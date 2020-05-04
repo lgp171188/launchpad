@@ -1,4 +1,4 @@
-# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """timeout.py tests.
@@ -408,10 +408,10 @@ class TestTimeout(TestCase):
 
     def test_urlfetch_does_not_support_ftp_urls_by_default(self):
         """urlfetch() does not support ftp urls by default."""
-        url = 'ftp://localhost/'
+        url = u'ftp://localhost/'
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for '%s'" % url, str(e))
+            "No connection adapters were found for {!r}".format(url), str(e))
 
     def test_urlfetch_supports_ftp_urls_if_allow_ftp(self):
         """urlfetch() supports ftp urls via a proxy if explicitly asked."""
@@ -444,10 +444,10 @@ class TestTimeout(TestCase):
         """urlfetch() does not support file urls by default."""
         test_path = self.useFixture(TempDir()).join('file')
         write_file(test_path, b'')
-        url = 'file://' + test_path
+        url = u'file://' + test_path
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for '%s'" % url, str(e))
+            "No connection adapters were found for {!r}".format(url), str(e))
 
     def test_urlfetch_supports_file_urls_if_allow_file(self):
         """urlfetch() supports file urls if explicitly asked to do so."""
