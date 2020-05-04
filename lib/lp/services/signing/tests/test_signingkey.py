@@ -244,6 +244,53 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             arch_kmod_key.signing_key,
             arch_signing_key_set.getSigningKey(KMOD, archive, distro_series))
 
+    def test_get_signing_key_exact_match(self):
+        UEFI = SigningKeyType.UEFI
+        KMOD = SigningKeyType.KMOD
+
+        archive = self.factory.makeArchive()
+        distro_series1 = archive.distribution.series[0]
+        distro_series2 = archive.distribution.series[1]
+        uefi_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.UEFI)
+        kmod_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.KMOD)
+
+        arch_signing_key_set = getUtility(IArchiveSigningKeySet)
+
+        # Create a key for the first distro series
+        series1_uefi_key = arch_signing_key_set.create(
+            archive, distro_series1, uefi_key)
+
+        # Create a key for the archive
+        arch_kmod_key = arch_signing_key_set.create(
+            archive, None, kmod_key)
+
+        # Should get the UEFI key for distro_series1
+        self.assertEqual(
+            series1_uefi_key.signing_key,
+            arch_signing_key_set.getSigningKey(
+                UEFI, archive, distro_series1, exact_match=True)
+        )
+        # Should get the archive's KMOD key.
+        self.assertEqual(
+            arch_kmod_key.signing_key,
+            arch_signing_key_set.getSigningKey(
+                KMOD, archive, None, exact_match=True)
+        )
+        # distro_series1 has no KMOD key.
+        self.assertEqual(
+            None,
+            arch_signing_key_set.getSigningKey(
+                KMOD, archive, distro_series1, exact_match=True)
+        )
+        # distro_series2 has no key at all.
+        self.assertEqual(
+            None,
+            arch_signing_key_set.getSigningKey(
+                KMOD, archive, distro_series2, exact_match=True)
+        )
+
     def test_get_signing_keys_with_distro_series_configured(self):
         UEFI = SigningKeyType.UEFI
         KMOD = SigningKeyType.KMOD
