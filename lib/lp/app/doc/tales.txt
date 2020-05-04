@@ -266,8 +266,8 @@ fmt:rfc822utcdatetime.
 
 To truncate a long string, use fmt:shorten:
 
-    >>> test_tales('foo/fmt:shorten/8', foo='abcdefghij')
-    'abcde...'
+    >>> print(test_tales('foo/fmt:shorten/8', foo='abcdefghij'))
+    abcde...
 
 To ellipsize the middle of a string. use fmt:ellipsize and pass the max
 length.
@@ -1080,35 +1080,35 @@ the start of the string is not a letter. If any invalid characters are
 stripped out, to ensure the id is unique, a base64 encoding is appended to the
 id.
 
-    >>> test_tales('foo/fmt:css-id', foo='beta2-milestone')
-    'beta2-milestone'
+    >>> print(test_tales('foo/fmt:css-id', foo='beta2-milestone'))
+    beta2-milestone
 
-    >>> test_tales('foo/fmt:css-id', foo='user name')
-    'user-name-dXNlciBuYW1l'
+    >>> print(test_tales('foo/fmt:css-id', foo='user name'))
+    user-name-dXNlciBuYW1l
 
-    >>> test_tales('foo/fmt:css-id', foo='1.0.1_series')
-    'j1-0-1_series'
+    >>> print(test_tales('foo/fmt:css-id', foo='1.0.1_series'))
+    j1-0-1_series
 
 An optional prefix for the if can be added to the path. It too will be
 escaped.
 
-    >>> test_tales('foo/fmt:css-id/series-', foo='1.0.1_series')
-    'series-1-0-1_series'
+    >>> print(test_tales('foo/fmt:css-id/series-', foo='1.0.1_series'))
+    series-1-0-1_series
 
-    >>> test_tales('foo/fmt:css-id/series_', foo='1.0.1_series')
-    'series_1-0-1_series'
+    >>> print(test_tales('foo/fmt:css-id/series_', foo='1.0.1_series'))
+    series_1-0-1_series
 
-    >>> test_tales('foo/fmt:css-id/0series-', foo='1.0.1_series')
-    'j0series-1-0-1_series'
+    >>> print(test_tales('foo/fmt:css-id/0series-', foo='1.0.1_series'))
+    j0series-1-0-1_series
 
 Zope fields are rendered with a period, and we need to ensure there is a way
 to retain the periods in the css id even though we would prefer not to.
 
-    >>> test_tales('foo/fmt:zope-css-id', foo='field.bug.target')
-    'field.bug.target'
+    >>> print(test_tales('foo/fmt:zope-css-id', foo='field.bug.target'))
+    field.bug.target
 
-    >>> test_tales('foo/fmt:zope-css-id', foo='field.gtk+_package')
-    'field.gtk-_package-ZmllbGQuZ3RrK19wYWNrYWdl'
+    >>> print(test_tales('foo/fmt:zope-css-id', foo='field.gtk+_package'))
+    field.gtk-_package-ZmllbGQuZ3RrK19wYWNrYWdl
 
 The fmt: namespace to get strings (obfuscation)
 -----------------------------------------------
@@ -1119,32 +1119,36 @@ unauthenticated users, the email address can be hidden. The address is
 replaced with the message '<email address hidden>'.
 
     >>> login(ANONYMOUS)
-    >>> test_tales('foo/fmt:obfuscate-email', foo='name.surname@company.com')
-    '<email address hidden>'
+    >>> print(test_tales(
+    ...     'foo/fmt:obfuscate-email', foo='name.surname@company.com'))
+    <email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='name@organization.org.cc')
-    '<email address hidden>'
+    >>> print(test_tales(
+    ...     'foo/fmt:obfuscate-email', foo='name@organization.org.cc'))
+    <email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='name+sub@domain.org')
-    '<email address hidden>'
+    >>> print(test_tales(
+    ...     'foo/fmt:obfuscate-email', foo='name+sub@domain.org'))
+    <email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email',
-    ...     foo='long_name@host.long-network.org.cc')
-    '<email address hidden>'
+    >>> print(test_tales('foo/fmt:obfuscate-email',
+    ...     foo='long_name@host.long-network.org.cc'))
+    <email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email',
-    ...     foo='"long/name="@organization.org')
-    '"<email address hidden>'
+    >>> print(test_tales('foo/fmt:obfuscate-email',
+    ...     foo='"long/name="@organization.org'))
+    "<email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email',
-    ...     foo='long-name@building.museum')
-    '<email address hidden>'
+    >>> print(test_tales('foo/fmt:obfuscate-email',
+    ...     foo='long-name@building.museum'))
+    <email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='foo@staticmethod.com')
-    '<email address hidden>'
+    >>> print(test_tales(
+    ...     'foo/fmt:obfuscate-email', foo='foo@staticmethod.com'))
+    <email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='<foo@bar.com>')
-    '<email address hidden>'
+    >>> print(test_tales('foo/fmt:obfuscate-email', foo='<foo@bar.com>'))
+    <email address hidden>
 
     >>> print test_tales('foo/fmt:obfuscate-email/fmt:text-to-html',
     ...     foo=signature)
@@ -1153,41 +1157,43 @@ replaced with the message '<email address hidden>'.
     &lt;email address hidden&gt;<br />
     Guilty of stealing everything I am.</p>
 
-    >>> test_tales('foo/fmt:obfuscate-email',
-    ...     foo='mailto:long-name@very.long.dom.cc')
-    'mailto:<email address hidden>'
+    >>> print(test_tales('foo/fmt:obfuscate-email',
+    ...     foo='mailto:long-name@very.long.dom.cc'))
+    mailto:<email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email',
-    ...     foo='http://person:password@site.net')
-    'http://person:<email address hidden>'
+    >>> print(test_tales('foo/fmt:obfuscate-email',
+    ...     foo='http://person:password@site.net'))
+    http://person:<email address hidden>
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='name @ host.school.edu')
-    'name @ host.school.edu'
+    >>> print(test_tales(
+    ...     'foo/fmt:obfuscate-email', foo='name @ host.school.edu'))
+    name @ host.school.edu
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='person@host')
-    'person@host'
+    >>> print(test_tales('foo/fmt:obfuscate-email', foo='person@host'))
+    person@host
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='(head, tail)=@array')
-    '(head, tail)=@array'
+    >>> print(test_tales(
+    ...     'foo/fmt:obfuscate-email', foo='(head, tail)=@array'))
+    (head, tail)=@array
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='@staticmethod')
-    '@staticmethod'
+    >>> print(test_tales('foo/fmt:obfuscate-email', foo='@staticmethod'))
+    @staticmethod
 
-    >>> test_tales('foo/fmt:obfuscate-email', foo='element/@attribute')
-    'element/@attribute'
+    >>> print(test_tales('foo/fmt:obfuscate-email', foo='element/@attribute'))
+    element/@attribute
 
     >>> bad_address = (
     ...     "medicalwei@sara:~$ Spinning................................"
     ...     "...........................................................not")
-    >>> test_tales('foo/fmt:obfuscate-email', foo=bad_address)
-    'medicalwei@sara:~$ ...'
+    >>> print(test_tales('foo/fmt:obfuscate-email', foo=bad_address))
+    medicalwei@sara:~$ ...
 
 However, if the user is authenticated, the email address is not
 obfuscated.
 
     >>> login('no-priv@canonical.com')
-    >>> test_tales('foo/fmt:obfuscate-email', foo='user@site.net')
-    'user@site.net'
+    >>> print(test_tales('foo/fmt:obfuscate-email', foo='user@site.net'))
+    user@site.net
 
 
 Linkification of email addresses
@@ -1220,8 +1226,8 @@ Team addresses are linkified with a team icon:
 
 Unknown email addresses are not altered in any way:
 
-    >>> test_tales('foo/fmt:linkify-email', foo='nobody@example.com')
-    'nobody@example.com'
+    >>> print(test_tales('foo/fmt:linkify-email', foo='nobody@example.com'))
+    nobody@example.com
 
 Users who specify that their email addresses must be hidden also do not
 get linkified.  test@canonical.com is hidden:
@@ -1231,8 +1237,8 @@ get linkified.  test@canonical.com is hidden:
     >>> discreet_user.hide_email_addresses
     True
 
-    >>> test_tales('foo/fmt:linkify-email', foo='test@canonical.com')
-    'test@canonical.com'
+    >>> print(test_tales('foo/fmt:linkify-email', foo='test@canonical.com'))
+    test@canonical.com
 
 
 Test the 'fmt:' namespace where the context is a dict.
