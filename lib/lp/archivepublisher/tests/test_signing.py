@@ -2106,6 +2106,10 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                           upload.process, self.archive, self.path, self.suite)
         self.assertTrue(upload.autokey)
 
+        # Make sure we deleted the locally generated keys.
+        self.assertFalse(os.path.exists(upload.uefi_cert))
+        self.assertFalse(os.path.exists(upload.uefi_key))
+
         # Make sure we didn't call lp-signing's /inject endpoint
         self.assertEqual(0, self.signing_service_client.inject.call_count)
         log_content = logger.content.as_text()
