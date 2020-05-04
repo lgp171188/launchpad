@@ -32,12 +32,17 @@ when there is no search text.
 
 When text is not None, the title indicates what was searched.
 
+    >>> from lp.services.encoding import wsgi_native_string
+
     >>> def getSearchView(form):
     ...     search_param_list = []
     ...     for name in sorted(form):
     ...         value = form[name]
-    ...         search_param_list.append('%s=%s' % (name, value))
-    ...     query_string = '&'.join(search_param_list)
+    ...         if isinstance(value, six.text_type):
+    ...             value = wsgi_native_string(value)
+    ...         search_param_list.append(b'%s=%s' % (
+    ...             wsgi_native_string(name), value))
+    ...     query_string = b'&'.join(search_param_list)
     ...     request = LaunchpadTestRequest(
     ...         SERVER_URL='https://launchpad.test/+search',
     ...         QUERY_STRING=query_string, form=form, PATH_INFO='/+search')
@@ -540,7 +545,7 @@ error. Also disable warnings, since we are tossing around malformed Unicode.
     >>> with warnings.catch_warnings():
     ...     warnings.simplefilter('ignore')
     ...     search_view = getSearchView(
-    ...         form={'field.text': '\xfe\xfckr\xfc'})
+    ...         form={'field.text': b'\xfe\xfckr\xfc'})
     >>> html = search_view()
     >>> 'Can not convert your search term' in html
     True

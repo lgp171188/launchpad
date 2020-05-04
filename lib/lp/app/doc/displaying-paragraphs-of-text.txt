@@ -485,7 +485,7 @@ we want to replace a variable number of spaces with the same number of
 
     >>> from lp.app.browser.stringformatter import FormattersAPI
     >>> import re
-    >>> matchobj = re.match('foo(.*)bar', 'fooX Ybar')
+    >>> matchobj = re.match('foo(.*)bar', six.ensure_str('fooX Ybar'))
     >>> matchobj.groups()
     ('X Y',)
     >>> FormattersAPI._substitute_matchgroup_for_spaces(matchobj)
@@ -499,9 +499,10 @@ First, let's try a match of nothing it understands.  This is a bug, so we get
 an AssertionError.
 
     >>> matchobj = re.match(
-    ...     ('(?P<bug>xxx)?(?P<faq>www)?(?P<url>yyy)?(?P<oops>zzz)?'
-    ...      '(?P<lpbranchurl>www)?(?P<clbug>vvv)?'),
-    ...     'fish')
+    ...     six.ensure_str(
+    ...         '(?P<bug>xxx)?(?P<faq>www)?(?P<url>yyy)?(?P<oops>zzz)?'
+    ...         '(?P<lpbranchurl>www)?(?P<clbug>vvv)?'),
+    ...     six.ensure_str('fish'))
     >>> sorted(matchobj.groupdict().items())
     [('bug', None),
      ('clbug', None),
@@ -517,7 +518,9 @@ an AssertionError.
 When we have a URL, the URL is made into a link.  A quote is added to the
 url to demonstrate quoting in the HTML attribute.
 
-    >>> matchobj = re.match('(?P<bug>xxx)?(?P<url>y"y)?', 'y"y')
+    >>> matchobj = re.match(
+    ...     six.ensure_str('(?P<bug>xxx)?(?P<url>y"y)?'),
+    ...     six.ensure_str('y"y'))
     >>> sorted(matchobj.groupdict().items())
     [('bug', None), ('url', 'y"y')]
     >>> FormattersAPI._linkify_substitution(matchobj)
@@ -527,7 +530,8 @@ When we have a bug reference, the 'bug' group is used as the text of the link,
 and the 'bugnum' is used to look up the bug.
 
     >>> matchobj = re.match(
-    ...     '(?P<bug>xxxx)?(?P<bugnum>2)?(?P<url>yyy)?', 'xxxx2')
+    ...     six.ensure_str('(?P<bug>xxxx)?(?P<bugnum>2)?(?P<url>yyy)?'),
+    ...     six.ensure_str('xxxx2'))
     >>> sorted(matchobj.groupdict().items())
     [('bug', 'xxxx'), ('bugnum', '2'), ('url', None)]
     >>> FormattersAPI._linkify_substitution(matchobj)
@@ -537,7 +541,8 @@ When the bugnum doesn't match any bug, we still get a link, but get a message
 in the link's title.
 
     >>> matchobj = re.match(
-    ...     '(?P<bug>xxxx)?(?P<bugnum>2000)?(?P<url>yyy)?', 'xxxx2000')
+    ...     six.ensure_str('(?P<bug>xxxx)?(?P<bugnum>2000)?(?P<url>yyy)?'),
+    ...     six.ensure_str('xxxx2000'))
     >>> sorted(matchobj.groupdict().items())
     [('bug', 'xxxx'), ('bugnum', '2000'), ('url', None)]
     >>> FormattersAPI._linkify_substitution(matchobj)
