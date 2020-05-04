@@ -9,4 +9,5 @@ from lp.services.job.scripts.process_job_source import ProcessJobSource
 
 if __name__ == '__main__':
     script = ProcessJobSource()
-    script.lock_and_run()
+    # ProcessJobSource handles its own locking.
+    script.run()

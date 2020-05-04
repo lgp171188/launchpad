@@ -19,6 +19,7 @@ from lp.services.config import config
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts.base import LaunchpadCronScript
+from lp.services.job.scripts.process_job_source import ProcessJobSource
 
 
 class LongEpilogHelpFormatter(IndentedHelpFormatter):
@@ -48,13 +49,6 @@ class ProcessJobSourceGroups(LaunchpadCronScript):
             '-e', '--exclude', dest='excluded_job_sources',
             metavar="JOB_SOURCE", default=[], action='append',
             help="Exclude specific job sources.")
-        self.parser.add_option(
-            '--wait', dest='do_wait', default=False, action='store_true',
-            help="Wait for the child processes to finish. This is useful "
-                 "for testing, but it shouldn't be used in a cronjob, since "
-                 "it would prevent the cronjob from processing new jobs "
-                 "if just one of the child processes is still processing, "
-                 "and each process only handles a single job source class.")
 
     def main(self):
         selected_groups = self.args
@@ -74,19 +68,16 @@ class ProcessJobSourceGroups(LaunchpadCronScript):
                         source, english_list(selected_groups, "or")))
             else:
                 selected_job_sources.remove(source)
+        if not selected_job_sources:
+            return
         # Process job sources.
         command = os.path.join(
             os.path.dirname(sys.argv[0]), 'process-job-source.py')
         child_args = [command]
         if self.options.verbose:
             child_args.append('-v')
-        children = []
-        for job_source in selected_job_sources:
-            child = subprocess.Popen(child_args + [job_source])
-            children.append(child)
-        if self.options.do_wait:
-            for child in children:
-                child.wait()
+        child_args.extend(sorted(selected_job_sources))
+        subprocess.check_call(child_args)
 
     @cachedproperty
     def all_job_sources(self):

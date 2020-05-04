@@ -47,7 +47,6 @@ __all__ = [
     'ZopelessAppServerLayer',
     'ZopelessDatabaseLayer',
     'ZopelessLayer',
-    'disconnect_stores',
     'reconnect_stores',
     ]
 
@@ -83,7 +82,6 @@ from six.moves.urllib.parse import (
     urlparse,
     )
 from six.moves.urllib.request import urlopen
-from storm.zope.interfaces import IZStorm
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
 import wsgi_intercept
@@ -119,7 +117,10 @@ from lp.services.config.fixture import (
     ConfigUseFixture,
     )
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import session_store
+from lp.services.database.sqlbase import (
+    disconnect_stores,
+    session_store,
+    )
 from lp.services.encoding import wsgi_native_string
 from lp.services.job.tests import celery_worker
 from lp.services.librarian.model import LibraryFileAlias
@@ -195,21 +196,6 @@ def is_ca_available():
         return False
     else:
         return True
-
-
-def disconnect_stores():
-    """Disconnect Storm stores."""
-    zstorm = getUtility(IZStorm)
-    stores = [
-        store for name, store in zstorm.iterstores() if name != 'session']
-
-    # If we have any stores, abort the transaction and close them.
-    if stores:
-        for store in stores:
-            zstorm.remove(store)
-        transaction.abort()
-        for store in stores:
-            store.close()
 
 
 def reconnect_stores(reset=False):

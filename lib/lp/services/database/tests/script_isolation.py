@@ -13,9 +13,11 @@ import warnings
 import transaction
 
 from lp.services.config import dbconfig
-from lp.services.database.sqlbase import cursor
+from lp.services.database.sqlbase import (
+    cursor,
+    disconnect_stores,
+    )
 from lp.services.scripts import execute_zcml_for_scripts
-from lp.testing.layers import disconnect_stores
 
 execute_zcml_for_scripts()
 

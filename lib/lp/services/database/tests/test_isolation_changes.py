@@ -22,12 +22,10 @@ from lp.services.config import dbconfig
 from lp.services.database.sqlbase import (
     connect,
     cursor,
+    disconnect_stores,
     ISOLATION_LEVEL_SERIALIZABLE,
     )
-from lp.testing.layers import (
-    disconnect_stores,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer
 
 
 def set_isolation_level(isolation):
