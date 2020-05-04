@@ -16,6 +16,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import six
 from storm.locals import (
     Int,
     Reference,
@@ -114,10 +115,9 @@ class TranslationSharingJob(StormBase):
 
 
 @delegate_to(ITranslationSharingJob)
-class TranslationSharingJobDerived:
+class TranslationSharingJobDerived(
+        six.with_metaclass(EnumeratedSubclass, object)):
     """Base class for specialized TranslationTemplate Job types."""
-
-    __metaclass__ = EnumeratedSubclass
 
     def getDBClass(self):
         return TranslationSharingJob
