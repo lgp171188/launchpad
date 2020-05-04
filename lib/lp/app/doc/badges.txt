@@ -26,7 +26,7 @@ alternate text and titles.
 Iterating over this collection gives:
 
     >>> for name in sorted(STANDARD_BADGES):
-    ...     print name
+    ...     print(name)
     blueprint
     branch
     bug
@@ -56,10 +56,10 @@ Both `alt` and `title` default to the empty string.
 
 Calling the render methods will produce the default image HTML.
 
-    >>> print bug.renderIconImage()
+    >>> print(bug.renderIconImage())
     <img alt="bug" width="14" height="14" src="/@@/bug"
          title="Linked to a bug"/>
-    >>> print bug.renderHeadingImage()
+    >>> print(bug.renderHeadingImage())
     <img alt="bug" width="32" height="32" src="/@@/bug-large"
          title="Linked to a bug" id="bugbadge"/>
 
@@ -128,7 +128,7 @@ badger class needs to implement the method `getBadge`.
     ...             return HasBadgeBase.getBadge(self, badge_name)
 
     >>> for badge in SimpleBadger(private_object).getVisibleBadges():
-    ...     print badge.alt, "/", badge.title
+    ...     print(badge.alt, "/", badge.title)
     bug / Bug-Title
     fish / Fish-Title
 
@@ -137,7 +137,7 @@ NotImplementedError.
 
     >>> SimpleBadger.badges.append("blueprint")
     >>> for badge in SimpleBadger(private_object).getVisibleBadges():
-    ...     print badge.alt
+    ...     print(badge.alt)
     Traceback (most recent call last):
     ...
     AttributeError:
@@ -173,11 +173,11 @@ determination methods to use the results of an alternative query.
     ... class Foo(object):
     ...     @property
     ...     def bugs(self):
-    ...         print "Foo.bugs"
+    ...         print("Foo.bugs")
     ...         return ['a']
     ...     @property
     ...     def blueprints(self):
-    ...         print "Foo.blueprints"
+    ...         print("Foo.blueprints")
     ...         return []
 
 Now define the adapter for the Foo content class.
@@ -219,7 +219,7 @@ Getting the visible badges for foo calls the underlying methods on foo,
 as illustrated by the printed method calls.
 
     >>> for badge in badger.getVisibleBadges():
-    ...     print badge.renderIconImage()
+    ...     print(badge.renderIconImage())
     Foo.bugs
     Foo.blueprints
     <img alt="bug" width="14" height="14" src="/@@/bug"
@@ -264,7 +264,7 @@ method calls, and thus avoiding unnecessary database hits (for normal
 content classes).
 
     >>> for badge in badger.getVisibleBadges():
-    ...     print badge.renderIconImage()
+    ...     print(badge.renderIconImage())
     <img alt="bug" width="14" height="14" src="/@@/bug"
     title="Linked to a bug"/>
 
@@ -281,13 +281,13 @@ through the printed attribute accessors, uses the attributes of the
 content class.
 
     >>> from lp.testing import test_tales
-    >>> print test_tales('context/badges:small', context=foo)
+    >>> print(test_tales('context/badges:small', context=foo))
     Foo.bugs
     Foo.blueprints
     <img alt="bug" width="14" height="14" src="/@@/bug"
          title="Linked to a bug"/>
 
-    >>> print test_tales('context/badges:large', context=foo)
+    >>> print(test_tales('context/badges:large', context=foo))
     Foo.bugs
     Foo.blueprints
     <img alt="bug" width="32" height="32" src="/@@/bug-large"
@@ -296,9 +296,9 @@ content class.
 Using the delegating foo, we get the delegated methods called and avoid
 the content class method calls.
 
-    >>> print test_tales('context/badges:small', context=delegating_foo)
+    >>> print(test_tales('context/badges:small', context=delegating_foo))
     <img alt="bug" width="14" height="14" src="/@@/bug"
          title="Linked to a bug"/>
-    >>> print test_tales('context/badges:large', context=delegating_foo)
+    >>> print(test_tales('context/badges:large', context=delegating_foo))
     <img alt="bug" width="32" height="32" src="/@@/bug-large"
          title="Linked to a bug" id="bugbadge"/>

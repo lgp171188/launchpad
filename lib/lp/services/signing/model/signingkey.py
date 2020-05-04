@@ -167,7 +167,8 @@ class ArchiveSigningKeySet:
         return obj
 
     @classmethod
-    def getSigningKey(cls, key_type, archive, distro_series):
+    def getSigningKey(cls, key_type, archive, distro_series,
+                      exact_match=False):
         store = IStore(ArchiveSigningKey)
         # Gets all the keys of the given key_type available for the archive
         rs = store.find(ArchiveSigningKey,
@@ -175,6 +176,10 @@ class ArchiveSigningKeySet:
                 SigningKey.key_type == key_type,
                 ArchiveSigningKey.key_type == key_type,
                 ArchiveSigningKey.archive == archive)
+
+        if exact_match:
+            rs = rs.find(
+                ArchiveSigningKey.earliest_distro_series == distro_series)
 
         # prefetch related signing keys to avoid extra queries.
         signing_keys = store.find(SigningKey, [

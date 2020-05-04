@@ -38,7 +38,7 @@ main and side content are positioned using the "yui-t4", "yui-main",
 
     >>> view = MainSideView(user, request)
     >>> html = view.render()
-    >>> print html
+    >>> print(html)
     <!DOCTYPE html>
     ...
       <!--
@@ -62,7 +62,7 @@ content to take up all the horizontal space.
 
     >>> view = MainOnlyView(user, request)
     >>> html = view.render()
-    >>> print html
+    >>> print(html)
     <!DOCTYPE html>
     ...
       <!--
@@ -85,7 +85,7 @@ slots are rendered, as are the application tabs.
 
     >>> view = SearchlessView(user, request)
     >>> html = view.render()
-    >>> print html
+    >>> print(html)
     <!DOCTYPE html>
     ...
     ...
@@ -103,7 +103,7 @@ Page Diagnostics
 
 The page includes a comment after the body with diagnostic information.
 
-    >>> print html[html.index('</body>') + 7:]
+    >>> print(html[html.index('</body>') + 7:])
     ...
     <!--
       Facet name: overview
@@ -124,7 +124,7 @@ The example layouts all used the heading slot to define a heading for their
 test. The template controlled the heading.
 
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print content.h1
+    >>> print(content.h1)
     <h1>Heading</h1>
 
 
@@ -141,7 +141,7 @@ Page Footers
     >>> view = BugsMainSideView(user, bugs_request)
     >>> footer = find_tag_by_id(html, 'footer')
     >>> for tag in footer.findAll('a'):
-    ...     print tag.string, tag['href']
+    ...     print(tag.string, tag['href'])
     None http://launchpad.test/
     Take the tour http://launchpad.test/+tour
     Read the guide https://help.launchpad.net/
@@ -172,7 +172,7 @@ attribute.
     ...     visibility=PersonVisibility.PRIVATE)
     >>> view = MainOnlyView(team, request)
     >>> body = find_tag_by_id(view.render(), 'document')
-    >>> print ' '.join(body['class'])
+    >>> print(' '.join(body['class']))
     tab-overview
         main_only
         private
@@ -184,7 +184,7 @@ When the context is public, the 'public' class is in the class attribute.
     >>> team = factory.makeTeam(owner=user, name='a-public-team')
     >>> view = MainOnlyView(team, request)
     >>> body = find_tag_by_id(view.render(), 'document')
-    >>> print ' '.join(body['class'])
+    >>> print(' '.join(body['class']))
     tab-overview main_only public yui3-skin-sam
 
 
@@ -196,7 +196,7 @@ Notifications are displayed between the breadcrumbs and the page content.
     >>> request.response.addInfoNotification('I cannot do that Dave.')
     >>> view = MainOnlyView(user, request)
     >>> body_tag = find_tag_by_id(view.render(), 'maincontent')
-    >>> print str(body_tag)
+    >>> print(str(body_tag))
     <div ... id="maincontent">
       ...
       <div id="request-notifications">
@@ -224,5 +224,5 @@ headers.
     >>> request.response.addInfoNotification('I cannot do that Dave.')
     >>> view = FormView(user, request)
     >>> view.initialize()
-    >>> print request.response.getHeader('X-Lazr-Notifications')
+    >>> print(request.response.getHeader('X-Lazr-Notifications'))
     [[20, "I cannot do that Dave."]]

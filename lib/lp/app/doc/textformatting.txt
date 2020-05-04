@@ -29,7 +29,7 @@ So, with textwrap:
     ...     "actual email that gets sent.\n\n"
     ...     "It's also smart enough to preserve whitespace, finally!""")
     >>> wrapped_description = textwrap.fill(description, width=56)
-    >>> print wrapped_description  #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_description)  #doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
     is that the edit notification email generator knows how
     to indent and wrap descriptions, so this will appear
@@ -45,7 +45,7 @@ MailWrapper to the rescue!
 
     >>> from lp.services.mail.mailwrapper import MailWrapper
     >>> mailwrapper = MailWrapper(width=56)
-    >>> print mailwrapper.format(description) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(mailwrapper.format(description)) #doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
     is that the edit notification email generator knows how
     to indent and wrap descriptions, so this will appear
@@ -65,7 +65,7 @@ Let's just make sure that it handles a single paragraph as well.
     ...     "and wrap descriptions, so this will appear quite nice in the "
     ...     "actual email that gets sent.")
     >>> wrapped_text = mailwrapper.format(single_paragraph)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
     is that the edit notification email generator knows how
     to indent and wrap descriptions, so this will appear
@@ -80,7 +80,7 @@ already.
     ... characters. It shouldn't be wrapped.
     ... """
     >>> wrapped_text = mailwrapper.format(already_wrapped)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
     This paragraph contains only lines that are less than 56
     characters. It shouldn't be wrapped.
 
@@ -95,7 +95,7 @@ of spaces:
     ... It shouldn't be wrapped.
     ... """
     >>> wrapped_text = mailwrapper.format(already_wrapped)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
     This paragraph contains only lines that are less than 56
     characters.
     <BLANKLINE>
@@ -113,7 +113,7 @@ allowed length. These shouldn't be wrapped.
     ... This is a reply to the line above.
     ... """
     >>> wrapped_text = mailwrapper.format(long_quoted_lines)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
     > > > > > Someone wrote this a long time ago. When it was written
     > > > > > all lines were less than 56 characters, but now they are
     > > > > > longer.
@@ -130,7 +130,7 @@ single line, such as URLs.
     ...     "Even though it's longer than 56 characters, it stays on a "
     ...     "single line.")
     >>> wrapped_text = mailwrapper.format(long_word)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
     This paragraph includes a long URL,
     https://launchpad.net/greenishballoon/+bug/1733/+subscriptions.
     Even though it's longer than 56 characters, it stays on
@@ -160,7 +160,7 @@ It preserves whitespace in the beginning of the line.
     ...                `^'     \ :/           `^'  `-^-'   \v/ :  \/
     ... """
     >>> wrapped_text = mailwrapper.format(ascii_cow)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
     <BLANKLINE>
                                                   /;    ;\
                                               __  \\____//
@@ -186,14 +186,14 @@ We can indent text as well:
 
     >>> mailwrapper = MailWrapper(width=56, indent=4*' ')
     >>> wrapped_text = mailwrapper.format(long_quoted_lines)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
         > > > > > Someone wrote this a long time ago. When it was written
         > > > > > all lines were less than 56 characters, but now they are
         > > > > > longer.
     <BLANKLINE>
         This is a reply to the line above.
 
-    >>> print mailwrapper.format(description) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(mailwrapper.format(description)) #doctest: -NORMALIZE_WHITESPACE
         A new description that is quite long. But the nice
         thing is that the edit notification email generator
         knows how to indent and wrap descriptions, so this
@@ -208,7 +208,7 @@ Sometimes we don't want to indent the first line.
 
     >>> mailwrapper = MailWrapper(
     ...     width=56, indent=4*' ', indent_first_line=False)
-    >>> print mailwrapper.format(description) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(mailwrapper.format(description)) #doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
         is that the edit notification email generator knows
         how to indent and wrap descriptions, so this will
@@ -219,7 +219,7 @@ Sometimes we don't want to indent the first line.
         finally!
 
     >>> wrapped_text = mailwrapper.format(long_quoted_lines)
-    >>> print wrapped_text #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
     > > > > > Someone wrote this a long time ago. When it was written
         > > > > > all lines were less than 56 characters, but now they are
         > > > > > longer.
@@ -264,7 +264,7 @@ long hyphenated URL.  Under normal circumstances, this will get wrapped.
 
     >>> wrapper = MailWrapper(72)
     >>> body = wrapper.format(text, force_wrap=True)
-    >>> print body
+    >>> print(body)
     Hello Scarlett O'Hara,
     <BLANKLINE>
     frankly-my-dear-i-dont-give-a-damn has a new message requiring your
@@ -297,7 +297,7 @@ The callable's argument is the pre-wrapped paragraph.
     ...     return paragraph.startswith('http://')
 
     >>> body = wrapper.format(text, force_wrap=True, wrap_func=nowrap)
-    >>> print body
+    >>> print(body)
     Hello Scarlett O'Hara,
     <BLANKLINE>
     frankly-my-dear-i-dont-give-a-damn has a new message requiring your

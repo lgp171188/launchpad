@@ -18,7 +18,7 @@ class TestVersionInfo(unittest.TestCase):
         # Getting version info should still work in them.
         args = [os.path.join(TREE_ROOT, "bin/py"), "-c",
                 "from lp.app.versioninfo import revision;"
-                "print revision"]
+                "print(revision)"]
         process = subprocess.Popen(args, cwd='/tmp', stdout=subprocess.PIPE)
         (output, errors) = process.communicate(None)
         self.assertEqual(revision, output.rstrip("\n"))

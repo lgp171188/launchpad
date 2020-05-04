@@ -54,16 +54,16 @@ to the named adapter: <tal:menu replace="structure view/@@+related-pages" />
     >>> view = EditView(user, LaunchpadTestRequest())
     >>> menu_view = create_initialized_view(
     ...     view, '+related-pages', principal=user)
-    >>> print menu_view.template.filename
+    >>> print(menu_view.template.filename)
     /.../navigationmenu-related-pages.pt
 
 The view provides access the menu's title and links. Both the enabled
 and disabled links are included.
 
-    >>> print menu_view.title
+    >>> print(menu_view.title)
     Related pages
     >>> for link in menu_view.links:
-    ...     print link.enabled, link.url
+    ...     print(link.enabled, link.url)
     True   http://launchpad.test/~beaker/+edit
     True   http://launchpad.test/~beaker/+edit-people
     False  http://launchpad.test/~beaker/+admin
@@ -73,7 +73,7 @@ link is rendered only if its 'enabled' property is true. The template uses the
 inline-link rules, if the link has an icon, the classes are set, otherwise a
 style attribute is used.
 
-    >>> print menu_view.render()
+    >>> print(menu_view.render())
     <div id="related-pages" class="portlet">
       <h2>Related pages</h2>
     <BLANKLINE>
@@ -100,19 +100,19 @@ be clickable.
 
     >>> request = LaunchpadTestRequest(
     ...     SERVER_URL='http://launchpad.test/~beaker/+edit')
-    >>> print request.getURL()
+    >>> print(request.getURL())
     http://launchpad.test/~beaker/+edit
 
     >>> view = EditView(user, request)
     >>> menu_view = create_initialized_view(
     ...     view, '+related-pages', principal=user)
     >>> for link in menu_view.links:
-    ...     print link.enabled, link.linked, link.url
+    ...     print(link.enabled, link.linked, link.url)
     True  False  http://launchpad.test/~beaker/+edit
     True  True   http://launchpad.test/~beaker/+edit-people
     False True   http://launchpad.test/~beaker/+admin
 
-    >>> print menu_view.render()
+    >>> print(menu_view.render())
     <div id="related-pages" class="portlet">
       <h2>Related pages</h2>
     ...
@@ -133,13 +133,13 @@ links.
     >>> menu_view = create_initialized_view(
     ...     view, '+global-actions', principal=user)
     >>> for link in menu_view.enabled_links:
-    ...     print link.enabled, link.linked, link.url
+    ...     print(link.enabled, link.linked, link.url)
     True  False  http://launchpad.test/~beaker/+edit
     True  True   http://launchpad.test/~beaker/+edit-people
 
 The generated markup is for a portlet with the global-actions id.
 
-    >>> print menu_view.render()
+    >>> print(menu_view.render())
     <div id="global-actions" class="portlet vertical">
       <ul>
         <li>
@@ -165,5 +165,5 @@ may contain links that require special privileges to access.
     >>> menu_view.enabled_links
     []
 
-    >>> print menu_view.render()
+    >>> print(menu_view.render())
     <BLANKLINE>

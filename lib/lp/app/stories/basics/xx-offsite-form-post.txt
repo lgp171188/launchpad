@@ -84,9 +84,9 @@ present a hopefully helpful error message.
   Traceback (most recent call last):
     ...
   HTTPError...
-  >>> print browser.headers['status']
+  >>> print(browser.headers['status'])
   403 Forbidden
-  >>> print extract_text(find_main_content(browser.contents))
+  >>> print(extract_text(find_main_content(browser.contents)))
   No REFERER Header
   ...
   >>> browser.getLink('the FAQ').url
@@ -135,7 +135,7 @@ managed by launchpad:
   >>> browser.getControl('Name', index=0).value = 'team4'
   >>> browser.getControl('Display Name').value = 'Team 4'
   >>> browser.getControl('Create').click()
-  >>> print browser.url
+  >>> print(browser.url)
   http://launchpad.test/~team4
 
   # Now restore our site's hostname.

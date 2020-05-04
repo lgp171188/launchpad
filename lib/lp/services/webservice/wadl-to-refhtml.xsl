@@ -479,6 +479,18 @@
                 <xsl:text>/+recipe/</xsl:text>
                 <var>&lt;oci_recipe.name&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'oci_recipe_build'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+                <xsl:text>/+recipe/</xsl:text>
+                <var>&lt;oci_recipe.name&gt;</var>
+                <xsl:text>/+build/</xsl:text>
+                <var>&lt;oci_recipe_build.id&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'oci_recipe_build_request'">
                 <xsl:text>/~</xsl:text>
                 <var>&lt;person.name&gt;</var>

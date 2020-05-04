@@ -23,7 +23,7 @@ Page title and heading
 The page title and heading suggest to the user to search launchpad
 when there is no search text.
 
-    >>> print search_view.text
+    >>> print(search_view.text)
     None
     >>> search_view.page_title
     'Search Launchpad'
@@ -76,7 +76,7 @@ search action.
 
     >>> search_view = getSearchView(form={})
 
-    >>> print search_view.text
+    >>> print(search_view.text)
     None
     >>> search_view.has_matches
     False
@@ -112,7 +112,7 @@ more bugs than questions.
     True
     >>> search_view.bug.title
     u'Nonsensical bugs are useless'
-    >>> print search_view.question
+    >>> print(search_view.question)
     None
 
 Private bugs are not matched if the user does not have permission to
@@ -137,7 +137,7 @@ But anonymous and unprivileged users cannot see the private bug.
     >>> login(ANONYMOUS)
     >>> search_view = getSearchView(
     ...     form={'field.text': private_bug.id})
-    >>> print search_view.bug
+    >>> print(search_view.bug)
     None
 
 The text and punctuation in the search text is ignored, and only the
@@ -154,7 +154,7 @@ numbers do match questions, but they are not used.
     True
     >>> search_view.bug.title
     u'Nonsensical bugs are useless'
-    >>> print search_view.question
+    >>> print(search_view.question)
     None
 
 It is not an error to search for a non-existent bug or question.
@@ -165,23 +165,22 @@ It is not an error to search for a non-existent bug or question.
     u'55555'
     >>> search_view.has_matches
     False
-    >>> print search_view.bug
+    >>> print(search_view.bug)
     None
-    >>> print search_view.question
+    >>> print(search_view.question)
     None
 
 There is no error if a number cannot be extracted from the search text.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': 'fifteen'})
-    >>> print search_view._getNumericToken(
-    ...     search_view.text)
+    >>> print(search_view._getNumericToken(search_view.text))
     None
     >>> search_view.has_matches
     False
-    >>> print search_view.bug
+    >>> print(search_view.bug)
     None
-    >>> print search_view.question
+    >>> print(search_view.question)
     None
 
 Bugs and questions are only returned for the first page of search,
@@ -192,9 +191,9 @@ when the start param is 0.
     ...           'start': '20'})
     >>> search_view.has_matches
     False
-    >>> print search_view.bug
+    >>> print(search_view.bug)
     None
-    >>> print search_view.question
+    >>> print(search_view.question)
     None
 
 
@@ -229,7 +228,7 @@ with a hyphen.
     True
     >>> search_view.pillar.displayname
     u'GNOME Terminal'
-    >>> print search_view.person_or_team
+    >>> print(search_view.person_or_team)
     None
 
 Since our pillars can have aliases, it's also possible to look up a pillar
@@ -259,9 +258,9 @@ section for how this kind of search can return matches.
     u'yahoo-webservices-python-api.'
     >>> search_view.has_matches
     False
-    >>> print search_view.pillar
+    >>> print(search_view.pillar)
     None
-    >>> print search_view.person_or_team
+    >>> print(search_view.person_or_team)
     None
 
 Leading and trailing punctuation and whitespace are stripped.
@@ -272,7 +271,7 @@ Leading and trailing punctuation and whitespace are stripped.
     u'name12'
     >>> search_view.has_matches
     True
-    >>> print search_view.pillar
+    >>> print(search_view.pillar)
     None
     >>> search_view.person_or_team.displayname
     u'Sample Person'
@@ -285,11 +284,11 @@ search, when the start param is 0.
     ...           'start': '20'})
     >>> search_view.has_matches
     True
-    >>> print search_view.bug
+    >>> print(search_view.bug)
     None
-    >>> print search_view.question
+    >>> print(search_view.question)
     None
-    >>> print search_view.pillar
+    >>> print(search_view.pillar)
     None
 
 Deactivated pillars and non-valid persons and teams cannot be exact
@@ -307,7 +306,7 @@ pillar, nor will nsv match Nicolas Velin's unclaimed account.
     ...           'start': '0'})
     >>> search_view._getNameToken(search_view.text)
     u'python-gnome2-dev'
-    >>> print search_view.pillar
+    >>> print(search_view.pillar)
     None
 
     >>> nsv = getUtility(IPersonSet).getByName('nsv')
@@ -321,7 +320,7 @@ pillar, nor will nsv match Nicolas Velin's unclaimed account.
     ...           'start': '0'})
     >>> search_view._getNameToken(search_view.text)
     u'nsv'
-    >>> print search_view.person_or_team
+    >>> print(search_view.person_or_team)
     None
 
 Private pillars are not matched if the user does not have permission to see
@@ -344,7 +343,7 @@ But anonymous and unprivileged users cannot see the private project.
 
     >>> login(ANONYMOUS)
     >>> search_view = getSearchView(form={'field.text': private_product_name})
-    >>> print search_view.pillar
+    >>> print(search_view.pillar)
     None
 
 
@@ -570,7 +569,7 @@ matching pages.
 The view provides the requested URL so that the template can make a
 link to try the search again
 
-    >>> print search_view.url
+    >>> print(search_view.url)
     https://launchpad.test/+search?field.text=gnomebaker
 
 
@@ -593,7 +592,7 @@ present in the rendered form.
     >>> search_form_view.initialize()
     >>> search_form_view.id_suffix
     '-secondary'
-    >>> print search_form_view.render()
+    >>> print(search_form_view.render())
     <form action="http://launchpad.test/+search" method="get"
       accept-charset="UTF-8" id="sitesearch-secondary"
       name="sitesearch-secondary">
@@ -615,7 +614,7 @@ field's value is 'bug', as was submitted above.
     >>> search_form_view.initialize()
     >>> search_form_view.id_suffix
     ''
-    >>> print search_form_view.render()
+    >>> print(search_form_view.render())
     <form action="http://launchpad.test/+search" method="get"
       accept-charset="UTF-8" id="sitesearch"
       name="sitesearch">
@@ -654,7 +653,7 @@ the first 20 items are None. Only the last 5 items are PageMatches.
     ...     page_matches, page_matches.start, page_matches.total)
     >>> len(results)
     25
-    >>> print results[0]
+    >>> print(results[0])
     None
     >>> results[24].title
     u'...Bug... tracker \u201cDebian Bug tracker\u201d'
@@ -719,7 +718,7 @@ batch is 20, which is the start of the next batch from Google.
     >>> batch.endNumber()
     3
     >>> for item in batch:
-    ...     print item
+    ...     print(item)
     0
     1
     2

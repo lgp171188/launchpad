@@ -35,7 +35,7 @@ can be used for subordinate field indentation, for example.
     >>> view = TestView(person, request)
     >>> view.initialize()
     >>> for tag in find_tags_by_class(view.render(), 'subordinate'):
-    ...     print tag
+    ...     print(tag)
     <div class="field subordinate">
     <label for="field.nickname">Nickname:</label>
     <div>

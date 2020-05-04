@@ -35,7 +35,7 @@ over, and the tag that surrounds the text.
 The widget is rendered by executing it, it prints out the attribute
 content.
 
-    >>> print widget()
+    >>> print(widget())
     <h1 id="edit-display_name">
     <span class="yui3-editable_text-text ellipsis"
           style="max-width: 90%;">
@@ -48,7 +48,7 @@ the edit view that appears as well as a <script> tag that will change that
 link into an AJAX control when JS is available:
 
     >>> ignored = login_person(product.owner)
-    >>> print widget()
+    >>> print(widget())
     <h1 id="edit-display_name">
     <span class="yui3-editable_text-text ellipsis"
           style="max-width: 90%;">
@@ -73,7 +73,7 @@ attribute being edited.  This can be overridden if needed using the
     >>> span_widget = TextLineEditorWidget(
     ...     product, title_field, title, 'span', content_box_id="overridden")
     >>> login(ANONYMOUS) # To not get the script tag rendered
-    >>> print span_widget()
+    >>> print(span_widget())
     <span id="overridden">...</span>
 
 
@@ -88,18 +88,18 @@ of the object being edited.  This can be overridden in two ways:
   * provide an 'edit_url' to use instead
   * provide an 'edit_title' to set the title attribute of the anchor
 
-    >>> print widget.edit_url
+    >>> print(widget.edit_url)
     http://launchpad.test/widget/+edit
 
     >>> diff_view = TextLineEditorWidget(
     ...     product, title_field, title, 'h1', edit_view='+edit-people',
     ...     edit_title='Change the product title')
-    >>> print diff_view.edit_url
+    >>> print(diff_view.edit_url)
     http://launchpad.test/widget/+edit-people
-    >>> print diff_view.edit_title
+    >>> print(diff_view.edit_title)
     Change the product title
     >>> ignored = login_person(product.owner)
-    >>> print diff_view()
+    >>> print(diff_view())
     <h1...
     <a class="yui3-editable_text-trigger sprite edit action-icon"
        href="http://launchpad.test/widget/+edit-people"
@@ -107,7 +107,7 @@ of the object being edited.  This can be overridden in two ways:
 
     >>> diff_url = TextLineEditorWidget(
     ...     product, title_field, title, 'h1', edit_url='http://example.com/')
-    >>> print diff_url.edit_url
+    >>> print(diff_url.edit_url)
     http://example.com/
 
 
@@ -149,7 +149,7 @@ over.
 With no-one logged in, there are no edit buttons.
 
     >>> login(ANONYMOUS)
-    >>> print widget()
+    >>> print(widget())
     <div>
       <div class="lazr-multiline-edit" id="edit-description">
         <div class="clearfix">
@@ -168,7 +168,7 @@ javascript is written to the page to hook up the links to show the multiline
 editor.
 
     >>> ignored = login_person(eric)
-    >>> print widget()
+    >>> print(widget())
     <div>
       <div class="lazr-multiline-edit" id="edit-description">
         <div class="clearfix">
@@ -207,7 +207,7 @@ tag.
     >>> archive.description = None
     >>> from lp.services.propertycache import clear_property_cache
     >>> clear_property_cache(widget)
-    >>> print widget()
+    >>> print(widget())
     <div>
     <div class="lazr-multiline-edit hidden" id="edit-description">
     ...
@@ -217,7 +217,7 @@ False.
 
     >>> widget = TextAreaEditorWidget(
     ...     archive, description, 'A title', hide_empty=False)
-    >>> print widget()
+    >>> print(widget())
     <div>
     <div class="lazr-multiline-edit" id="edit-description">
     ...
@@ -265,7 +265,7 @@ to select.
     >>> ignore = login_person(product.owner)
     >>> owner = IProduct['owner']
     >>> widget = InlineEditPickerWidget(product, owner, default_text)
-    >>> print widget()
+    >>> print(widget())
     <span id="edit-owner">
       <span class="yui3-activator-data-box">
         <a href="/~eric" class="sprite person">Eric</a>
@@ -326,7 +326,7 @@ on the current value of the field on the object:
     ...     false_text="Don't hide it",
     ...     true_text="Keep it secret",
     ...     prefix="My email: ")
-    >>> print widget()
+    >>> print(widget())
     <span id="edit-hide_email_addresses">
     My email: <span class="value">Don't hide it</span>
     </span>
@@ -335,7 +335,7 @@ If the user has edit rights, an edit icon is rendered and some javascript is
 rendered to hook up the widget.
 
     >>> ignored = login_person(eric)
-    >>> print widget()
+    >>> print(widget())
     <span id="edit-hide_email_addresses">
     My email: <span class="value">Don't hide it</span>
       <span>
@@ -396,7 +396,7 @@ on the current value of the field on the object:
     ...     header='Select distroseries:', vocabulary='BuildableDistroSeries',
     ...     label_tag='dt', items_tag='dl',
     ...     selected_items=recipe.distroseries)
-    >>> print widget()
+    >>> print(widget())
     <span id="edit-distroseries">
       <dt>
         Recipe distro series
@@ -412,7 +412,7 @@ If the user has edit rights, an edit icon is rendered and some javascript is
 rendered to hook up the widget.
 
     >>> ignored = login_person(eric)
-    >>> print widget()
+    >>> print(widget())
     <span id="edit-distroseries">
       <dt>
         Recipe distro series

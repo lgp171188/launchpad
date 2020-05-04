@@ -200,9 +200,9 @@ text must be overridden in subclasses.
     >>> breadcrumb = Breadcrumb(cookbook)
     >>> verifyObject(IBreadcrumb, breadcrumb)
     True
-    >>> print breadcrumb.text
+    >>> print(breadcrumb.text)
     None
-    >>> print breadcrumb.url
+    >>> print(breadcrumb.url)
     http://launchpad.test/joy-of-cooking
 
 As said above, the breadcrumb's attributes can be overridden with subclassing
@@ -258,7 +258,7 @@ location bar.
     ...         recursive=False)
     ...     segments = [extract_text(step).encode('us-ascii', 'replace')
     ...                 for step in hierarchy]
-    ...     print 'Location:', ' > '.join(segments)
+    ...     print('Location:', ' > '.join(segments))
 
     >>> markup = hierarchy.render()
     >>> print_hierarchy(markup)
@@ -267,7 +267,7 @@ location bar.
 The items in the breadcrumbs are linked, except for the last one which
 represents the current location.
 
-    >>> print markup
+    >>> print(markup)
     <ol itemprop="breadcrumb" class="breadcrumbs">
       <li>
         <a href="http://launchpad.test/joy-of-cooking">Joy of cooking</a>

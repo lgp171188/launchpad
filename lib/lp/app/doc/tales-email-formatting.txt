@@ -21,7 +21,7 @@ Paragraphs that mix quoted and reply text fold only the quoted lines.
     ...                      'This is a reply to the line above.\n'
     ...                      'This is a continuation line.'
     ...                      '\n')
-    >>> print test_tales('foo/fmt:email-to-html', foo=mixed_quoted_text)
+    >>> print(test_tales('foo/fmt:email-to-html', foo=mixed_quoted_text))
     <p>Mister X wrote:<br />
     <span class="foldable-quoted">
     &gt; This is a quoted line<br />
@@ -37,7 +37,7 @@ the quoted section from the paragraph.
     ...                       '> quoted_line\n'
     ...                       'Remark line.\n'
     ...                       '\n')
-    >>> print test_tales('foo/fmt:email-to-html', foo=quoted_remark_text)
+    >>> print(test_tales('foo/fmt:email-to-html', foo=quoted_remark_text))
     <p>Attribution line<br />
     <span class="foldable-quoted">
     &gt; quoted_line<br />
@@ -57,7 +57,7 @@ span.
     ...                       '> First line in the third paragraph.\n'
     ...                       '> Second line in the third paragraph.\n'
     ...                       '\n')
-    >>> print test_tales('foo/fmt:email-to-html', foo=quoted_paragraphs)
+    >>> print(test_tales('foo/fmt:email-to-html', foo=quoted_paragraphs))
     <p>Attribution line<br />
     <span class="foldable-quoted">
     &gt; First line in the first paragraph.<br />
@@ -77,7 +77,7 @@ is no distinction between the nested levels of quoting.
     ...                   '>>> three\n'
     ...                   '>> two\n'
     ...                   '> one\n')
-    >>> print test_tales('foo/fmt:email-to-html', foo=nested_quoting)
+    >>> print(test_tales('foo/fmt:email-to-html', foo=nested_quoting))
     <p><span class="foldable-quoted">&gt;&gt;&gt;&gt; four<br />
     &gt;&gt;&gt; three<br />
     &gt;&gt; two<br />
@@ -92,7 +92,7 @@ wrapped in a foldable-quoted span.
     ...                      '>> This is a double quoted line\n'
     ...                      '>> > This is a triple quoted line.\n'
     ...                      '\n')
-    >>> print test_tales('foo/fmt:email-to-html', foo=weird_quoted_text)
+    >>> print(test_tales('foo/fmt:email-to-html', foo=weird_quoted_text))
     <p>Ms. Y wrote:<br />
     <span class="foldable-quoted">
     &gt;&gt; This is a double quoted line<br />
@@ -113,14 +113,14 @@ the preceding nested quoting test).
 
     >>> python = ('>>> tz = pytz.timezone("Asia/Calcutta")\n'
     ...           '>>> mydate = datetime.datetime(2007, 2, 18, 15, 35)\n'
-    ...           '>>> print tz.localize(mydate)\n'
+    ...           '>>> print(tz.localize(mydate))\n'
     ...           '2007-02-18 15:35:00+05:30\n'
     ...           '\n')
     >>> not_python = ('> This line really is a quoted passage.\n'
     ...               '>>> This does not invoke an exception rule.\n'
     ...               '\n')
-    >>> print test_tales('foo/fmt:email-to-html',
-    ...                  foo='\n'.join([python, not_python]))
+    >>> print(test_tales('foo/fmt:email-to-html',
+    ...                  foo='\n'.join([python, not_python])))
     <p>&gt;&gt;&gt; tz = pytz.timezone(<wbr />&quot;Asia/Calcutta&quot;...
     &gt;&gt;&gt; mydate = datetime.<wbr />datetime(<wbr />2007, 2, ...
     2007-02-18 15:35:00+05:30</p>
@@ -137,7 +137,7 @@ output and not fold it.
     >>> bar_quoted_text = ('Someone said sometime ago:\n'
     ...                    '| Quote passages are folded.\n'
     ...                    '\n')
-    >>> print test_tales('foo/fmt:email-to-html', foo=bar_quoted_text)
+    >>> print(test_tales('foo/fmt:email-to-html', foo=bar_quoted_text))
     <p>Someone said sometime ago:<br />
     <span class="foldable-quoted">
     | Quote passages are folded.
@@ -151,7 +151,7 @@ output and not fold it.
     ...         '+++-==============-==============-====================\n'
     ...         'ii libdvdread3 0.9.7-2ubuntu1 library for reading DVDs\n'
     ...         '\n')
-    >>> print test_tales('foo/fmt:email-to-html', foo=dpkg)
+    >>> print(test_tales('foo/fmt:email-to-html', foo=dpkg))
     <p>dpkg -l libdvdread3<br />
     Desired=<wbr />Unknown/<wbr />Install/<wbr />...
     | Status=<wbr />Not/Installed/<wbr />Config-<wbr />...
@@ -170,8 +170,8 @@ output and not fold it.
     ...             '+++-==============-==============-==================\n'
     ...             'ii libdvdread3 0.9.7-2ubuntu1 library for reading DVDs\n'
     ...             '\n')
-    >>> print test_tales('foo/fmt:email-to-html',
-    ...                  foo='\n'.join([bad_dpkg]))
+    >>> print(test_tales('foo/fmt:email-to-html',
+    ...                  foo='\n'.join([bad_dpkg])))
     <p>When dpkg output is in text, possibly tampered with,<br />
     we must take care to identify &#x27;|&#x27; quoted passages.<br />
     $ Desired=<wbr />Unknown/<wbr />Install/<wbr />Remove/...

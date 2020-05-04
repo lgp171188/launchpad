@@ -21,7 +21,7 @@ set value.
 None is an accepted field value.
 
     >>> non_required_field.set(thing, None)
-    >>> print non_required_field.get(thing)
+    >>> print(non_required_field.get(thing))
     None
 
 

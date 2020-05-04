@@ -42,7 +42,7 @@ Anonymous users don't get tracebacks.
 
 And the OOPS ID is displayed but not linkified.
 
-    >>> print find_main_content(str(result))
+    >>> print(find_main_content(str(result)))
     <...
     <h1 class="exception">Oops!</h1>
     ...
@@ -61,7 +61,7 @@ In this case, we are logged in as the foo.bar@canonical.com user.
 
 And the OOPS ID is displayed and linkified.
 
-    >>> print find_main_content(str(result))
+    >>> print(find_main_content(str(result)))
     <...
     <h1 class="exception">Oops!</h1>
     ...
@@ -80,7 +80,7 @@ case, Carlos.
 
 And the OOPS ID is displayed but not linkified.
 
-    >>> print find_main_content(str(result))
+    >>> print(find_main_content(str(result)))
     <...
     <h1 class="exception">Oops!</h1>
     ...
@@ -101,9 +101,9 @@ unregister the adapter.
 lp.testing.pages.http accepts the handle_errors parameter in case you
 want to see tracebacks instead of error pages.
 
-  >>> print http(r"""
+  >>> print(http(r"""
   ... GET /whatever HTTP/1.1
-  ... """, handle_errors=False)
+  ... """, handle_errors=False))
   Traceback (most recent call last):
   ...
   NotFound: ...

@@ -24,6 +24,7 @@ __all__ = [
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     ]
 
+from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -164,11 +165,11 @@ class IOCIRecipeBuildRequest(Interface):
     error_message = exported(TextLine(
         title=_("Error message"), required=False, readonly=True))
 
-    builds = CollectionField(
+    builds = exported(doNotSnapshot(CollectionField(
         title=_("Builds produced by this request"),
         # Really IOCIRecipeBuild, patched in lp.oci.interfaces.webservice.
         value_type=Reference(schema=Interface),
-        required=True, readonly=True)
+        required=True, readonly=True)))
 
 
 class IOCIRecipeView(Interface):

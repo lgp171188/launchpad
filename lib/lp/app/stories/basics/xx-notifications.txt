@@ -3,10 +3,10 @@ Ensure that notifications are being displayed and propogated correctly.
 
 This first page adds notifications itself before being rendered.
 
->>> print http(r"""
+>>> print(http(r"""
 ... GET /+notificationtest1 HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
-... """)
+... """))
 HTTP/1.1 200 Ok
 Content-Length: ...
 Content-Type: text/html;charset=utf-8
@@ -28,7 +28,7 @@ The notification messages should be propogated.
 ... GET /+notificationtest2 HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
 ... """)
->>> print result
+>>> print(result)
 HTTP/1.1 303 See Other
 ...
 Location: /
@@ -38,11 +38,11 @@ Location: /
 >>> launchpad_session_cookie = re.search(
 ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
 ...     )
->>> print http(r"""
+>>> print(http(r"""
 ... GET %(destination_url)s HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
 ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
-... """ % vars())
+... """ % vars()))
 HTTP/1.1 200 Ok
 ...
 ...<div class="error message">Error notification <b>1</b></div>
@@ -64,7 +64,7 @@ combined.
 ... GET /+notificationtest3 HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
 ... """)
->>> print result
+>>> print(result)
 HTTP/1.1 303 See Other
 ...
 Content-Length: 0
@@ -76,11 +76,11 @@ Location: /+notificationtest1
 >>> launchpad_session_cookie = re.search(
 ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
 ...     )
->>> print http(r"""
+>>> print(http(r"""
 ... GET %(destination_url)s HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
 ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
-... """ % vars())
+... """ % vars()))
 HTTP/1.1 200 Ok
 ...
 ...<div class="error message">+notificationtest3 error</div>
@@ -105,7 +105,7 @@ be needed.
 ... GET /+notificationtest4 HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
 ... """)
->>> print result
+>>> print(result)
 HTTP/1.1 303 See Other
 ...
 Content-Length: 0
@@ -122,7 +122,7 @@ Location: /+notificationtest3
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
 ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
 ... """ % vars())
->>> print result
+>>> print(result)
 HTTP/1.1 303 See Other
 ...
 Content-Length: 0
@@ -134,11 +134,11 @@ Location: /+notificationtest1
 >>> launchpad_session_cookie = re.search(
 ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
 ...     )
->>> print http(r"""
+>>> print(http(r"""
 ... GET %(destination_url)s HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
 ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
-... """ % vars())
+... """ % vars()))
 HTTP/1.1 200 Ok
 ...
 ...<div class="error message">+notificationtest4 error</div>
