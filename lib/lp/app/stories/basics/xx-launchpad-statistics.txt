@@ -11,7 +11,7 @@ acessible to launchpad Admins:
 When we login as an admin, we can see all the stats listed:
 
   >>> admin_browser.open('http://launchpad.test/+statistics/')
-  >>> print admin_browser.title
+  >>> print(admin_browser.title)
   Launchpad statistics
   >>> 'answered_question_count' in admin_browser.contents
   True

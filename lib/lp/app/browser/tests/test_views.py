@@ -28,7 +28,7 @@ bing_flag = FeatureFixture({'sitesearch.engine.name': 'bing'})
 
 
 def setUp_bing(test):
-    setUp(test)
+    setUp(test, future=True)
     bing_flag.setUp()
 
 
@@ -50,11 +50,12 @@ special = {
     # Run these doctests again with the default search engine.
     'launchpad-search-pages.txt': LayeredDocFileSuite(
         '../doc/launchpad-search-pages.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=PageTestLayer,
         stdout_logging_level=logging.WARNING),
     }
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setUp(test, future=True))

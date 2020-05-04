@@ -30,7 +30,7 @@ Basics
     ...     '* joy\n'
     ...     '* elation'
     ...     )
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>This is a paragraph that has been hard-wrapped by an email
     application.<br />
     We used to handle this specially, but we no longer do because it was
@@ -47,7 +47,7 @@ Basics
     ...     "through as-is, which means browsers will ignore them, but "
     ...     "that's fine, they're not important anyway.\n"
     ...     )
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>&nbsp;1. Here&#x27;s an example<br />
     &nbsp;2. where a list is followed by a paragraph.<br />
     &nbsp;&nbsp;&nbsp;Leading spaces in a line or paragraph are presented, which means converting them to &amp;nbsp;. Trailing spaces are passed through as-is, which means browsers will ignore them, but that&#x27;s fine, they&#x27;re not important anyway.</p>
@@ -65,7 +65,7 @@ Basics
     ...     '\n'
     ...     '\n'
     ...     'But they\'re still just two paragraphs.')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>Here are two paragraphs with lots of whitespace between them.</p>
     <p>But they&#x27;re still just two paragraphs.</p>
 
@@ -81,7 +81,7 @@ previous line.  This aids in the display of code samples:
     ...     '    def currentCount(self, language=None):\n'
     ...     '        """See IRosettaStats."""\n'
     ...     '        return self.currentCount\n')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>This is a code sample written in Python.<br />
     &nbsp;&nbsp;&nbsp;&nbsp;def messageCount(self):<br />
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;See IRosettaStats.&quot;&quot;&quot;<br />
@@ -102,7 +102,7 @@ Testing a bunch of URL links.
     ...     '\n'
     ...     'I have a Jabber account (jabber:foo@jabber.example.com)\n'
     ...     'Foo Bar <mailto:foo.bar@example.net>')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a rel="nofollow" href="https://launchpad.net/">https:/<wbr />/launchpad.<wbr />net/</a> is the new Launchpad site<br />
     <a rel="nofollow" href="http://example.com/something?foo=bar&amp;hum=baz">http://<wbr />example.<wbr />com/something?<wbr />foo=bar&amp;<wbr />hum=baz</a><br />
     You can check the PPC md5sums at <a rel="nofollow" href="ftp://ftp.ubuntu.com/ubuntu/dists/breezy/main/installer-powerpc/current/images/MD5SUMS">ftp://ftp.<wbr />ubuntu.<wbr />com/ubuntu/<wbr />dists/breezy/<wbr />main/installer-<wbr />powerpc/<wbr />current/<wbr />images/<wbr />MD5SUMS</a><br />
@@ -157,7 +157,7 @@ fmt:text-to-html knows how to linkify URLs:
     ...     'http://localhost?testing=[square-brackets-in-query]\n'
     ... )
 
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a rel="nofollow" href="http://localhost:8086/bar/baz/foo.html">http://<wbr />localhost:<wbr />8086/bar/<wbr />baz/foo.<wbr />html</a><br />
     <a rel="nofollow" href="ftp://localhost:8086/bar/baz/foo.bar.html">ftp://localhost<wbr />:8086/bar/<wbr />baz/foo.<wbr />bar.html</a><br />
     <a rel="nofollow" href="sftp://localhost:8086/bar/baz/foo.bar.html">sftp://<wbr />localhost:<wbr />8086/bar/<wbr />baz/foo.<wbr />bar.html</a>.<br />
@@ -202,7 +202,7 @@ The fmt:text-to-html formatter leaves a number of non-URIs unlinked:
     >>> text = (
     ...     'nothttp://launchpad.net/\n'
     ...     'http::No-cache=True\n')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>nothttp:<wbr />//launchpad.<wbr />net/<br />
     http::No-cache=True</p>
 
@@ -231,7 +231,7 @@ links:
     ...     'bug\n'
     ...     '#123\n'
     ...     'debug #52\n')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/bugs/123" class="bug-link">bug 123</a><br />
     <a href="/bugs/123" class="bug-link">bug    123</a><br />
     <a href="/bugs/123" class="bug-link">bug #123</a><br />
@@ -252,19 +252,19 @@ links:
     >>> text = (
     ...     'bug 123\n'
     ...     'bug 123\n')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/bugs/123" class="bug-link">bug 123</a><br />
     <a href="/bugs/123" class="bug-link">bug 123</a></p>
 
     >>> text = (
     ...     'bug 1234\n'
     ...     'bug 123\n')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/bugs/1234" class="bug-link">bug 1234</a><br />
     <a href="/bugs/123" class="bug-link">bug 123</a></p>
 
     >>> text = 'bug 0123\n'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/bugs/123" class="bug-link">bug 0123</a></p>
 
 
@@ -272,25 +272,25 @@ We linkify bugs that are in the Ubuntu convention for referring to bugs in
 Debian changelogs.
 
     >>> text = 'LP: #123.\n'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>LP: <a href="/bugs/123" class="bug-link">#123</a>.</p>
 
 Works with multiple bugs:
 
     >>> text = 'LP: #123, #2.\n'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>LP: <a href="/bugs/123" class="bug-link">#123</a>, <a href="/bugs/2" class="bug-link">#2</a>.</p>
 
 And with lower case 'lp' too:
 
     >>> text = 'lp: #123, #2.\n'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>lp: <a href="/bugs/123" class="bug-link">#123</a>, <a href="/bugs/2" class="bug-link">#2</a>.</p>
 
 Even line breaks cannot stop the power of bug linking:
 
     >>> text = 'LP:  #123,\n#2.\n'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>LP:  <a href="/bugs/123" class="bug-link">#123</a>,<br />
     <a href="/bugs/2" class="bug-link">#2</a>.</p>
 
@@ -314,7 +314,7 @@ subscriber.
 A private bug is still linked as no check is made on the actual bug.
 
     >>> text = 'bug 6\n'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/bugs/6" class="bug-link">bug 6</a></p>
 
 
@@ -331,7 +331,7 @@ FAQ references are global, and also linkified:
     ...     'faq item 1\n'
     ...     'faq  number  2\n'
     ...     )
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="http://answers.launchpad.test/ubuntu/+faq/1">faq 1</a><br />
     <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq #2</a><br />
     <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq-2</a><br />
@@ -344,7 +344,7 @@ Except, that is, when the FAQ doesn't exist:
     >>> text = (
     ...     'faq 999\n'
     ...     )
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>faq 999</p>
 
 
@@ -365,7 +365,7 @@ Branch references are linkified:
     ...     'lp:foo/bar/baz\n'
     ...     'lp:///foo\n'
     ...     'lp:/foo\n')
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/+code/~foo/bar/baz" class="...">lp:~foo/bar/baz</a><br />
     <a href="/+code/~foo/bar/bug-123" class="...">lp:~foo/bar/bug-123</a><br />
     <a href="/+code/~foo/+junk/baz" class="...">lp:~foo/+junk/baz</a><br />
@@ -382,14 +382,14 @@ Text that looks like a branch reference, but is followed only by digits is
 treated as a link to a bug.
 
     >>> text = 'lp:1234'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/bugs/1234" class="bug-link">lp:1234</a></p>
 
 We are even smart enough to notice the trailing punctuation gunk and separate
 that from the link.
 
     >>> text = 'lp:1234,'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/bugs/1234" class="bug-link">lp:1234</a>,</p>
 
 
@@ -419,7 +419,7 @@ When not logged in as a privileged user, no link:
     False
 
     >>> text = 'OOPS-38C23'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>OOPS-38C23</p>
 
 
@@ -430,21 +430,21 @@ After login, a link:
     >>> getUtility(ILaunchBag).developer
     True
 
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-38C23">OOPS-38C23</a></p>
 
 OOPS references can take a number of forms:
 
     >>> text = 'OOPS-38C23'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-38C23">OOPS-38C23</a></p>
 
     >>> text = 'OOPS-123abcdef'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-123abcdef">OOPS-123abcdef</a></p>
 
     >>> text = 'OOPS-abcdef123'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-abcdef123">OOPS-abcdef123</a></p>
 
 If the configuration value doesn't end with a slash, we won't add one. This
@@ -457,14 +457,14 @@ lets us configure the URL to use query parameters.
     ...     """
     >>> config.push('oops_root_url', oops_root_url)
     >>> text = 'OOPS-38C23'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="http://foo/barOOPS-38C23">OOPS-38C23</a></p>
     >>> config_data = config.pop('oops_root_url')
 
 Check against false positives:
 
     >>> text = 'OOPS code'
-    >>> print test_tales('foo/fmt:text-to-html', foo=text)
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>OOPS code</p>
 
 Reset login information.

@@ -157,7 +157,7 @@ The Savannah bug tracker also has a BugTrackerAlias with the URL
 http://savannah.nognu.org/
 
     >>> for alias in celebs.savannah_tracker.aliases:
-    ...     print alias
+    ...     print(alias)
     http://savannah.nognu.org/
 
 
@@ -190,7 +190,7 @@ team. It's used for determining who is allowed to create new package
 sets.
 
     >>> ubuntu_techboard = personset.getByName('techboard')
-    >>> print ubuntu_techboard.name
+    >>> print(ubuntu_techboard.name)
     techboard
 
     >>> celebs.ubuntu_techboard == ubuntu_techboard
@@ -220,12 +220,12 @@ clear picture of what is missing where.
 
     >>> person_celebrity_names = set(get_person_celebrity_names())
     >>> person_roles_names = set(get_person_roles_names())
-    >>> print "Please add to IPersonRoles: " + (
-    ...       ", ".join(list(person_celebrity_names - person_roles_names)))
+    >>> print("Please add to IPersonRoles: " + (
+    ...       ", ".join(list(person_celebrity_names - person_roles_names))))
     Please add to IPersonRoles:
 
-    >>> print "Please remove from IPersonRoles: " + (
-    ...       ", ".join(list(person_roles_names - person_celebrity_names)))
+    >>> print("Please remove from IPersonRoles: " + (
+    ...       ", ".join(list(person_roles_names - person_celebrity_names))))
     Please remove from IPersonRoles:
 
 

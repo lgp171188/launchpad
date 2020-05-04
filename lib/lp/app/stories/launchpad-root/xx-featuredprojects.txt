@@ -25,16 +25,16 @@ projects' pages in Launchpad. The "project of the day" is listed separately.
 
     >>> anon_browser.open('http://launchpad.test/')
     >>> featured = find_tag_by_id(anon_browser.contents, 'homepage-featured')
-    >>> print extract_text(featured.h2)
+    >>> print(extract_text(featured.h2))
     Featured projects
 
     >>> top_project = featured.find('', 'featured-project-top')
-    >>> print extract_text(top_project.h3)
+    >>> print(extract_text(top_project.h3))
     GNOME
 
     >>> featured_list = featured.find('', 'featured-projects-list')
     >>> for link in featured_list.findAll('a'):
-    ...     print extract_text(link)
+    ...     print(extract_text(link))
     Gnome Applets
     Bazaar
     Mozilla Firefox
@@ -93,12 +93,12 @@ is now at index '4' and is therefore displayed as the top project:
     >>> anon_browser.open('http://launchpad.test/')
     >>> featured = find_tag_by_id(anon_browser.contents, 'homepage-featured')
     >>> top_project = featured.find('', 'featured-project-top')
-    >>> print extract_text(top_project.h3)
+    >>> print(extract_text(top_project.h3))
     Gentoo
 
     >>> featured_list = featured.find('', 'featured-projects-list')
     >>> for link in featured_list.findAll('a'):
-    ...     print extract_text(link)
+    ...     print(extract_text(link))
     Apache
     Gnome Applets
     Bazaar
@@ -126,7 +126,7 @@ that Apache has been removed:
     >>> anon_browser.open('http://launchpad.test/')
     >>> featured = find_tag_by_id(anon_browser.contents, 'homepage-featured')
     >>> for link in featured.findAll('a'):
-    ...     print extract_text(link)
+    ...     print(extract_text(link))
     GNOME
     Gnome Applets
     Bazaar
