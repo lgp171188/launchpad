@@ -989,6 +989,8 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
         with person_logged_in(self.person):
             self.assertThat(builds, MatchesSetwise(*[
                 ContainsDict({
+                    "recipe_link": Equals(abs_url(oci_recipe)),
+                    "requester_link": Equals(abs_url(self.person)),
                     "buildstate": Equals("Needs building"),
                     "eta": IsInstance(string_types, type(None)),
                     "date": IsInstance(string_types, type(None)),
@@ -997,6 +999,9 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
                     "registry_upload_status": Equals("Unscheduled"),
                     "title": Equals(
                         "%s build of %s" % (
-                            arch_series.processor.name, api_url(oci_recipe)))
+                            arch_series.processor.name, api_url(oci_recipe))),
+                    "score": IsInstance(int),
+                    "can_be_rescored": Equals(True),
+                    "can_be_cancelled": Equals(True),
                 })
                 for arch_series in distro_arch_series]))

@@ -82,16 +82,16 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
 class IOCIRecipeBuildView(IPackageBuild):
     """`IOCIRecipeBuild` attributes that require launchpad.View permission."""
 
-    requester = PublicPersonChoice(
+    requester = exported(PublicPersonChoice(
         title=_("Requester"),
         description=_("The person who requested this OCI recipe build."),
-        vocabulary='ValidPersonOrTeam', required=True, readonly=True)
+        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
-    recipe = Reference(
+    recipe = exported(Reference(
         IOCIRecipe,
         title=_("The OCI recipe to build."),
         required=True,
-        readonly=True)
+        readonly=True))
 
     eta = exported(Datetime(
         title=_("The datetime when the build job is estimated to complete."),
@@ -136,19 +136,19 @@ class IOCIRecipeBuildView(IPackageBuild):
         title=_("The series and architecture for which to build."),
         required=True, readonly=True))
 
-    score = Int(
+    score = exported(Int(
         title=_("Score of the related build farm job (if any)."),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
-    can_be_rescored = Bool(
+    can_be_rescored = exported(Bool(
         title=_("Can be rescored"),
         required=True, readonly=True,
-        description=_("Whether this build record can be rescored manually."))
+        description=_("Whether this build record can be rescored manually.")))
 
-    can_be_cancelled = Bool(
+    can_be_cancelled = exported(Bool(
         title=_("Can be cancelled"),
         required=True, readonly=True,
-        description=_("Whether this build record can be cancelled."))
+        description=_("Whether this build record can be cancelled.")))
 
     manifest = Attribute(_("The manifest of the image."))
 
