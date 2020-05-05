@@ -62,6 +62,7 @@ from lp.testing import (
     api_url,
     login_person,
     person_logged_in,
+    StormStatementRecorder,
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
@@ -415,7 +416,9 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             self.assertFalse(recipe.official)
 
         # Set official for project1 and make sure nothing else got changed
-        oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
+        with StormStatementRecorder() as recorder:
+            oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
+            self.assertEqual(1, recorder.count)
 
         self.assertIsNone(oci_project2.getOfficialRecipe())
         self.assertEqual(

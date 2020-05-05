@@ -162,10 +162,9 @@ class OCIProject(BugTargetBase, StormBase):
         if recipe.oci_project != self:
             raise ValueError(
                 "OCI recipe cannot be set as official of another OCI project.")
+        from lp.oci.model.ocirecipe import OCIRecipe
         recipes = self.getRecipes()
-        recipes.set(official=False)
-        if recipe is not None:
-            recipe.official = True
+        recipes.set(official=OCIRecipe.id == recipe.id)
 
 
 @implementer(IOCIProjectSet)
