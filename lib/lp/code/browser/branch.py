@@ -36,6 +36,7 @@ from lazr.restful.interface import (
 from lazr.uri import URI
 import pytz
 import simplejson
+import six
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
@@ -954,8 +955,8 @@ class BranchDeletionView(LaunchpadFormView):
         :return: A list of tuples of (item, action, reason, allowed)
         """
         reqs = []
-        for item, (action, reason) in (
-            self.context.deletionRequirements(eager_load=True).iteritems()):
+        for item, (action, reason) in six.iteritems(
+                self.context.deletionRequirements(eager_load=True)):
             allowed = check_permission('launchpad.Edit', item)
             reqs.append((item, action, reason, allowed))
         return reqs

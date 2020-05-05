@@ -52,6 +52,7 @@ from fixtures import (
     )
 from lazr.enum import BaseItem
 import pytz
+import six
 from six.moves import cPickle as pickle
 from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
@@ -388,7 +389,7 @@ def obfuscate_structure(o):
     elif isinstance(o, (dict)):
         return dict(
             (obfuscate_structure(key), obfuscate_structure(value))
-            for key, value in o.iteritems())
+            for key, value in six.iteritems(o))
     else:
         return o
 

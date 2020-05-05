@@ -17,6 +17,8 @@ from collections import (
     )
 from operator import attrgetter
 
+import six
+
 from lp.bugs.interfaces.bugtarget import IHasBugs
 
 
@@ -67,5 +69,5 @@ def filter_bugtasks_by_context(context, bugtasks):
     for task in bugtasks:
         bug_mapping[task.bugID].append(weight_calculator(task))
 
-    filtered = [sorted(tasks)[0].task for tasks in bug_mapping.itervalues()]
+    filtered = [sorted(tasks)[0].task for tasks in six.itervalues(bug_mapping)]
     return sorted(filtered, key=attrgetter('bugID'))

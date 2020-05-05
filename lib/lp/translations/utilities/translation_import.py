@@ -14,6 +14,7 @@ from operator import attrgetter
 
 import posixpath
 import pytz
+import six
 from storm.exceptions import TimeoutError
 import transaction
 from zope.component import getUtility
@@ -274,7 +275,7 @@ class TranslationImporter:
         """See `ITranslationImporter`."""
         file_extensions = []
 
-        for importer in importers.itervalues():
+        for importer in six.itervalues(importers):
             file_extensions.extend(importer.file_extensions)
 
         return sorted(set(file_extensions))
@@ -290,7 +291,7 @@ class TranslationImporter:
 
     def isTemplateName(self, path):
         """See `ITranslationImporter`."""
-        for importer in importers.itervalues():
+        for importer in six.itervalues(importers):
             if path.endswith(importer.template_suffix):
                 return True
         return False

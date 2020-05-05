@@ -283,7 +283,7 @@ class MessageSharingMerge(LaunchpadScript):
         log.info("Merging %d template equivalence classes." % class_count)
 
         tm = TransactionManager(self.txn, self.options.dry_run)
-        for number, name in enumerate(sorted(equivalence_classes.iterkeys())):
+        for number, name in enumerate(sorted(equivalence_classes)):
             templates = equivalence_classes[name]
             log.info(
                 "Merging equivalence class '%s': %d template(s) (%d / %d)" % (
@@ -429,7 +429,7 @@ class TranslationMerger:
 
         self.tm.endTransaction(intermediate=True)
 
-        for representative_id in representatives.itervalues():
+        for representative_id in six.itervalues(representatives):
             representative = POTMsgSet.get(representative_id)
             self._scrubPOTMsgSetTranslations(representative)
             self.tm.endTransaction(intermediate=True)
@@ -484,7 +484,7 @@ class TranslationMerger:
         num_representatives = len(subordinates)
         representative_num = 0
 
-        for representative, potmsgsets in subordinates.iteritems():
+        for representative, potmsgsets in six.iteritems(subordinates):
             representative_num += 1
             log.debug("Message %d/%d: %d subordinate(s)." % (
                 representative_num, num_representatives, len(potmsgsets)))

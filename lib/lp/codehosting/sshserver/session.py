@@ -15,6 +15,7 @@ import sys
 
 from lazr.sshserver.events import AvatarEvent
 from lazr.sshserver.session import DoNothingSession
+import six
 from six import reraise
 from six.moves.urllib.parse import urlparse
 from twisted.internet import (
@@ -144,7 +145,7 @@ class ForkedProcessTransport(process.BaseProcess):
         assert executable == 'brz', executable  # Maybe .endswith()
         assert args[0] == 'brz', args[0]
         message = ['fork-env %s\n' % (' '.join(args[1:]),)]
-        for key, value in environment.iteritems():
+        for key, value in six.iteritems(environment):
             # XXX: Currently we only pass BRZ_EMAIL, should we be passing
             #      everything else? Note that many won't be handled properly,
             #      since the process is already running.

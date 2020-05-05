@@ -18,6 +18,7 @@ import email
 
 from breezy.revision import NULL_REVISION
 import pytz
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -287,7 +288,7 @@ class RevisionSet:
                            parent_id=parent_id)
 
         # Create revision properties.
-        for name, value in properties.iteritems():
+        for name, value in six.iteritems(properties):
             RevisionProperty(revision=revision, name=name, value=value)
 
         return revision
@@ -378,7 +379,7 @@ class RevisionSet:
         for bzr_revision in revisions:
             db_id = revision_db_id[bzr_revision.revision_id]
             # Property data: revision DB id, name, value.
-            for name, value in bzr_revision.properties.iteritems():
+            for name, value in six.iteritems(bzr_revision.properties):
                 # pristine-tar properties can be huge, and storing them
                 # in the database provides no value. Exclude them.
                 if name.startswith('deb-pristine-delta'):

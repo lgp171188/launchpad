@@ -26,6 +26,7 @@ import time
 import apt_inst
 import apt_pkg
 from debian.deb822 import Deb822Dict
+import six
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -218,7 +219,7 @@ class NascentUploadFile:
         ckfile = open(self.filepath, "r")
         size = 0
         for chunk in filechunks(ckfile):
-            for digester in digesters.itervalues():
+            for digester in six.itervalues(digesters):
                 digester.update(chunk)
             size += len(chunk)
         ckfile.close()
@@ -905,7 +906,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
             debug_package = None
 
         user_defined_fields = self.extractUserDefinedFields(
-            [(field, encoded[field]) for field in self.control.iterkeys()])
+            [(field, encoded[field]) for field in self.control])
 
         binary = build.createBinaryPackageRelease(
             binarypackagename=binary_name,

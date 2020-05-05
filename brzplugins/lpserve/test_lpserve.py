@@ -18,6 +18,7 @@ from breezy import (
     trace,
     )
 from breezy.plugins import lpserve
+import six
 from testtools import content
 
 from lp.codehosting import (
@@ -336,11 +337,11 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
         old_env = {}
 
         def cleanup_environment():
-            for env_var, value in env_changes.iteritems():
+            for env_var, value in six.iteritems(env_changes):
                 old_env[env_var] = osutils.set_or_unset_env(env_var, value)
 
         def restore_environment():
-            for env_var, value in old_env.iteritems():
+            for env_var, value in six.iteritems(old_env):
                 osutils.set_or_unset_env(env_var, value)
 
         cwd = None
@@ -406,7 +407,7 @@ class TestCaseWithLPForkingServiceSubprocess(TestCaseWithSubprocess):
     def send_fork_request(self, command, env=None):
         if env is not None:
             request_lines = ['fork-env %s\n' % (command,)]
-            for key, value in env.iteritems():
+            for key, value in six.iteritems(env):
                 request_lines.append('%s: %s\n' % (key, value))
             request_lines.append('end\n')
             request = ''.join(request_lines)

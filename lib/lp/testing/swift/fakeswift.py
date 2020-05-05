@@ -22,6 +22,7 @@ import sys
 import time
 import uuid
 
+import six
 from twisted.web import (
     http,
     resource,
@@ -77,7 +78,7 @@ class FakeKeystone(resource.Resource):
             if self._isValidToken(token, tenant_name):
                 return token
         else:
-            for id, token in self.tokens.iteritems():
+            for id, token in six.iteritems(self.tokens):
                 if self._isValidToken(token, tenant_name):
                     return token
 

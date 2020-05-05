@@ -14,6 +14,7 @@ __all__ = [
 
 import time
 
+import six
 from twisted.internet import defer
 
 from lp.code.interfaces.codehosting import BRANCH_TRANSPORT
@@ -84,7 +85,7 @@ class BranchFileSystemClient:
     def _getFromCache(self, path):
         """Get the cached 'transport_tuple' for 'path'."""
         split_path = path.strip('/').split('/')
-        for object_path, value in self._cache.iteritems():
+        for object_path, value in six.iteritems(self._cache):
             transport_type, data, inserted_time = value
             split_object_path = object_path.strip('/').split('/')
             # Do a segment-by-segment comparison. Python sucks, lists should

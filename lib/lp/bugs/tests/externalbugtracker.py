@@ -17,6 +17,7 @@ import re
 import time
 
 import responses
+import six
 from six.moves import xmlrpc_client
 from six.moves.urllib_parse import (
     parse_qs,
@@ -720,7 +721,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
     def _copy_comment(self, comment, fields_to_return=None):
         # Copy wanted fields.
         return dict(
-            (key, value) for (key, value) in comment.iteritems()
+            (key, value) for (key, value) in six.iteritems(comment)
             if fields_to_return is None or key in fields_to_return)
 
     def comments(self, arguments):

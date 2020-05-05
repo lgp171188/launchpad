@@ -3,6 +3,7 @@ import hmac
 import random
 import time
 
+import six
 from six.moves.urllib.parse import (
     parse_qs,
     quote,
@@ -118,7 +119,7 @@ class OAuthRequest(object):
     # get any non-oauth parameters
     def get_nonoauth_parameters(self):
         parameters = {}
-        for k, v in self.parameters.iteritems():
+        for k, v in six.iteritems(self.parameters):
             # ignore oauth parameters
             if k.find('oauth_') < 0:
                 parameters[k] = v
@@ -129,13 +130,15 @@ class OAuthRequest(object):
         auth_header = 'OAuth realm="%s"' % realm
         # add the oauth parameters
         if self.parameters:
-            for k, v in self.parameters.iteritems():
+            for k, v in six.iteritems(self.parameters):
                 auth_header += ', %s="%s"' % (k, v)
         return {'Authorization': auth_header}
 
     # serialize as post data for a POST request
     def to_postdata(self):
-        return '&'.join('%s=%s' % (escape(str(k)), escape(str(v))) for k, v in self.parameters.iteritems())
+        return '&'.join(
+            '%s=%s' % (escape(str(k)), escape(str(v)))
+            for k, v in six.iteritems(self.parameters))
 
     # serialize as a url for a GET request
     def to_url(self):
@@ -269,7 +272,7 @@ class OAuthRequest(object):
     @staticmethod
     def _split_url_string(param_str):
         parameters = parse_qs(param_str, keep_blank_values=False)
-        for k, v in parameters.iteritems():
+        for k, v in six.iteritems(parameters):
             parameters[k] = unquote(v[0])
         return parameters
 

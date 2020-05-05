@@ -33,6 +33,7 @@ from lazr.enum import (
     EnumeratedType,
     Item,
     )
+import six
 from six.moves.urllib.parse import parse_qs
 from storm.expr import Desc
 from zope.browserpage import ViewPageTemplateFile
@@ -1306,7 +1307,7 @@ class GroupedDistributionSourcePackageBranchesView(LaunchpadView,
         # For each distro series, we only want the "best" pocket if one branch
         # is linked to more than one pocket.  Best here means smaller value.
         official_branches = {}
-        for key, value in distro_links.iteritems():
+        for key, value in six.iteritems(distro_links):
             ordered = sorted(value, key=attrgetter('pocket'))
             seen_branches = set()
             branches = []
@@ -1363,7 +1364,7 @@ class GroupedDistributionSourcePackageBranchesView(LaunchpadView,
         and merge proposal links for badges.
         """
         visible_branches = []
-        for branches, count in self.series_branches_map.itervalues():
+        for branches, count in six.itervalues(self.series_branches_map):
             visible_branches.extend(branches)
         return visible_branches
 

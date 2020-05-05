@@ -170,7 +170,7 @@ class TranslationSharingJobDerived(
             for.
         :param event: The event itself.
         """
-        for event_type, job_classes in cls._event_types.iteritems():
+        for event_type, job_classes in six.iteritems(cls._event_types):
             if not event_type.providedBy(event):
                 continue
             for job_class in job_classes:
@@ -191,7 +191,7 @@ class TranslationSharingJobDerived(
             # Ignore changes to POTemplates that are neither renames,
             # nor moves to a different package/project.
             return
-        for event_type, job_classes in cls._event_types.iteritems():
+        for event_type, job_classes in six.iteritems(cls._event_types):
             if not event_type.providedBy(event):
                 continue
             for job_class in job_classes:

@@ -5,6 +5,7 @@ __metaclass__ = type
 
 from operator import methodcaller
 
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -193,8 +194,8 @@ class EquivalenceClassTestMixin:
         This ignores the ordering of templates in an equivalence class.
         A separate test looks at ordering.
         """
-        self.assertEqual(set(actual.iterkeys()), set(expected.iterkeys()))
-        for key, value in actual.iteritems():
+        self.assertEqual(set(actual), set(expected))
+        for key, value in six.iteritems(actual):
             self.assertEqual(set(value), set(expected[key]))
 
 

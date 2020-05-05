@@ -24,6 +24,7 @@ from cStringIO import StringIO
 import os
 import re
 
+import six
 from sqlobject import (
     SQLObjectMoreThanOneResultError,
     SQLObjectNotFound,
@@ -504,7 +505,7 @@ class SourcePackageHandler:
         dsc_contents = parse_tagfile(dsc_path)
         dsc_contents = dict([
             (name.lower(), value) for
-            (name, value) in dsc_contents.iteritems()])
+            (name, value) in six.iteritems(dsc_contents)])
 
         # Since the dsc doesn't know, we add in the directory, package
         # component and section
