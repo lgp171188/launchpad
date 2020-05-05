@@ -5,11 +5,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from datetime import datetime
 import json
 
 from fixtures import FakeLogger
-from pytz import utc
 from six import (
     ensure_text,
     string_types,
@@ -62,6 +60,7 @@ from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
     api_url,
+    login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -386,6 +385,56 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 OCIPushRuleAlreadyExists,
                 recipe.newPushRule,
                 recipe.owner, url, image_name, credentials)
+
+    def test_set_recipe_as_official_for_oci_project(self):
+        owner = self.factory.makePerson()
+        login_person(owner)
+        oci_project1 = self.factory.makeOCIProject(registrant=owner)
+        oci_project2 = self.factory.makeOCIProject(registrant=owner)
+
+        oci_proj1_recipes = [
+            self.factory.makeOCIRecipe(oci_project=oci_project1,
+                                       registrant=owner),
+            self.factory.makeOCIRecipe(oci_project=oci_project1,
+                                       registrant=owner),
+            self.factory.makeOCIRecipe(oci_project=oci_project1,
+                                       registrant=owner)
+        ]
+
+        # Recipes for project 2
+        oci_proj2_recipes = [
+            self.factory.makeOCIRecipe(oci_project=oci_project2,
+                                       registrant=owner),
+            self.factory.makeOCIRecipe(oci_project=oci_project2,
+                                       registrant=owner)
+        ]
+
+        self.assertIsNone(oci_project1.getOfficialRecipe())
+        self.assertIsNone(oci_project2.getOfficialRecipe())
+        for recipe in oci_proj1_recipes + oci_proj2_recipes:
+            self.assertFalse(recipe.official)
+
+        # Set official for project1 and make sure nothing else got changed
+        oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
+
+        self.assertIsNone(oci_project2.getOfficialRecipe())
+        self.assertEqual(
+            oci_proj1_recipes[0], oci_project1.getOfficialRecipe())
+        self.assertTrue(oci_proj1_recipes[0].official)
+        for recipe in oci_proj1_recipes[1:] + oci_proj2_recipes:
+            self.assertFalse(recipe.official)
+
+    def test_set_recipe_as_official_for_wrong_oci_project(self):
+        owner = self.factory.makePerson()
+        login_person(owner)
+        oci_project = self.factory.makeOCIProject(registrant=owner)
+        another_oci_project = self.factory.makeOCIProject(registrant=owner)
+
+        recipe = self.factory.makeOCIRecipe(
+            oci_project=oci_project, registrant=owner)
+
+        self.assertRaises(
+            ValueError, another_oci_project.setOfficialRecipe, recipe)
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
@@ -901,7 +950,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             recipe = self.factory.makeOCIRecipe(
                 oci_project=oci_project, owner=self.person,
                 registrant=self.person)
-            push_rule = self.factory.makeOCIPushRule(
+            self.factory.makeOCIPushRule(
                 recipe=recipe, image_name=image_name)
             url = api_url(recipe)
 

@@ -159,6 +159,9 @@ class OCIProject(BugTargetBase, StormBase):
 
     def setOfficialRecipe(self, recipe):
         """See `IOCIProject`."""
+        if recipe.oci_project != self:
+            raise ValueError(
+                "OCI recipe cannot be set as official of another OCI project.")
         recipes = self.getRecipes()
         recipes.set(official=False)
         if recipe is not None:
