@@ -88,6 +88,12 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getRecipes():
         """Returns the set of OCI Recipes for this project."""
 
+    def getOfficialRecipe():
+        """Gets the official recipe for this OCI project."""
+
+    def setOfficialRecipe(recipe):
+        """Sets the given recipe as the official one."""
+
 
 class IOCIProjectEditableAttributes(IBugTarget):
     """IOCIProject attributes that can be edited.
