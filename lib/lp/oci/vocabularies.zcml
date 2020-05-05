@@ -15,4 +15,15 @@
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
     </class>
 
+    <securedutility
+        name="OCIRecipe"
+        component="lp.oci.vocabularies.OCIRecipeVocabulary"
+        provides="zope.schema.interfaces.IVocabularyFactory">
+        <allow interface="zope.schema.interfaces.IVocabularyFactory" />
+    </securedutility>
+
+    <class class="lp.oci.vocabularies.OCIRecipeVocabulary">
+        <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
+    </class>
+
 </configure>

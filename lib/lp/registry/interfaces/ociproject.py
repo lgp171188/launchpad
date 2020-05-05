@@ -54,7 +54,6 @@ from lp.services.fields import (
     PublicPersonChoice,
     )
 
-
 # XXX: pappacena 2020-04-20: It is ok to remove the feature flag since we
 # already have in place the correct permission check for this feature.
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
@@ -85,6 +84,9 @@ class IOCIProjectView(IHasGitRepositories, Interface):
 
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
+
+    def getRecipes():
+        """Returns the set of OCI Recipes for this project."""
 
 
 class IOCIProjectEditableAttributes(IBugTarget):

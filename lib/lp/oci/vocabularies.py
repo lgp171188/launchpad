@@ -10,6 +10,7 @@ __all__ = []
 
 from zope.schema.vocabulary import SimpleTerm
 
+from lp.oci.model.ocirecipe import OCIRecipe
 from lp.services.webapp.vocabulary import StormVocabularyBase
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
@@ -28,3 +29,20 @@ class OCIRecipeDistroArchSeriesVocabulary(StormVocabularyBase):
 
     def __len__(self):
         return len(self.context.getAllowedArchitectures())
+
+
+class OCIRecipeVocabulary(StormVocabularyBase):
+    """All OCI Recipes of a given OCI Project."""
+
+    _table = OCIRecipe
+
+    def toTerm(self, recipe):
+        return SimpleTerm(
+            recipe, recipe.id, "~%s / %s" % (recipe.owner.name, recipe.name))
+
+    def __iter__(self):
+        for obj in self.context.getRecipes():
+            yield self.toTerm(obj)
+
+    def __len__(self):
+        return self.context.getRecipes().count()

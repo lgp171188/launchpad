@@ -147,6 +147,11 @@ class OCIProject(BugTargetBase, StormBase):
     def getSeriesByName(self, name):
         return self.series.find(OCIProjectSeries.name == name).one()
 
+    def getRecipes(self):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.oci_project == self)
+
 
 @implementer(IOCIProjectSet)
 class OCIProjectSet:
