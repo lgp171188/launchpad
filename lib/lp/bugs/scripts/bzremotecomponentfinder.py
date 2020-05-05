@@ -12,6 +12,7 @@ __all__ = [
 import re
 
 import requests
+import six
 import transaction
 from zope.component import getUtility
 
@@ -163,7 +164,7 @@ class BugzillaRemoteComponentFinder:
     def storeRemoteProductsAndComponents(self, bz_bugtracker, lp_bugtracker):
         """Stores parsed product/component data from bz_bugtracker"""
         components_to_add = []
-        for product in bz_bugtracker.products.itervalues():
+        for product in six.itervalues(bz_bugtracker.products):
             # Look up the component group id from Launchpad for the product
             # if it already exists.  Otherwise, add it.
             lp_component_group = lp_bugtracker.getRemoteComponentGroup(

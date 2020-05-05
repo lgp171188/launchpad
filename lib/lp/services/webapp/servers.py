@@ -529,7 +529,7 @@ def get_query_string_params(request):
     parsed_qs = parse_qs(query_string, keep_blank_values=True)
     # Use BrowserRequest._decode() for decoding the received parameters.
     decoded_qs = {}
-    for key, values in parsed_qs.iteritems():
+    for key, values in six.iteritems(parsed_qs):
         decoded_qs[key] = [
             request._decode(value) for value in values]
     return decoded_qs

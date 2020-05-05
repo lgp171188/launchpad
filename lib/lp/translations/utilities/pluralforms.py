@@ -12,6 +12,8 @@ __all__ = [
 import gettext
 import re
 
+import six
+
 from lp.translations.interfaces.translations import TranslationConstants
 
 
@@ -47,7 +49,7 @@ def make_friendly_plural_forms(expression, expected_forms):
 
     return [
         {'form': form, 'examples': examples}
-        for (form, examples) in forms.iteritems()
+        for (form, examples) in six.iteritems(forms)
         ]
 
 

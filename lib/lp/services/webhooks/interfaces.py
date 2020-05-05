@@ -40,6 +40,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+import six
 from six.moves import http_client
 from zope.interface import (
     Attribute,
@@ -105,7 +106,7 @@ class AnyWebhookEventTypeVocabulary(SimpleVocabulary):
     def __init__(self, context):
         terms = [
             self.createTerm(key, key, value)
-            for key, value in WEBHOOK_EVENT_TYPES.iteritems()]
+            for key, value in six.iteritems(WEBHOOK_EVENT_TYPES)]
         super(AnyWebhookEventTypeVocabulary, self).__init__(terms)
 
 

@@ -9,6 +9,7 @@ __all__ = [
     ]
 
 from lazr.restful.utils import get_current_browser_request
+import six
 from zope.i18n import (
     Message,
     translate,
@@ -95,7 +96,7 @@ class structured:
             self.escapedtext = text % tuple(html_escape(rep) for rep in reps)
         elif kwreps:
             self.escapedtext = text % dict(
-                (k, html_escape(v)) for k, v in kwreps.iteritems())
+                (k, html_escape(v)) for k, v in six.iteritems(kwreps))
         else:
             self.escapedtext = text
 

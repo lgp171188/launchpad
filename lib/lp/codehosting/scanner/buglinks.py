@@ -9,6 +9,7 @@ __all__ = [
     ]
 
 from breezy.bugtracker import InvalidBugStatus
+import six
 from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 
@@ -77,7 +78,7 @@ class BugBranchLinker:
         except InvalidBugStatus:
             return
         bug_set = getUtility(IBugSet)
-        for bug_id, status in bug_info.iteritems():
+        for bug_id, status in six.iteritems(bug_info):
             try:
                 bug = bug_set.get(bug_id)
             except NotFoundError:

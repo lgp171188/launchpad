@@ -22,6 +22,7 @@ import os
 import sys
 
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     IntCol,
@@ -1012,7 +1013,7 @@ def expand_binary_requests(distroseries, binaries):
     arch_map = dict((arch.architecturetag, arch) for arch in archs)
 
     expanded = []
-    for bpr, overrides in binaries.iteritems():
+    for bpr, overrides in six.iteritems(binaries):
         if bpr.architecturespecific:
             # Find the DAS in this series corresponding to the original
             # build arch tag. If it does not exist or is disabled, we should

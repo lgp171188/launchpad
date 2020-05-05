@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from io import BytesIO
 
+import six
 import transaction
 
 from lp.services.log.logger import DevNullLogger
@@ -96,7 +97,7 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         exactly the same priority."""
         for file_extension in TranslationImporter().supported_file_extensions:
             priorities = []
-            for format, importer in importers.iteritems():
+            for format, importer in six.iteritems(importers):
                 if file_extension in importer.file_extensions:
                     self.assertNotIn(importer.priority, priorities)
                     priorities.append(importer.priority)

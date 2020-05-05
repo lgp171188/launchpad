@@ -157,7 +157,7 @@ def import_sourcepackages(distro, packages_map, package_root,
     npacks = len(packages_map.src_map)
     log.info('%i Source Packages to be imported', npacks)
 
-    for package in sorted(packages_map.src_map.iterkeys()):
+    for package in sorted(packages_map.src_map):
         for source in packages_map.src_map[package]:
             attempt_source_package_import(
                 distro, source, package_root, importer_handler)
@@ -193,7 +193,7 @@ def import_binarypackages(distro, packages_map, package_root,
         log.info(
             '%i Binary Packages to be imported for %s', npacks, archtag)
         # Go over binarypackages importing them for this architecture
-        for package_name in sorted(packages_map.bin_map[archtag].iterkeys()):
+        for package_name in sorted(packages_map.bin_map[archtag]):
             binary = packages_map.bin_map[archtag][package_name]
             try:
                 try:

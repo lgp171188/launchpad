@@ -684,7 +684,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             ISourcePackageNameSet).getOrCreateByName(self.source)
 
         user_defined_fields = self.extractUserDefinedFields([
-            (field, encoded[field]) for field in self._dict.iterkeys()])
+            (field, encoded[field]) for field in self._dict])
 
         if self.changes.buildinfo is not None:
             buildinfo_lfa = self.changes.buildinfo.storeInDatabase()

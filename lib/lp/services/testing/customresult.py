@@ -11,6 +11,7 @@ __all__ = [
 
 from unittest import TestSuite
 
+import six
 from zope.testrunner import find
 
 
@@ -65,7 +66,7 @@ def filter_tests(list_name, reorder_tests=False):
         test_lookup = {}
         # Multiple unique testcases can be represented by a single id and they
         # must be tracked separately.
-        for layer_name, suite in tests_by_layer_name.iteritems():
+        for layer_name, suite in six.iteritems(tests_by_layer_name):
             for testcase in suite:
                 layer_to_tests = test_lookup.setdefault(
                     testcase.id(), {})

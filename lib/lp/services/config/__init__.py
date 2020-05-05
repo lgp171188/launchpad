@@ -22,6 +22,7 @@ import sys
 
 from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
+import six
 from six.moves.urllib.parse import (
     urlparse,
     urlunparse,
@@ -459,7 +460,7 @@ class DatabaseConfig:
 
         Overriding a value to None removes the override.
         """
-        for attr, value in kwargs.iteritems():
+        for attr, value in six.iteritems(kwargs):
             assert attr in self._db_config_attrs, (
                 "%s cannot be overridden" % attr)
             if value is None:

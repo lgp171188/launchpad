@@ -131,7 +131,7 @@ class ObjectSet:
         del self._objects[db_object.id]
 
     def __iter__(self):
-        return self._objects.itervalues()
+        return six.itervalues(self._objects)
 
     def _find(self, **kwargs):
         [(key, value)] = kwargs.items()

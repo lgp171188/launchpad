@@ -11,6 +11,7 @@ __all__ = [
 
 import logging
 
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -243,7 +244,7 @@ class Builder(SQLBase):
 
         job_type_conditions = []
         job_sources = specific_build_farm_job_sources()
-        for job_type, job_source in job_sources.iteritems():
+        for job_type, job_source in six.iteritems(job_sources):
             query = job_source.addCandidateSelectionCriteria(
                 self.processor, self.virtualized)
             if query:

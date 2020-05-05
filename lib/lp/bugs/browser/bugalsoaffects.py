@@ -16,6 +16,7 @@ from lazr.enum import (
     Item,
     )
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
@@ -605,7 +606,7 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
 
             # Don't request validation for text widgets that are not
             # related to the current radio selection.
-            for option, name in link_upstream_options.iteritems():
+            for option, name in six.iteritems(link_upstream_options):
                 if link_upstream_how != option:
                     names.discard(name)
                 elif self.widgets[name].hasValidInput():
@@ -619,7 +620,7 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
         else:
             # Don't validate these widgets when we don't yet know how
             # we intend to link upstream.
-            names.difference_update(link_upstream_options.itervalues())
+            names.difference_update(six.itervalues(link_upstream_options))
 
         return super(ProductBugTaskCreationStep,
                      self).validate_widgets(data, names)

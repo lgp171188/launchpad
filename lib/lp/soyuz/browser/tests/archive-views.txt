@@ -105,8 +105,10 @@ usage details in a dictionary containing:
 We will use a helper function for printing the returned dictionary
 contents.
 
+    >>> import six
+
     >>> def print_repository_usage(repository_usage):
-    ...     for key, value in sorted(repository_usage.iteritems()):
+    ...     for key, value in sorted(six.iteritems(repository_usage)):
     ...         print('%s: %s' % (key, value))
 
 Celso PPA has some packages, but still below the quota.

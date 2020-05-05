@@ -32,6 +32,7 @@ import re
 
 from lazr.lifecycle.event import ObjectDeletedEvent
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
@@ -1138,7 +1139,7 @@ class BugTask(SQLBase):
             new_key['sourcepackagename'] != self.sourcepackagename):
             self._syncSourcePackages(new_key['sourcepackagename'], user)
 
-        for name, value in new_key.iteritems():
+        for name, value in six.iteritems(new_key):
             setattr(self, name, value)
         self.updateTargetNameCache()
         self.bug._reconcileAccess()

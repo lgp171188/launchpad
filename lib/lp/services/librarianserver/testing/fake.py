@@ -19,6 +19,7 @@ import hashlib
 from StringIO import StringIO
 
 from fixtures import Fixture
+import six
 from six.moves.urllib.parse import urljoin
 import transaction
 from transaction.interfaces import ISynchronizer
@@ -138,7 +139,7 @@ class FakeLibrarian(Fixture):
         database transaction.
         """
         # Note that all files have been committed to storage.
-        for alias in self.aliases.itervalues():
+        for alias in six.itervalues(self.aliases):
             alias.file_committed = True
 
     def _makeAlias(self, file_id, name, content, content_type):
@@ -175,7 +176,7 @@ class FakeLibrarian(Fixture):
 
     def findBySHA256(self, sha256):
         "See `ILibraryFileAliasSet`."""
-        for alias in self.aliases.itervalues():
+        for alias in six.itervalues(self.aliases):
             if alias.content.sha256 == sha256:
                 return alias
 

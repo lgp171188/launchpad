@@ -10,6 +10,7 @@ from datetime import (
     )
 
 from pytz import utc
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -698,7 +699,7 @@ class TestMinTimeToNextBuilderMulti(MultiArchBuildsBase):
         check_mintime_to_builder(self, job, 0)
 
         # Let's disable all builders.
-        for builders in self.builders.itervalues():
+        for builders in six.itervalues(self.builders):
             for builder in builders:
                 builder.builderok = False
 
