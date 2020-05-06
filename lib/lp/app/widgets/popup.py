@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Single selection widget using a popup to select one item from many."""
@@ -259,6 +259,11 @@ class PersonPickerWidget(VocabularyPickerWidget):
     @property
     def nonajax_uri(self):
         return '/people/'
+
+
+class OCIRecipePickerWidget(VocabularyPickerWidget):
+    header = 'Select a Recipe'
+    step_title = 'Search for the recipe.'
 
 
 class BugTrackerPickerWidget(VocabularyPickerWidget):

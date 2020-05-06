@@ -35,6 +35,7 @@ from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
+from lp.registry.model.person import Person
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
@@ -152,10 +153,16 @@ class OCIProject(BugTargetBase, StormBase):
         from lp.oci.model.ocirecipe import OCIRecipe
         return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.oci_project == self)
 
-    def searchRecipes(self, query):
+    def searchRecipes(self, recipe_name, owner_name=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        return self.getRecipes().find(OCIRecipe.name.contains_string(query))
+        q = self.getRecipes().find(
+            OCIRecipe.name.contains_string(recipe_name))
+        if owner_name is not None:
+            q = q.find(
+                OCIRecipe.owner_id == Person.id,
+                Person.name == owner_name)
+        return q
 
     def getOfficialRecipe(self):
         """See `IOCIProject`."""
