@@ -32,9 +32,12 @@
           Apologies for the inconvenience.
         </p>
         <p>
-          If you report this as a bug, please include the error ID below,
-          preferably by copying and pasting it rather than by taking a
-          screenshot.
+          If you
+          <a tal:define="root modules/lp.services.webapp.vhosts/allvhosts/configs/bugs/rooturl"
+             tal:attributes="href python: root + 'launchpad'">
+            report this as a bug</a>,
+          please include the error ID below, preferably by copying and
+          pasting it rather than by taking a screenshot.
         </p>
         <p>
           (Error <abbr>ID</abbr>:
@@ -45,6 +48,11 @@
 
         <div class="related">
           <ul>
+            <li>
+              <a href="https://help.launchpad.net/Feedback">
+                How to provide feedback or report a bug?
+              </a>
+            </li>
             <li>
               <a tal:attributes="href modules/lp.services.webapp.vhosts/allvhosts/configs/mainsite/rooturl"
               >Return to the Launchpad front page</a>
