@@ -152,6 +152,11 @@ class OCIProject(BugTargetBase, StormBase):
         from lp.oci.model.ocirecipe import OCIRecipe
         return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.oci_project == self)
 
+    def searchRecipes(self, query):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        return self.getRecipes().find(OCIRecipe.name.contains_string(query))
+
     def getOfficialRecipe(self):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
@@ -159,12 +164,13 @@ class OCIProject(BugTargetBase, StormBase):
 
     def setOfficialRecipe(self, recipe):
         """See `IOCIProject`."""
-        if recipe.oci_project != self:
+        if recipe is not None and recipe.oci_project != self:
             raise ValueError(
                 "OCI recipe cannot be set as official of another OCI project.")
         from lp.oci.model.ocirecipe import OCIRecipe
         recipes = self.getRecipes()
-        recipes.set(official=OCIRecipe.id == recipe.id)
+        recipe_id = recipe.id if recipe else None
+        recipes.set(official=OCIRecipe.id == recipe_id)
 
 
 @implementer(IOCIProjectSet)

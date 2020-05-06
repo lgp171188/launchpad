@@ -88,6 +88,9 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getRecipes():
         """Returns the set of OCI Recipes for this project."""
 
+    def searchRecipes(query):
+        """Searches for recipes in this OCI project."""
+
     def getOfficialRecipe():
         """Gets the official recipe for this OCI project."""
 

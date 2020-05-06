@@ -415,7 +415,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
 
-        # Set official for project1 and make sure nothing else got changed
+        # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
             oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
             self.assertEqual(1, recorder.count)
@@ -425,6 +425,14 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_proj1_recipes[0], oci_project1.getOfficialRecipe())
         self.assertTrue(oci_proj1_recipes[0].official)
         for recipe in oci_proj1_recipes[1:] + oci_proj2_recipes:
+            self.assertFalse(recipe.official)
+
+        # Set back no recipe as official.
+        with StormStatementRecorder() as recorder:
+            oci_project1.setOfficialRecipe(None)
+            self.assertEqual(1, recorder.count)
+
+        for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
 
     def test_set_recipe_as_official_for_wrong_oci_project(self):
@@ -438,6 +446,24 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
         self.assertRaises(
             ValueError, another_oci_project.setOfficialRecipe, recipe)
+
+    def test_search_recipe_from_oci_project(self):
+        owner = self.factory.makePerson()
+        login_person(owner)
+        oci_project = self.factory.makeOCIProject(registrant=owner)
+        another_oci_project = self.factory.makeOCIProject(registrant=owner)
+
+        recipe1 = self.factory.makeOCIRecipe(
+            name="something", oci_project=oci_project, registrant=owner)
+        recipe2 = self.factory.makeOCIRecipe(
+            name="banana", oci_project=oci_project, registrant=owner)
+        recipe_from_another_project = self.factory.makeOCIRecipe(
+            name="something too", oci_project=another_oci_project,
+            registrant=owner)
+
+        self.assertEqual([recipe1], list(oci_project.searchRecipes("somet")))
+        self.assertEqual([recipe2], list(oci_project.searchRecipes("bana")))
+        self.assertEqual([], list(oci_project.searchRecipes("foo")))
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
