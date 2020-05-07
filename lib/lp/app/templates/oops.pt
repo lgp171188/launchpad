@@ -31,11 +31,16 @@
           and we&#8217;ll fix it as soon as possible.
           Apologies for the inconvenience.
         </p>
+        <p tal:condition="not: view/user|nothing">
+          <strong>If you can't login</strong>, join us on
+          <a href="irc://irc.freenode.net/launchpad">#launchpad IRC channel</a>
+          at irc.freenode.net,
+          <a href="mailto:feedback@launchpad.net">e-mail us</a>
+          or visit our
+          <a href="https://help.launchpad.net/Feedback">feedback page</a>.
+        </p>
         <p>
-          If you
-          <a tal:define="root modules/lp.services.webapp.vhosts/allvhosts/configs/bugs/rooturl"
-             tal:attributes="href python: root + 'launchpad'">
-            report this as a bug</a>,
+          If you <a href="/launchpad/+filebug">report this as a bug</a>,
           please include the error ID below, preferably by copying and
           pasting it rather than by taking a screenshot.
         </p>
@@ -50,7 +55,7 @@
           <ul>
             <li>
               <a href="https://help.launchpad.net/Feedback">
-                How to provide feedback or report a bug?
+                Provide feedback or report a bug
               </a>
             </li>
             <li>
