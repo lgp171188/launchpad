@@ -1,0 +1,87 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/searchless"
+  i18n:domain="launchpad"
+>
+<body>
+
+<div metal:fill-slot="heading">
+  <h2>Search packages in <tal:title replace="context/title" /></h2>
+</div>
+
+<metal:side fill-slot="side">
+  <div tal:replace="structure context/@@+global-actions"/>
+</metal:side>
+
+<div metal:fill-slot="main">
+  <div class="top-portlet">
+    <form name="search" method="GET">
+      <div>
+        <label for="text">
+          Show <span tal:replace="context/title" /> OCI projects containing:
+        </label>
+      </div>
+
+      <input type="text" name="text" size="35"
+        tal:attributes="value request/text|nothing" />
+
+      <input type="submit" value="Search"
+          tal:condition="not: view/search_requested" />
+
+      <input type="submit" value="Search Again"
+          tal:condition="view/search_requested" />
+    </form>
+  </div>
+
+  <tal:search_requested condition="view/search_requested">
+      <div class="main-portlet">
+        <p tal:define="count view/count"
+           tal:condition="count">
+          <span tal:condition="python: count == 1">
+            There is <strong>1</strong> OCI project</span>
+          <span tal:condition="python: count != 1">
+            There are <strong tal:content="count" /> OCI projects
+          </span>
+          registered for <tal:context replace="view/title" />
+          matching <strong tal:content="view/text" />.
+        </p>
+        <p tal:define="count view/count"
+           tal:condition="not: count">
+           There are no OCI projects registered for
+           <tal:context replace="view/title" /> matching your search.
+        </p>
+      </div>
+
+      <table class="listing" id="mirrors_list">
+        <tbody>
+          <tr class="head">
+            <th>Name</th>
+            <th>Description</th>
+            <th>Registrant</th>
+            <th>Date created</th>
+          </tr>
+
+          <tr tal:repeat="item view/preloaded_batch">
+            <td>
+              <a tal:content="item/name"
+                 tal:attributes="href item/fmt:url" />
+            </td>
+            <td tal:content="item/description" />
+            <td tal:content="structure item/registrant/fmt:link" />
+            <td tal:content="item/date_created/fmt:displaydate" />
+          </tr>
+        </tbody>
+      </table>
+
+       <tal:navigation
+          replace="structure view/batchnav/@@+navigation-links-lower" />
+  </tal:search_requested>
+
+</div>
+
+</body>
+
+</html>

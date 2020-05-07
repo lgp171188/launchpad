@@ -191,3 +191,11 @@ class OCIProjectSet:
             OCIProject.ociprojectname == OCIProjectName.id,
             OCIProjectName.name == name).one()
         return target
+
+    def findByDistributionAndName(self, distribution, name):
+        """See `IOCIProjectSet`."""
+        return IStore(OCIProject).find(
+            OCIProject,
+            OCIProject.distribution == distribution,
+            OCIProject.ociprojectname == OCIProjectName.id,
+            OCIProjectName.name.contains_string(name))

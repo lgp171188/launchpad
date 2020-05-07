@@ -311,11 +311,16 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
         text = 'Create an OCI Project'
         return Link('+new-oci-project', text, icon='add')
 
+    def search_oci_project(self):
+        text = 'Search for OCI Project'
+        return Link('+oci-project-search', text, icon='info')
+
     @cachedproperty
     def links(self):
         return [
             'edit', 'admin', 'pubconf', 'subscribe_to_bug_mail',
-            'edit_bug_mail', 'sharing', 'new_oci_project']
+            'edit_bug_mail', 'sharing', 'new_oci_project',
+            'search_oci_project']
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
