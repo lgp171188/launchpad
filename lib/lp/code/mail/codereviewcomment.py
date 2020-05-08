@@ -44,7 +44,7 @@ class CodeReviewCommentMailer(BMPMailer):
         self.message = code_review_comment.message
         from_person = self.message.owner
         from_address = format_address(
-            from_person.displayname, from_person.preferredemail.email)
+            from_person.displayname, code_review_comment.branch_merge_proposal.address)
         merge_proposal = code_review_comment.branch_merge_proposal
         BMPMailer.__init__(
             self, self.message.subject, None, recipients, merge_proposal,
