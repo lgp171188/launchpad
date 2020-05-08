@@ -236,8 +236,9 @@ class OCIProjectSearchView(LaunchpadView):
 
     @cachedproperty
     def preloaded_batch(self):
-        # XXX: pappacena 2020-05-07: preload related objects.
-        return list(self.batchnav.batch)
+        projects = self.batchnav.batch
+        getUtility(IOCIProjectSet).preloadDataForOCIProjects(projects)
+        return projects
 
     @property
     def search_results(self):

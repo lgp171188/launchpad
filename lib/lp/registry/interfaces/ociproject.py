@@ -180,6 +180,9 @@ class IOCIProjectSet(Interface):
         """Find OCIProjects for a given distribution that contains the
         provided name."""
 
+    def preloadDataForOCIProjects(oci_projects):
+        """Preload data for the given list of OCIProject objects."""
+
 
 @error_status(http_client.UNAUTHORIZED)
 class OCIProjectCreateFeatureDisabled(Unauthorized):

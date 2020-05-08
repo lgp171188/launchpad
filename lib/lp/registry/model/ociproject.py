@@ -12,6 +12,7 @@ __all__ = [
     ]
 
 import pytz
+from lp.registry.interfaces.person import IPersonSet
 from six import text_type
 from storm.locals import (
     Bool,
@@ -35,6 +36,7 @@ from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
@@ -199,3 +201,13 @@ class OCIProjectSet:
             OCIProject.distribution == distribution,
             OCIProject.ociprojectname == OCIProjectName.id,
             OCIProjectName.name.contains_string(name))
+
+    def preloadDataForOCIProjects(self, oci_projects):
+        """See `IOCIProjectSet`."""
+        oci_projects = [removeSecurityProxy(i) for i in oci_projects]
+
+        person_ids = [i.registrant_id for i in oci_projects]
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            person_ids, need_validity=True))
+
+        load_related(OCIProjectName, oci_projects, ["ociprojectname_id"])

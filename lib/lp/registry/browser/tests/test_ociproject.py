@@ -22,8 +22,11 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import structured
 from lp.testing import (
+    admin_logged_in,
     BrowserTestCase,
+    login_person,
     person_logged_in,
+    record_two_runs,
     test_tales,
     TestCaseWithFactory,
     )
@@ -233,6 +236,22 @@ class TestOCIProjectSearchView(BrowserTestCase):
         nav_links_text = extract_text(nav_links).replace('\n', ' ')
         self.assertIn("First • Previous • Next • Last", nav_links_text)
 
+    def assertOCIProjectsArePresent(self, browser, oci_projects):
+        table = find_tag_by_id(browser.contents, "projects_list")
+        with admin_logged_in():
+            for oci_project in oci_projects:
+                url = canonical_url(oci_project, force_local_path=True)
+                self.assertIn(url, str(table))
+                self.assertIn(oci_project.name, str(table))
+
+    def assertOCIProjectsAreNotPresent(self, browser, oci_projects):
+        table = find_tag_by_id(browser.contents, "projects_list")
+        with admin_logged_in():
+            for oci_project in oci_projects:
+                url = canonical_url(oci_project, force_local_path=True)
+                self.assertNotIn(url, str(table))
+                self.assertNotIn(oci_project.name, str(table))
+
     def test_search_no_oci_projects(self):
         person = self.factory.makePerson()
         distribution = self.factory.makeDistribution()
@@ -263,13 +282,65 @@ class TestOCIProjectSearchView(BrowserTestCase):
             "There are 3 OCI projects registered for %s" % distro.name,
             extract_text(main_portlet).replace("\n", " "))
 
-        # Checks that the table was filled with project's details and link
-        # for all 3 projects.
-        table = find_tag_by_id(browser.contents, "projects_list")
-        with person_logged_in(person):
-            for oci_project in oci_projects:
-                url = canonical_url(oci_project, force_local_path=True)
-                self.assertIn(url, str(table))
-                self.assertIn(oci_project.name, str(table))
-
+        self.assertOCIProjectsArePresent(browser, oci_projects)
         self.assertPaginationIsPresent(browser, 3, 3)
+
+    def test_oci_projects_with_search_keyword(self):
+        person = self.factory.makePerson()
+        distro = self.factory.makeDistribution(owner=person)
+
+        # And 2 OCI projects that will match the name
+        oci_projects = [
+            self.factory.makeOCIProject(
+                ociprojectname="find-me-%s" % i,
+                registrant=person, pillar=distro) for i in range(2)]
+
+        # Creates 2 OCI Projects that will not match search
+        other_oci_projects = [
+            self.factory.makeOCIProject(
+                ociprojectname="something-%s" % i,
+                registrant=person, pillar=distro) for i in range(2)]
+
+        browser = self.getViewBrowser(
+            distro, user=person, view_name='+oci-project-search')
+        browser.getControl(name="text").value = "find-me"
+        browser.getControl("Search").click()
+
+        # Check top message.
+        main_portlet = find_tags_by_class(browser.contents, "main-portlet")[0]
+        self.assertIn(
+            'There are 2 OCI projects registered for %s matching "%s"' %
+            (distro.name, "find-me"),
+            extract_text(main_portlet).replace("\n", " "))
+
+        self.assertOCIProjectsArePresent(browser, oci_projects)
+        self.assertOCIProjectsAreNotPresent(browser, other_oci_projects)
+        self.assertPaginationIsPresent(browser, 2, 2)
+
+    def test_query_count_is_constant(self):
+        batch_size = 3
+        self.pushConfig("launchpad", default_batch_size=batch_size)
+
+        person = self.factory.makePerson()
+        distro = self.factory.makeDistribution(owner=person)
+        name_pattern = "find-me-"
+
+        def createOCIProject():
+            self.factory.makeOCIProject(
+                ociprojectname=self.factory.getUniqueString(name_pattern),
+                pillar=distro)
+
+        viewer = self.factory.makePerson()
+        def getView():
+            browser = self.getViewBrowser(
+                distro, user=viewer, view_name='+oci-project-search')
+            browser.getControl(name="text").value = name_pattern
+            browser.getControl("Search").click()
+            return browser
+
+        def do_login():
+            login_person(person)
+
+        recorder1, recorder2 = record_two_runs(
+            getView, createOCIProject, 1, 10, login_method=do_login)
+        self.assertEqual(recorder1.count, recorder2.count)
