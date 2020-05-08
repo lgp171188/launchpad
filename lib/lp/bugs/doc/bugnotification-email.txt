@@ -454,8 +454,12 @@ The Reply-To address generation is straightforward:
     >>> get_bugmail_replyto_address(bug_four)
     u'Bug 4 <4@bugs.launchpad.net>'
 
-The From address generator handles a few special cases. The trivial case
-is, well, trivial. Stuart has four email addresses:
+In order to implement proper DMARC-compliant bug notification email
+messages to be sent, the From address generator is also quite straightforward
+and uses the bug's email address for the From address, while adjusting the
+friendly display name field.
+
+This applies for all users.  For example, Stuart has four email addresses:
 
     >>> stub = getUtility(IPersonSet).getByName("stub")
     >>> [(email.email, email.status.name) for email
@@ -465,39 +469,13 @@ is, well, trivial. Stuart has four email addresses:
      (u'stub@fastmail.fm', 'NEW'),
      (u'zen@shangri-la.dropbear.id.au', 'OLD')]
 
-But we use his preferred one:
+However, because of DMARC compliance, we only use the bug's email address in the
+From field, with Stuart's name in the 'display name' portion of the email address:
 
     >>> get_bugmail_from_address(stub, bug_four)
     'Stuart Bishop <4@bugs.launchpad.net>'
 
-Now, mpo doesn't have a validated email address, but we pick out the
-first address we find:
-
-    >>> mpo = getUtility(IPersonSet).getByName("mpo")
-    >>> get_bugmail_from_address(mpo, bug_four)
-    '=?utf-8?b?TWF0dGkgUMO2bGzDpA==?= <4@bugs.launchpad.net>'
-
-(As you can see in the above example, get_bugmail_from_address() takes
-care of encoding the person's displayname correctly.)
-
-The team janitor doesn't have an email address at all!
-
-    >>> janitor = getUtility(IPersonSet).getByName("team-membership-janitor")
-    >>> get_bugmail_from_address(janitor, bug_four)
-    'Team Membership Janitor <4@bugs.launchpad.net>'
-
-The Launchpad Janitor celebrity isn't a real user, and shouldn't be
-sending mail. Notifications from the janitor are sent with the address
-of the bug itself.
-
-    >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-    >>> lp_janitor = getUtility(ILaunchpadCelebrities).janitor
-    >>> get_bugmail_from_address(lp_janitor, bug_four)
-    'Launchpad Bug Tracker <4@bugs.launchpad.net>'
-
-If a person has specified that their email remain private,
-get_bugmail_from_address() will return their display name with bug's
-email address.
+This also happens for users with hidden addresses:
 
     >>> private_person = factory.makePerson(
     ...     email="hidden@example.com", displayname="Ford Prefect")
@@ -505,6 +483,24 @@ email address.
     >>> get_bugmail_from_address(private_person, bug_four)
     'Ford Prefect <4@bugs.launchpad.net>'
 
+It also behaves the same for users with no verified email addresses:
+
+    >>> mpo = getUtility(IPersonSet).getByName("mpo")
+    >>> get_bugmail_from_address(mpo, bug_four)
+    '=?utf-8?b?TWF0dGkgUMO2bGzDpA==?= <4@bugs.launchpad.net>'
+
+This also happens for the team janitor:
+
+    >>> janitor = getUtility(IPersonSet).getByName("team-membership-janitor")
+    >>> get_bugmail_from_address(janitor, bug_four)
+    'Team Membership Janitor <4@bugs.launchpad.net>'
+
+And also applies for the Launchpad Janitor:
+
+    >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+    >>> lp_janitor = getUtility(ILaunchpadCelebrities).janitor
+    >>> get_bugmail_from_address(lp_janitor, bug_four)
+    'Launchpad Bug Tracker <4@bugs.launchpad.net>'
 
 Construction of bug notification emails
 ---------------------------------------
