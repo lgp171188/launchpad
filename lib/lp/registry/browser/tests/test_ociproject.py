@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -31,6 +32,7 @@ from lp.testing.matchers import MatchesTagText
 from lp.testing.pages import (
     extract_text,
     find_main_content,
+    find_tag_by_id,
     find_tags_by_class,
     )
 from lp.testing.publication import test_traverse
@@ -161,9 +163,6 @@ class TestOCIProjectAddView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super(TestOCIProjectAddView, self).setUp()
-
     def test_create_oci_project(self):
         oci_project = self.factory.makeOCIProject()
         user = oci_project.pillar.owner
@@ -213,3 +212,64 @@ class TestOCIProjectAddView(BrowserTestCase):
             new_distribution,
             user=another_person,
             view_name='+new-oci-project')
+
+
+class TestOCIProjectSearchView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def assertPaginationIsPresent(
+            self, browser, results_in_page, total_result):
+        """Checks that pagination is shown at the browser."""
+        nav_index = find_tags_by_class(
+            browser.contents, "batch-navigation-index")[0]
+        nav_index_text = extract_text(nav_index).replace('\n', ' ')
+        self.assertIn(
+            "1 → %s of %s results" % (results_in_page, total_result),
+            nav_index_text)
+
+        nav_links = find_tags_by_class(
+            browser.contents, "batch-navigation-links")[0]
+        nav_links_text = extract_text(nav_links).replace('\n', ' ')
+        self.assertIn("First • Previous • Next • Last", nav_links_text)
+
+    def test_search_no_oci_projects(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution()
+        browser = self.getViewBrowser(
+            distribution, user=person, view_name='+oci-project-search')
+
+        main_portlet = find_tags_by_class(browser.contents, "main-portlet")[0]
+        self.assertIn(
+            "There are no OCI projects registered for %s" % distribution.name,
+            extract_text(main_portlet).replace("\n", " "))
+
+    def test_oci_projects_no_search_keyword(self):
+        person = self.factory.makePerson()
+        distro = self.factory.makeDistribution(owner=person)
+
+        # Creates 3 OCI Projects
+        oci_projects = [
+            self.factory.makeOCIProject(
+                ociprojectname="test-project-%s" % i,
+                registrant=person, pillar=distro) for i in range(3)]
+
+        browser = self.getViewBrowser(
+            distro, user=person, view_name='+oci-project-search')
+
+        # Check top message.
+        main_portlet = find_tags_by_class(browser.contents, "main-portlet")[0]
+        self.assertIn(
+            "There are 3 OCI projects registered for %s" % distro.name,
+            extract_text(main_portlet).replace("\n", " "))
+
+        # Checks that the table was filled with project's details and link
+        # for all 3 projects.
+        table = find_tag_by_id(browser.contents, "projects_list")
+        with person_logged_in(person):
+            for oci_project in oci_projects:
+                url = canonical_url(oci_project, force_local_path=True)
+                self.assertIn(url, str(table))
+                self.assertIn(oci_project.name, str(table))
+
+        self.assertPaginationIsPresent(browser, 3, 3)

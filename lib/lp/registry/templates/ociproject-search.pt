@@ -9,7 +9,7 @@
 <body>
 
 <div metal:fill-slot="heading">
-  <h2>Search packages in <tal:title replace="context/title" /></h2>
+  <h2>Search OCI projects in <tal:title replace="context/title" /></h2>
 </div>
 
 <metal:side fill-slot="side">
@@ -34,9 +34,9 @@
       <input type="submit" value="Search Again"
           tal:condition="view/search_requested" />
     </form>
-  </div>
 
-  <tal:search_requested condition="view/search_requested">
+
+    <tal:search_result>
       <div class="main-portlet">
         <p tal:define="count view/count"
            tal:condition="count">
@@ -46,40 +46,45 @@
             There are <strong tal:content="count" /> OCI projects
           </span>
           registered for <tal:context replace="view/title" />
-          matching <strong tal:content="view/text" />.
+          <span tal:condition= "python: view.search_requested and view.text">
+            matching "<strong tal:content="view/text" />".
+          </span>
         </p>
         <p tal:define="count view/count"
            tal:condition="not: count">
-           There are no OCI projects registered for
-           <tal:context replace="view/title" /> matching your search.
+          There are no OCI projects registered for
+          <tal:context replace="view/title" />
+          <span tal:condition= "python: view.search_requested and view.text">
+            matching "<strong tal:content="view/text" />".
+          </span>
         </p>
-      </div>
 
-      <table class="listing" id="mirrors_list">
-        <tbody>
-          <tr class="head">
-            <th>Name</th>
-            <th>Description</th>
-            <th>Registrant</th>
-            <th>Date created</th>
-          </tr>
+        <table class="listing" id="projects_list">
+          <tbody>
+            <tr class="head">
+              <th>Name</th>
+              <th>Description</th>
+              <th>Registrant</th>
+              <th>Date created</th>
+            </tr>
 
-          <tr tal:repeat="item view/preloaded_batch">
-            <td>
-              <a tal:content="item/name"
-                 tal:attributes="href item/fmt:url" />
-            </td>
-            <td tal:content="item/description" />
-            <td tal:content="structure item/registrant/fmt:link" />
-            <td tal:content="item/date_created/fmt:displaydate" />
-          </tr>
-        </tbody>
-      </table>
+            <tr tal:repeat="item view/preloaded_batch">
+              <td>
+                <a tal:content="item/name"
+                   tal:attributes="href item/fmt:url" />
+              </td>
+              <td tal:content="item/description" />
+              <td tal:content="structure item/registrant/fmt:link" />
+              <td tal:content="item/date_created/fmt:displaydate" />
+            </tr>
+          </tbody>
+        </table>
 
-       <tal:navigation
+        <tal:navigation
           replace="structure view/batchnav/@@+navigation-links-lower" />
-  </tal:search_requested>
-
+      </div>
+    </tal:search_result>
+  </div>
 </div>
 
 </body>
