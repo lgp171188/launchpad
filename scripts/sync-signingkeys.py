@@ -7,6 +7,5 @@ import _pythonpath
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
 
 if __name__ == '__main__':
-    script = SyncSigningKeysScript(
-        'lp.archivepublisher.scripts.sync_signingkeys')
+    script = SyncSigningKeysScript('sync-signingkeys')
     script.lock_and_run()
