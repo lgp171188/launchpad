@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the renovated slave scanner aka BuilddManager."""
@@ -40,6 +40,7 @@ from lp.buildmaster.interactor import (
     BuilderInteractor,
     BuilderSlave,
     extract_vitals_from_db,
+    shut_down_default_threadpool,
     )
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
@@ -120,6 +121,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         hoary = ubuntu.getSeries('hoary')
         self.test_publisher.setUpDefaultDistroSeries(hoary)
         self.test_publisher.addFakeChroots(db_only=True)
+        self.addCleanup(shut_down_default_threadpool)
 
     def _resetBuilder(self, builder):
         """Reset the given builder and its job."""
@@ -660,6 +662,10 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
+    def setUp(self):
+        super(TestSlaveScannerWithLibrarian, self).setUp()
+        self.addCleanup(shut_down_default_threadpool)
+
     @defer.inlineCallbacks
     def test_end_to_end(self):
         # Test that SlaveScanner.scan() successfully finds, dispatches,
@@ -835,6 +841,10 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
 class TestSlaveScannerWithoutDB(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest
+
+    def setUp(self):
+        super(TestSlaveScannerWithoutDB, self).setUp()
+        self.addCleanup(shut_down_default_threadpool)
 
     def getScanner(self, builder_factory=None, interactor=None, slave=None,
                    behaviour=None):
@@ -1028,6 +1038,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         builder_name = BOB_THE_BUILDER_NAME
         self.builder = getUtility(IBuilderSet)[builder_name]
         self.builder.virtualized = True
+        self.addCleanup(shut_down_default_threadpool)
 
     @property
     def vitals(self):
