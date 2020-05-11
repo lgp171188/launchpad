@@ -37,19 +37,20 @@ class OCIRecipeDistroArchSeriesVocabulary(StormVocabularyBase):
 
 @implementer(IHugeVocabulary)
 class OCIRecipeVocabulary(StormVocabularyBase):
-    """All OCI Recipes of a given OCI Project."""
+    """All OCI Recipes of a given OCI project."""
 
     _table = OCIRecipe
     displayname = 'Select a recipe'
     step_title = 'Search'
 
     def toTerm(self, recipe):
-        title = "~%s/%s" % (recipe.owner.name, recipe.name)
-        return SimpleTerm(recipe, title, title)
+        token = "%s/%s" % (recipe.owner.name, recipe.name)
+        title = "~%s" % token
+        return SimpleTerm(recipe, token, title)
 
     def getTermByToken(self, token):
         # Remove the starting tilde, and split owner and recipe name.
-        owner_name, recipe_name = token[1:].split('/')
+        owner_name, recipe_name = token.split('/')
         recipe = self.context.searchRecipes(recipe_name, owner_name).one()
         if recipe is None:
             raise LookupError(token)
@@ -58,9 +59,5 @@ class OCIRecipeVocabulary(StormVocabularyBase):
     def search(self, query, vocab_filter=None):
         return self.context.searchRecipes(query)
 
-    def __iter__(self):
-        for obj in self.context.getRecipes():
-            yield self.toTerm(obj)
-
-    def __len__(self):
-        return self.context.getRecipes().count()
+    def _entries(self):
+        return self.context.getRecipes()

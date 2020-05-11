@@ -394,21 +394,15 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         oci_project2 = self.factory.makeOCIProject(registrant=owner)
 
         oci_proj1_recipes = [
-            self.factory.makeOCIRecipe(oci_project=oci_project1,
-                                       registrant=owner),
-            self.factory.makeOCIRecipe(oci_project=oci_project1,
-                                       registrant=owner),
-            self.factory.makeOCIRecipe(oci_project=oci_project1,
-                                       registrant=owner)
-        ]
+            self.factory.makeOCIRecipe(
+                oci_project=oci_project1, registrant=owner)
+            for _ in range(3)]
 
         # Recipes for project 2
         oci_proj2_recipes = [
-            self.factory.makeOCIRecipe(oci_project=oci_project2,
-                                       registrant=owner),
-            self.factory.makeOCIRecipe(oci_project=oci_project2,
-                                       registrant=owner)
-        ]
+            self.factory.makeOCIRecipe(
+                oci_project=oci_project2, registrant=owner)
+            for _ in range(2)]
 
         self.assertIsNone(oci_project1.getOfficialRecipe())
         self.assertIsNone(oci_project2.getOfficialRecipe())
@@ -418,7 +412,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
             oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
-            self.assertEqual(1, recorder.count)
+            self.assertEqual(2, recorder.count)
 
         self.assertIsNone(oci_project2.getOfficialRecipe())
         self.assertEqual(
