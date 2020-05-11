@@ -454,10 +454,9 @@ The Reply-To address generation is straightforward:
     >>> get_bugmail_replyto_address(bug_four)
     u'Bug 4 <4@bugs.launchpad.net>'
 
-In order to implement proper DMARC-compliant bug notification email
-messages to be sent, the From address generator is also quite straightforward
-and uses the bug's email address for the From address, while adjusting the
-friendly display name field.
+In order to send DMARC-compliant bug notifications, the From address generator
+is also quite straightforward and uses the bug's email address for the From
+address, while adjusting the friendly display name field.
 
 This applies for all users.  For example, Stuart has four email addresses:
 
@@ -495,7 +494,7 @@ This also happens for the team janitor:
     >>> get_bugmail_from_address(janitor, bug_four)
     'Team Membership Janitor <4@bugs.launchpad.net>'
 
-And also applies for the Launchpad Janitor:
+And it also applies for the Launchpad Janitor:
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> lp_janitor = getUtility(ILaunchpadCelebrities).janitor

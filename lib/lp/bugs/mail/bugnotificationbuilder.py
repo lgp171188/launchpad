@@ -45,7 +45,7 @@ def get_bugmail_from_address(person, bug):
     if person == getUtility(ILaunchpadCelebrities).janitor:
         displayname = 'Launchpad Bug Tracker'
     else:
-        displayname = person.displayname
+        displayname = person.display_name
 
     return format_address(displayname,
                           "%s@%s" % (bug.id, config.launchpad.bugs_domain))
