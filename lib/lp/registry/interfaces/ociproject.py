@@ -97,9 +97,6 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getOfficialRecipe():
         """Gets the official recipe for this OCI project."""
 
-    def setOfficialRecipe(recipe):
-        """Sets the given recipe as the official one."""
-
 
 class IOCIProjectEditableAttributes(IBugTarget):
     """IOCIProject attributes that can be edited.
@@ -134,6 +131,10 @@ class IOCIProjectEdit(Interface):
     def newSeries(name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
         """Creates a new `IOCIProjectSeries`."""
+
+    def setOfficialRecipe(recipe):
+        """Sets the given recipe as the official one. If recipe is None,
+        the current official recipe will be unset."""
 
 
 class IOCIProjectLegitimate(Interface):

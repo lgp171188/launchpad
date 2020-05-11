@@ -23,6 +23,7 @@ from testtools.matchers import (
     )
 import transaction
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
@@ -389,10 +390,13 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 recipe.owner, url, image_name, credentials)
 
     def test_set_recipe_as_official_for_oci_project(self):
-        owner = self.factory.makePerson()
+        distro = self.factory.makeDistribution()
+        owner = distro.owner
         login_person(owner)
-        oci_project1 = self.factory.makeOCIProject(registrant=owner)
-        oci_project2 = self.factory.makeOCIProject(registrant=owner)
+        oci_project1 = self.factory.makeOCIProject(
+            registrant=owner, pillar=distro)
+        oci_project2 = self.factory.makeOCIProject(
+            registrant=owner, pillar=distro)
 
         oci_proj1_recipes = [
             self.factory.makeOCIRecipe(
@@ -413,7 +417,9 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
             oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
-            self.assertEqual(2, recorder.count)
+            # 3 queries: 1 for permission check, 1 to get the current
+            # official, 1 to set the new one.
+            self.assertEqual(3, recorder.count)
 
         self.assertIsNone(oci_project2.getOfficialRecipe())
         self.assertEqual(
@@ -431,16 +437,31 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             self.assertFalse(recipe.official)
 
     def test_set_recipe_as_official_for_wrong_oci_project(self):
-        owner = self.factory.makePerson()
+        distro = self.factory.makeDistribution()
+        owner = distro.owner
         login_person(owner)
-        oci_project = self.factory.makeOCIProject(registrant=owner)
-        another_oci_project = self.factory.makeOCIProject(registrant=owner)
+        oci_project = self.factory.makeOCIProject(
+            registrant=owner, pillar=distro)
+        another_oci_project = self.factory.makeOCIProject(
+            registrant=owner, pillar=distro)
 
         recipe = self.factory.makeOCIRecipe(
             oci_project=oci_project, registrant=owner)
 
         self.assertRaises(
             ValueError, another_oci_project.setOfficialRecipe, recipe)
+
+    def test_permission_check_on_setOfficialRecipe(self):
+        distro = self.factory.makeDistribution()
+        owner = distro.owner
+        login_person(owner)
+        oci_project = self.factory.makeOCIProject(
+            registrant=owner, pillar=distro)
+
+        another_user = self.factory.makePerson()
+        with person_logged_in(another_user):
+            self.assertRaises(
+                Unauthorized, getattr, oci_project, 'setOfficialRecipe')
 
     def test_oci_project_get_recipe_by_name_and_owner(self):
         owner = self.factory.makePerson()
