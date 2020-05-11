@@ -406,10 +406,9 @@
     <!-- Define the widget used by OCIRecipeChoice fields. -->
     <view
       type="zope.publisher.interfaces.browser.IBrowserRequest"
-      for="lp.oci.browser.fields.ocirecipe.OCIRecipeField
-        lp.services.webapp.vocabulary.IHugeVocabulary"
+      for="lp.oci.vocabularies.OCIRecipeVocabulary"
       provides="zope.formlib.interfaces.IInputWidget"
-      factory="lp.app.widgets.popup.OCIRecipePickerWidget"
+      factory="lp.app.widgets.popup.VocabularyPickerWidget"
       permission="zope.Public"
       />
 

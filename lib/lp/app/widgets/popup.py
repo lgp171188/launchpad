@@ -261,11 +261,6 @@ class PersonPickerWidget(VocabularyPickerWidget):
         return '/people/'
 
 
-class OCIRecipePickerWidget(VocabularyPickerWidget):
-    header = 'Select a Recipe'
-    step_title = 'Search for the recipe.'
-
-
 class BugTrackerPickerWidget(VocabularyPickerWidget):
 
     __call__ = ViewPageTemplateFile('templates/bugtracker-picker.pt')

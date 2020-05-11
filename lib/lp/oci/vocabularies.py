@@ -40,6 +40,8 @@ class OCIRecipeVocabulary(StormVocabularyBase):
     """All OCI Recipes of a given OCI Project."""
 
     _table = OCIRecipe
+    displayname = 'Select a recipe'
+    step_title = 'Search'
 
     def toTerm(self, recipe):
         title = "~%s/%s" % (recipe.owner.name, recipe.name)

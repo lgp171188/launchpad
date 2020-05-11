@@ -17,6 +17,7 @@ __all__ = [
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import implementer
+from zope.schema import Choice
 
 from lp.app.browser.launchpadform import (
     action,
@@ -26,7 +27,6 @@ from lp.app.browser.launchpadform import (
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
-from lp.oci.browser.fields.ocirecipe import OCIRecipeField
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
@@ -178,7 +178,7 @@ class OCIProjectEditView(LaunchpadEditFormView):
     def extendFields(self):
         official_recipe = self.context.getOfficialRecipe()
         self.form_fields += form.Fields(
-            OCIRecipeField(
+            Choice(
                 __name__="official_recipe", title=u"Official recipe",
                 required=False, vocabulary="OCIRecipe",
                 default=official_recipe))
