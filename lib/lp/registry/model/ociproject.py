@@ -182,7 +182,8 @@ class OCIProject(BugTargetBase, StormBase):
         """See `IOCIProject`."""
         if recipe is not None and recipe.oci_project != self:
             raise ValueError(
-                "OCI recipe cannot be set as official of another OCI project.")
+                "An OCI recipe cannot be set as the official recipe of "
+                "another OCI project.")
         previous = self.getOfficialRecipe()
         if previous != recipe:
             if previous is not None:
