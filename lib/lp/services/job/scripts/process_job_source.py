@@ -147,8 +147,6 @@ class ProcessJobSource(LaunchpadScript):
             log.startLogging(sys.stdout)
         failure_count = 0
         for job_source_name in self.job_source_names:
-            self.logger.info(
-                'Calling ProcessSingleJobSource(%s)', job_source_name)
             script = ProcessSingleJobSource(
                 test_args=[job_source_name], logger=self.logger)
             # This is easier than unparsing all the possible options.
