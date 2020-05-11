@@ -12,6 +12,7 @@ import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
+    Is,
     MatchesDict,
     MatchesStructure,
     )
@@ -181,6 +182,7 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
             "action": Equals("status-changed"),
             "recipe": Equals(
                  canonical_url(self.build.recipe, force_local_path=True)),
+            "build_request": Is(None),
             "status": Equals("Successfully built"),
             'registry_upload_status': Equals("Unscheduled"),
             }

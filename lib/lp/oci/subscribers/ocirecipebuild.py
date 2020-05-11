@@ -27,7 +27,7 @@ def _trigger_oci_recipe_build_webhook(build, action):
             }
         payload.update(compose_webhook_payload(
             IOCIRecipeBuild, build,
-            ["recipe", "status", "registry_upload_status"]))
+            ["recipe", "build_request", "status", "registry_upload_status"]))
         getUtility(IWebhookSet).trigger(
             build.recipe, "oci-recipe:build:0.1", payload)
 
@@ -35,6 +35,7 @@ def _trigger_oci_recipe_build_webhook(build, action):
 def oci_recipe_build_created(build, event):
     """Trigger events when a new OCI recipe build is created."""
     _trigger_oci_recipe_build_webhook(build, "created")
+
 
 def oci_recipe_build_modified(build, event):
     """Trigger events when OCI recipe build statuses change."""

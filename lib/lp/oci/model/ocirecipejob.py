@@ -241,7 +241,8 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
                 "Skipping %r because the requester has been deleted." % self)
             return
         try:
-            self.builds = self.recipe.requestBuildsFromJob(requester)
+            self.builds = self.recipe.requestBuildsFromJob(
+                requester, build_request=self.build_request)
             self.error_message = None
         except self.retry_error_types:
             raise

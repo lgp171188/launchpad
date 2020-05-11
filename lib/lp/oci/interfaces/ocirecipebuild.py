@@ -40,7 +40,10 @@ from zope.schema import (
 from lp import _
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
-from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeBuildRequest,
+    )
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 from lp.services.librarian.interfaces import ILibraryFileAlias
@@ -81,6 +84,11 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
 
 class IOCIRecipeBuildView(IPackageBuild):
     """`IOCIRecipeBuild` attributes that require launchpad.View permission."""
+
+    build_request = Reference(
+        IOCIRecipeBuildRequest,
+        title=_("The build request that caused this build to be created."),
+        required=False, readonly=True)
 
     requester = exported(PublicPersonChoice(
         title=_("Requester"),
