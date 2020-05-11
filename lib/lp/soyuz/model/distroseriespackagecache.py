@@ -24,10 +24,10 @@ from zope.interface import implementer
 from lp.services.database import bulk
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.distroseriespackagecache import (
     IDistroSeriesPackageCache,
     )
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -61,10 +61,8 @@ class DistroSeriesPackageCache(SQLBase):
                     DistroArchSeries.id, tables=[DistroArchSeries],
                     where=DistroArchSeries.distroseries == distroseries)),
             BinaryPackagePublishingHistory.archive == archive,
-            BinaryPackagePublishingHistory.status.is_in((
-                PackagePublishingStatus.PENDING,
-                PackagePublishingStatus.PUBLISHED))).config(
-                    distinct=True)
+            BinaryPackagePublishingHistory.status.is_in(
+                active_publishing_status)).config(distinct=True)
         return bulk.load(BinaryPackageName, bpn_ids)
 
     @classmethod
@@ -134,9 +132,8 @@ class DistroSeriesPackageCache(SQLBase):
                     DistroArchSeries.id, tables=[DistroArchSeries],
                     where=DistroArchSeries.distroseries == distroseries)),
             BinaryPackagePublishingHistory.archive == archive,
-            BinaryPackagePublishingHistory.status.is_in((
-                PackagePublishingStatus.PENDING,
-                PackagePublishingStatus.PUBLISHED))
+            BinaryPackagePublishingHistory.status.is_in(
+                active_publishing_status),
             ).group_by(
                 BinaryPackageRelease.binarypackagenameID,
                 BinaryPackageRelease.summary,

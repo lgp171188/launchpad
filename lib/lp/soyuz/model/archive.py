@@ -1915,8 +1915,7 @@ class Archive(SQLBase):
             # publication.
             published_sources = from_archive.getPublishedSources(
                 name=name, distroseries=from_series_obj, exact_match=True,
-                status=(PackagePublishingStatus.PUBLISHED,
-                        PackagePublishingStatus.PENDING))
+                status=active_publishing_status)
             first_source = published_sources.first()
             if first_source is not None:
                 sources.append(first_source)

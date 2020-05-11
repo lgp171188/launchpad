@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test BuilderInteractor features."""
@@ -16,13 +16,8 @@ import signal
 import tempfile
 
 from lpbuildd.slave import BuilderStatus
-from lpbuildd.tests.harness import BuilddSlaveTestSetup
 from six.moves import xmlrpc_client
-from testtools.matchers import (
-    ContainsAll,
-    HasLength,
-    MatchesDict,
-    )
+from testtools.matchers import ContainsAll
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import (
     assert_fails_with,
@@ -31,12 +26,10 @@ from testtools.twistedsupport import (
     SynchronousDeferredRunTest,
     )
 import treq
-from twisted.internet import (
-    defer,
-    reactor as default_reactor,
-    )
+from twisted.internet import defer
 from twisted.internet.task import Clock
 from twisted.python.failure import Failure
+from twisted.python.threadpool import ThreadPool
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import (
@@ -49,7 +42,7 @@ from lp.buildmaster.interactor import (
     BuilderInteractor,
     BuilderSlave,
     extract_vitals_from_db,
-    LimitedHTTPConnectionPool,
+    shut_down_default_threadpool,
     )
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
@@ -122,6 +115,10 @@ class MockBuilderFactory:
 class TestBuilderInteractor(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+
+    def setUp(self):
+        super(TestBuilderInteractor, self).setUp()
+        self.addCleanup(shut_down_default_threadpool)
 
     def test_extractBuildStatus_baseline(self):
         # extractBuildStatus picks the name of the build status out of a
@@ -474,6 +471,7 @@ class TestSlave(TestCase):
     def setUp(self):
         super(TestSlave, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.addCleanup(shut_down_default_threadpool)
 
     def test_abort(self):
         slave = self.slave_helper.getClientSlave()
@@ -673,8 +671,11 @@ class TestSlaveTimeouts(TestCase):
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
         self.proxy = DeadProxy("url")
+        threadpool = ThreadPool()
+        threadpool.start()
+        self.addCleanup(threadpool.stop)
         self.slave = self.slave_helper.getClientSlave(
-            reactor=self.clock, proxy=self.proxy)
+            reactor=self.clock, proxy=self.proxy, threadpool=threadpool)
 
     def assertCancelled(self, d, timeout=None):
         self.clock.advance((timeout or config.builddmaster.socket_timeout) + 1)
@@ -726,7 +727,12 @@ class TestSlaveConnectionTimeouts(TestCase):
         # only the config value should.
         self.pushConfig('builddmaster', socket_timeout=180)
 
-        slave = self.slave_helper.getClientSlave(reactor=self.clock)
+        threadpool = ThreadPool()
+        threadpool.start()
+        self.addCleanup(threadpool.stop)
+
+        slave = self.slave_helper.getClientSlave(
+            reactor=self.clock, threadpool=threadpool)
         d = slave.echo()
         # Advance past the 30 second timeout.  The real reactor will
         # never call connectTCP() since we're not spinning it up.  This
@@ -750,6 +756,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
     def setUp(self):
         super(TestSlaveWithLibrarian, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.addCleanup(shut_down_default_threadpool)
 
     def test_ensurepresent_librarian(self):
         # ensurepresent, when given an http URL for a file will download the
@@ -803,7 +810,6 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
             for sha1, local_file in files:
                 with open(local_file) as f:
                     self.assertEqual(content_map[sha1], f.read())
-            return slave.pool.closeCachedConnections()
 
         def finished_uploading(ignored):
             d = slave.getFiles(files)
@@ -831,10 +837,13 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
     def test_getFiles_open_connections(self):
         # getFiles honours the configured limit on active download
         # connections.
-        pool = LimitedHTTPConnectionPool(default_reactor, 2)
+        threadpool = ThreadPool(minthreads=1, maxthreads=2)
+        threadpool.start()
+        self.addCleanup(threadpool.stop)
+
         contents = [self.factory.getUniqueString() for _ in range(10)]
         self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave(pool=pool)
+        slave = self.slave_helper.getClientSlave(threadpool=threadpool)
         files = []
         content_map = {}
 
@@ -844,12 +853,8 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
             for sha1, local_file in files:
                 with open(local_file) as f:
                     self.assertEqual(content_map[sha1], f.read())
-            # Only two connections were used.
-            port = BuilddSlaveTestSetup().daemon_port
-            self.assertThat(
-                slave.pool._connections,
-                MatchesDict({("http", "localhost", port): HasLength(2)}))
-            return slave.pool.closeCachedConnections()
+            # Only two workers were used.
+            self.assertEqual(2, threadpool.workers)
 
         def finished_uploading(ignored):
             d = slave.getFiles(files)
@@ -884,7 +889,6 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         yield slave.getFiles([(lf.content.sha1, os.fdopen(temp_fd, "w"))])
         with open(temp_name) as f:
             self.assertEqual('content', f.read())
-        yield slave.pool.closeCachedConnections()
 
     @defer.inlineCallbacks
     def test_getFiles_with_empty_file(self):
@@ -898,4 +902,3 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         yield slave.getFiles([(empty_sha1, temp_name)])
         with open(temp_name) as f:
             self.assertEqual(b'', f.read())
-        yield slave.pool.closeCachedConnections()

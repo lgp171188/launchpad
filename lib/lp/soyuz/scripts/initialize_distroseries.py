@@ -29,7 +29,6 @@ from lp.services.scripts import log
 from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
     ArchivePurpose,
-    PackagePublishingStatus,
     PackageUploadStatus,
     )
 from lp.soyuz.interfaces.archive import (
@@ -45,6 +44,7 @@ from lp.soyuz.interfaces.packageset import (
     IPackagesetSet,
     NoSuchPackageSet,
     )
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.interfaces.queue import IPackageUploadSet
 from lp.soyuz.model.binarypackagebuild import COPY_ARCHIVE_SCORE_PENALTY
 from lp.soyuz.model.packageset import Packageset
@@ -577,9 +577,7 @@ class InitializeDistroSeries:
                                 INIT_POCKETS.items()):
                             sources = archive.getPublishedSources(
                                 distroseries=parent, pocket=source_pocket,
-                                status=(PackagePublishingStatus.PENDING,
-                                        PackagePublishingStatus.PUBLISHED),
-                                name=spns)
+                                status=active_publishing_status, name=spns)
                             sources_published.extend(do_copy(
                                 sources, target_archive, self.distroseries,
                                 target_pocket,

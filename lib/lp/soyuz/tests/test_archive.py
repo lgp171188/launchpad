@@ -113,6 +113,10 @@ from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJobSource
+from lp.soyuz.interfaces.publishing import (
+    active_publishing_status,
+    inactive_publishing_status,
+    )
 from lp.soyuz.model.archive import (
     Archive,
     validate_ppa,
@@ -2580,10 +2584,6 @@ class TestGetPublishedSources(TestCaseWithFactory):
         # publications.
         self.assertEqual(3, cprov_archive.getPublishedSources().count())
         # Various filters.
-        active_status = [PackagePublishingStatus.PENDING,
-                         PackagePublishingStatus.PUBLISHED]
-        inactive_status = [PackagePublishingStatus.SUPERSEDED,
-                           PackagePublishingStatus.DELETED]
         warty = cprov_archive.distribution['warty']
         hoary = cprov_archive.distribution['hoary']
         breezy_autotest = cprov_archive.distribution['breezy-autotest']
@@ -2616,9 +2616,9 @@ class TestGetPublishedSources(TestCaseWithFactory):
         self.assertEqual(3, cprov_archive.getPublishedSources(
             status=PackagePublishingStatus.PUBLISHED).count())
         self.assertEqual(3, cprov_archive.getPublishedSources(
-            status=active_status).count())
+            status=active_publishing_status).count())
         self.assertEqual(0, cprov_archive.getPublishedSources(
-            status=inactive_status).count())
+            status=inactive_publishing_status).count())
         self.assertEqual(2, cprov_archive.getPublishedSources(
             distroseries=warty).count())
         self.assertEqual(0, cprov_archive.getPublishedSources(
