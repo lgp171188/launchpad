@@ -60,6 +60,7 @@ from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
     api_url,
+    login_admin,
     login_person,
     person_logged_in,
     StormStatementRecorder,
@@ -441,6 +442,23 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertRaises(
             ValueError, another_oci_project.setOfficialRecipe, recipe)
 
+    def test_oci_project_get_recipe_by_name_and_owner(self):
+        owner = self.factory.makePerson()
+        login_person(owner)
+        oci_project = self.factory.makeOCIProject(registrant=owner)
+
+        recipe = self.factory.makeOCIRecipe(
+            oci_project=oci_project, registrant=owner, owner=owner,
+            name="foo-recipe")
+
+        self.assertEqual(
+            recipe,
+            oci_project.getRecipeByNameAndOwner(recipe.name, owner.name))
+        self.assertIsNone(
+            oci_project.getRecipeByNameAndOwner(recipe.name, "someone"))
+        self.assertIsNone(
+            oci_project.getRecipeByNameAndOwner("some-recipe", owner.name))
+
     def test_search_recipe_from_oci_project(self):
         owner = self.factory.makePerson()
         login_person(owner)
@@ -448,16 +466,49 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         another_oci_project = self.factory.makeOCIProject(registrant=owner)
 
         recipe1 = self.factory.makeOCIRecipe(
-            name="something", oci_project=oci_project, registrant=owner)
+            name="a something", oci_project=oci_project, registrant=owner)
         recipe2 = self.factory.makeOCIRecipe(
             name="banana", oci_project=oci_project, registrant=owner)
-        recipe_from_another_project = self.factory.makeOCIRecipe(
+        # Recipe from another project.
+        self.factory.makeOCIRecipe(
             name="something too", oci_project=another_oci_project,
             registrant=owner)
 
         self.assertEqual([recipe1], list(oci_project.searchRecipes("somet")))
         self.assertEqual([recipe2], list(oci_project.searchRecipes("bana")))
         self.assertEqual([], list(oci_project.searchRecipes("foo")))
+
+    def test_search_recipe_from_oci_project_is_ordered(self):
+        login_admin()
+        team = self.factory.makeTeam()
+        owner1 = self.factory.makePerson(name="a-user")
+        owner2 = self.factory.makePerson(name="b-user")
+        owner3 = self.factory.makePerson(name="foo-person")
+        team.addMember(owner1, team)
+        team.addMember(owner2, team)
+        team.addMember(owner3, team)
+
+        distro = self.factory.makeDistribution(oci_project_admin=team)
+        oci_project = self.factory.makeOCIProject(
+            registrant=team, pillar=distro)
+        recipe1 = self.factory.makeOCIRecipe(
+            name="same-name", oci_project=oci_project,
+            registrant=owner1, owner=owner1)
+        recipe2 = self.factory.makeOCIRecipe(
+            name="same-name", oci_project=oci_project,
+            registrant=owner2, owner=owner2)
+        recipe3 = self.factory.makeOCIRecipe(
+            name="a-first", oci_project=oci_project,
+            registrant=owner1, owner=owner1)
+        # This one should be filtered out.
+        self.factory.makeOCIRecipe(
+            name="xxx", oci_project=oci_project,
+            registrant=owner3, owner=owner3)
+
+        # It should be sorted by owner's name first, then recipe name.
+        self.assertEqual(
+            [recipe3, recipe1, recipe2],
+            list(oci_project.searchRecipes(u"a")))
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):

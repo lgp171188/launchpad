@@ -182,7 +182,6 @@ class OCIProjectEditView(LaunchpadEditFormView):
                 __name__="official_recipe", title=u"Official recipe",
                 required=False, vocabulary="OCIRecipe",
                 default=official_recipe))
-        self.widget_errors['official_recipe'] = ''
 
     @property
     def label(self):

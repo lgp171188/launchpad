@@ -51,7 +51,7 @@ class OCIRecipeVocabulary(StormVocabularyBase):
     def getTermByToken(self, token):
         # Remove the starting tilde, and split owner and recipe name.
         owner_name, recipe_name = token.split('/')
-        recipe = self.context.searchRecipes(recipe_name, owner_name).one()
+        recipe = self.context.getRecipeByNameAndOwner(recipe_name, owner_name)
         if recipe is None:
             raise LookupError(token)
         return self.toTerm(recipe)

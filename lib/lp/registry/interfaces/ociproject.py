@@ -85,10 +85,13 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
 
+    def getRecipeByNameAndOwner(recipe_name, owner_name):
+        """Returns the exact match search for recipe_name AND owner_name."""
+
     def getRecipes():
         """Returns the set of OCI Recipes for this project."""
 
-    def searchRecipes(recipe_name, owner_name):
+    def searchRecipes(query):
         """Searches for recipes in this OCI project."""
 
     def getOfficialRecipe():

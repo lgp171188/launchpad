@@ -157,14 +157,21 @@ class OCIProject(BugTargetBase, StormBase):
             OCIRecipe.oci_project == self)
         return rs.order_by(Person.name, OCIRecipe.name)
 
-    def searchRecipes(self, recipe_name, owner_name=None):
+    def getRecipeByNameAndOwner(self, recipe_name, owner_name):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
         q = self.getRecipes().find(
-            OCIRecipe.name.contains_string(recipe_name))
-        if owner_name is not None:
-            q = q.find(Person.name == owner_name)
-        return q
+                OCIRecipe.name == recipe_name,
+                Person.name == owner_name)
+        return q.one()
+
+    def searchRecipes(self, query):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        q = self.getRecipes().find(
+            OCIRecipe.name.contains_string(query) |
+            Person.name.contains_string(query))
+        return q.order_by(Person.name, OCIRecipe.name)
 
     def getOfficialRecipe(self):
         """See `IOCIProject`."""
