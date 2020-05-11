@@ -121,7 +121,9 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     name = Unicode(name="name", allow_none=False)
     description = Unicode(name="description", allow_none=True)
 
-    official = Bool(name="official", default=False)
+    # OCIRecipe.official shouldn't be set directly. Instead, call
+    # oci_recipe.setOfficialRecipe method.
+    _official = Bool(name="official", default=False)
 
     git_repository_id = Int(name="git_repository", allow_none=True)
     git_repository = Reference(git_repository_id, "GitRepository.id")
@@ -145,7 +147,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.oci_project = oci_project
         self.description = description
         self.build_file = build_file
-        self.official = official
+        self._official = official
         self.require_virtualized = require_virtualized
         self.build_daily = build_daily
         self.date_created = date_created
@@ -155,6 +157,11 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     @property
     def valid_webhook_event_types(self):
         return ["oci-recipe:build:0.1"]
+
+    @property
+    def official(self):
+        """See `IOCIProject.setOfficialRecipe` method."""
+        return self._official
 
     def destroySelf(self):
         """See `IOCIRecipe`."""

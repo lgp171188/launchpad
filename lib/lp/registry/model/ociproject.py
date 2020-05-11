@@ -176,7 +176,7 @@ class OCIProject(BugTargetBase, StormBase):
     def getOfficialRecipe(self):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        return self.getRecipes().find(OCIRecipe.official == True).one()
+        return self.getRecipes().find(OCIRecipe._official == True).one()
 
     def setOfficialRecipe(self, recipe):
         """See `IOCIProject`."""
@@ -187,9 +187,9 @@ class OCIProject(BugTargetBase, StormBase):
         previous = self.getOfficialRecipe()
         if previous != recipe:
             if previous is not None:
-                previous.official = False
+                previous._official = False
             if recipe is not None:
-                recipe.official = True
+                recipe._official = True
 
 
 @implementer(IOCIProjectSet)

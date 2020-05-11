@@ -23,7 +23,10 @@ from testtools.matchers import (
     )
 import transaction
 from zope.component import getUtility
-from zope.security.interfaces import Unauthorized
+from zope.security.interfaces import (
+    ForbiddenAttribute,
+    Unauthorized,
+    )
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
@@ -389,6 +392,11 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 recipe.newPushRule,
                 recipe.owner, url, image_name, credentials)
 
+    def test_set_official_directly_is_forbidden(self):
+        recipe = self.factory.makeOCIRecipe()
+        self.assertRaises(
+            ForbiddenAttribute, setattr, recipe, 'official', True)
+
     def test_set_recipe_as_official_for_oci_project(self):
         distro = self.factory.makeDistribution()
         owner = distro.owner
@@ -400,13 +408,13 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
         oci_proj1_recipes = [
             self.factory.makeOCIRecipe(
-                oci_project=oci_project1, registrant=owner)
+                oci_project=oci_project1, registrant=owner, owner=owner)
             for _ in range(3)]
 
         # Recipes for project 2
         oci_proj2_recipes = [
             self.factory.makeOCIRecipe(
-                oci_project=oci_project2, registrant=owner)
+                oci_project=oci_project2, registrant=owner, owner=owner)
             for _ in range(2)]
 
         self.assertIsNone(oci_project1.getOfficialRecipe())
@@ -417,9 +425,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
             oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
-            # 3 queries: 1 for permission check, 1 to get the current
-            # official, 1 to set the new one.
-            self.assertEqual(3, recorder.count)
+            self.assertEqual(2, recorder.count)
 
         self.assertIsNone(oci_project2.getOfficialRecipe())
         self.assertEqual(

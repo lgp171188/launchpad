@@ -200,6 +200,13 @@ class IOCIRecipeView(Interface):
         "The architectures that are available to be enabled or disabled for "
         "this OCI recipe.")
 
+    # This should only be set by using IOCIProject.setOfficialRecipe
+    official = Bool(
+        title=_("OCI project official"),
+        required=False,
+        description=_("True if this recipe is official for its OCI project."),
+        readonly=True)
+
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
         processors=List(
@@ -340,7 +347,7 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         readonly=True))
 
-    official = Bool(
+    _official = Bool(
         title=_("OCI project official"),
         required=True,
         default=False,
