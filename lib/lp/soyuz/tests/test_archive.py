@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Archive features."""
@@ -172,15 +172,17 @@ class TestGetPublicationsInArchive(TestCaseWithFactory):
                 )
         return archives, sourcepackagename
 
-    def getPublications(self, sourcepackagename, archives, distribution):
+    def getPublications(self, sourcepackagename, archives, distribution=None,
+                        distroseries=None):
         return getUtility(IArchiveSet).getPublicationsInArchives(
-            sourcepackagename, archives, distribution=distribution)
+            sourcepackagename, archives, distribution=distribution,
+            distroseries=distroseries)
 
     def test_getPublications_returns_all_published_publications(self):
         # Returns all currently published publications for archives
         archives, sourcepackagename = self.makeArchivesWithPublications()
         results = self.getPublications(
-            sourcepackagename, archives, archives[0].distribution)
+            sourcepackagename, archives, distribution=archives[0].distribution)
         self.assertEqual(3, results.count())
 
     def test_getPublications_empty_list_of_archives(self):
@@ -188,7 +190,7 @@ class TestGetPublicationsInArchive(TestCaseWithFactory):
         # resultset.
         archives, sourcepackagename = self.makeArchivesWithPublications()
         results = self.getPublications(
-            sourcepackagename, [], archives[0].distribution)
+            sourcepackagename, [], distribution=archives[0].distribution)
         self.assertEqual([], list(results))
 
     def assertPublicationsFromArchives(self, publications, archives):
@@ -200,7 +202,8 @@ class TestGetPublicationsInArchive(TestCaseWithFactory):
         # Returns only publications for the specified archives
         archives, sourcepackagename = self.makeArchivesWithPublications()
         results = self.getPublications(
-            sourcepackagename, [archives[0]], archives[0].distribution)
+            sourcepackagename, [archives[0]],
+            distribution=archives[0].distribution)
         self.assertPublicationsFromArchives(results, [archives[0]])
 
     def test_getPublications_returns_only_published_publications(self):
@@ -211,7 +214,7 @@ class TestGetPublicationsInArchive(TestCaseWithFactory):
             archive=archive, sourcepackagename=sourcepackagename,
             status=PackagePublishingStatus.PENDING)
         results = self.getPublications(
-            sourcepackagename, [archive], archive.distribution)
+            sourcepackagename, [archive], distribution=archive.distribution)
         self.assertEqual([], list(results))
 
     def publishSourceInNewArchive(self, sourcepackagename):
@@ -235,6 +238,27 @@ class TestGetPublicationsInArchive(TestCaseWithFactory):
             sourcepackagename, [archive, other_archive],
             distribution=archive.distribution)
         self.assertPublicationsFromArchives(results, [archive])
+
+    def test_getPublications_for_specific_distroseries(self):
+        # Results can be filtered for specific distroseries.
+        archives = self.makeArchivesForOneDistribution()
+        sourcepackagename = self.factory.makeSourcePackageName()
+        distroseries_list = [
+            self.factory.makeDistroSeries(
+                distribution=archives[0].distribution)
+            for _ in range(3)]
+        for archive in archives:
+            for distroseries in distroseries_list:
+                self.factory.makeSourcePackagePublishingHistory(
+                    sourcepackagename=sourcepackagename,
+                    distroseries=distroseries, archive=archive,
+                    status=PackagePublishingStatus.PUBLISHED)
+        for distroseries in distroseries_list:
+            results = self.getPublications(
+                sourcepackagename, archives, distroseries=distroseries)
+            self.assertPublicationsFromArchives(results, archives)
+            for publication in results:
+                self.assertEqual(distroseries, publication.distroseries)
 
 
 class TestArchiveRepositorySize(TestCaseWithFactory):
