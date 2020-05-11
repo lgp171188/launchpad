@@ -8,6 +8,7 @@ __all__ = [
     'connect',
     'convert_storm_clause_to_string',
     'cursor',
+    'disconnect_stores',
     'flush_database_caches',
     'flush_database_updates',
     'get_transaction_timestamp',
@@ -50,6 +51,7 @@ from storm.locals import (
     Storm,
     )
 from storm.zope.interfaces import IZStorm
+import transaction
 from twisted.python.util import mergeFunctionMetadata
 from zope.component import getUtility
 from zope.interface import implementer
@@ -631,3 +633,24 @@ class cursor:
 def session_store():
     """Return a store connected to the session DB."""
     return getUtility(IZStorm).get('session', 'launchpad-session:')
+
+
+def disconnect_stores():
+    """Disconnect Storm stores.
+
+    Note that any existing Storm objects will be broken, so this should only
+    be used in situations where we can guarantee that we have no such object
+    references in hand (other than in Storm caches, which will be dropped as
+    a process of removing stores anyway).
+    """
+    zstorm = getUtility(IZStorm)
+    stores = [
+        store for name, store in zstorm.iterstores() if name != 'session']
+
+    # If we have any stores, abort the transaction and close them.
+    if stores:
+        for store in stores:
+            zstorm.remove(store)
+        transaction.abort()
+        for store in stores:
+            store.close()
