@@ -23,10 +23,10 @@ from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.distributionsourcepackagecache import (
     IDistributionSourcePackageCache,
     )
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
@@ -76,9 +76,8 @@ class DistributionSourcePackageCache(SQLBase):
             spn_ids = IStore(SourcePackagePublishingHistory).find(
                 SourcePackagePublishingHistory.sourcepackagenameID,
                 SourcePackagePublishingHistory.archive == archive,
-                SourcePackagePublishingHistory.status.is_in((
-                    PackagePublishingStatus.PENDING,
-                    PackagePublishingStatus.PUBLISHED)))
+                SourcePackagePublishingHistory.status.is_in(
+                    active_publishing_status))
         return bulk.load(SourcePackageName, spn_ids.config(distinct=True))
 
     @classmethod
@@ -151,9 +150,8 @@ class DistributionSourcePackageCache(SQLBase):
             SourcePackagePublishingHistory.sourcepackagenameID.is_in(
                 [spn.id for spn in sourcepackagenames]),
             SourcePackagePublishingHistory.archive == archive,
-            SourcePackagePublishingHistory.status.is_in((
-                PackagePublishingStatus.PENDING,
-                PackagePublishingStatus.PUBLISHED))
+            SourcePackagePublishingHistory.status.is_in(
+                active_publishing_status),
             ).config(distinct=True).order_by(SourcePackageRelease.id))
         if len(all_sprs) == 0:
             if log is not None:
