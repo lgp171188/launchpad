@@ -321,13 +321,13 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         pending_processors = {i.processor for i in pending}
         return len(pending_processors) == len(processors)
 
-    def requestBuild(self, requester, distro_arch_series):
+    def requestBuild(self, requester, distro_arch_series, build_request=None):
         self._checkRequestBuild(requester)
         if self._hasPendingBuilds([distro_arch_series]):
             raise OCIRecipeBuildAlreadyPending
 
         build = getUtility(IOCIRecipeBuildSet).new(
-            requester, self, distro_arch_series)
+            requester, self, distro_arch_series, build_request=build_request)
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build
@@ -335,14 +335,15 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def getBuildRequest(self, job_id):
         return OCIRecipeBuildRequest(self, job_id)
 
-    def requestBuildsFromJob(self, requester):
+    def requestBuildsFromJob(self, requester, build_request=None):
         self._checkRequestBuild(requester)
         distro_arch_series_to_build = set(self.getAllowedArchitectures())
 
         builds = []
         for das in distro_arch_series_to_build:
             try:
-                builds.append(self.requestBuild(requester, das))
+                builds.append(self.requestBuild(
+                    requester, das, build_request=build_request))
             except OCIRecipeBuildAlreadyPending:
                 pass
 

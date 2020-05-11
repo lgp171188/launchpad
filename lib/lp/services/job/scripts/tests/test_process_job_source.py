@@ -24,10 +24,10 @@ from lp.testing.layers import LaunchpadScriptLayer
 from lp.testing.matchers import DocTestMatches
 
 
-class ProcessJobSourceConfigTest(TestCase):
+class ProcessSingleJobSourceConfigTest(TestCase):
     """
-    This test case is specific for unit testing ProcessJobSource's usage of
-    config.
+    This test case is specific for unit testing ProcessSingleJobSource's
+    usage of config.
     """
     def test_config_section_link(self):
         module_name = "lp.code.interfaces.branchmergeproposal"
@@ -35,7 +35,7 @@ class ProcessJobSourceConfigTest(TestCase):
         self.pushConfig("IUpdatePreviewDiffJobSource",
                         link="IBranchMergeProposalJobSource")
 
-        proc = process_job_source.ProcessJobSource(
+        proc = process_job_source.ProcessSingleJobSource(
             test_args=['IUpdatePreviewDiffJobSource'])
         self.assertEqual(proc.config_section.module, module_name)
 
@@ -120,9 +120,9 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         self.assertIn('Group: MAIN\n    I', output)
 
     def test_empty_queue(self):
-        # The script should just launch a child for each job source class,
-        # and then exit if no jobs are in the queue.  It should not create
-        # its own lockfile.
+        # The script should just run over each job source class, and then
+        # exit if no jobs are in the queue.  It should not create its own
+        # lockfile.
         returncode, output, error = run_script(self.script, ['MAIN'])
         expected = (
             '.*Creating lockfile:.*launchpad-process-job-'
@@ -132,7 +132,7 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
 
     def test_processed(self):
         # The script should output the number of jobs that have been
-        # processed by its child processes.
+        # processed.
         person = self.factory.makePerson(name='murdock')
         team = self.factory.makeTeam(name='a-team')
         login_person(team.teamowner)
@@ -141,8 +141,7 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         tm = membership_set.getByPersonAndTeam(person, team)
         tm.setStatus(TeamMembershipStatus.ADMIN, team.teamowner)
         transaction.commit()
-        returncode, output, error = run_script(
-            self.script, ['-v', '--wait', 'MAIN'])
+        returncode, output, error = run_script(self.script, ['-v', 'MAIN'])
         self.assertTextMatchesExpressionIgnoreWhitespace(
             ('INFO Running <MembershipNotificationJob '
              'about ~murdock in ~a-team; status=Waiting>'),

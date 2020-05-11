@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,8 +9,14 @@ __all__ = [
     ]
 
 from lp.services.webapp import Navigation
-from lp.services.webapp.publisher import LaunchpadView
-from lp.soyuz.browser.packagerelationship import relationship_builder
+from lp.services.webapp.publisher import (
+    canonical_url,
+    LaunchpadView,
+    )
+from lp.soyuz.browser.packagerelationship import (
+    PackageRelationshipSet,
+    relationship_builder,
+    )
 from lp.soyuz.interfaces.binarypackagerelease import IBinaryPackageRelease
 
 
@@ -55,3 +61,13 @@ class BinaryPackageView(LaunchpadView):
 
     def breaks(self):
         return self._relationship_parser(self.context.breaks)
+
+    def built_using(self):
+        relationship_set = PackageRelationshipSet()
+        for reference in self.context.built_using_references:
+            spr = reference.source_package_release
+            sp = spr.upload_distroseries.getSourcePackage(
+                spr.sourcepackagename)
+            sp_url = canonical_url(sp) if sp is not None else None
+            relationship_set.add(spr.name, '=', spr.version, sp_url)
+        return relationship_set

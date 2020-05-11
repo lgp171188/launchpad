@@ -72,6 +72,9 @@
         <browser:page
             name="+portlet-breaks"
             template="../templates/binarypackagerelease-portlet-breaks.pt"/>
+        <browser:page
+            name="+portlet-builtusing"
+            template="../templates/binarypackagerelease-portlet-builtusing.pt"/>
     </browser:pages>
     <browser:pages
         for="lp.soyuz.interfaces.sourcepackagerelease.ISourcePackageRelease"
