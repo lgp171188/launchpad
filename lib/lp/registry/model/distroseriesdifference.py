@@ -1,4 +1,4 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for a difference between two distribution series."""
@@ -125,9 +125,8 @@ def most_recent_publications(dsds, in_parent, statuses, match_version=False):
         DistroSeriesDifference.source_package_name_id,
         SourcePackagePublishingHistory,
         )
-    # DistroSeries.getPublishedSources() matches on MAIN_ARCHIVE_PURPOSES,
-    # but we are only ever going to be interested in the distribution's
-    # main (PRIMARY) archive.
+    # We are only ever going to be interested in the distribution's main
+    # (PRIMARY) archive.
     archive_subselect = Select(
         Archive.id, tables=[Archive, DistroSeries],
         where=And(
@@ -564,8 +563,10 @@ class DistroSeriesDifference(StormBase):
         if for_parent:
             distro_series = self.parent_series
 
-        pubs = distro_series.getPublishedSources(
-            self.source_package_name, include_pending=True)
+        pubs = distro_series.main_archive.getPublishedSources(
+            name=self.source_package_name.name,
+            status=active_publishing_status, distroseries=distro_series,
+            exact_match=True, order_by_date=True)
 
         # The most recent published source is the first one.
         try:

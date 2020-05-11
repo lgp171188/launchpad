@@ -336,9 +336,13 @@ again" type set of assertions.
     >>> humpy.previous_series = hoary
     >>> ids = InitializeDistroSeries(humpy, [hoary.id])
     >>> ids.initialize()
-    >>> hoary.getPublishedSources('pmount').count()
+    >>> hoary.main_archive.getPublishedSources(
+    ...     name='pmount', status=PackagePublishingStatus.PUBLISHED,
+    ...     distroseries=hoary, exact_match=True).count()
     1
-    >>> humpy.getPublishedSources('pmount').count()
+    >>> humpy.main_archive.getPublishedSources(
+    ...     name='pmount', status=PackagePublishingStatus.PUBLISHED,
+    ...     distroseries=humpy, exact_match=True).count()
     1
     >>> hoary.main_archive.getAllPublishedBinaries(
     ...     distroarchseries=hoary['i386'], name=u'pmount',
