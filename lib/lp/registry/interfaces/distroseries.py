@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistroSeries."""
@@ -615,27 +615,6 @@ class IDistroSeriesPublic(
 
         :return: a dict where the key is a `ISourcePackage`
             and the value is a `IDistributionSourcePackageRelease`.
-        """
-
-    def getPublishedSources(sourcepackage_or_name, pocket=None, version=None,
-                            include_pending=False, archive=None):
-        """Return the SourcePackagePublishingHistory(s)
-
-        Deprecated.  Use IArchive.getPublishedSources instead.
-
-        Given a ISourcePackageName or name.
-
-        If pocket is not specified, we look in all pockets.
-
-        If version is not specified, return packages with any version.
-
-        If 'include_pending' is True, we return also the pending publication
-        records, those packages that will get published in the next publisher
-        run (it's only useful when we need to know if a given package is
-        known during a publisher run, mostly in pre-upload checks)
-
-        If 'archive' is not specified consider publication in the
-        main_archive, otherwise respect the given value.
         """
 
     def getAllPublishedSources():
