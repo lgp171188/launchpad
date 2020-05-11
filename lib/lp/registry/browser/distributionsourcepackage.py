@@ -429,8 +429,10 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
 
         :param sourcepackage: ISourcePackage
         """
-        publications = sourcepackage.distroseries.getPublishedSources(
-            sourcepackage.sourcepackagename)
+        publications = getUtility(IArchiveSet).getPublicationsInArchives(
+            sourcepackage.sourcepackagename,
+            sourcepackage.distribution.all_distro_archives,
+            distroseries=sourcepackage.distroseries)
         pocket_dict = {}
         for pub in shortlist(publications):
             version = pub.source_package_version
