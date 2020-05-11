@@ -744,19 +744,3 @@ IPerson.hardware_submissions.
     >>> set(submission.owner.name for submission
     ...     in owner.hardware_submissions)
     set([u'name12'])
-
-== Feature flag ==
-
-Launchpad's hardware database is obsolescent.  We have a feature flag to
-stage the removal of support for new submissions.
-
-    >>> from lp.hardwaredb.interfaces.hwdb import (
-    ...     HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG,
-    ...     )
-    >>> from lp.services.features.testing import FeatureFixture
-
-    >>> with FeatureFixture({HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG: u'on'}):
-    ...     factory.makeHWSubmission()
-    Traceback (most recent call last):
-    ...
-    HWSubmissionsDisabledError: Launchpad's hardware database is obsolete ...
