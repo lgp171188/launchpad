@@ -317,10 +317,9 @@ class TestDistribution(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         for _ in range(5):
             self.factory.makeOCIProject(pillar=distro)
-        self.factory.makeOCIProject(pillar=distro)
 
         result = distro.searchOCIProjects()
-        self.assertEqual(6, result.count())
+        self.assertEqual(5, result.count())
 
     def test_searchOCIProjects_by_name(self):
         name = self.factory.getUniqueUnicode()
