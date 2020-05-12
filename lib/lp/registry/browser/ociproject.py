@@ -80,7 +80,7 @@ class OCIProjectAddView(LaunchpadFormView):
         oci_project_name = getUtility(
             IOCIProjectNameSet).getOrCreateByName(name)
 
-        oci_project = getUtility(IOCIProjectSet).getByDistributionAndName(
+        oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
             self.context, oci_project_name.name)
         if oci_project:
             self.setFieldError(
@@ -183,7 +183,7 @@ class OCIProjectEditView(LaunchpadEditFormView):
         distribution = data.get('distribution')
         name = data.get('name')
         if distribution and name:
-            oci_project = getUtility(IOCIProjectSet).getByDistributionAndName(
+            oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
                 distribution, name)
             if oci_project is not None and oci_project != self.context:
                 self.setFieldError(

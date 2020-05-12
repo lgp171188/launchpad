@@ -47,13 +47,13 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     )
-
 
 # XXX: pappacena 2020-04-20: It is ok to remove the feature flag since we
 # already have in place the correct permission check for this feature.
@@ -96,7 +96,11 @@ class IOCIProjectEditableAttributes(IBugTarget):
     distribution = exported(ReferenceChoice(
         title=_("The distribution that this OCI project is associated with."),
         schema=IDistribution, vocabulary="Distribution",
-        required=True, readonly=False))
+        required=False, readonly=False))
+    product = exported(ReferenceChoice(
+        title=_('The project that this OCI project is associated with.'),
+        schema=IProduct, vocabulary='Product',
+        required=False, readonly=False))
     name = exported(TextLine(
         title=_("Name"), required=True, readonly=False,
         constraint=name_validator,
@@ -110,8 +114,9 @@ class IOCIProjectEditableAttributes(IBugTarget):
         title=_("The description for this OCI project."),
         required=True, readonly=False))
     pillar = exported(Reference(
-        IDistribution,
-        title=_("The pillar containing this target."), readonly=True))
+        Interface,
+        title=_("The pillar containing this target."),
+        required=True, readonly=False))
 
 
 class IOCIProjectEdit(Interface):
@@ -174,8 +179,13 @@ class IOCIProjectSet(Interface):
             bugfiling_duplicate_search=False):
         """Create an `IOCIProject`."""
 
-    def getByDistributionAndName(distribution, name):
-        """Get the OCIProjects for a given distribution."""
+    def getByPillarAndName(pillar, name):
+        """Get the OCIProjects for a given distribution.
+
+        :param pillar: An instance of Distribution or Product.
+        :param name: The OCIProject name to find.
+        :return: The OCIProject found.
+        """
 
 
 @error_status(http_client.UNAUTHORIZED)

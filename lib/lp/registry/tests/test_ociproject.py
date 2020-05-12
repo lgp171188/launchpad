@@ -46,6 +46,11 @@ class TestOCIProject(TestCaseWithFactory):
         with admin_logged_in():
             self.assertProvides(oci_project, IOCIProject)
 
+    def test_product_pillar(self):
+        product = self.factory.makeProduct(name="some-project")
+        oci_project = self.factory.makeOCIProject(pillar=product)
+        self.assertEqual(product, oci_project.pillar)
+
     def test_newSeries(self):
         driver = self.factory.makePerson()
         distribution = self.factory.makeDistribution(driver=driver)
@@ -130,7 +135,7 @@ class TestOCIProjectSet(TestCaseWithFactory):
 
         with person_logged_in(registrant):
             fetched_result = getUtility(
-                IOCIProjectSet).getByDistributionAndName(
+                IOCIProjectSet).getByPillarAndName(
                     distribution, oci_project.ociprojectname.name)
             self.assertEqual(oci_project, fetched_result)
 
@@ -273,6 +278,5 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             other_user = self.factory.makePerson()
             distro = removeSecurityProxy(self.factory.makeDistribution(
                 owner=other_user))
-            url = api_url(distro)
 
         self.assertCanCreateOCIProject(distro, self.person)

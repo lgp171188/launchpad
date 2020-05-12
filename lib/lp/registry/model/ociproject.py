@@ -32,6 +32,7 @@ from lp.registry.interfaces.ociproject import (
     IOCIProjectSet,
     )
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
@@ -75,6 +76,9 @@ class OCIProject(BugTargetBase, StormBase):
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
 
+    product_id = Int(name='product', allow_none=True)
+    product = Reference(product_id, 'Product.id')
+
     ociprojectname_id = Int(name="ociprojectname", allow_none=False)
     ociprojectname = Reference(ociprojectname_id, "OCIProjectName.id")
 
@@ -97,7 +101,18 @@ class OCIProject(BugTargetBase, StormBase):
     @property
     def pillar(self):
         """See `IBugTarget`."""
-        return self.distribution
+        return self.product if self.product_id else self.distribution
+
+    @pillar.setter
+    def pillar(self, pillar):
+        if IDistribution.providedBy(pillar):
+            self.distribution = pillar
+        elif IProduct.providedBy(pillar):
+            self.product = pillar
+        else:
+            raise ValueError(
+                'The target of an OCIProject must be an '
+                'IDistribution instance.')
 
     @property
     def display_name(self):
@@ -164,16 +179,7 @@ class OCIProjectSet:
         target = OCIProject()
         target.date_created = date_created
         target.date_last_modified = date_created
-
-        # XXX twom 2019-10-10 This needs to have IProduct support
-        # when the model supports it
-        if IDistribution.providedBy(pillar):
-            target.distribution = pillar
-        else:
-            raise ValueError(
-                'The target of an OCIProject must be an '
-                'IDistribution instance.')
-
+        target.pillar = pillar
         target.registrant = registrant
         target.ociprojectname = name
         target.description = description
@@ -183,11 +189,30 @@ class OCIProjectSet:
         store.add(target)
         return target
 
-    def getByDistributionAndName(self, distribution, name):
+    def _get_pillar_attribute(self, pillar):
+        """Checks if the provided pillar is a valid one for OCIProject,
+        returning the model attribute where this pillar would be stored.
+
+        If pillar is not valid, raises ValueError.
+
+        :param pillar: A Distribution or Product.
+        :return: Storm attribute where the pillar would be stored.
+                 If pillar is not valid, raises ValueError.
+        """
+        if IDistribution.providedBy(pillar):
+            return OCIProject.distribution
+        elif IProduct.providedBy(pillar):
+            return OCIProject.product
+        else:
+            raise ValueError(
+                'The target of an OCIProject must be either an '
+                'IDistribution or an IProduct instance.')
+
+    def getByPillarAndName(self, pillar, name):
         """See `IOCIProjectSet`."""
         target = IStore(OCIProject).find(
             OCIProject,
-            OCIProject.distribution == distribution,
+            self._get_pillar_attribute(pillar) == pillar,
             OCIProject.ociprojectname == OCIProjectName.id,
             OCIProjectName.name == name).one()
         return target
