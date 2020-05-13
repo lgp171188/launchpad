@@ -103,7 +103,9 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         script = self.makeScript([])
         self.assertThat(script.getKeysPerType(keys_dir), MatchesDict({
-            SigningKeyType.UEFI: Equals(("uefi.key", "uefi.crt"))
+            SigningKeyType.UEFI: Equals(
+                (os.path.join(keys_dir, "uefi.key"),
+                 os.path.join(keys_dir, "uefi.crt")))
         }))
 
     def test_get_series_paths(self):
@@ -150,12 +152,18 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         script.main()
 
         self.assertItemsEqual([
-            mock.call(archive, SigningKeyType.KMOD, series1, "kmod.pem",
-                      "kmod.x509"),
-            mock.call(archive, SigningKeyType.OPAL, series1, "opal.pem",
-                      "opal.x509"),
-            mock.call(archive, SigningKeyType.UEFI, None, "uefi.key",
-                      "uefi.crt")],
+            mock.call(
+                archive, SigningKeyType.KMOD, series1,
+                os.path.join(key_dirs[series1], "kmod.pem"),
+                os.path.join(key_dirs[series1], "kmod.x509")),
+            mock.call(
+                archive, SigningKeyType.OPAL, series1,
+                os.path.join(key_dirs[series1], "opal.pem"),
+                os.path.join(key_dirs[series1], "opal.x509")),
+            mock.call(
+                archive, SigningKeyType.UEFI, None,
+                os.path.join(archive_root, "uefi.key"),
+                os.path.join(archive_root, "uefi.crt"))],
             script.inject.call_args_list)
 
         # Check the log messages.
@@ -166,13 +174,22 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         tpl = "INFO Found key files %s / %s (type=%s, series=%s)."
         self.assertIn(
-            tpl % ("kmod.pem", "kmod.x509", SigningKeyType.KMOD, series1.name),
+            tpl % (
+                os.path.join(key_dirs[series1], "kmod.pem"),
+                os.path.join(key_dirs[series1], "kmod.x509"),
+                SigningKeyType.KMOD, series1.name),
             content)
         self.assertIn(
-            tpl % ("opal.pem", "opal.x509", SigningKeyType.OPAL, series1.name),
+            tpl % (
+                os.path.join(key_dirs[series1], "opal.pem"),
+                os.path.join(key_dirs[series1], "opal.x509"),
+                SigningKeyType.OPAL, series1.name),
             content)
         self.assertIn(
-            tpl % ("uefi.key", "uefi.crt", SigningKeyType.UEFI, None),
+            tpl % (
+                os.path.join(archive_root, "uefi.key"),
+                os.path.join(archive_root, "uefi.crt"),
+                SigningKeyType.UEFI, None),
             content)
 
     def test_inject(self):
