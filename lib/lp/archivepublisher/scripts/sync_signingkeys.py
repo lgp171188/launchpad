@@ -64,12 +64,12 @@ class SyncSigningKeysScript(LaunchpadScript):
             SigningKeyType.SIPL: ("sipl.pem", "sipl.x509"),
             SigningKeyType.FIT: ("fit.key", "fit.crt"),
         }
+        found_keys_per_type = {}
         for key_type in SigningKeyType.items:
             files = [os.path.join(dir, f) for f in keys_per_type[key_type]]
-            if not all(os.path.exists(f) for f in files):
-                del keys_per_type[key_type]
-                continue
-        return keys_per_type
+            if all(os.path.exists(f) for f in files):
+                found_keys_per_type[key_type] = tuple(files)
+        return found_keys_per_type
 
     def getSeriesPaths(self, archive):
         """Returns the directory of each series containing signing keys.
