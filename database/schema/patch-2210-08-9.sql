@@ -77,13 +77,13 @@ DROP INDEX old__gitrepository__owner__project__owner_default__key;
 
 
 -- Unique target_defaul for project.
-CREATE UNIQUE gitrepository__project__target_default__key
+CREATE UNIQUE INDEX gitrepository__project__target_default__key
     ON GitRepository (project)
     WHERE project IS NOT NULL
         AND ociprojectname IS NULL
         AND target_default;
 
-CREATE UNIQUE gitrepository__project__target_default__oci__key
+CREATE UNIQUE INDEX gitrepository__project__target_default__oci__key
     ON GitRepository (project)
     WHERE project IS NOT NULL
         AND ociprojectname IS NOT NULL
