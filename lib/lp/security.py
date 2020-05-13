@@ -117,7 +117,10 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeBuildRequest,
     )
-from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
+from lp.oci.interfaces.ocirecipebuild import (
+    IOCIFile,
+    IOCIRecipeBuild,
+    )
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.announcement import IAnnouncement
@@ -3545,6 +3548,11 @@ class EditOCIRecipeBuild(AdminByBuilddAdmin):
 
 class AdminOCIRecipeBuild(AdminByBuilddAdmin):
     usedfor = IOCIRecipeBuild
+
+
+class ViewOCIFile(AnonymousAuthorization):
+    """Anyone can view an `IOCIFile`."""
+    usedfor = IOCIFile
 
 
 class ViewOCIRegistryCredentials(AuthorizationBase):

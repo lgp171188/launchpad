@@ -97,6 +97,20 @@
         factory="lp.oci.model.ocirecipebuildbehaviour.OCIRecipeBuildBehaviour"
         permission="zope.Public" />
 
+    <!-- OCIFile -->
+    <class class="lp.oci.model.ocirecipebuild.OCIFile">
+        <require
+            permission="launchpad.View"
+            interface="lp.oci.interfaces.ocirecipebuild.IOCIFile" />
+    </class>
+
+    <!-- OCIFileSet -->
+    <securedutility
+        class="lp.oci.model.ocirecipebuild.OCIFileSet"
+        provides="lp.oci.interfaces.ocirecipebuild.IOCIFileSet">
+        <allow interface="lp.oci.interfaces.ocirecipebuild.IOCIFileSet" />
+    </securedutility>
+
     <!-- OCIRegistryCredentials -->
     <class class="lp.oci.model.ociregistrycredentials.OCIRegistryCredentials">
         <require

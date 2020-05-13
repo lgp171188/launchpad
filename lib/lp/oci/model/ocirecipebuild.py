@@ -43,6 +43,7 @@ from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIFile,
+    IOCIFileSet,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     OCIRecipeBuildRegistryUploadStatus,
@@ -96,6 +97,16 @@ class OCIFile(Storm):
         self.build = build
         self.library_file = library_file
         self.layer_file_digest = layer_file_digest
+
+
+@implementer(IOCIFileSet)
+class OCIFileSet:
+
+    def getByLayerDigest(self, layer_file_digest):
+        return IStore(OCIFile).find(
+            OCIFile,
+            OCIFile.layer_file_digest == layer_file_digest).order_by(
+                OCIFile.id).first()
 
 
 @implementer(IOCIRecipeBuild)
