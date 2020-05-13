@@ -51,6 +51,21 @@ class TestOCIProject(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject(pillar=product)
         self.assertEqual(product, oci_project.pillar)
 
+    def test_prevents_moving_pillar_type(self):
+        project = self.factory.makeProduct()
+        distro = self.factory.makeDistribution()
+
+        project_oci_project = self.factory.makeOCIProject(pillar=project)
+        distro_oci_project = self.factory.makeOCIProject(pillar=distro)
+
+        with admin_logged_in():
+            self.assertRaises(
+                ValueError, setattr, project_oci_project, 'pillar', distro)
+            self.assertRaises(
+                ValueError, setattr, distro_oci_project, 'pillar', project)
+            self.assertRaises(
+                ValueError, setattr, distro_oci_project, 'pillar', 'Invalid')
+
     def test_newSeries(self):
         driver = self.factory.makePerson()
         distribution = self.factory.makeDistribution(driver=driver)

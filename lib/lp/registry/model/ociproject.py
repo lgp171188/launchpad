@@ -76,8 +76,8 @@ class OCIProject(BugTargetBase, StormBase):
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
 
-    product_id = Int(name='product', allow_none=True)
-    product = Reference(product_id, 'Product.id')
+    project_id = Int(name='project', allow_none=True)
+    project = Reference(project_id, 'Product.id')
 
     ociprojectname_id = Int(name="ociprojectname", allow_none=False)
     ociprojectname = Reference(ociprojectname_id, "OCIProjectName.id")
@@ -101,18 +101,26 @@ class OCIProject(BugTargetBase, StormBase):
     @property
     def pillar(self):
         """See `IBugTarget`."""
-        return self.product if self.product_id else self.distribution
+        return self.project if self.project_id else self.distribution
 
     @pillar.setter
     def pillar(self, pillar):
         if IDistribution.providedBy(pillar):
+            if self.project_id is not None:
+                raise ValueError(
+                    "Cannot set a distribution pillar for an OCIProject that "
+                    "is already based on a project.")
             self.distribution = pillar
         elif IProduct.providedBy(pillar):
-            self.product = pillar
+            if self.distribution_id is not None:
+                raise ValueError(
+                    "Cannot set a project pillar for an OCIProject that "
+                    "is already based on a distribution.")
+            self.project = pillar
         else:
             raise ValueError(
-                'The target of an OCIProject must be an '
-                'IDistribution instance.')
+                'The target of an OCIProject must be either an IDistribution '
+                'or IProduct instance.')
 
     @property
     def display_name(self):
@@ -202,7 +210,7 @@ class OCIProjectSet:
         if IDistribution.providedBy(pillar):
             return OCIProject.distribution
         elif IProduct.providedBy(pillar):
-            return OCIProject.product
+            return OCIProject.project
         else:
             raise ValueError(
                 'The target of an OCIProject must be either an '

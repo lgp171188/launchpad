@@ -97,7 +97,7 @@ class IOCIProjectEditableAttributes(IBugTarget):
         title=_("The distribution that this OCI project is associated with."),
         schema=IDistribution, vocabulary="Distribution",
         required=False, readonly=False))
-    product = exported(ReferenceChoice(
+    project = exported(ReferenceChoice(
         title=_('The project that this OCI project is associated with.'),
         schema=IProduct, vocabulary='Product',
         required=False, readonly=False))
@@ -113,10 +113,10 @@ class IOCIProjectEditableAttributes(IBugTarget):
     description = exported(Text(
         title=_("The description for this OCI project."),
         required=True, readonly=False))
-    pillar = exported(Reference(
+    pillar = Reference(
         Interface,
         title=_("The pillar containing this target."),
-        required=True, readonly=False))
+        required=True, readonly=False)
 
 
 class IOCIProjectEdit(Interface):
@@ -180,7 +180,7 @@ class IOCIProjectSet(Interface):
         """Create an `IOCIProject`."""
 
     def getByPillarAndName(pillar, name):
-        """Get the OCIProjects for a given distribution.
+        """Get the OCIProjects for a given distribution or project.
 
         :param pillar: An instance of Distribution or Product.
         :param name: The OCIProject name to find.
