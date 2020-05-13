@@ -18,7 +18,7 @@ CREATE UNIQUE INDEX ociproject__project__ociprojectname__key
     ON OCIProject (project, ociprojectname) WHERE project IS NOT NULL;
 
 
--- Alter GitRepository table to allow ociprojectname + project
+-- Alter GitRepository table to allow ociprojectname + project.
 ALTER TABLE GitRepository
     DROP CONSTRAINT one_container,
     ADD CONSTRAINT one_container CHECK (
@@ -32,5 +32,19 @@ ALTER TABLE GitRepository
         (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NOT NULL) OR
         -- Personal
         (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NULL));
+
+
+-- Rename current unique constraints on GitRepository for project to allow
+-- ociprojectname + project in the next migration.
+ALTER INDEX gitrepository__owner__project__name__key
+    RENAME TO old__gitrepository__owner__project__name__key;
+
+ALTER INDEX gitrepository__owner__project__owner_default__key
+    RENAME TO old__gitrepository__owner__project__owner_default__key;
+
+ALTER INDEX gitrepository__project__target_default__key
+    RENAME TO old__gitrepository__project__target_default__key;
+
+
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 8, 8);
