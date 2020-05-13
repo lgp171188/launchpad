@@ -15,6 +15,22 @@ COMMENT ON COLUMN OCIProject.project
 
 CREATE INDEX ociproject__project__idx ON OCIProject (project);
 CREATE UNIQUE INDEX ociproject__project__ociprojectname__key
-    ON OCIProject (project, ociprojectname);
+    ON OCIProject (project, ociprojectname) WHERE project IS NOT NULL;
+
+
+-- Alter GitRepository table to allow ociprojectname + project
+ALTER TABLE GitRepository
+    DROP CONSTRAINT one_container,
+    ADD CONSTRAINT one_container CHECK (
+        -- Project
+        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NULL) OR
+        -- Distribution source package
+        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NOT NULL AND ociprojectname IS NULL) OR
+        -- Distribution OCI project
+        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NULL AND ociprojectname IS NOT NULL) OR
+        -- Project OCI project
+        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NOT NULL) OR
+        -- Personal
+        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NULL));
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 8, 8);
