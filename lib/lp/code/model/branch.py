@@ -24,8 +24,6 @@ from six.moves.urllib_parse import urlsplit
 from sqlobject import (
     ForeignKey,
     IntCol,
-    SQLMultipleJoin,
-    SQLRelatedJoin,
     StringCol,
     )
 from storm.expr import (
@@ -299,7 +297,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # this branch.
         self.information_type = information_type
         self._reconcileAccess()
-        if information_type in PRIVATE_INFORMATION_TYPES and self.subscribers:
+        if (information_type in PRIVATE_INFORMATION_TYPES and
+                not self.subscribers.is_empty()):
             # Grant the subscriber access if they can't see the branch.
             service = getUtility(IService, 'sharing')
             blind_subscribers = service.getPeopleWithoutAccess(
@@ -438,11 +437,11 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         result = result.order_by(Desc(BranchRevision.sequence))
         return DecoratedResultSet(result, operator.itemgetter(0))
 
-    subscriptions = SQLMultipleJoin(
-        'BranchSubscription', joinColumn='branch', orderBy='id')
-    subscribers = SQLRelatedJoin(
-        'Person', joinColumn='branch', otherColumn='person',
-        intermediateTable='BranchSubscription', orderBy='name')
+    subscriptions = ReferenceSet(
+        'id', 'BranchSubscription.branch_id', order_by='BranchSubscription.id')
+    subscribers = ReferenceSet(
+        'id', 'BranchSubscription.branch_id',
+        'BranchSubscription.person_id', 'Person.id', order_by='Person.name')
 
     bug_branches = ReferenceSet(
         'id', 'BugBranch.branch_id', order_by='BugBranch.id')
@@ -1071,9 +1070,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         if person is None:
             return None
-        subscription = BranchSubscription.selectOneBy(
-            person=person, branch=self)
-        return subscription
+        return Store.of(self).find(
+            BranchSubscription,
+            BranchSubscription.person == person,
+            BranchSubscription.branch == self).one()
 
     def getSubscriptionsByLevel(self, notification_levels):
         """See `IBranch`."""
