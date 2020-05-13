@@ -613,7 +613,9 @@ class TestRunner(TestCaseWithFactory):
                 importer_handler)
             return [
                 p.source_package_version
-                for p in series.getPublishedSources('archive-copier')]
+                for p in series.main_archive.getPublishedSources(
+                    name='archive-copier', distroseries=series,
+                    exact_match=True)]
 
         # Our test archive has archive-copier 0.1.5 and 0.3.6 With
         # soyuz.gina.skip_source_versions set to

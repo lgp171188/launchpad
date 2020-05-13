@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -357,8 +357,8 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
         # three archives.
         archive_set = getUtility(IArchiveSet)
         publications = archive_set.getPublicationsInArchives(
-                self.context.sourcepackagename, top_three_archives,
-                self.context.distribution)
+            self.context.sourcepackagename, top_three_archives,
+            distribution=self.context.distribution)
 
         # Collect the publishings for each archive
         archive_publishings = {}
@@ -429,8 +429,10 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
 
         :param sourcepackage: ISourcePackage
         """
-        publications = sourcepackage.distroseries.getPublishedSources(
-            sourcepackage.sourcepackagename)
+        publications = getUtility(IArchiveSet).getPublicationsInArchives(
+            sourcepackage.sourcepackagename,
+            sourcepackage.distribution.all_distro_archives,
+            distroseries=sourcepackage.distroseries)
         pocket_dict = {}
         for pub in shortlist(publications):
             version = pub.source_package_version

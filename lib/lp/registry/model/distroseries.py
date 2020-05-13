@@ -35,10 +35,7 @@ from storm.expr import (
     SQL,
     )
 from storm.locals import JSON
-from storm.store import (
-    EmptyResultSet,
-    Store,
-    )
+from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -77,14 +74,8 @@ from lp.registry.interfaces.pocket import (
     pocketsuffix,
     )
 from lp.registry.interfaces.series import SeriesStatus
-from lp.registry.interfaces.sourcepackage import (
-    ISourcePackage,
-    ISourcePackageFactory,
-    )
-from lp.registry.interfaces.sourcepackagename import (
-    ISourcePackageName,
-    ISourcePackageNameSet,
-    )
+from lp.registry.interfaces.sourcepackage import ISourcePackageFactory
+from lp.registry.interfaces.sourcepackagename import ISourcePackageName
 from lp.registry.model.milestone import (
     HasMilestonesMixin,
     Milestone,
@@ -1005,55 +996,6 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         result = unlinked.union(linked_but_no_productseries)
         return [SourcePackage(sourcepackagename=spn, distroseries=self) for
             spn in result]
-
-    def getPublishedSources(self, sourcepackage_or_name, version=None,
-                             pocket=None, include_pending=False,
-                             archive=None):
-        """See `IDistroSeries`."""
-        # Deprecated.  Use IArchive.getPublishedSources instead.
-
-        # XXX cprov 2006-02-13 bug 31317:
-        # We need a standard and easy API, no need
-        # to support multiple type arguments, only string name should be
-        # the best choice in here, the call site will be clearer.
-        if ISourcePackage.providedBy(sourcepackage_or_name):
-            spn = sourcepackage_or_name.name
-        elif ISourcePackageName.providedBy(sourcepackage_or_name):
-            spn = sourcepackage_or_name
-        else:
-            spns = getUtility(ISourcePackageNameSet)
-            spn = spns.queryByName(sourcepackage_or_name)
-            if spn is None:
-                return EmptyResultSet()
-
-        queries = ["""
-        sourcepackagerelease=sourcepackagerelease.id AND
-        sourcepackagepublishinghistory.sourcepackagename=%s AND
-        distroseries=%s
-        """ % sqlvalues(spn.id, self.id)]
-
-        if pocket is not None:
-            queries.append("pocket=%s" % sqlvalues(pocket.value))
-
-        if version is not None:
-            queries.append("version=%s" % sqlvalues(version))
-
-        if include_pending:
-            queries.append("status in (%s, %s)" % sqlvalues(
-                PackagePublishingStatus.PUBLISHED,
-                PackagePublishingStatus.PENDING))
-        else:
-            queries.append("status=%s" % sqlvalues(
-                PackagePublishingStatus.PUBLISHED))
-
-        archives = self.distribution.getArchiveIDList(archive)
-        queries.append("archive IN %s" % sqlvalues(archives))
-
-        published = SourcePackagePublishingHistory.select(
-            " AND ".join(queries), clauseTables=['SourcePackageRelease'],
-            orderBy=['-id'])
-
-        return published
 
     def isUnstable(self):
         """See `IDistroSeries`."""

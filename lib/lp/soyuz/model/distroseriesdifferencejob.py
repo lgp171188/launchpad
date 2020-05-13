@@ -1,4 +1,4 @@
-# Copyright 2011-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Job class to request generation or update of `DistroSeriesDifference`s."""
@@ -147,8 +147,9 @@ def may_require_job(derived_series, sourcepackagename, parent_series):
 
 def has_package(distroseries, sourcepackagename):
     """Does `distroseries` have the given source package?"""
-    return not distroseries.getPublishedSources(
-        sourcepackagename, include_pending=True).is_empty()
+    return not distroseries.main_archive.getPublishedSources(
+        name=sourcepackagename.name, status=active_publishing_status,
+        distroseries=distroseries, exact_match=True).is_empty()
 
 
 @implementer(IDistroSeriesDifferenceJob)
