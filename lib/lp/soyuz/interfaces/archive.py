@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Archive interfaces."""
@@ -2452,7 +2452,7 @@ class IArchiveSet(Interface):
         """Return a result set containing all private PPAs."""
 
     def getPublicationsInArchives(source_package_name, archive_list,
-                                  distribution):
+                                  distribution=None, distroseries=None):
         """Return a result set of publishing records for the source package.
 
         :param source_package_name: an `ISourcePackageName` identifying the
@@ -2460,6 +2460,8 @@ class IArchiveSet(Interface):
         :param archive_list: a list of at least one archive with which to
             restrict the search.
         :param distribution: the distribution by which the results will
+            be limited.
+        :param distroseries: the distroseries by which the results will
             be limited.
         :return: a resultset of the `ISourcePackagePublishingHistory` objects
             that are currently published in the given archives.
