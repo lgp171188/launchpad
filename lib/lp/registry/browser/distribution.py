@@ -3,6 +3,8 @@
 
 """Browser views for distributions."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -105,6 +107,7 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.feeds.browser import FeedsMixin
@@ -311,11 +314,16 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
         text = 'Create an OCI Project'
         return Link('+new-oci-project', text, icon='add')
 
+    def search_oci_project(self):
+        text = 'Search for OCI Project'
+        return Link('+search-oci-project', text, icon='info')
+
     @cachedproperty
     def links(self):
         return [
             'edit', 'admin', 'pubconf', 'subscribe_to_bug_mail',
-            'edit_bug_mail', 'sharing', 'new_oci_project']
+            'edit_bug_mail', 'sharing', 'new_oci_project',
+            'search_oci_project']
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
@@ -1369,3 +1377,50 @@ class DistributionPublisherConfigView(LaunchpadFormView):
         self.request.response.addInfoNotification(
             'Your changes have been applied.')
         self.next_url = canonical_url(self.context)
+
+
+class DistributionOCIProjectSearchView(LaunchpadView):
+    """Page to search for OCI projects of a given distribution."""
+    page_title = ''
+
+    @property
+    def label(self):
+        return "Search OCI projects in %s" % self.context.title
+
+    @property
+    def text(self):
+        text = self.request.get("text", None)
+        if isinstance(text, list):
+            # The user may have URL hacked a query string with more than one
+            # "text" parameter. We'll take the last one.
+            text = text[-1]
+        return text
+
+    @property
+    def search_requested(self):
+        return self.text is not None
+
+    @property
+    def title(self):
+        return self.context.name
+
+    @cachedproperty
+    def count(self):
+        """Return the number of matched search results."""
+        return self.batchnav.batch.total()
+
+    @cachedproperty
+    def batchnav(self):
+        """Return the batch navigator for the search results."""
+        return BatchNavigator(self.search_results, self.request)
+
+    @cachedproperty
+    def preloaded_batch(self):
+        projects = self.batchnav.batch
+        getUtility(IOCIProjectSet).preloadDataForOCIProjects(projects)
+        return projects
+
+    @property
+    def search_results(self):
+        return getUtility(IOCIProjectSet).findByDistributionAndName(
+            self.context, self.text or '')

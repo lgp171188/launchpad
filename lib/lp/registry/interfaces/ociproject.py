@@ -54,7 +54,6 @@ from lp.services.fields import (
     PublicPersonChoice,
     )
 
-
 # XXX: pappacena 2020-04-20: It is ok to remove the feature flag since we
 # already have in place the correct permission check for this feature.
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
@@ -176,6 +175,13 @@ class IOCIProjectSet(Interface):
 
     def getByDistributionAndName(distribution, name):
         """Get the OCIProjects for a given distribution."""
+
+    def findByDistributionAndName(distribution, name_substring):
+        """Find OCIProjects for a given distribution that contains the
+        provided name."""
+
+    def preloadDataForOCIProjects(oci_projects):
+        """Preload data for the given list of OCIProject objects."""
 
 
 @error_status(http_client.UNAUTHORIZED)

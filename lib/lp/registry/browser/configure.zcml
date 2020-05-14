@@ -2156,6 +2156,13 @@
         template="../templates/ociproject-new.pt"
         />
     <browser:page
+        name="+search-oci-project"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.distribution.DistributionOCIProjectSearchView"
+        permission="zope.Public"
+        template="../templates/distribution-search-oci-projects.pt"
+        />
+    <browser:page
         name="+search"
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.distribution.DistributionPackageSearchView"
