@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -6,28 +6,26 @@ __metaclass__ = type
 __all__ = [
     'BuilderInteractor',
     'extract_vitals_from_db',
-    'shut_down_default_threadpool',
     ]
 
 from collections import namedtuple
 import logging
 import os.path
-import sys
 import tempfile
-import traceback
 
-from requests import Session
-from requests_toolbelt.downloadutils import stream
-import six
 from six.moves.urllib.parse import urlparse
 import transaction
 from twisted.internet import (
     defer,
     reactor as default_reactor,
-    threads,
     )
-from twisted.python.threadpool import ThreadPool
+from twisted.internet.protocol import Protocol
 from twisted.web import xmlrpc
+from twisted.web.client import (
+    Agent,
+    HTTPConnectionPool,
+    ResponseDone,
+    )
 from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
@@ -57,35 +55,94 @@ class QuietQueryFactory(xmlrpc._QueryFactory):
     noisy = False
 
 
-_default_threadpool = None
-_default_threadpool_shutdown = None
+class FileWritingProtocol(Protocol):
+    """A protocol that saves data to a file."""
+
+    def __init__(self, finished, file_to_write):
+        self.finished = finished
+        if isinstance(file_to_write, (bytes, unicode)):
+            self.filename = file_to_write
+            self.file = tempfile.NamedTemporaryFile(
+                mode="wb", prefix=os.path.basename(self.filename) + "_",
+                dir=os.path.dirname(self.filename), delete=False)
+        else:
+            self.filename = None
+            self.file = file_to_write
+
+    def dataReceived(self, data):
+        try:
+            self.file.write(data)
+        except IOError:
+            try:
+                self.file.close()
+            except IOError:
+                pass
+            self.file = None
+            self.finished.errback()
+
+    def connectionLost(self, reason):
+        try:
+            if self.file is not None:
+                self.file.close()
+            if self.filename is not None and reason.check(ResponseDone):
+                os.rename(self.file.name, self.filename)
+        except IOError:
+            self.finished.errback()
+        else:
+            if reason.check(ResponseDone):
+                self.finished.callback(None)
+            else:
+                self.finished.errback(reason)
 
 
-def default_threadpool(reactor=None):
-    global _default_threadpool, _default_threadpool_shutdown
+class LimitedHTTPConnectionPool(HTTPConnectionPool):
+    """A connection pool with an upper limit on open connections."""
+
+    # XXX cjwatson 2016-05-25: This actually only limits active connections,
+    # and doesn't count idle but open connections towards the limit; this is
+    # because it's very difficult to do the latter with HTTPConnectionPool's
+    # current design.  Users of this pool must therefore expect some
+    # additional file descriptors to be open for idle connections.
+
+    def __init__(self, reactor, limit, persistent=True):
+        super(LimitedHTTPConnectionPool, self).__init__(
+            reactor, persistent=persistent)
+        self._semaphore = defer.DeferredSemaphore(limit)
+
+    def getConnection(self, key, endpoint):
+        d = self._semaphore.acquire()
+        d.addCallback(
+            lambda _: super(LimitedHTTPConnectionPool, self).getConnection(
+                key, endpoint))
+        return d
+
+    def _putConnection(self, key, connection):
+        super(LimitedHTTPConnectionPool, self)._putConnection(key, connection)
+        # Only release the semaphore in the next main loop iteration; if we
+        # release it here then the next request may start using this
+        # connection's parser before this request has quite finished with
+        # it.
+        self._reactor.callLater(0, self._semaphore.release)
+
+
+_default_pool = None
+
+
+def default_pool(reactor=None):
+    global _default_pool
     if reactor is None:
         reactor = default_reactor
-    if _default_threadpool is None:
-        _default_threadpool = ThreadPool(
-            maxthreads=config.builddmaster.download_connections,
-            name=six.ensure_str('buildd-manager-requests'))
-        _default_threadpool.start()
-        shutdown_id = reactor.addSystemEventTrigger(
-            'during', 'shutdown', _default_threadpool.stop)
-        _default_threadpool_shutdown = (reactor, shutdown_id)
-    return _default_threadpool
-
-
-def shut_down_default_threadpool():
-    """Shut down the default threadpool.  Used in test cleanup."""
-    global _default_threadpool, _default_threadpool_shutdown
-    if _default_threadpool is not None:
-        _default_threadpool.stop()
-        _default_threadpool = None
-    if _default_threadpool_shutdown is not None:
-        reactor, shutdown_id = _default_threadpool_shutdown
-        reactor.removeSystemEventTrigger(shutdown_id)
-        _default_threadpool_shutdown = None
+    if _default_pool is None:
+        # Circular import.
+        from lp.buildmaster.manager import SlaveScanner
+        # Short cached connection timeout to avoid potential weirdness with
+        # virtual builders that reboot frequently.
+        _default_pool = LimitedHTTPConnectionPool(
+            reactor, config.builddmaster.download_connections)
+        _default_pool.maxPersistentPerHost = (
+            config.builddmaster.idle_download_connections_per_builder)
+        _default_pool.cachedConnectionTimeout = SlaveScanner.SCAN_INTERVAL
+    return _default_pool
 
 
 class BuilderSlave(object):
@@ -100,8 +157,7 @@ class BuilderSlave(object):
     # many false positives in your test run and will most likely break
     # production.
 
-    def __init__(self, proxy, builder_url, vm_host, timeout, reactor,
-                 threadpool):
+    def __init__(self, proxy, builder_url, vm_host, timeout, reactor, pool):
         """Initialize a BuilderSlave.
 
         :param proxy: An XML-RPC proxy, implementing 'callRemote'. It must
@@ -117,13 +173,13 @@ class BuilderSlave(object):
         if reactor is None:
             reactor = default_reactor
         self.reactor = reactor
-        if threadpool is None:
-            threadpool = default_threadpool(reactor=reactor)
-        self.threadpool = threadpool
+        if pool is None:
+            pool = default_pool(reactor=reactor)
+        self.pool = pool
 
     @classmethod
     def makeBuilderSlave(cls, builder_url, vm_host, timeout, reactor=None,
-                         proxy=None, threadpool=None):
+                         proxy=None, pool=None):
         """Create and return a `BuilderSlave`.
 
         :param builder_url: The URL of the slave buildd machine,
@@ -132,7 +188,7 @@ class BuilderSlave(object):
             here.
         :param reactor: Used by tests to override the Twisted reactor.
         :param proxy: Used By tests to override the xmlrpc.Proxy.
-        :param threadpool: Used by tests to override the ThreadPool.
+        :param pool: Used by tests to override the HTTPConnectionPool.
         """
         rpc_url = urlappend(builder_url.encode('utf-8'), 'rpc')
         if proxy is None:
@@ -141,8 +197,7 @@ class BuilderSlave(object):
             server_proxy.queryFactory = QuietQueryFactory
         else:
             server_proxy = proxy
-        return cls(
-            server_proxy, builder_url, vm_host, timeout, reactor, threadpool)
+        return cls(server_proxy, builder_url, vm_host, timeout, reactor, pool)
 
     def _with_timeout(self, d, timeout=None):
         return cancel_on_timeout(d, timeout or self.timeout, self.reactor)
@@ -181,7 +236,6 @@ class BuilderSlave(object):
         """Get the URL for a file on the builder with a given SHA-1."""
         return urlappend(self._file_cache_url, sha1).encode('utf8')
 
-    @defer.inlineCallbacks
     def getFile(self, sha_sum, file_to_write, logger=None):
         """Fetch a file from the builder.
 
@@ -194,42 +248,26 @@ class BuilderSlave(object):
             errback with the error string.
         """
         file_url = self.getURL(sha_sum)
+        d = Agent(self.reactor, pool=self.pool).request("GET", file_url)
 
-        def download():
-            session = Session()
-            session.trust_env = False
-            response = session.get(file_url, timeout=self.timeout, stream=True)
-            response.raise_for_status()
-            if isinstance(file_to_write, six.string_types):
-                f = tempfile.NamedTemporaryFile(
-                    mode="wb", prefix=os.path.basename(file_to_write) + "_",
-                    dir=os.path.dirname(file_to_write), delete=False)
-            else:
-                f = file_to_write
-            try:
-                stream.stream_response_to_file(response, path=f)
-            except Exception:
-                f.close()
-                os.unlink(f.name)
-                raise
-            else:
-                f.close()
-                if isinstance(file_to_write, six.string_types):
-                    os.rename(f.name, file_to_write)
+        def got_response(response):
+            finished = defer.Deferred()
+            response.deliverBody(FileWritingProtocol(finished, file_to_write))
+            return finished
 
-        try:
-            session = Session()
-            session.trust_env = False
-            yield threads.deferToThreadPool(
-                self.reactor, self.threadpool, download)
-            if logger is not None:
-                logger.info("Grabbed %s" % file_url)
-        except Exception as e:
-            if logger is not None:
-                logger.info("Failed to grab %s: %s\n%s" % (
-                    file_url, str(e),
-                    " ".join(traceback.format_exception(*sys.exc_info()))))
-            raise
+        def log_success(result):
+            logger.info("Grabbed %s" % file_url)
+            return result
+
+        def log_failure(failure):
+            logger.info("Failed to grab %s: %s\n%s" % (
+                file_url, failure.getErrorMessage(), failure.getTraceback()))
+            return failure
+
+        d.addCallback(got_response)
+        if logger is not None:
+            d.addCallbacks(log_success, log_failure)
+        return d
 
     def getFiles(self, files, logger=None):
         """Fetch many files from the builder.

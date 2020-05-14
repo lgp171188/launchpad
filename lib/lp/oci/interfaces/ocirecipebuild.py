@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIFile',
+    'IOCIFileSet',
     'IOCIRecipeBuild',
     'IOCIRecipeBuildSet',
     'OCIRecipeBuildRegistryUploadStatus',
@@ -80,6 +81,13 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
 
         This OCI build was successfully uploaded to a registry.
         """)
+
+
+class IOCIFileSet(Interface):
+    """A file artifact of an OCIRecipeBuild."""
+
+    def getByLayerDigest(layer_file_digest):
+        """Return an `IOCIFile` with the matching layer_file_digest."""
 
 
 class IOCIRecipeBuildView(IPackageBuild):

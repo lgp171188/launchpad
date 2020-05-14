@@ -18,6 +18,7 @@ import json
 import os
 
 from twisted.internet import defer
+from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -32,6 +33,7 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
+from lp.oci.interfaces.ocirecipebuild import IOCIFileSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.librarian.utils import copy_and_close
 from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
@@ -134,12 +136,17 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
                 # This is in the form '<id>/layer.tar', we only need the first
                 layer_filename = "{}.tar.gz".format(layer_id.split('/')[0])
                 digest = digests_section[diff_id]['digest']
-                try:
-                    _, librarian_file, _ = self.build.getLayerFileByDigest(
-                        digest)
-                except NotFoundError:
+                # Check if the file already exists in the librarian
+                oci_file = getUtility(IOCIFileSet).getByLayerDigest(
+                    digest)
+                if oci_file:
+                    librarian_file = oci_file.library_file
+                # If it doesn't, we need to download it
+                else:
                     files.add(layer_filename)
                     continue
+                # If the file already exists, retrieve it from the librarian
+                # so we can add it to the build artifacts
                 layer_path = os.path.join(upload_path, layer_filename)
                 librarian_file.open()
                 copy_and_close(librarian_file, open(layer_path, 'wb'))

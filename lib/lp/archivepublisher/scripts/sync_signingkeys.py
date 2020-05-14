@@ -16,6 +16,7 @@ from datetime import datetime
 import os
 
 from pytz import utc
+import transaction
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -67,6 +68,7 @@ class SyncSigningKeysScript(LaunchpadScript):
         found_keys_per_type = {}
         for key_type in SigningKeyType.items:
             files = [os.path.join(dir, f) for f in keys_per_type[key_type]]
+            self.logger.debug("Checking files %s...", ', '.join(files))
             if all(os.path.exists(f) for f in files):
                 found_keys_per_type[key_type] = tuple(files)
         return found_keys_per_type
@@ -87,8 +89,11 @@ class SyncSigningKeysScript(LaunchpadScript):
             return {}
         for series in archive.distribution.series:
             path = os.path.join(pubconf.signingroot, series.name)
+            self.logger.debug("\tChecking if %s exists.", path)
             if os.path.exists(path):
                 series_paths[series] = path
+        self.logger.debug(
+            "\tChecking if root dir %s exists.", pubconf.signingroot)
         if os.path.exists(pubconf.signingroot):
             series_paths[None] = pubconf.signingroot
         return series_paths
@@ -99,7 +104,8 @@ class SyncSigningKeysScript(LaunchpadScript):
             key_type, archive, series, exact_match=True)
         if existing_signing_key is not None:
             self.logger.info("Signing key for %s / %s / %s already exists",
-                             key_type, archive.reference, series.name)
+                             key_type, archive.reference,
+                             series.name if series else None)
             return existing_signing_key
 
         with open(priv_key_path, 'rb') as fd:
@@ -119,9 +125,9 @@ class SyncSigningKeysScript(LaunchpadScript):
             keys_per_type = self.getKeysPerType(path)
             for key_type, (priv_key, pub_key) in keys_per_type.items():
                 self.logger.info(
-                    "Found key files %s / %s (type=%s, series=%s)." %
-                    (priv_key, pub_key, key_type,
-                     series.name if series else None))
+                    "Found key files %s / %s (type=%s, series=%s).",
+                    priv_key, pub_key, key_type,
+                    series.name if series else None)
                 self.inject(archive, key_type, series, priv_key, pub_key)
 
     def main(self):
@@ -129,4 +135,5 @@ class SyncSigningKeysScript(LaunchpadScript):
             self.logger.info(
                 "#%s - Processing keys for archive %s.", i, archive.reference)
             self.processArchive(archive)
+        transaction.commit()
         self.logger.info("Finished processing archives injections.")
