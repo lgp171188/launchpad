@@ -36,6 +36,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
+from lp.registry.model.person import Person
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
@@ -148,6 +149,53 @@ class OCIProject(BugTargetBase, StormBase):
 
     def getSeriesByName(self, name):
         return self.series.find(OCIProjectSeries.name == name).one()
+
+    def getRecipes(self):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        rs = IStore(OCIRecipe).find(
+            OCIRecipe,
+            OCIRecipe.owner_id == Person.id,
+            OCIRecipe.oci_project == self)
+        return rs.order_by(Person.name, OCIRecipe.name)
+
+    def getRecipeByNameAndOwner(self, recipe_name, owner_name):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        q = self.getRecipes().find(
+            OCIRecipe.name == recipe_name,
+            Person.name == owner_name)
+        return q.one()
+
+    def searchRecipes(self, query):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        q = self.getRecipes().find(
+            OCIRecipe.name.contains_string(query) |
+            Person.name.contains_string(query))
+        return q.order_by(Person.name, OCIRecipe.name)
+
+    def getOfficialRecipe(self):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        return self.getRecipes().find(OCIRecipe._official == True).one()
+
+    def setOfficialRecipe(self, recipe):
+        """See `IOCIProject`."""
+        if recipe is not None and recipe.oci_project != self:
+            raise ValueError(
+                "An OCI recipe cannot be set as the official recipe of "
+                "another OCI project.")
+        # Removing security proxy here because `_official` is a private
+        # attribute not declared on the Interface, and we need to set it
+        # regardless of security checks on OCIRecipe objects.
+        recipe = removeSecurityProxy(recipe)
+        previous = removeSecurityProxy(self.getOfficialRecipe())
+        if previous != recipe:
+            if previous is not None:
+                previous._official = False
+            if recipe is not None:
+                recipe._official = True
 
 
 @implementer(IOCIProjectSet)

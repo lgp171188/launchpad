@@ -85,6 +85,18 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
 
+    def getRecipeByNameAndOwner(recipe_name, owner_name):
+        """Returns the exact match search for recipe_name AND owner_name."""
+
+    def getRecipes():
+        """Returns the set of OCI recipes for this project."""
+
+    def searchRecipes(query):
+        """Searches for recipes in this OCI project."""
+
+    def getOfficialRecipe():
+        """Gets the official recipe for this OCI project."""
+
 
 class IOCIProjectEditableAttributes(IBugTarget):
     """IOCIProject attributes that can be edited.
@@ -119,6 +131,10 @@ class IOCIProjectEdit(Interface):
     def newSeries(name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
         """Creates a new `IOCIProjectSeries`."""
+
+    def setOfficialRecipe(recipe):
+        """Sets the given recipe as the official one. If recipe is None,
+        the current official recipe will be unset."""
 
 
 class IOCIProjectLegitimate(Interface):
