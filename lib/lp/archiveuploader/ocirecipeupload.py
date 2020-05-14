@@ -63,8 +63,8 @@ class OCIRecipeUpload:
                         "{}.tar.gz".format(layer_id)
                     )
                     self.logger.debug("Layer path: {}".format(layer_path))
-                    # If the file is already in the librarian, the file
-                    # won't exist on disk, so we can just reuse it.
+                    # If the file is already in the librarian,
+                    # we can just reuse it.
                     existing_file = getUtility(IOCIFileSet).getByLayerDigest(
                         digest)
                     # XXX 2020-05-14 twom This will need to respect restricted
