@@ -290,7 +290,7 @@ class OpenIDCallbackView(OpenIDLogin):
 
     def _gather_params(self, request):
         params = dict(request.form)
-        for key, value in request.query_string_params.iteritems():
+        for key, value in six.iteritems(request.query_string_params):
             if len(value) > 1:
                 raise ValueError(
                     'Did not expect multi-valued fields.')

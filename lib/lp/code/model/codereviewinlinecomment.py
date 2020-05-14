@@ -10,6 +10,7 @@ __all__ = [
     'CodeReviewInlineCommentSet',
     ]
 
+import six
 from storm.expr import LeftJoin
 from storm.locals import (
     Int,
@@ -113,7 +114,7 @@ class CodeReviewInlineCommentSet:
             list(crics), key=lambda c: c.comment.date_created)
         inline_comments = []
         for cric in sorted_crics:
-            for line_number, text in cric.comments.iteritems():
+            for line_number, text in six.iteritems(cric.comments):
                 comment = {
                     'line_number': line_number,
                     'person': cric.person,

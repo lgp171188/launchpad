@@ -118,7 +118,7 @@ from lp.services.webhooks.interfaces import IWebhookJobSource
 from lp.services.webhooks.model import WebhookJob
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJobType
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
@@ -470,9 +470,8 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
              Archive.distributionID,
              SourcePackageName.id,
              SourcePackageName.name),
-            SourcePackagePublishingHistory.status.is_in((
-                PackagePublishingStatus.PENDING,
-                PackagePublishingStatus.PUBLISHED)),
+            SourcePackagePublishingHistory.status.is_in(
+                active_publishing_status),
             SourcePackagePublishingHistory.id > self.last_spph_id)
         return rows.order_by(SourcePackagePublishingHistory.id)
 

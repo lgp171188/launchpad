@@ -31,6 +31,7 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+import six
 from six.moves.urllib_parse import (
     urlsplit,
     urlunsplit,
@@ -1273,9 +1274,8 @@ class GitRepositoryDeletionView(LaunchpadFormView):
         :return: A list of tuples of (item, action, reason, allowed)
         """
         reqs = []
-        for item, (action, reason) in (
-                self.context.getDeletionRequirements(
-                    eager_load=True).iteritems()):
+        for item, (action, reason) in six.iteritems(
+                self.context.getDeletionRequirements(eager_load=True)):
             allowed = check_permission("launchpad.Edit", item)
             reqs.append((item, action, reason, allowed))
         return reqs

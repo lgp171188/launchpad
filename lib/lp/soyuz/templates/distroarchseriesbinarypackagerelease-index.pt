@@ -87,6 +87,7 @@
     <div tal:replace="structure bpr/@@+portlet-predepends" />
     <div tal:replace="structure bpr/@@+portlet-enhances" />
     <div tal:replace="structure bpr/@@+portlet-breaks" />
+    <div tal:replace="structure bpr/@@+portlet-builtusing" />
 
   </div><!--portlet-->
   </div><!--yui-g-->

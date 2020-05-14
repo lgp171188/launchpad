@@ -38,6 +38,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import six
 from storm.exceptions import LostObjectError
 from storm.expr import (
     And,
@@ -241,9 +242,8 @@ class BranchJob(StormBase):
 
 
 @delegate_to(IBranchJob)
-class BranchJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class BranchJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     def __init__(self, branch_job):
         self.context = branch_job
@@ -684,7 +684,7 @@ class RevisionsAddedJob(BranchJobDerived):
                 proposals[source_id] = (proposal, date_created)
 
         return sorted(
-            [proposal for proposal, date_created in proposals.itervalues()],
+            [proposal for proposal, date_created in six.itervalues(proposals)],
             key=operator.attrgetter('date_created'), reverse=True)
 
     def getRevisionMessage(self, revision_id, revno):

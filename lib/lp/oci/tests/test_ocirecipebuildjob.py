@@ -10,6 +10,7 @@ __metaclass__ = type
 from fixtures import FakeLogger
 from testtools.matchers import (
     Equals,
+    Is,
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
@@ -25,7 +26,6 @@ from lp.oci.interfaces.ocirecipe import (
 from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRecipeBuildJob,
     IOCIRegistryUploadJob,
-    IOCIRegistryUploadJobSource,
     )
 from lp.oci.interfaces.ociregistryclient import IOCIRegistryClient
 from lp.oci.model.ocirecipebuildjob import (
@@ -37,6 +37,8 @@ from lp.oci.model.ocirecipebuildjob import (
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
+from lp.services.webapp import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
@@ -46,8 +48,6 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
-from lp.services.webapp import canonical_url
-from lp.services.webhooks.testing import LogsScheduledWebhooks
 
 
 def run_isolated_jobs(jobs):
@@ -134,6 +134,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
             "action": Equals("created"),
             "recipe": Equals(
                 canonical_url(ocibuild.recipe, force_local_path=True)),
+            "build_request": Is(None),
             "status": Equals("Successfully built"),
             "registry_upload_status": Equals("Pending")}]
         expected_payloads += [{
@@ -142,6 +143,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
             "action": Equals("status-changed"),
             "recipe": Equals(
                 canonical_url(ocibuild.recipe, force_local_path=True)),
+            "build_request": Is(None),
             "status": Equals("Successfully built"),
             "registry_upload_status": Equals(expected),
             } for expected in expected_registry_upload_statuses]

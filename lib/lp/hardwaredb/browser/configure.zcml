@@ -18,6 +18,12 @@
         permission="zope.Public"
         name="+submit"
         template="../templates/hwdb-submit-hardware-data.pt"/>
+    <browser:page
+        for="lp.hardwaredb.interfaces.hwdb.HWSubmissionsDisabledError"
+        class="lp.hardwaredb.browser.hwdb.HWDBSubmissionsDisabledView"
+        name="index.html"
+        permission="zope.Public"
+        template="../templates/hwdb-submissions-disabled.pt"/>
     <browser:url
         for="lp.hardwaredb.interfaces.hwdb.IHWSystemFingerprint"
         path_expression="string:+fingerprint/${fingerprint}"

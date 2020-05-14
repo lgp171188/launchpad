@@ -429,10 +429,9 @@ class GPGSigningContext:
         self.mode = mode
 
 
-class ObjectFactory:
+class ObjectFactory(
+        six.with_metaclass(AutoDecorate(default_master_store)), object):
     """Factory methods for creating basic Python objects."""
-
-    __metaclass__ = AutoDecorate(default_master_store)
 
     # This allocates process-wide unique integers.  We count on Python doing
     # only cooperative threading to make this safe across threads.

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -231,9 +232,6 @@ class TestOCIProjectEditView(BrowserTestCase):
 class TestOCIProjectAddView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super(TestOCIProjectAddView, self).setUp()
 
     def test_create_oci_project(self):
         oci_project = self.factory.makeOCIProject()

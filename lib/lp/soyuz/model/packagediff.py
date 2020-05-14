@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import tempfile
 
+import six
 from sqlobject import ForeignKey
 from storm.expr import Desc
 from storm.store import EmptyResultSet
@@ -215,7 +216,7 @@ class PackageDiff(SQLBase):
                 zip(directions, (self.from_source, self.to_source)))
 
             # Iterate over the packages to be diff'ed.
-            for direction, package in packages.iteritems():
+            for direction, package in six.iteritems(packages):
                 # Create distinct directory locations for
                 # 'from' and 'to' files.
                 absolute_path = os.path.join(tmp_dir, direction)

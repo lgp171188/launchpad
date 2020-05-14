@@ -29,6 +29,18 @@ XXX: noodles 2009-01-16 bug 317863: move this into the STP.
 
   >>> login('foo.bar@canonical.com')
   >>> build = getUtility(IBinaryPackageBuildSet).getByID(2)
+
+The sample data doesn't have any Built-Using references.  For now, just
+manually insert one so that we can check how it's rendered.
+
+  >>> from lp.soyuz.enums import BinarySourceReferenceType
+  >>> from lp.soyuz.interfaces.binarysourcereference import (
+  ...     IBinarySourceReferenceSet,
+  ...     )
+  >>> bpr = build.getBinaryPackageRelease('mozilla-firefox')
+  >>> _ = getUtility(IBinarySourceReferenceSet).createFromRelationship(
+  ...     bpr, 'iceweasel (= 1.0)', BinarySourceReferenceType.BUILT_USING)
+
   >>> package_upload = build.distro_series.createQueueEntry(
   ...     PackagePublishingPocket.UPDATES, build.archive,
   ...    'changes.txt', b'my changes')
@@ -73,10 +85,16 @@ links to a binary in the context in question.
   TEXT: "bar"
   LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
-
   >>> print_relation('breaks')
   TEXT: "baz"
   LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+
+The 'Built-Using' section contains a link to a source in the context in
+question.
+
+  >>> print_relation('builtusing')
+  LINK: "iceweasel (= 1.0)" ->
+  http://launchpad.test/ubuntu/warty/+source/iceweasel
 
 
 'Depends', 'Conflicts', 'Replaces', 'Suggests' and 'Recommends'

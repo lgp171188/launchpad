@@ -26,6 +26,7 @@ import time
 import apt_inst
 import apt_pkg
 from debian.deb822 import Deb822Dict
+import six
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -62,6 +63,7 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.component import IComponentSet
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.model.files import SourceFileMixin
 
@@ -218,7 +220,7 @@ class NascentUploadFile:
         ckfile = open(self.filepath, "r")
         size = 0
         for chunk in filechunks(ckfile):
-            for digester in digesters.itervalues():
+            for digester in six.itervalues(digesters):
                 digester.update(chunk)
             size += len(chunk)
         ckfile.close()
@@ -785,9 +787,10 @@ class BaseBinaryUploadFile(PackageUploadFile):
         assert self.source_name is not None
         assert self.source_version is not None
         distroseries = self.policy.distroseries
-        spphs = distroseries.getPublishedSources(
-            self.source_name, version=self.source_version,
-            include_pending=True, archive=self.policy.archive)
+        spphs = self.policy.archive.getPublishedSources(
+            name=self.source_name, version=self.source_version,
+            status=active_publishing_status, distroseries=distroseries,
+            exact_match=True)
         # Workaround storm bug in EmptyResultSet.
         spphs = list(spphs[:1])
         try:
@@ -905,7 +908,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
             debug_package = None
 
         user_defined_fields = self.extractUserDefinedFields(
-            [(field, encoded[field]) for field in self.control.iterkeys()])
+            [(field, encoded[field]) for field in self.control])
 
         binary = build.createBinaryPackageRelease(
             binarypackagename=binary_name,

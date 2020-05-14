@@ -39,6 +39,8 @@ import re
 import signal
 import subprocess
 
+import six
+
 from lp.services.encoding import guess as guess_encoding
 from lp.soyuz.enums import BinaryPackageFileType
 
@@ -333,7 +335,7 @@ def merge_file_lists(files, checksums_sha1, checksums_sha256, changes=True):
                 (filename, file_hashes[filename], size))
 
     # Ensure that each filename was only listed in Files once.
-    if set(file_counter.itervalues()) - set([1]):
+    if set(six.itervalues(file_counter)) - set([1]):
         raise UploadError("Duplicate filenames in Files field.")
 
     # Ensure that the Checksums-Sha1 and Checksums-Sha256 fields, if

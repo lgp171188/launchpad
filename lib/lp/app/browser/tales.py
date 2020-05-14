@@ -23,6 +23,7 @@ from lazr.enum import enumerated_type_registry
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import pytz
+import six
 from six.moves.urllib.parse import quote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
@@ -1418,7 +1419,7 @@ class CustomizableFormatter(ObjectFormatterAPI):
         """
         values = dict(
             (k, v if v is not None else '')
-            for k, v in self._link_summary_values().iteritems())
+            for k, v in six.iteritems(self._link_summary_values()))
         return structured(self._link_summary_template, **values).escapedtext
 
     def _title_values(self):
@@ -1440,7 +1441,7 @@ class CustomizableFormatter(ObjectFormatterAPI):
             return None
         values = dict(
             (k, v if v is not None else '')
-            for k, v in self._title_values().iteritems())
+            for k, v in six.iteritems(self._title_values()))
         return structured(title_template, **values).escapedtext
 
     def sprite_css(self):

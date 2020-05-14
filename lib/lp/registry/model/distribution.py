@@ -1128,11 +1128,14 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # circular import
         from lp.registry.model.ociproject import OCIProject
         store = Store.of(self)
+        clauses = [OCIProject.distribution == self]
+        if text is not None:
+            clauses += [
+                OCIProject.ociprojectname_id == OCIProjectName.id,
+                OCIProjectName.name.contains_string(text)]
         return store.find(
             OCIProject,
-            OCIProject.distribution == self,
-            OCIProject.ociprojectname_id == OCIProjectName.id,
-            OCIProjectName.name.contains_string(text))
+            *clauses)
 
     def guessPublishedSourcePackageName(self, pkgname):
         """See `IDistribution`"""

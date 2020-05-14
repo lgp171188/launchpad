@@ -37,6 +37,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.component import IComponentSet
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.component import Component
@@ -230,10 +231,7 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
         super(FromExistingOverridePolicy, self).__init__(*args, **kwargs)
 
     def getExistingPublishingStatuses(self, include_deleted):
-        status = [
-            PackagePublishingStatus.PENDING,
-            PackagePublishingStatus.PUBLISHED,
-            ]
+        status = list(active_publishing_status)
         if include_deleted:
             status.append(PackagePublishingStatus.DELETED)
         return status

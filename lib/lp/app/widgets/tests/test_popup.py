@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 import simplejson
+import six
 from zope.interface import Interface
 from zope.interface.interface import InterfaceClass
 from zope.schema import Choice
@@ -34,9 +35,9 @@ class TestMetaClass(InterfaceClass):
             __module__=__module__)
 
 
-class ITest(Interface):
-# The schema class for the widget we will test.
-    __metaclass__ = TestMetaClass
+class ITest(six.with_metaclass(TestMetaClass, Interface)):
+    # The schema class for the widget we will test.
+    pass
 
 
 class TestVocabularyPickerWidget(TestCaseWithFactory):

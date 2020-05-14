@@ -5,6 +5,7 @@
 
 __metaclass__ = type
 
+import six
 from storm.store import Store
 import transaction
 from zope.security.proxy import removeSecurityProxy
@@ -171,7 +172,8 @@ class TestFindLatestSourcePackageReleases(TestCaseWithFactory, FactoryHelper):
             for status in active_publishing_status)
         query = compose_sql_find_latest_source_package_releases(distroseries)
         self.assertContentEqual(
-            [self.getExpectedResultFor(spph) for spph in spphs.itervalues()],
+            [self.getExpectedResultFor(spph)
+             for spph in six.itervalues(spphs)],
             Store.of(distroseries).execute(query))
 
     def test_does_not_find_inactive_publication(self):

@@ -96,6 +96,7 @@ import oops_datedir_repo.serializer_rfc822
 import pytz
 import scandir
 import simplejson
+import six
 from storm.store import Store
 import subunit
 import testtools
@@ -697,7 +698,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         The config values will be restored during test tearDown.
         """
         name = self.factory.getUniqueString()
-        body = '\n'.join("%s: %s" % (k, v) for k, v in kwargs.iteritems())
+        body = '\n'.join("%s: %s" % (k, v) for k, v in six.iteritems(kwargs))
         config.push(name, "\n[%s]\n%s\n" % (section, body))
         self.addCleanup(config.pop, name)
 
@@ -1527,13 +1528,13 @@ def monkey_patch(context, **kwargs):
     """
     old_values = {}
     not_set = object()
-    for name, value in kwargs.iteritems():
+    for name, value in six.iteritems(kwargs):
         old_values[name] = getattr(context, name, not_set)
         setattr(context, name, value)
     try:
         yield
     finally:
-        for name, value in old_values.iteritems():
+        for name, value in six.iteritems(old_values):
             if value is not_set:
                 delattr(context, name)
             else:

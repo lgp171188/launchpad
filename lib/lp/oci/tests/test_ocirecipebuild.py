@@ -12,6 +12,7 @@ import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
+    Is,
     MatchesDict,
     MatchesStructure,
     )
@@ -28,6 +29,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.oci.interfaces.ocirecipebuild import (
+    IOCIFileSet,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
@@ -49,6 +51,32 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.matchers import HasQueryCount
+
+
+class TestOCIFileSet(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super(TestOCIFileSet, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
+    def test_implements_interface(self):
+        file_set = getUtility(IOCIFileSet)
+        self.assertProvides(file_set, IOCIFileSet)
+
+    def test_getByLayerDigest(self):
+        digest = "test_digest"
+        oci_file = self.factory.makeOCIFile(layer_file_digest=digest)
+        for _ in range(3):
+            self.factory.makeOCIFile()
+
+        result = getUtility(IOCIFileSet).getByLayerDigest(digest)
+        self.assertEqual(oci_file, result)
+
+    def test_getByLayerDigest_not_matching(self):
+        result = getUtility(IOCIFileSet).getByLayerDigest("not existing")
+        self.assertIsNone(result)
 
 
 class TestOCIRecipeBuild(TestCaseWithFactory):
@@ -181,6 +209,7 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
             "action": Equals("status-changed"),
             "recipe": Equals(
                  canonical_url(self.build.recipe, force_local_path=True)),
+            "build_request": Is(None),
             "status": Equals("Successfully built"),
             'registry_upload_status': Equals("Unscheduled"),
             }

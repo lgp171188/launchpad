@@ -18,6 +18,7 @@ from lazr.enum import (
     DBItem,
     )
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
@@ -98,9 +99,8 @@ class OCIRecipeBuildJob(StormBase):
 
 
 @delegate_to(IOCIRecipeBuildJob)
-class OCIRecipeBuildJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class OCIRecipeBuildJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     def __init__(self, oci_build_job):
         self.context = oci_build_job

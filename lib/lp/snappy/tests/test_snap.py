@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap packages."""
@@ -564,14 +564,27 @@ class TestSnap(TestCaseWithFactory):
             self.assertEqual(
                 (snap_base, snap_base.name),
                 Snap._findBase({"base": "bare", "build-base": snap_base.name}))
+            self.assertEqual(
+                (snap_base, snap_base.name),
+                Snap._findBase({"build-base": snap_base.name}))
+            self.assertEqual(
+                (snap_base, snap_base.name),
+                Snap._findBase({"type": "base", "name": snap_base.name}))
         self.assertRaises(
             NoSuchSnapBase, Snap._findBase,
             {"base": "nonexistent"})
         self.assertRaises(
             NoSuchSnapBase, Snap._findBase,
+            {"base": "bare"})
+        self.assertRaises(
+            NoSuchSnapBase, Snap._findBase,
             {"base": "bare", "build-base": "nonexistent"})
+        self.assertRaises(
+            NoSuchSnapBase, Snap._findBase,
+            {"build-base": "nonexistent"})
         self.assertEqual((None, None), Snap._findBase({}))
-        self.assertEqual((None, None), Snap._findBase({"base": "bare"}))
+        self.assertEqual(
+            (None, None), Snap._findBase({"name": snap_bases[0].name}))
 
     def test__findBase_with_default(self):
         with admin_logged_in():
@@ -585,15 +598,28 @@ class TestSnap(TestCaseWithFactory):
             self.assertEqual(
                 (snap_base, snap_base.name),
                 Snap._findBase({"base": "bare", "build-base": snap_base.name}))
+            self.assertEqual(
+                (snap_base, snap_base.name),
+                Snap._findBase({"build-base": snap_base.name}))
+            self.assertEqual(
+                (snap_base, snap_base.name),
+                Snap._findBase({"type": "base", "name": snap_base.name}))
         self.assertRaises(
             NoSuchSnapBase, Snap._findBase,
             {"base": "nonexistent"})
         self.assertRaises(
             NoSuchSnapBase, Snap._findBase,
+            {"base": "bare"})
+        self.assertRaises(
+            NoSuchSnapBase, Snap._findBase,
             {"base": "bare", "build-base": "nonexistent"})
+        self.assertRaises(
+            NoSuchSnapBase, Snap._findBase,
+            {"build-base": "nonexistent"})
         self.assertEqual((snap_bases[0], None), Snap._findBase({}))
         self.assertEqual(
-            (snap_bases[0], None), Snap._findBase({"base": "bare"}))
+            (snap_bases[0], None),
+            Snap._findBase({"name": snap_bases[0].name}))
 
     def makeRequestBuildsJob(self, arch_tags, git_ref=None):
         distro = self.factory.makeDistribution()

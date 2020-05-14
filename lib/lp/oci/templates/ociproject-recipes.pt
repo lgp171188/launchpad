@@ -1,0 +1,60 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad"
+>
+
+<body>
+  <metal:side fill-slot="side">
+    <div tal:replace="structure context/@@+global-actions"/>
+  </metal:side>
+
+  <div metal:fill-slot="main">
+      <div class="main-portlet">
+        <p tal:define="count view/count"
+           tal:condition="count">
+          <span tal:condition="python: count == 1">
+            There is <strong>1</strong> recipe</span>
+          <span tal:condition="python: count != 1">
+            There are <strong tal:content="count" /> recipes
+          </span>
+          registered for <tal:context replace="view/title" />.
+        </p>
+        <p tal:define="count view/count"
+           tal:condition="not: count">
+           There are no recipes registered for <tal:context replace="view/title" />.
+        </p>
+      </div>
+
+      <table class="listing" id="mirrors_list">
+        <tbody>
+          <tr class="head">
+            <th>Name</th>
+            <th>Owner</th>
+            <th>Source</th>
+            <th>Build file</th>
+            <th>Date created</th>
+          </tr>
+
+          <tr tal:repeat="recipe view/preloaded_recipes_batch">
+            <td>
+              <a tal:content="recipe/name"
+                 tal:attributes="href recipe/fmt:url" />
+            </td>
+            <td tal:content="structure recipe/owner/fmt:link" />
+            <td tal:content="recipe/git_ref/identity" />
+            <td tal:content="recipe/build_file" />
+            <td tal:content="recipe/date_created/fmt:displaydate" />
+          </tr>
+        </tbody>
+      </table>
+
+       <tal:navigation
+          replace="structure view/recipes_navigator/@@+navigation-links-lower" />
+  </div>
+
+</body>
+</html>

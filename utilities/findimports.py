@@ -46,6 +46,8 @@ import linecache
 import os
 import sys
 
+import six
+
 
 class ImportFinder(ASTVisitor):
     """AST visitor that collects all imported names in its imports attribute.
@@ -285,7 +287,7 @@ class ModuleGraph(object):
     def printUnusedImports(self):
         for module in self.listModules():
             names = [(unused.lineno, unused.name)
-                     for unused in module.unused_names.itervalues()]
+                     for unused in six.itervalues(module.unused_names)]
             names.sort()
             for lineno, name in names:
                 if not self.all_unused:

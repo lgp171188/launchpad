@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from contextlib import contextmanager
 
+import six
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import queryAdapter
@@ -64,7 +65,7 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
         subscribers = dict(
             (name_pair, make_person(*name_pair))
             for name_pair in self.name_pairs)
-        self.subscribers_set = frozenset(subscribers.itervalues())
+        self.subscribers_set = frozenset(six.itervalues(subscribers))
         self.subscribers_sorted = tuple(
             subscribers[name_pair] for name_pair in self.name_pairs_sorted)
 
@@ -428,7 +429,7 @@ class TestBugSubscriptionInfoPermissions(TestCaseWithFactory):
         self.assertEqual({}, checker.set_permissions)
 
         # All attributes require launchpad.View.
-        permissions = set(checker.get_permissions.itervalues())
+        permissions = set(six.itervalues(checker.get_permissions))
         self.assertContentEqual(["launchpad.View"], permissions)
 
         # The security adapter for launchpad.View lets anyone reference the

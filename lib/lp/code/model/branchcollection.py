@@ -16,6 +16,7 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
+import six
 from storm.expr import (
     And,
     Asc,
@@ -562,7 +563,7 @@ class GenericBranchCollection:
                 bugtasks_for_branch[bugbranch.branch].append(bugtask)
 
             # Now filter those down to one bugtask per branch
-            for branch, tasks in bugtasks_for_branch.iteritems():
+            for branch, tasks in six.iteritems(bugtasks_for_branch):
                 linked_bugtasks[branch.id].extend(
                     filter_bugtasks_by_context(branch.target.context, tasks))
 

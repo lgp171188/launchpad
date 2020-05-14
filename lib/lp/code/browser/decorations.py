@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Decorated model objects used in the browser code."""
@@ -95,7 +95,7 @@ class DecoratedBranch(BzrIdentityMixin):
         """
         if user is None:
             return False
-        return user.id in [sub.personID for sub in self.subscriptions]
+        return user.id in [sub.person_id for sub in self.subscriptions]
 
     @cachedproperty
     def latest_revisions(self):

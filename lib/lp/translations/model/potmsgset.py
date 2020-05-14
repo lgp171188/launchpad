@@ -14,6 +14,7 @@ from collections import (
 import logging
 import re
 
+import six
 from sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
@@ -122,7 +123,7 @@ def dictify_translations(translations):
     # Filter out None values.
     return dict(
         (form, translation)
-        for form, translation in translations.iteritems()
+        for form, translation in six.iteritems(translations)
         if translation is not None)
 
 
@@ -611,7 +612,7 @@ class POTMsgSet(SQLBase):
 
         forms = dict(
             ('msgstr%d' % form, potranslation)
-            for form, potranslation in potranslations.iteritems())
+            for form, potranslation in six.iteritems(potranslations))
 
         if from_import:
             origin = RosettaTranslationOrigin.SCM
@@ -748,7 +749,7 @@ class POTMsgSet(SQLBase):
 
         translation_args = dict(
             ('msgstr%d' % form, translation)
-            for form, translation in translations.iteritems())
+            for form, translation in six.iteritems(translations))
 
         return TranslationMessage(
             potmsgset=self,

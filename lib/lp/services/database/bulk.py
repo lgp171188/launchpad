@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Optimized bulk operations against the database."""
@@ -25,6 +25,7 @@ from operator import (
     itemgetter,
     )
 
+import six
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
@@ -52,7 +53,7 @@ def collate(things, key):
     collection = defaultdict(list)
     for thing in things:
         collection[key(thing)].append(thing)
-    return collection.iteritems()
+    return six.iteritems(collection)
 
 
 def get_type(thing):
@@ -158,7 +159,7 @@ def load_referencing(object_type, owning_objects, reference_keys,
         At this point, all the objects should be of the same type, but that
         constraint could be lifted in future.
     :param reference_keys: A list of attributes that should be used to select
-        object_type keys. e.g. ['branchID']
+        object_type keys. e.g. ['branch_id']
     :param extra_conditions: A list of Storm clauses that will be used in the
         final query.
     :return: A list of object_type where any of reference_keys refered to the

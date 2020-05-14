@@ -7,6 +7,7 @@ __all__ = [
     'HWDBApplicationNavigation',
     'HWDBFingerprintSetView',
     'HWDBPersonSubmissionsView',
+    'HWDBSubmissionsDisabledView',
     'HWDBSubmissionTextView',
     'HWDBUploadView',
     ]
@@ -41,6 +42,7 @@ from lp.services.webapp import (
     stepthrough,
     )
 from lp.services.webapp.batching import BatchNavigator
+from lp.services.webapp.error import GoneView
 from lp.services.webapp.interfaces import ILaunchBag
 
 
@@ -154,6 +156,12 @@ class HWDBUploadView(LaunchpadFormView):
         """Adds a custom header to HWDB clients."""
         self.request.response.setHeader(
             u'X-Launchpad-HWDB-Submission', value)
+
+
+class HWDBSubmissionsDisabledView(GoneView):
+    """View to indicate that new submissions are disabled."""
+
+    page_title = "Hardware database submissions disabled"
 
 
 class HWDBPersonSubmissionsView(LaunchpadView):

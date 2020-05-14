@@ -13,6 +13,7 @@ import os
 import tempfile
 
 from lazr.delegates import delegate_to
+import six
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -75,9 +76,8 @@ def _filter_ubuntu_translation_file(filename):
 
 @delegate_to(IPackageTranslationsUploadJob)
 @provider(IPackageTranslationsUploadJobSource)
-class PackageTranslationsUploadJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class PackageTranslationsUploadJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     config = config.IPackageTranslationsUploadJobSource
 

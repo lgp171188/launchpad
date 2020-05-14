@@ -19,6 +19,7 @@ from textwrap import dedent
 
 import posixpath
 import pytz
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -1457,7 +1458,8 @@ class TranslationImportQueue:
         """
         now = datetime.datetime.now(pytz.UTC)
         deletion_clauses = []
-        for status, max_age in translation_import_queue_entry_age.iteritems():
+        for status, max_age in six.iteritems(
+                translation_import_queue_entry_age):
             cutoff = now - max_age
             deletion_clauses.append(And(
                 TranslationImportQueueEntry.status == status,

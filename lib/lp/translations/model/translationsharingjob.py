@@ -16,6 +16,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import six
 from storm.locals import (
     Int,
     Reference,
@@ -114,10 +115,9 @@ class TranslationSharingJob(StormBase):
 
 
 @delegate_to(ITranslationSharingJob)
-class TranslationSharingJobDerived:
+class TranslationSharingJobDerived(
+        six.with_metaclass(EnumeratedSubclass, object)):
     """Base class for specialized TranslationTemplate Job types."""
-
-    __metaclass__ = EnumeratedSubclass
 
     def getDBClass(self):
         return TranslationSharingJob
@@ -170,7 +170,7 @@ class TranslationSharingJobDerived:
             for.
         :param event: The event itself.
         """
-        for event_type, job_classes in cls._event_types.iteritems():
+        for event_type, job_classes in six.iteritems(cls._event_types):
             if not event_type.providedBy(event):
                 continue
             for job_class in job_classes:
@@ -191,7 +191,7 @@ class TranslationSharingJobDerived:
             # Ignore changes to POTemplates that are neither renames,
             # nor moves to a different package/project.
             return
-        for event_type, job_classes in cls._event_types.iteritems():
+        for event_type, job_classes in six.iteritems(cls._event_types):
             if not event_type.providedBy(event):
                 continue
             for job_class in job_classes:
