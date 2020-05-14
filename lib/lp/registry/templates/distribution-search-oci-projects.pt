@@ -8,10 +8,6 @@
 >
 <body>
 
-<div metal:fill-slot="heading">
-  <h2>Search OCI projects in <tal:title replace="context/title" /></h2>
-</div>
-
 <metal:side fill-slot="side">
   <div tal:replace="structure context/@@+global-actions"/>
 </metal:side>
@@ -46,7 +42,7 @@
             There are <strong tal:content="count" /> OCI projects
           </span>
           registered for <tal:context replace="view/title" />
-          <span tal:condition= "python: view.search_requested and view.text">
+          <span tal:condition="python: view.search_requested and view.text">
             matching "<strong tal:content="view/text" />".
           </span>
         </p>
@@ -54,7 +50,7 @@
            tal:condition="not: count">
           There are no OCI projects registered for
           <tal:context replace="view/title" />
-          <span tal:condition= "python: view.search_requested and view.text">
+          <span tal:condition="python: view.search_requested and view.text">
             matching "<strong tal:content="view/text" />".
           </span>
         </p>
@@ -63,7 +59,6 @@
           <tbody>
             <tr class="head">
               <th>Name</th>
-              <th>Description</th>
               <th>Registrant</th>
               <th>Date created</th>
             </tr>
@@ -73,7 +68,6 @@
                 <a tal:content="item/name"
                    tal:attributes="href item/fmt:url" />
               </td>
-              <td tal:content="item/description" />
               <td tal:content="structure item/registrant/fmt:link" />
               <td tal:content="item/date_created/fmt:displaydate" />
             </tr>

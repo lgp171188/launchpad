@@ -176,7 +176,7 @@ class IOCIProjectSet(Interface):
     def getByDistributionAndName(distribution, name):
         """Get the OCIProjects for a given distribution."""
 
-    def findByDistributionAndName(distribution, name):
+    def findByDistributionAndName(distribution, name_substring):
         """Find OCIProjects for a given distribution that contains the
         provided name."""
 

@@ -1384,9 +1384,15 @@ class DistributionOCIProjectSearchView(LaunchpadView):
     page_title = ''
 
     @property
+    def label(self):
+        return "Search OCI projects in %s" % self.context.title
+
+    @property
     def text(self):
         text = self.request.get("text", None)
         if isinstance(text, list):
+            # The user may have URL hacked a query string with more than one
+            # "text" parameter. We'll take the last one.
             text = text[-1]
         return text
 
