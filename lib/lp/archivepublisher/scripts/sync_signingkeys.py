@@ -15,8 +15,8 @@ __all__ = [
 from datetime import datetime
 import os
 
-import transaction
 from pytz import utc
+import transaction
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
