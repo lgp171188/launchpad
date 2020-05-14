@@ -41,10 +41,7 @@ from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
     )
-from lp.buildmaster.interactor import (
-    BuilderInteractor,
-    shut_down_default_threadpool,
-    )
+from lp.buildmaster.interactor import BuilderInteractor
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonError,
     CannotBuild,
@@ -114,7 +111,7 @@ class MakeOCIBuildMixin:
         builder.processor = job.build.processor
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
-        self.addCleanup(shut_down_default_threadpool)
+        self.addCleanup(slave.pool.closeCachedConnections)
 
         # Taken from test_archivedependencies.py
         for component_name in ("main", "universe"):
@@ -210,7 +207,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
                         Equals(b"Basic " + base64.b64encode(
                             b"admin-launchpad.test:admin-secret"))]),
                     b"Content-Type": MatchesListwise([
-                        Equals(b"application/json"),
+                        Equals(b"application/json; charset=UTF-8"),
                         ]),
                     }),
                 "content": AfterPreprocessing(json.loads, MatchesDict({
