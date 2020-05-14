@@ -89,7 +89,10 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
-from lp.services.propertycache import cachedproperty
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -139,8 +142,6 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     build_daily = Bool(name="build_daily", default=False)
 
-    _git_ref = None
-
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT):
@@ -184,19 +185,21 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
 
+    @cachedproperty
+    def _git_ref(self):
+        return self.git_repository.getRefByPath(self.git_path)
+
     @property
     def git_ref(self):
         """See `IOCIRecipe`."""
-        if self.git_repository is not None:
-            if self._git_ref is None:
-                self._git_ref = self.git_repository.getRefByPath(self.git_path)
+        if self.git_repository_id is not None:
             return self._git_ref
         return None
 
     @git_ref.setter
     def git_ref(self, value):
         """See `IOCIRecipe`."""
-        self._git_ref = value
+        get_property_cache(self)._git_ref = value
         if value is not None:
             self.git_repository = value.repository
             self.git_path = value.path
