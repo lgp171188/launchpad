@@ -158,7 +158,6 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.build_daily = build_daily
         self.date_created = date_created
         self.date_last_modified = date_created
-        self._git_ref = None
         self.git_ref = git_ref
 
     @property

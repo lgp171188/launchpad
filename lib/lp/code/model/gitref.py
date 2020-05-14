@@ -22,6 +22,7 @@ from six.moves.urllib.parse import (
     quote_plus,
     urlsplit,
     )
+from storm.expr import And
 from storm.locals import (
     DateTime,
     Int,
@@ -632,8 +633,9 @@ class GitRef(StormBase, GitRefMixin):
 
         condition = None
         for repo, path in repos_and_paths:
-            clause = (GitRef.path.is_in([path, full_path(path)])
-                      & (GitRef.repository_id == repo.id))
+            clause = And(
+                GitRef.path.is_in([path, full_path(path)]),
+                (GitRef.repository_id == repo.id))
             condition = clause if condition is None else condition | clause
         result = {}
 
