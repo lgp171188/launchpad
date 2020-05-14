@@ -347,13 +347,6 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         readonly=True))
 
-    _official = Bool(
-        title=_("OCI project official"),
-        required=True,
-        default=False,
-        description=_("True if this recipe is official for its OCI project."),
-        readonly=False)
-
     git_ref = exported(Reference(
         IGitRef, title=_("Git branch"), required=True, readonly=False,
         description=_(

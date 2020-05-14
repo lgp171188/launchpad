@@ -184,7 +184,11 @@ class OCIProject(BugTargetBase, StormBase):
             raise ValueError(
                 "An OCI recipe cannot be set as the official recipe of "
                 "another OCI project.")
-        previous = self.getOfficialRecipe()
+        # Removing security proxy here because `_official` is a private
+        # attribute not declared on the Interface, and we need to set it
+        # regardless of security checks on OCIRecipe objects.
+        recipe = removeSecurityProxy(recipe)
+        previous = removeSecurityProxy(self.getOfficialRecipe())
         if previous != recipe:
             if previous is not None:
                 previous._official = False
