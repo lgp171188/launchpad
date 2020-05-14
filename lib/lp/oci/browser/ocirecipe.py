@@ -64,6 +64,7 @@ from lp.services.webapp import (
     stepthrough,
     structured,
     )
+from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import NameBreadcrumb
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.archive import EnableProcessorsMixin
@@ -142,6 +143,38 @@ class OCIRecipeContextMenu(ContextMenu):
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
         return Link('+request-builds', 'Request builds', icon='add')
+
+
+class OCIProjectRecipesView(LaunchpadView):
+    """Default view for the list of OCI recipes of an OCI project."""
+    page_title = 'Recipes'
+
+    @property
+    def label(self):
+        return 'OCI recipes for %s' % self.context.name
+
+    @property
+    def title(self):
+        return self.context.name
+
+    @property
+    def recipes(self):
+        recipes = getUtility(IOCIRecipeSet).findByOCIProject(self.context)
+        return recipes.order_by('name')
+
+    @property
+    def recipes_navigator(self):
+        return BatchNavigator(self.recipes, self.request)
+
+    @cachedproperty
+    def count(self):
+        return self.recipes_navigator.batch.total()
+
+    @property
+    def preloaded_recipes_batch(self):
+        recipes = self.recipes_navigator.batch
+        getUtility(IOCIRecipeSet).preloadDataForOCIRecipes(recipes)
+        return recipes
 
 
 class OCIRecipeView(LaunchpadView):
