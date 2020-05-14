@@ -67,6 +67,8 @@ class OCIRecipeUpload:
                     # won't exist on disk, so we can just reuse it.
                     existing_file = getUtility(IOCIFileSet).getByLayerDigest(
                         digest)
+                    # XXX 2020-05-14 twom This will need to respect restricted
+                    # when we do private builds.
                     if existing_file:
                         build.addFile(
                             existing_file.library_file,
