@@ -6,7 +6,6 @@ __metaclass__ = type
 __all__ = [
     'BuilderInteractor',
     'extract_vitals_from_db',
-    'shut_down_default_threadpool',
     ]
 
 from collections import namedtuple
