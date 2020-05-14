@@ -3,6 +3,8 @@
 
 """Browser views for distributions."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -105,6 +107,7 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.feeds.browser import FeedsMixin
@@ -313,7 +316,7 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
 
     def search_oci_project(self):
         text = 'Search for OCI Project'
-        return Link('+oci-project-search', text, icon='info')
+        return Link('+search-oci-project', text, icon='info')
 
     @cachedproperty
     def links(self):
@@ -1374,3 +1377,44 @@ class DistributionPublisherConfigView(LaunchpadFormView):
         self.request.response.addInfoNotification(
             'Your changes have been applied.')
         self.next_url = canonical_url(self.context)
+
+
+class DistributionOCIProjectSearchView(LaunchpadView):
+    """Page to search for OCI projects of a given distribution."""
+    page_title = ''
+
+    @property
+    def text(self):
+        text = self.request.get("text", None)
+        if isinstance(text, list):
+            text = text[-1]
+        return text
+
+    @property
+    def search_requested(self):
+        return self.text is not None
+
+    @property
+    def title(self):
+        return self.context.name
+
+    @cachedproperty
+    def count(self):
+        """Return the number of matched search results."""
+        return self.batchnav.batch.total()
+
+    @cachedproperty
+    def batchnav(self):
+        """Return the batch navigator for the search results."""
+        return BatchNavigator(self.search_results, self.request)
+
+    @cachedproperty
+    def preloaded_batch(self):
+        projects = self.batchnav.batch
+        getUtility(IOCIProjectSet).preloadDataForOCIProjects(projects)
+        return projects
+
+    @property
+    def search_results(self):
+        return getUtility(IOCIProjectSet).findByDistributionAndName(
+            self.context, self.text or '')
