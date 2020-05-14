@@ -3,8 +3,6 @@
 
 """Browser views for distributions."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 __all__ = [
@@ -44,6 +42,7 @@ from collections import defaultdict
 import datetime
 
 from lazr.restful.utils import smartquote
+import six
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
@@ -1423,4 +1422,4 @@ class DistributionOCIProjectSearchView(LaunchpadView):
     @property
     def search_results(self):
         return getUtility(IOCIProjectSet).findByDistributionAndName(
-            self.context, self.text or '')
+            self.context, self.text or six.ensure_text(''))
