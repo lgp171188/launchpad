@@ -161,8 +161,8 @@ class OCIProject(BugTargetBase, StormBase):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
         q = self.getRecipes().find(
-                OCIRecipe.name == recipe_name,
-                Person.name == owner_name)
+            OCIRecipe.name == recipe_name,
+            Person.name == owner_name)
         return q.one()
 
     def searchRecipes(self, query):

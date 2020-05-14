@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -400,15 +400,6 @@
         lp.services.webapp.vocabulary.IHugeVocabulary"
       provides="zope.formlib.interfaces.IInputWidget"
       factory="lp.app.widgets.popup.PersonPickerWidget"
-      permission="zope.Public"
-      />
-
-    <!-- Define the widget used by OCIRecipeChoice fields. -->
-    <view
-      type="zope.publisher.interfaces.browser.IBrowserRequest"
-      for="lp.oci.vocabularies.OCIRecipeVocabulary"
-      provides="zope.formlib.interfaces.IInputWidget"
-      factory="lp.app.widgets.popup.VocabularyPickerWidget"
       permission="zope.Public"
       />
 

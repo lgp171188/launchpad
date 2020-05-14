@@ -122,7 +122,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     description = Unicode(name="description", allow_none=True)
 
     # OCIRecipe.official shouldn't be set directly. Instead, call
-    # oci_recipe.setOfficialRecipe method.
+    # oci_project.setOfficialRecipe method.
     _official = Bool(name="official", default=False)
 
     git_repository_id = Int(name="git_repository", allow_none=True)
