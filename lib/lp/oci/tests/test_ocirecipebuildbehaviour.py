@@ -519,6 +519,41 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
             self.assertEqual(contents, b'retrieved from librarian')
 
     @defer.inlineCallbacks
+    def test_handleStatus_OK_reuse_from_other_build(self):
+        """We should be able to reuse a layer file from a separate build."""
+        self.factory.makeOCIFile(
+            layer_file_digest=u'digest_2',
+            content="layer 2 retrieved from librarian")
+
+        now = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.buildmaster.model.buildfarmjobbehaviour.datetime')).mock
+        mock_datetime.now = lambda: now
+        with dbuser(config.builddmaster.dbuser):
+            yield self.behaviour.handleStatus(
+                self.build.buildqueue_record, 'OK',
+                {'filemap': self.filemap})
+        self.assertEqual(
+            ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash'],
+            self.slave._got_file_record)
+        # This hash should not appear as it is already in the librarian
+        self.assertNotIn('layer_1_hash', self.slave._got_file_record)
+        self.assertNotIn('layer_2_hash', self.slave._got_file_record)
+
+        # layer_2 should have been retrieved from the librarian
+        layer_2_path = os.path.join(
+            self.upload_root,
+            "incoming",
+            self.behaviour.getUploadDirLeaf(self.build.build_cookie),
+            str(self.build.archive.id),
+            self.build.distribution.name,
+            "layer_2.tar.gz"
+        )
+        with open(layer_2_path, 'rb') as layer_2_fp:
+            contents = layer_2_fp.read()
+            self.assertEqual(contents, b'layer 2 retrieved from librarian')
+
+    @defer.inlineCallbacks
     def test_handleStatus_OK_absolute_filepath(self):
 
         self._createTestFile(
