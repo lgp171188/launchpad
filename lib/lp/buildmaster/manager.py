@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Soyuz buildd slave manager logic."""
@@ -16,7 +16,11 @@ import functools
 import logging
 
 import six
-from storm.expr import LeftJoin
+from storm.expr import (
+    Column,
+    LeftJoin,
+    Table,
+    )
 import transaction
 from twisted.application import service
 from twisted.internet import (
@@ -47,7 +51,12 @@ from lp.buildmaster.interfaces.builder import (
     )
 from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.services.database.bulk import dbify_value
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormexpr import (
+    BulkUpdate,
+    Values,
+    )
 from lp.services.propertycache import get_property_cache
 
 
@@ -278,12 +287,13 @@ class SlaveScanner:
     # greater than abort_timeout in launchpad-buildd's slave BuildManager.
     CANCEL_TIMEOUT = 180
 
-    def __init__(self, builder_name, builder_factory, logger, clock=None,
-                 interactor_factory=BuilderInteractor,
+    def __init__(self, builder_name, builder_factory, log_tail_updater, logger,
+                 clock=None, interactor_factory=BuilderInteractor,
                  slave_factory=BuilderInteractor.makeSlaveFromVitals,
                  behaviour_factory=BuilderInteractor.getBuildBehaviour):
         self.builder_name = builder_name
         self.builder_factory = builder_factory
+        self.log_tail_updater = log_tail_updater
         self.logger = logger
         self.interactor_factory = interactor_factory
         self.slave_factory = slave_factory
@@ -484,7 +494,7 @@ class SlaveScanner:
             assert slave_status is not None
             yield interactor.updateBuild(
                 vitals, slave, slave_status, self.builder_factory,
-                self.behaviour_factory)
+                self.behaviour_factory, self.log_tail_updater)
         else:
             if not vitals.builderok:
                 return
@@ -580,6 +590,63 @@ class NewBuildersScanner:
         return list(extra_builders)
 
 
+class LogTailUpdater:
+    """Perform build queue logtail updates in bulk."""
+
+    # How often to update, in seconds.
+    UPDATE_INTERVAL = 15
+
+    def __init__(self, manager, clock=None):
+        self.manager = manager
+        # Use the clock if provided, it's so that tests can
+        # advance it.  Use the reactor by default.
+        if clock is None:
+            clock = reactor
+        self._clock = clock
+        self.pending_updates = {}
+
+    def stop(self):
+        """Terminate the LoopingCall."""
+        self.loop.stop()
+
+    def scheduleUpdate(self):
+        """Schedule a callback UPDATE_INTERVAL seconds later."""
+        self.loop = LoopingCall(self.update)
+        self.loop.clock = self._clock
+        self.stopping_deferred = self.loop.start(self.UPDATE_INTERVAL)
+        return self.stopping_deferred
+
+    def update(self):
+        """Check for any pending updates and write them to the database."""
+        self.manager.logger.debug("Writing logtail updates.")
+        try:
+            pending_updates = self.pending_updates
+            self.pending_updates = {}
+            self.writeUpdates(pending_updates)
+        except Exception:
+            self.manager.logger.exception(
+                "Failure while writing logtail updates:\n")
+            transaction.abort()
+        self.manager.logger.debug("Logtail update complete.")
+
+    def writeUpdates(self, pending_updates):
+        if not pending_updates:
+            return
+        new_logtails = Table("new_logtails")
+        new_logtails_expr = Values(
+            new_logtails.name,
+            [("buildqueue", "integer"), ("logtail", "text")],
+            [[dbify_value(BuildQueue.id, buildqueue_id),
+              dbify_value(BuildQueue.logtail, logtail)]
+             for buildqueue_id, logtail in pending_updates.items()])
+        store = IStore(BuildQueue)
+        store.execute(BulkUpdate(
+            {BuildQueue.logtail: Column("logtail", new_logtails)},
+            table=BuildQueue, values=new_logtails_expr,
+            where=(BuildQueue.id == Column("buildqueue", new_logtails))))
+        transaction.commit()
+
+
 class BuilddManager(service.Service):
     """Main Buildd Manager service class."""
 
@@ -589,6 +656,7 @@ class BuilddManager(service.Service):
         self.logger = self._setupLogger()
         self.new_builders_scanner = NewBuildersScanner(
             manager=self, clock=clock)
+        self.log_tail_updater = LogTailUpdater(manager=self, clock=clock)
 
     def _setupLogger(self):
         """Set up a 'slave-scanner' logger that redirects to twisted.
@@ -613,6 +681,9 @@ class BuilddManager(service.Service):
         # Ask the NewBuildersScanner to add and start SlaveScanners for
         # each current builder, and any added in the future.
         self.new_builders_scanner.scheduleScan()
+        # Ask the LogTailUpdater to schedule bulk updates for build queue
+        # logtails.
+        self.log_tail_updater.scheduleUpdate()
 
     def stopService(self):
         """Callback for when we need to shut down."""
@@ -620,7 +691,9 @@ class BuilddManager(service.Service):
         # All the SlaveScanner objects need to be halted gracefully.
         deferreds = [slave.stopping_deferred for slave in self.builder_slaves]
         deferreds.append(self.new_builders_scanner.stopping_deferred)
+        deferreds.append(self.log_tail_updater.stopping_deferred)
 
+        self.log_tail_updater.stop()
         self.new_builders_scanner.stop()
         for slave in self.builder_slaves:
             slave.stopCycle()
@@ -635,7 +708,8 @@ class BuilddManager(service.Service):
         """Set up scanner objects for the builders specified."""
         for builder in builders:
             slave_scanner = SlaveScanner(
-                builder, self.builder_factory, self.logger)
+                builder, self.builder_factory, self.log_tail_updater,
+                self.logger)
             self.builder_slaves.append(slave_scanner)
             slave_scanner.startCycle()
 

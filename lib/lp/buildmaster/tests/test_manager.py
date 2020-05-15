@@ -50,6 +50,7 @@ from lp.buildmaster.manager import (
     BuilderFactory,
     JOB_RESET_THRESHOLD,
     judge_failure,
+    LogTailUpdater,
     NewBuildersScanner,
     PrefetchedBuilderFactory,
     recover_failure,
@@ -94,6 +95,12 @@ from lp.testing.layers import (
     )
 from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import BOB_THE_BUILDER_NAME
+
+
+class FakeLogTailUpdater:
+    """A minimal fake version of `LogTailUpdater`."""
+
+    pending_updates = {}
 
 
 class TestSlaveScannerScan(TestCaseWithFactory):
@@ -150,8 +157,11 @@ class TestSlaveScannerScan(TestCaseWithFactory):
             builder_name = BOB_THE_BUILDER_NAME
         if builder_factory is None:
             builder_factory = BuilderFactory()
+        manager = BuilddManager(builder_factory=builder_factory, clock=clock)
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            builder_name, builder_factory, BufferLogger(), clock=clock)
+            builder_name, builder_factory, manager.log_tail_updater,
+            BufferLogger(), clock=clock)
         scanner.logger.name = 'slave-scanner'
 
         return scanner
@@ -254,6 +264,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
         yield scanner.scan()
+        scanner.log_tail_updater.update()
         self._checkJobUpdated(builder, job)
 
     @defer.inlineCallbacks
@@ -331,6 +342,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
         yield scanner.scan()
+        scanner.log_tail_updater.update()
         self._checkJobUpdated(builder, job, logtail=u"\uFFFD\uFFFD──")
 
     @defer.inlineCallbacks
@@ -359,6 +371,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
         yield scanner.scan()
+        scanner.log_tail_updater.update()
         self._checkJobUpdated(builder, job, logtail=u"foobarbaz")
 
     @defer.inlineCallbacks
@@ -435,11 +448,13 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
         yield scanner.scan()
+        yield scanner.log_tail_updater.update()
         self.assertBuildingJob(job, builder, logtail="This is a build log: 0")
         self.assertIsNone(build.revision_id)
         slave.revision_id = "dummy"
         scanner = self._getScanner(builder_name=builder.name)
         yield scanner.scan()
+        yield scanner.log_tail_updater.update()
         self.assertBuildingJob(job, builder, logtail="This is a build log: 1")
         self.assertEqual("dummy", build.revision_id)
 
@@ -671,9 +686,11 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
         # control.
         get_slave = FakeMethod(OkSlave())
         clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            builder.name, BuilderFactory(), BufferLogger(),
-            slave_factory=get_slave, clock=clock)
+            builder.name, BuilderFactory(), manager.log_tail_updater,
+            BufferLogger(), slave_factory=get_slave, clock=clock)
 
         # The slave is idle and dirty, so the first scan will clean it
         # with a reset.
@@ -700,10 +717,13 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
         # updated.
         get_slave.result = BuildingSlave(build.build_cookie)
         yield scanner.scan()
+        yield scanner.log_tail_updater.update()
         self.assertEqual("This is a build log: 0", bq.logtail)
         yield scanner.scan()
+        yield scanner.log_tail_updater.update()
         self.assertEqual("This is a build log: 1", bq.logtail)
         yield scanner.scan()
+        yield scanner.log_tail_updater.update()
         self.assertEqual("This is a build log: 2", bq.logtail)
         self.assertEqual(
             ['status', 'status', 'status'], get_slave.result.method_log)
@@ -835,7 +855,7 @@ class TestSlaveScannerWithoutDB(TestCase):
         if behaviour is None:
             behaviour = TrivialBehaviour()
         return SlaveScanner(
-            'mock', builder_factory, BufferLogger(),
+            'mock', builder_factory, FakeLogTailUpdater(), BufferLogger(),
             interactor_factory=FakeMethod(interactor),
             slave_factory=FakeMethod(slave),
             behaviour_factory=FakeMethod(behaviour))
@@ -925,8 +945,11 @@ class TestSlaveScannerWithoutDB(TestCase):
     def test_getExpectedCookie_caches(self):
         bq = FakeBuildQueue('trivial')
         bf = MockBuilderFactory(MockBuilder(), bq)
+        manager = BuilddManager()
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            'mock', bf, BufferLogger(), interactor_factory=FakeMethod(None),
+            'mock', bf, manager.log_tail_updater, BufferLogger(),
+            interactor_factory=FakeMethod(None),
             slave_factory=FakeMethod(None),
             behaviour_factory=FakeMethod(TrivialBehaviour()))
 
@@ -1020,8 +1043,11 @@ class TestCancellationChecking(TestCaseWithFactory):
         return extract_vitals_from_db(self.builder)
 
     def _getScanner(self, clock=None):
+        manager = BuilddManager(clock=clock)
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            None, BuilderFactory(), BufferLogger(), clock=clock)
+            None, BuilderFactory(), manager.log_tail_updater, BufferLogger(),
+            clock=clock)
         scanner.logger.name = 'slave-scanner'
         return scanner
 
@@ -1111,6 +1137,21 @@ class TestBuilddManager(TestCase):
         advance = NewBuildersScanner.SCAN_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(0, manager.new_builders_scanner.scan.call_count)
+
+    def test_startService_adds_LogTailUpdater(self):
+        # When startService is called, the manager will start up a
+        # LogTailUpdater object.
+        self._stub_out_scheduleNextScanCycle()
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+
+        # Replace scan() with FakeMethod so we can see if it was called.
+        manager.log_tail_updater.update = FakeMethod()
+
+        manager.startService()
+        advance = LogTailUpdater.UPDATE_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, manager.log_tail_updater.update.call_count)
 
 
 class TestFailureAssessments(TestCaseWithFactory):
@@ -1340,6 +1381,66 @@ class TestNewBuilders(TestCase):
         self.assertEqual(2, scanner.checkForNewBuilders.call_count)
         clock.advance(advance)
         self.assertEqual(3, scanner.checkForNewBuilders.call_count)
+
+
+class TestLogTailUpdater(TestCaseWithFactory):
+    """Test updating of log tails."""
+
+    layer = LaunchpadZopelessLayer
+
+    def _getUpdater(self, clock=None):
+        return LogTailUpdater(
+            manager=BuilddManager(builder_factory=BuilderFactory()),
+            clock=clock)
+
+    def test_scheduleUpdate(self):
+        # scheduleUpdate calls the "update" method.
+        clock = task.Clock()
+        log_tail_updater = self._getUpdater(clock=clock)
+        log_tail_updater.update = FakeMethod()
+        log_tail_updater.scheduleUpdate()
+
+        clock.advance(LogTailUpdater.UPDATE_INTERVAL + 1)
+        self.assertNotEqual(
+            0, log_tail_updater.update.call_count,
+            "scheduleUpdate did not schedule anything")
+
+    def test_update(self):
+        # update writes pending updates to the database.
+        log_tail_updater = self._getUpdater()
+        bqs = [
+            self.factory.makeBinaryPackageBuild().queueBuild()
+            for _ in range(3)]
+        log_tail_updater.pending_updates[bqs[0].id] = "A log tail"
+        log_tail_updater.pending_updates[bqs[1].id] = "Another log tail"
+        transaction.commit()
+
+        log_tail_updater.update()
+        self.assertEqual("A log tail", bqs[0].logtail)
+        self.assertEqual("Another log tail", bqs[1].logtail)
+        self.assertIsNone(bqs[2].logtail)
+
+        self.assertEqual({}, log_tail_updater.pending_updates)
+        log_tail_updater.update()
+        self.assertEqual("A log tail", bqs[0].logtail)
+        self.assertEqual("Another log tail", bqs[1].logtail)
+        self.assertIsNone(bqs[2].logtail)
+
+    def test_update_swallows_exceptions(self):
+        # update swallows exceptions so the LoopingCall always retries.
+        clock = task.Clock()
+        log_tail_updater = self._getUpdater(clock=clock)
+        log_tail_updater.writeUpdates = FakeMethod(failure=Exception("Boom"))
+        log_tail_updater.scheduleUpdate()
+        self.assertEqual(1, log_tail_updater.writeUpdates.call_count)
+
+        # Even though the previous writeUpdates raised an exception, further
+        # updates will happen as normal.
+        advance = LogTailUpdater.UPDATE_INTERVAL + 1
+        clock.advance(advance)
+        self.assertEqual(2, log_tail_updater.writeUpdates.call_count)
+        clock.advance(advance)
+        self.assertEqual(3, log_tail_updater.writeUpdates.call_count)
 
 
 def is_file_growing(filepath, poll_interval=1, poll_repeat=10):
