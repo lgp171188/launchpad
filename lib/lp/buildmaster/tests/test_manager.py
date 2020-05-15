@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the renovated slave scanner aka BuilddManager."""
@@ -16,10 +16,7 @@ import time
 from six.moves import xmlrpc_client
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
-from testtools.twistedsupport import (
-    assert_fails_with,
-    AsynchronousDeferredRunTest,
-    )
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import (
     defer,
@@ -179,28 +176,18 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.assertEqual(0, builder.failure_count)
         self.assertTrue(builder.currentjob is not None)
 
-    def _checkNoDispatch(self, slave, builder):
-        """Assert that no dispatch has occurred.
-
-        'slave' is None, so no interations would be passed
-        to the asynchonous dispatcher and the builder remained active
-        and IDLE.
-        """
-        self.assertTrue(slave is None, "Unexpected slave.")
-
+    def _checkNoDispatch(self, builder):
+        """Assert that no dispatch has occurred."""
         builder = getUtility(IBuilderSet).get(builder.id)
         self.assertTrue(builder.builderok)
         self.assertTrue(builder.currentjob is None)
 
-    def _checkJobRescued(self, slave, builder, job):
+    def _checkJobRescued(self, builder, job):
         """`SlaveScanner.scan` rescued the job.
 
         Nothing gets dispatched,  the 'broken' builder remained disabled
         and the 'rescued' job is ready to be dispatched.
         """
-        self.assertTrue(
-            slave is None, "Unexpected slave.")
-
         builder = getUtility(IBuilderSet).get(builder.id)
         self.assertFalse(builder.builderok)
 
@@ -231,25 +218,23 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         transaction.commit()
 
         # Run 'scan' and check its result.
-        slave = yield scanner.scan()
+        yield scanner.scan()
         self.assertIs(None, builder.currentjob)
-        self._checkJobRescued(slave, builder, job)
+        self._checkJobRescued(builder, job)
 
-    def _checkJobUpdated(self, slave, builder, job,
-                         logtail='This is a build log: 0'):
+    def _checkJobUpdated(self, builder, job, logtail='This is a build log: 0'):
         """`SlaveScanner.scan` updates legitimate jobs.
 
         Job is kept assigned to the active builder and its 'logtail' is
         updated.
         """
-        self.assertTrue(slave is None, "Unexpected slave.")
-
         builder = getUtility(IBuilderSet).get(builder.id)
         self.assertTrue(builder.builderok)
 
         job = getUtility(IBuildQueueSet).get(job.id)
         self.assertBuildingJob(job, builder, logtail=logtail)
 
+    @defer.inlineCallbacks
     def testScanUpdatesBuildingJobs(self):
         # Enable sampledata builder attached to an appropriate testing
         # slave. It will respond as if it was building the sampledata job.
@@ -268,10 +253,10 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         # Run 'scan' and check its result.
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        d = defer.maybeDeferred(scanner.scan)
-        d.addCallback(self._checkJobUpdated, builder, job)
-        return d
+        yield scanner.scan()
+        self._checkJobUpdated(builder, job)
 
+    @defer.inlineCallbacks
     def test_scan_with_nothing_to_dispatch(self):
         factory = LaunchpadObjectFactory()
         builder = factory.makeBuilder()
@@ -279,9 +264,10 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
-        d = scanner.scan()
-        return d.addCallback(self._checkNoDispatch, builder)
+        yield scanner.scan()
+        self._checkNoDispatch(builder)
 
+    @defer.inlineCallbacks
     def test_scan_with_manual_builder(self):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
@@ -290,9 +276,8 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         builder.manual = True
         transaction.commit()
         scanner = self._getScanner()
-        d = scanner.scan()
-        d.addCallback(self._checkNoDispatch, builder)
-        return d
+        yield scanner.scan()
+        self._checkNoDispatch(builder)
 
     @defer.inlineCallbacks
     def test_scan_with_not_ok_builder(self):
@@ -307,6 +292,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         # Because the builder is not ok, we can't use _checkNoDispatch.
         self.assertIsNone(builder.currentjob)
 
+    @defer.inlineCallbacks
     def test_scan_of_broken_slave(self):
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
@@ -315,9 +301,10 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         builder.failure_count = 0
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
-        d = scanner.scan()
-        return assert_fails_with(d, xmlrpc_client.Fault)
+        with ExpectedException(xmlrpc_client.Fault):
+            yield scanner.scan()
 
+    @defer.inlineCallbacks
     def test_scan_of_partial_utf8_logtail(self):
         # The builder returns a fixed number of bytes from the tail of the
         # log, so the first character can easily end up being invalid UTF-8.
@@ -343,10 +330,10 @@ class TestSlaveScannerScan(TestCaseWithFactory):
 
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        d = defer.maybeDeferred(scanner.scan)
-        d.addCallback(
-            self._checkJobUpdated, builder, job, logtail=u"\uFFFD\uFFFD──")
+        yield scanner.scan()
+        self._checkJobUpdated(builder, job, logtail=u"\uFFFD\uFFFD──")
 
+    @defer.inlineCallbacks
     def test_scan_of_logtail_containing_nul(self):
         # PostgreSQL text columns can't store ASCII NUL (\0) characters, so
         # we make sure to filter those out of the logtail.
@@ -371,9 +358,8 @@ class TestSlaveScannerScan(TestCaseWithFactory):
 
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        d = defer.maybeDeferred(scanner.scan)
-        d.addCallback(
-            self._checkJobUpdated, builder, job, logtail=u"foobarbaz")
+        yield scanner.scan()
+        self._checkJobUpdated(builder, job, logtail=u"foobarbaz")
 
     @defer.inlineCallbacks
     def test_scan_calls_builder_factory_prescanUpdate(self):
