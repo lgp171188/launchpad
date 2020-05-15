@@ -495,21 +495,21 @@ class TestSlaveScannerScan(TestCaseWithFactory):
     def test_scan_first_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
-        self._assertFailureCounting(
+        return self._assertFailureCounting(
             builder_count=0, job_count=0, expected_builder_count=1,
             expected_job_count=1)
 
     def test_scan_second_builder_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
-        self._assertFailureCounting(
+        return self._assertFailureCounting(
             builder_count=1, job_count=0, expected_builder_count=2,
             expected_job_count=1)
 
     def test_scan_second_job_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
-        self._assertFailureCounting(
+        return self._assertFailureCounting(
             builder_count=0, job_count=1, expected_builder_count=1,
             expected_job_count=2)
 
