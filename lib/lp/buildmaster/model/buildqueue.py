@@ -190,7 +190,7 @@ class BuildQueue(SQLBase):
             # instance, and the contents might include invalid UTF-8 due to
             # being a fixed number of bytes from the tail of the log.  Turn
             # it into Unicode as best we can.
-            self.logtail = str(
+            self.logtail = bytes(
                 slave_status.get("logtail")).decode("UTF-8", errors="replace")
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
