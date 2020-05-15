@@ -19,8 +19,8 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     mutator_for,
-    operation_parameters,
     operation_for_version,
+    operation_parameters,
     )
 from lazr.restful.fields import Reference
 from six.moves import http_client
