@@ -245,8 +245,7 @@ class Builder(SQLBase):
         job_type_conditions = []
         job_sources = specific_build_farm_job_sources()
         for job_type, job_source in six.iteritems(job_sources):
-            query = job_source.addCandidateSelectionCriteria(
-                self.processor, self.virtualized)
+            query = job_source.addCandidateSelectionCriteria()
             if query:
                 job_type_conditions.append(
                     Or(
