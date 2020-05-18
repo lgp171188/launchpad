@@ -18,6 +18,7 @@ import uuid
 
 import fixtures
 from fixtures import MockPatch
+import pytz
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
@@ -523,14 +524,17 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     @defer.inlineCallbacks
     def test_handleStatus_OK_reuse_from_other_build(self):
         """We should be able to reuse a layer file from a separate build."""
-        self.factory.makeOCIFile(
+        oci_file = self.factory.makeOCIFile(
             layer_file_digest=u'digest_2',
             content="layer 2 retrieved from librarian")
 
-        now = datetime.now()
+        now = datetime.now(pytz.UTC)
         mock_datetime = self.useFixture(MockPatch(
             'lp.buildmaster.model.buildfarmjobbehaviour.datetime')).mock
+        mock_oci_datetime = self.useFixture(MockPatch(
+            'lp.oci.model.ocirecipebuildbehaviour.datetime')).mock
         mock_datetime.now = lambda: now
+        mock_oci_datetime.now = lambda tzinfo=None: now
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record, 'OK',
@@ -554,6 +558,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         with open(layer_2_path, 'rb') as layer_2_fp:
             contents = layer_2_fp.read()
             self.assertEqual(contents, b'layer 2 retrieved from librarian')
+        self.assertEqual(now, oci_file.date_last_used)
 
     @defer.inlineCallbacks
     def test_handleStatus_OK_absolute_filepath(self):
