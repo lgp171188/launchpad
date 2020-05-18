@@ -298,6 +298,9 @@ class IBuilderSet(IBuilderSetAdmin):
     def get(builder_id):
         """Return the IBuilder with the given builderid."""
 
+    def preloadProcessors(builders):
+        """Preload processors for a collection of `IBuilder`s."""
+
     @collection_default_content()
     def getBuilders():
         """Return all active configured builders."""

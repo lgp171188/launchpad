@@ -353,18 +353,20 @@ class BuilderSet(object):
         """See IBuilderSet."""
         return Builder.select().count()
 
-    def _preloadProcessors(self, rows):
+    def preloadProcessors(self, builders):
+        """See `IBuilderSet`."""
         # Grab (Builder.id, Processor.id) pairs and stuff them into the
         # Builders' processor caches.
         store = IStore(BuilderProcessor)
+        builder_ids = [b.id for b in builders]
         pairs = list(store.using(BuilderProcessor, Processor).find(
             (BuilderProcessor.builder_id, BuilderProcessor.processor_id),
             BuilderProcessor.processor_id == Processor.id,
-            BuilderProcessor.builder_id.is_in([b.id for b in rows])).order_by(
+            BuilderProcessor.builder_id.is_in(builder_ids)).order_by(
                 BuilderProcessor.builder_id, Processor.name))
         load(Processor, [pid for bid, pid in pairs])
-        for row in rows:
-            get_property_cache(row)._processors_cache = []
+        for builder in builders:
+            get_property_cache(builder)._processors_cache = []
         for bid, pid in pairs:
             cache = get_property_cache(store.get(Builder, bid))
             cache._processors_cache.append(store.get(Processor, pid))
@@ -377,7 +379,7 @@ class BuilderSet(object):
                 Builder.virtualized, Builder.name)
 
         def preload(rows):
-            self._preloadProcessors(rows)
+            self.preloadProcessors(rows)
             load_related(Person, rows, ['ownerID'])
             bqs = getUtility(IBuildQueueSet).preloadForBuilders(rows)
             BuildQueue.preloadSpecificBuild(bqs)
