@@ -69,6 +69,8 @@ from lp.code.model.gitjob import (
     GitJob,
     GitRefScanJob,
     )
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -1056,6 +1058,48 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         switch_dbuser('testadmin')
         self.assertEqual(1, store.find(SnapBuildJob).count())
+
+    def test_OCIFileJobPruner(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        ocifile = self.factory.makeOCIFile()
+        ocifile.date_last_used = THIRTY_DAYS_AGO
+        self.assertEqual(1, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(0, store.find(OCIFile).count())
+
+    def test_OCIFileJobPruner_doesnt_prune_recent(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        self.factory.makeOCIFile()
+        self.assertEqual(1, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(1, store.find(OCIFile).count())
+
+    def test_OCIFileJobPruner_mixed_dates(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        ocifile = self.factory.makeOCIFile()
+        ocifile.date_last_used = THIRTY_DAYS_AGO
+        self.factory.makeOCIFile()
+        self.assertEqual(2, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(1, store.find(OCIFile).count())
 
     def test_WebhookJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
