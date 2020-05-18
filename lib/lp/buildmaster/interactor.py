@@ -337,8 +337,9 @@ class BuilderSlave(object):
 
 BuilderVitals = namedtuple(
     'BuilderVitals',
-    ('name', 'url', 'virtualized', 'vm_host', 'vm_reset_protocol',
-     'builderok', 'manual', 'build_queue', 'version', 'clean_status'))
+    ('name', 'url', 'processors', 'virtualized', 'vm_host',
+     'vm_reset_protocol', 'builderok', 'manual', 'build_queue', 'version',
+     'clean_status'))
 
 _BQ_UNSPECIFIED = object()
 
@@ -347,9 +348,10 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
     if build_queue == _BQ_UNSPECIFIED:
         build_queue = builder.currentjob
     return BuilderVitals(
-        builder.name, builder.url, builder.virtualized, builder.vm_host,
-        builder.vm_reset_protocol, builder.builderok, builder.manual,
-        build_queue, builder.version, builder.clean_status)
+        builder.name, builder.url, removeSecurityProxy(builder.processors),
+        builder.virtualized, builder.vm_host, builder.vm_reset_protocol,
+        builder.builderok, builder.manual, build_queue, builder.version,
+        builder.clean_status)
 
 
 class BuilderInteractor(object):
@@ -500,20 +502,31 @@ class BuilderInteractor(object):
 
     @classmethod
     @defer.inlineCallbacks
-    def findAndStartJob(cls, vitals, builder, slave):
+    def findAndStartJob(cls, vitals, builder, slave, builder_factory):
         """Find a job to run and send it to the buildd slave.
 
         :return: A Deferred whose value is the `IBuildQueue` instance
             found or None if no job was found.
         """
         logger = cls._getSlaveScannerLogger()
-        # XXX This method should be removed in favour of two separately
-        # called methods that find and dispatch the job.  It will
-        # require a lot of test fixing.
-        candidate = builder.acquireBuildCandidate()
+
+        # Find a build candidate.  If we succeed, mark it as building
+        # immediately so that it is not dispatched by another builder in the
+        # build manager.
+        #
+        # We can consider this to be atomic, because although the build
+        # manager is a Twisted app and gives the appearance of doing lots of
+        # things at once, it's still single-threaded so no more than one
+        # builder scan can be in this code at the same time.
+        #
+        # If there's ever more than one build manager running at once, then
+        # this code will need some sort of mutex.
+        candidate = builder_factory.findBuildCandidate(vitals)
         if candidate is None:
             logger.debug("No build candidates available for builder.")
             defer.returnValue(None)
+        candidate.markAsBuilding(builder)
+        transaction.commit()
 
         new_behaviour = cls.getBuildBehaviour(candidate, builder, slave)
         needed_bfjb = type(removeSecurityProxy(

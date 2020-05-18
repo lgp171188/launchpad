@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Builder interfaces."""
@@ -207,22 +207,6 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
 
     def failBuilder(reason):
         """Mark builder as failed for a given reason."""
-
-    def acquireBuildCandidate():
-        """Acquire a build candidate in an atomic fashion.
-
-        When retrieiving a candidate we need to mark it as building
-        immediately so that it is not dispatched by another builder in the
-        build manager.
-
-        We can consider this to be atomic because although the build manager
-        is a Twisted app and gives the appearance of doing lots of things at
-        once, it's still single-threaded so no more than one builder scan
-        can be in this code at the same time.
-
-        If there's ever more than one build manager running at once, then
-        this code will need some sort of mutex.
-        """
 
 
 class IBuilderEdit(Interface):

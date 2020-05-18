@@ -11,8 +11,10 @@ __all__ = [
     'SlaveScanner',
     ]
 
+from collections import defaultdict
 import datetime
 import functools
+from itertools import chain
 import logging
 
 import six
@@ -49,6 +51,7 @@ from lp.buildmaster.interfaces.builder import (
     CannotResumeHost,
     IBuilderSet,
     )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.services.database.bulk import dbify_value
@@ -70,6 +73,13 @@ JOB_RESET_THRESHOLD = 3
 # The number of times a builder can consecutively fail before we
 # mark it builderok=False.
 BUILDER_FAILURE_THRESHOLD = 5
+
+
+def sort_build_candidates(candidates):
+    # Re-sort a combined list of candidates.  This must match the ordering
+    # used in BuildQueueSet.findBuildCandidates.
+    return sorted(
+        candidates, key=lambda candidate: (-candidate.lastscore, candidate.id))
 
 
 class BuilderFactory:
@@ -109,6 +119,14 @@ class BuilderFactory:
             extract_vitals_from_db(b)
             for b in getUtility(IBuilderSet).__iter__())
 
+    def findBuildCandidate(self, vitals):
+        """Find the next build candidate for this `BuilderVitals`, or None."""
+        bq_set = getUtility(IBuildQueueSet)
+        candidates = sort_build_candidates(chain.from_iterable(
+            bq_set.findBuildCandidates(processor, vitals.virtualized, 1)
+            for processor in vitals.processors + [None]))
+        return candidates[0] if candidates else None
+
 
 class PrefetchedBuilderFactory:
     """A smart builder factory that does efficient bulk queries.
@@ -119,15 +137,28 @@ class PrefetchedBuilderFactory:
 
     date_updated = None
 
+    @staticmethod
+    def _getBuilderGroupKeys(vitals):
+        return [
+            (processor, vitals.virtualized)
+            for processor in vitals.processors + [None]]
+
     def update(self):
         """See `BuilderFactory`."""
         transaction.abort()
-        builders_and_bqs = IStore(Builder).using(
+        builders_and_bqs = list(IStore(Builder).using(
             Builder, LeftJoin(BuildQueue, BuildQueue.builderID == Builder.id)
-            ).find((Builder, BuildQueue))
+            ).find((Builder, BuildQueue)))
+        getUtility(IBuilderSet).preloadProcessors(
+            [b for b, _ in builders_and_bqs])
         self.vitals_map = dict(
             (b.name, extract_vitals_from_db(b, bq))
             for b, bq in builders_and_bqs)
+        self.builder_groups = defaultdict(list)
+        for vitals in self.vitals_map.values():
+            for builder_group_key in self._getBuilderGroupKeys(vitals):
+                self.builder_groups[builder_group_key].append(vitals)
+        self.candidates_map = {}
         transaction.abort()
         self.date_updated = datetime.datetime.utcnow()
 
@@ -150,6 +181,22 @@ class PrefetchedBuilderFactory:
     def iterVitals(self):
         """See `BuilderFactory`."""
         return (b for n, b in sorted(six.iteritems(self.vitals_map)))
+
+    def findBuildCandidate(self, vitals):
+        """See `BuilderFactory`."""
+        bq_set = getUtility(IBuildQueueSet)
+        builder_group_keys = self._getBuilderGroupKeys(vitals)
+        for builder_group_key in builder_group_keys:
+            if builder_group_key not in self.candidates_map:
+                processor, virtualized = builder_group_key
+                self.candidates_map[builder_group_key] = (
+                    bq_set.findBuildCandidates(
+                        processor, virtualized,
+                        len(self.builder_groups[builder_group_key])))
+        candidates = sorted(chain.from_iterable(
+            self.candidates_map[builder_group_key]
+            for builder_group_key in builder_group_keys))
+        return candidates.pop(0) if candidates else None
 
 
 def judge_failure(builder_count, job_count, exc, retry=True):
@@ -517,7 +564,8 @@ class SlaveScanner:
                 # attempt to just retry the scan; we need to reset
                 # the job so the dispatch will be reattempted.
                 builder = self.builder_factory[self.builder_name]
-                d = interactor.findAndStartJob(vitals, builder, slave)
+                d = interactor.findAndStartJob(
+                    vitals, builder, slave, self.builder_factory)
                 d.addErrback(functools.partial(self._scanFailed, False))
                 yield d
                 if builder.currentjob is not None:

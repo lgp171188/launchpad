@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test BuilderInteractor features."""
@@ -37,7 +37,6 @@ from twisted.internet import (
     )
 from twisted.internet.task import Clock
 from twisted.python.failure import Failure
-from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
@@ -408,28 +407,30 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         return builder, build
 
     def test_findAndStartJob_returns_candidate(self):
-        # findAndStartJob finds the next queued job using _findBuildCandidate.
+        # findAndStartJob finds the next queued job using findBuildCandidate.
         # We don't care about the type of build at all.
         builder, build = self._setupRecipeBuildAndBuilder()
         candidate = build.queueBuild()
-        # _findBuildCandidate is tested elsewhere, we just make sure that
+        builder_factory = MockBuilderFactory(builder, candidate)
+        # findBuildCandidate is tested elsewhere, we just make sure that
         # findAndStartJob delegates to it.
-        removeSecurityProxy(builder)._findBuildCandidate = FakeMethod(
-            result=candidate)
+        builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
-        d = BuilderInteractor.findAndStartJob(vitals, builder, OkSlave())
+        d = BuilderInteractor.findAndStartJob(
+            vitals, builder, OkSlave(), builder_factory)
         return d.addCallback(self.assertEqual, candidate)
 
     def test_findAndStartJob_starts_job(self):
-        # findAndStartJob finds the next queued job using _findBuildCandidate
+        # findAndStartJob finds the next queued job using findBuildCandidate
         # and then starts it.
         # We don't care about the type of build at all.
         builder, build = self._setupRecipeBuildAndBuilder()
         candidate = build.queueBuild()
-        removeSecurityProxy(builder)._findBuildCandidate = FakeMethod(
-            result=candidate)
+        builder_factory = MockBuilderFactory(builder, candidate)
+        builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
-        d = BuilderInteractor.findAndStartJob(vitals, builder, OkSlave())
+        d = BuilderInteractor.findAndStartJob(
+            vitals, builder, OkSlave(), builder_factory)
 
         def check_build_started(candidate):
             self.assertEqual(candidate.builder, builder)
@@ -443,23 +444,25 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder, build = self._setupBinaryBuildAndBuilder()
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
         candidate = build.queueBuild()
-        removeSecurityProxy(builder)._findBuildCandidate = FakeMethod(
-            result=candidate)
+        builder_factory = MockBuilderFactory(builder, candidate)
+        builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         with ExpectedException(
                 BuildDaemonIsolationError,
                 "Attempted to start build on a dirty slave."):
-            yield BuilderInteractor.findAndStartJob(vitals, builder, OkSlave())
+            yield BuilderInteractor.findAndStartJob(
+                vitals, builder, OkSlave(), builder_factory)
 
     @defer.inlineCallbacks
     def test_findAndStartJob_dirties_slave(self):
         # findAndStartJob marks its builder DIRTY before dispatching.
         builder, build = self._setupBinaryBuildAndBuilder()
         candidate = build.queueBuild()
-        removeSecurityProxy(builder)._findBuildCandidate = FakeMethod(
-            result=candidate)
+        builder_factory = MockBuilderFactory(builder, candidate)
+        builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
-        yield BuilderInteractor.findAndStartJob(vitals, builder, OkSlave())
+        yield BuilderInteractor.findAndStartJob(
+            vitals, builder, OkSlave(), builder_factory)
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
 
 

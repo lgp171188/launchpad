@@ -11,15 +11,24 @@ __all__ = [
 
 from datetime import datetime
 from itertools import groupby
+import logging
 from operator import attrgetter
 
 import pytz
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
     IntervalCol,
     StringCol,
+    )
+from storm.expr import (
+    And,
+    Desc,
+    Exists,
+    Or,
+    SQL,
     )
 from storm.properties import (
     DateTime,
@@ -55,6 +64,7 @@ from lp.services.database.constants import (
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.features import getFeatureFlag
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -273,3 +283,81 @@ class BuildQueueSet(object):
                 removeSecurityProxy(build).build_farm_job_id)
             get_property_cache(build).buildqueue_record = bq
         return bqs
+
+    def _getSlaveScannerLogger(self):
+        """Return the logger instance from buildd-slave-scanner.py."""
+        # XXX cprov 20071120: Ideally the Launchpad logging system
+        # should be able to configure the root-logger instead of creating
+        # a new object, then the logger lookups won't require the specific
+        # name argument anymore. See bug 164203.
+        logger = logging.getLogger('slave-scanner')
+        return logger
+
+    def findBuildCandidates(self, processor, virtualized, limit):
+        """See `IBuildQueueSet`."""
+        # Circular import.
+        from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+
+        logger = self._getSlaveScannerLogger()
+
+        job_type_conditions = []
+        job_sources = specific_build_farm_job_sources()
+        for job_type, job_source in six.iteritems(job_sources):
+            query = job_source.addCandidateSelectionCriteria()
+            if query:
+                job_type_conditions.append(
+                    Or(
+                        BuildFarmJob.job_type != job_type,
+                        Exists(SQL(query))))
+
+        def get_int_feature_flag(flag):
+            value_str = getFeatureFlag(flag)
+            if value_str is not None:
+                try:
+                    return int(value_str)
+                except ValueError:
+                    logger.error('invalid %s %r', flag, value_str)
+
+        score_conditions = []
+        minimum_scores = set()
+        if processor is not None:
+            minimum_scores.add(get_int_feature_flag(
+                'buildmaster.minimum_score.%s' % processor.name))
+        minimum_scores.add(get_int_feature_flag('buildmaster.minimum_score'))
+        minimum_scores.discard(None)
+        # If there are minimum scores set for any of the processors
+        # supported by this builder, use the highest of them.  This is a bit
+        # weird and not completely ideal, but it's a safe conservative
+        # option and avoids substantially complicating the candidate query.
+        if minimum_scores:
+            score_conditions.append(
+                BuildQueue.lastscore >= max(minimum_scores))
+
+        store = IStore(BuildQueue)
+        candidate_jobs = store.using(BuildQueue, BuildFarmJob).find(
+            (BuildQueue.id,),
+            BuildFarmJob.id == BuildQueue._build_farm_job_id,
+            BuildQueue.status == BuildQueueStatus.WAITING,
+            BuildQueue.processor == processor,
+            BuildQueue.virtualized == virtualized,
+            BuildQueue.builder == None,
+            And(*(job_type_conditions + score_conditions))
+            ).order_by(Desc(BuildQueue.lastscore), BuildQueue.id)
+
+        # Only try a limited number of jobs. It's much easier on the
+        # database, the chance of a large prefix of the queue being
+        # bad candidates is negligible, and we want reasonably bounded
+        # per-cycle performance even if the prefix is large.
+        candidates = []
+        for (candidate_id,) in candidate_jobs[:max(limit * 2, 10)]:
+            candidate = getUtility(IBuildQueueSet).get(candidate_id)
+            job_source = job_sources[
+                removeSecurityProxy(candidate)._build_farm_job.job_type]
+            candidate_approved = job_source.postprocessCandidate(
+                candidate, logger)
+            if candidate_approved:
+                candidates.append(candidate)
+                if len(candidates) >= limit:
+                    break
+
+        return candidates

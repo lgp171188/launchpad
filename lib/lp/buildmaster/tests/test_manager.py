@@ -755,7 +755,8 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
 
     def test_update(self):
         # update grabs all of the Builders and their BuildQueues in a
-        # single query.
+        # single query, plus an additional two queries to grab all the
+        # associated Processors.
         builders = [self.factory.makeBuilder() for i in range(5)]
         for i in range(3):
             bq = self.factory.makeBinaryPackageBuild().queueBuild()
@@ -765,7 +766,7 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         pbf.update()
         with StormStatementRecorder() as recorder:
             pbf.update()
-        self.assertThat(recorder, HasQueryCount(Equals(1)))
+        self.assertThat(recorder, HasQueryCount(Equals(3)))
 
     def test_getVitals(self):
         # PrefetchedBuilderFactory.getVitals looks up the BuilderVitals

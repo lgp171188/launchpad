@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Builder features."""
@@ -11,13 +11,13 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
-    BuildQueueStatus,
     BuildStatus,
     )
 from lp.buildmaster.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.tests.mock_slaves import make_publisher
@@ -98,15 +98,20 @@ class TestBuilder(TestCaseWithFactory):
         self.assertEqual([proc], builder.processors)
 
 
-class TestFindBuildCandidateBase(TestCaseWithFactory):
+# XXX cjwatson 2020-05-18: All these tests would now make more sense in
+# lp.buildmaster.tests.test_buildqueue, and should be moved there when
+# convenient.
+class TestFindBuildCandidatesBase(TestCaseWithFactory):
     """Setup the test publisher and some builders."""
 
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestFindBuildCandidateBase, self).setUp()
+        super(TestFindBuildCandidatesBase, self).setUp()
         self.publisher = make_publisher()
         self.publisher.prepareBreezyAutotest()
+
+        self.proc_386 = getUtility(IProcessorSet).getByName('386')
 
         # Create some i386 builders ready to build PPA builds.  Two
         # already exist in sampledata so we'll use those first.
@@ -128,138 +133,167 @@ class TestFindBuildCandidateBase(TestCaseWithFactory):
             builder.builderok = True
             builder.manual = False
 
+        self.bq_set = getUtility(IBuildQueueSet)
 
-class TestFindBuildCandidateGeneralCases(TestFindBuildCandidateBase):
-    # Test usage of findBuildCandidate not specific to any archive type.
 
-    def test_findBuildCandidate_matches_processor(self):
-        # Builder._findBuildCandidate returns the highest scored build
-        # for any of the builder's architectures.
+class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
+    # Test usage of findBuildCandidates not specific to any archive type.
+
+    def test_findBuildCandidates_matches_processor(self):
+        # BuildQueueSet.findBuildCandidates returns the highest scored build
+        # for the given processor and the given virtualization setting.
         bq1 = self.factory.makeBinaryPackageBuild().queueBuild()
         bq2 = self.factory.makeBinaryPackageBuild().queueBuild()
+        bq3 = self.factory.makeBinaryPackageBuild(
+            processor=bq2.processor).queueBuild()
 
-        # With no job for the builder's processor, no job is returned.
+        # No job is returned for a fresh processor.
         proc = self.factory.makeProcessor()
-        builder = removeSecurityProxy(
-            self.factory.makeBuilder(processors=[proc], virtualized=True))
-        self.assertIs(None, builder._findBuildCandidate())
+        self.assertEqual([], self.bq_set.findBuildCandidates(proc, True, 3))
 
-        # Once bq1's processor is added to the mix, it's the best
-        # candidate.
-        builder.processors = [proc, bq1.processor]
-        self.assertEqual(bq1, builder._findBuildCandidate())
+        # bq1 is the best candidate for its processor.
+        self.assertEqual(
+            [bq1], self.bq_set.findBuildCandidates(bq1.processor, True, 3))
 
-        # bq2's score doesn't matter, as its processor isn't suitable
-        # for our builder.
+        # bq2's score doesn't matter when finding candidates for bq1's
+        # processor.
         bq2.manualScore(3000)
-        self.assertEqual(bq1, builder._findBuildCandidate())
+        self.assertEqual([], self.bq_set.findBuildCandidates(proc, True, 3))
+        self.assertEqual(
+            [bq1], self.bq_set.findBuildCandidates(bq1.processor, True, 3))
 
-        # But once we add bq2's processor, its higher score makes it win.
-        builder.processors = [bq1.processor, bq2.processor]
-        self.assertEqual(bq2, builder._findBuildCandidate())
+        # When looking at bq2's processor, the build with the higher score
+        # wins.
+        self.assertEqual(
+            [bq2, bq3],
+            self.bq_set.findBuildCandidates(bq2.processor, True, 3))
+        bq3.manualScore(4000)
+        self.assertEqual(
+            [bq3, bq2],
+            self.bq_set.findBuildCandidates(bq2.processor, True, 3))
 
-    def test_findBuildCandidate_supersedes_builds(self):
-        # IBuilder._findBuildCandidate identifies if there are builds
-        # for superseded source package releases in the queue and marks
-        # the corresponding build record as SUPERSEDED.
+    def test_findBuildCandidates_supersedes_builds(self):
+        # BuildQueueSet.findBuildCandidates identifies if there are builds
+        # for superseded source package releases in the queue and marks the
+        # corresponding build record as SUPERSEDED.
         archive = self.factory.makeArchive()
         self.publisher.getPubSource(
             sourcename="gedit", status=PackagePublishingStatus.PUBLISHED,
             archive=archive).createMissingBuilds()
-        old_candidate = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
+        old_candidates = self.bq_set.findBuildCandidates(
+            self.proc_386, True, 2)
 
         # The candidate starts off as NEEDSBUILD:
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(
-            old_candidate)
+            old_candidates[0])
         self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
 
         # Now supersede the source package:
         publication = build.current_source_publication
         publication.status = PackagePublishingStatus.SUPERSEDED
 
-        # The candidate returned is now a different one:
-        new_candidate = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
-        self.assertNotEqual(new_candidate, old_candidate)
+        # The list of candidates returned is now different:
+        new_candidates = self.bq_set.findBuildCandidates(
+            self.proc_386, True, 2)
+        self.assertNotEqual(new_candidates, old_candidates)
 
         # And the old_candidate is superseded:
         self.assertEqual(BuildStatus.SUPERSEDED, build.status)
 
-    def test_findBuildCandidate_honours_minimum_score(self):
+    def test_findBuildCandidates_honours_limit(self):
+        # BuildQueueSet.findBuildCandidates returns no more than the number
+        # of candidates requested.
+        processor = self.factory.makeProcessor()
+        bqs = [
+            self.factory.makeBinaryPackageBuild(
+                processor=processor).queueBuild()
+            for _ in range(10)]
+
+        self.assertEqual(
+            bqs[:5], self.bq_set.findBuildCandidates(processor, True, 5))
+        self.assertEqual(
+            bqs, self.bq_set.findBuildCandidates(processor, True, 10))
+        self.assertEqual(
+            bqs, self.bq_set.findBuildCandidates(processor, True, 11))
+
+        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(bqs[0])
+        build.current_source_publication.status = (
+            PackagePublishingStatus.SUPERSEDED)
+
+        self.assertEqual(
+            bqs[1:6], self.bq_set.findBuildCandidates(processor, True, 5))
+
+    def test_findBuildCandidates_honours_minimum_score(self):
         # Sometimes there's an emergency that requires us to lock down the
         # build farm except for certain whitelisted builds.  We do this by
         # way of a feature flag to set a minimum score; if this is set,
-        # Builder._findBuildCandidate will ignore any build with a lower
-        # score.
-        bq1 = self.factory.makeBinaryPackageBuild().queueBuild()
-        bq1.manualScore(100000)
-        bq2 = self.factory.makeBinaryPackageBuild().queueBuild()
-        bq2.manualScore(99999)
-        builder1 = removeSecurityProxy(
-            self.factory.makeBuilder(
-                processors=[bq1.processor, self.factory.makeProcessor()],
-                virtualized=True))
-        builder2 = removeSecurityProxy(
-            self.factory.makeBuilder(
-                processors=[bq2.processor, self.factory.makeProcessor()],
-                virtualized=True))
+        # BuildQueueSet.findBuildCandidates will ignore any build with a
+        # lower score.
+        processors = []
+        bqs = []
+        for _ in range(2):
+            processors.append(self.factory.makeProcessor())
+            bqs.append([])
+            for score in (100000, 99999):
+                bq = self.factory.makeBinaryPackageBuild(
+                    processor=processors[-1]).queueBuild()
+                bq.manualScore(score)
+                bqs[-1].append(bq)
+        processors.append(self.factory.makeProcessor())
 
-        # By default, each builder has the appropriate one of the two builds
-        # we just created as a candidate.
-        self.assertEqual(bq1, builder1._findBuildCandidate())
-        self.assertEqual(bq2, builder2._findBuildCandidate())
+        # By default, each processor has the two builds we just created for
+        # it as candidates, with the highest score first.
+        self.assertEqual(
+            bqs[0], self.bq_set.findBuildCandidates(processors[0], True, 3))
+        self.assertEqual(
+            bqs[1], self.bq_set.findBuildCandidates(processors[1], True, 3))
 
         # If we set a minimum score, then only builds above that threshold
         # are candidates.
         with FeatureFixture({'buildmaster.minimum_score': '100000'}):
-            self.assertEqual(bq1, builder1._findBuildCandidate())
-            self.assertIsNone(builder2._findBuildCandidate())
+            self.assertEqual(
+                [bqs[0][0]],
+                self.bq_set.findBuildCandidates(processors[0], True, 3))
+            self.assertEqual(
+                [bqs[1][0]],
+                self.bq_set.findBuildCandidates(processors[1], True, 3))
 
         # We can similarly set a minimum score for individual processors.
-        # The maximum of these for any processor supported by the builder is
-        # used.
         cases = [
-            ({0: '99999'}, bq2),
-            ({1: '99999'}, bq2),
-            ({0: '100000'}, None),
-            ({1: '100000'}, None),
-            ({0: '99999', 1: '99999'}, bq2),
-            ({0: '99999', 1: '100000'}, None),
-            ({0: '100000', 1: '99999'}, None),
+            ({0: '99999'}, [bqs[0], bqs[1], []]),
+            ({1: '99999'}, [bqs[0], bqs[1], []]),
+            ({2: '99999'}, [bqs[0], bqs[1], []]),
+            ({0: '100000'}, [[bqs[0][0]], bqs[1], []]),
+            ({1: '100000'}, [bqs[0], [bqs[1][0]], []]),
+            ({2: '100000'}, [bqs[0], bqs[1], []]),
             ]
-        for feature_spec, expected_bq in cases:
+        for feature_spec, expected_bqs in cases:
             features = {
-                'buildmaster.minimum_score.%s' % builder2.processors[i].name:
-                    score
+                'buildmaster.minimum_score.%s' % processors[i].name: score
                 for i, score in feature_spec.items()}
             with FeatureFixture(features):
-                self.assertEqual(expected_bq, builder2._findBuildCandidate())
+                for i, processor in enumerate(processors):
+                    self.assertEqual(
+                        expected_bqs[i],
+                        self.bq_set.findBuildCandidates(processor, True, 3))
 
         # If we set an invalid minimum score, buildd-manager doesn't
         # explode.
         with FakeLogger() as logger:
             with FeatureFixture({'buildmaster.minimum_score': 'nonsense'}):
-                self.assertEqual(bq1, builder1._findBuildCandidate())
-                self.assertEqual(bq2, builder2._findBuildCandidate())
+                self.assertEqual(
+                    bqs[0],
+                    self.bq_set.findBuildCandidates(processors[0], True, 3))
+                self.assertEqual(
+                    bqs[1],
+                    self.bq_set.findBuildCandidates(processors[1], True, 3))
             self.assertEqual(
                 "invalid buildmaster.minimum_score u'nonsense'\n"
                 "invalid buildmaster.minimum_score u'nonsense'\n",
                 logger.output)
 
-    def test_acquireBuildCandidate_marks_building(self):
-        # acquireBuildCandidate() should call _findBuildCandidate and
-        # mark the build as building.
-        archive = self.factory.makeArchive()
-        self.publisher.getPubSource(
-            sourcename="gedit", status=PackagePublishingStatus.PUBLISHED,
-            archive=archive).createMissingBuilds()
-        candidate = removeSecurityProxy(
-            self.frog_builder).acquireBuildCandidate()
-        self.assertEqual(BuildQueueStatus.RUNNING, candidate.status)
 
-
-class TestFindBuildCandidatePPABase(TestFindBuildCandidateBase):
+class TestFindBuildCandidatesPPABase(TestFindBuildCandidatesBase):
 
     ppa_joe_private = False
     ppa_jim_private = False
@@ -280,7 +314,7 @@ class TestFindBuildCandidatePPABase(TestFindBuildCandidateBase):
 
     def setUp(self):
         """Publish some builds for the test archive."""
-        super(TestFindBuildCandidatePPABase, self).setUp()
+        super(TestFindBuildCandidatesPPABase, self).setUp()
 
         # Create two PPAs and add some builds to each.
         self.ppa_joe = self.factory.makeArchive(
@@ -330,32 +364,33 @@ class TestFindBuildCandidatePPABase(TestFindBuildCandidateBase):
         self.assertEqual(num_free_builders, 2)
 
 
-class TestFindBuildCandidatePPA(TestFindBuildCandidatePPABase):
+class TestFindBuildCandidatesPPA(TestFindBuildCandidatesPPABase):
 
     def test_findBuildCandidate(self):
         # joe's fourth i386 build will be the next build candidate.
-        next_job = removeSecurityProxy(self.builder4)._findBuildCandidate()
+        [next_job] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
         self.assertEqual('joesppa', build.archive.name)
 
     def test_findBuildCandidate_with_disabled_archive(self):
         # Disabled archives should not be considered for dispatching
         # builds.
-        disabled_job = removeSecurityProxy(self.builder4)._findBuildCandidate()
+        [disabled_job] = self.bq_set.findBuildCandidates(
+            self.proc_386, True, 1)
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(
             disabled_job)
         build.archive.disable()
-        next_job = removeSecurityProxy(self.builder4)._findBuildCandidate()
+        [next_job] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
         self.assertNotEqual(disabled_job, next_job)
 
 
-class TestFindBuildCandidatePrivatePPA(TestFindBuildCandidatePPABase):
+class TestFindBuildCandidatesPrivatePPA(TestFindBuildCandidatesPPABase):
 
     ppa_joe_private = True
 
     def test_findBuildCandidate_for_private_ppa(self):
         # joe's fourth i386 build will be the next build candidate.
-        next_job = removeSecurityProxy(self.builder4)._findBuildCandidate()
+        [next_job] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
         self.assertEqual('joesppa', build.archive.name)
 
@@ -364,15 +399,15 @@ class TestFindBuildCandidatePrivatePPA(TestFindBuildCandidatePPABase):
         # from the (password protected) repo area, not the librarian.
         pub = build.current_source_publication
         pub.status = PackagePublishingStatus.PENDING
-        candidate = removeSecurityProxy(self.builder4)._findBuildCandidate()
+        [candidate] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
         self.assertNotEqual(next_job.id, candidate.id)
 
 
-class TestFindBuildCandidateDistroArchive(TestFindBuildCandidateBase):
+class TestFindBuildCandidatesDistroArchive(TestFindBuildCandidatesBase):
 
     def setUp(self):
         """Publish some builds for the test archive."""
-        super(TestFindBuildCandidateDistroArchive, self).setUp()
+        super(TestFindBuildCandidatesDistroArchive, self).setUp()
         # Create a primary archive and publish some builds for the
         # queue.
         self.non_ppa = self.factory.makeArchive(
@@ -388,29 +423,22 @@ class TestFindBuildCandidateDistroArchive(TestFindBuildCandidateBase):
     def test_findBuildCandidate_for_non_ppa(self):
         # Normal archives are not restricted to serial builds per
         # arch.
-
-        next_job = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
-        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
-        self.assertEqual('primary', build.archive.name)
-        self.assertEqual('gedit', build.source_package_release.name)
+        self.assertEqual(
+            [self.gedit_build.buildqueue_record,
+             self.firefox_build.buildqueue_record],
+            self.bq_set.findBuildCandidates(self.proc_386, True, 3))
 
         # Now even if we set the build building, we'll still get the
         # second non-ppa build for the same archive as the next candidate.
-        build.updateStatus(BuildStatus.BUILDING, builder=self.frog_builder)
-        next_job = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
-        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
-        self.assertEqual('primary', build.archive.name)
-        self.assertEqual('firefox', build.source_package_release.name)
+        self.gedit_build.updateStatus(
+            BuildStatus.BUILDING, builder=self.frog_builder)
+        self.assertEqual(
+            [self.firefox_build.buildqueue_record],
+            self.bq_set.findBuildCandidates(self.proc_386, True, 3))
 
     def test_findBuildCandidate_for_recipe_build(self):
         # Recipe builds with a higher score are selected first.
         # This test is run in a context with mixed recipe and binary builds.
-
-        self.assertIsNot(self.frog_builder.processor, None)
-        self.assertEqual(self.frog_builder.virtualized, True)
-
         self.assertEqual(self.gedit_build.buildqueue_record.lastscore, 2505)
         self.assertEqual(self.firefox_build.buildqueue_record.lastscore, 2505)
 
@@ -423,13 +451,14 @@ class TestFindBuildCandidateDistroArchive(TestFindBuildCandidateBase):
 
         self.assertEqual(recipe_build_job.lastscore, 9999)
 
-        next_job = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
+        self.assertEqual(
+            [recipe_build_job,
+             self.gedit_build.buildqueue_record,
+             self.firefox_build.buildqueue_record],
+            self.bq_set.findBuildCandidates(self.proc_386, True, 3))
 
-        self.assertEqual(recipe_build_job, next_job)
 
-
-class TestFindRecipeBuildCandidates(TestFindBuildCandidateBase):
+class TestFindRecipeBuildCandidates(TestFindBuildCandidatesBase):
     # These tests operate in a "recipe builds only" setting.
     # Please see also bug #507782.
 
@@ -460,11 +489,6 @@ class TestFindRecipeBuildCandidates(TestFindBuildCandidateBase):
     def test_findBuildCandidate_with_highest_score(self):
         # The recipe build with the highest score is selected first.
         # This test is run in a "recipe builds only" context.
-
-        self.assertIsNot(self.frog_builder.processor, None)
-        self.assertEqual(self.frog_builder.virtualized, True)
-
-        next_job = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
-
-        self.assertEqual(self.bq2, next_job)
+        self.assertEqual(
+            [self.bq2, self.bq1],
+            self.bq_set.findBuildCandidates(self.proc_386, True, 2))
