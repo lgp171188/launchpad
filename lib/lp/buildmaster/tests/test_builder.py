@@ -259,50 +259,6 @@ class TestFindBuildCandidateGeneralCases(TestFindBuildCandidateBase):
         self.assertEqual(BuildQueueStatus.RUNNING, candidate.status)
 
 
-class TestFindBuildCandidatePPAWithSingleBuilder(TestCaseWithFactory):
-
-    layer = LaunchpadZopelessLayer
-
-    def setUp(self):
-        super(TestFindBuildCandidatePPAWithSingleBuilder, self).setUp()
-        self.publisher = make_publisher()
-        self.publisher.prepareBreezyAutotest()
-
-        self.bob_builder = getUtility(IBuilderSet)['bob']
-        self.frog_builder = getUtility(IBuilderSet)['frog']
-
-        # Disable bob so only frog is available.
-        self.bob_builder.manual = True
-        self.bob_builder.builderok = True
-        self.frog_builder.manual = False
-        self.frog_builder.builderok = True
-
-        # Make a new PPA and give it some builds.
-        self.ppa_joe = self.factory.makeArchive(name="joesppa")
-        self.publisher.getPubSource(
-            sourcename="gedit", status=PackagePublishingStatus.PUBLISHED,
-            archive=self.ppa_joe).createMissingBuilds()
-
-    def test_findBuildCandidate_first_build_started(self):
-        # The allocation rule for PPA dispatching doesn't apply when
-        # there's only one builder available.
-
-        # Asking frog to find a candidate should give us the joesppa build.
-        next_job = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
-        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
-        self.assertEqual('joesppa', build.archive.name)
-
-        # If bob is in a failed state the joesppa build is still
-        # returned.
-        self.bob_builder.builderok = False
-        self.bob_builder.manual = False
-        next_job = removeSecurityProxy(
-            self.frog_builder)._findBuildCandidate()
-        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
-        self.assertEqual('joesppa', build.archive.name)
-
-
 class TestFindBuildCandidatePPABase(TestFindBuildCandidateBase):
 
     ppa_joe_private = False
