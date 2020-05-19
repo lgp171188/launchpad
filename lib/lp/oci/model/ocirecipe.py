@@ -42,6 +42,9 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.processor import Processor
+from lp.code.model.gitcollection import GenericGitCollection
+from lp.code.model.gitref import GitRef
+from lp.code.model.gitrepository import GitRepository
 from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import (
@@ -66,8 +69,11 @@ from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
+from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import Person
 from lp.registry.model.series import ACTIVE_STATUSES
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
@@ -83,7 +89,10 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
-from lp.services.propertycache import cachedproperty
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -121,7 +130,9 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     name = Unicode(name="name", allow_none=False)
     description = Unicode(name="description", allow_none=True)
 
-    official = Bool(name="official", default=False)
+    # OCIRecipe.official shouldn't be set directly. Instead, call
+    # oci_project.setOfficialRecipe method.
+    _official = Bool(name="official", default=False)
 
     git_repository_id = Int(name="git_repository", allow_none=True)
     git_repository = Reference(git_repository_id, "GitRepository.id")
@@ -145,7 +156,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.oci_project = oci_project
         self.description = description
         self.build_file = build_file
-        self.official = official
+        self._official = official
         self.require_virtualized = require_virtualized
         self.build_daily = build_daily
         self.date_created = date_created
@@ -155,6 +166,11 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     @property
     def valid_webhook_event_types(self):
         return ["oci-recipe:build:0.1"]
+
+    @property
+    def official(self):
+        """See `IOCIProject.setOfficialRecipe` method."""
+        return self._official
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -176,16 +192,21 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
 
+    @cachedproperty
+    def _git_ref(self):
+        return self.git_repository.getRefByPath(self.git_path)
+
     @property
     def git_ref(self):
         """See `IOCIRecipe`."""
-        if self.git_repository is not None:
-            return self.git_repository.getRefByPath(self.git_path)
+        if self.git_repository_id is not None:
+            return self._git_ref
         return None
 
     @git_ref.setter
     def git_ref(self, value):
         """See `IOCIRecipe`."""
+        get_property_cache(self)._git_ref = value
         if value is not None:
             self.git_repository = value.repository
             self.git_path = value.path
@@ -544,6 +565,23 @@ class OCIRecipeSet:
 
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
+
+        # Preload projects
+        oci_projects = [recipe.oci_project for recipe in recipes]
+        load_related(Distribution, oci_projects, ["distribution_id"])
+
+        # Preload repos
+        repos = load_related(GitRepository, recipes, ["git_repository_id"])
+        load_related(Person, repos, ['owner_id', 'registrant_id'])
+        GenericGitCollection.preloadDataForRepositories(repos)
+
+        # Preload GitRefs.
+        git_refs = GitRef.findByReposAndPaths(
+            [(r.git_repository, r.git_path) for r in recipes])
+        for recipe in recipes:
+            git_ref = git_refs.get((recipe.git_repository, recipe.git_path))
+            if git_ref is not None:
+                recipe.git_ref = git_ref
 
 
 @implementer(IOCIRecipeBuildRequest)

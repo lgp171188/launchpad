@@ -70,6 +70,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
+from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
@@ -305,6 +306,10 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             git_ref=ref)
         job = self.makeJob(ref, recipe=recipe)
         repository.removeRefs([ref.path])
+
+        # Clean the git_ref cache
+        del get_property_cache(job.build.recipe)._git_ref
+
         self.assertIsNone(job.build.recipe.git_ref)
         expected_exception_msg = ("Source repository for "
                                   "~oci-owner/{} has been deleted.".format(

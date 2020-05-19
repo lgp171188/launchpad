@@ -8,9 +8,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = []
 
+from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
-from lp.services.webapp.vocabulary import StormVocabularyBase
+from lp.oci.model.ocirecipe import OCIRecipe
+from lp.services.webapp.vocabulary import (
+    IHugeVocabulary,
+    StormVocabularyBase,
+    )
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
@@ -28,3 +33,30 @@ class OCIRecipeDistroArchSeriesVocabulary(StormVocabularyBase):
 
     def __len__(self):
         return len(self.context.getAllowedArchitectures())
+
+
+@implementer(IHugeVocabulary)
+class OCIRecipeVocabulary(StormVocabularyBase):
+    """All OCI Recipes of a given OCI project."""
+
+    _table = OCIRecipe
+    displayname = 'Select a recipe'
+    step_title = 'Search'
+
+    def toTerm(self, recipe):
+        token = "%s/%s" % (recipe.owner.name, recipe.name)
+        title = "~%s" % token
+        return SimpleTerm(recipe, token, title)
+
+    def getTermByToken(self, token):
+        owner_name, recipe_name = token.split('/')
+        recipe = self.context.getRecipeByNameAndOwner(recipe_name, owner_name)
+        if recipe is None:
+            raise LookupError(token)
+        return self.toTerm(recipe)
+
+    def search(self, query, vocab_filter=None):
+        return self.context.searchRecipes(query)
+
+    def _entries(self):
+        return self.context.getRecipes()
