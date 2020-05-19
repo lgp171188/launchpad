@@ -100,10 +100,10 @@ from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 class FakeLogTailUpdater:
     """A minimal fake version of `LogTailUpdater`."""
 
-    pending_updates = {}
+    pending_logtails = {}
 
     def addPendingUpdate(self, build_queue_id, logtail):
-        self.pending_updates[build_queue_id] = logtail
+        self.pending_logtails[build_queue_id] = logtail
 
 
 class TestSlaveScannerScan(TestCaseWithFactory):
@@ -1423,7 +1423,7 @@ class TestLogTailUpdater(TestCaseWithFactory):
         self.assertEqual("Another log tail", bqs[1].logtail)
         self.assertIsNone(bqs[2].logtail)
 
-        self.assertEqual({}, log_tail_updater.pending_updates)
+        self.assertEqual({}, log_tail_updater.pending_logtails)
         log_tail_updater.update()
         self.assertEqual("A log tail", bqs[0].logtail)
         self.assertEqual("Another log tail", bqs[1].logtail)

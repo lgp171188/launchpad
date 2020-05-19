@@ -603,7 +603,7 @@ class LogTailUpdater:
         if clock is None:
             clock = reactor
         self._clock = clock
-        self.pending_updates = {}
+        self.pending_logtails = {}
 
     def stop(self):
         """Terminate the LoopingCall."""
@@ -617,23 +617,23 @@ class LogTailUpdater:
         return self.stopping_deferred
 
     def addLogTail(self, build_queue_id, logtail):
-        self.pending_updates[build_queue_id] = logtail
+        self.pending_logtails[build_queue_id] = logtail
 
     def update(self):
         """Check for any pending updates and write them to the database."""
         self.manager.logger.debug("Writing logtail updates.")
         try:
-            pending_updates = self.pending_updates
-            self.pending_updates = {}
-            self.writeUpdates(pending_updates)
+            pending_logtails = self.pending_logtails
+            self.pending_logtails = {}
+            self.writeUpdates(pending_logtails)
         except Exception:
             self.manager.logger.exception(
                 "Failure while writing logtail updates:\n")
             transaction.abort()
         self.manager.logger.debug("Logtail update complete.")
 
-    def writeUpdates(self, pending_updates):
-        if not pending_updates:
+    def writeUpdates(self, pending_logtails):
+        if not pending_logtails:
             return
         new_logtails = Table("new_logtails")
         new_logtails_expr = Values(
@@ -641,7 +641,7 @@ class LogTailUpdater:
             [("buildqueue", "integer"), ("logtail", "text")],
             [[dbify_value(BuildQueue.id, buildqueue_id),
               dbify_value(BuildQueue.logtail, logtail)]
-             for buildqueue_id, logtail in pending_updates.items()])
+             for buildqueue_id, logtail in pending_logtails.items()])
         store = IStore(BuildQueue)
         store.execute(BulkUpdate(
             {BuildQueue.logtail: Column("logtail", new_logtails)},
