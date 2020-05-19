@@ -569,7 +569,7 @@ class BuilderInteractor(object):
     @classmethod
     @defer.inlineCallbacks
     def updateBuild(cls, vitals, slave, slave_status, builder_factory,
-                    behaviour_factory, log_tail_updater):
+                    behaviour_factory, manager):
         """Verify the current build job status.
 
         Perform the required actions for each state.
@@ -585,7 +585,7 @@ class BuilderInteractor(object):
                 'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
             logtail = cls.extractLogTail(slave_status)
             if logtail is not None:
-                log_tail_updater.addLogTail(vitals.build_queue.id, logtail)
+                manager.addLogTail(vitals.build_queue.id, logtail)
             vitals.build_queue.specific_build.updateStatus(
                 vitals.build_queue.specific_build.status,
                 slave_status=slave_status)
