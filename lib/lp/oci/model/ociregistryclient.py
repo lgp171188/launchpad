@@ -74,7 +74,7 @@ class OCIRegistryClient:
         """
         # Check if it already exists
         try:
-            head_response = http_client.request_path(
+            head_response = http_client.requestPath(
                 "/blobs/{}".format(digest),
                 method="HEAD")
             if head_response.status_code == 200:
@@ -85,7 +85,7 @@ class OCIRegistryClient:
             if http_error.response.status_code != 404:
                 raise http_error
 
-        post_response = http_client.request_path(
+        post_response = http_client.requestPath(
             "/blobs/uploads/", method="POST")
 
         post_location = post_response.headers["Location"]
@@ -219,7 +219,7 @@ class OCIRegistryClient:
         preloaded_data = cls._preloadFiles(build, manifest, digests)
 
         for push_rule in build.recipe.push_rules:
-            http_client = RegistryHTTPClient.get_instance(push_rule)
+            http_client = RegistryHTTPClient.getInstance(push_rule)
 
             for section in manifest:
                 # Work out names and tags
@@ -250,7 +250,7 @@ class OCIRegistryClient:
                     preloaded_data[section["Config"]])
 
                 # Upload the registry manifest
-                manifest_response = http_client.request_path(
+                manifest_response = http_client.requestPath(
                     "/manifests/{}".format(tag),
                     json=registry_manifest,
                     headers={
@@ -289,13 +289,13 @@ class RegistryHTTPClient:
             request_kwargs.setdefault("auth", (username, password))
         return urlfetch(url, **request_kwargs)
 
-    def request_path(self, path, *args, **request_kwargs):
+    def requestPath(self, path, *args, **request_kwargs):
         """Shortcut to do a request to {self.api_url}/{path}."""
         url = "{}{}".format(self.api_url, path)
         return self.request(url, *args, **request_kwargs)
 
     @classmethod
-    def get_instance(cls, push_rule):
+    def getInstance(cls, push_rule):
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule."""
         split = urlsplit(push_rule.registry_url)
@@ -324,7 +324,7 @@ class DockerHubHTTPClient(RegistryHTTPClient):
         return "{}/v2/{}/{}".format(
             push_rule.registry_url, push_rule.username, push_rule.image_name)
 
-    def parse_auth_instructions(self, request):
+    def parseAuthInstructions(self, request):
         """Parse the Www-Authenticate response header.
 
         This method parses the appropriate header from the request and returns
@@ -338,7 +338,7 @@ class DockerHubHTTPClient(RegistryHTTPClient):
     def authenticate(self, last_failed_request):
         """Tries to authenticate, considering the last HTTP 401 failed
         request."""
-        token_type, values = self.parse_auth_instructions(last_failed_request)
+        token_type, values = self.parseAuthInstructions(last_failed_request)
         url = values.pop("realm")
         # We should use the basic auth version for this request.
         response = super(DockerHubHTTPClient, self).request(

@@ -345,7 +345,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         client = DockerHubHTTPClient(push_rule)
 
         self.assertEqual(
-            client.parse_auth_instructions(request), ("Bearer", {
+            client.parseAuthInstructions(request), ("Bearer", {
             "realm": "https://auth.docker.io/token",
             "service": "registry.docker.io",
             "scope": "repository:the-user/test-image:pull,push"
