@@ -625,29 +625,26 @@ class LogTailUpdater:
         try:
             pending_logtails = self.pending_logtails
             self.pending_logtails = {}
-            self.flushUpdates(pending_logtails)
+            if pending_logtails:
+                new_logtails = Table("new_logtails")
+                new_logtails_expr = Values(
+                    new_logtails.name,
+                    [("buildqueue", "integer"), ("logtail", "text")],
+                    [[dbify_value(BuildQueue.id, buildqueue_id),
+                      dbify_value(BuildQueue.logtail, logtail)]
+                     for buildqueue_id, logtail in pending_logtails.items()])
+                store = IStore(BuildQueue)
+                store.execute(BulkUpdate(
+                    {BuildQueue.logtail: Column("logtail", new_logtails)},
+                    table=BuildQueue, values=new_logtails_expr,
+                    where=(
+                        BuildQueue.id == Column("buildqueue", new_logtails))))
+                transaction.commit()
         except Exception:
             self.manager.logger.exception(
                 "Failure while flushing logtail updates:\n")
             transaction.abort()
         self.manager.logger.debug("Logtail update complete.")
-
-    def flushUpdates(self, pending_logtails):
-        if not pending_logtails:
-            return
-        new_logtails = Table("new_logtails")
-        new_logtails_expr = Values(
-            new_logtails.name,
-            [("buildqueue", "integer"), ("logtail", "text")],
-            [[dbify_value(BuildQueue.id, buildqueue_id),
-              dbify_value(BuildQueue.logtail, logtail)]
-             for buildqueue_id, logtail in pending_logtails.items()])
-        store = IStore(BuildQueue)
-        store.execute(BulkUpdate(
-            {BuildQueue.logtail: Column("logtail", new_logtails)},
-            table=BuildQueue, values=new_logtails_expr,
-            where=(BuildQueue.id == Column("buildqueue", new_logtails))))
-        transaction.commit()
 
 
 class BuilddManager(service.Service):

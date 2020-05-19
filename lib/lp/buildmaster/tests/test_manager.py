@@ -1433,17 +1433,22 @@ class TestLogTailUpdater(TestCaseWithFactory):
         # update swallows exceptions so the LoopingCall always retries.
         clock = task.Clock()
         log_tail_updater = self._getUpdater(clock=clock)
-        log_tail_updater.flushUpdates = FakeMethod(failure=Exception("Boom"))
+        log_tail_updater.manager.logger = BufferLogger()
+        bq = self.factory.makeBinaryPackageBuild().queueBuild()
+        log_tail_updater.addLogTail("nonsense", "A log tail")
+        transaction.commit()
+
         log_tail_updater.scheduleUpdate()
-        self.assertEqual(1, log_tail_updater.flushUpdates.call_count)
+        self.assertIn(
+            "Failure while flushing logtail updates:",
+            log_tail_updater.manager.logger.getLogBuffer())
 
         # Even though the previous flushUpdates raised an exception, further
         # updates will happen as normal.
+        log_tail_updater.addLogTail(bq.id, "Another log tail")
         advance = LogTailUpdater.UPDATE_INTERVAL + 1
         clock.advance(advance)
-        self.assertEqual(2, log_tail_updater.flushUpdates.call_count)
-        clock.advance(advance)
-        self.assertEqual(3, log_tail_updater.flushUpdates.call_count)
+        self.assertEqual("Another log tail", bq.logtail)
 
 
 def is_file_growing(filepath, poll_interval=1, poll_repeat=10):
