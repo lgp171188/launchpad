@@ -591,7 +591,7 @@ class NewBuildersScanner:
 
 
 class LogTailUpdater:
-    """Perform build queue logtail updates in bulk."""
+    """Flush pending build queue logtail updates in bulk."""
 
     # How often to update, in seconds.
     UPDATE_INTERVAL = 15
@@ -620,19 +620,19 @@ class LogTailUpdater:
         self.pending_logtails[build_queue_id] = logtail
 
     def update(self):
-        """Check for any pending updates and write them to the database."""
-        self.manager.logger.debug("Writing logtail updates.")
+        """Check for any pending updates and flush them to the database."""
+        self.manager.logger.debug("Flushing logtail updates.")
         try:
             pending_logtails = self.pending_logtails
             self.pending_logtails = {}
-            self.writeUpdates(pending_logtails)
+            self.flushUpdates(pending_logtails)
         except Exception:
             self.manager.logger.exception(
-                "Failure while writing logtail updates:\n")
+                "Failure while flushing logtail updates:\n")
             transaction.abort()
         self.manager.logger.debug("Logtail update complete.")
 
-    def writeUpdates(self, pending_logtails):
+    def flushUpdates(self, pending_logtails):
         if not pending_logtails:
             return
         new_logtails = Table("new_logtails")

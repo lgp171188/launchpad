@@ -1433,17 +1433,17 @@ class TestLogTailUpdater(TestCaseWithFactory):
         # update swallows exceptions so the LoopingCall always retries.
         clock = task.Clock()
         log_tail_updater = self._getUpdater(clock=clock)
-        log_tail_updater.writeUpdates = FakeMethod(failure=Exception("Boom"))
+        log_tail_updater.flushUpdates = FakeMethod(failure=Exception("Boom"))
         log_tail_updater.scheduleUpdate()
-        self.assertEqual(1, log_tail_updater.writeUpdates.call_count)
+        self.assertEqual(1, log_tail_updater.flushUpdates.call_count)
 
-        # Even though the previous writeUpdates raised an exception, further
+        # Even though the previous flushUpdates raised an exception, further
         # updates will happen as normal.
         advance = LogTailUpdater.UPDATE_INTERVAL + 1
         clock.advance(advance)
-        self.assertEqual(2, log_tail_updater.writeUpdates.call_count)
+        self.assertEqual(2, log_tail_updater.flushUpdates.call_count)
         clock.advance(advance)
-        self.assertEqual(3, log_tail_updater.writeUpdates.call_count)
+        self.assertEqual(3, log_tail_updater.flushUpdates.call_count)
 
 
 def is_file_growing(filepath, poll_interval=1, poll_repeat=10):
