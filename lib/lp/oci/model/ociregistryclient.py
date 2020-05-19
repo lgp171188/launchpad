@@ -15,6 +15,7 @@ import hashlib
 from io import BytesIO
 import json
 import logging
+import re
 import tarfile
 
 from requests.exceptions import (
@@ -304,27 +305,60 @@ class RegistryHTTPClient:
 
 
 class DockerHubHTTPClient(RegistryHTTPClient):
+    """Special case of RegistryHTTPClient for Docherhub.
+
+    This client type is prepared to deal with DockerHub's authorization
+    cycle, which involves fetching the appropriate authorization token
+    instead of using HTTP's basic auth.
+    """
+
     def __init__(self, push_rule):
         super(DockerHubHTTPClient, self).__init__(push_rule)
         self.auth_token = None
 
     @property
     def api_url(self):
-        """Get the base API URL for Dockerhub projects."""
+        """Get the base API URL for Dockerhub projects, including both the
+        image and user name."""
         push_rule = self.push_rule
         return "{}/v2/{}/{}".format(
             push_rule.registry_url, push_rule.username, push_rule.image_name)
 
-    def authenticate(self, last_failure):
-        """Tries to authenticate, considering the last HTTP 401 error."""
-        raise NotImplementedError("DockerHub auth is not implemented yet.")
+    def parse_auth_instructions(self, request):
+        """Parse the Www-Authenticate response header.
+
+        This method parses the appropriate header from the request and returns
+        the token type and the key-value pairs that should be used as query
+        parameters of the token GET request."""
+        instructions = request.headers['Www-Authenticate']
+        token_type, values = instructions.split(' ', 1)
+        dict_values = dict(re.compile(r'(.*?)="(.*?)"\,?').findall(values))
+        return token_type, dict_values
+
+    def authenticate(self, last_failed_request):
+        """Tries to authenticate, considering the last HTTP 401 failed
+        request."""
+        token_type, values = self.parse_auth_instructions(last_failed_request)
+        url = values.pop("realm")
+        # We should use the basic auth version for this request.
+        response = super(DockerHubHTTPClient, self).request(
+            url, params=values, method="GET", auth=self.credentials)
+        response.raise_for_status()
+        self.auth_token = response.json()["token"]
 
     def request(self, url, auth_retry=True, *args, **request_kwargs):
+        """Does a request, handling authentication cycle in case of 401
+        response.
+
+        :param auth_retry: Should we authentication and retry the request if
+                           it fails with HTTP 401 code?"""
         try:
-            return super(DockerHubHTTPClient, self).request(
-                url, *args, **request_kwargs)
+            headers = request_kwargs.pop("headers", {})
+            if self.auth_token is not None:
+                headers["Authorization"] = "Bearer %s" % self.auth_token
+            return urlfetch(url, headers=headers, **request_kwargs)
         except HTTPError as e:
-            if e.response.status_code == 401:
+            if auth_retry and e.response.status_code == 401:
                 self.authenticate(e.response)
                 return self.request(url, auth_retry=False, **request_kwargs)
             raise

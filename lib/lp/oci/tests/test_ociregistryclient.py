@@ -25,14 +25,20 @@ from testtools.matchers import (
     MatchesListwise,
     )
 import transaction
+from zope.security.proxy import removeSecurityProxy
 
 from lp.oci.model.ociregistryclient import (
+    DockerHubHTTPClient,
     OCIRegistryClient,
     RegistryHTTPClient,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.services.compat import mock
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadZopelessLayer,
+    )
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
@@ -302,3 +308,134 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(
             5, self.client._upload.retry.statistics["attempt_number"])
         self.assertEqual(5, self.retry_count)
+
+
+class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestDockerHubHTTPClient, self).setUp()
+        self.setConfig()
+
+    def makeOCIPushRule(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://registry.hub.docker.com",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        return self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="test-image")
+
+    def test_api_url(self):
+        push_rule = self.makeOCIPushRule()
+        client = DockerHubHTTPClient(push_rule)
+        self.assertEqual(
+            "https://registry.hub.docker.com/v2/the-user/test-image",
+            client.api_url)
+
+    def test_parse_instructions(self):
+        auth_header_content = (
+            'Bearer realm="https://auth.docker.io/token",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"')
+
+        request = mock.Mock()
+        request.headers = {'Www-Authenticate': auth_header_content}
+
+        push_rule = self.makeOCIPushRule()
+        client = DockerHubHTTPClient(push_rule)
+
+        self.assertEqual(
+            client.parse_auth_instructions(request), ("Bearer", {
+            "realm": "https://auth.docker.io/token",
+            "service": "registry.docker.io",
+            "scope": "repository:the-user/test-image:pull,push"
+        }))
+
+    @responses.activate
+    def test_unauthorized_request_retries_fetching_token(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+            'Bearer realm="%s",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+        responses.add("GET", token_url, status=200, json={"token": "123abc"})
+        responses.add("GET", url, status=201, json={"success": True})
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = DockerHubHTTPClient(push_rule)
+        response = client.request(url)
+        self.assertEquals(201, response.status_code)
+        self.assertEquals(response.json(), {"success": True})
+
+        # Check that the 3 requests were made in order.
+        self.assertEquals(3, len(responses.calls))
+        failed_call, auth_call, success_call = responses.calls
+
+        self.assertEqual(url, failed_call.request.url)
+        self.assertEqual(401, failed_call.response.status_code)
+
+        self.assertStartsWith(auth_call.request.url, token_url)
+        self.assertEqual(200, auth_call.response.status_code)
+
+        self.assertEqual(url, success_call.request.url)
+        self.assertEqual(201, success_call.response.status_code)
+
+    @responses.activate
+    def test_unauthorized_request_retries_only_once(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+            'Bearer realm="%s",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+        responses.add("GET", token_url, status=200, json={"token": "123abc"})
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = DockerHubHTTPClient(push_rule)
+        self.assertRaises(HTTPError, client.request, url)
+
+        # Check that the 3 requests were made in order.
+        self.assertEquals(3, len(responses.calls))
+        failed_call, auth_call, second_failed_call = responses.calls
+
+        self.assertEqual(url, failed_call.request.url)
+        self.assertEqual(401, failed_call.response.status_code)
+
+        self.assertStartsWith(auth_call.request.url, token_url)
+        self.assertEqual(200, auth_call.response.status_code)
+
+        self.assertEqual(url, second_failed_call.request.url)
+        self.assertEqual(401, second_failed_call.response.status_code)
+
+    @responses.activate
+    def test_unauthorized_request_fails_to_get_token(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+            'Bearer realm="%s",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+        responses.add("GET", token_url, status=400)
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = DockerHubHTTPClient(push_rule)
+        self.assertRaises(HTTPError, client.request, url)
+
+        self.assertEquals(2, len(responses.calls))
+        failed_call, auth_call = responses.calls
+
+        self.assertEqual(url, failed_call.request.url)
+        self.assertEqual(401, failed_call.response.status_code)
+
+        self.assertStartsWith(auth_call.request.url, token_url)
+        self.assertEqual(400, auth_call.response.status_code)
