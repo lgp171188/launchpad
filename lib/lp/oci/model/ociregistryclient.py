@@ -305,7 +305,7 @@ class RegistryHTTPClient:
 
 
 class DockerHubHTTPClient(RegistryHTTPClient):
-    """Special case of RegistryHTTPClient for Docherhub.
+    """Special case of RegistryHTTPClient for DockerHub.
 
     This client type is prepared to deal with DockerHub's authorization
     cycle, which involves fetching the appropriate authorization token
