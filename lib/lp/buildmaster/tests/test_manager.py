@@ -102,6 +102,9 @@ class FakeLogTailUpdater:
 
     pending_updates = {}
 
+    def addPendingUpdate(self, build_queue_id, logtail):
+        self.pending_updates[build_queue_id] = logtail
+
 
 class TestSlaveScannerScan(TestCaseWithFactory):
     """Tests `SlaveScanner.scan` method.
@@ -1411,8 +1414,8 @@ class TestLogTailUpdater(TestCaseWithFactory):
         bqs = [
             self.factory.makeBinaryPackageBuild().queueBuild()
             for _ in range(3)]
-        log_tail_updater.pending_updates[bqs[0].id] = "A log tail"
-        log_tail_updater.pending_updates[bqs[1].id] = "Another log tail"
+        log_tail_updater.addLogTail(bqs[0].id, "A log tail")
+        log_tail_updater.addLogTail(bqs[1].id, "Another log tail")
         transaction.commit()
 
         log_tail_updater.update()

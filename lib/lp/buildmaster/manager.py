@@ -616,6 +616,9 @@ class LogTailUpdater:
         self.stopping_deferred = self.loop.start(self.UPDATE_INTERVAL)
         return self.stopping_deferred
 
+    def addLogTail(self, build_queue_id, logtail):
+        self.pending_updates[build_queue_id] = logtail
+
     def update(self):
         """Check for any pending updates and write them to the database."""
         self.manager.logger.debug("Writing logtail updates.")

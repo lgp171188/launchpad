@@ -585,8 +585,7 @@ class BuilderInteractor(object):
                 'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
             logtail = cls.extractLogTail(slave_status)
             if logtail is not None:
-                log_tail_updater.pending_updates[vitals.build_queue.id] = (
-                    logtail)
+                log_tail_updater.addLogTail(vitals.build_queue.id, logtail)
             vitals.build_queue.specific_build.updateStatus(
                 vitals.build_queue.specific_build.status,
                 slave_status=slave_status)
