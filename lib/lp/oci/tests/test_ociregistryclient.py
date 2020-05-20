@@ -340,9 +340,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
         self.assertEqual(1, len(responses.calls))
         call = responses.calls[0]
-        self.assertEqual(
-            "Basic dGhlLXVzZXI6dGhlLXBhc3N3ZA==",
-            call.request.headers["Authorization"])
+        self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
     @responses.activate
     def test_get_bearer_token_client_instance(self):
@@ -353,17 +351,36 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
             registry_credentials=credentials,
             image_name="the-user/test-image"))
 
-        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=401,
-                      headers={"Www-Authenticate": 'realm="something.com"'})
+        responses.add(
+            "GET", "%s/v2/" % push_rule.registry_url, status=401, headers={
+                "Www-Authenticate": 'Bearer realm="something.com"'})
 
         instance = RegistryHTTPClient.getInstance(push_rule)
         self.assertEqual(BearerTokenRegistryClient, type(instance))
 
         self.assertEqual(1, len(responses.calls))
         call = responses.calls[0]
-        self.assertEqual(
-            "Basic dGhlLXVzZXI6dGhlLXBhc3N3ZA==",
-            call.request.headers["Authorization"])
+        self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
+
+    @responses.activate
+    def test_get_basic_auth_client_instance(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://the-registry.test",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="the-user/test-image"))
+
+        responses.add(
+            "GET", "%s/v2/" % push_rule.registry_url, status=401, headers={
+                "Www-Authenticate": 'Basic realm="something.com"'})
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(RegistryHTTPClient, type(instance))
+
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
 
 class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):

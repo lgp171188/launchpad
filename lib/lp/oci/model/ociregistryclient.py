@@ -305,18 +305,23 @@ class RegistryHTTPClient:
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule."""
         try:
-            # Tries to login with basic auth (standard method). If it
-            # succeed, we give back the default client.
-            default_client = cls(push_rule)
-            default_client.request("{}/v2/".format(push_rule.registry_url))
-            return default_client
+            urlfetch("{}/v2/".format(push_rule.registry_url))
+            # No authorization error? Just return the basic RegistryHTTPClient.
+            return RegistryHTTPClient(push_rule)
         except HTTPError as e:
             # If we got back an "UNAUTHORIZED" error with "Www-Authenticate"
-            # header, we should use a BearerTokenRegistryClient.
-            if e.response.status_code == 401:
-                return BearerTokenRegistryClient(push_rule)
-        raise ValueError("Unknown authentication type for %s registry" %
-                         push_rule.registry_url)
+            # header, we should check what type of authorization we should use.
+            header_key = "Www-Authenticate"
+            if (e.response.status_code == 401
+                    and header_key in e.response.headers):
+                auth_type = e.response.headers[header_key].split(' ', 1)[0]
+                if auth_type == 'Bearer':
+                    return BearerTokenRegistryClient(push_rule)
+                elif auth_type == 'Basic':
+                    return RegistryHTTPClient(push_rule)
+        raise OCIRegistryAuthenticationError(
+            "Unknown authentication type for %s registry" %
+            push_rule.registry_url)
 
 
 class BearerTokenRegistryClient(RegistryHTTPClient):
