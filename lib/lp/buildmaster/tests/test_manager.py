@@ -95,15 +95,6 @@ from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 
 
-class FakeLogTailUpdater:
-    """A minimal fake version of `LogTailUpdater`."""
-
-    pending_logtails = {}
-
-    def addPendingUpdate(self, build_queue_id, logtail):
-        self.pending_logtails[build_queue_id] = logtail
-
-
 class TestSlaveScannerScan(TestCaseWithFactory):
     """Tests `SlaveScanner.scan` method.
 
@@ -839,6 +830,15 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         self.assertContentEqual(BuilderFactory().iterVitals(), all_vitals)
 
 
+class FakeBuilddManager:
+    """A minimal fake version of `BuilddManager`."""
+
+    pending_logtails = {}
+
+    def addLogTail(self, build_queue_id, logtail):
+        self.pending_logtails[build_queue_id] = logtail
+
+
 class TestSlaveScannerWithoutDB(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest
@@ -856,7 +856,7 @@ class TestSlaveScannerWithoutDB(TestCase):
         if behaviour is None:
             behaviour = TrivialBehaviour()
         return SlaveScanner(
-            'mock', builder_factory, FakeLogTailUpdater(), BufferLogger(),
+            'mock', builder_factory, FakeBuilddManager(), BufferLogger(),
             interactor_factory=FakeMethod(interactor),
             slave_factory=FakeMethod(slave),
             behaviour_factory=FakeMethod(behaviour))
