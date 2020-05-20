@@ -337,7 +337,7 @@ class BuilderSlave(object):
 
 BuilderVitals = namedtuple(
     'BuilderVitals',
-    ('name', 'url', 'processors', 'virtualized', 'vm_host',
+    ('name', 'url', 'processor_names', 'virtualized', 'vm_host',
      'vm_reset_protocol', 'builderok', 'manual', 'build_queue', 'version',
      'clean_status'))
 
@@ -348,7 +348,8 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
     if build_queue == _BQ_UNSPECIFIED:
         build_queue = builder.currentjob
     return BuilderVitals(
-        builder.name, builder.url, removeSecurityProxy(builder.processors),
+        builder.name, builder.url,
+        [processor.name for processor in builder.processors],
         builder.virtualized, builder.vm_host, builder.vm_reset_protocol,
         builder.builderok, builder.manual, build_queue, builder.version,
         builder.clean_status)
