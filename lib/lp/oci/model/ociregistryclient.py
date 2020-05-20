@@ -300,11 +300,11 @@ class RegistryHTTPClient:
         given push rule."""
         split = urlsplit(push_rule.registry_url)
         if split.netloc.endswith('registry.hub.docker.com'):
-            return DockerHubHTTPClient(push_rule)
+            return BearerTokenRegistryClient(push_rule)
         return RegistryHTTPClient(push_rule)
 
 
-class DockerHubHTTPClient(RegistryHTTPClient):
+class BearerTokenRegistryClient(RegistryHTTPClient):
     """Special case of RegistryHTTPClient for DockerHub.
 
     This client type is prepared to deal with DockerHub's authorization
@@ -313,7 +313,7 @@ class DockerHubHTTPClient(RegistryHTTPClient):
     """
 
     def __init__(self, push_rule):
-        super(DockerHubHTTPClient, self).__init__(push_rule)
+        super(BearerTokenRegistryClient, self).__init__(push_rule)
         self.auth_token = None
 
     def parseAuthInstructions(self, request):
@@ -333,7 +333,7 @@ class DockerHubHTTPClient(RegistryHTTPClient):
         token_type, values = self.parseAuthInstructions(last_failed_request)
         url = values.pop("realm")
         # We should use the basic auth version for this request.
-        response = super(DockerHubHTTPClient, self).request(
+        response = super(BearerTokenRegistryClient, self).request(
             url, params=values, method="GET", auth=self.credentials)
         response.raise_for_status()
         self.auth_token = response.json()["token"]

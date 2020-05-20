@@ -28,7 +28,7 @@ import transaction
 from zope.security.proxy import removeSecurityProxy
 
 from lp.oci.model.ociregistryclient import (
-    DockerHubHTTPClient,
+    BearerTokenRegistryClient,
     OCIRegistryClient,
     RegistryHTTPClient,
     )
@@ -310,11 +310,11 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(5, self.retry_count)
 
 
-class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
+class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDockerHubHTTPClient, self).setUp()
+        super(TestBearerTokenRegistryClient, self).setUp()
         self.setConfig()
 
     def makeOCIPushRule(self):
@@ -327,7 +327,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_api_url(self):
         push_rule = self.makeOCIPushRule()
-        client = DockerHubHTTPClient(push_rule)
+        client = BearerTokenRegistryClient(push_rule)
         self.assertEqual(
             "https://registry.hub.docker.com/v2/the-user/test-image",
             client.api_url)
@@ -342,7 +342,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         request.headers = {'Www-Authenticate': auth_header_content}
 
         push_rule = self.makeOCIPushRule()
-        client = DockerHubHTTPClient(push_rule)
+        client = BearerTokenRegistryClient(push_rule)
 
         self.assertEqual(
             client.parseAuthInstructions(request), ("Bearer", {
@@ -366,7 +366,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         responses.add("GET", url, status=201, json={"success": True})
 
         push_rule = removeSecurityProxy(self.makeOCIPushRule())
-        client = DockerHubHTTPClient(push_rule)
+        client = BearerTokenRegistryClient(push_rule)
         response = client.request(url)
         self.assertEqual(201, response.status_code)
         self.assertEqual(response.json(), {"success": True})
@@ -398,7 +398,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         responses.add("GET", token_url, status=200, json={"token": "123abc"})
 
         push_rule = removeSecurityProxy(self.makeOCIPushRule())
-        client = DockerHubHTTPClient(push_rule)
+        client = BearerTokenRegistryClient(push_rule)
         self.assertRaises(HTTPError, client.request, url)
 
         # Check that the 3 requests were made in order.
@@ -428,7 +428,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         responses.add("GET", token_url, status=400)
 
         push_rule = removeSecurityProxy(self.makeOCIPushRule())
-        client = DockerHubHTTPClient(push_rule)
+        client = BearerTokenRegistryClient(push_rule)
         self.assertRaises(HTTPError, client.request, url)
 
         self.assertEqual(2, len(responses.calls))
