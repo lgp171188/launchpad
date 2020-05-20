@@ -579,7 +579,7 @@ class BuilddManager(service.Service):
         return logger
 
     def checkForNewBuilders(self):
-        """See if any new builders were added."""
+        """Add and return any new builders."""
         new_builders = set(
             vitals.name for vitals in self.builder_factory.iterVitals())
         old_builders = set(self.current_builders)
@@ -588,7 +588,7 @@ class BuilddManager(service.Service):
         return list(extra_builders)
 
     def scanBuilders(self):
-        """If a new builder appears, create a SlaveScanner for it."""
+        """Update builders from the database and start new polling loops."""
         self.logger.debug("Refreshing builders from the database.")
         try:
             self.builder_factory.update()
