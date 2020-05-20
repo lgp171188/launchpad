@@ -3467,15 +3467,12 @@ class EditOCIProject(AuthorizationBase):
                 user.inTeam(self.obj.pillar.oci_project_admin))
 
 
-class EditOCIProjectSeries(AuthorizationBase):
+class EditOCIProjectSeries(DelegatedAuthorization):
     permission = 'launchpad.Edit'
     usedfor = IOCIProjectSeries
 
-    def checkAuthenticated(self, user):
-        """Maintainers, drivers, and admins can drive projects."""
-        return (user.in_admin or
-                user.isDriver(self.obj.oci_project.pillar) or
-                user.inTeam(self.obj.oci_project.pillar.oci_project_admin))
+    def __init__(self, obj):
+        super(EditOCIProjectSeries, self).__init__(obj, obj.oci_project)
 
 
 class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
