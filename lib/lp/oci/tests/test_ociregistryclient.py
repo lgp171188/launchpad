@@ -29,6 +29,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.oci.model.ociregistryclient import (
     BearerTokenRegistryClient,
+    OCIRegistryAuthenticationError,
     OCIRegistryClient,
     RegistryHTTPClient,
     )
@@ -494,3 +495,42 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
         self.assertStartsWith(auth_call.request.url, token_url)
         self.assertEqual(400, auth_call.response.status_code)
+
+    @responses.activate
+    def test_authenticate_malformed_www_authenticate_header(self):
+        auth_header_content = (
+            'Bearer service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"')
+
+        previous_request = mock.Mock()
+        previous_request.headers = {'Www-Authenticate': auth_header_content}
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = BearerTokenRegistryClient(push_rule)
+        self.assertRaises(OCIRegistryAuthenticationError,
+                          client.authenticate, previous_request)
+
+    @responses.activate
+    def test_authenticate_malformed_token_response(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+          'Bearer realm="%s",'
+          'service="registry.docker.io",'
+          'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+        responses.add("GET", token_url, status=200, json={
+            # no "token" key on the response.
+            "shrug": "123"
+        })
+
+        previous_request = mock.Mock()
+        previous_request.headers = {'Www-Authenticate': auth_header_content}
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = BearerTokenRegistryClient(push_rule)
+
+        self.assertRaises(OCIRegistryAuthenticationError,
+                          client.authenticate, previous_request)

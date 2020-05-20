@@ -15,12 +15,15 @@ import hashlib
 from io import BytesIO
 import json
 import logging
-import re
 import tarfile
 
 from requests.exceptions import (
     ConnectionError,
     HTTPError,
+    )
+from six.moves.urllib.request import (
+    parse_http_list,
+    parse_keqv_list,
     )
 from tenacity import (
     before_log,
@@ -264,6 +267,10 @@ class OCIRegistryClient:
                             build.recipe.name, build.id))
 
 
+class OCIRegistryAuthenticationError(Exception):
+    pass
+
+
 class RegistryHTTPClient:
     def __init__(self, push_rule):
         self.push_rule = push_rule
@@ -332,25 +339,35 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
         parameters of the token GET request."""
         instructions = request.headers['Www-Authenticate']
         token_type, values = instructions.split(' ', 1)
-        dict_values = dict(re.compile(r'(.*?)="(.*?)"\,?').findall(values))
+        dict_values = parse_keqv_list(parse_http_list(values))
         return token_type, dict_values
 
     def authenticate(self, last_failed_request):
         """Tries to authenticate, considering the last HTTP 401 failed
         request."""
         token_type, values = self.parseAuthInstructions(last_failed_request)
-        url = values.pop("realm")
+        try:
+            url = values.pop("realm")
+        except KeyError:
+            raise OCIRegistryAuthenticationError(
+                "Auth instructions didn't include realm to get the token: %s"
+                % values)
         # We should use the basic auth version for this request.
         response = super(BearerTokenRegistryClient, self).request(
             url, params=values, method="GET", auth=self.credentials)
         response.raise_for_status()
-        self.auth_token = response.json()["token"]
+        response_data = response.json()
+        try:
+            self.auth_token = response_data["token"]
+        except KeyError:
+            raise OCIRegistryAuthenticationError(
+                "Could not get token from response data: %s" % response_data)
 
     def request(self, url, auth_retry=True, *args, **request_kwargs):
         """Does a request, handling authentication cycle in case of 401
         response.
 
-        :param auth_retry: Should we authentication and retry the request if
+        :param auth_retry: Should we authenticate and retry the request if
                            it fails with HTTP 401 code?"""
         try:
             headers = request_kwargs.pop("headers", {})
@@ -360,5 +377,6 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
         except HTTPError as e:
             if auth_retry and e.response.status_code == 401:
                 self.authenticate(e.response)
-                return self.request(url, auth_retry=False, **request_kwargs)
+                return self.request(
+                    url, auth_retry=False, *args, **request_kwargs)
             raise
