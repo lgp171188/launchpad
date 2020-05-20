@@ -316,14 +316,6 @@ class DockerHubHTTPClient(RegistryHTTPClient):
         super(DockerHubHTTPClient, self).__init__(push_rule)
         self.auth_token = None
 
-    @property
-    def api_url(self):
-        """Get the base API URL for Dockerhub projects, including both the
-        image and user name."""
-        push_rule = self.push_rule
-        return "{}/v2/{}/{}".format(
-            push_rule.registry_url, push_rule.username, push_rule.image_name)
-
     def parseAuthInstructions(self, request):
         """Parse the Www-Authenticate response header.
 

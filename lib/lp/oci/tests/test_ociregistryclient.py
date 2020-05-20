@@ -178,7 +178,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.client.upload(self.build)
 
         http_client = _upload_fixture.mock.call_args_list[0][0][-1]
-        self.assertEquals(
+        self.assertEqual(
             http_client.credentials, ('test-username', 'test-password'))
 
     def test_preloadFiles(self):
@@ -323,7 +323,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
             credentials={'username': 'the-user', 'password': "the-passwd"})
         return self.factory.makeOCIPushRule(
             registry_credentials=credentials,
-            image_name="test-image")
+            image_name="the-user/test-image")
 
     def test_api_url(self):
         push_rule = self.makeOCIPushRule()
@@ -368,11 +368,11 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         push_rule = removeSecurityProxy(self.makeOCIPushRule())
         client = DockerHubHTTPClient(push_rule)
         response = client.request(url)
-        self.assertEquals(201, response.status_code)
-        self.assertEquals(response.json(), {"success": True})
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(response.json(), {"success": True})
 
         # Check that the 3 requests were made in order.
-        self.assertEquals(3, len(responses.calls))
+        self.assertEqual(3, len(responses.calls))
         failed_call, auth_call, success_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
@@ -402,7 +402,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertRaises(HTTPError, client.request, url)
 
         # Check that the 3 requests were made in order.
-        self.assertEquals(3, len(responses.calls))
+        self.assertEqual(3, len(responses.calls))
         failed_call, auth_call, second_failed_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
@@ -431,7 +431,7 @@ class TestDockerHubHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         client = DockerHubHTTPClient(push_rule)
         self.assertRaises(HTTPError, client.request, url)
 
-        self.assertEquals(2, len(responses.calls))
+        self.assertEqual(2, len(responses.calls))
         failed_call, auth_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
