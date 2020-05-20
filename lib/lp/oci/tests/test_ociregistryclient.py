@@ -120,14 +120,18 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
 
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+
         manifests_url = "{}/v2/{}/manifests/edge".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            self.build.recipe.push_rules[0].image_name
+            push_rule.registry_credentials.url,
+            push_rule.image_name
         )
         responses.add("PUT", manifests_url, status=201)
+
         self.client.upload(self.build)
 
-        request = json.loads(responses.calls[0].request.body)
+        request = json.loads(responses.calls[1].request.body)
 
         self.assertThat(request, MatchesDict({
             "layers": MatchesListwise([
@@ -170,11 +174,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             "password": "test-password"
         })
 
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+
         manifests_url = "{}/v2/{}/manifests/edge".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            self.build.recipe.push_rules[0].image_name
-        )
+            push_rule.registry_credentials.url, push_rule.image_name)
         responses.add("PUT", manifests_url, status=201)
+
         self.client.upload(self.build)
 
         http_client = _upload_fixture.mock.call_args_list[0][0][-1]
@@ -308,6 +314,55 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(
             5, self.client._upload.retry.statistics["attempt_number"])
         self.assertEqual(5, self.retry_count)
+
+
+class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestRegistryHTTPClient, self).setUp()
+        self.setConfig()
+
+    @responses.activate
+    def test_get_default_client_instance(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://the-registry.test",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="the-user/test-image"))
+
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(RegistryHTTPClient, type(instance))
+
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual(
+            "Basic dGhlLXVzZXI6dGhlLXBhc3N3ZA==",
+            call.request.headers["Authorization"])
+
+    @responses.activate
+    def test_get_bearer_token_client_instance(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://the-registry.test",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="the-user/test-image"))
+
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=401,
+                      headers={"Www-Authenticate": 'realm="something.com"'})
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(BearerTokenRegistryClient, type(instance))
+
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual(
+            "Basic dGhlLXVzZXI6dGhlLXBhc3N3ZA==",
+            call.request.headers["Authorization"])
 
 
 class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):

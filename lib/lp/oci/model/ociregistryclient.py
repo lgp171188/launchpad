@@ -22,7 +22,6 @@ from requests.exceptions import (
     ConnectionError,
     HTTPError,
     )
-from six.moves.urllib.parse import urlsplit
 from tenacity import (
     before_log,
     retry,
@@ -298,10 +297,19 @@ class RegistryHTTPClient:
     def getInstance(cls, push_rule):
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule."""
-        split = urlsplit(push_rule.registry_url)
-        if split.netloc.endswith('registry.hub.docker.com'):
-            return BearerTokenRegistryClient(push_rule)
-        return RegistryHTTPClient(push_rule)
+        try:
+            # Tries to login with basic auth (standard method). If it
+            # succeed, we give back the default client.
+            default_client = cls(push_rule)
+            default_client.request("{}/v2/".format(push_rule.registry_url))
+            return default_client
+        except HTTPError as e:
+            # If we got back an "UNAUTHORIZED" error with "Www-Authenticate"
+            # header, we should use a BearerTokenRegistryClient.
+            if e.response.status_code == 401:
+                return BearerTokenRegistryClient(push_rule)
+        raise ValueError("Unknown authentication type for %s registry" %
+                         push_rule.registry_url)
 
 
 class BearerTokenRegistryClient(RegistryHTTPClient):
