@@ -345,11 +345,9 @@ class TestCodeImportDeletion(TestCodeImportBase):
             code_import=code_import)
         code_import_event_id = code_import_event.id
         CodeImportSet().delete(code_import_event.code_import)
-        # CodeImportEvent.get should not raise anything.
-        # But since it populates the object cache, we must invalidate it.
-        Store.of(code_import_event).invalidate(code_import_event)
-        self.assertRaises(
-            SQLObjectNotFound, CodeImportEvent.get, code_import_event_id)
+        store = Store.of(code_import_event)
+        store.invalidate(code_import_event)
+        self.assertIsNone(store.get(CodeImportEvent, code_import_event_id))
 
     def test_deleteIncludesResult(self):
         """Ensure deleting CodeImport objects deletes associated results."""

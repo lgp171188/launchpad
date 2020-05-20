@@ -3,6 +3,8 @@
 
 """Database classes including and related to CodeImportMachine."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -10,11 +12,11 @@ __all__ = [
     'CodeImportMachineSet',
     ]
 
-from sqlobject import (
-    SQLMultipleJoin,
-    StringCol,
+from sqlobject import StringCol
+from storm.locals import (
+    Desc,
+    ReferenceSet,
     )
-from storm.locals import ReferenceSet
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -53,9 +55,11 @@ class CodeImportMachine(SQLBase):
         '<primary key>', 'CodeImportJob.machine_id',
         order_by=('CodeImportJob.date_started', 'CodeImportJob.id'))
 
-    events = SQLMultipleJoin(
-        'CodeImportEvent', joinColumn='machine',
-        orderBy=['-date_created', '-id'])
+    events = ReferenceSet(
+        '<primary key>', 'CodeImportEvent.machine_id',
+        order_by=(
+            Desc('CodeImportEvent.date_created'),
+            Desc('CodeImportEvent.id')))
 
     def shouldLookForJob(self, worker_limit):
         """See `ICodeImportMachine`."""

@@ -58,6 +58,20 @@ class TestOCIProject(TestCaseWithFactory):
                 registrant)
             self.assertProvides(series, IOCIProjectSeries)
 
+    def test_newSeries_as_oci_project_admin(self):
+        admin_person = self.factory.makePerson()
+        admin_team = self.factory.makeTeam(members=[admin_person])
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=admin_team)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        registrant = self.factory.makePerson()
+        with person_logged_in(admin_person):
+            series = oci_project.newSeries(
+                'test-series',
+                'test-summary',
+                registrant)
+            self.assertProvides(series, IOCIProjectSeries)
+
     def test_newSeries_bad_permissions(self):
         distribution = self.factory.makeDistribution()
         registrant = self.factory.makePerson()

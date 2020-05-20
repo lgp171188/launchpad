@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BinaryPackageBuildBehaviour."""
@@ -37,6 +37,7 @@ from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
+from lp.buildmaster.manager import BuilddManager
 from lp.buildmaster.tests.mock_slaves import (
     AbortingSlave,
     BuildingSlave,
@@ -424,6 +425,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         switch_dbuser('testadmin')
 
         self.builder = self.factory.makeBuilder()
+        self.manager = BuilddManager()
         self.interactor = BuilderInteractor()
         self.build = self.factory.makeBinaryPackageBuild(
             builder=self.builder, pocket=PackagePublishingPocket.RELEASE)
@@ -442,7 +444,8 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         slave_status = yield slave.status()
         yield self.interactor.updateBuild(
             bf.getVitals('foo'), slave, slave_status, bf,
-            self.interactor.getBuildBehaviour)
+            self.interactor.getBuildBehaviour, self.manager)
+        self.manager.flushLogTails()
 
     def assertBuildProperties(self, build):
         """Check that a build happened by making sure some of its properties
