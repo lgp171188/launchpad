@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -539,10 +539,37 @@ class BuilderInteractor(object):
             "Malformed status string: '%s'" % status_string)
         return status_string[len(lead_string):]
 
+    @staticmethod
+    def extractLogTail(slave_status):
+        """Extract the log tail from a builder status response.
+
+        :param slave_status: build status dict from BuilderSlave.status.
+        :return: a text string representing the tail of the build log, or
+            None if the log tail is unavailable and should be left
+            unchanged.
+        """
+        builder_status = slave_status["builder_status"]
+        if builder_status == "BuilderStatus.ABORTING":
+            logtail = "Waiting for slave process to be terminated"
+        elif slave_status.get("logtail") is not None:
+            # slave_status["logtail"] is normally an xmlrpc_client.Binary
+            # instance, and the contents might include invalid UTF-8 due to
+            # being a fixed number of bytes from the tail of the log.  Turn
+            # it into Unicode as best we can.
+            logtail = bytes(
+                slave_status.get("logtail")).decode("UTF-8", errors="replace")
+            # PostgreSQL text columns can't contain \0 characters, and since
+            # we only use this for web UI display purposes there's no point
+            # in going through contortions to store them.
+            logtail = logtail.replace("\0", "")
+        else:
+            logtail = None
+        return logtail
+
     @classmethod
     @defer.inlineCallbacks
     def updateBuild(cls, vitals, slave, slave_status, builder_factory,
-                    behaviour_factory):
+                    behaviour_factory, manager):
         """Verify the current build job status.
 
         Perform the required actions for each state.
@@ -556,7 +583,9 @@ class BuilderInteractor(object):
         builder_status = slave_status['builder_status']
         if builder_status in (
                 'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
-            vitals.build_queue.collectStatus(slave_status)
+            logtail = cls.extractLogTail(slave_status)
+            if logtail is not None:
+                manager.addLogTail(vitals.build_queue.id, logtail)
             vitals.build_queue.specific_build.updateStatus(
                 vitals.build_queue.specific_build.status,
                 slave_status=slave_status)
