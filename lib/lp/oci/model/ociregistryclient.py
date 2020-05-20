@@ -303,7 +303,7 @@ class RegistryHTTPClient:
     @classmethod
     def getInstance(cls, push_rule):
         """Returns an instance of RegistryHTTPClient adapted to the
-        given push rule."""
+        given push rule and registry's authentication flow."""
         try:
             urlfetch("{}/v2/".format(push_rule.registry_url))
             # No authorization error? Just return the basic RegistryHTTPClient.
@@ -316,6 +316,13 @@ class RegistryHTTPClient:
                     and header_key in e.response.headers):
                 auth_type = e.response.headers[header_key].split(' ', 1)[0]
                 if auth_type == 'Bearer':
+                    # Note that, although we have the realm where to
+                    # authenticate, we do not retrieve the authentication
+                    # token here. Different operations might need different
+                    # permission scope (defined at "Bearer ...scope=yyy").
+                    # So, we defer the token fetching to a moment where we
+                    # are actually doing the operations and we will get info
+                    # about what scope we will need.
                     return BearerTokenRegistryClient(push_rule)
                 elif auth_type == 'Basic':
                     return RegistryHTTPClient(push_rule)
