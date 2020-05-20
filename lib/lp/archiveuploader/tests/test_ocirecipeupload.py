@@ -113,3 +113,31 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
             "ERROR Missing layer file: layer_2.",
             self.log.getLogBuffer())
         self.assertFalse(self.build.verifySuccessfulUpload())
+
+    def test_reuse_existing_file(self):
+        # The digests.json specifies a file that already exists in the
+        # librarian, but not on disk
+        self.assertFalse(self.build.verifySuccessfulUpload())
+        del get_property_cache(self.build).manifest
+        del get_property_cache(self.build).digests
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id), "ubuntu")
+        write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
+        write_file(os.path.join(upload_dir, "manifest.json"), b"manifest")
+        write_file(
+            os.path.join(upload_dir, "digests.json"), json.dumps(self.digests))
+
+        # create the existing file
+        self.switchToAdmin()
+        layer_2 = self.factory.makeOCIFile(layer_file_digest="digest_2")
+        Store.of(layer_2.build).flush()
+        self.switchToUploader()
+
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build)
+        result = handler.processOCIRecipe(self.log)
+        self.assertEqual(
+            UploadStatusEnum.ACCEPTED, result,
+            "OCI upload failed\nGot: %s" % self.log.getLogBuffer())
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+        self.assertTrue(self.build.verifySuccessfulUpload())

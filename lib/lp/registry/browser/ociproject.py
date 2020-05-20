@@ -15,7 +15,9 @@ __all__ = [
     ]
 
 from zope.component import getUtility
+from zope.formlib import form
 from zope.interface import implementer
+from zope.schema import Choice
 
 from lp.app.browser.launchpadform import (
     action,
@@ -170,7 +172,16 @@ class OCIProjectEditView(LaunchpadEditFormView):
     field_names = [
         'distribution',
         'name',
+        'official_recipe',
         ]
+
+    def extendFields(self):
+        official_recipe = self.context.getOfficialRecipe()
+        self.form_fields += form.Fields(
+            Choice(
+                __name__="official_recipe", title=u"Official recipe",
+                required=False, vocabulary="OCIRecipe",
+                default=official_recipe))
 
     @property
     def label(self):
@@ -193,7 +204,9 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     @action('Update OCI project', name='update')
     def update_action(self, action, data):
+        official_recipe = data.pop("official_recipe")
         self.updateContextFromData(data)
+        self.context.setOfficialRecipe(official_recipe)
 
     @property
     def next_url(self):

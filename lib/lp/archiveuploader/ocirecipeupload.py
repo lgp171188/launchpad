@@ -17,6 +17,7 @@ from zope.component import getUtility
 
 from lp.archiveuploader.utils import UploadError
 from lp.buildmaster.enums import BuildStatus
+from lp.oci.interfaces.ocirecipebuild import IOCIFileSet
 from lp.services.helpers import filenameToContentType
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 
@@ -62,6 +63,17 @@ class OCIRecipeUpload:
                         "{}.tar.gz".format(layer_id)
                     )
                     self.logger.debug("Layer path: {}".format(layer_path))
+                    # If the file is already in the librarian,
+                    # we can just reuse it.
+                    existing_file = getUtility(IOCIFileSet).getByLayerDigest(
+                        digest)
+                    # XXX 2020-05-14 twom This will need to respect restricted
+                    # when we do private builds.
+                    if existing_file:
+                        build.addFile(
+                            existing_file.library_file,
+                            layer_file_digest=digest)
+                        continue
                     if not os.path.exists(layer_path):
                         raise UploadError(
                             "Missing layer file: {}.".format(layer_id))

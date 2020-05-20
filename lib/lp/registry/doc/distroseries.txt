@@ -131,41 +131,8 @@ and version values consistently.
     Warty (4.10)
 
 
-Published sources
------------------
-
-DistroSeries.getPublishedSources:
-
-    >>> from lp.registry.model.distroseries import DistroSeries
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> warty2 = DistroSeries.get(1)
-
-Passing a ISourcePackageName as argument:
-
-    >>> prs = warty2.getPublishedSources(
-    ...       SourcePackageName.byName('mozilla-firefox'))
-    >>> print prs.count()
-    1
-    >>> print prs[0].sourcepackagerelease.sourcepackagename.name
-    mozilla-firefox
-
-Passing a string name:
-
-    >>> print warty2.getPublishedSources('mozilla-firefox').count()
-    1
-
-Including pending publication records in the result:
-
-    >>> print warty2.getPublishedSources('mozilla-firefox',
-    ...           include_pending=True).count()
-    2
-
-Not found as empty list:
-
-    >>> print warty2.getPublishedSources('nosuchpackage').count()
-    0
-
-See distroseries-publishing-lookups.txt for more information.
+canModifySuite
+--------------
 
 canModifySuite method helps us to decide if an upload is allowed or not,
 according to the distroseries status and the upload target pocket.
@@ -336,9 +303,13 @@ again" type set of assertions.
     >>> humpy.previous_series = hoary
     >>> ids = InitializeDistroSeries(humpy, [hoary.id])
     >>> ids.initialize()
-    >>> hoary.getPublishedSources('pmount').count()
+    >>> hoary.main_archive.getPublishedSources(
+    ...     name='pmount', status=PackagePublishingStatus.PUBLISHED,
+    ...     distroseries=hoary, exact_match=True).count()
     1
-    >>> humpy.getPublishedSources('pmount').count()
+    >>> humpy.main_archive.getPublishedSources(
+    ...     name='pmount', status=PackagePublishingStatus.PUBLISHED,
+    ...     distroseries=humpy, exact_match=True).count()
     1
     >>> hoary.main_archive.getAllPublishedBinaries(
     ...     distroarchseries=hoary['i386'], name=u'pmount',

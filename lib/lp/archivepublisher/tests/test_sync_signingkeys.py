@@ -6,36 +6,45 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
-
-
 __all__ = [
     'SyncSigningKeysScript',
     ]
 
 from datetime import datetime
 import os
+from textwrap import dedent
 
 from fixtures import (
     MockPatch,
     TempDir,
     )
 from pytz import utc
+from testtools.content import text_content
 from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesStructure,
     )
+import transaction
+from zope.component import getUtility
 
 from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
 from lp.services.compat import mock
+from lp.services.config.fixture import (
+    ConfigFixture,
+    ConfigUseFixture,
+    )
 from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger
 from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.testing.fixture import SigningServiceFixture
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.soyuz.model.archive import Archive
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
+from lp.testing.script import run_script
 
 
 class TestSyncSigningKeysScript(TestCaseWithFactory):
@@ -44,8 +53,16 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
     def setUp(self):
         super(TestSyncSigningKeysScript, self).setUp()
         self.signing_root_dir = self.useFixture(TempDir()).path
-        self.pushConfig(
-            "personalpackagearchive", signing_keys_root=self.signing_root_dir)
+        # Add our local configuration to an on-disk configuration file so
+        # that it can be used by subprocesses.
+        config_name = self.factory.getUniqueString()
+        config_fixture = self.useFixture(
+            ConfigFixture(config_name, os.environ["LPCONFIG"]))
+        config_fixture.add_section(dedent("""
+            [personalpackagearchive]
+            signing_keys_root: {}
+            """).format(self.signing_root_dir))
+        self.useFixture(ConfigUseFixture(config_name))
 
     def makeScript(self, test_args):
         script = SyncSigningKeysScript("test-sync", test_args=test_args)
@@ -103,7 +120,9 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         script = self.makeScript([])
         self.assertThat(script.getKeysPerType(keys_dir), MatchesDict({
-            SigningKeyType.UEFI: Equals(("uefi.key", "uefi.crt"))
+            SigningKeyType.UEFI: Equals(
+                (os.path.join(keys_dir, "uefi.key"),
+                 os.path.join(keys_dir, "uefi.crt")))
         }))
 
     def test_get_series_paths(self):
@@ -150,12 +169,18 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         script.main()
 
         self.assertItemsEqual([
-            mock.call(archive, SigningKeyType.KMOD, series1, "kmod.pem",
-                      "kmod.x509"),
-            mock.call(archive, SigningKeyType.OPAL, series1, "opal.pem",
-                      "opal.x509"),
-            mock.call(archive, SigningKeyType.UEFI, None, "uefi.key",
-                      "uefi.crt")],
+            mock.call(
+                archive, SigningKeyType.KMOD, series1,
+                os.path.join(key_dirs[series1], "kmod.pem"),
+                os.path.join(key_dirs[series1], "kmod.x509")),
+            mock.call(
+                archive, SigningKeyType.OPAL, series1,
+                os.path.join(key_dirs[series1], "opal.pem"),
+                os.path.join(key_dirs[series1], "opal.x509")),
+            mock.call(
+                archive, SigningKeyType.UEFI, None,
+                os.path.join(archive_root, "uefi.key"),
+                os.path.join(archive_root, "uefi.crt"))],
             script.inject.call_args_list)
 
         # Check the log messages.
@@ -166,13 +191,22 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         tpl = "INFO Found key files %s / %s (type=%s, series=%s)."
         self.assertIn(
-            tpl % ("kmod.pem", "kmod.x509", SigningKeyType.KMOD, series1.name),
+            tpl % (
+                os.path.join(key_dirs[series1], "kmod.pem"),
+                os.path.join(key_dirs[series1], "kmod.x509"),
+                SigningKeyType.KMOD, series1.name),
             content)
         self.assertIn(
-            tpl % ("opal.pem", "opal.x509", SigningKeyType.OPAL, series1.name),
+            tpl % (
+                os.path.join(key_dirs[series1], "opal.pem"),
+                os.path.join(key_dirs[series1], "opal.x509"),
+                SigningKeyType.OPAL, series1.name),
             content)
         self.assertIn(
-            tpl % ("uefi.key", "uefi.crt", SigningKeyType.UEFI, None),
+            tpl % (
+                os.path.join(archive_root, "uefi.key"),
+                os.path.join(archive_root, "uefi.crt"),
+                SigningKeyType.UEFI, None),
             content)
 
     def test_inject(self):
@@ -265,3 +299,30 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             "Signing key for %s / %s / %s already exists" %
             (key_type, archive.reference, series.name),
             script.logger.content.as_text())
+
+    def runScript(self):
+        transaction.commit()
+        ret, out, err = run_script("scripts/sync-signingkeys.py")
+        self.addDetail("stdout", text_content(out))
+        self.addDetail("stderr", text_content(err))
+        self.assertEqual(0, ret)
+        transaction.commit()
+
+    def test_script(self):
+        self.useFixture(SigningServiceFixture())
+        series = self.factory.makeDistroSeries()
+        archive = self.factory.makeArchive(distribution=series.distribution)
+        key_dirs = self.makeArchiveSigningDir(archive)
+        archive_root = key_dirs[None]
+        with open(os.path.join(archive_root, "uefi.key"), "wb") as fd:
+            fd.write(b"Private key content")
+        with open(os.path.join(archive_root, "uefi.crt"), "wb") as fd:
+            fd.write(b"Public key content")
+
+        self.runScript()
+
+        archive_signing_key = getUtility(IArchiveSigningKeySet).getSigningKey(
+            SigningKeyType.UEFI, archive, series)
+        self.assertThat(archive_signing_key, MatchesStructure(
+            key_type=Equals(SigningKeyType.UEFI),
+            public_key=Equals(b"Public key content")))

@@ -63,6 +63,7 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.component import IComponentSet
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.model.files import SourceFileMixin
 
@@ -786,9 +787,10 @@ class BaseBinaryUploadFile(PackageUploadFile):
         assert self.source_name is not None
         assert self.source_version is not None
         distroseries = self.policy.distroseries
-        spphs = distroseries.getPublishedSources(
-            self.source_name, version=self.source_version,
-            include_pending=True, archive=self.policy.archive)
+        spphs = self.policy.archive.getPublishedSources(
+            name=self.source_name, version=self.source_version,
+            status=active_publishing_status, distroseries=distroseries,
+            exact_match=True)
         # Workaround storm bug in EmptyResultSet.
         spphs = list(spphs[:1])
         try:

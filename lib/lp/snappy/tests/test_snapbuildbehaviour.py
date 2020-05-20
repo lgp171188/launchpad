@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build behaviour."""
@@ -57,7 +57,6 @@ from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
     )
-from lp.buildmaster.interactor import shut_down_default_threadpool
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
@@ -315,7 +314,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         builder.processor = job.build.processor
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
-        self.addCleanup(shut_down_default_threadpool)
+        self.addCleanup(slave.pool.closeCachedConnections)
         return job
 
     @defer.inlineCallbacks
@@ -357,7 +356,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
                         Equals(b"Basic " + base64.b64encode(
                             b"admin-launchpad.test:admin-secret"))]),
                     b"Content-Type": MatchesListwise([
-                        Equals(b"application/json"),
+                        Equals(b"application/json; charset=UTF-8"),
                         ]),
                     }),
                 "content": AfterPreprocessing(json.loads, MatchesDict({
