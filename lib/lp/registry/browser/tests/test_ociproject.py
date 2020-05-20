@@ -128,6 +128,36 @@ class TestOCIProjectEditView(BrowserTestCase):
             "Name:\nnew-name\nEdit OCI project",
             MatchesTagText(content, "name"))
 
+    def test_edit_oci_project_ad_oci_project_admin(self):
+        admin_person = self.factory.makePerson()
+        admin_team = self.factory.makeTeam(members=[admin_person])
+        original_distribution = self.factory.makeDistribution(
+            oci_project_admin=admin_team)
+        oci_project = self.factory.makeOCIProject(
+            pillar=original_distribution)
+        new_distribution = self.factory.makeDistribution(
+            oci_project_admin=admin_team)
+
+        browser = self.getViewBrowser(
+            oci_project, user=admin_person)
+        browser.getLink("Edit OCI project").click()
+        browser.getControl(name="field.distribution").value = [
+            new_distribution.name]
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl("Update OCI project").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual(
+            "OCI project new-name for %s" % new_distribution.display_name,
+            extract_text(content.h1))
+        self.assertThat(
+            "Distribution:\n%s\nEdit OCI project" % (
+                new_distribution.display_name),
+            MatchesTagText(content, "distribution"))
+        self.assertThat(
+            "Name:\nnew-name\nEdit OCI project",
+            MatchesTagText(content, "name"))
+
     def test_edit_oci_project_sets_date_last_modified(self):
         # Editing an OCI project sets the date_last_modified property.
         date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
