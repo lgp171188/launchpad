@@ -20,7 +20,7 @@ CREATE UNIQUE INDEX ociproject__project__ociprojectname__key
 
 -- Alter GitRepository table to allow oci_project.
 COMMENT ON COLUMN GitRepository.ociprojectname
-    IS 'Deprecated column. Should be removed, together with corresponding indexes.';
+    IS 'Deprecated column. Check one_container and default_implies_target constraints before removing.';
 
 ALTER TABLE GitRepository
     ADD COLUMN oci_project integer REFERENCES ociproject,
@@ -35,6 +35,12 @@ ALTER TABLE GitRepository
         -- OCI project
         (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NOT NULL) OR
         -- Personal
-        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL));
+        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL)),
+    DROP CONSTRAINT default_implies_target,
+    ADD CONSTRAINT default_implies_target CHECK (
+        project IS NOT NULL
+        OR distribution IS NOT NULL
+        OR oci_project IS NOT NULL
+        OR NOT owner_default AND NOT target_default);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 8, 8);
