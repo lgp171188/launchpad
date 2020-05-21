@@ -76,11 +76,10 @@ JOB_RESET_THRESHOLD = 3
 BUILDER_FAILURE_THRESHOLD = 5
 
 
-def sort_build_candidates(candidates):
-    # Re-sort a combined list of candidates.  This must match the ordering
-    # used in BuildQueueSet.findBuildCandidates.
-    return sorted(
-        candidates, key=lambda candidate: (-candidate.lastscore, candidate.id))
+def build_candidate_sort_key(candidate):
+    # Sort key for build candidates.  This must match the ordering used in
+    # BuildQueueSet.findBuildCandidates.
+    return -candidate.lastscore, candidate.id
 
 
 class BuilderFactory:
@@ -128,10 +127,12 @@ class BuilderFactory:
             for processor_name in vitals.processor_names}
         processors_by_name[None] = None
         bq_set = getUtility(IBuildQueueSet)
-        candidates = sort_build_candidates(chain.from_iterable(
-            bq_set.findBuildCandidates(
-                processors_by_name[processor_name], vitals.virtualized, 1)
-            for processor_name in vitals.processor_names + [None]))
+        candidates = sorted(
+            chain.from_iterable(
+                bq_set.findBuildCandidates(
+                    processors_by_name[processor_name], vitals.virtualized, 1)
+                for processor_name in vitals.processor_names + [None]),
+            key=build_candidate_sort_key)
         return candidates[0] if candidates else None
 
 
@@ -189,8 +190,7 @@ class PrefetchedBuilderFactory:
         """See `BuilderFactory`."""
         return (b for n, b in sorted(six.iteritems(self.vitals_map)))
 
-    def findBuildCandidate(self, vitals):
-        """See `BuilderFactory`."""
+    def _fetchBuildCandidates(self, vitals):
         builder_group_keys = self._getBuilderGroupKeys(vitals)
         missing_builder_group_keys = [
             builder_group_key
@@ -206,14 +206,30 @@ class PrefetchedBuilderFactory:
             bq_set = getUtility(IBuildQueueSet)
             for builder_group_key in missing_builder_group_keys:
                 processor_name, virtualized = builder_group_key
-                self.candidates_map[builder_group_key] = (
+                self.candidates_map[builder_group_key] = list(
                     bq_set.findBuildCandidates(
                         processors_by_name[processor_name], virtualized,
                         len(self.builder_groups[builder_group_key])))
-        candidates = sorted(chain.from_iterable(
-            self.candidates_map[builder_group_key]
-            for builder_group_key in builder_group_keys))
-        return candidates.pop(0) if candidates else None
+
+    def findBuildCandidate(self, vitals):
+        """See `BuilderFactory`."""
+        self._fetchBuildCandidates(vitals)
+        builder_group_keys = self._getBuilderGroupKeys(vitals)
+        grouped_candidates = []
+        for builder_group_key in builder_group_keys:
+            if self.candidates_map[builder_group_key]:
+                grouped_candidates.append(
+                    (builder_group_key,
+                     self.candidates_map[builder_group_key][0]))
+        grouped_candidates.sort(
+            key=lambda grouped_candidate: build_candidate_sort_key(
+                grouped_candidate[1]))
+        if grouped_candidates:
+            builder_group_key, candidate = grouped_candidates[0]
+            self.candidates_map[builder_group_key].pop(0)
+            return candidate
+        else:
+            return None
 
 
 def judge_failure(builder_count, job_count, exc, retry=True):

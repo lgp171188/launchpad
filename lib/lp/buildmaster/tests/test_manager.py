@@ -830,6 +830,22 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
             4, len([v for v in all_vitals if v.build_queue is not None]))
         self.assertContentEqual(BuilderFactory().iterVitals(), all_vitals)
 
+    def test_findBuildCandidate_avoids_duplicates(self):
+        # findBuildCandidate removes the job it finds from its internal list
+        # of candidates, so a second call returns a different job.
+        builders = [
+            self.factory.makeBuilder(virtualized=False) for _ in range(2)]
+        for _ in range(2):
+            self.factory.makeBinaryPackageBuild().queueBuild()
+        transaction.commit()
+        pbf = PrefetchedBuilderFactory()
+        pbf.update()
+
+        candidates = [
+            pbf.findBuildCandidate(pbf.getVitals(builder.name))
+            for builder in builders]
+        self.assertNotEqual(candidates[0], candidates[1])
+
 
 class FakeBuilddManager:
     """A minimal fake version of `BuilddManager`."""
