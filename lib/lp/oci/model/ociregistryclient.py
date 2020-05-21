@@ -18,9 +18,10 @@ import logging
 import tarfile
 
 from requests.exceptions import (
-    HTTPError,
     ConnectionError,
+    HTTPError,
     )
+from six.moves.urllib.parse import urlsplit
 from tenacity import (
     before_log,
     retry,
@@ -61,23 +62,20 @@ class OCIRegistryClient:
         before=before_log(log, logging.INFO),
         retry=retry_if_exception_type(ConnectionError),
         stop=stop_after_attempt(5))
-    def _upload(cls, digest, push_rule, name, fileobj, auth):
+    def _upload(cls, digest, push_rule, fileobj, http_client):
         """Upload a blob to the registry, using a given digest.
 
         :param digest: The digest to store the file under.
         :param push_rule: `OCIPushRule` to use for the URL and credentials.
-        :param name: Name of the image the blob is part of.
         :param fileobj: An object that looks like a buffer.
 
         :raises BlobUploadFailed: if the registry does not accept the blob.
         """
         # Check if it already exists
         try:
-            head_response = urlfetch(
-                "{}/v2/{}/blobs/{}".format(
-                    push_rule.registry_credentials.url, name, digest),
-                method="HEAD",
-                auth=auth)
+            head_response = http_client.requestPath(
+                "/blobs/{}".format(digest),
+                method="HEAD")
             if head_response.status_code == 200:
                 log.info("{} already found".format(digest))
                 return
@@ -86,27 +84,25 @@ class OCIRegistryClient:
             if http_error.response.status_code != 404:
                 raise http_error
 
-        post_response = urlfetch(
-            "{}/v2/{}/blobs/uploads/".format(
-                push_rule.registry_credentials.url, name),
-            method="POST", auth=auth)
+        post_response = http_client.requestPath(
+            "/blobs/uploads/", method="POST")
 
         post_location = post_response.headers["Location"]
         query_parsed = {"digest": digest}
 
-        put_response = urlfetch(
+        put_response = http_client.request(
             post_location,
             params=query_parsed,
             data=fileobj,
-            method="PUT",
-            auth=auth)
+            method="PUT")
 
         if put_response.status_code != 201:
-            raise BlobUploadFailed(
-                "Upload of {} for {} failed".format(digest, name))
+            msg = "Upload of {} for {} failed".format(
+                digest, push_rule.image_name)
+            raise BlobUploadFailed(msg)
 
     @classmethod
-    def _upload_layer(cls, digest, push_rule, name, lfa, auth):
+    def _upload_layer(cls, digest, push_rule, lfa, http_client):
         """Upload a layer blob to the registry.
 
         Uses _upload, but opens the LFA and extracts the necessary files
@@ -114,7 +110,6 @@ class OCIRegistryClient:
 
         :param digest: The digest to store the file under.
         :param push_rule: `OCIPushRule` to use for the URL and credentials.
-        :param name: Name of the image the blob is part of.
         :param lfa: The `LibraryFileAlias` for the layer.
         """
         lfa.open()
@@ -124,7 +119,7 @@ class OCIRegistryClient:
                 if tarinfo.name != 'layer.tar':
                     continue
                 fileobj = un_zipped.extractfile(tarinfo)
-                cls._upload(digest, push_rule, name, fileobj, auth)
+                cls._upload(digest, push_rule, fileobj, http_client)
         finally:
             lfa.close()
 
@@ -223,15 +218,10 @@ class OCIRegistryClient:
         preloaded_data = cls._preloadFiles(build, manifest, digests)
 
         for push_rule in build.recipe.push_rules:
-            # Work out the auth details for the registry
-            auth = push_rule.registry_credentials.getCredentials()
-            if auth.get('username'):
-                auth_tuple = (auth['username'], auth.get('password'))
-            else:
-                auth_tuple = None
+            http_client = RegistryHTTPClient.getInstance(push_rule)
+
             for section in manifest:
                 # Work out names and tags
-                image_name = push_rule.image_name
                 tag = cls._calculateTag(build, push_rule)
                 file_data = preloaded_data[section["Config"]]
                 config = file_data["config_file"]
@@ -240,9 +230,8 @@ class OCIRegistryClient:
                     cls._upload_layer(
                         diff_id,
                         push_rule,
-                        image_name,
                         file_data[diff_id],
-                        auth_tuple)
+                        http_client)
                 # The config file is required in different forms, so we can
                 # calculate the sha, work these out and upload
                 config_json = json.dumps(config).encode("UTF-8")
@@ -250,9 +239,8 @@ class OCIRegistryClient:
                 cls._upload(
                     "sha256:{}".format(config_sha),
                     push_rule,
-                    image_name,
                     BytesIO(config_json),
-                    auth_tuple)
+                    http_client)
 
                 # Build the registry manifest from the image manifest
                 # and associated configs
@@ -261,20 +249,82 @@ class OCIRegistryClient:
                     preloaded_data[section["Config"]])
 
                 # Upload the registry manifest
-                manifest_response = urlfetch(
-                    "{}/v2/{}/manifests/{}".format(
-                        push_rule.registry_credentials.url,
-                        image_name,
-                        tag),
+                manifest_response = http_client.requestPath(
+                    "/manifests/{}".format(tag),
                     json=registry_manifest,
                     headers={
                         "Content-Type":
                             "application/"
                             "vnd.docker.distribution.manifest.v2+json"
                         },
-                    method="PUT",
-                    auth=auth_tuple)
+                    method="PUT")
                 if manifest_response.status_code != 201:
                     raise ManifestUploadFailed(
                         "Failed to upload manifest for {} in {}".format(
                             build.recipe.name, build.id))
+
+
+class RegistryHTTPClient:
+    def __init__(self, push_rule):
+        self.push_rule = push_rule
+
+    @property
+    def credentials(self):
+        """Returns a tuple of (username, password)."""
+        auth = self.push_rule.registry_credentials.getCredentials()
+        if auth.get('username'):
+            return auth['username'], auth.get('password')
+        return None, None
+
+    @property
+    def api_url(self):
+        """Returns the base API URL for this registry."""
+        push_rule = self.push_rule
+        return "{}/v2/{}".format(push_rule.registry_url, push_rule.image_name)
+
+    def request(self, url, *args, **request_kwargs):
+        username, password = self.credentials
+        if username is not None:
+            request_kwargs.setdefault("auth", (username, password))
+        return urlfetch(url, **request_kwargs)
+
+    def requestPath(self, path, *args, **request_kwargs):
+        """Shortcut to do a request to {self.api_url}/{path}."""
+        url = "{}{}".format(self.api_url, path)
+        return self.request(url, *args, **request_kwargs)
+
+    @classmethod
+    def getInstance(cls, push_rule):
+        """Returns an instance of RegistryHTTPClient adapted to the
+        given push rule."""
+        split = urlsplit(push_rule.registry_url)
+        if split.netloc.endswith('registry.hub.docker.com'):
+            return DockerHubHTTPClient(push_rule)
+        return RegistryHTTPClient(push_rule)
+
+
+class DockerHubHTTPClient(RegistryHTTPClient):
+    def __init__(self, push_rule):
+        super(DockerHubHTTPClient, self).__init__(push_rule)
+        self.auth_token = None
+
+    @property
+    def api_url(self):
+        """Get the base API URL for Dockerhub projects."""
+        push_rule = self.push_rule
+        return "{}/v2/{}/{}".format(
+            push_rule.registry_url, push_rule.username, push_rule.image_name)
+
+    def authenticate(self, last_failure):
+        """Tries to authenticate, considering the last HTTP 401 error."""
+        raise NotImplementedError("DockerHub auth is not implemented yet.")
+
+    def request(self, url, auth_retry=True, *args, **request_kwargs):
+        try:
+            return super(DockerHubHTTPClient, self).request(
+                url, *args, **request_kwargs)
+        except HTTPError as e:
+            if e.response.status_code == 401:
+                self.authenticate(e.response)
+                return self.request(url, auth_retry=False, **request_kwargs)
+            raise
