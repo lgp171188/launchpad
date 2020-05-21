@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database implementation of the Git repository lookup utility."""
@@ -251,8 +251,7 @@ class DistributionOCIProjectGitTraversable(_BaseGitTraversable):
 
     def getNamespace(self, owner):
         return getUtility(IGitNamespaceSet).get(
-            owner, distribution=self.context.distribution,
-            ociprojectname=self.context.ociprojectname)
+            owner, oci_project=self.context)
 
 
 class SegmentIterator(six.Iterator):
