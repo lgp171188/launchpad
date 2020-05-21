@@ -21,7 +21,10 @@ from requests.exceptions import (
     ConnectionError,
     HTTPError,
     )
-from six.moves.urllib.parse import urlsplit
+from six.moves.urllib.request import (
+    parse_http_list,
+    parse_keqv_list,
+    )
 from tenacity import (
     before_log,
     retry,
@@ -264,6 +267,12 @@ class OCIRegistryClient:
                             build.recipe.name, build.id))
 
 
+class OCIRegistryAuthenticationError(Exception):
+    def __init__(self, msg, http_error=None):
+        super(OCIRegistryAuthenticationError, self).__init__(msg)
+        self.http_error = http_error
+
+
 class RegistryHTTPClient:
     def __init__(self, push_rule):
         self.push_rule = push_rule
@@ -296,35 +305,93 @@ class RegistryHTTPClient:
     @classmethod
     def getInstance(cls, push_rule):
         """Returns an instance of RegistryHTTPClient adapted to the
-        given push rule."""
-        split = urlsplit(push_rule.registry_url)
-        if split.netloc.endswith('registry.hub.docker.com'):
-            return DockerHubHTTPClient(push_rule)
-        return RegistryHTTPClient(push_rule)
+        given push rule and registry's authentication flow."""
+        try:
+            urlfetch("{}/v2/".format(push_rule.registry_url))
+            # No authorization error? Just return the basic RegistryHTTPClient.
+            return RegistryHTTPClient(push_rule)
+        except HTTPError as e:
+            # If we got back an "UNAUTHORIZED" error with "Www-Authenticate"
+            # header, we should check what type of authorization we should use.
+            header_key = "Www-Authenticate"
+            if (e.response.status_code == 401
+                    and header_key in e.response.headers):
+                auth_type = e.response.headers[header_key].split(' ', 1)[0]
+                if auth_type == 'Bearer':
+                    # Note that, although we have the realm where to
+                    # authenticate, we do not retrieve the authentication
+                    # token here. Different operations might need different
+                    # permission scope (defined at "Bearer ...scope=yyy").
+                    # So, we defer the token fetching to a moment where we
+                    # are actually doing the operations and we will get info
+                    # about what scope we will need.
+                    return BearerTokenRegistryClient(push_rule)
+                elif auth_type == 'Basic':
+                    return RegistryHTTPClient(push_rule)
+            raise OCIRegistryAuthenticationError(
+                "Unknown authentication type for %s registry" %
+                push_rule.registry_url, e)
 
 
-class DockerHubHTTPClient(RegistryHTTPClient):
+class BearerTokenRegistryClient(RegistryHTTPClient):
+    """Special case of RegistryHTTPClient for registries with auth
+    based on bearer token, like DockerHub.
+
+    This client type is prepared to deal with DockerHub's authorization
+    cycle, which involves fetching the appropriate authorization token
+    instead of using HTTP's basic auth.
+    """
+
     def __init__(self, push_rule):
-        super(DockerHubHTTPClient, self).__init__(push_rule)
+        super(BearerTokenRegistryClient, self).__init__(push_rule)
         self.auth_token = None
 
-    @property
-    def api_url(self):
-        """Get the base API URL for Dockerhub projects."""
-        push_rule = self.push_rule
-        return "{}/v2/{}/{}".format(
-            push_rule.registry_url, push_rule.username, push_rule.image_name)
+    def parseAuthInstructions(self, request):
+        """Parse the Www-Authenticate response header.
 
-    def authenticate(self, last_failure):
-        """Tries to authenticate, considering the last HTTP 401 error."""
-        raise NotImplementedError("DockerHub auth is not implemented yet.")
+        This method parses the appropriate header from the request and returns
+        the token type and the key-value pairs that should be used as query
+        parameters of the token GET request."""
+        instructions = request.headers['Www-Authenticate']
+        token_type, values = instructions.split(' ', 1)
+        dict_values = parse_keqv_list(parse_http_list(values))
+        return token_type, dict_values
+
+    def authenticate(self, last_failed_request):
+        """Tries to authenticate, considering the last HTTP 401 failed
+        request."""
+        token_type, values = self.parseAuthInstructions(last_failed_request)
+        try:
+            url = values.pop("realm")
+        except KeyError:
+            raise OCIRegistryAuthenticationError(
+                "Auth instructions didn't include realm to get the token: %s"
+                % values)
+        # We should use the basic auth version for this request.
+        response = super(BearerTokenRegistryClient, self).request(
+            url, params=values, method="GET", auth=self.credentials)
+        response.raise_for_status()
+        response_data = response.json()
+        try:
+            self.auth_token = response_data["token"]
+        except KeyError:
+            raise OCIRegistryAuthenticationError(
+                "Could not get token from response data: %s" % response_data)
 
     def request(self, url, auth_retry=True, *args, **request_kwargs):
+        """Does a request, handling authentication cycle in case of 401
+        response.
+
+        :param auth_retry: Should we authenticate and retry the request if
+                           it fails with HTTP 401 code?"""
         try:
-            return super(DockerHubHTTPClient, self).request(
-                url, *args, **request_kwargs)
+            headers = request_kwargs.pop("headers", {})
+            if self.auth_token is not None:
+                headers["Authorization"] = "Bearer %s" % self.auth_token
+            return urlfetch(url, headers=headers, **request_kwargs)
         except HTTPError as e:
-            if e.response.status_code == 401:
+            if auth_retry and e.response.status_code == 401:
                 self.authenticate(e.response)
-                return self.request(url, auth_retry=False, **request_kwargs)
+                return self.request(
+                    url, auth_retry=False, *args, **request_kwargs)
             raise
