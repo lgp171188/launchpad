@@ -538,10 +538,10 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         url = "http://fake.launchpad.test/foo"
         responses.add("GET", url, status=401, headers={
             'Www-Authenticate': auth_header_content})
+
+        # no "token" key on the response.
         responses.add("GET", token_url, status=200, json={
-            # no "token" key on the response.
-            "shrug": "123"
-        })
+            "shrug": "123"})
 
         previous_request = mock.Mock()
         previous_request.headers = {'Www-Authenticate': auth_header_content}

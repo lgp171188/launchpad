@@ -268,7 +268,9 @@ class OCIRegistryClient:
 
 
 class OCIRegistryAuthenticationError(Exception):
-    pass
+    def __init__(self, msg, http_error=None):
+        super(OCIRegistryAuthenticationError, self).__init__(msg)
+        self.http_error = http_error
 
 
 class RegistryHTTPClient:
@@ -326,13 +328,14 @@ class RegistryHTTPClient:
                     return BearerTokenRegistryClient(push_rule)
                 elif auth_type == 'Basic':
                     return RegistryHTTPClient(push_rule)
-        raise OCIRegistryAuthenticationError(
-            "Unknown authentication type for %s registry" %
-            push_rule.registry_url)
+            raise OCIRegistryAuthenticationError(
+                "Unknown authentication type for %s registry" %
+                push_rule.registry_url, e)
 
 
 class BearerTokenRegistryClient(RegistryHTTPClient):
-    """Special case of RegistryHTTPClient for DockerHub.
+    """Special case of RegistryHTTPClient for registries with auth
+    based on bearer token, like DockerHub.
 
     This client type is prepared to deal with DockerHub's authorization
     cycle, which involves fetching the appropriate authorization token
