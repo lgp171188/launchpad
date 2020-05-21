@@ -198,14 +198,14 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
     def update(self):
         """See `BaseBuilderFactory`."""
         transaction.abort()
-        builders_and_bqs = list(IStore(Builder).using(
+        builders_and_current_bqs = list(IStore(Builder).using(
             Builder, LeftJoin(BuildQueue, BuildQueue.builderID == Builder.id)
             ).find((Builder, BuildQueue)))
         getUtility(IBuilderSet).preloadProcessors(
-            [b for b, _ in builders_and_bqs])
+            [b for b, _ in builders_and_current_bqs])
         self.vitals_map = dict(
             (b.name, extract_vitals_from_db(b, bq))
-            for b, bq in builders_and_bqs)
+            for b, bq in builders_and_current_bqs)
         self.builder_groups = defaultdict(list)
         for vitals in self.vitals_map.values():
             for builder_group_key in self._getBuilderGroupKeys(vitals):
