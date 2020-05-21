@@ -5,7 +5,8 @@ SET client_min_messages=ERROR;
 
 ALTER TABLE OCIProject ADD COLUMN project integer REFERENCES product;
 
-ALTER TABLE OCIProject ALTER COLUMN distribution
+ALTER TABLE OCIProject
+    ALTER COLUMN distribution
     DROP NOT NULL,
     ADD CONSTRAINT one_container
         CHECK ((project IS NULL) != (distribution IS NULL));
@@ -13,38 +14,27 @@ ALTER TABLE OCIProject ALTER COLUMN distribution
 COMMENT ON COLUMN OCIProject.project
     IS 'The project that this OCI project is associated with.';
 
-CREATE INDEX ociproject__project__idx ON OCIProject (project);
 CREATE UNIQUE INDEX ociproject__project__ociprojectname__key
     ON OCIProject (project, ociprojectname) WHERE project IS NOT NULL;
 
 
--- Alter GitRepository table to allow ociprojectname + project.
+-- Alter GitRepository table to allow oci_project.
+COMMENT ON COLUMN GitRepository.ociprojectname
+    IS 'Deprecated column. Should be removed, together with corresponding indexes.';
+
 ALTER TABLE GitRepository
+    ADD COLUMN oci_project integer REFERENCES ociproject,
     DROP CONSTRAINT one_container,
     ADD CONSTRAINT one_container CHECK (
-        -- Project
-        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NULL) OR
-        -- Distribution source package
-        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NOT NULL AND ociprojectname IS NULL) OR
-        -- Distribution OCI project
+        -- Distribution + OCIProjectName, to keep compatibility temporarily
         (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NULL AND ociprojectname IS NOT NULL) OR
-        -- Project OCI project
-        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NOT NULL) OR
+        -- Project
+        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL) OR
+        -- Distribution source package
+        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NOT NULL AND oci_project IS NULL) OR
+        -- OCI project
+        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NOT NULL) OR
         -- Personal
-        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NULL));
-
-
--- Rename current unique constraints on GitRepository for project to allow
--- ociprojectname + project in the next migration.
-ALTER INDEX gitrepository__owner__project__name__key
-    RENAME TO old__gitrepository__owner__project__name__key;
-
-ALTER INDEX gitrepository__owner__project__owner_default__key
-    RENAME TO old__gitrepository__owner__project__owner_default__key;
-
-ALTER INDEX gitrepository__project__target_default__key
-    RENAME TO old__gitrepository__project__target_default__key;
-
-
+        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL));
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 8, 8);
