@@ -82,11 +82,40 @@ def build_candidate_sort_key(candidate):
     return -candidate.lastscore, candidate.id
 
 
-class BuilderFactory:
+class BaseBuilderFactory:
+
+    date_updated = None
+
+    def update(self):
+        """Update the factory's view of the world."""
+        raise NotImplementedError
+
+    def prescanUpdate(self):
+        """Update the factory's view of the world before each scan."""
+        raise NotImplementedError
+
+    def __getitem__(self, name):
+        """Get the named `Builder` Storm object."""
+        return getUtility(IBuilderSet).getByName(name)
+
+    def getVitals(self, name):
+        """Get the named `BuilderVitals` object."""
+        raise NotImplementedError
+
+    def iterVitals(self):
+        """Iterate over all `BuilderVitals` objects."""
+        raise NotImplementedError
+
+    def findBuildCandidate(self, vitals):
+        """Find the next build candidate for this `BuilderVitals`, or None."""
+        raise NotImplementedError
+
+
+class BuilderFactory(BaseBuilderFactory):
     """A dumb builder factory that just talks to the DB."""
 
     def update(self):
-        """Update the factory's view of the world.
+        """See `BaseBuilderFactory`.
 
         For the basic BuilderFactory this is a no-op, but others might do
         something.
@@ -94,7 +123,7 @@ class BuilderFactory:
         return
 
     def prescanUpdate(self):
-        """Update the factory's view of the world before each scan.
+        """See `BaseBuilderFactory`.
 
         For the basic BuilderFactory this means ending the transaction
         to ensure that data retrieved is up to date.
@@ -105,22 +134,18 @@ class BuilderFactory:
     def date_updated(self):
         return datetime.datetime.utcnow()
 
-    def __getitem__(self, name):
-        """Get the named `Builder` Storm object."""
-        return getUtility(IBuilderSet).getByName(name)
-
     def getVitals(self, name):
-        """Get the named `BuilderVitals` object."""
+        """See `BaseBuilderFactory`."""
         return extract_vitals_from_db(self[name])
 
     def iterVitals(self):
-        """Iterate over all `BuilderVitals` objects."""
+        """See `BaseBuilderFactory`."""
         return (
             extract_vitals_from_db(b)
             for b in getUtility(IBuilderSet).__iter__())
 
     def findBuildCandidate(self, vitals):
-        """Find the next build candidate for this `BuilderVitals`, or None."""
+        """See `BaseBuilderFactory`."""
         processor_set = getUtility(IProcessorSet)
         processors_by_name = {
             processor_name: processor_set.getByName(processor_name)
@@ -136,14 +161,12 @@ class BuilderFactory:
         return candidates[0] if candidates else None
 
 
-class PrefetchedBuilderFactory:
+class PrefetchedBuilderFactory(BaseBuilderFactory):
     """A smart builder factory that does efficient bulk queries.
 
     `getVitals` and `iterVitals` don't touch the DB directly. They work
     from cached data updated by `update`.
     """
-
-    date_updated = None
 
     @staticmethod
     def _getBuilderGroupKeys(vitals):
@@ -152,7 +175,7 @@ class PrefetchedBuilderFactory:
             for processor_name in vitals.processor_names + [None]]
 
     def update(self):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         transaction.abort()
         builders_and_bqs = list(IStore(Builder).using(
             Builder, LeftJoin(BuildQueue, BuildQueue.builderID == Builder.id)
@@ -171,23 +194,19 @@ class PrefetchedBuilderFactory:
         self.date_updated = datetime.datetime.utcnow()
 
     def prescanUpdate(self):
-        """See `BuilderFactory`.
+        """See `BaseBuilderFactory`.
 
         This is a no-op, as the data was already brought sufficiently up
         to date by update().
         """
         return
 
-    def __getitem__(self, name):
-        """See `BuilderFactory`."""
-        return getUtility(IBuilderSet).getByName(name)
-
     def getVitals(self, name):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         return self.vitals_map[name]
 
     def iterVitals(self):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         return (b for n, b in sorted(six.iteritems(self.vitals_map)))
 
     def _fetchBuildCandidates(self, vitals):
@@ -212,7 +231,7 @@ class PrefetchedBuilderFactory:
                         len(self.builder_groups[builder_group_key])))
 
     def findBuildCandidate(self, vitals):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         self._fetchBuildCandidates(vitals)
         builder_group_keys = self._getBuilderGroupKeys(vitals)
         grouped_candidates = []
