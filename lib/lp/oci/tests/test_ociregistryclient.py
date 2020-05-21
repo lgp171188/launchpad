@@ -8,6 +8,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import json
+import os
+import tarfile
 
 from fixtures import MockPatch
 from requests.exceptions import (
@@ -15,6 +17,7 @@ from requests.exceptions import (
     HTTPError,
     )
 import responses
+from six import StringIO
 from tenacity import RetryError
 from testtools.matchers import (
     Equals,
@@ -22,11 +25,21 @@ from testtools.matchers import (
     MatchesListwise,
     )
 import transaction
+from zope.security.proxy import removeSecurityProxy
 
-from lp.oci.model.ociregistryclient import OCIRegistryClient
+from lp.oci.model.ociregistryclient import (
+    BearerTokenRegistryClient,
+    OCIRegistryAuthenticationError,
+    OCIRegistryClient,
+    RegistryHTTPClient,
+    )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.services.compat import mock
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadZopelessLayer,
+    )
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
@@ -74,19 +87,29 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             filename='config_file_1.json'
         )
 
-        # make layer files
-        self.layer_1_file = self.factory.makeOCIFile(
-            build=self.build,
-            content="digest_1",
-            filename="digest_1_filename",
-            layer_file_digest="digest_1"
-        )
-        self.layer_2_file = self.factory.makeOCIFile(
-            build=self.build,
-            content="digest_2",
-            filename="digest_2_filename",
-            layer_file_digest="digest_2"
-        )
+        tmpdir = self.makeTemporaryDirectory()
+        self.layer_files = []
+        for i in range(1, 3):
+            digest = 'digest_%i' % i
+            file_name = 'digest_%s_filename' % i
+            file_path = os.path.join(tmpdir, file_name)
+
+            with open(file_path, 'w') as fd:
+                fd.write(digest)
+
+            fileout = StringIO()
+            tar = tarfile.open(mode="w:gz", fileobj=fileout)
+            tar.add(file_path, 'layer.tar')
+            tar.close()
+
+            fileout.seek(0)
+            # make layer files
+            self.layer_files.append(self.factory.makeOCIFile(
+                build=self.build,
+                content=fileout.read(),
+                filename=file_name,
+                layer_file_digest=digest
+            ))
 
         transaction.commit()
 
@@ -98,14 +121,18 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
 
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+
         manifests_url = "{}/v2/{}/manifests/edge".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            self.build.recipe.push_rules[0].image_name
+            push_rule.registry_credentials.url,
+            push_rule.image_name
         )
         responses.add("PUT", manifests_url, status=201)
+
         self.client.upload(self.build)
 
-        request = json.loads(responses.calls[0].request.body)
+        request = json.loads(responses.calls[1].request.body)
 
         self.assertThat(request, MatchesDict({
             "layers": MatchesListwise([
@@ -113,12 +140,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(8)}),
+                    "size": Equals(
+                        self.layer_files[0].library_file.content.filesize)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(8)})
+                    "size": Equals(
+                        self.layer_files[1].library_file.content.filesize)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
@@ -146,16 +175,18 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             "password": "test-password"
         })
 
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+
         manifests_url = "{}/v2/{}/manifests/edge".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            self.build.recipe.push_rules[0].image_name
-        )
+            push_rule.registry_credentials.url, push_rule.image_name)
         responses.add("PUT", manifests_url, status=201)
+
         self.client.upload(self.build)
 
-        self.assertIn(
-            ('test-username', 'test-password'),
-            _upload_fixture.mock.call_args_list[0][0])
+        http_client = _upload_fixture.mock.call_args_list[0][0][-1]
+        self.assertEqual(
+            http_client.credentials, ('test-username', 'test-password'))
 
     def test_preloadFiles(self):
         self._makeFiles()
@@ -165,8 +196,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertThat(files, MatchesDict({
             'config_file_1.json': MatchesDict({
                 'config_file': Equals(self.config),
-                'diff_id_1': Equals(self.layer_1_file.library_file),
-                'diff_id_2': Equals(self.layer_2_file.library_file)})}))
+                'diff_id_1': Equals(self.layer_files[0].library_file),
+                'diff_id_2': Equals(self.layer_files[1].library_file)})}))
 
     def test_calculateTag(self):
         result = self.client._calculateTag(
@@ -189,12 +220,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(8)}),
+                    "size": Equals(
+                        self.layer_files[0].library_file.content.filesize)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(8)})
+                    "size": Equals(
+                        self.layer_files[1].library_file.content.filesize)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
@@ -209,44 +242,47 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
     @responses.activate
     def test_upload_handles_existing(self):
-        blobs_url = "{}/v2/{}/blobs/{}".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            "test-name",
-            "test-digest")
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=200)
+        push_rule = self.build.recipe.push_rules[0]
+        push_rule.registry_credentials.setCredentials({})
         self.client._upload(
-            "test-digest", self.build.recipe.push_rules[0],
-            "test-name", None, None)
+            "test-digest", push_rule, None, http_client)
         # There should be no auth headers for these calls
         for call in responses.calls:
             self.assertNotIn('Authorization', call.request.headers.keys())
 
     @responses.activate
     def test_upload_raises_non_404(self):
-        blobs_url = "{}/v2/{}/blobs/{}".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            "test-name",
-            "test-digest")
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=500)
+        push_rule = self.build.recipe.push_rules[0]
         self.assertRaises(
             HTTPError,
             self.client._upload,
             "test-digest",
-            self.build.recipe.push_rules[0],
-            "test-name",
+            push_rule,
             None,
-            None)
+            http_client)
 
     @responses.activate
     def test_upload_passes_basic_auth(self):
-        blobs_url = "{}/v2/{}/blobs/{}".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            "test-name",
-            "test-digest")
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=200)
+        push_rule.registry_credentials.setCredentials({
+            "username": "user", "password": "password"})
         self.client._upload(
-            "test-digest", self.build.recipe.push_rules[0],
-            "test-name", None, ('user', 'password'))
+            "test-digest", push_rule, None,
+            http_client)
 
         for call in responses.calls:
             self.assertEqual(
@@ -269,12 +305,249 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.client._upload.retry.sleep = lambda x: None
 
         try:
+            push_rule = self.build.recipe.push_rules[0]
             self.client._upload(
-                "test-digest", self.build.recipe.push_rules[0],
-                "test-name", None, ('user', 'password'))
+                "test-digest", push_rule,
+                None, RegistryHTTPClient(push_rule))
         except RetryError:
             pass
         # Check that tenacity and our counting agree
         self.assertEqual(
             5, self.client._upload.retry.statistics["attempt_number"])
         self.assertEqual(5, self.retry_count)
+
+
+class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestRegistryHTTPClient, self).setUp()
+        self.setConfig()
+
+    @responses.activate
+    def test_get_default_client_instance(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://the-registry.test",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="the-user/test-image"))
+
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(RegistryHTTPClient, type(instance))
+
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
+
+    @responses.activate
+    def test_get_bearer_token_client_instance(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://the-registry.test",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="the-user/test-image"))
+
+        responses.add(
+            "GET", "%s/v2/" % push_rule.registry_url, status=401, headers={
+                "Www-Authenticate": 'Bearer realm="something.com"'})
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(BearerTokenRegistryClient, type(instance))
+
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
+
+    @responses.activate
+    def test_get_basic_auth_client_instance(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://the-registry.test",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="the-user/test-image"))
+
+        responses.add(
+            "GET", "%s/v2/" % push_rule.registry_url, status=401, headers={
+                "Www-Authenticate": 'Basic realm="something.com"'})
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(RegistryHTTPClient, type(instance))
+
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
+
+
+class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestBearerTokenRegistryClient, self).setUp()
+        self.setConfig()
+
+    def makeOCIPushRule(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://registry.hub.docker.com",
+            credentials={'username': 'the-user', 'password': "the-passwd"})
+        return self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="the-user/test-image")
+
+    def test_api_url(self):
+        push_rule = self.makeOCIPushRule()
+        client = BearerTokenRegistryClient(push_rule)
+        self.assertEqual(
+            "https://registry.hub.docker.com/v2/the-user/test-image",
+            client.api_url)
+
+    def test_parse_instructions(self):
+        auth_header_content = (
+            'Bearer realm="https://auth.docker.io/token",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"')
+
+        request = mock.Mock()
+        request.headers = {'Www-Authenticate': auth_header_content}
+
+        push_rule = self.makeOCIPushRule()
+        client = BearerTokenRegistryClient(push_rule)
+
+        self.assertEqual(
+            client.parseAuthInstructions(request), ("Bearer", {
+            "realm": "https://auth.docker.io/token",
+            "service": "registry.docker.io",
+            "scope": "repository:the-user/test-image:pull,push"
+        }))
+
+    @responses.activate
+    def test_unauthorized_request_retries_fetching_token(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+            'Bearer realm="%s",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+        responses.add("GET", token_url, status=200, json={"token": "123abc"})
+        responses.add("GET", url, status=201, json={"success": True})
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = BearerTokenRegistryClient(push_rule)
+        response = client.request(url)
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(response.json(), {"success": True})
+
+        # Check that the 3 requests were made in order.
+        self.assertEqual(3, len(responses.calls))
+        failed_call, auth_call, success_call = responses.calls
+
+        self.assertEqual(url, failed_call.request.url)
+        self.assertEqual(401, failed_call.response.status_code)
+
+        self.assertStartsWith(auth_call.request.url, token_url)
+        self.assertEqual(200, auth_call.response.status_code)
+
+        self.assertEqual(url, success_call.request.url)
+        self.assertEqual(201, success_call.response.status_code)
+
+    @responses.activate
+    def test_unauthorized_request_retries_only_once(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+            'Bearer realm="%s",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+        responses.add("GET", token_url, status=200, json={"token": "123abc"})
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = BearerTokenRegistryClient(push_rule)
+        self.assertRaises(HTTPError, client.request, url)
+
+        # Check that the 3 requests were made in order.
+        self.assertEqual(3, len(responses.calls))
+        failed_call, auth_call, second_failed_call = responses.calls
+
+        self.assertEqual(url, failed_call.request.url)
+        self.assertEqual(401, failed_call.response.status_code)
+
+        self.assertStartsWith(auth_call.request.url, token_url)
+        self.assertEqual(200, auth_call.response.status_code)
+
+        self.assertEqual(url, second_failed_call.request.url)
+        self.assertEqual(401, second_failed_call.response.status_code)
+
+    @responses.activate
+    def test_unauthorized_request_fails_to_get_token(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+            'Bearer realm="%s",'
+            'service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+        responses.add("GET", token_url, status=400)
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = BearerTokenRegistryClient(push_rule)
+        self.assertRaises(HTTPError, client.request, url)
+
+        self.assertEqual(2, len(responses.calls))
+        failed_call, auth_call = responses.calls
+
+        self.assertEqual(url, failed_call.request.url)
+        self.assertEqual(401, failed_call.response.status_code)
+
+        self.assertStartsWith(auth_call.request.url, token_url)
+        self.assertEqual(400, auth_call.response.status_code)
+
+    @responses.activate
+    def test_authenticate_malformed_www_authenticate_header(self):
+        auth_header_content = (
+            'Bearer service="registry.docker.io",'
+            'scope="repository:the-user/test-image:pull,push"')
+
+        previous_request = mock.Mock()
+        previous_request.headers = {'Www-Authenticate': auth_header_content}
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = BearerTokenRegistryClient(push_rule)
+        self.assertRaises(OCIRegistryAuthenticationError,
+                          client.authenticate, previous_request)
+
+    @responses.activate
+    def test_authenticate_malformed_token_response(self):
+        token_url = "https://auth.docker.io/token"
+        auth_header_content = (
+          'Bearer realm="%s",'
+          'service="registry.docker.io",'
+          'scope="repository:the-user/test-image:pull,push"') % token_url
+
+        url = "http://fake.launchpad.test/foo"
+        responses.add("GET", url, status=401, headers={
+            'Www-Authenticate': auth_header_content})
+
+        # no "token" key on the response.
+        responses.add("GET", token_url, status=200, json={
+            "shrug": "123"})
+
+        previous_request = mock.Mock()
+        previous_request.headers = {'Www-Authenticate': auth_header_content}
+
+        push_rule = removeSecurityProxy(self.makeOCIPushRule())
+        client = BearerTokenRegistryClient(push_rule)
+
+        self.assertRaises(OCIRegistryAuthenticationError,
+                          client.authenticate, previous_request)
