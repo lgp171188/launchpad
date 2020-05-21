@@ -8,6 +8,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import json
+import os
+import tarfile
 
 from fixtures import MockPatch
 from requests.exceptions import (
@@ -15,6 +17,7 @@ from requests.exceptions import (
     HTTPError,
     )
 import responses
+from six import StringIO
 from tenacity import RetryError
 from testtools.matchers import (
     Equals,
@@ -23,7 +26,10 @@ from testtools.matchers import (
     )
 import transaction
 
-from lp.oci.model.ociregistryclient import OCIRegistryClient
+from lp.oci.model.ociregistryclient import (
+    OCIRegistryClient,
+    RegistryHTTPClient,
+    )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
@@ -74,19 +80,29 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             filename='config_file_1.json'
         )
 
-        # make layer files
-        self.layer_1_file = self.factory.makeOCIFile(
-            build=self.build,
-            content="digest_1",
-            filename="digest_1_filename",
-            layer_file_digest="digest_1"
-        )
-        self.layer_2_file = self.factory.makeOCIFile(
-            build=self.build,
-            content="digest_2",
-            filename="digest_2_filename",
-            layer_file_digest="digest_2"
-        )
+        tmpdir = self.makeTemporaryDirectory()
+        self.layer_files = []
+        for i in range(1, 3):
+            digest = 'digest_%i' % i
+            file_name = 'digest_%s_filename' % i
+            file_path = os.path.join(tmpdir, file_name)
+
+            with open(file_path, 'w') as fd:
+                fd.write(digest)
+
+            fileout = StringIO()
+            tar = tarfile.open(mode="w:gz", fileobj=fileout)
+            tar.add(file_path, 'layer.tar')
+            tar.close()
+
+            fileout.seek(0)
+            # make layer files
+            self.layer_files.append(self.factory.makeOCIFile(
+                build=self.build,
+                content=fileout.read(),
+                filename=file_name,
+                layer_file_digest=digest
+            ))
 
         transaction.commit()
 
@@ -113,12 +129,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(8)}),
+                    "size": Equals(
+                        self.layer_files[0].library_file.content.filesize)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(8)})
+                    "size": Equals(
+                        self.layer_files[1].library_file.content.filesize)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
@@ -153,9 +171,9 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         responses.add("PUT", manifests_url, status=201)
         self.client.upload(self.build)
 
-        self.assertIn(
-            ('test-username', 'test-password'),
-            _upload_fixture.mock.call_args_list[0][0])
+        http_client = _upload_fixture.mock.call_args_list[0][0][-1]
+        self.assertEquals(
+            http_client.credentials, ('test-username', 'test-password'))
 
     def test_preloadFiles(self):
         self._makeFiles()
@@ -165,8 +183,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertThat(files, MatchesDict({
             'config_file_1.json': MatchesDict({
                 'config_file': Equals(self.config),
-                'diff_id_1': Equals(self.layer_1_file.library_file),
-                'diff_id_2': Equals(self.layer_2_file.library_file)})}))
+                'diff_id_1': Equals(self.layer_files[0].library_file),
+                'diff_id_2': Equals(self.layer_files[1].library_file)})}))
 
     def test_calculateTag(self):
         result = self.client._calculateTag(
@@ -189,12 +207,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(8)}),
+                    "size": Equals(
+                        self.layer_files[0].library_file.content.filesize)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(8)})
+                    "size": Equals(
+                        self.layer_files[1].library_file.content.filesize)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
@@ -209,44 +229,47 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
     @responses.activate
     def test_upload_handles_existing(self):
-        blobs_url = "{}/v2/{}/blobs/{}".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            "test-name",
-            "test-digest")
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=200)
+        push_rule = self.build.recipe.push_rules[0]
+        push_rule.registry_credentials.setCredentials({})
         self.client._upload(
-            "test-digest", self.build.recipe.push_rules[0],
-            "test-name", None, None)
+            "test-digest", push_rule, None, http_client)
         # There should be no auth headers for these calls
         for call in responses.calls:
             self.assertNotIn('Authorization', call.request.headers.keys())
 
     @responses.activate
     def test_upload_raises_non_404(self):
-        blobs_url = "{}/v2/{}/blobs/{}".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            "test-name",
-            "test-digest")
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=500)
+        push_rule = self.build.recipe.push_rules[0]
         self.assertRaises(
             HTTPError,
             self.client._upload,
             "test-digest",
-            self.build.recipe.push_rules[0],
-            "test-name",
+            push_rule,
             None,
-            None)
+            http_client)
 
     @responses.activate
     def test_upload_passes_basic_auth(self):
-        blobs_url = "{}/v2/{}/blobs/{}".format(
-            self.build.recipe.push_rules[0].registry_credentials.url,
-            "test-name",
-            "test-digest")
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=200)
+        push_rule.registry_credentials.setCredentials({
+            "username": "user", "password": "password"})
         self.client._upload(
-            "test-digest", self.build.recipe.push_rules[0],
-            "test-name", None, ('user', 'password'))
+            "test-digest", push_rule, None,
+            http_client)
 
         for call in responses.calls:
             self.assertEqual(
@@ -269,9 +292,10 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.client._upload.retry.sleep = lambda x: None
 
         try:
+            push_rule = self.build.recipe.push_rules[0]
             self.client._upload(
-                "test-digest", self.build.recipe.push_rules[0],
-                "test-name", None, ('user', 'password'))
+                "test-digest", push_rule,
+                None, RegistryHTTPClient(push_rule))
         except RetryError:
             pass
         # Check that tenacity and our counting agree
