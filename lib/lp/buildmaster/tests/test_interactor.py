@@ -55,6 +55,7 @@ from lp.buildmaster.interfaces.builder import (
     CannotFetchFile,
     CannotResumeHost,
     )
+from lp.buildmaster.manager import BaseBuilderFactory
 from lp.buildmaster.tests.mock_slaves import (
     AbortingSlave,
     BuildingSlave,
@@ -91,7 +92,7 @@ class FakeBuildQueue:
         self.status = BuildQueueStatus.RUNNING
 
 
-class MockBuilderFactory:
+class MockBuilderFactory(BaseBuilderFactory):
     """A mock builder factory which uses a preset Builder and BuildQueue."""
 
     def __init__(self, builder, build_queue):

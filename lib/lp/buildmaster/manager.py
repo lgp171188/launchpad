@@ -110,6 +110,27 @@ class BaseBuilderFactory:
         """Find the next build candidate for this `BuilderVitals`, or None."""
         raise NotImplementedError
 
+    def acquireBuildCandidate(self, vitals, builder):
+        """Acquire and return a build candidate in an atomic fashion.
+
+        If we succeed, mark it as building immediately so that it is not
+        dispatched to another builder by the build manager.
+
+        We can consider this to be atomic, because although the build
+        manager is a Twisted app and gives the appearance of doing lots of
+        things at once, it's still single-threaded so no more than one
+        builder scan can be in this code at the same time (as long as we
+        don't yield).
+
+        If there's ever more than one build manager running at once, then
+        this code will need some sort of mutex.
+        """
+        candidate = self.findBuildCandidate(vitals)
+        if candidate is not None:
+            candidate.markAsBuilding(builder)
+            transaction.commit()
+        return candidate
+
 
 class BuilderFactory(BaseBuilderFactory):
     """A dumb builder factory that just talks to the DB."""

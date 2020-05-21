@@ -846,6 +846,19 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
             for builder in builders]
         self.assertNotEqual(candidates[0], candidates[1])
 
+    def test_acquireBuildCandidate_marks_building(self):
+        # acquireBuildCandidate calls findBuildCandidate and marks the build
+        # as building.
+        builder = self.factory.makeBuilder(virtualized=False)
+        self.factory.makeBinaryPackageBuild().queueBuild()
+        transaction.commit()
+        pbf = PrefetchedBuilderFactory()
+        pbf.update()
+
+        candidate = pbf.acquireBuildCandidate(
+            pbf.getVitals(builder.name), builder)
+        self.assertEqual(BuildQueueStatus.RUNNING, candidate.status)
+
 
 class FakeBuilddManager:
     """A minimal fake version of `BuilddManager`."""

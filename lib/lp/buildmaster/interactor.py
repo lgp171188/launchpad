@@ -510,24 +510,10 @@ class BuilderInteractor(object):
             found or None if no job was found.
         """
         logger = cls._getSlaveScannerLogger()
-
-        # Find a build candidate.  If we succeed, mark it as building
-        # immediately so that it is not dispatched by another builder in the
-        # build manager.
-        #
-        # We can consider this to be atomic, because although the build
-        # manager is a Twisted app and gives the appearance of doing lots of
-        # things at once, it's still single-threaded so no more than one
-        # builder scan can be in this code at the same time.
-        #
-        # If there's ever more than one build manager running at once, then
-        # this code will need some sort of mutex.
-        candidate = builder_factory.findBuildCandidate(vitals)
+        candidate = builder_factory.acquireBuildCandidate(vitals, builder)
         if candidate is None:
             logger.debug("No build candidates available for builder.")
             defer.returnValue(None)
-        candidate.markAsBuilding(builder)
-        transaction.commit()
 
         new_behaviour = cls.getBuildBehaviour(candidate, builder, slave)
         needed_bfjb = type(removeSecurityProxy(
