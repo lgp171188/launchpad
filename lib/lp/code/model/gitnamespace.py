@@ -300,7 +300,8 @@ class PersonalGitNamespace(_BaseGitNamespace):
             GitRepository.owner == self.owner,
             GitRepository.project == None,
             GitRepository.distribution == None,
-            GitRepository.sourcepackagename == None)
+            GitRepository.sourcepackagename == None,
+            GitRepository.oci_project == None)
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
@@ -579,11 +580,10 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
         return IHasGitRepositories(self.oci_project)
 
     def _retargetRepository(self, repository):
-        ocip = self.oci_project
         repository.project = None
-        repository.distribution = ocip.distribution
+        repository.distribution = None
         repository.sourcepackagename = None
-        repository.oci_project = ocip.oci_project
+        repository.oci_project = self.oci_project
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""

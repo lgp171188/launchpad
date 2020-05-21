@@ -1362,8 +1362,7 @@ class TestGitRepositoryNamespace(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository(target=oci_project)
         namespace = getUtility(IGitNamespaceSet).get(
-            person=repository.owner, distribution=oci_project.pillar,
-            ociprojectname=oci_project.ociprojectname)
+            person=repository.owner, oci_project=oci_project)
         self.assertEqual(namespace, repository.namespace)
 
 

@@ -15,6 +15,7 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
+from lp.registry.model.ociproject import OCIProject
 from storm.expr import (
     And,
     Asc,
@@ -54,9 +55,7 @@ from lp.code.model.gitrepository import (
 from lp.code.model.gitrule import GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
-from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.model.distribution import Distribution
-from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -203,7 +202,7 @@ class GenericGitCollection:
         load_related(Distribution, repositories, ['distribution_id'])
         load_related(SourcePackageName, repositories, ['sourcepackagename_id'])
         load_related(Product, repositories, ['project_id'])
-        load_related(OCIProjectName, repositories, ['ociprojectname_id'])
+        load_related(OCIProject, repositories, ['oci_project_id'])
         caches = {
             repository.id: get_property_cache(repository)
             for repository in repositories}
@@ -488,19 +487,14 @@ class GenericGitCollection:
 
     def inOCIProject(self, oci_project):
         """See `IGitCollection`."""
-        # XXX twom 2019-11-01 This will eventually have project support
-        assert IDistribution.providedBy(oci_project.pillar)
-        distribution = oci_project.pillar
-        ociprojectname = oci_project.ociprojectname
-        return self._filterBy(
-            [GitRepository.distribution == distribution,
-             GitRepository.ociprojectname == ociprojectname])
+        return self._filterBy([GitRepository.oci_project == oci_project])
 
     def isPersonal(self):
         """See `IGitCollection`."""
         return self._filterBy(
             [GitRepository.project == None,
-             GitRepository.distribution == None])
+             GitRepository.distribution == None,
+             GitRepository.oci_project == None])
 
     def isPrivate(self):
         """See `IGitCollection`."""
