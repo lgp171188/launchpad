@@ -109,7 +109,7 @@ class SigningKey(StormBase):
         fingerprint = generated_key['fingerprint']
 
         store = IMasterStore(SigningKey)
-        # Check if the key if already saved in the database.
+        # Check if the key is already saved in the database.
         db_key = store.find(
             SigningKey,
             SigningKey.key_type == key_type,

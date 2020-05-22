@@ -217,7 +217,6 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             earliest_distro_series=distro_series)
 
         store = Store.of(arch_key)
-        store.invalidate()
 
         rs = store.find(ArchiveSigningKey)
         self.assertEqual(1, rs.count())
@@ -239,7 +238,6 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         another_arch_key = getUtility(IArchiveSigningKeySet).inject(
             SigningKeyType.UEFI, bytes(priv_key), bytes(pub_key),
             u"Another description", now, another_archive)
-        store.invalidate()
 
         rs = store.find(ArchiveSigningKey)
         self.assertEqual(2, rs.count())
