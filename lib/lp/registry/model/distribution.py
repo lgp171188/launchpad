@@ -176,6 +176,7 @@ from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archivefile import ArchiveFile
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
@@ -1288,60 +1289,53 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getPendingPublicationPPAs(self):
         """See `IDistribution`."""
-        src_query = """
-        Archive.purpose = %s AND
-        Archive.distribution = %s AND
-        SourcePackagePublishingHistory.archive = archive.id AND
-        SourcePackagePublishingHistory.scheduleddeletiondate IS NULL AND
-        SourcePackagePublishingHistory.dateremoved IS NULL AND
-        SourcePackagePublishingHistory.status IN (%s, %s)
-         """ % sqlvalues(ArchivePurpose.PPA, self,
-                         PackagePublishingStatus.PENDING,
-                         PackagePublishingStatus.DELETED)
+        src_archives = IStore(Archive).find(
+            Archive,
+            Archive.purpose == ArchivePurpose.PPA,
+            Archive.distribution == self,
+            SourcePackagePublishingHistory.archive == Archive.id,
+            SourcePackagePublishingHistory.scheduleddeletiondate == None,
+            SourcePackagePublishingHistory.dateremoved == None,
+            SourcePackagePublishingHistory.status.is_in([
+                PackagePublishingStatus.PENDING,
+                PackagePublishingStatus.DELETED,
+                ]),
+            ).order_by(Archive.id).config(distinct=True)
 
-        src_archives = Archive.select(
-            src_query, clauseTables=['SourcePackagePublishingHistory'],
-            orderBy=['archive.id'], distinct=True)
+        bin_archives = IStore(Archive).find(
+            Archive,
+            Archive.purpose == ArchivePurpose.PPA,
+            Archive.distribution == self,
+            BinaryPackagePublishingHistory.archive == Archive.id,
+            BinaryPackagePublishingHistory.scheduleddeletiondate == None,
+            BinaryPackagePublishingHistory.dateremoved == None,
+            BinaryPackagePublishingHistory.status.is_in([
+                PackagePublishingStatus.PENDING,
+                PackagePublishingStatus.DELETED,
+                ]),
+            ).order_by(Archive.id).config(distinct=True)
 
-        bin_query = """
-        Archive.purpose = %s AND
-        Archive.distribution = %s AND
-        BinaryPackagePublishingHistory.archive = archive.id AND
-        BinaryPackagePublishingHistory.scheduleddeletiondate IS NULL AND
-        BinaryPackagePublishingHistory.dateremoved IS NULL AND
-        BinaryPackagePublishingHistory.status IN (%s, %s)
-        """ % sqlvalues(ArchivePurpose.PPA, self,
-                        PackagePublishingStatus.PENDING,
-                        PackagePublishingStatus.DELETED)
+        reapable_af_archives = IStore(Archive).find(
+            Archive,
+            Archive.purpose == ArchivePurpose.PPA,
+            Archive.distribution == self,
+            ArchiveFile.archive == Archive.id,
+            ArchiveFile.scheduled_deletion_date < UTC_NOW,
+            ).order_by(Archive.id).config(distinct=True)
 
-        bin_archives = Archive.select(
-            bin_query, clauseTables=['BinaryPackagePublishingHistory'],
-            orderBy=['archive.id'], distinct=True)
+        dirty_suites_archives = IStore(Archive).find(
+            Archive,
+            Archive.purpose == ArchivePurpose.PPA,
+            Archive.distribution == self,
+            Archive.dirty_suites != None,
+            ).order_by(Archive.id)
 
-        reapable_af_query = """
-        Archive.purpose = %s AND
-        Archive.distribution = %s AND
-        ArchiveFile.archive = archive.id AND
-        ArchiveFile.scheduled_deletion_date < %s
-        """ % sqlvalues(ArchivePurpose.PPA, self, UTC_NOW)
-
-        reapable_af_archives = Archive.select(
-            reapable_af_query, clauseTables=['ArchiveFile'],
-            orderBy=['archive.id'], distinct=True)
-
-        dirty_suites_query = """
-        Archive.purpose = %s AND
-        Archive.distribution = %s AND
-        Archive.dirty_suites IS NOT NULL
-        """ % sqlvalues(ArchivePurpose.PPA, self)
-
-        dirty_suites_archives = Archive.select(
-            dirty_suites_query, orderBy=['archive.id'])
-
-        deleting_archives = Archive.selectBy(
-            distribution=self,
-            purpose=ArchivePurpose.PPA,
-            status=ArchiveStatus.DELETING).orderBy(['archive.id'])
+        deleting_archives = IStore(Archive).find(
+            Archive,
+            Archive.purpose == ArchivePurpose.PPA,
+            Archive.distribution == self,
+            Archive.status == ArchiveStatus.DELETING,
+            ).order_by(Archive.id)
 
         return src_archives.union(bin_archives).union(
             reapable_af_archives).union(dirty_suites_archives).union(
