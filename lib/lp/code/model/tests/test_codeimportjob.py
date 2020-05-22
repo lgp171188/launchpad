@@ -947,7 +947,7 @@ class TestCodeImportJobWorkflowFinishJob(TestCaseWithFactory,
                 running_job, CodeImportResultStatus.FAILURE, None)
             intervals.append(
                 code_import.import_job.date_due -
-                code_import.results[-1].date_job_started)
+                code_import.results.last().date_job_started)
             running_job = code_import.import_job
             getUtility(ICodeImportJobWorkflow).startJob(
                 running_job, self.machine)

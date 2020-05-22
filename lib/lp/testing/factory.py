@@ -2544,7 +2544,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             machine = self.makeCodeImportMachine()
         requesting_user = None
         if log_excerpt is None:
-            log_excerpt = self.getUniqueString()
+            log_excerpt = self.getUniqueUnicode()
         if result_status is None:
             result_status = CodeImportResultStatus.FAILURE
         if date_finished is None:
