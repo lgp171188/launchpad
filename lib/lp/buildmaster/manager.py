@@ -14,7 +14,6 @@ __all__ = [
 from collections import defaultdict
 import datetime
 import functools
-from itertools import chain
 import logging
 
 import six
@@ -80,6 +79,72 @@ def build_candidate_sort_key(candidate):
     # Sort key for build candidates.  This must match the ordering used in
     # BuildQueueSet.findBuildCandidates.
     return -candidate.lastscore, candidate.id
+
+
+class PrefetchedBuildCandidates:
+
+    def __init__(self):
+        self.builder_groups = defaultdict(list)
+        self.candidates = defaultdict(list)
+        self.sort_keys = {}
+
+    @staticmethod
+    def _getBuilderGroupKeys(vitals):
+        return [
+            (processor_name, vitals.virtualized)
+            for processor_name in vitals.processor_names + [None]]
+
+    def addBuilder(self, vitals):
+        for builder_group_key in self._getBuilderGroupKeys(vitals):
+            self.builder_groups[builder_group_key].append(vitals)
+
+    @staticmethod
+    def _getSortKey(candidate):
+        # Sort key for build candidates.  This must match the ordering used in
+        # BuildQueueSet.findBuildCandidates.
+        return -candidate.lastscore, candidate.id
+
+    def _addCandidates(self, builder_group_key, candidates):
+        for candidate in candidates:
+            self.candidates[builder_group_key].append(candidate.id)
+            self.sort_keys[candidate.id] = self._getSortKey(candidate)
+
+    def fetchForBuilder(self, vitals):
+        builder_group_keys = self._getBuilderGroupKeys(vitals)
+        missing_builder_group_keys = [
+            builder_group_key
+            for builder_group_key in builder_group_keys
+            if builder_group_key not in self.candidates]
+        if missing_builder_group_keys:
+            processor_set = getUtility(IProcessorSet)
+            processors_by_name = {
+                processor_name: (
+                    processor_set.getByName(processor_name)
+                    if processor_name is not None else None)
+                for processor_name, _ in missing_builder_group_keys}
+            bq_set = getUtility(IBuildQueueSet)
+            for builder_group_key in missing_builder_group_keys:
+                processor_name, virtualized = builder_group_key
+                self._addCandidates(
+                    builder_group_key,
+                    bq_set.findBuildCandidates(
+                        processors_by_name[processor_name], virtualized,
+                        len(self.builder_groups[builder_group_key])))
+
+    def pop(self, vitals):
+        builder_group_keys = self._getBuilderGroupKeys(vitals)
+        grouped_candidates = sorted(
+            [(builder_group_key, self.candidates[builder_group_key][0])
+             for builder_group_key in builder_group_keys
+             if self.candidates[builder_group_key]],
+            key=lambda key_candidate: self.sort_keys[key_candidate[1]])
+        if grouped_candidates:
+            builder_group_key, candidate_id = grouped_candidates[0]
+            self.candidates[builder_group_key].pop(0)
+            del self.sort_keys[candidate_id]
+            return getUtility(IBuildQueueSet).get(candidate_id)
+        else:
+            return None
 
 
 class BaseBuilderFactory:
@@ -167,19 +232,10 @@ class BuilderFactory(BaseBuilderFactory):
 
     def findBuildCandidate(self, vitals):
         """See `BaseBuilderFactory`."""
-        processor_set = getUtility(IProcessorSet)
-        processors_by_name = {
-            processor_name: processor_set.getByName(processor_name)
-            for processor_name in vitals.processor_names}
-        processors_by_name[None] = None
-        bq_set = getUtility(IBuildQueueSet)
-        candidates = sorted(
-            chain.from_iterable(
-                bq_set.findBuildCandidates(
-                    processors_by_name[processor_name], vitals.virtualized, 1)
-                for processor_name in vitals.processor_names + [None]),
-            key=build_candidate_sort_key)
-        return candidates[0] if candidates else None
+        candidates = PrefetchedBuildCandidates()
+        candidates.addBuilder(vitals)
+        candidates.fetchForBuilder(vitals)
+        return candidates.pop(vitals)
 
 
 class PrefetchedBuilderFactory(BaseBuilderFactory):
@@ -188,12 +244,6 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
     `getVitals` and `iterVitals` don't touch the DB directly. They work
     from cached data updated by `update`.
     """
-
-    @staticmethod
-    def _getBuilderGroupKeys(vitals):
-        return [
-            (processor_name, vitals.virtualized)
-            for processor_name in vitals.processor_names + [None]]
 
     def update(self):
         """See `BaseBuilderFactory`."""
@@ -206,11 +256,9 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
         self.vitals_map = dict(
             (b.name, extract_vitals_from_db(b, bq))
             for b, bq in builders_and_current_bqs)
-        self.builder_groups = defaultdict(list)
+        self.candidates = PrefetchedBuildCandidates()
         for vitals in self.vitals_map.values():
-            for builder_group_key in self._getBuilderGroupKeys(vitals):
-                self.builder_groups[builder_group_key].append(vitals)
-        self.candidates_map = {}
+            self.candidates.addBuilder(vitals)
         transaction.abort()
         self.date_updated = datetime.datetime.utcnow()
 
@@ -230,46 +278,10 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
         """See `BaseBuilderFactory`."""
         return (b for n, b in sorted(six.iteritems(self.vitals_map)))
 
-    def _fetchBuildCandidates(self, vitals):
-        builder_group_keys = self._getBuilderGroupKeys(vitals)
-        missing_builder_group_keys = [
-            builder_group_key
-            for builder_group_key in builder_group_keys
-            if builder_group_key not in self.candidates_map]
-        if missing_builder_group_keys:
-            processor_set = getUtility(IProcessorSet)
-            processors_by_name = {
-                processor_name: (
-                    processor_set.getByName(processor_name)
-                    if processor_name is not None else None)
-                for processor_name, _ in missing_builder_group_keys}
-            bq_set = getUtility(IBuildQueueSet)
-            for builder_group_key in missing_builder_group_keys:
-                processor_name, virtualized = builder_group_key
-                self.candidates_map[builder_group_key] = list(
-                    bq_set.findBuildCandidates(
-                        processors_by_name[processor_name], virtualized,
-                        len(self.builder_groups[builder_group_key])))
-
     def findBuildCandidate(self, vitals):
         """See `BaseBuilderFactory`."""
-        self._fetchBuildCandidates(vitals)
-        builder_group_keys = self._getBuilderGroupKeys(vitals)
-        grouped_candidates = []
-        for builder_group_key in builder_group_keys:
-            if self.candidates_map[builder_group_key]:
-                grouped_candidates.append(
-                    (builder_group_key,
-                     self.candidates_map[builder_group_key][0]))
-        grouped_candidates.sort(
-            key=lambda grouped_candidate: build_candidate_sort_key(
-                grouped_candidate[1]))
-        if grouped_candidates:
-            builder_group_key, candidate = grouped_candidates[0]
-            self.candidates_map[builder_group_key].pop(0)
-            return candidate
-        else:
-            return None
+        self.candidates.fetchForBuilder(vitals)
+        return self.candidates.pop(vitals)
 
 
 def judge_failure(builder_count, job_count, exc, retry=True):

@@ -343,7 +343,7 @@ class BuildQueueSet(object):
             BuildQueue.builder == None,
             And(*(job_type_conditions + score_conditions))
             # This must match the ordering used in
-            # lp.buildmaster.manager.build_candidate_sort_key.
+            # PrefetchedBuildCandidates._getSortKey.
             ).order_by(Desc(BuildQueue.lastscore), BuildQueue.id)
 
         # Only try a limited number of jobs. It's much easier on the
