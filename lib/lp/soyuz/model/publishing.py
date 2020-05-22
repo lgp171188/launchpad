@@ -157,7 +157,8 @@ class ArchivePublisherBase:
         """see IArchiveSafePublisher."""
         # XXX cprov 2006-06-14:
         # Implement sanity checks before set it as published
-        if self.status == PackagePublishingStatus.PENDING:
+        if (self.status in active_publishing_status and
+                self.datepublished is None):
             # update the DB publishing record status if they
             # are pending, don't do anything for the ones
             # already published (usually when we use -C

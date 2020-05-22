@@ -1296,11 +1296,14 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             SourcePackagePublishingHistory.archive == Archive.id,
             SourcePackagePublishingHistory.scheduleddeletiondate == None,
             SourcePackagePublishingHistory.dateremoved == None,
-            SourcePackagePublishingHistory.status.is_in([
-                PackagePublishingStatus.PENDING,
-                PackagePublishingStatus.DELETED,
-                ]),
-            ).order_by(Archive.id).config(distinct=True)
+            Or(
+                And(
+                    SourcePackagePublishingHistory.status.is_in(
+                        active_publishing_status),
+                    SourcePackagePublishingHistory.datepublished == None),
+                SourcePackagePublishingHistory.status ==
+                    PackagePublishingStatus.DELETED,
+                )).order_by(Archive.id).config(distinct=True)
 
         bin_archives = IStore(Archive).find(
             Archive,
@@ -1309,11 +1312,14 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             BinaryPackagePublishingHistory.archive == Archive.id,
             BinaryPackagePublishingHistory.scheduleddeletiondate == None,
             BinaryPackagePublishingHistory.dateremoved == None,
-            BinaryPackagePublishingHistory.status.is_in([
-                PackagePublishingStatus.PENDING,
-                PackagePublishingStatus.DELETED,
-                ]),
-            ).order_by(Archive.id).config(distinct=True)
+            Or(
+                And(
+                    BinaryPackagePublishingHistory.status.is_in(
+                        active_publishing_status),
+                    BinaryPackagePublishingHistory.datepublished == None),
+                BinaryPackagePublishingHistory.status ==
+                    PackagePublishingStatus.DELETED,
+                )).order_by(Archive.id).config(distinct=True)
 
         reapable_af_archives = IStore(Archive).find(
             Archive,
