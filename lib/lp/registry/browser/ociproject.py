@@ -14,6 +14,8 @@ __all__ = [
     'OCIProjectNavigationMenu',
     ]
 
+from lp.registry.interfaces.distribution import IDistribution
+from lp.registry.interfaces.product import IProduct
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import implementer
@@ -170,10 +172,17 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     schema = IOCIProject
     field_names = [
-        'distribution',
         'name',
         'official_recipe',
         ]
+
+    def setUpFields(self):
+        pillar = self.context.pillar
+        if IDistribution.providedBy(pillar):
+            self.field_names = ['distribution'] + self.field_names
+        elif IProduct.providedBy(pillar):
+            self.field_names = ['project'] + self.field_names
+        super(OCIProjectEditView, self).setUpFields()
 
     def extendFields(self):
         official_recipe = self.context.getOfficialRecipe()

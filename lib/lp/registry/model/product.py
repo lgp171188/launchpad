@@ -20,6 +20,7 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.declarations import error_status
 from lazr.restful.utils import safe_hasattr
 import pytz
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from six.moves import http_client
 from sqlobject import (
     BoolCol,
@@ -1139,6 +1140,10 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     def bugtargetname(self):
         """See `IBugTarget`."""
         return self.name
+
+    def getOCIProject(self, name):
+        return getUtility(IOCIProjectSet).getByPillarAndName(
+            self, name)
 
     def getPackage(self, distroseries):
         """See `IProduct`."""

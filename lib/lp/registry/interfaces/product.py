@@ -798,6 +798,10 @@ class IProductView(
                                 filter_statuses.
         """
 
+    def getOCIProject(name):
+        """Return a `OCIProject` with the given name for this product, or None.
+        """
+
     def getPackage(distroseries):
         """Return a package in that distroseries for this product."""
 

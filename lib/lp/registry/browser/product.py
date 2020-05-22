@@ -275,6 +275,10 @@ class ProductNavigation(
     def traverse_commercialsubscription(self, name):
         return self.context.commercial_subscription
 
+    @stepthrough('+oci')
+    def traverse_oci(self, name):
+        return self.context.getOCIProject(name)
+
     def traverse(self, name):
         return self.context.getSeries(name)
 
