@@ -79,7 +79,7 @@ class TestOCIProjectView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
-    def test_index(self):
+    def test_index_distribution_pillar(self):
         distribution = self.factory.makeDistribution(displayname="My Distro")
         oci_project = self.factory.makeOCIProject(
             pillar=distribution, ociprojectname="oci-name")
@@ -88,6 +88,18 @@ class TestOCIProjectView(BrowserTestCase):
             .*
             OCI project information
             Distribution: My Distro
+            Name: oci-name
+            """, self.getMainText(oci_project))
+
+    def test_index_project_pillar(self):
+        product = self.factory.makeProduct(displayname="My Project")
+        oci_project = self.factory.makeOCIProject(
+            pillar=product, ociprojectname="oci-name")
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            OCI project oci-name for My Project
+            .*
+            OCI project information
+            Project: My Project
             Name: oci-name
             """, self.getMainText(oci_project))
 
@@ -123,10 +135,38 @@ class TestOCIProjectEditView(BrowserTestCase):
         self.assertThat(
             "Distribution:\n%s\nEdit OCI project" % (
                 new_distribution.display_name),
-            MatchesTagText(content, "distribution"))
+            MatchesTagText(content, "pillar"))
         self.assertThat(
             "Name:\nnew-name\nEdit OCI project",
             MatchesTagText(content, "name"))
+
+    def test_edit_oci_project_change_project_pillar(self):
+        with admin_logged_in():
+            owner = self.factory.makePerson()
+            project = self.factory.makeProduct(owner=owner)
+            new_project = self.factory.makeProduct(owner=owner)
+            oci_project = self.factory.makeOCIProject(pillar=project)
+            new_project_name = new_project.name
+
+        browser = self.getViewBrowser(
+            oci_project, user=oci_project.pillar.owner)
+        browser.getLink("Edit OCI project").click()
+        browser.getControl(name="field.project").value = [new_project_name]
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl("Update OCI project").click()
+
+        content = find_main_content(browser.contents)
+        with person_logged_in(owner):
+            self.assertEqual(
+                "OCI project new-name for %s" % new_project.display_name,
+                extract_text(content.h1))
+            self.assertThat(
+                "Project:\n%s\nEdit OCI project" % (
+                    new_project.display_name),
+                MatchesTagText(content, "pillar"))
+            self.assertThat(
+                "Name:\nnew-name\nEdit OCI project",
+                MatchesTagText(content, "name"))
 
     def test_edit_oci_project_ad_oci_project_admin(self):
         admin_person = self.factory.makePerson()
@@ -153,7 +193,7 @@ class TestOCIProjectEditView(BrowserTestCase):
         self.assertThat(
             "Distribution:\n%s\nEdit OCI project" % (
                 new_distribution.display_name),
-            MatchesTagText(content, "distribution"))
+            MatchesTagText(content, "pillar"))
         self.assertThat(
             "Name:\nnew-name\nEdit OCI project",
             MatchesTagText(content, "name"))
@@ -280,10 +320,32 @@ class TestOCIProjectAddView(BrowserTestCase):
         self.assertThat(
             "Distribution:\n%s\nEdit OCI project" % (
                 new_distribution.display_name),
-            MatchesTagText(content, "distribution"))
+            MatchesTagText(content, "pillar"))
         self.assertThat(
              "Name:\nnew-name\nEdit OCI project",
              MatchesTagText(content, "name"))
+
+    def test_create_oci_project_for_project(self):
+        oci_project = self.factory.makeOCIProject()
+        user = oci_project.pillar.owner
+        project = self.factory.makeProduct(owner=user)
+        browser = self.getViewBrowser(
+            project, user=user, view_name='+new-oci-project')
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl("Create OCI Project").click()
+
+        content = find_main_content(browser.contents)
+        with person_logged_in(user):
+            self.assertEqual(
+                "OCI project new-name for %s" % project.display_name,
+                extract_text(content.h1))
+            self.assertThat(
+                "Project:\n%s\nEdit OCI project" % (
+                    project.display_name),
+                MatchesTagText(content, "pillar"))
+            self.assertThat(
+                 "Name:\nnew-name\nEdit OCI project",
+                 MatchesTagText(content, "name"))
 
     def test_create_oci_project_already_exists(self):
         person = self.factory.makePerson()
