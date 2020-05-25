@@ -14,7 +14,6 @@ __all__ = [
     'OCIProjectNavigationMenu',
     ]
 
-import six
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import implementer
@@ -263,4 +262,4 @@ class OCIProjectSearchView(LaunchpadView):
     @property
     def search_results(self):
         return getUtility(IOCIProjectSet).findByPillarAndName(
-            self.context, self.text or six.ensure_text(''))
+            self.context, self.text or '')
