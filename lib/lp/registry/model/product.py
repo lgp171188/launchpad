@@ -1148,7 +1148,10 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     def canAdministerOCIProjects(self, person):
         if person is None:
             return False
-        if person.inTeam(self.owner):
+        # XXX: pappacena 2020-05-25: Maybe we should have an attribute named
+        # oci_project_admin on Product too, the same way we have on
+        # Distribution.
+        if person.inTeam(self.driver):
             return True
         person_roles = IPersonRoles(person)
         if person_roles.in_admin or person_roles.isOwner(self):

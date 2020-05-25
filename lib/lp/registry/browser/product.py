@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for products."""
@@ -430,6 +430,7 @@ class ProductNavigationMenu(NavigationMenu):
     facet = 'overview'
     links = [
         'details',
+        'new_oci_project',
         'announcements',
         'downloads',
         ]
@@ -503,6 +504,11 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
     def sharing(self):
         return Link('+sharing', 'Sharing', icon='edit')
 
+    @enabled_with_permission('launchpad.Driver')
+    def new_oci_project(self):
+        text = 'Create an OCI Project'
+        return Link('+new-oci-project', text, icon='add')
+
 
 class IProductEditMenu(Interface):
     """A marker interface for the 'Change details' navigation menu."""
@@ -521,7 +527,8 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
 
     @cachedproperty
     def links(self):
-        links = ['edit', 'review_license', 'administer', 'sharing']
+        links = ['edit', 'review_license', 'administer', 'sharing',
+                 'new_oci_project']
         add_subscribe_link(links)
         return links
 

@@ -176,13 +176,24 @@ class OCIProjectEditView(LaunchpadEditFormView):
         'official_recipe',
         ]
 
-    def setUpFields(self):
+    def _getPillarFieldName(self):
         pillar = self.context.pillar
         if IDistribution.providedBy(pillar):
-            self.field_names = ['distribution'] + self.field_names
+            return 'distribution'
         elif IProduct.providedBy(pillar):
-            self.field_names = ['project'] + self.field_names
+            return 'project'
+        raise NotImplementedError("This view only supports distribution or "
+                                  "project as pillars for OCIProject.")
+
+    def setUpFields(self):
+        pillar_key = self._getPillarFieldName()
+        self.field_names = [pillar_key] + self.field_names
+
         super(OCIProjectEditView, self).setUpFields()
+
+        # Set the correct pillar field as mandatory
+        pillar_field = self.form_fields.get(pillar_key).field
+        pillar_field.required = True
 
     def extendFields(self):
         official_recipe = self.context.getOfficialRecipe()
@@ -200,16 +211,16 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     def validate(self, data):
         super(OCIProjectEditView, self).validate(data)
-        distribution = data.get('distribution')
+        pillar = data.get(self._getPillarFieldName())
         name = data.get('name')
-        if distribution and name:
+        if pillar and name:
             oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
-                distribution, name)
+                pillar, name)
             if oci_project is not None and oci_project != self.context:
                 self.setFieldError(
                     'name',
                     'There is already an OCI project in %s with this name.' % (
-                        distribution.display_name))
+                        pillar.display_name))
 
     @action('Update OCI project', name='update')
     def update_action(self, action, data):
