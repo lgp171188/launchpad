@@ -878,6 +878,17 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         )
         self.repository.destroySelf(break_references=True)
 
+    def test_destroySelf_with_merge_proposal_within_self(self):
+        # Deletion works if the repository has a merge proposal from one
+        # branch to another within itself.
+        [source_ref] = self.factory.makeGitRefs(repository=self.repository)
+        [prerequisite_ref] = self.factory.makeGitRefs(
+            repository=self.repository)
+        self.factory.makeBranchMergeProposalForGit(
+            registrant=self.user, target_ref=self.ref,
+            prerequisite_ref=prerequisite_ref, source_ref=source_ref)
+        self.repository.destroySelf(break_references=True)
+
     def test_related_webhooks_deleted(self):
         webhook = self.factory.makeWebhook(target=self.repository)
         webhook.ping()
