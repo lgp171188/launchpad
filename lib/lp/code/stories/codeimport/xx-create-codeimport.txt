@@ -83,6 +83,7 @@ When the user clicks continue, the import branch is created
     at http://bzr.example.com/firefox/trunk.
     The next import is scheduled to run
     as soon as possible.
+    Edit import source or review import
     >>> browser.getLink("http://bzr.example.com/firefox/trunk")
     <Link text='http://bzr.example.com/firefox/trunk'
            url='http://bzr.example.com/firefox/trunk'>
@@ -102,6 +103,7 @@ URL.
     at http://user:password@bzr.example.com/firefox/trunk.
     The next import is scheduled to run
     as soon as possible.
+    Edit import source or review import
 
 Specifying a Launchpad URL results in an error.
 
@@ -130,6 +132,7 @@ But a Launchpad Git URL is OK.
     This branch is an import of the HEAD branch of the Git repository at
     git://git.launchpad.net/firefox.git.
     The next import is scheduled to run as soon as possible.
+    Edit import source or review import
 
 Requesting a Subversion import
 ==============================
@@ -153,6 +156,7 @@ When the user clicks continue, the import branch is created
     from http://svn.example.com/firefox/trunk.
     The next import is scheduled to run
     as soon as possible.
+    Edit import source or review import
     >>> browser.getLink("http://svn.example.com/firefox/trunk")
     <Link text='http://svn.example.com/firefox/trunk'
            url='http://svn.example.com/firefox/trunk'>
@@ -182,6 +186,7 @@ URL.
     from http://user:password@svn.example.com/firefox/trunk.
     The next import is scheduled to run
     as soon as possible.
+    Edit import source or review import
 
 
 Requesting a Git-to-Bazaar import
@@ -205,6 +210,7 @@ When the user clicks continue, the approved import branch is created.
     This branch is an import of the HEAD branch of the Git repository at
     git://example.com/firefox.git.
     The next import is scheduled to run as soon as possible.
+    Edit import source or review import
 
 
 Requesting a Git-to-Git import
@@ -233,6 +239,7 @@ When the user clicks continue, the approved import repository is created.
     This repository is an import of the Git repository at
     git://example.com/firefox.git.
     The next import is scheduled to run as soon as possible.
+    Edit import source or review import
 
 
 Requesting a CVS import
@@ -256,6 +263,7 @@ to identify the CVS branch.  A project and branch name are also required.
     :pserver:anonymous@cvs.example.com:/mozilla/cvs.
     The next import is scheduled to run
     as soon as possible.
+    Edit import source or review import
 
 Requesting a CVS import with invalid information
 ================================================

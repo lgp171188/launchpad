@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the code import browser code."""
@@ -72,10 +72,23 @@ class TestImportDetails(TestCaseWithFactory):
             code_import, 'git-import-details',
             'This repository is an import of the Git repository')
 
-    def test_branch_owner_of_import_forbidden(self):
+    def test_other_users_are_forbidden_to_change_codeimport(self):
         # Unauthorized users are forbidden to edit an import.
         cimport = self.factory.makeCodeImport()
-        with person_logged_in(cimport.branch.owner):
+        another_person = self.factory.makePerson()
+        with person_logged_in(another_person):
             self.assertRaises(
                 Unauthorized, create_initialized_view, cimport.branch,
                 '+edit-import')
+
+    def test_branch_owner_of_import_can_edit_it(self):
+        # Owners are allowed to edit code import.
+        cimport = self.factory.makeCodeImport()
+        with person_logged_in(cimport.branch.owner):
+            view = create_initialized_view(
+                cimport.branch, '+edit-import', form={
+                    "field.actions.update": "update",
+                    "field.url": "http://foo.test"
+                })
+            self.assertEqual([], view.errors)
+            self.assertEqual(cimport.url, 'http://foo.test')

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for CodeImports."""
@@ -88,7 +88,6 @@ from lp.code.interfaces.gitnamespace import (
     IGitNamespacePolicy,
     )
 from lp.registry.interfaces.product import IProduct
-from lp.registry.interfaces.role import IPersonRoles
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.fields import URIField
 from lp.services.propertycache import cachedproperty
@@ -98,6 +97,7 @@ from lp.services.webapp import (
     Navigation,
     stepto,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.escaping import structured
@@ -189,10 +189,9 @@ class CodeImportBaseView(LaunchpadFormView):
     custom_widget_url = CustomWidgetFactory(URIWidget, displayWidth=50)
 
     @cachedproperty
-    def _super_user(self):
+    def _is_allowed_user(self):
         """Is the user an admin or member of vcs-imports?"""
-        role = IPersonRoles(self.user)
-        return role.in_admin or role.in_vcs_imports
+        return check_permission("launchpad.Edit", self.code_import)
 
     def showOptionalMarker(self, field_name):
         """Don't show the optional marker for rcs locations."""
@@ -600,7 +599,7 @@ class CodeImportEditView(CodeImportBaseView):
         self.code_import = self.context.code_import
         if self.code_import is None:
             raise NotFoundError
-        if not self._super_user:
+        if not self._is_allowed_user:
             raise Unauthorized
         # The next and cancel location is the target details page.
         self.cancel_url = self.next_url = canonical_url(self.context)
@@ -629,7 +628,8 @@ class CodeImportEditView(CodeImportBaseView):
 
     def _showButtonForStatus(self, status):
         """If the status is different, and the user is super, show button."""
-        return self._super_user and self.code_import.review_status != status
+        return (self._is_allowed_user and
+                self.code_import.review_status != status)
 
     actions = form.Actions(
         _makeEditAction(_('Update'), None, 'updated'),
