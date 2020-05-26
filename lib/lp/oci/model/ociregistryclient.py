@@ -11,6 +11,7 @@ __all__ = [
 ]
 
 
+from functools import partial
 import hashlib
 from io import BytesIO
 import json
@@ -43,6 +44,9 @@ from lp.services.timeout import urlfetch
 
 
 log = logging.getLogger(__name__)
+
+# Helper function to call urlfetch(use_proxy=True, *args, **kwargs)
+proxy_urlfetch = partial(urlfetch, use_proxy=True)
 
 
 @implementer(IOCIRegistryClient)
@@ -295,7 +299,7 @@ class RegistryHTTPClient:
         username, password = self.credentials
         if username is not None:
             request_kwargs.setdefault("auth", (username, password))
-        return urlfetch(url, **request_kwargs)
+        return proxy_urlfetch(url, **request_kwargs)
 
     def requestPath(self, path, *args, **request_kwargs):
         """Shortcut to do a request to {self.api_url}/{path}."""
@@ -307,7 +311,7 @@ class RegistryHTTPClient:
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule and registry's authentication flow."""
         try:
-            urlfetch("{}/v2/".format(push_rule.registry_url))
+            proxy_urlfetch("{}/v2/".format(push_rule.registry_url))
             # No authorization error? Just return the basic RegistryHTTPClient.
             return RegistryHTTPClient(push_rule)
         except HTTPError as e:
@@ -388,7 +392,7 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
             headers = request_kwargs.pop("headers", {})
             if self.auth_token is not None:
                 headers["Authorization"] = "Bearer %s" % self.auth_token
-            return urlfetch(url, headers=headers, **request_kwargs)
+            return proxy_urlfetch(url, headers=headers, **request_kwargs)
         except HTTPError as e:
             if auth_retry and e.response.status_code == 401:
                 self.authenticate(e.response)

@@ -31,6 +31,7 @@ from lp.oci.model.ociregistryclient import (
     BearerTokenRegistryClient,
     OCIRegistryAuthenticationError,
     OCIRegistryClient,
+    proxy_urlfetch,
     RegistryHTTPClient,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
@@ -42,7 +43,21 @@ from lp.testing.layers import (
     )
 
 
-class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
+class SpyProxyCallsMixin:
+    def setupProxySpy(self):
+        self.proxy_call_count = 0
+
+        def count_proxy_call_count(*args, **kwargs):
+            self.proxy_call_count += 1
+            return proxy_urlfetch(*args, **kwargs)
+
+        self.useFixture(MockPatch(
+            'lp.oci.model.ociregistryclient.proxy_urlfetch',
+            side_effect=count_proxy_call_count))
+
+
+class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
+                            TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
     retry_count = 0
@@ -50,6 +65,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
     def setUp(self):
         super(TestOCIRegistryClient, self).setUp()
         self.setConfig()
+        self.setupProxySpy()
         self.manifest = [{
             "Config": "config_file_1.json",
             "Layers": ["layer_1/layer.tar", "layer_2/layer.tar"]}]
@@ -251,6 +267,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         push_rule.registry_credentials.setCredentials({})
         self.client._upload(
             "test-digest", push_rule, None, http_client)
+
+        self.assertEqual(len(responses.calls), self.proxy_call_count)
         # There should be no auth headers for these calls
         for call in responses.calls:
             self.assertNotIn('Authorization', call.request.headers.keys())
@@ -263,6 +281,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=500)
         push_rule = self.build.recipe.push_rules[0]
+        self.assertEqual(len(responses.calls), self.proxy_call_count)
         self.assertRaises(
             HTTPError,
             self.client._upload,
@@ -284,6 +303,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             "test-digest", push_rule, None,
             http_client)
 
+        self.assertEqual(len(responses.calls), self.proxy_call_count)
         for call in responses.calls:
             self.assertEqual(
                 'Basic dXNlcjpwYXNzd29yZA==',
@@ -297,7 +317,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             raise ConnectionError
 
         self.useFixture(MockPatch(
-            'lp.oci.model.ociregistryclient.urlfetch',
+            'lp.oci.model.ociregistryclient.proxy_urlfetch',
             side_effect=count_retries
         ))
         # Patch sleep so we don't need to change our arguments and the
@@ -317,12 +337,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(5, self.retry_count)
 
 
-class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
+class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
+                             TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestRegistryHTTPClient, self).setUp()
         self.setConfig()
+        self.setupProxySpy()
 
     @responses.activate
     def test_get_default_client_instance(self):
@@ -339,6 +361,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(RegistryHTTPClient, type(instance))
 
         self.assertEqual(1, len(responses.calls))
+        self.assertEqual(1, self.proxy_call_count)
         call = responses.calls[0]
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
@@ -359,6 +382,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(BearerTokenRegistryClient, type(instance))
 
         self.assertEqual(1, len(responses.calls))
+        self.assertEqual(1, self.proxy_call_count)
         call = responses.calls[0]
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
@@ -379,16 +403,19 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(RegistryHTTPClient, type(instance))
 
         self.assertEqual(1, len(responses.calls))
+        self.assertEqual(1, self.proxy_call_count)
         call = responses.calls[0]
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
 
-class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
+class TestBearerTokenRegistryClient(OCIConfigHelperMixin,
+                                    SpyProxyCallsMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestBearerTokenRegistryClient, self).setUp()
         self.setConfig()
+        self.setupProxySpy()
 
     def makeOCIPushRule(self):
         credentials = self.factory.makeOCIRegistryCredentials(
@@ -446,6 +473,7 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
         # Check that the 3 requests were made in order.
         self.assertEqual(3, len(responses.calls))
+        self.assertEqual(3, self.proxy_call_count)
         failed_call, auth_call, success_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
@@ -476,6 +504,7 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
         # Check that the 3 requests were made in order.
         self.assertEqual(3, len(responses.calls))
+        self.assertEqual(3, self.proxy_call_count)
         failed_call, auth_call, second_failed_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
@@ -505,6 +534,7 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertRaises(HTTPError, client.request, url)
 
         self.assertEqual(2, len(responses.calls))
+        self.assertEqual(2, self.proxy_call_count)
         failed_call, auth_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
