@@ -12,7 +12,6 @@ from datetime import (
 from functools import partial
 
 import pytz
-from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -357,11 +356,9 @@ class TestCodeImportDeletion(TestCodeImportBase):
             code_import=code_import)
         code_import_result_id = code_import_result.id
         CodeImportSet().delete(code_import_result.code_import)
-        # CodeImportResult.get should not raise anything.
-        # But since it populates the object cache, we must invalidate it.
-        Store.of(code_import_result).invalidate(code_import_result)
-        self.assertRaises(
-            SQLObjectNotFound, CodeImportResult.get, code_import_result_id)
+        store = Store.of(code_import_result)
+        store.invalidate(code_import_result)
+        self.assertIsNone(store.get(CodeImportResult, code_import_result_id))
 
 
 class TestCodeImportStatusUpdate(TestCodeImportBase):

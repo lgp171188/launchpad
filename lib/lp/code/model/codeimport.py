@@ -16,7 +16,6 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 from sqlobject import (
     ForeignKey,
     IntervalCol,
-    SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
     )
@@ -28,9 +27,10 @@ from storm.expr import (
     )
 from storm.locals import (
     Int,
+    Reference,
+    ReferenceSet,
     Store,
     )
-from storm.references import Reference
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -186,9 +186,9 @@ class CodeImport(SQLBase):
             if job.state == CodeImportJobState.PENDING:
                 CodeImportJobWorkflow().deletePendingJob(self)
 
-    results = SQLMultipleJoin(
-        'CodeImportResult', joinColumn='code_import',
-        orderBy=['-date_job_started'])
+    results = ReferenceSet(
+        '<primary key>', 'CodeImportResult.code_import_id',
+        order_by=Desc('CodeImportResult.date_job_started'))
 
     @property
     def consecutive_failure_count(self):
