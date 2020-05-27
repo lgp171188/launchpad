@@ -23,7 +23,8 @@ CREATE INDEX "gitrepository__oci_project__date_last_modified__idx"
     WHERE oci_project IS NOT NULL;
 
 CREATE INDEX "gitrepository__oci_project__id__idx"
-    ON GitRepository (oci_project, id);
+    ON GitRepository (oci_project, id)
+    WHERE oci_project IS NOT NULL;
 
 CREATE INDEX "gitrepository__owner__oci_project__date_last_modified__idx"
     ON GitRepository (owner, oci_project, date_last_modified)
