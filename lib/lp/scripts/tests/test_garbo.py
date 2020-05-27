@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the database garbage collector."""
@@ -509,17 +509,17 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             config.codeimport.consecutive_failure_limit - 1)
 
         switch_dbuser('testadmin')
-        code_import_id = self.factory.makeCodeImport().id
-        machine_id = self.factory.makeCodeImportMachine().id
-        requester_id = self.factory.makePerson().id
+        code_import = self.factory.makeCodeImport()
+        machine = self.factory.makeCodeImportMachine()
+        requester = self.factory.makePerson()
         transaction.commit()
 
         def new_code_import_result(timestamp):
             switch_dbuser('testadmin')
             CodeImportResult(
                 date_created=timestamp,
-                code_importID=code_import_id, machineID=machine_id,
-                requesting_userID=requester_id,
+                code_import=code_import, machine=machine,
+                requesting_user=requester,
                 status=CodeImportResultStatus.FAILURE,
                 date_job_started=timestamp)
             transaction.commit()

@@ -461,6 +461,12 @@ class IArchiveSubscriberView(Interface):
             "explicit publish flag and any other constraints."))
     series_with_sources = Attribute(
         "DistroSeries to which this archive has published sources")
+    signing_key_fingerprint = exported(
+        Text(
+            title=_("Archive signing key fingerprint"), required=False,
+            description=_("A OpenPGP signing key fingerprint (40 chars) "
+                          "for this PPA or None if there is no signing "
+                          "key available.")))
     signing_key = Object(
         title=_('Repository signing key.'), required=False, schema=IGPGKey)
 
@@ -1182,13 +1188,6 @@ class IArchiveView(IHasBuildRecords):
         title=_("Build farm secret"), required=False,
         description=_(
             "The password used by the build farm to access the archive."))
-
-    signing_key_fingerprint = exported(
-        Text(
-            title=_("Archive signing key fingerprint"), required=False,
-            description=_("A OpenPGP signing key fingerprint (40 chars) "
-                          "for this PPA or None if there is no signing "
-                          "key available.")))
 
     @call_with(eager_load=True)
     @rename_parameters_as(

@@ -13,6 +13,7 @@ from six import (
     string_types,
     )
 from storm.exceptions import LostObjectError
+from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -24,6 +25,7 @@ from testtools.matchers import (
     )
 import transaction
 from zope.component import getUtility
+from zope.schema import ValidationError
 from zope.security.interfaces import (
     ForbiddenAttribute,
     Unauthorized,
@@ -431,6 +433,21 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             self.assertEqual(
                 push_rule,
                 recipe.push_rules[0])
+
+    def test_newPushRule_invalid_url(self):
+        self.setConfig()
+        recipe = self.factory.makeOCIRecipe()
+        url = 'asdf://foo.com'
+        image_name = ensure_text(self.factory.getUniqueString())
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+
+        with person_logged_in(recipe.owner):
+            self.assertRaises(
+                ValidationError, recipe.newPushRule,
+                recipe.owner, url, image_name, credentials)
+            # Avoid trying to flush the incomplete object on cleanUp.
+            Store.of(recipe).rollback()
 
     def test_newPushRule_same_details(self):
         self.setConfig()
