@@ -123,7 +123,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
             code_import_job.id, CodeImportResultStatus.SUCCESS.name,
             log_file_alias.http_url)
         self.assertEqual(
-            log_file_alias, code_import.results[-1].log_file)
+            log_file_alias, code_import.results.last().log_file)
 
     def test_finishJobID_not_found(self):
         # getImportDataForJobID returns a NoSuchCodeImportJob fault when there

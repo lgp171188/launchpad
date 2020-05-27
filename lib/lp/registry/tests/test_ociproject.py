@@ -51,7 +51,7 @@ class TestOCIProject(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject(pillar=product)
         self.assertEqual(product, oci_project.pillar)
 
-    def test_prevents_moving_pillar_type(self):
+    def test_prevents_moving_pillar_to_invalid_type(self):
         project = self.factory.makeProduct()
         distro = self.factory.makeDistribution()
 
@@ -59,10 +59,14 @@ class TestOCIProject(TestCaseWithFactory):
         distro_oci_project = self.factory.makeOCIProject(pillar=distro)
 
         with admin_logged_in():
-            self.assertRaises(
-                ValueError, setattr, project_oci_project, 'pillar', distro)
-            self.assertRaises(
-                ValueError, setattr, distro_oci_project, 'pillar', project)
+            project_oci_project.pillar = distro
+            self.assertEqual(project_oci_project.distribution, distro)
+            self.assertIsNone(project_oci_project.project)
+
+            distro_oci_project.pillar = project
+            self.assertIsNone(distro_oci_project.distribution)
+            self.assertEqual(distro_oci_project.project, project)
+
             self.assertRaises(
                 ValueError, setattr, distro_oci_project, 'pillar', 'Invalid')
 

@@ -32,8 +32,8 @@ from lp.registry.interfaces.ociproject import (
     IOCIProjectSet,
     )
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
-from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
@@ -109,17 +109,11 @@ class OCIProject(BugTargetBase, StormBase):
     @pillar.setter
     def pillar(self, pillar):
         if IDistribution.providedBy(pillar):
-            if self.project_id is not None:
-                raise ValueError(
-                    "Cannot set a distribution pillar for an OCIProject that "
-                    "is already based on a project.")
             self.distribution = pillar
+            self.project = None
         elif IProduct.providedBy(pillar):
-            if self.distribution_id is not None:
-                raise ValueError(
-                    "Cannot set a project pillar for an OCIProject that "
-                    "is already based on a distribution.")
             self.project = pillar
+            self.distribution = None
         else:
             raise ValueError(
                 'The target of an OCIProject must be either an IDistribution '

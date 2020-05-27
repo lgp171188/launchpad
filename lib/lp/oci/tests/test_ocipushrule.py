@@ -5,14 +5,17 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
+from zope.schema import ValidationError
 
 from lp.oci.interfaces.ocipushrule import (
     IOCIPushRule,
     IOCIPushRuleSet,
     OCIPushRuleAlreadyExists,
     )
+from lp.oci.model.ociregistrycredentials import OCIRegistryCredentials
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.testing import (
     person_logged_in,
@@ -56,6 +59,17 @@ class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
         push_rule = self.factory.makeOCIPushRule(
             registry_credentials=credentials)
         self.assertEqual(credentials.username, push_rule.username)
+
+    def test_valid_registry_url(self):
+        owner = self.factory.makePerson()
+        url = "asdf://foo.com"
+        credentials = {"username": "foo"}
+        self.assertRaisesRegex(
+            ValidationError,
+            "asdf://foo.com is not a valid URL for 'url' attribute",
+            OCIRegistryCredentials, owner, url, credentials)
+        # Avoid trying to flush the incomplete object on cleanUp.
+        Store.of(owner).rollback()
 
 
 class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
