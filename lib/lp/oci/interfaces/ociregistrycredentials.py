@@ -22,7 +22,10 @@ from zope.schema import (
 
 from lp import _
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.fields import PersonChoice
+from lp.services.fields import (
+    PersonChoice,
+    URIField,
+    )
 
 
 @error_status(http_client.CONFLICT)
@@ -61,7 +64,8 @@ class IOCIRegistryCredentialsEditableAttributes(IHasOwner):
                       "push rules using them."),
         readonly=False)
 
-    url = TextLine(
+    url = URIField(
+        allowed_schemes=['http', 'https'],
         title=_("URL"),
         description=_("The registry URL."),
         required=True,

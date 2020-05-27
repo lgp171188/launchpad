@@ -23,8 +23,10 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.schema import ValidationError
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.validators.url import validate_url
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
@@ -59,6 +61,15 @@ class OCIRegistrySecretsEncryptedContainer(NaClEncryptedContainerBase):
             return None
 
 
+def url_validator(allowed_schemes):
+    def wrapped(obj, attr, value):
+        if not validate_url(value, allowed_schemes):
+            raise ValidationError(
+                "%s is not a valid URL for '%s' attribute" % (value, attr))
+        return value
+    return wrapped
+
+
 @implementer(IOCIRegistryCredentials)
 class OCIRegistryCredentials(Storm):
 
@@ -69,7 +80,9 @@ class OCIRegistryCredentials(Storm):
     owner_id = Int(name='owner', allow_none=False)
     owner = Reference(owner_id, 'Person.id')
 
-    url = Unicode(name="url", allow_none=False)
+    url = Unicode(
+        name="url", allow_none=False, validator=url_validator(
+            IOCIRegistryCredentials['url'].allowed_schemes))
 
     _credentials = JSON(name="credentials", allow_none=True)
 
