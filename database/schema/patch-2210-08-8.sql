@@ -29,11 +29,11 @@ ALTER TABLE GitRepository
         -- Distribution + OCIProjectName, to keep compatibility temporarily
         (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NULL AND ociprojectname IS NOT NULL) OR
         -- Project
-        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL) OR
+        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL AND ociprojectname IS NULL) OR
         -- Distribution source package
-        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NOT NULL AND oci_project IS NULL) OR
+        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NOT NULL AND oci_project IS NULL AND ociprojectname IS NULL) OR
         -- OCI project
-        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NOT NULL) OR
+        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NOT NULL AND ociprojectname IS NULL) OR
         -- Personal
         (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL)),
     DROP CONSTRAINT default_implies_target,
@@ -41,6 +41,6 @@ ALTER TABLE GitRepository
         project IS NOT NULL
         OR distribution IS NOT NULL
         OR oci_project IS NOT NULL
-        OR NOT owner_default AND NOT target_default);
+        OR (NOT owner_default AND NOT target_default));
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 8, 8);
