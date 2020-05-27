@@ -1496,29 +1496,36 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """
         alteration_operations = []
         deletion_operations = []
+        seen_merge_proposal_ids = set()
         # Merge proposals require their source and target repositories to
         # exist.
         for merge_proposal in self.landing_targets:
-            deletion_operations.append(
-                DeletionCallable(
-                    merge_proposal,
-                    msg("This repository is the source repository of this "
-                        "merge proposal."),
-                    merge_proposal.deleteProposal))
+            if merge_proposal.id not in seen_merge_proposal_ids:
+                deletion_operations.append(
+                    DeletionCallable(
+                        merge_proposal,
+                        msg("This repository is the source repository of this "
+                            "merge proposal."),
+                        merge_proposal.deleteProposal))
+                seen_merge_proposal_ids.add(merge_proposal.id)
         # Cannot use self.landing_candidates, because it ignores merged
         # merge proposals.
         for merge_proposal in BranchMergeProposal.selectBy(
-            target_git_repository=self):
-            deletion_operations.append(
-                DeletionCallable(
-                    merge_proposal,
-                    msg("This repository is the target repository of this "
-                        "merge proposal."),
-                    merge_proposal.deleteProposal))
+                target_git_repository=self):
+            if merge_proposal.id not in seen_merge_proposal_ids:
+                deletion_operations.append(
+                    DeletionCallable(
+                        merge_proposal,
+                        msg("This repository is the target repository of this "
+                            "merge proposal."),
+                        merge_proposal.deleteProposal))
+                seen_merge_proposal_ids.add(merge_proposal.id)
         for merge_proposal in BranchMergeProposal.selectBy(
-            prerequisite_git_repository=self):
-            alteration_operations.append(
-                ClearPrerequisiteRepository(merge_proposal))
+                prerequisite_git_repository=self):
+            if merge_proposal.id not in seen_merge_proposal_ids:
+                alteration_operations.append(
+                    ClearPrerequisiteRepository(merge_proposal))
+                seen_merge_proposal_ids.add(merge_proposal.id)
         recipes = self.recipes if eager_load else self._getRecipes()
         deletion_operations.extend(
             DeletionCallable(
