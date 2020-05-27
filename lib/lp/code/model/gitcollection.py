@@ -15,7 +15,6 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
-from lp.registry.model.ociproject import OCIProject
 from storm.expr import (
     And,
     Asc,
@@ -56,6 +55,7 @@ from lp.code.model.gitrule import GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
 from lp.registry.model.distribution import Distribution
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName

@@ -381,8 +381,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             names["distribution"] = self.distribution.name
             names["source"] = self.sourcepackagename.name
         elif self.oci_project is not None:
-            fmt = "~%(owner)s/%(distribution)s/+oci/%(ociproject)s"
-            names["distribution"] = self.oci_project.distribution.name
+            fmt = "~%(owner)s/%(pillar)s/+oci/%(ociproject)s"
+            names["pillar"] = self.oci_project.pillar.name
             names["ociproject"] = self.oci_project.ociprojectname.name
         else:
             fmt = "~%(owner)s"
