@@ -1,481 +1,633 @@
-// This file the result of auto-converting colours.css to scss.
+.questionstatusOPEN {
+    color: #000;
+  }
+
+  .questionstatusNEEDSINFO {
+    /* brown */
+    color: #930;
+  }
+
+  .questionstatusANSWERED {
+    /* grey-green */
+    color: #363;
+  }
+
+  .questionstatusSOLVED {
+    color: #090;
+  }
+
+  .questionstatusEXPIRED {
+    color: #666;
+  }
+
+  .questionstatusINVALID {
+    color: #c00;
+  }
+
+  .specstatusAPPROVED {
+    color: green;
+
+    a {
+      color: green;
+    }
+  }
+
+  .specstatusPENDINGAPPROVAL, .specstatusPENDINGREVIEW {
+    color: #f09;
+
+    a {
+      color: #f09;
+    }
+  }
+
+  .specstatusDRAFT, .specstatusDISCUSSION {
+    color: #930;
+
+    a {
+      color: #930;
+    }
+  }
+
+  .specstatusNEW {
+    color: red;
+
+    a {
+      color: red;
+    }
+  }
+
+  .specstatusSUPERSEDED, .specstatusOBSOLETE, .specpriorityNOTFORUS, .specpriorityUNDEFINED {
+    color: gray;
+
+    a {
+      color: gray;
+    }
+  }
+
+  .specpriorityLOW {
+    color: black;
+
+    a {
+      color: black;
+    }
+  }
+
+  .specpriorityMEDIUM {
+    color: #f60;
+
+    a {
+      color: #f60;
+    }
+  }
+
+  .specpriorityHIGH, .specpriorityESSENTIAL {
+    color: red;
+
+    a {
+      color: red;
+    }
+  }
+
+  .specdeliveryUNKNOWN, .specdeliveryNOTSTARTED {
+    color: gray;
+
+    a {
+      color: gray;
+    }
+  }
+
+  .specdeliveryDEFERRED, .specdeliveryNEEDSINFRASTUCTURE, .specdeliveryBLOCKED {
+    color: red;
+
+    a {
+      color: red;
+    }
+  }
+
+  .specdeliverySTARTED, .specdeliveryGOOD {
+    color: blue;
 
-.questionstatusOPEN
-  color: #000
+    a {
+      color: blue;
+    }
+  }
+
+  .specdeliverySLOW {
+    color: red;
 
-.questionstatusNEEDSINFO
-  // brown
-  color: #930
+    a {
+      color: red;
+    }
+  }
+
+  .specdeliveryBETA {
+    color: #f60;
 
-.questionstatusANSWERED
-  // grey-green
-  color: #363
+    a {
+      color: #f60;
+    }
+  }
+
+  .specdeliveryNEEDSREVIEW {
+    color: purple;
 
-.questionstatusSOLVED
-  color: #090
+    a {
+      color: purple;
+    }
+  }
+
+  .specdeliveryAWAITINGDEPLOYMENT {
+    color: red;
 
-.questionstatusEXPIRED
-  color: #666
+    a {
+      color: red;
+    }
+  }
+
+  .specdeliveryIMPLEMENTED, .specdeliveryINFORMATIONAL {
+    color: green;
 
-.questionstatusINVALID
-  color: #c00
+    a {
+      color: green;
+    }
+  }
+
+  .bug-activity {
+    color: #555;
+  }
 
-.specstatusAPPROVED
-  color: green
+  .statusNEW {
+    color: #930;
 
-  a
-    color: green
+    a {
+      color: #930;
+    }
+  }
+
+  .statusINCOMPLETE, .statusCONFIRMED {
+    color: red;
 
-.specstatusPENDINGAPPROVAL, .specstatusPENDINGREVIEW
-  color: #f09
-
-  a
-    color: #f09
-
-.specstatusDRAFT, .specstatusDISCUSSION
-  color: #930
-
-  a
-    color: #930
-
-.specstatusNEW
-  color: red
-
-  a
-    color: red
-
-.specstatusSUPERSEDED, .specstatusOBSOLETE, .specpriorityNOTFORUS, .specpriorityUNDEFINED
-  color: gray
-
-  a
-    color: gray
-
-.specpriorityLOW
-  color: black
-
-  a
-    color: black
-
-.specpriorityMEDIUM
-  color: #f60
-
-  a
-    color: #f60
-
-.specpriorityHIGH, .specpriorityESSENTIAL
-  color: red
-
-  a
-    color: red
-
-.specdeliveryUNKNOWN, .specdeliveryNOTSTARTED
-  color: gray
-
-  a
-    color: gray
-
-.specdeliveryDEFERRED, .specdeliveryNEEDSINFRASTUCTURE, .specdeliveryBLOCKED
-  color: red
-
-  a
-    color: red
-
-.specdeliverySTARTED, .specdeliveryGOOD
-  color: blue
-
-  a
-    color: blue
-
-.specdeliverySLOW
-  color: red
-
-  a
-    color: red
-
-.specdeliveryBETA
-  color: #f60
-
-  a
-    color: #f60
-
-.specdeliveryNEEDSREVIEW
-  color: purple
-
-  a
-    color: purple
-
-.specdeliveryAWAITINGDEPLOYMENT
-  color: red
-
-  a
-    color: red
-
-.specdeliveryIMPLEMENTED, .specdeliveryINFORMATIONAL
-  color: green
-
-  a
-    color: green
-
-.bug-activity
-  color: #555
-
-.statusNEW
-  color: #930
-
-  a
-    color: #930
-
-.statusINCOMPLETE, .statusCONFIRMED
-  color: red
-
-  a
-    color: red
-
-.statusTRIAGED
-  color: #f60
-
-  a
-    color: #f60
-
-.statusINPROGRESS
-  color: black
-
-  a
-    color: black
-
-.statusFIXCOMMITTED
-  color: #050
-
-  a
-    color: #050
-
-.statusFIXRELEASED
-  color: green
-
-  a
-    color: green
-
-.statusINVALID, .statusWONTFIX, .statusOPINION
-  color: #555
-
-  a
-    color: #555
-
-.importanceCRITICAL
-  color: red
-
-  a
-    color: red
-
-.importanceHIGH
-  color: #f60
-
-  a
-    color: #f60
-
-.importanceMEDIUM
-  color: green
-
-  a
-    color: green
-
-.importanceLOW
-  color: black
-
-  a
-    color: black
-
-.importanceWISHLIST
-  color: blue
-
-  a
-    color: blue
-
-.importanceUNDECIDED
-  color: #999
-
-  a
-    color: #999
-
-#client-listing
-  .statusUNKNOWN, .statusNEW, .statusINCOMPLETE
-    color: #c63600
-    background-color: #ffdabe
-
-    a
-      color: #c63600
-      background-color: #ffdabe
-
-  .statusCONFIRMED, .statusTRIAGED
-    color: #896e00
-    background-color: #f4f1a4
-
-    a
-      color: #896e00
-      background-color: #f4f1a4
-
-  .statusINPROGRESS, .statusFIXCOMMITTED
-    color: #137587
-    background-color: #cbe7ef
-
-    a
-      color: #137587
-      background-color: #cbe7ef
-
-  .statusFIXRELEASED
-    color: #4f7b10
-    background-color: #cef1a0
-
-    a
-      color: #4f7b10
-      background-color: #cef1a0
-
-  .statusEXPIRED, .statusINVALID, .statusWONTFIX, .statusOPINION
-    color: #464646
-    background-color: #ddd
-
-    a
-      color: #464646
-      background-color: #ddd
-
-  .importanceCRITICAL
-    background-color: #DF382C
-    color: white
-
-    a
-      background-color: #DF382C
-      color: white
-
-  .importanceHIGH
-    background-color: #EFB73E
-    color: white
-
-    a
-      background-color: #EFB73E
-      color: white
-
-  .importanceMEDIUM
-    background-color: #19B6EE
-    color: white
-
-    a
-      background-color: #19B6EE
-      color: white
-
-  .importanceLOW
-    background-color: #38B44A
-    color: white
-
-    a
-      background-color: #38B44A
-      color: white
-
-  .importanceWISHLIST
-    background-color: #724dc8
-    color: white
-
-    a
-      background-color: #724dc8
-      color: white
-
-  .importanceUNDECIDED
-    background-color: #666666
-    color: white
-
-    a
-      background-color: #666666
-      color: white
-
-a
-  &.official-tag
-    /* Looks just like a normal link
-
-  &.unofficial-tag
-    color: #6699ee
-
-.vcsimportSUCCESS
-  /* inherited text color
-
-.vcsimportFAILURE
-  color: Red
-
-.greylink a
-  &:link, &:visited
-    color: gray
-
-.stale-diff
-  color: #f60
-
-.conflicts-diff
-  color: red
-
-.branchstatusMATURE
-  color: #090
-
-  a
-    color: #090
-
-.branchstatusDEVELOPMENT
-  color: #900
-
-  a
-    color: #900
-
-.branchstatusEXPERIMENTAL
-  color: #930
-
-  a
-    color: #930
-
-.branchstatusMERGED, .branchstatusABANDONED
-  color: gray
-
-  a
-    color: gray
-
-.branchstatusNEW
-  color: black
-
-  a
-    color: black
-
-.voteAPPROVE
-  color: green
-
-.voteNEEDS_FIXING
-  color: #930
-
-.voteDISAPPROVE, .voteRESUBMIT
-  color: red
-
-.voteABSTAIN
-  color: #666
-
-.votePENDING
-  color: #f60
-
-.mergestatusWORK_IN_PROGRESS
-  color: black
-
-  a
-    color: black
-
-.mergestatusNEEDS_REVIEW
-  color: #f60
-
-  a
-    color: #f60
-
-.mergestatusCODE_APPROVED, .mergestatusMERGED
-  color: green
-
-  a
-    color: green
-
-.mergestatusREJECTED, .mergestatusMERGE_FAILED
-  color: red
-
-  a
-    color: red
-
-.mergestatusQUEUED
-  color: black
-
-  a
-    color: black
-
-.mergestatusSUPERSEDED
-  color: #666
-
-  a
-    color: #666
-
-.codeimportNEW
-  color: #930
-
-.codeimportREVIEWED
-  color: green
-
-.codeimportINVALID, .codeimportSUSPENDED, .codeimportFAILING
-  color: red
-
-.translationimportstatusAPPROVED
-  color: #050
-
-  a
-    color: #050
-
-.translationimportstatusIMPORTED
-  color: green
-
-  a
-    color: green
-
-.translationimportstatusDELETED
-  color: black
-
-  a
-    color: black
-
-.translationimportstatusFAILED
-  color: red
-
-  a
-    color: red
-
-.translationimportstatusNEEDS_REVIEW
-  color: #f60
-
-  a
-    color: #f60
-
-.translationimportstatusBLOCKED
-  color: blue
-
-  a
-    color: blue
-
-.translationimportstatusNEEDS_INFORMATION
-  color: maroon
-
-  a
-    color: maroon
-
-.dismissed
-  color: #666
-
-  a
-    color: #666
-
-.distromirrorstatusUP, .distromirrorstatusONEHOURBEHIND, .distromirrorstatusTWOHOURSBEHIND, .distromirrorstatusFOURHOURSBEHIND, .distromirrorstatusSIXHOURSBEHIND
-  color: green
-
-.distromirrorstatusONEDAYBEHIND
-  color: #f60
-
-.distromirrorstatusTWODAYSBEHIND, .distromirrorstatusONEWEEKBEHIND
-  color: red
-
-.distromirrorstatusUNKNOWN
-  color: #666
-
-.buildstatusNEEDSBUILD
-  color: gray
-
-.buildstatusBUILDING
-  color: black
-
-.buildstatusFULLYBUILT
-  color: green
-
-.buildstatusFAILEDTOBUILD, .buildstatusMANUALDEPWAIT, .buildstatusCHROOTWAIT, .buildstatusSUPERSEDED, .buildstatusFAILEDTOUPLOAD
-  color: red
-
-.launchpad-gold
-  color: #F8C300
-
-.green
-  color: green
-
-.red
-  color: red
+    a {
+      color: red;
+    }
+  }
+
+  .statusTRIAGED {
+    color: #f60;
+
+    a {
+      color: #f60;
+    }
+  }
+
+  .statusINPROGRESS {
+    color: black;
+
+    a {
+      color: black;
+    }
+  }
+
+  .statusFIXCOMMITTED {
+    color: #050;
+
+    a {
+      color: #050;
+    }
+  }
+
+  .statusFIXRELEASED {
+    color: green;
+
+    a {
+      color: green;
+    }
+  }
+
+  .statusINVALID, .statusWONTFIX, .statusOPINION {
+    color: #555;
+
+    a {
+      color: #555;
+    }
+  }
+
+  .importanceCRITICAL {
+    color: red;
+
+    a {
+      color: red;
+    }
+  }
+
+  .importanceHIGH {
+    color: #f60;
+
+    a {
+      color: #f60;
+    }
+  }
+
+  .importanceMEDIUM {
+    color: green;
+
+    a {
+      color: green;
+    }
+  }
+
+  .importanceLOW {
+    color: black;
+
+    a {
+      color: black;
+    }
+  }
+
+  .importanceWISHLIST {
+    color: blue;
+
+    a {
+      color: blue;
+    }
+  }
+
+  .importanceUNDECIDED {
+    color: #999;
+
+    a {
+      color: #999;
+    }
+  }
+
+  #client-listing {
+    .statusUNKNOWN, .statusNEW, .statusINCOMPLETE {
+      color: #c63600;
+      background-color: #ffdabe;
+
+      a {
+        color: #c63600;
+        background-color: #ffdabe;
+      }
+    }
+
+    .statusCONFIRMED, .statusTRIAGED {
+      color: #896e00;
+      background-color: #f4f1a4;
+
+      a {
+        color: #896e00;
+        background-color: #f4f1a4;
+      }
+    }
+
+    .statusINPROGRESS, .statusFIXCOMMITTED {
+      color: #137587;
+      background-color: #cbe7ef;
+
+      a {
+        color: #137587;
+        background-color: #cbe7ef;
+      }
+    }
+
+    .statusFIXRELEASED {
+      color: #4f7b10;
+      background-color: #cef1a0;
+
+      a {
+        color: #4f7b10;
+        background-color: #cef1a0;
+      }
+    }
+
+    .statusEXPIRED, .statusINVALID, .statusWONTFIX, .statusOPINION {
+      color: #464646;
+      background-color: #ddd;
+
+      a {
+        color: #464646;
+        background-color: #ddd;
+      }
+    }
+
+    .importanceCRITICAL {
+      background-color: #DF382C;
+      color: white;
+
+      a {
+        background-color: #DF382C;
+        color: white;
+      }
+    }
+
+    .importanceHIGH {
+      background-color: #EFB73E;
+      color: white;
+
+      a {
+        background-color: #EFB73E;
+        color: white;
+      }
+    }
+
+    .importanceMEDIUM {
+      background-color: #19B6EE;
+      color: white;
+
+      a {
+        background-color: #19B6EE;
+        color: white;
+      }
+    }
+
+    .importanceLOW {
+      background-color: #38B44A;
+      color: white;
+
+      a {
+        background-color: #38B44A;
+        color: white;
+      }
+    }
+
+    .importanceWISHLIST {
+      background-color: #724dc8;
+      color: white;
+
+      a {
+        background-color: #724dc8;
+        color: white;
+      }
+    }
+
+    .importanceUNDECIDED {
+      background-color: #666666;
+      color: white;
+
+      a {
+        background-color: #666666;
+        color: white;
+      }
+    }
+  }
+
+  a {
+    &.official-tag {
+      /* Looks just like a normal link  */
+    }
+
+    &.unofficial-tag {
+      color: #6699ee;
+    }
+  }
+
+  .vcsimportSUCCESS {
+    /* inherited text color */
+  }
+
+  .vcsimportFAILURE {
+    color: Red;
+  }
+
+  .greylink a {
+    &:link, &:visited {
+      color: gray;
+    }
+  }
+
+  .stale-diff {
+    color: #f60;
+  }
+
+  .conflicts-diff {
+    color: red;
+  }
+
+  .branchstatusMATURE {
+    color: #090;
+
+    a {
+      color: #090;
+    }
+  }
+
+  .branchstatusDEVELOPMENT {
+    color: #900;
+
+    a {
+      color: #900;
+    }
+  }
+
+  .branchstatusEXPERIMENTAL {
+    color: #930;
+
+    a {
+      color: #930;
+    }
+  }
+
+  .branchstatusMERGED, .branchstatusABANDONED {
+    color: gray;
+
+    a {
+      color: gray;
+    }
+  }
+
+  .branchstatusNEW {
+    color: black;
+
+    a {
+      color: black;
+    }
+  }
+
+  .voteAPPROVE {
+    color: green;
+  }
+
+  .voteNEEDS_FIXING {
+    color: #930;
+  }
+
+  .voteDISAPPROVE, .voteRESUBMIT {
+    color: red;
+  }
+
+  .voteABSTAIN {
+    color: #666;
+  }
+
+  .votePENDING {
+    color: #f60;
+  }
+
+  .mergestatusWORK_IN_PROGRESS {
+    color: black;
+
+    a {
+      color: black;
+    }
+  }
+
+  .mergestatusNEEDS_REVIEW {
+    color: #f60;
+
+    a {
+      color: #f60;
+    }
+  }
+
+  .mergestatusCODE_APPROVED, .mergestatusMERGED {
+    color: green;
+
+    a {
+      color: green;
+    }
+  }
+
+  .mergestatusREJECTED, .mergestatusMERGE_FAILED {
+    color: red;
+
+    a {
+      color: red;
+    }
+  }
+
+  .mergestatusQUEUED {
+    color: black;
+
+    a {
+      color: black;
+    }
+  }
+
+  .mergestatusSUPERSEDED {
+    color: #666;
+
+    a {
+      color: #666;
+    }
+  }
+
+  .codeimportNEW {
+    color: #930;
+  }
+
+  .codeimportREVIEWED {
+    color: green;
+  }
+
+  .codeimportINVALID, .codeimportSUSPENDED, .codeimportFAILING {
+    color: red;
+  }
+
+  .translationimportstatusAPPROVED {
+    color: #050;
+
+    a {
+      color: #050;
+    }
+  }
+
+  .translationimportstatusIMPORTED {
+    color: green;
+
+    a {
+      color: green;
+    }
+  }
+
+  .translationimportstatusDELETED {
+    color: black;
+
+    a {
+      color: black;
+    }
+  }
+
+  .translationimportstatusFAILED {
+    color: red;
+
+    a {
+      color: red;
+    }
+  }
+
+  .translationimportstatusNEEDS_REVIEW {
+    color: #f60;
+
+    a {
+      color: #f60;
+    }
+  }
+
+  .translationimportstatusBLOCKED {
+    color: blue;
+
+    a {
+      color: blue;
+    }
+  }
+
+  .translationimportstatusNEEDS_INFORMATION {
+    color: maroon;
+
+    a {
+      color: maroon;
+    }
+  }
+
+  .dismissed {
+    color: #666;
+
+    a {
+      color: #666;
+    }
+  }
+
+  .distromirrorstatusUP, .distromirrorstatusONEHOURBEHIND, .distromirrorstatusTWOHOURSBEHIND, .distromirrorstatusFOURHOURSBEHIND, .distromirrorstatusSIXHOURSBEHIND {
+    color: green;
+  }
+
+  .distromirrorstatusONEDAYBEHIND {
+    color: #f60;
+  }
+
+  .distromirrorstatusTWODAYSBEHIND, .distromirrorstatusONEWEEKBEHIND {
+    color: red;
+  }
+
+  .distromirrorstatusUNKNOWN {
+    color: #666;
+  }
+
+  .buildstatusNEEDSBUILD {
+    color: gray;
+  }
+
+  .buildstatusBUILDING {
+    color: black;
+  }
+
+  .buildstatusFULLYBUILT {
+    color: green;
+  }
+
+  .buildstatusFAILEDTOBUILD, .buildstatusMANUALDEPWAIT, .buildstatusCHROOTWAIT, .buildstatusSUPERSEDED, .buildstatusFAILEDTOUPLOAD {
+    color: red;
+  }
+
+  .launchpad-gold {
+    color: #F8C300;
+  }
+
+  .green {
+    color: green;
+  }
+
+  .red {
+    color: red;
+  }
