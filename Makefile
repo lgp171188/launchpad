@@ -184,6 +184,13 @@ css_combine: jsbuild_widget_css
 	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
 	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --output-style compressed --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/combo.scss
 
+css_watch: jsbuild_widget_css
+	${SHHH} bin/sprite-util create-image
+	${SHHH} bin/sprite-util create-css
+	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/ --watch -r
+
+
 jsbuild_widget_css: bin/jsbuild
 	${SHHH} bin/jsbuild \
 	    --srcdir lib/lp/app/javascript \
