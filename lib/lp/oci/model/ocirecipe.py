@@ -36,6 +36,7 @@ from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
@@ -216,9 +217,12 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def distribution(self):
-        # XXX twom 2019-12-05 This may need to change when an OCIProject
-        # pillar isn't just a distribution
-        return self.oci_project.distribution
+        if self.oci_project.distribution:
+            return self.oci_project.distribution
+        # XXX pappacena 2020-05-28: If the related OCIProject is not
+        # based on distribution, maybe we should get the default distro from
+        # a feature flag, instead of hardcoding Ubuntu.
+        return getUtility(ILaunchpadCelebrities).ubuntu
 
     @property
     def distro_series(self):
@@ -237,9 +241,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         """See `IOCIRecipe`."""
         clauses = [Processor.id == DistroArchSeries.processor_id]
         if self.distro_series is not None:
+            enabled_archs_resultset = removeSecurityProxy(
+                self.distro_series.enabled_architectures)
             clauses.append(DistroArchSeries.id.is_in(
-                self.distro_series.enabled_architectures.get_select_expr(
-                    DistroArchSeries.id)))
+                enabled_archs_resultset.get_select_expr(DistroArchSeries.id)))
         else:
             # We might not know the series if the OCI project's distribution
             # has no series at all, which can happen in tests.  Fall back to

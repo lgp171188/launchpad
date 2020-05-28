@@ -91,8 +91,22 @@ class TestOCIRecipeNavigation(TestCaseWithFactory):
             "http://launchpad.test/~person/distro/+oci/oci-project/"
             "+recipe/recipe", canonical_url(recipe))
 
-    def test_recipe(self):
-        recipe = self.factory.makeOCIRecipe()
+    def test_recipe_traverse_distribution(self):
+        # Make sure we can reach recipe of distro-based OCI projects.
+        distro = self.factory.makeDistribution()
+        oci_project = self.factory.makeOCIProject(pillar=distro)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/~%s/%s/+oci/%s/+recipe/%s" % (
+                recipe.owner.name, recipe.oci_project.pillar.name,
+                recipe.oci_project.name, recipe.name))
+        self.assertEqual(recipe, obj)
+
+    def test_recipe_traverse_project(self):
+        # Make sure we can reach recipe of project-based OCI projects.
+        project = self.factory.makeProduct()
+        oci_project = self.factory.makeOCIProject(pillar=project)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         obj, _, _ = test_traverse(
             "http://launchpad.test/~%s/%s/+oci/%s/+recipe/%s" % (
                 recipe.owner.name, recipe.oci_project.pillar.name,
