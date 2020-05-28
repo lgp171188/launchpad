@@ -11,4 +11,4 @@ COMMENT ON COLUMN OCIFile.date_last_used IS 'The datetime this file was last use
 CREATE INDEX ocifile__date_last_used__idx
     ON OCIFile (date_last_used);
 
-INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 08, 9);
+INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 16, 0);
