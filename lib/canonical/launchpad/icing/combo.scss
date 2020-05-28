@@ -18,11 +18,6 @@
 // Include our main stylesheets at the end so they
 // take precedence over the others.
 'css/base',
-'css/typography',
-'css/colours',
-'css/forms',
-'css/layout',
-'css/modifiers',
 // This shouldn't require the _index, but doesn't appear to be allowable
 // in this version of node-sass (v4.14.4)
 'css/components/_index';
