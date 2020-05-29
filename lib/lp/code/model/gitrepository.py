@@ -1393,6 +1393,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         if is_owner:
             grants = grants.union(
                 self.findRuleGrantsByGrantee(GitGranteeType.REPOSITORY_OWNER))
+
+        bulk.load_related(Person, grants, ["grantee_id"])
         for grant in grants:
             grants_for_user[grant.rule].append(grant)
 
