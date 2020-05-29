@@ -187,7 +187,7 @@ css_watch: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-image
 	${SHHH} bin/sprite-util create-css
 	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
-	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/ --watch -r
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/ --watch --recursive
 
 
 jsbuild_widget_css: bin/jsbuild

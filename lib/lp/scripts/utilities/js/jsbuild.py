@@ -343,7 +343,7 @@ class Builder:
                 (self.name, skin_name))
 
             css_files = extra_css_files + self.skins[skin_name]
-            # Embedded URL rewrite should start build/ for correct
+            # Embedded URL rewrite should start with build/ for correct
             # filesystem location, as node-sass cannot add it.
             combined_css = CSSComboFile(
                 css_files, skin_build_file, resource_prefix="build/")
