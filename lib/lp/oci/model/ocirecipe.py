@@ -57,6 +57,7 @@ from lp.oci.interfaces.ocirecipe import (
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
     OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_BUILD_DISTRIBUTION,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
@@ -68,6 +69,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     )
 from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.model.distribution import Distribution
@@ -219,10 +221,18 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def distribution(self):
         if self.oci_project.distribution:
             return self.oci_project.distribution
-        # XXX pappacena 2020-05-28: If the related OCIProject is not
-        # based on distribution, maybe we should get the default distro from
-        # a feature flag, instead of hardcoding Ubuntu.
-        return getUtility(ILaunchpadCelebrities).ubuntu
+        # For OCI projects that are not based on distribution, we use the
+        # default distribution set by the following feature flag (or
+        # defaults to Ubuntu, if none is set).
+        distro_name = getFeatureFlag(OCI_RECIPE_BUILD_DISTRIBUTION)
+        if not distro_name:
+            return getUtility(ILaunchpadCelebrities).ubuntu
+        distro = getUtility(IDistributionSet).getByName(distro_name)
+        if not distro:
+            raise ValueError(
+                "'%s' is not a valid value for feature flag '%s'" %
+                (distro_name, OCI_RECIPE_BUILD_DISTRIBUTION))
+        return distro
 
     @property
     def distro_series(self):
