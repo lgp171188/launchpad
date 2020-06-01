@@ -253,6 +253,12 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
             owner=owner, information_type=InformationType.PROPRIETARY)
         self.assertTrue(WebhookSet._checkVisibility(target, owner))
 
+    def test__checkVisibility_private_artifact_team_owned(self):
+        owner = self.factory.makeTeam()
+        target = self.makeTarget(
+            owner=owner, information_type=InformationType.PROPRIETARY)
+        self.assertTrue(WebhookSet._checkVisibility(target, owner))
+
     def test__checkVisibility_lost_access_to_private_artifact(self):
         # A user may lose access to a private artifact even if they own it,
         # for example if they leave the team that has a policy grant for
