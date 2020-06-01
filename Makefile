@@ -1,6 +1,13 @@
 # This file modified from Zope3/Makefile
 # Licensed under the ZPL, (c) Zope Corporation and contributors.
 
+# Macro to lazily evaluate a shell command and cache the output.  This
+# allows us to set variables to the output of shell commands without having
+# to invoke those commands on every make invocation.
+# Use like this: FOO = $(call lazy_eval,FOO,command and arguments)
+# Borrowed from dpkg.
+lazy_eval ?= $(or $(value CACHE_$(1)),$(eval CACHE_$(1) := $(shell $(2)))$(value CACHE_$(1)))
+
 PYTHON:=python2.7
 
 WD:=$(shell pwd)
@@ -42,6 +49,11 @@ YARN_BUILD := $(JS_BUILD_DIR)/yarn
 YARN := utilities/yarn
 YUI_SYMLINK := $(JS_BUILD_DIR)/yui
 LP_JS_BUILD := $(JS_BUILD_DIR)/lp
+NODE_ARCH = $(call lazy_eval,NODE_ARCH,nodejs -p process.arch)
+NODE_ABI = $(call lazy_eval,NODE_ABI,nodejs -p process.versions.modules)
+NODE_SASS_VERSION = 4.14.1
+NODE_SASS_BINDING = linux-$(NODE_ARCH)-$(NODE_ABI)
+NODE_SASS_BINARY = $(WD)/download-cache/yarn/node-sass-$(NODE_SASS_VERSION)-$(NODE_SASS_BINDING)_binding.node
 
 MINS_TO_SHUTDOWN=15
 
@@ -191,14 +203,14 @@ $(YARN_BUILD): | $(JS_BUILD_DIR)
 	$(RM) -r $@/tmp
 
 $(JS_BUILD_DIR)/.production: yarn/package.json | $(YARN_BUILD)
-	$(YARN) install --offline --frozen-lockfile --production
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) install --offline --frozen-lockfile --production
 	# We don't use YUI's Flash components and they have a bad security
 	# record. Kill them.
 	find yarn/node_modules/yui -name '*.swf' -delete
 	touch $@
 
 $(JS_BUILD_DIR)/.development: $(JS_BUILD_DIR)/.production
-	$(YARN) install --offline --frozen-lockfile
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) install --offline --frozen-lockfile
 	touch $@
 
 $(YUI_SYMLINK): $(JS_BUILD_DIR)/.production
@@ -235,7 +247,7 @@ build_wheels: $(PIP_BIN)
 	$(RM) wheelhouse/lp-[0-9]*.whl
 	$(MAKE) clean_pip
 
-# Compatibility.
+# Compatibility
 build_eggs: build_wheels
 
 # setuptools won't touch files that would have the same contents, but for
