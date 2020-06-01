@@ -520,19 +520,17 @@ class TestGitRepository(TestCaseWithFactory):
         grantees = [self.factory.makePerson() for _ in range(2)]
 
         ref_paths = ['refs/heads/master']
-        creator_info = {"n": 1}
 
         def add_fake_refs_to_request():
-            creator_info["n"] += 1
-            n = creator_info["n"]
-            ref_paths.append("refs/heads/branch-%s" % n)
+            ref_paths.append(
+                self.factory.getUniqueUnicode("refs/heads/branch"))
 
             with admin_logged_in():
                 teams = [self.factory.makeTeam() for _ in range(2)]
                 teams[0].addMember(grantees[0], teams[0].teamowner)
                 teams[1].addMember(grantees[1], teams[1].teamowner)
             master_rule = self.factory.makeGitRule(
-                repository=repository, ref_pattern="refs/heads/branch-%s" % n)
+                repository=repository, ref_pattern=ref_paths[-1])
             self.factory.makeGitRuleGrant(
                 rule=master_rule, grantee=teams[0], can_create=True)
             self.factory.makeGitRuleGrant(
