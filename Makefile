@@ -50,7 +50,7 @@ YARN := utilities/yarn
 YUI_SYMLINK := $(JS_BUILD_DIR)/yui
 LP_JS_BUILD := $(JS_BUILD_DIR)/lp
 NODE_ABI = $(call lazy_eval,NODE_ABI,nodejs -p process.versions.modules)
-NODE_SASS_VERSION = 4.14.4
+NODE_SASS_VERSION = 4.14.1
 NODE_SASS_BINDING = linux-x64-$(NODE_ABI)
 NODE_SASS_BINARY = $(WD)/download-cache/yarn/node-sass-$(NODE_SASS_VERSION)-$(NODE_SASS_BINDING)_binding.node
 
