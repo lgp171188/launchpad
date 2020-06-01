@@ -514,6 +514,38 @@ class TestGitRepository(TestCaseWithFactory):
             include_transitive=False)
         self.assertEqual([exact_grant], list(results))
 
+    def test_getRefsPermission_query_count(self):
+        repository = self.factory.makeGitRepository()
+        owner = repository.owner
+        grantees = [self.factory.makePerson() for _ in range(2)]
+
+        ref_paths = ['refs/heads/master']
+
+        def add_fake_refs_to_request():
+            ref_paths.append(
+                self.factory.getUniqueUnicode("refs/heads/branch"))
+
+            with admin_logged_in():
+                teams = [self.factory.makeTeam() for _ in range(2)]
+                teams[0].addMember(grantees[0], teams[0].teamowner)
+                teams[1].addMember(grantees[1], teams[1].teamowner)
+            master_rule = self.factory.makeGitRule(
+                repository=repository, ref_pattern=ref_paths[-1])
+            self.factory.makeGitRuleGrant(
+                rule=master_rule, grantee=teams[0], can_create=True)
+            self.factory.makeGitRuleGrant(
+                rule=master_rule, grantee=teams[1], can_push=True)
+
+        def check_permissions():
+            repository.checkRefPermissions(grantees[0], ref_paths)
+
+        recorder1, recorder2 = record_two_runs(
+            check_permissions, add_fake_refs_to_request, 1, 10,
+            login_method=lambda: login_person(owner))
+
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+        self.assertEqual(7, recorder1.count)
+
 
 class TestGitIdentityMixin(TestCaseWithFactory):
     """Test the defaults and identities provided by GitIdentityMixin."""
