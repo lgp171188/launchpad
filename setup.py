@@ -306,7 +306,6 @@ setup(
                 'lp.services.sitesearch.bingtestservice:main',
             'build-twisted-plugin-cache = '
                 'lp.services.twistedsupport.plugincache:main',
-            'combine-css = lp.scripts.utilities.js.combinecss:main',
             'generate-key-pair = '
                 'lp.services.crypto.scripts.generatekeypair:main',
             'harness = lp.scripts.harness:python',
