@@ -1574,17 +1574,7 @@ class OnlyVcsImportsAndAdmins(AuthorizationBase):
         return user.in_admin or user.in_vcs_imports
 
 
-class OwnerAndVcsImportsAndAdmins(AuthorizationBase):
-    """Base class that allows object owner, Launchpad admins and VCS Imports
-    experts."""
-
-    def checkAuthenticated(self, user):
-        return (user.inTeam(self.obj.owner) or
-                user.in_admin or
-                user.in_vcs_imports)
-
-
-class EditCodeImport(OwnerAndVcsImportsAndAdmins):
+class EditCodeImport(AuthorizationBase):
     """Control who can edit the object view of a CodeImport.
 
     Currently, we restrict the visibility of the new code import
@@ -1592,6 +1582,11 @@ class EditCodeImport(OwnerAndVcsImportsAndAdmins):
     """
     permission = 'launchpad.Edit'
     usedfor = ICodeImport
+
+    def checkAuthenticated(self, user):
+        return (user.inTeam(self.obj.owner) or
+                user.in_admin or
+                user.in_vcs_imports)
 
 
 class SeeCodeImportJobSet(OnlyVcsImportsAndAdmins):
