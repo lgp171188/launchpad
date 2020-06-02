@@ -97,16 +97,19 @@ class OCIRegistryClient:
         post_location = post_response.headers["Location"]
         query_parsed = {"digest": digest}
 
-        put_response = http_client.request(
-            post_location,
-            params=query_parsed,
-            data=fileobj,
-            method="PUT")
-
-        if put_response.status_code != 201:
-            msg = "Upload of {} for {} failed".format(
-                digest, push_rule.image_name)
-            raise BlobUploadFailed(msg)
+        try:
+            http_client.request(
+                post_location,
+                params=query_parsed,
+                data=fileobj,
+                method="PUT")
+        except HTTPError as http_error:
+            if http_error.response.status_code != 201:
+                msg = "Upload of {} for {} failed".format(
+                    digest, push_rule.image_name)
+                raise BlobUploadFailed(msg)
+            else:
+                raise
 
     @classmethod
     def _upload_layer(cls, digest, push_rule, lfa, http_client):
@@ -256,19 +259,23 @@ class OCIRegistryClient:
                     preloaded_data[section["Config"]])
 
                 # Upload the registry manifest
-                manifest_response = http_client.requestPath(
-                    "/manifests/{}".format(tag),
-                    json=registry_manifest,
-                    headers={
-                        "Content-Type":
-                            "application/"
-                            "vnd.docker.distribution.manifest.v2+json"
-                        },
-                    method="PUT")
-                if manifest_response.status_code != 201:
-                    raise ManifestUploadFailed(
-                        "Failed to upload manifest for {} in {}".format(
-                            build.recipe.name, build.id))
+                try:
+                    http_client.requestPath(
+                        "/manifests/{}".format(tag),
+                        json=registry_manifest,
+                        headers={
+                            "Content-Type":
+                                "application/"
+                                "vnd.docker.distribution.manifest.v2+json"
+                            },
+                        method="PUT")
+                except HTTPError as http_error:
+                    if http_error.response.status_code != 201:
+                        raise ManifestUploadFailed(
+                            "Failed to upload manifest for {} in {}".format(
+                                build.recipe.name, build.id))
+                    else:
+                        raise
 
 
 class OCIRegistryAuthenticationError(Exception):

@@ -7,9 +7,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from functools import partial
 import json
 import os
 import tarfile
+import uuid
 
 from fixtures import MockPatch
 from requests.exceptions import (
@@ -20,13 +22,20 @@ import responses
 from six import StringIO
 from tenacity import RetryError
 from testtools.matchers import (
+    AfterPreprocessing,
     Equals,
     MatchesDict,
+    MatchesException,
     MatchesListwise,
+    Raises,
     )
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.oci.interfaces.ociregistryclient import (
+    BlobUploadFailed,
+    ManifestUploadFailed,
+    )
 from lp.oci.model.ociregistryclient import (
     BearerTokenRegistryClient,
     OCIRegistryAuthenticationError,
@@ -274,7 +283,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             self.assertNotIn('Authorization', call.request.headers.keys())
 
     @responses.activate
-    def test_upload_raises_non_404(self):
+    def test_upload_check_existing_raises_non_404(self):
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
         blobs_url = "{}/blobs/{}".format(
@@ -335,6 +344,74 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertEqual(
             5, self.client._upload.retry.statistics["attempt_number"])
         self.assertEqual(5, self.retry_count)
+
+    @responses.activate
+    def test_upload_put_blob_raises_error(self):
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        put_errors = [
+            {
+                "code": "BLOB_UPLOAD_INVALID",
+                "message": "blob upload invalid",
+                "detail": [],
+                },
+            ]
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add(
+            "PUT", upload_url, status=400, json={"errors": put_errors})
+        self.assertThat(
+            partial(
+                self.client._upload,
+                "test-digest", push_rule, None, http_client),
+            Raises(MatchesException(
+                BlobUploadFailed,
+                AfterPreprocessing(
+                    str,
+                    Equals(
+                        "Upload of {} for {} failed".format(
+                            "test-digest", push_rule.image_name))))))
+
+    @responses.activate
+    def test_upload_put_manifest_raises_error(self):
+        self._makeFiles()
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+
+        manifests_url = "{}/v2/{}/manifests/edge".format(
+            push_rule.registry_credentials.url,
+            push_rule.image_name
+        )
+        put_errors = [
+            {
+                "code": "MANIFEST_INVALID",
+                "message": "manifest invalid",
+                "detail": [],
+                },
+            ]
+        responses.add(
+            "PUT", manifests_url, status=400, json={"errors": put_errors})
+
+        self.assertThat(
+            partial(self.client.upload, self.build),
+            Raises(MatchesException(
+                ManifestUploadFailed,
+                AfterPreprocessing(
+                    str,
+                    Equals(
+                        "Failed to upload manifest for {} in {}".format(
+                            self.build.recipe.name, self.build.id))))))
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
