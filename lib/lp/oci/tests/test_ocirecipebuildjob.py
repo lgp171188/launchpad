@@ -131,15 +131,6 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         expected_payloads = [{
             "recipe_build": Equals(
                 canonical_url(ocibuild, force_local_path=True)),
-            "action": Equals("created"),
-            "recipe": Equals(
-                canonical_url(ocibuild.recipe, force_local_path=True)),
-            "build_request": Is(None),
-            "status": Equals("Successfully built"),
-            "registry_upload_status": Equals("Pending")}]
-        expected_payloads += [{
-            "recipe_build": Equals(
-                canonical_url(ocibuild, force_local_path=True)),
             "action": Equals("status-changed"),
             "recipe": Equals(
                 canonical_url(ocibuild.recipe, force_local_path=True)),
@@ -184,8 +175,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertContentEqual([job], ocibuild.registry_upload_jobs)
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
-        self.assertWebhookDeliveries(
-            ocibuild, ["Uploaded"], logger)
+        self.assertWebhookDeliveries(ocibuild, ["Pending", "Uploaded"], logger)
 
     def test_run_failed(self):
         # A failed run sets the registry upload status to FAILED.
@@ -203,4 +193,4 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertEqual("An upload failure", job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            ocibuild, ["Failed to upload"], logger)
+            ocibuild, ["Pending", "Failed to upload"], logger)
