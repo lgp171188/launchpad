@@ -17,7 +17,6 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from lazr.lifecycle.event import ObjectCreatedEvent
 import six
 from storm.databases.postgres import JSON
 from storm.locals import (
@@ -26,7 +25,6 @@ from storm.locals import (
     )
 import transaction
 from zope.component import getUtility
-from zope.event import notify
 from zope.interface import (
     implementer,
     provider,
@@ -161,12 +159,16 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     @classmethod
     def create(cls, build):
         """See `IOCIRegistryUploadJobSource`"""
-        oci_build_job = OCIRecipeBuildJob(
-            build, cls.class_job_type, {})
-        job = cls(oci_build_job)
-        job.celeryRunOnCommit()
-        del get_property_cache(build).last_registry_upload_job
-        notify(ObjectCreatedEvent(build))
+        edited_fields = set()
+        with notify_modified(build, edited_fields) as before_modification:
+            oci_build_job = OCIRecipeBuildJob(
+                build, cls.class_job_type, {})
+            job = cls(oci_build_job)
+            job.celeryRunOnCommit()
+            del get_property_cache(build).last_registry_upload_job
+            upload_status = build.registry_upload_status
+            if upload_status != before_modification.registry_upload_status:
+                edited_fields.add("registry_upload_status")
         return job
 
     # Ideally we'd just override Job._set_status or similar, but
