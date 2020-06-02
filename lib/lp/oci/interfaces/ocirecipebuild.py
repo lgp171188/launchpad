@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'CannotScheduleRegistryUpload',
     'IOCIFile',
     'IOCIFileSet',
     'IOCIRecipeBuild',
@@ -19,13 +20,17 @@ from lazr.enum import (
     Item,
     )
 from lazr.restful.declarations import (
+    error_status,
     export_as_webservice_entry,
+    export_write_operation,
     exported,
+    operation_for_version,
     )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -51,6 +56,11 @@ from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+
+
+@error_status(http_client.BAD_REQUEST)
+class CannotScheduleRegistryUpload(Exception):
+    """This build cannot be uploaded to registries."""
 
 
 class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
@@ -214,6 +224,15 @@ class IOCIRecipeBuildEdit(Interface):
         :param lfa: An `ILibraryFileAlias`.
         :param layer_file_digest: Digest for this file, used for image layers.
         :return: An `IOCILayerFile`.
+        """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def scheduleRegistryUpload():
+        """Schedule an upload of this build to each configured registry.
+
+        :raises CannotScheduleRegistryUpload: if the build is not in a state
+            where an upload can be scheduled.
         """
 
     def cancel():
