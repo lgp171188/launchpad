@@ -85,7 +85,7 @@ class PrefetchedBuildCandidates:
     """A set of build candidates updated using efficient bulk queries.
 
     `pop` doesn't touch the DB directly.  It works from cached data updated
-    by `fetchForBuilder`.
+    by `prefetchForBuilder`.
     """
 
     def __init__(self, all_vitals):
@@ -113,7 +113,7 @@ class PrefetchedBuildCandidates:
             self.candidates[builder_group_key].append(candidate.id)
             self.sort_keys[candidate.id] = self._getSortKey(candidate)
 
-    def fetchForBuilder(self, vitals):
+    def prefetchForBuilder(self, vitals):
         """Ensure that the prefetched cache is populated for this builder."""
         builder_group_keys = self._getBuilderGroupKeys(vitals)
         missing_builder_group_keys = [
@@ -244,7 +244,7 @@ class BuilderFactory(BaseBuilderFactory):
     def findBuildCandidate(self, vitals):
         """See `BaseBuilderFactory`."""
         candidates = PrefetchedBuildCandidates([vitals])
-        candidates.fetchForBuilder(vitals)
+        candidates.prefetchForBuilder(vitals)
         return candidates.pop(vitals)
 
 
@@ -289,7 +289,7 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
 
     def findBuildCandidate(self, vitals):
         """See `BaseBuilderFactory`."""
-        self.candidates.fetchForBuilder(vitals)
+        self.candidates.prefetchForBuilder(vitals)
         return self.candidates.pop(vitals)
 
 
