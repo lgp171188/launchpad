@@ -82,6 +82,11 @@ def build_candidate_sort_key(candidate):
 
 
 class PrefetchedBuildCandidates:
+    """A set of build candidates updated using efficient bulk queries.
+
+    `pop` doesn't touch the DB directly.  It works from cached data updated
+    by `fetchForBuilder`.
+    """
 
     def __init__(self):
         self.builder_groups = defaultdict(list)
@@ -95,6 +100,8 @@ class PrefetchedBuildCandidates:
             for processor_name in vitals.processor_names + [None]]
 
     def addBuilder(self, vitals):
+        # This is only used to approximate the count of candidates that we
+        # need to fetch for each group.
         for builder_group_key in self._getBuilderGroupKeys(vitals):
             self.builder_groups[builder_group_key].append(vitals)
 
@@ -110,6 +117,7 @@ class PrefetchedBuildCandidates:
             self.sort_keys[candidate.id] = self._getSortKey(candidate)
 
     def fetchForBuilder(self, vitals):
+        """Ensure that the prefetched cache is populated for this builder."""
         builder_group_keys = self._getBuilderGroupKeys(vitals)
         missing_builder_group_keys = [
             builder_group_key
@@ -132,6 +140,12 @@ class PrefetchedBuildCandidates:
                         len(self.builder_groups[builder_group_key])))
 
     def pop(self, vitals):
+        """Return a suitable build candidate for this builder.
+
+        The candidate is removed from the cache, but the caller must ensure
+        that it is marked as building, otherwise it will come back the next
+        time the cache is updated (typically on the next scan cycle).
+        """
         builder_group_keys = self._getBuilderGroupKeys(vitals)
         grouped_candidates = sorted(
             [(builder_group_key, self.candidates[builder_group_key][0])
