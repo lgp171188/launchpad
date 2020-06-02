@@ -32,11 +32,14 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIFileSet,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
+    OCIRecipeBuildRegistryUploadStatus,
     )
+from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -280,6 +283,71 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         clear_property_cache(self.build)
         self.assertFalse(self.build.estimate)
+
+    def test_registry_upload_status_unscheduled(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED,
+            build.registry_upload_status)
+
+    def test_registry_upload_status_pending(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        getUtility(IOCIRegistryUploadJobSource).create(build)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.PENDING,
+            build.registry_upload_status)
+
+    def test_registry_upload_status_uploaded(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.COMPLETED
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.UPLOADED,
+            build.registry_upload_status)
+
+    def test_registry_upload_status_failed_to_upload(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.FAILED
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.FAILEDTOUPLOAD,
+            build.registry_upload_status)
+
+    def test_registry_upload_error_summary_no_job(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        self.assertIsNone(build.registry_upload_error_summary)
+
+    def test_registry_upload_error_summary_job_no_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        getUtility(IOCIRegistryUploadJobSource).create(build)
+        self.assertIsNone(build.registry_upload_error_summary)
+
+    def test_registry_upload_error_summary_job_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        removeSecurityProxy(job).error_summary = "Boom"
+        self.assertEqual("Boom", build.registry_upload_error_summary)
+
+    def test_registry_upload_errors_no_job(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        self.assertEqual([], build.registry_upload_errors)
+
+    def test_registry_upload_errors_job_no_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        getUtility(IOCIRegistryUploadJobSource).create(build)
+        self.assertEqual([], build.registry_upload_errors)
+
+    def test_registry_upload_errors_job_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        removeSecurityProxy(job).errors = [
+            {"code": "BOOM", "message": "Boom", "detail": "It went boom"},
+            ]
+        self.assertEqual(
+            [{"code": "BOOM", "message": "Boom", "detail": "It went boom"}],
+            build.registry_upload_errors)
 
 
 class TestOCIRecipeBuildSet(TestCaseWithFactory):

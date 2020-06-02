@@ -24,9 +24,12 @@ from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
     Equals,
+    Is,
+    MatchesAll,
     MatchesDict,
     MatchesException,
     MatchesListwise,
+    MatchesStructure,
     Raises,
     )
 import transaction
@@ -371,11 +374,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "test-digest", push_rule, None, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
-                AfterPreprocessing(
-                    str,
-                    Equals(
-                        "Upload of {} for {} failed".format(
-                            "test-digest", push_rule.image_name))))))
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Upload of {} for {} failed".format(
+                                "test-digest", push_rule.image_name))),
+                    MatchesStructure.byEquality(errors=put_errors)))))
 
     @responses.activate
     def test_upload_put_blob_raises_non_201_success(self):
@@ -395,11 +400,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "test-digest", push_rule, None, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
-                AfterPreprocessing(
-                    str,
-                    Equals(
-                        "Upload of {} for {} failed".format(
-                            "test-digest", push_rule.image_name))))))
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Upload of {} for {} failed".format(
+                                "test-digest", push_rule.image_name))),
+                    MatchesStructure(errors=Is(None))))))
 
     @responses.activate
     def test_upload_put_manifest_raises_error(self):
@@ -430,11 +437,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             partial(self.client.upload, self.build),
             Raises(MatchesException(
                 ManifestUploadFailed,
-                AfterPreprocessing(
-                    str,
-                    Equals(
-                        "Failed to upload manifest for {} in {}".format(
-                            self.build.recipe.name, self.build.id))))))
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Failed to upload manifest for {} in {}".format(
+                                self.build.recipe.name, self.build.id))),
+                    MatchesStructure.byEquality(errors=put_errors)))))
 
     @responses.activate
     def test_upload_put_manifest_raises_non_201_success(self):
@@ -457,11 +466,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             partial(self.client.upload, self.build),
             Raises(MatchesException(
                 ManifestUploadFailed,
-                AfterPreprocessing(
-                    str,
-                    Equals(
-                        "Failed to upload manifest for {} in {}".format(
-                            self.build.recipe.name, self.build.id))))))
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Failed to upload manifest for {} in {}".format(
+                                self.build.recipe.name, self.build.id))),
+                    MatchesStructure(errors=Is(None))))))
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
