@@ -142,6 +142,9 @@ class PrefetchedBuildCandidates:
         time the cache is updated (typically on the next scan cycle).
         """
         builder_group_keys = self._getBuilderGroupKeys(vitals)
+        # Take the first entry from the pre-sorted list of candidates for
+        # each builder group, and then re-sort the combined list in exactly
+        # the same way.
         grouped_candidates = sorted(
             [(builder_group_key, self.candidates[builder_group_key][0])
              for builder_group_key in builder_group_keys
