@@ -35,4 +35,8 @@ CREATE INDEX "gitrepository__owner__oci_project__id__idx"
     WHERE oci_project IS NOT NULL;
 
 
+ALTER TABLE GitRepository VALIDATE CONSTRAINT one_container;
+ALTER TABLE GitRepository VALIDATE CONSTRAINT default_implies_target;
+
+
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 8, 9);
