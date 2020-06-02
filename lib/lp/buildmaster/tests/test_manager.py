@@ -755,7 +755,8 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
 
     def test_update(self):
         # update grabs all of the Builders and their BuildQueues in a
-        # single query.
+        # single query, plus an additional two queries to grab all the
+        # associated Processors.
         builders = [self.factory.makeBuilder() for i in range(5)]
         for i in range(3):
             bq = self.factory.makeBinaryPackageBuild().queueBuild()
@@ -765,7 +766,7 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         pbf.update()
         with StormStatementRecorder() as recorder:
             pbf.update()
-        self.assertThat(recorder, HasQueryCount(Equals(1)))
+        self.assertThat(recorder, HasQueryCount(Equals(3)))
 
     def test_getVitals(self):
         # PrefetchedBuilderFactory.getVitals looks up the BuilderVitals
@@ -828,6 +829,46 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         self.assertEqual(
             4, len([v for v in all_vitals if v.build_queue is not None]))
         self.assertContentEqual(BuilderFactory().iterVitals(), all_vitals)
+
+    def test_findBuildCandidate_avoids_duplicates(self):
+        # findBuildCandidate removes the job it finds from its internal list
+        # of candidates, so a second call returns a different job.
+        das = self.factory.makeDistroArchSeries()
+        builders = [
+            self.factory.makeBuilder(
+                processors=[das.processor]) for _ in range(2)]
+        builder_names = [builder.name for builder in builders]
+        for _ in range(5):
+            self.factory.makeBinaryPackageBuild(
+                distroarchseries=das).queueBuild()
+        transaction.commit()
+        pbf = PrefetchedBuilderFactory()
+        pbf.update()
+
+        candidate0 = pbf.findBuildCandidate(pbf.getVitals(builder_names[0]))
+        self.assertIsNotNone(candidate0)
+        transaction.abort()
+        with StormStatementRecorder() as recorder:
+            candidate1 = pbf.findBuildCandidate(
+                pbf.getVitals(builder_names[1]))
+        self.assertIsNotNone(candidate1)
+        self.assertNotEqual(candidate0, candidate1)
+        # The second call made only a single query, to fetch the candidate
+        # by ID.
+        self.assertThat(recorder, HasQueryCount(Equals(1)))
+
+    def test_acquireBuildCandidate_marks_building(self):
+        # acquireBuildCandidate calls findBuildCandidate and marks the build
+        # as building.
+        builder = self.factory.makeBuilder(virtualized=False)
+        self.factory.makeBinaryPackageBuild().queueBuild()
+        transaction.commit()
+        pbf = PrefetchedBuilderFactory()
+        pbf.update()
+
+        candidate = pbf.acquireBuildCandidate(
+            pbf.getVitals(builder.name), builder)
+        self.assertEqual(BuildQueueStatus.RUNNING, candidate.status)
 
 
 class FakeBuilddManager:

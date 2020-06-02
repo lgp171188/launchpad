@@ -260,7 +260,7 @@ class ISpecificBuildFarmJobSource(Interface):
             job.
         """
 
-    def addCandidateSelectionCriteria(processor, virtualized):
+    def addCandidateSelectionCriteria():
         """Provide a sub-query to refine the candidate job selection.
 
         Return a sub-query to narrow down the list of candidate jobs.
@@ -268,10 +268,6 @@ class ISpecificBuildFarmJobSource(Interface):
         refer to the `BuildQueue` and `BuildFarmJob` tables already utilized
         in the latter.
 
-        :param processor: the type of processor that the candidate jobs are
-            expected to run on.
-        :param virtualized: whether the candidate jobs are expected to run on
-            the `processor` natively or inside a virtual machine.
         :return: a string containing a sub-query that narrows down the list of
             candidate jobs.
         """

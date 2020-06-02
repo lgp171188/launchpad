@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mock Build objects for tests soyuz buildd-system."""
@@ -56,14 +56,16 @@ class MockBuilder:
     """Emulates a IBuilder class."""
 
     def __init__(self, name='mock-builder', builderok=True, manual=False,
-                 virtualized=True, vm_host=None, url='http://fake:0000',
-                 version=None, clean_status=BuilderCleanStatus.DIRTY,
+                 processors=None, virtualized=True, vm_host=None,
+                 url='http://fake:0000', version=None,
+                 clean_status=BuilderCleanStatus.DIRTY,
                  vm_reset_protocol=BuilderResetProtocol.PROTO_1_1):
         self.currentjob = None
         self.builderok = builderok
         self.manual = manual
         self.url = url
         self.name = name
+        self.processors = processors or []
         self.virtualized = virtualized
         self.vm_host = vm_host
         self.vm_reset_protocol = vm_reset_protocol
