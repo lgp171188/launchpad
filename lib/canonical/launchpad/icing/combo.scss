@@ -15,9 +15,10 @@
 'build/inline-sprites-1',
 'build/inline-sprites-2',
 'build/block-sprites-1',
-// This shouldn't require the _index, but doesn't appear to be allowable
-// in this version of node-sass (v4.14.4)
-'css/components/_index',
 // Include our main stylesheets at the end so they
-// take precedence over the others.
-'css/base';
+// take precedence over the others (except components).
+'css/base',
+// This shouldn't require the _index, but doesn't appear to be allowable
+// in this version of node-sass (v4.14.4).
+// Components are appended after base.
+'css/components/_index';
