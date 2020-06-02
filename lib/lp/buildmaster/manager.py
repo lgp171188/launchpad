@@ -115,26 +115,24 @@ class PrefetchedBuildCandidates:
 
     def prefetchForBuilder(self, vitals):
         """Ensure that the prefetched cache is populated for this builder."""
-        builder_group_keys = self._getBuilderGroupKeys(vitals)
-        missing_builder_group_keys = [
-            builder_group_key
-            for builder_group_key in builder_group_keys
-            if builder_group_key not in self.candidates]
-        if missing_builder_group_keys:
-            processor_set = getUtility(IProcessorSet)
-            processors_by_name = {
-                processor_name: (
-                    processor_set.getByName(processor_name)
-                    if processor_name is not None else None)
-                for processor_name, _ in missing_builder_group_keys}
-            bq_set = getUtility(IBuildQueueSet)
-            for builder_group_key in missing_builder_group_keys:
-                processor_name, virtualized = builder_group_key
-                self._addCandidates(
-                    builder_group_key,
-                    bq_set.findBuildCandidates(
-                        processors_by_name[processor_name], virtualized,
-                        len(self.builder_groups[builder_group_key])))
+        missing_builder_group_keys = (
+            set(self._getBuilderGroupKeys(vitals)) - set(self.candidates))
+        if not missing_builder_group_keys:
+            return
+        processor_set = getUtility(IProcessorSet)
+        processors_by_name = {
+            processor_name: (
+                processor_set.getByName(processor_name)
+                if processor_name is not None else None)
+            for processor_name, _ in missing_builder_group_keys}
+        bq_set = getUtility(IBuildQueueSet)
+        for builder_group_key in missing_builder_group_keys:
+            processor_name, virtualized = builder_group_key
+            self._addCandidates(
+                builder_group_key,
+                bq_set.findBuildCandidates(
+                    processors_by_name[processor_name], virtualized,
+                    len(self.builder_groups[builder_group_key])))
 
     def pop(self, vitals):
         """Return a suitable build candidate for this builder.
