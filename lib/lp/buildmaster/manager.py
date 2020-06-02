@@ -88,8 +88,11 @@ class PrefetchedBuildCandidates:
     by `fetchForBuilder`.
     """
 
-    def __init__(self):
+    def __init__(self, all_vitals):
         self.builder_groups = defaultdict(list)
+        for vitals in all_vitals:
+            for builder_group_key in self._getBuilderGroupKeys(vitals):
+                self.builder_groups[builder_group_key].append(vitals)
         self.candidates = defaultdict(list)
         self.sort_keys = {}
 
@@ -98,12 +101,6 @@ class PrefetchedBuildCandidates:
         return [
             (processor_name, vitals.virtualized)
             for processor_name in vitals.processor_names + [None]]
-
-    def addBuilder(self, vitals):
-        # This is only used to approximate the count of candidates that we
-        # need to fetch for each group.
-        for builder_group_key in self._getBuilderGroupKeys(vitals):
-            self.builder_groups[builder_group_key].append(vitals)
 
     @staticmethod
     def _getSortKey(candidate):
@@ -246,8 +243,7 @@ class BuilderFactory(BaseBuilderFactory):
 
     def findBuildCandidate(self, vitals):
         """See `BaseBuilderFactory`."""
-        candidates = PrefetchedBuildCandidates()
-        candidates.addBuilder(vitals)
+        candidates = PrefetchedBuildCandidates([vitals])
         candidates.fetchForBuilder(vitals)
         return candidates.pop(vitals)
 
@@ -270,9 +266,8 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
         self.vitals_map = dict(
             (b.name, extract_vitals_from_db(b, bq))
             for b, bq in builders_and_current_bqs)
-        self.candidates = PrefetchedBuildCandidates()
-        for vitals in self.vitals_map.values():
-            self.candidates.addBuilder(vitals)
+        self.candidates = PrefetchedBuildCandidates(
+            list(self.vitals_map.values()))
         transaction.abort()
         self.date_updated = datetime.datetime.utcnow()
 
