@@ -19,6 +19,6 @@
 // take precedence over the others (except components).
 'css/base',
 // This shouldn't require the _index, but doesn't appear to be allowable
-// in this version of node-sass (v4.14.4).
+// in this version of node-sass (v4.14.1).
 // Components are appended after base.
 'css/components/_index';
