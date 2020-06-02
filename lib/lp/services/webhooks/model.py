@@ -42,6 +42,7 @@ from zope.interface import (
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app import versioninfo
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -61,7 +62,6 @@ from lp.services.job.model.job import (
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.scripts import log
 from lp.services.webapp.authorization import iter_authorization
-from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webhooks.interfaces import (
     IWebhook,
     IWebhookClient,
@@ -255,10 +255,9 @@ class WebhookSet:
         :return: True if the context is visible to the webhook owner,
             otherwise False.
         """
-        authutil = getUtility(IPlacelessAuthUtility)
         return all(iter_authorization(
             removeSecurityProxy(context), "launchpad.View",
-            authutil.getPrincipal(user.accountID), {}))
+            IPersonRoles(user), {}))
 
     def trigger(self, target, event_type, payload, context=None):
         if context is None:
