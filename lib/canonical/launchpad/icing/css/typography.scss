@@ -1,0 +1,195 @@
+// This file the result of auto-converting typography.css to scss.
+
+$page-width: 45em;
+$wider-page: $page-width + 15em;
+$reduced-spacing: 0.8em;
+$link-colour: #03a;
+$active-link-colour: #36c;
+$separate-link-colour: #093;
+
+h1, h2, h3, h4, h5, h6 {
+    background: none;
+    clear: left;
+  }
+
+  h1 {
+    clear: none;
+    font-size: 30px;
+    line-height: 34px;
+  }
+
+  h2 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-size: 22px;
+    line-height: 26px;
+  }
+
+  h3 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    line-height: 20px;
+  }
+
+  .yui-u > div > h3:first-child {
+    margin-top: 0;
+  }
+
+  p {
+    width: auto;
+    margin-bottom: $reduced-spacing;
+  }
+
+  div + p, ul + p, table + p {
+    margin-top: $reduced-spacing;
+  }
+
+  p, li, dt, dd, blockquote, .narrow, .narrow-listing {
+    /* Wrap the text before the eye gets lost. */
+    max-width: $page-width;
+  }
+
+  .wide * {
+    max-width: $wider-page;
+  }
+
+  table.wide {
+    width: $wider-page;
+  }
+
+  pre, code, samp, tt, .console {
+    font-family: monospace;
+    margin-bottom: $reduced-spacing;
+  }
+
+  pre.wrap {
+    /* From nice_pre in tales.py */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  :link, :visited, a.js-action {
+    /* Links are blue, brighter when clicked, and greyer once visited. */
+    color: $link-colour;
+    text-decoration: none;
+  }
+
+  :link:hover, :visited:hover, a.js-action:hover {
+    text-decoration: underline;
+  }
+
+  :link:active, :visited:active {
+    color: $active-link-colour;
+  }
+
+  a {
+    &.js-action:active {
+      color: $active-link-colour;
+    }
+
+    &[onclick] {
+      /* Links that don't open separate pages are green. */
+      color: $separate-link-colour;
+      cursor: pointer;
+    }
+  }
+
+  .collapsible legend a {
+    /* Links that don't open separate pages are green. */
+    color: $separate-link-colour;
+    cursor: pointer;
+  }
+
+  a {
+    &.js-action, &[onclick]:active {
+      /* Links that don't open separate pages are green. */
+      color: $separate-link-colour;
+      cursor: pointer;
+    }
+  }
+
+  .collapsible legend a:active {
+    /* Links that don't open separate pages are green. */
+    color: $separate-link-colour;
+    cursor: pointer;
+  }
+
+  a {
+    &.js-action {
+      /* Links that don't open separate pages are green. */
+      color: $separate-link-colour;
+      cursor: pointer;
+
+      &:active {
+        /* Links that don't open separate pages are green. */
+        color: $separate-link-colour;
+        cursor: pointer;
+      }
+    }
+
+    &.help {
+      border-bottom: 1px dotted $link-colour;
+      cursor: help;
+
+      &:hover {
+        text-decoration: none;
+      }
+    }
+
+    &.action-icon:hover {
+      text-decoration: none;
+    }
+
+    &.help.icon, &.sprite.maybe.help {
+      border: none;
+    }
+
+    &.invalid-link {
+      color: #909090;
+      text-decoration: none;
+      cursor: default;
+
+      &:active, &:hover {
+        color: #909090;
+        text-decoration: none;
+        cursor: default;
+      }
+    }
+  }
+
+  img, a img {
+    /* No border on images that are links. */
+    border: none;
+  }
+
+  abbr[title], acronym[title] {
+    border-bottom: 1px dotted black;
+    cursor: help;
+  }
+
+  em {
+    font-style: italic;
+  }
+
+  strong, .title {
+    font-weight: bold;
+  }
+
+  kbd {
+    background-color: #ddd;
+    border: 1px solid;
+    border-color: white gray gray white;
+    color: black;
+    margin: 1px;
+    min-width: 1em;
+    outline: 1px #666;
+  }
+
+  tt.command {
+    padding-left: 2em;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
