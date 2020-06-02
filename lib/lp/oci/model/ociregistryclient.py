@@ -98,18 +98,17 @@ class OCIRegistryClient:
         query_parsed = {"digest": digest}
 
         try:
-            http_client.request(
+            put_response = http_client.request(
                 post_location,
                 params=query_parsed,
                 data=fileobj,
                 method="PUT")
         except HTTPError as http_error:
-            if http_error.response.status_code != 201:
-                msg = "Upload of {} for {} failed".format(
-                    digest, push_rule.image_name)
-                raise BlobUploadFailed(msg)
-            else:
-                raise
+            put_response = http_error.response
+        if put_response.status_code != 201:
+            msg = "Upload of {} for {} failed".format(
+                digest, push_rule.image_name)
+            raise BlobUploadFailed(msg)
 
     @classmethod
     def _upload_layer(cls, digest, push_rule, lfa, http_client):
@@ -260,7 +259,7 @@ class OCIRegistryClient:
 
                 # Upload the registry manifest
                 try:
-                    http_client.requestPath(
+                    manifest_response = http_client.requestPath(
                         "/manifests/{}".format(tag),
                         json=registry_manifest,
                         headers={
@@ -270,12 +269,11 @@ class OCIRegistryClient:
                             },
                         method="PUT")
                 except HTTPError as http_error:
-                    if http_error.response.status_code != 201:
-                        raise ManifestUploadFailed(
-                            "Failed to upload manifest for {} in {}".format(
-                                build.recipe.name, build.id))
-                    else:
-                        raise
+                    manifest_response = http_error.response
+                if manifest_response.status_code != 201:
+                    raise ManifestUploadFailed(
+                        "Failed to upload manifest for {} in {}".format(
+                            build.recipe.name, build.id))
 
 
 class OCIRegistryAuthenticationError(Exception):
