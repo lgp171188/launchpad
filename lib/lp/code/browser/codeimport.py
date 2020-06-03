@@ -189,9 +189,14 @@ class CodeImportBaseView(LaunchpadFormView):
     custom_widget_url = CustomWidgetFactory(URIWidget, displayWidth=50)
 
     @cachedproperty
-    def _is_allowed_user(self):
-        """Is the user an admin or member of vcs-imports?"""
+    def _is_edit_user(self):
+        """Can this user edit specific fields?"""
         return check_permission("launchpad.Edit", self.code_import)
+
+    @cachedproperty
+    def _is_moderator_user(self):
+        """Is a moderator of code imports?"""
+        return check_permission("launchpad.Moderate", self.code_import)
 
     def showOptionalMarker(self, field_name):
         """Don't show the optional marker for rcs locations."""
@@ -554,12 +559,22 @@ def _makeEditAction(label, status, text):
 
     def success(self, action, data):
         """Make the requested status change."""
-        if status is not None:
-            data['review_status'] = status
-        event = self.code_import.updateFromData(data, self.user)
-        if event is not None:
-            self.request.response.addNotification(
-                'The code import has been ' + text + '.')
+        if self._is_moderator_user:
+            # Moderators can change everything in code import, including its
+            # status.
+            if status is not None:
+                data['review_status'] = status
+            event = self.code_import.updateFromData(data, self.user)
+            if event is not None:
+                self.request.response.addNotification(
+                    'The code import has been ' + text + '.')
+        elif self._is_edit_user and "url" in data:
+            # Edit users can only change URL
+            new_url = data["url"]
+            if self.code_import.url != new_url:
+                self.code_import.url = new_url
+                self.request.response.addNotification(
+                    'The code import URL has been updated.')
         else:
             self.request.response.addNotification('No changes made.')
     name = label.lower().replace(' ', '_')
@@ -599,7 +614,7 @@ class CodeImportEditView(CodeImportBaseView):
         self.code_import = self.context.code_import
         if self.code_import is None:
             raise NotFoundError
-        if not self._is_allowed_user:
+        if not self._is_edit_user and not self._is_moderator_user:
             raise Unauthorized
         # The next and cancel location is the target details page.
         self.cancel_url = self.next_url = canonical_url(self.context)
@@ -628,7 +643,7 @@ class CodeImportEditView(CodeImportBaseView):
 
     def _showButtonForStatus(self, status):
         """If the status is different, and the user is super, show button."""
-        return (self._is_allowed_user and
+        return (self._is_moderator_user and
                 self.code_import.review_status != status)
 
     actions = form.Actions(

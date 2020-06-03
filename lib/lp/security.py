@@ -1589,6 +1589,16 @@ class EditCodeImport(AuthorizationBase):
                 user.in_vcs_imports)
 
 
+class ModerateCodeImport(OnlyVcsImportsAndAdmins):
+    """Control who can moderate a CodeImport.
+
+    Currently, we restrict the visibility of code import moderation
+    system to members of ~vcs-imports and Launchpad admins.
+    """
+    permission = 'launchpad.Moderate'
+    usedfor = ICodeImport
+
+
 class SeeCodeImportJobSet(OnlyVcsImportsAndAdmins):
     """Control who can see the CodeImportJobSet utility.
 

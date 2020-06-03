@@ -13,12 +13,14 @@ from testtools.matchers import StartsWith
 from zope.security.interfaces import Unauthorized
 
 from lp.code.enums import (
+    CodeImportReviewStatus,
     RevisionControlSystems,
     TargetRevisionControlSystems,
     )
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.webapp import canonical_url
 from lp.testing import (
+    admin_logged_in,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -91,4 +93,31 @@ class TestImportDetails(TestCaseWithFactory):
                     "field.url": "http://foo.test"
                 })
             self.assertEqual([], view.errors)
-            self.assertEqual(cimport.url, 'http://foo.test')
+            self.assertEqual('http://foo.test', cimport.url)
+
+    def test_branch_owner_of_import_cannot_change_status(self):
+        # Owners are allowed to edit code import.
+        cimport = self.factory.makeCodeImport()
+        original_url = cimport.url
+        with person_logged_in(cimport.branch.owner):
+            view = create_initialized_view(
+                cimport.branch, '+edit-import', form={
+                    "field.actions.suspend": "Suspend",
+                    "field.url": "http://foo.test"
+                })
+            self.assertEqual([], view.errors)
+            self.assertEqual(original_url, cimport.url)
+
+    def test_admin_can_change_code_import_status(self):
+        # Owners are allowed to edit code import.
+        cimport = self.factory.makeCodeImport()
+        with admin_logged_in():
+            view = create_initialized_view(
+                cimport.branch, '+edit-import', form={
+                    "field.actions.suspend": "Suspend",
+                    "field.url": "http://foo.test"
+                })
+            self.assertEqual([], view.errors)
+            self.assertEqual("http://foo.test", cimport.url)
+            self.assertEqual(
+                CodeImportReviewStatus.SUSPENDED, cimport.review_status)
