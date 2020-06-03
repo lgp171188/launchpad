@@ -1305,7 +1305,7 @@ class TestPersonLiveFSView(BrowserTestCase, TestCaseWithFactory):
         with person_logged_in(self.person):
             self.assertIn(livefs.name, main_text)
 
-    def test_displays_no_recipe(self):
+    def test_displays_no_livefs_system(self):
         browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
         main_text = extract_text(find_main_content(browser.contents))
         with person_logged_in(self.person):
