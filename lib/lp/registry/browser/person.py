@@ -3620,6 +3620,32 @@ class PersonOAuthTokensView(LaunchpadView):
             canonical_url(self.context, view_name='+oauth-tokens'))
 
 
+class PersonLiveFSView(LaunchpadView):
+    """Default view for the list of live filesystems owned by a person."""
+    page_title = 'LiveFS'
+
+    @property
+    def label(self):
+        return 'Live filesystems for %s' % self.context.name
+
+    @property
+    def title(self):
+        return self.context.name
+
+    @property
+    def livefs(self):
+        livefs = getUtility(ILiveFSSet).getByPerson(self.context)
+        return livefs.order_by('name')
+
+    @property
+    def livefs_navigator(self):
+        return BatchNavigator(self.livefs, self.request)
+
+    @cachedproperty
+    def count(self):
+        return self.livefs_navigator.batch.total()
+
+
 class PersonTimeZoneForm(Interface):
 
     time_zone = Choice(

@@ -1,10 +1,14 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# -*- coding: utf-8 -*-
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import unicode_literals
 
 __metaclass__ = type
 
 import doctest
 import email
+from operator import attrgetter
 import re
 from textwrap import dedent
 
@@ -43,6 +47,7 @@ from lp.registry.model.karma import KarmaCategory
 from lp.registry.model.milestone import milestone_sort_key
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.log.logger import DevNullLogger
@@ -61,6 +66,7 @@ from lp.soyuz.enums import (
     ArchiveStatus,
     PackagePublishingStatus,
     )
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
     ANONYMOUS,
@@ -85,6 +91,7 @@ from lp.testing.layers import (
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
+    find_main_content,
     find_tag_by_id,
     setupBrowserForUser,
     )
@@ -1272,6 +1279,60 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
                     '?batch=5&memo=5&start=5'))},
                 text='Next'))
         self.assertThat(view(), next_match)
+
+
+class TestPersonLiveFSView(BrowserTestCase, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonLiveFSView, self).setUp()
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
+        self.person = self.factory.makePerson(
+                        name="test-person", displayname="Test Person")
+
+    def makeLiveFS(self, count=1):
+        with person_logged_in(self.person):
+            return [self.factory.makeLiveFS(
+                registrant=self.person, owner=self.person)
+                for _ in range(count)]
+
+    def test_displays_live_filesystem(self):
+        livefs = self.factory.makeLiveFS(
+            registrant=self.person, owner=self.person)
+        browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+
+        with person_logged_in(self.person):
+            self.assertIn(livefs.name, main_text)
+
+    def test_displays_no_recipe(self):
+        browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+        with person_logged_in(self.person):
+            self.assertIn(
+                "There are no live filesystems for %s"
+                % self.person.name,
+                main_text)
+
+    def test_paginates_live_filesystems(self):
+        batch_size = 5
+        self.pushConfig("launchpad", default_batch_size=batch_size)
+        livefs = self.makeLiveFS(10)
+        browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+        no_wrap_main_text = main_text.replace('\n', ' ')
+        with person_logged_in(self.person):
+            self.assertIn(
+                "There are 10 live filesystems registered for %s"
+                % self.person.name,
+                no_wrap_main_text)
+            self.assertIn("1 → 5 of 10 results", no_wrap_main_text)
+            self.assertIn("First • Previous • Next • Last", no_wrap_main_text)
+
+            # Assert we're listing the first set of live filesystems
+            items = sorted(livefs, key=attrgetter('name'))
+            for lfs in items[:batch_size]:
+                self.assertIn(lfs.name, main_text)
 
 
 class TestPersonRelatedPackagesFailedBuild(TestCaseWithFactory):
