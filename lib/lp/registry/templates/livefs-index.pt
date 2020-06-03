@@ -23,13 +23,12 @@
           </span>
           registered for <tal:context replace="view/title" />.
         </p>
-        <p tal:define="count view/count"
-           tal:condition="not: count">
+        <p tal:condition="not: view/count">
            There are no live filesystems for <tal:context replace="view/title" />.
         </p>
       </div>
 
-      <table class="listing" id="mirrors_list">
+      <table class="listing" id="mirrors_list" tal:condition="view/count">
         <tbody>
           <tr class="head">
             <th>Name</th>
