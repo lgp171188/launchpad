@@ -27,6 +27,7 @@ __all__ = [
     'PersonIndexView',
     'PersonKarmaView',
     'PersonLanguagesView',
+    'PersonLiveFSView',
     'PersonNavigation',
     'PersonOAuthTokensView',
     'PersonOverviewMenu',
