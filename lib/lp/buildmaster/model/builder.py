@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,9 +9,6 @@ __all__ = [
     'BuilderSet',
     ]
 
-import logging
-
-import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -20,23 +17,15 @@ from sqlobject import (
     StringCol,
     )
 from storm.expr import (
-    And,
     Coalesce,
     Count,
-    Desc,
-    Exists,
-    Or,
-    Select,
-    SQL,
     Sum,
     )
 from storm.properties import Int
 from storm.references import Reference
 from storm.store import Store
-import transaction
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import (
     IncompatibleArguments,
@@ -53,11 +42,7 @@ from lp.buildmaster.interfaces.builder import (
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSet
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
-from lp.buildmaster.model.buildqueue import (
-    BuildQueue,
-    specific_build_farm_job_sources,
-    )
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.processor import Processor
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.bulk import (
@@ -74,7 +59,6 @@ from lp.services.database.interfaces import (
     )
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormbase import StormBase
-from lp.services.features import getFeatureFlag
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -215,97 +199,6 @@ class Builder(SQLBase):
             return getUtility(IBuildFarmJobSet).getBuildsForBuilder(
                 self, status=build_state, user=user)
 
-    def _getSlaveScannerLogger(self):
-        """Return the logger instance from buildd-slave-scanner.py."""
-        # XXX cprov 20071120: Ideally the Launchpad logging system
-        # should be able to configure the root-logger instead of creating
-        # a new object, then the logger lookups won't require the specific
-        # name argument anymore. See bug 164203.
-        logger = logging.getLogger('slave-scanner')
-        return logger
-
-    def acquireBuildCandidate(self):
-        """See `IBuilder`."""
-        candidate = self._findBuildCandidate()
-        if candidate is not None:
-            candidate.markAsBuilding(self)
-            transaction.commit()
-        return candidate
-
-    def _findBuildCandidate(self):
-        """Find a candidate job for dispatch to an idle buildd slave.
-
-        The pending BuildQueue item with the highest score for this builder
-        or None if no candidate is available.
-
-        :return: A candidate job.
-        """
-        logger = self._getSlaveScannerLogger()
-
-        job_type_conditions = []
-        job_sources = specific_build_farm_job_sources()
-        for job_type, job_source in six.iteritems(job_sources):
-            query = job_source.addCandidateSelectionCriteria(
-                self.processor, self.virtualized)
-            if query:
-                job_type_conditions.append(
-                    Or(
-                        BuildFarmJob.job_type != job_type,
-                        Exists(SQL(query))))
-
-        def get_int_feature_flag(flag):
-            value_str = getFeatureFlag(flag)
-            if value_str is not None:
-                try:
-                    return int(value_str)
-                except ValueError:
-                    logger.error('invalid %s %r', flag, value_str)
-
-        score_conditions = []
-        minimum_scores = set()
-        for processor in self.processors:
-            minimum_scores.add(get_int_feature_flag(
-                'buildmaster.minimum_score.%s' % processor.name))
-        minimum_scores.add(get_int_feature_flag('buildmaster.minimum_score'))
-        minimum_scores.discard(None)
-        # If there are minimum scores set for any of the processors
-        # supported by this builder, use the highest of them.  This is a bit
-        # weird and not completely ideal, but it's a safe conservative
-        # option and avoids substantially complicating the candidate query.
-        if minimum_scores:
-            score_conditions.append(
-                BuildQueue.lastscore >= max(minimum_scores))
-
-        store = IStore(self.__class__)
-        candidate_jobs = store.using(BuildQueue, BuildFarmJob).find(
-            (BuildQueue.id,),
-            BuildFarmJob.id == BuildQueue._build_farm_job_id,
-            BuildQueue.status == BuildQueueStatus.WAITING,
-            Or(
-                BuildQueue.processorID.is_in(Select(
-                    BuilderProcessor.processor_id, tables=[BuilderProcessor],
-                    where=BuilderProcessor.builder == self)),
-                BuildQueue.processor == None),
-            BuildQueue.virtualized == self.virtualized,
-            BuildQueue.builder == None,
-            And(*(job_type_conditions + score_conditions))
-            ).order_by(Desc(BuildQueue.lastscore), BuildQueue.id)
-
-        # Only try the first handful of jobs. It's much easier on the
-        # database, the chance of a large prefix of the queue being
-        # bad candidates is negligible, and we want reasonably bounded
-        # per-cycle performance even if the prefix is large.
-        for (candidate_id,) in candidate_jobs[:10]:
-            candidate = getUtility(IBuildQueueSet).get(candidate_id)
-            job_source = job_sources[
-                removeSecurityProxy(candidate)._build_farm_job.job_type]
-            candidate_approved = job_source.postprocessCandidate(
-                candidate, logger)
-            if candidate_approved:
-                return candidate
-
-        return None
-
 
 class BuilderProcessor(StormBase):
     __storm_table__ = 'BuilderProcessor'
@@ -354,18 +247,20 @@ class BuilderSet(object):
         """See IBuilderSet."""
         return Builder.select().count()
 
-    def _preloadProcessors(self, rows):
+    def preloadProcessors(self, builders):
+        """See `IBuilderSet`."""
         # Grab (Builder.id, Processor.id) pairs and stuff them into the
         # Builders' processor caches.
         store = IStore(BuilderProcessor)
+        builder_ids = [b.id for b in builders]
         pairs = list(store.using(BuilderProcessor, Processor).find(
             (BuilderProcessor.builder_id, BuilderProcessor.processor_id),
             BuilderProcessor.processor_id == Processor.id,
-            BuilderProcessor.builder_id.is_in([b.id for b in rows])).order_by(
+            BuilderProcessor.builder_id.is_in(builder_ids)).order_by(
                 BuilderProcessor.builder_id, Processor.name))
         load(Processor, [pid for bid, pid in pairs])
-        for row in rows:
-            get_property_cache(row)._processors_cache = []
+        for builder in builders:
+            get_property_cache(builder)._processors_cache = []
         for bid, pid in pairs:
             cache = get_property_cache(store.get(Builder, bid))
             cache._processors_cache.append(store.get(Processor, pid))
@@ -378,7 +273,7 @@ class BuilderSet(object):
                 Builder.virtualized, Builder.name)
 
         def preload(rows):
-            self._preloadProcessors(rows)
+            self.preloadProcessors(rows)
             load_related(Person, rows, ['ownerID'])
             bqs = getUtility(IBuildQueueSet).preloadForBuilders(rows)
             BuildQueue.preloadSpecificBuild(bqs)

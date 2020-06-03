@@ -251,7 +251,7 @@ class BuildFarmJobMixin:
 class SpecificBuildFarmJobSourceMixin:
 
     @staticmethod
-    def addCandidateSelectionCriteria(processor, virtualized):
+    def addCandidateSelectionCriteria():
         """See `ISpecificBuildFarmJobSource`."""
         return ('')
 
