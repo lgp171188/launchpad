@@ -185,7 +185,7 @@ css_combine: jsbuild_widget_css
 	# Compile the base.css file separately for tests
 	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING)/ $(WD)/$(ICING)/css/base.scss
 	# Compile the combo.css for the main site
-	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/combo.scss
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --output-style compressed --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/combo.scss
 
 css_watch: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-image
