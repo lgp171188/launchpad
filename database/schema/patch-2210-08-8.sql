@@ -35,12 +35,14 @@ ALTER TABLE GitRepository
         -- OCI project
         (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NOT NULL AND ociprojectname IS NULL) OR
         -- Personal
-        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL)),
+        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND oci_project IS NULL))
+        NOT VALID,
     DROP CONSTRAINT default_implies_target,
     ADD CONSTRAINT default_implies_target CHECK (
         project IS NOT NULL
         OR distribution IS NOT NULL
         OR oci_project IS NOT NULL
-        OR (NOT owner_default AND NOT target_default));
+        OR (NOT owner_default AND NOT target_default))
+        NOT VALID;
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 8, 8);
