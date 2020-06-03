@@ -21,34 +21,32 @@
           <span tal:condition="python: count != 1">
             There are <strong tal:content="count" /> live filesystems
           </span>
-          registered for <tal:context replace="view/title" />.
+          registered for <tal:owner replace="context/display_name" />.
         </p>
         <p tal:condition="not: view/count">
-           There are no live filesystems for <tal:context replace="view/title" />.
+           There are no live filesystems for <tal:owner replace="context/display_name" />.
         </p>
       </div>
 
-      <table class="listing" id="mirrors_list" tal:condition="view/count">
+      <table class="listing" id="livefses_list" tal:condition="view/count">
         <tbody>
           <tr class="head">
             <th>Name</th>
-            <th>Owner</th>
             <th>Date created</th>
           </tr>
 
-          <tr tal:repeat="filesystem view/livefs">
+          <tr tal:repeat="filesystem view/livefses">
             <td>
               <a tal:content="filesystem/name"
                  tal:attributes="href filesystem/fmt:url" />
             </td>
-            <td tal:content="structure filesystem/owner/fmt:link" />
             <td tal:content="filesystem/date_created/fmt:displaydate" />
           </tr>
         </tbody>
       </table>
 
        <tal:navigation
-          replace="structure view/livefs_navigator/@@+navigation-links-lower" />
+          replace="structure view/livefses_navigator/@@+navigation-links-lower" />
   </div>
 
 </body>

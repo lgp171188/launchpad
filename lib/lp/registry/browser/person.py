@@ -3627,24 +3627,20 @@ class PersonLiveFSView(LaunchpadView):
 
     @property
     def label(self):
-        return 'Live filesystems for %s' % self.context.name
+        return 'Live filesystems for %s' % self.context.display_name
 
     @property
-    def title(self):
-        return self.context.name
+    def livefses(self):
+        livefses = getUtility(ILiveFSSet).getByPerson(self.context)
+        return livefses.order_by('name')
 
     @property
-    def livefs(self):
-        livefs = getUtility(ILiveFSSet).getByPerson(self.context)
-        return livefs.order_by('name')
-
-    @property
-    def livefs_navigator(self):
-        return BatchNavigator(self.livefs, self.request)
+    def livefses_navigator(self):
+        return BatchNavigator(self.livefses, self.request)
 
     @cachedproperty
     def count(self):
-        return self.livefs_navigator.batch.total()
+        return self.livefses_navigator.batch.total()
 
 
 class PersonTimeZoneForm(Interface):

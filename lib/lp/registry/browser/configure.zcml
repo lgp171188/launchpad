@@ -1235,7 +1235,7 @@
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonLiveFSView"
         permission="launchpad.View"
-        template="../templates/livefs-index.pt"
+        template="../templates/person-livefses.pt"
         />
     <browser:page
         name="+index"

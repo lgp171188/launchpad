@@ -28,6 +28,7 @@ from zope.publisher.interfaces import NotFound
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import TextAreaEditorWidget
+from lp.app.browser.tales import DateTimeFormatterAPI
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -1281,31 +1282,46 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
         self.assertThat(view(), next_match)
 
 
-class TestPersonLiveFSView(BrowserTestCase, TestCaseWithFactory):
+class TestPersonLiveFSView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestPersonLiveFSView, self).setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.person = self.factory.makePerson(
-                        name="test-person", displayname="Test Person")
+            name="test-person", displayname="Test Person")
 
     def makeLiveFS(self, count=1):
         with person_logged_in(self.person):
-            return [self.factory.makeLiveFS(
-                registrant=self.person, owner=self.person)
+            return [
+                self.factory.makeLiveFS(
+                    registrant=self.person, owner=self.person)
                 for _ in range(count)]
 
     def test_displays_live_filesystem(self):
         livefs = self.factory.makeLiveFS(
             registrant=self.person, owner=self.person)
-        browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
-        main_text = extract_text(find_main_content(browser.contents))
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
 
+        expected_url = "/~%s/+livefs/%s/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name)
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs name link', 'a',
+                attrs={'href': expected_url},
+                text=livefs.name))
+        date_formatter = DateTimeFormatterAPI(livefs.date_created)
+        date_created_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs date created', 'td',
+                text='%s' % date_formatter.displaydate()))
         with person_logged_in(self.person):
-            self.assertIn(livefs.name, main_text)
+            self.assertThat(view.render(), link_match)
+            self.assertThat(view.render(), date_created_match)
 
-    def test_displays_no_livefs_system(self):
+    def test_displays_no_live_filesystems(self):
         browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
         main_text = extract_text(find_main_content(browser.contents))
         with person_logged_in(self.person):
