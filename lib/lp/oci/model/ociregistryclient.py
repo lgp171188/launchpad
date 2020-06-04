@@ -15,6 +15,10 @@ from functools import partial
 import hashlib
 from io import BytesIO
 import json
+try:
+    from json.decoder import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
 import logging
 import tarfile
 
@@ -61,6 +65,18 @@ class OCIRegistryClient:
         finally:
             reference.close()
 
+    @classmethod
+    def _makeRegistryError(cls, error_class, summary, response):
+        errors = None
+        if response.content:
+            try:
+                response_data = response.json()
+            except JSONDecodeError:
+                pass
+            else:
+                errors = response_data.get("errors")
+        return error_class(summary, errors)
+
     # Retry this on a ConnectionError, 5 times with 3 seconds wait.
     # Log each attempt so we can see they are happening.
     @classmethod
@@ -106,9 +122,11 @@ class OCIRegistryClient:
         except HTTPError as http_error:
             put_response = http_error.response
         if put_response.status_code != 201:
-            msg = "Upload of {} for {} failed".format(
-                digest, push_rule.image_name)
-            raise BlobUploadFailed(msg)
+            raise cls._makeRegistryError(
+                BlobUploadFailed,
+                "Upload of {} for {} failed".format(
+                    digest, push_rule.image_name),
+                put_response)
 
     @classmethod
     def _upload_layer(cls, digest, push_rule, lfa, http_client):
@@ -271,9 +289,11 @@ class OCIRegistryClient:
                 except HTTPError as http_error:
                     manifest_response = http_error.response
                 if manifest_response.status_code != 201:
-                    raise ManifestUploadFailed(
+                    raise cls._makeRegistryError(
+                        ManifestUploadFailed,
                         "Failed to upload manifest for {} in {}".format(
-                            build.recipe.name, build.id))
+                            build.recipe.name, build.id),
+                        manifest_response)
 
 
 class OCIRegistryAuthenticationError(Exception):

@@ -436,6 +436,16 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         else:
             return OCIRecipeBuildRegistryUploadStatus.FAILEDTOUPLOAD
 
+    @property
+    def registry_upload_error_summary(self):
+        job = self.last_registry_upload_job
+        return job and job.error_summary
+
+    @property
+    def registry_upload_errors(self):
+        job = self.last_registry_upload_job
+        return (job and job.errors) or []
+
 
 @implementer(IOCIRecipeBuildSet)
 class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):

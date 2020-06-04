@@ -34,7 +34,9 @@ from zope.schema import (
     Bool,
     Choice,
     Datetime,
+    Dict,
     Int,
+    List,
     TextLine,
     )
 
@@ -185,6 +187,22 @@ class IOCIRecipeBuildView(IPackageBuild):
         vocabulary=OCIRecipeBuildRegistryUploadStatus,
         required=True, readonly=False
     ))
+
+    registry_upload_error_summary = exported(TextLine(
+        title=_("Registry upload error summary"),
+        description=_(
+            "The error summary, if any, from the last attempt to upload this "
+            "build to a registry."),
+        required=False, readonly=True))
+
+    registry_upload_errors = exported(List(
+        title=_("Detailed registry upload errors"),
+        description=_(
+            "A list of errors, as described in "
+            "https://docs.docker.com/registry/spec/api/#errors, from the last "
+            "attempt to upload this build to a registry."),
+        value_type=Dict(key_type=TextLine()),
+        required=False, readonly=True))
 
 
 class IOCIRecipeBuildEdit(Interface):
