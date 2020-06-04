@@ -10,16 +10,25 @@ __all__ = [
     'BlobUploadFailed',
     'IOCIRegistryClient',
     'ManifestUploadFailed',
+    'OCIRegistryError',
 ]
 
 from zope.interface import Interface
 
 
-class BlobUploadFailed(Exception):
+class OCIRegistryError(Exception):
+    """An error returned by an OCI registry."""
+
+    def __init__(self, summary, errors):
+        super(OCIRegistryError, self).__init__(summary)
+        self.errors = errors
+
+
+class BlobUploadFailed(OCIRegistryError):
     pass
 
 
-class ManifestUploadFailed(Exception):
+class ManifestUploadFailed(OCIRegistryError):
     pass
 
 
