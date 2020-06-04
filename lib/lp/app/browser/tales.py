@@ -485,6 +485,12 @@ class DBSchemaAPI:
             raise TraversalError(name)
 
 
+# Python 3 doesn't have types.NoneType, but we still need to be able to
+# refer to the type of None from ZCML so that we can register the
+# NoneFormatter adapter.
+NoneType = type(None)
+
+
 @implementer(ITraversable)
 class NoneFormatter:
     """Adapter from None to various string formats.
