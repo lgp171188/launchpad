@@ -239,13 +239,12 @@ class BuilderSlave(object):
         return urlappend(self._file_cache_url, sha1).encode('utf8')
 
     @defer.inlineCallbacks
-    def getFile(self, sha_sum, file_to_write, logger=None):
+    def getFile(self, sha_sum, path_to_write, logger=None):
         """Fetch a file from the builder.
 
         :param sha_sum: The sha of the file (which is also its name on the
             builder)
-        :param file_to_write: A file name or file-like object to write
-            the file to
+        :param path_to_write: A file name to write the file to
         :param logger: An optional logger.
         :return: A Deferred that calls back when the download is done, or
             errback with the error string.
@@ -255,7 +254,7 @@ class BuilderSlave(object):
             response = yield Agent(self.reactor, pool=self.pool).request(
                 "GET", file_url)
             finished = defer.Deferred()
-            response.deliverBody(FileWritingProtocol(finished, file_to_write))
+            response.deliverBody(FileWritingProtocol(finished, path_to_write))
             yield finished
             if logger is not None:
                 logger.info("Grabbed %s" % file_url)
@@ -270,7 +269,7 @@ class BuilderSlave(object):
         """Fetch many files from the builder.
 
         :param files: A sequence of pairs of the builder file name to
-            retrieve and the file name or file object to write the file to.
+            retrieve and the file name to write the file to.
         :param logger: An optional logger.
 
         :return: A DeferredList that calls back when the download is done.
