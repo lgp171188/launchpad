@@ -29,10 +29,10 @@ from lp.app.enums import InformationType
 from lp.buildmaster.enums import BuildStatus
 from lp.code.enums import (
     GitGranteeType,
+    GitRepositoryStatus,
     GitRepositoryType,
     TargetRevisionControlSystems,
     )
-from lp.code.errors import GitRepositoryCreationFault
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.interfaces.gitcollection import IAllGitRepositories
@@ -292,22 +292,27 @@ class TestGitAPIMixin:
             requester, path.lstrip("/"))
         self.assertIsNotNone(repository)
         self.assertEqual(requester, repository.registrant)
-        self.assertEqual(
-            {"path": repository.getInternalPath(), "writable": True,
-             "trailing": "", "private": private},
-            translation)
-        self.assertEqual(
-            (repository.getInternalPath(),),
-            self.hosting_fixture.create.extract_args()[0])
+
+        cloned_from = repository.getClonedFrom()
+        self.assertEqual({
+            "path": repository.getInternalPath(),
+            "writable": True,
+            "trailing": "",
+            "private": private,
+            "creation_params": {
+                "repository_id": repository.id,
+                "clone_from": (cloned_from.getInternalPath() if cloned_from
+                               else None)}
+            }, translation)
+        self.assertEqual(0, self.hosting_fixture.create.call_count)
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)
+        self.assertEqual(GitRepositoryStatus.CREATING, repository.status)
         return repository
 
     def assertCreatesFromClone(self, requester, path, cloned_from,
                                can_authenticate=False):
         self.assertCreates(requester, path, can_authenticate)
-        self.assertEqual(
-            {"clone_from": cloned_from.getInternalPath()},
-            self.hosting_fixture.create.extract_kwargs()[0])
+        self.assertEqual(0, self.hosting_fixture.create.call_count)
 
     def assertHasRefPermissions(self, requester, repository, ref_paths,
                                 permissions, macaroon_raw=None):
@@ -744,6 +749,21 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertCreates(
             requester, u"/~%s/%s/+git/random" % (requester.name, project.name))
 
+    def test_translatePath_create_project_blocks_duplicate_calls(self):
+        # translatePath creates a project repository that doesn't exist,
+        # but blocks any further request to create the same repository.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        path = u"/~%s/%s/+git/random" % (requester.name, project.name)
+        self.assertCreates(requester, path)
+
+        auth_params = _make_auth_params(
+            requester, can_authenticate=True)
+        request_id = auth_params["request-id"]
+        self.assertFault(
+            faults.GitRepositoryBeingCreated,
+            request_id, "translatePath", path, "write", auth_params)
+
     def test_translatePath_create_project_clone_from_target_default(self):
         # translatePath creates a project repository cloned from the target
         # default if it exists.
@@ -1061,27 +1081,6 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertFalse(repository.target_default)
         self.assertTrue(repository.owner_default)
         self.assertEqual(team, repository.owner)
-
-    def test_translatePath_create_broken_hosting_service(self):
-        # If the hosting service is down, trying to create a repository
-        # fails and doesn't leave junk around in the Launchpad database.
-        self.hosting_fixture.create.failure = GitRepositoryCreationFault(
-            "nothing here", path="123")
-        requester = self.factory.makePerson()
-        initial_count = getUtility(IAllGitRepositories).count()
-        oops_id = self.assertOopsOccurred(
-            requester, u"/~%s/+git/random" % requester.name,
-            permission="write")
-        login(ANONYMOUS)
-        self.assertEqual(
-            initial_count, getUtility(IAllGitRepositories).count())
-        # The error report OOPS ID should match the fault, and the traceback
-        # text should show the underlying exception.
-        self.assertEqual(1, len(self.oopses))
-        self.assertEqual(oops_id, self.oopses[0]["id"])
-        self.assertIn(
-            "GitRepositoryCreationFault: nothing here",
-            self.oopses[0]["tb_text"])
 
     def test_translatePath_code_import(self):
         # A code import worker with a suitable macaroon can write to a

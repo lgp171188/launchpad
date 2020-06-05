@@ -370,6 +370,31 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         getUtility(IGitHostingClient).create(
             hosting_path, clone_from=clone_from_path)
 
+    def getClonedFrom(self):
+        """See `IGitRepository`"""
+        repository_set = getUtility(IGitRepositorySet)
+        registrant = self.registrant
+
+        # If repository has target_default, clone from default.
+        clone_from_repository = None
+        try:
+            default = repository_set.getDefaultRepository(
+                self.target)
+            if default is not None and default.visibleByUser(registrant):
+                clone_from_repository = default
+            else:
+                default = repository_set.getDefaultRepositoryForOwner(
+                    self.owner, self.target)
+                if (default is not None and
+                        default.visibleByUser(registrant)):
+                    clone_from_repository = default
+        except GitTargetError:
+            pass  # Ignore Personal repositories.
+        if clone_from_repository == self:
+            clone_from_repository = None
+
+        return clone_from_repository
+
     @property
     def valid_webhook_event_types(self):
         return ["git:push:0.1", "merge-proposal:0.1"]

@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of the XML-RPC APIs for Git."""
@@ -31,6 +31,7 @@ from lp.app.validators import LaunchpadValidationError
 from lp.code.enums import (
     GitGranteeType,
     GitPermissionType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.errors import (
@@ -214,9 +215,13 @@ class GitAPI(LaunchpadXMLRPCView):
             raise faults.Unauthorized()
 
     def _performLookup(self, requester, path, auth_params):
+        """Perform a translation path lookup.
+
+        :return: A tuple with the repository object and a dict with
+                 translation information."""
         repository, extra_path = getUtility(IGitLookup).getByPath(path)
         if repository is None:
-            return None
+            return None, None
 
         verified = self._verifyAuthParams(requester, repository, auth_params)
         naked_repository = removeSecurityProxy(repository)
@@ -236,7 +241,7 @@ class GitAPI(LaunchpadXMLRPCView):
             try:
                 hosting_path = repository.getInternalPath()
             except Unauthorized:
-                return None
+                return naked_repository, None
             writable = (
                 repository.repository_type == GitRepositoryType.HOSTED and
                 check_permission("launchpad.Edit", repository))
@@ -249,7 +254,7 @@ class GitAPI(LaunchpadXMLRPCView):
                     writable = True
             private = repository.private
 
-        return {
+        return naked_repository, {
             "path": hosting_path,
             "writable": writable,
             "trailing": extra_path,
@@ -347,10 +352,14 @@ class GitAPI(LaunchpadXMLRPCView):
 
         try:
             try:
+                # Creates the repository on the database, but do not create
+                # it on hosting service. It should be created by the hosting
+                # service as a result of pathTranslate call indicating that
+                # the repo was just created in Launchpad.
                 namespace.createRepository(
                     GitRepositoryType.HOSTED, requester, repository_name,
                     target_default=target_default, owner_default=owner_default,
-                    with_hosting=True)
+                    with_hosting=False, status=GitRepositoryStatus.CREATING)
             except LaunchpadValidationError as e:
                 # Despite the fault name, this just passes through the
                 # exception text so there's no need for a new Git-specific
@@ -377,11 +386,21 @@ class GitAPI(LaunchpadXMLRPCView):
         if requester == LAUNCHPAD_ANONYMOUS:
             requester = None
         try:
-            result = self._performLookup(requester, path, auth_params)
+            repo, result = self._performLookup(requester, path, auth_params)
+            if repo and repo.status == GitRepositoryStatus.CREATING:
+                raise faults.GitRepositoryBeingCreated(path)
+
             if (result is None and requester is not None and
                 permission == "write"):
                 self._createRepository(requester, path)
-                result = self._performLookup(requester, path, auth_params)
+                repo, result = self._performLookup(
+                    requester, path, auth_params)
+                clone_from = repo.getClonedFrom()
+                result["creation_params"] = {
+                    "repository_id": repo.id,
+                    "clone_from": (clone_from.getInternalPath() if clone_from
+                                   else None)
+                }
             if result is None:
                 raise faults.GitRepositoryNotFound(path)
             if permission != "read" and not result["writable"]:
