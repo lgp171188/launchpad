@@ -14,6 +14,7 @@ from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.services.features import getFeatureFlag
+from lp.services.scripts import log
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.payload import compose_webhook_payload
@@ -47,4 +48,9 @@ def oci_recipe_build_modified(build, event):
         if status_changed:
             if (build.recipe.can_upload_to_registry and
                     build.status == BuildStatus.FULLYBUILT):
+                log.info("Scheduling upload of %r to registries." % build)
                 getUtility(IOCIRegistryUploadJobSource).create(build)
+            else:
+                log.info(
+                    "%r is not configured for upload to registries." %
+                    build.recipe)

@@ -42,12 +42,14 @@ from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import (
+    CannotScheduleRegistryUpload,
     IOCIFile,
     IOCIFileSet,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     OCIRecipeBuildRegistryUploadStatus,
     )
+from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJob,
     OCIRecipeBuildJobType,
@@ -445,6 +447,28 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     def registry_upload_errors(self):
         job = self.last_registry_upload_job
         return (job and job.errors) or []
+
+    def scheduleRegistryUpload(self):
+        """See `IOCIRecipeBuild`."""
+        if not self.recipe.can_upload_to_registry:
+            raise CannotScheduleRegistryUpload(
+                "Cannot upload this build to registries because the recipe is "
+                "not properly configured.")
+        if not self.was_built or self.getFiles().is_empty():
+            raise CannotScheduleRegistryUpload(
+                "Cannot upload this build because it has no files.")
+        if (self.registry_upload_status ==
+                OCIRecipeBuildRegistryUploadStatus.PENDING):
+            raise CannotScheduleRegistryUpload(
+                "An upload of this build is already in progress.")
+        elif (self.registry_upload_status ==
+                OCIRecipeBuildRegistryUploadStatus.UPLOADED):
+            # XXX cjwatson 2020-04-22: This won't be quite right in the case
+            # where a recipe has multiple push rules.
+            raise CannotScheduleRegistryUpload(
+                "Cannot upload this build because it has already been "
+                "uploaded.")
+        getUtility(IOCIRegistryUploadJobSource).create(self)
 
 
 @implementer(IOCIRecipeBuildSet)
