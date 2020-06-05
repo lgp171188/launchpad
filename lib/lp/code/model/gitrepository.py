@@ -95,6 +95,7 @@ from lp.code.enums import (
     GitListingSort,
     GitObjectType,
     GitPermissionType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.errors import (
@@ -294,6 +295,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     repository_type = EnumCol(
         dbName='repository_type', enum=GitRepositoryType, notNull=True)
 
+    status = EnumCol(
+        dbName='status', enum=GitRepositoryStatus, notNull=True)
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
 
@@ -327,7 +331,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     def __init__(self, repository_type, registrant, owner, target, name,
                  information_type, date_created, reviewer=None,
-                 description=None):
+                 description=None, status=None):
         super(GitRepository, self).__init__()
         self.repository_type = repository_type
         self.registrant = registrant
@@ -351,6 +355,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             assert IDistribution.providedBy(target.pillar)
             self.ociprojectname = target.ociprojectname
             self.distribution = target.pillar
+        self.status = (status if status is not None
+                       else GitRepositoryStatus.AVAILABLE)
         self.owner_default = False
         self.target_default = False
 

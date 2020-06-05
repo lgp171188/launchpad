@@ -26,6 +26,7 @@ __all__ = [
     'GitListingSort',
     'GitObjectType',
     'GitPermissionType',
+    'GitRepositoryStatus',
     'GitRepositoryType',
     'NON_CVS_RCS_TYPES',
     'RevisionControlSystems',
@@ -145,6 +146,25 @@ class GitRepositoryType(DBEnumeratedType):
 
         Registered in Launchpad with an external location,
         but is not to be mirrored, nor available through Launchpad.
+        """)
+
+
+class GitRepositoryStatus(DBEnumeratedType):
+    """Git Repository Status
+
+    The current situation of this Git Repository.
+    """
+
+    AVAILABLE = DBItem(1, """
+        Available
+
+        This repository is available to be used.
+        """)
+
+    CREATING = DBItem(2, """
+        Creating
+
+        This repository is being created on git hosting system.
         """)
 
 

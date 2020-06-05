@@ -44,7 +44,10 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
-from zope.security.interfaces import Unauthorized
+from zope.security.interfaces import (
+    ForbiddenAttribute,
+    Unauthorized,
+    )
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
@@ -63,6 +66,7 @@ from lp.code.enums import (
     GitGranteeType,
     GitListingSort,
     GitObjectType,
+    GitRepositoryStatus,
     GitRepositoryType,
     TargetRevisionControlSystems,
     )
@@ -207,6 +211,23 @@ class TestGitRepository(TestCaseWithFactory):
         self.assertThat(
             self.factory.makeGitRepository(),
             DoesNotSnapshot(large_properties, IGitRepositoryView))
+
+    def test_git_repository_default_status(self):
+        repository = self.factory.makeGitRepository()
+        store = Store.of(repository)
+
+        self.assertEqual(GitRepositoryStatus.AVAILABLE, repository.status)
+
+        removeSecurityProxy(repository).status = GitRepositoryStatus.CREATING
+        store.flush()
+        self.assertEqual(GitRepositoryStatus.CREATING, repository.status)
+
+    def test_git_repository_status_is_read_only(self):
+        repository = self.factory.makeGitRepository()
+        with person_logged_in(repository.owner):
+            self.assertRaises(
+                ForbiddenAttribute,
+                setattr, repository, 'status', GitRepositoryStatus.CREATING)
 
     def test_unique_name_project(self):
         project = self.factory.makeProduct()

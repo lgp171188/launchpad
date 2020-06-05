@@ -66,6 +66,7 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     GitListingSort,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
@@ -142,6 +143,11 @@ class IGitRepositoryView(IHasRecipes):
         description=_(
             "The way this repository is hosted: directly on Launchpad, or "
             "imported from somewhere else.")))
+
+    status = Choice(
+        title=_("Status of this repository"),
+        required=True, readonly=True,
+        vocabulary=GitRepositoryStatus)
 
     registrant = exported(PublicPersonChoice(
         title=_("Registrant"), required=True, readonly=True,
