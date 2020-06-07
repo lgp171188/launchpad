@@ -13,6 +13,7 @@ import shutil
 import tempfile
 
 from storm.store import Store
+from testscenarios import load_tests_apply_scenarios
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
@@ -635,3 +636,6 @@ class TestVerifySuccessfulBuildForBinaryPackageBuild(
 class TestHandleStatusForBinaryPackageBuild(
     MakeBinaryPackageBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with binary builds."""
+
+
+load_tests = load_tests_apply_scenarios

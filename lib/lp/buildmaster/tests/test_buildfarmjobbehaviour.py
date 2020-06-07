@@ -13,6 +13,7 @@ import os
 import shutil
 import tempfile
 
+from testscenarios import WithScenarios
 from testtools import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -24,7 +25,10 @@ from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
     )
-from lp.buildmaster.interactor import BuilderInteractor
+from lp.buildmaster.interactor import (
+    BuilderInteractor,
+    shut_down_default_process_pool,
+    )
 from lp.buildmaster.interfaces.builder import BuildDaemonError
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
@@ -40,6 +44,7 @@ from lp.buildmaster.tests.mock_slaves import (
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import BufferLogger
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.testing import (
@@ -316,8 +321,17 @@ class TestVerifySuccessfulBuildMixin:
         self.assertRaises(AssertionError, behaviour.verifySuccessfulBuild)
 
 
-class TestHandleStatusMixin:
-    """Tests for `IPackageBuild`s handleStatus method."""
+class TestHandleStatusMixin(WithScenarios):
+    """Tests for `IPackageBuild`s handleStatus method.
+
+    This should be run in a test file with
+    `load_tests = load_tests_apply_scenarios`.
+    """
+
+    scenarios = [
+        ('download_in_twisted', {'download_in_subprocess': False}),
+        ('download_in_subprocess', {'download_in_subprocess': True}),
+        ]
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
@@ -328,6 +342,9 @@ class TestHandleStatusMixin:
 
     def setUp(self):
         super(TestHandleStatusMixin, self).setUp()
+        if self.download_in_subprocess:
+            self.useFixture(FeatureFixture(
+                {'buildmaster.download_in_subprocess': 'on'}))
         self.factory = LaunchpadObjectFactory()
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
@@ -339,6 +356,7 @@ class TestHandleStatusMixin:
         self.interactor = BuilderInteractor()
         self.behaviour = self.interactor.getBuildBehaviour(
             self.build.buildqueue_record, self.builder, self.slave)
+        self.addCleanup(shut_down_default_process_pool)
 
         # We overwrite the buildmaster root to use a temp directory.
         tempdir = tempfile.mkdtemp()

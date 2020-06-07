@@ -15,6 +15,7 @@ import sys
 import tempfile
 import traceback
 
+from ampoule.pool import ProcessPool
 from six.moves.urllib.parse import urlparse
 import transaction
 from twisted.internet import (
@@ -33,6 +34,10 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
+from lp.buildmaster.downloader import (
+    DownloadCommand,
+    DownloadProcess,
+    )
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
     BuilderResetProtocol,
@@ -47,6 +52,11 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
+from lp.services.job.runner import (
+    QuietAMPConnector,
+    VirtualEnvProcessStarter,
+    )
 from lp.services.twistedsupport import cancel_on_timeout
 from lp.services.twistedsupport.processmonitor import ProcessWithTimeout
 from lp.services.webapp import urlappend
@@ -128,6 +138,8 @@ class LimitedHTTPConnectionPool(HTTPConnectionPool):
 
 
 _default_pool = None
+_default_process_pool = None
+_default_process_pool_shutdown = None
 
 
 def default_pool(reactor=None):
@@ -147,6 +159,44 @@ def default_pool(reactor=None):
     return _default_pool
 
 
+def make_download_process_pool(**kwargs):
+    """Make a pool of processes for downloading files."""
+    env = {"PATH": os.environ["PATH"]}
+    if "LPCONFIG" in os.environ:
+        env["LPCONFIG"] = os.environ["LPCONFIG"]
+    starter = VirtualEnvProcessStarter(env=env)
+    starter.connectorFactory = QuietAMPConnector
+    kwargs = dict(kwargs)
+    kwargs.setdefault("max", config.builddmaster.download_connections)
+    return ProcessPool(DownloadProcess, starter=starter, **kwargs)
+
+
+def default_process_pool(reactor=None):
+    global _default_process_pool, _default_process_pool_shutdown
+    if reactor is None:
+        reactor = default_reactor
+    if _default_process_pool is None:
+        _default_process_pool = make_download_process_pool()
+        _default_process_pool.start()
+        shutdown_id = reactor.addSystemEventTrigger(
+            "during", "shutdown", _default_process_pool.stop)
+        _default_process_pool_shutdown = (reactor, shutdown_id)
+    return _default_process_pool
+
+
+@defer.inlineCallbacks
+def shut_down_default_process_pool():
+    """Shut down the default process pool.  Used in test cleanup."""
+    global _default_process_pool, _default_process_pool_shutdown
+    if _default_process_pool is not None:
+        yield _default_process_pool.stop()
+        _default_process_pool = None
+    if _default_process_pool_shutdown is not None:
+        reactor, shutdown_id = _default_process_pool_shutdown
+        reactor.removeSystemEventTrigger(shutdown_id)
+        _default_process_pool_shutdown = None
+
+
 class BuilderSlave(object):
     """Add in a few useful methods for the XMLRPC slave.
 
@@ -159,7 +209,8 @@ class BuilderSlave(object):
     # many false positives in your test run and will most likely break
     # production.
 
-    def __init__(self, proxy, builder_url, vm_host, timeout, reactor, pool):
+    def __init__(self, proxy, builder_url, vm_host, timeout, reactor,
+                 pool=None, process_pool=None):
         """Initialize a BuilderSlave.
 
         :param proxy: An XML-RPC proxy, implementing 'callRemote'. It must
@@ -175,13 +226,21 @@ class BuilderSlave(object):
         if reactor is None:
             reactor = default_reactor
         self.reactor = reactor
+        self._download_in_subprocess = bool(
+            getFeatureFlag('buildmaster.download_in_subprocess'))
         if pool is None:
             pool = default_pool(reactor=reactor)
         self.pool = pool
+        if self._download_in_subprocess:
+            if process_pool is None:
+                process_pool = default_process_pool(reactor=reactor)
+            self.process_pool = process_pool
+        else:
+            self.process_pool = None
 
     @classmethod
     def makeBuilderSlave(cls, builder_url, vm_host, timeout, reactor=None,
-                         proxy=None, pool=None):
+                         proxy=None, pool=None, process_pool=None):
         """Create and return a `BuilderSlave`.
 
         :param builder_url: The URL of the slave buildd machine,
@@ -191,6 +250,7 @@ class BuilderSlave(object):
         :param reactor: Used by tests to override the Twisted reactor.
         :param proxy: Used By tests to override the xmlrpc.Proxy.
         :param pool: Used by tests to override the HTTPConnectionPool.
+        :param process_pool: Used by tests to override the ProcessPool.
         """
         rpc_url = urlappend(builder_url.encode('utf-8'), 'rpc')
         if proxy is None:
@@ -199,7 +259,9 @@ class BuilderSlave(object):
             server_proxy.queryFactory = QuietQueryFactory
         else:
             server_proxy = proxy
-        return cls(server_proxy, builder_url, vm_host, timeout, reactor, pool)
+        return cls(
+            server_proxy, builder_url, vm_host, timeout, reactor,
+            pool=pool, process_pool=process_pool)
 
     def _with_timeout(self, d, timeout=None):
         return cancel_on_timeout(d, timeout or self.timeout, self.reactor)
@@ -251,11 +313,18 @@ class BuilderSlave(object):
         """
         file_url = self.getURL(sha_sum)
         try:
-            response = yield Agent(self.reactor, pool=self.pool).request(
-                "GET", file_url)
-            finished = defer.Deferred()
-            response.deliverBody(FileWritingProtocol(finished, path_to_write))
-            yield finished
+            if self._download_in_subprocess:
+                yield self.process_pool.doWork(
+                    DownloadCommand,
+                    file_url=file_url, path_to_write=path_to_write,
+                    timeout=self.timeout)
+            else:
+                response = yield Agent(self.reactor, pool=self.pool).request(
+                    "GET", file_url)
+                finished = defer.Deferred()
+                response.deliverBody(
+                    FileWritingProtocol(finished, path_to_write))
+                yield finished
             if logger is not None:
                 logger.info("Grabbed %s" % file_url)
         except Exception as e:
