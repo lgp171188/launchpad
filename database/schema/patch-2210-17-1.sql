@@ -3,11 +3,12 @@
 
 SET client_min_messages=ERROR;
 
-CREATE INDEX gitrepository__status__idx ON GitRepository (status);
+-- Status "2" is GitRepositoryStatus.AVAILABLE
+UPDATE GitRepository SET status = 2 WHERE status IS NULL;
 
 ALTER TABLE GitRepository
-    ALTER COLUMN status
-        SET DEFAULT 1,
     ALTER COLUMN status SET NOT NULL;
+
+CREATE INDEX gitrepository__status__idx ON GitRepository (status);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 17, 1);
