@@ -93,13 +93,24 @@ class IGitAPI(Interface):
             or an `Unauthorized` fault for unauthorized push attempts.
         """
 
-    def confirmRepoCreation(translated_path):
+    def confirmRepoCreation(repository_id):
         """Confirm that repository creation.
 
         When code hosting finishes creating the repository locally,
         it should call back this method to confirm that the repository was
         created, and Launchpad should make the repository available for end
         users.
+
+        :param repository_id: The database ID of the repository, provided by
+                    translatePath call when repo creation is necessary.
+        """
+
+    def abortRepoCreation(repository_id):
+        """Abort the creation of a repository, removing it from database.
+
+        When code hosting fails to create a repository locally, it should
+        call back this method to indicate that the operation failed and the
+        repository should be removed from Launchpad's database.
 
         :param repository_id: The database ID of the repository, provided by
                     translatePath call when repo creation is necessary.
