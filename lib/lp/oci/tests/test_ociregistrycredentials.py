@@ -140,7 +140,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_new(self):
         owner = self.factory.makePerson()
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             owner=owner,
@@ -152,7 +152,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_new_with_existing(self):
         owner = self.factory.makePerson()
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         getUtility(IOCIRegistryCredentialsSet).new(
             owner=owner,
@@ -165,7 +165,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_getOrCreate_existing(self):
         owner = self.factory.makePerson()
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         new = getUtility(IOCIRegistryCredentialsSet).new(
             owner=owner,
@@ -181,7 +181,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_getOrCreate_new(self):
         owner = self.factory.makePerson()
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         new = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
             owner=owner,
