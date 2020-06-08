@@ -12,6 +12,7 @@ from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
 from six.moves.urllib.parse import quote
+from storm.store import Store
 from testtools.matchers import (
     Equals,
     IsInstance,
@@ -29,6 +30,7 @@ from lp.app.enums import InformationType
 from lp.buildmaster.enums import BuildStatus
 from lp.code.enums import (
     GitGranteeType,
+    GitRepositoryStatus,
     GitRepositoryType,
     TargetRevisionControlSystems,
     )
@@ -44,6 +46,7 @@ from lp.code.interfaces.gitrepository import (
     )
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.enums import TeamMembershipPolicy
+from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.macaroons.interfaces import (
@@ -279,6 +282,32 @@ class TestGitAPIMixin:
             {"path": removeSecurityProxy(repository).getInternalPath(),
              "writable": writable, "trailing": trailing, "private": private},
             translation)
+
+    def assertConfirmsRepoCreation(self, requester, git_repository,
+                                   can_authenticate=True):
+        auth_params = _make_auth_params(
+            requester, can_authenticate=can_authenticate)
+        request_id = auth_params["request-id"]
+        result = self.assertDoesNotFault(
+            request_id, "confirmRepoCreation", git_repository.id, auth_params)
+        login(ANONYMOUS)
+        self.assertIsNone(result)
+        Store.of(git_repository).invalidate(git_repository)
+        self.assertEqual(git_repository.status, GitRepositoryStatus.AVAILABLE)
+
+    def assertConfirmRepoCreationFails(
+            self, failure, requester, git_repository, can_authenticate=True):
+        auth_params = _make_auth_params(
+            requester, can_authenticate=can_authenticate)
+        request_id = auth_params["request-id"]
+        original_status = git_repository.status
+        self.assertFault(
+            failure, request_id, "confirmRepoCreation", git_repository.id,
+            auth_params)
+        store = Store.of(git_repository)
+        if store:
+            store.invalidate(git_repository)
+        self.assertEqual(original_status, git_repository.status)
 
     def assertCreates(self, requester, path, can_authenticate=False,
                       private=False):
@@ -659,6 +688,29 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     """Tests for the implementation of `IGitAPI`."""
 
     layer = LaunchpadFunctionalLayer
+
+    def test_confirm_git_repository_creation(self):
+        owner = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
+        repo.status = GitRepositoryStatus.CREATING
+        self.assertConfirmsRepoCreation(owner, repo)
+
+    def test_only_owner_can_confirm_git_repository_creation(self):
+        requester = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
+        repo.status = GitRepositoryStatus.CREATING
+
+        expected_failure = faults.GitRepositoryNotFound(str(repo.id))
+        self.assertConfirmRepoCreationFails(expected_failure, requester, repo)
+
+    def test_confirm_git_repository_creation_of_non_existing_repository(self):
+        requester = self.factory.makePerson()
+        repo = mock.Mock()
+        repo.id = 99999
+
+        expected_failure = faults.GitRepositoryNotFound('99999')
+        self.assertConfirmRepoCreationFails(expected_failure, requester, repo)
 
     def test_translatePath_cannot_translate(self):
         # Sometimes translatePath will not know how to translate a path.

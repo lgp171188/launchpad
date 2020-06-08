@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of the XML-RPC APIs for Git."""
@@ -31,6 +31,7 @@ from lp.app.validators import LaunchpadValidationError
 from lp.code.enums import (
     GitGranteeType,
     GitPermissionType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.errors import (
@@ -69,6 +70,7 @@ from lp.registry.interfaces.product import (
     NoSuchProduct,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.services.database.interfaces import IStore
 from lp.services.macaroons.interfaces import (
     IMacaroonIssuer,
     NO_USER,
@@ -583,4 +585,46 @@ class GitAPI(LaunchpadXMLRPCView):
                 "checkRefPermissions succeeded: %s",
                 [(ref_path.data, permissions)
                  for ref_path, permissions in result])
+        return result
+
+    def _confirmRepoCreation(self, requester, repository_id, auth_params):
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
+        # We remove the security proxy here because we are in a controlled,
+        # internal environment, and "status" is a read-only attribute for
+        # users.
+        naked_repo = removeSecurityProxy(
+            getUtility(IGitLookup).get(repository_id))
+        if naked_repo is None:
+            raise faults.GitRepositoryNotFound(str(repository_id))
+
+        verified = self._verifyAuthParams(requester, naked_repo, auth_params)
+        if verified is not None and verified.user is NO_USER:
+            if not _can_internal_issuer_write(verified):
+                raise faults.Unauthorized()
+
+        # Only the repository owner can mark it as "available".
+        if requester != naked_repo.owner:
+            raise faults.GitRepositoryNotFound(str(repository_id))
+
+        naked_repo.status = GitRepositoryStatus.AVAILABLE
+        IStore(naked_repo).flush()
+        transaction.commit()
+
+    def confirmRepoCreation(self, repository_id, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: confirmRepoCreation('%s')", repository_id)
+        try:
+            result = run_with_login(
+                requester_id, self._confirmRepoCreation,
+                repository_id, auth_params)
+        except Exception as e:
+            result = e
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("confirmRepoCreation failed: %r", result)
+        else:
+            logger.info("confirmRepoCreation succeeded: %s" % result)
         return result
