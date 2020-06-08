@@ -532,9 +532,9 @@ class ObjectFactory(
         elif rcstype == 'cvs':
             assert url is None
             if cvs_root is None:
-                cvs_root = self.getUniqueString()
+                cvs_root = self.getUniqueUnicode()
             if cvs_module is None:
-                cvs_module = self.getUniqueString()
+                cvs_module = self.getUniqueUnicode()
         elif rcstype == 'git':
             assert cvs_root is cvs_module is None
             if url is None:
@@ -2526,7 +2526,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         The machine will be in the OFFLINE state."""
         if hostname is None:
-            hostname = self.getUniqueString('machine-')
+            hostname = self.getUniqueUnicode('machine-')
         if set_online:
             state = CodeImportMachineState.ONLINE
         else:

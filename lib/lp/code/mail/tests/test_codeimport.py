@@ -3,6 +3,8 @@
 
 """Tests for code import related mailings"""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from email import message_from_string
 import textwrap
 
