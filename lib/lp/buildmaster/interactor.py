@@ -11,7 +11,9 @@ __all__ = [
 from collections import namedtuple
 import logging
 import os.path
+import sys
 import tempfile
+import traceback
 
 from six.moves.urllib.parse import urlparse
 import transaction
@@ -236,44 +238,38 @@ class BuilderSlave(object):
         """Get the URL for a file on the builder with a given SHA-1."""
         return urlappend(self._file_cache_url, sha1).encode('utf8')
 
-    def getFile(self, sha_sum, file_to_write, logger=None):
+    @defer.inlineCallbacks
+    def getFile(self, sha_sum, path_to_write, logger=None):
         """Fetch a file from the builder.
 
         :param sha_sum: The sha of the file (which is also its name on the
             builder)
-        :param file_to_write: A file name or file-like object to write
-            the file to
+        :param path_to_write: A file name to write the file to
         :param logger: An optional logger.
         :return: A Deferred that calls back when the download is done, or
             errback with the error string.
         """
         file_url = self.getURL(sha_sum)
-        d = Agent(self.reactor, pool=self.pool).request("GET", file_url)
-
-        def got_response(response):
+        try:
+            response = yield Agent(self.reactor, pool=self.pool).request(
+                "GET", file_url)
             finished = defer.Deferred()
-            response.deliverBody(FileWritingProtocol(finished, file_to_write))
-            return finished
-
-        def log_success(result):
-            logger.info("Grabbed %s" % file_url)
-            return result
-
-        def log_failure(failure):
-            logger.info("Failed to grab %s: %s\n%s" % (
-                file_url, failure.getErrorMessage(), failure.getTraceback()))
-            return failure
-
-        d.addCallback(got_response)
-        if logger is not None:
-            d.addCallbacks(log_success, log_failure)
-        return d
+            response.deliverBody(FileWritingProtocol(finished, path_to_write))
+            yield finished
+            if logger is not None:
+                logger.info("Grabbed %s" % file_url)
+        except Exception as e:
+            if logger is not None:
+                logger.info("Failed to grab %s: %s\n%s" % (
+                    file_url, e,
+                    " ".join(traceback.format_exception(*sys.exc_info()))))
+            raise
 
     def getFiles(self, files, logger=None):
         """Fetch many files from the builder.
 
         :param files: A sequence of pairs of the builder file name to
-            retrieve and the file name or file object to write the file to.
+            retrieve and the file name to write the file to.
         :param logger: An optional logger.
 
         :return: A DeferredList that calls back when the download is done.

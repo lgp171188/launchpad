@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An `IBuildFarmJobBehaviour` for `TranslationTemplatesBuild`.
@@ -86,9 +86,8 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
             return defer.succeed(None)
 
         fd, fname = tempfile.mkstemp()
-        tarball_file = os.fdopen(fd, 'wb')
-        d = self._slave.getFile(slave_filename, tarball_file)
-        # getFile will close the file object.
+        os.close(fd)
+        d = self._slave.getFile(slave_filename, fname)
         return d.addCallback(lambda ignored: fname)
 
     def _uploadTarball(self, branch, tarball, logger):
