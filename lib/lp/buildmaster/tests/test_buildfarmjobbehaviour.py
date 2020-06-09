@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for BuildFarmJobBehaviourBase."""
@@ -317,12 +317,10 @@ class TestVerifySuccessfulBuildMixin:
 
 
 class TestHandleStatusMixin:
-    """Tests for `IPackageBuild`s handleStatus method.
-
-    This should be run with a Trial TestCase.
-    """
+    """Tests for `IPackageBuild`s handleStatus method."""
 
     layer = LaunchpadZopelessLayer
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def makeBuild(self):
         """Allow classes to override the build with which the test runs."""
