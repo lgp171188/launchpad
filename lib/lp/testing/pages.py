@@ -38,10 +38,7 @@ import six
 from six.moves.urllib.parse import urljoin
 from soupsieve import escape as css_escape
 import transaction
-from webtest import (
-    forms,
-    TestRequest,
-    )
+from webtest import TestRequest
 from zope.app.wsgi.testlayer import (
     FakeResponse as _FakeResponse,
     NotInBrowserLayer,
@@ -102,11 +99,6 @@ SAMPLEDATA_ACCESS_SECRETS = {
     u'salgado-change-anything': u'test',
     u'nopriv-read-nonprivate': u'mystery',
     }
-
-
-# Teach WebTest about <input type="search" />.
-# https://github.com/Pylons/webtest/pull/219
-forms.Field.classes['search'] = forms.Text
 
 
 class FakeResponse(_FakeResponse):
