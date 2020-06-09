@@ -27,6 +27,7 @@ __all__ = [
     'PersonIndexView',
     'PersonKarmaView',
     'PersonLanguagesView',
+    'PersonLiveFSView',
     'PersonNavigation',
     'PersonOAuthTokensView',
     'PersonOverviewMenu',
@@ -3618,6 +3619,28 @@ class PersonOAuthTokensView(LaunchpadView):
                 "revoked already?" % consumer.key)
         self.request.response.redirect(
             canonical_url(self.context, view_name='+oauth-tokens'))
+
+
+class PersonLiveFSView(LaunchpadView):
+    """Default view for the list of live filesystems owned by a person."""
+    page_title = 'LiveFS'
+
+    @property
+    def label(self):
+        return 'Live filesystems for %s' % self.context.display_name
+
+    @property
+    def livefses(self):
+        livefses = getUtility(ILiveFSSet).getByPerson(self.context)
+        return livefses.order_by('name')
+
+    @property
+    def livefses_navigator(self):
+        return BatchNavigator(self.livefses, self.request)
+
+    @cachedproperty
+    def count(self):
+        return self.livefses_navigator.batch.total()
 
 
 class PersonTimeZoneForm(Interface):
