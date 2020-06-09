@@ -92,7 +92,6 @@ from lp.testing.layers import (
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
-    find_main_content,
     find_tag_by_id,
     setupBrowserForUser,
     )
@@ -1298,7 +1297,7 @@ class TestPersonLiveFSView(BrowserTestCase):
                     registrant=self.person, owner=self.person)
                 for _ in range(count)]
 
-    def test_displays_live_filesystem(self):
+    def test_displays_livefs(self):
         livefs = self.factory.makeLiveFS(
             registrant=self.person, owner=self.person)
         view = create_initialized_view(
@@ -1321,34 +1320,106 @@ class TestPersonLiveFSView(BrowserTestCase):
             self.assertThat(view.render(), link_match)
             self.assertThat(view.render(), date_created_match)
 
-    def test_displays_no_live_filesystems(self):
-        browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
-        main_text = extract_text(find_main_content(browser.contents))
+    def test_displays_no_livefs(self):
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
+        no_livefs_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'No livefs', 'p',
+                text='There are no live filesystems for %s'
+                % self.person.display_name))
         with person_logged_in(self.person):
-            self.assertIn(
-                "There are no live filesystems for %s"
-                % self.person.name,
-                main_text)
+            self.assertThat(view.render(), no_livefs_match)
 
-    def test_paginates_live_filesystems(self):
+    def test_paginates_livefs(self):
         batch_size = 5
         self.pushConfig("launchpad", default_batch_size=batch_size)
         livefs = self.makeLiveFS(10)
-        browser = self.getViewBrowser(self.person, "+livefs", user=self.person)
-        main_text = extract_text(find_main_content(browser.contents))
-        no_wrap_main_text = main_text.replace('\n', ' ')
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
+        no_livefs_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Top livefs paragraph', 'strong',
+                text="10"))
+        first_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Navigation first', 'span',
+                attrs={'class': 'first inactive'},
+                text="First"))
+        previous_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Navigation previous', 'span',
+                attrs={'class': 'previous inactive'},
+                text="Previous"))
         with person_logged_in(self.person):
-            self.assertIn(
-                "There are 10 live filesystems registered for %s"
-                % self.person.name,
-                no_wrap_main_text)
-            self.assertIn("1 → 5 of 10 results", no_wrap_main_text)
-            self.assertIn("First • Previous • Next • Last", no_wrap_main_text)
+            self.assertThat(view.render(), no_livefs_match)
+            self.assertThat(view.render(), first_match)
+            self.assertThat(view.render(), previous_match)
+            self.assertThat(view.render(), soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    soupmatchers.Tag(
+                        "next element", "a",
+                        attrs={"id": "lower-batch-nav-batchnav-next"}),
+                    soupmatchers.Tag(
+                        "next link", "strong",
+                        text='Next'))))
+            self.assertThat(view.render(), soupmatchers.HTMLContains(
+                    soupmatchers.Tag(
+                        "last element", "a",
+                        attrs={"id": "lower-batch-nav-batchnav-last"},
+                        text='Last')))
 
             # Assert we're listing the first set of live filesystems
             items = sorted(livefs, key=attrgetter('name'))
             for lfs in items[:batch_size]:
-                self.assertIn(lfs.name, main_text)
+                expected_url = "/~%s/+livefs/%s/%s/%s" % (
+                    lfs.owner.name, lfs.distro_series.distribution.name,
+                    lfs.distro_series.name, lfs.name)
+                link_match = soupmatchers.HTMLContains(
+                    soupmatchers.Tag(
+                        'Livefs name link', 'a',
+                        attrs={'href': expected_url},
+                        text=lfs.name))
+                self.assertThat(view.render(), link_match)
+
+    def test_displays_livefs_only_for_owner(self):
+        livefs = self.factory.makeLiveFS(
+            registrant=self.person, owner=self.person)
+        different_owner = self.factory.makePerson(
+            name="different-person", displayname="Different Person")
+        livefs_different_owner = self.factory.makeLiveFS(
+            registrant=different_owner, owner=different_owner)
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
+        expected_url = "/~%s/+livefs/%s/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name)
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs name link', 'a',
+                attrs={'href': expected_url},
+                text=livefs.name))
+        date_formatter = DateTimeFormatterAPI(livefs.date_created)
+        date_created_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs date created', 'td',
+                text='%s' % date_formatter.displaydate()))
+
+        different_owner_url = "/~%s/+livefs/%s/%s/%s" % (
+                livefs_different_owner.owner.name,
+                livefs_different_owner.distro_series.distribution.name,
+                livefs_different_owner.distro_series.name,
+                livefs_different_owner.name)
+        different_owner_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs name link', 'a',
+                attrs={'href': different_owner_url},
+                text=livefs_different_owner.name))
+
+        with person_logged_in(self.person):
+            self.assertThat(view.render(), link_match)
+            self.assertThat(view.render(), date_created_match)
+            self.assertNotIn(different_owner_match, view.render())
 
 
 class TestPersonRelatedPackagesFailedBuild(TestCaseWithFactory):

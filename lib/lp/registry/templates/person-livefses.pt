@@ -14,18 +14,12 @@
 
   <div metal:fill-slot="main">
       <div class="main-portlet">
-        <p tal:define="count view/count"
-           tal:condition="count">
-          <span tal:condition="python: count == 1">
-            There is <strong>1</strong> live filesystem</span>
-          <span tal:condition="python: count != 1">
-            There are <strong tal:content="count" /> live filesystems
-          </span>
+        <p tal:define="count view/count" tal:condition="count">
+          <span tal:condition="python: count == 1">There is <strong>1</strong> live filesystem</span>
+          <span tal:condition="python: count != 1">There are <strong tal:content="count"/> live filesystems</span>
           registered for <tal:owner replace="context/display_name" />.
         </p>
-        <p tal:condition="not: view/count">
-           There are no live filesystems for <tal:owner replace="context/display_name" />.
-        </p>
+        <p tal:condition="not: view/count">There are no live filesystems for <tal:owner replace="context/display_name"/></p>
       </div>
 
       <table class="listing" id="livefses_list" tal:condition="view/count">
@@ -45,8 +39,7 @@
         </tbody>
       </table>
 
-       <tal:navigation
-          replace="structure view/livefses_navigator/@@+navigation-links-lower" />
+      <tal:navigation replace="structure view/livefses_navigator/@@+navigation-links-lower" />
   </div>
 
 </body>
