@@ -97,7 +97,7 @@ class FileUploadClient:
         try:
             self.state.s = socket.socket(AF_INET, SOCK_STREAM)
             self.state.s.connect((self.upload_host, self.upload_port))
-            self.state.f = self.state.s.makefile('w+', 0)
+            self.state.f = self.state.s.makefile('rwb', 0)
         except socket.error as x:
             raise UploadFailed(
                 '[%s:%s]: %s' % (self.upload_host, self.upload_port, x))
@@ -109,11 +109,12 @@ class FileUploadClient:
 
     def _checkError(self):
         if select([self.state.s], [], [], 0)[0]:
-            response = self.state.f.readline().strip()
+            response = six.ensure_str(
+                self.state.f.readline().strip(), errors='replace')
             raise UploadFailed('Server said: ' + response)
 
     def _sendLine(self, line, check_for_error_responses=True):
-        self.state.f.write(line + '\r\n')
+        self.state.f.write(six.ensure_binary(line + '\r\n'))
         if check_for_error_responses:
             self._checkError()
 
@@ -207,7 +208,8 @@ class FileUploadClient:
             self.state.f.flush()
 
             # Read response
-            response = self.state.f.readline().strip()
+            response = six.ensure_str(
+                self.state.f.readline().strip(), errors='replace')
             if response != '200':
                 raise UploadFailed('Server said: ' + response)
 
@@ -269,7 +271,8 @@ class FileUploadClient:
             self.state.f.flush()
 
             # Read response
-            response = self.state.f.readline().strip()
+            response = six.ensure_str(
+                self.state.f.readline().strip(), errors='replace')
             if not response.startswith('200'):
                 raise UploadFailed(
                     'Could not upload %s. Server said: %s' % (name, response))
