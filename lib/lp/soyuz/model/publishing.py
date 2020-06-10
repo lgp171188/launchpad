@@ -163,7 +163,8 @@ class ArchivePublisherBase:
             # are pending, don't do anything for the ones
             # already published (usually when we use -C
             # publish-distro.py option)
-            self.status = PackagePublishingStatus.PUBLISHED
+            if self.status == PackagePublishingStatus.PENDING:
+                self.status = PackagePublishingStatus.PUBLISHED
             self.datepublished = UTC_NOW
 
     def publish(self, diskpool, log):
