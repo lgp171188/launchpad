@@ -102,6 +102,7 @@ Let's download it and make sure the contents look ok.
 On another occasion, the user requests just Catalan translation.  The
 queue is initially empty.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> def render_request(request):
     ...     if request.pofile is None:
     ...         return request.potemplate.name
@@ -113,7 +114,7 @@ queue is initially empty.
     >>> def print_queue():
     ...     requests = [
     ...         render_request(request)
-    ...         for request in POExportRequest.select()]
+    ...         for request in IStore(POExportRequest).find(POExportRequest)]
     ...     for request in sorted(requests):
     ...         print(request)
     >>> print_queue()
@@ -161,7 +162,7 @@ Only the Spanish request is new, and that goes into the queue.
     pmount:es
 
     >>> # Clean up the queue again.
-    >>> for request in POExportRequest.select():
+    >>> for request in IStore(POExportRequest).find(POExportRequest):
     ...     request.destroySelf()
 
 
