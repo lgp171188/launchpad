@@ -315,14 +315,15 @@ class SlaveTestHelpers(fixtures.Fixture):
                 lambda: open(tachandler.logfile, 'r').readlines()))
         return tachandler
 
-    def getClientSlave(self, reactor=None, proxy=None, pool=None):
+    def getClientSlave(self, reactor=None, proxy=None,
+                       pool=None, process_pool=None):
         """Return a `BuilderSlave` for use in testing.
 
         Points to a fixed URL that is also used by `BuilddSlaveTestSetup`.
         """
         return BuilderSlave.makeBuilderSlave(
             self.base_url, 'vmhost', config.builddmaster.socket_timeout,
-            reactor=reactor, proxy=proxy, pool=pool)
+            reactor=reactor, proxy=proxy, pool=pool, process_pool=process_pool)
 
     def makeCacheFile(self, tachandler, filename, contents=b'something'):
         """Make a cache file available on the remote slave.

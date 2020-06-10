@@ -37,6 +37,7 @@ from lp.buildmaster.interactor import (
     BuilderInteractor,
     BuilderSlave,
     extract_vitals_from_db,
+    shut_down_default_process_pool,
     )
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
@@ -116,6 +117,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         hoary = ubuntu.getSeries('hoary')
         self.test_publisher.setUpDefaultDistroSeries(hoary)
         self.test_publisher.addFakeChroots(db_only=True)
+        self.addCleanup(shut_down_default_process_pool)
 
     def _resetBuilder(self, builder):
         """Reset the given builder and its job."""
@@ -653,6 +655,10 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
+    def setUp(self):
+        super(TestSlaveScannerWithLibrarian, self).setUp()
+        self.addCleanup(shut_down_default_process_pool)
+
     @defer.inlineCallbacks
     def test_end_to_end(self):
         # Test that SlaveScanner.scan() successfully finds, dispatches,
@@ -884,6 +890,10 @@ class TestSlaveScannerWithoutDB(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest
 
+    def setUp(self):
+        super(TestSlaveScannerWithoutDB, self).setUp()
+        self.addCleanup(shut_down_default_process_pool)
+
     def getScanner(self, builder_factory=None, interactor=None, slave=None,
                    behaviour=None):
         if builder_factory is None:
@@ -1079,6 +1089,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         builder_name = BOB_THE_BUILDER_NAME
         self.builder = getUtility(IBuilderSet)[builder_name]
         self.builder.virtualized = True
+        self.addCleanup(shut_down_default_process_pool)
 
     @property
     def vitals(self):

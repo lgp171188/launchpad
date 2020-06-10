@@ -19,6 +19,7 @@ import fixtures
 from pymacaroons import Macaroon
 import pytz
 from six.moves.urllib_parse import urlsplit
+from testscenarios import load_tests_apply_scenarios
 from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,
@@ -844,3 +845,6 @@ class TestVerifySuccessfulBuildForSnapBuild(
 class TestHandleStatusForSnapBuild(
     MakeSnapBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with Snap builds."""
+
+
+load_tests = load_tests_apply_scenarios
