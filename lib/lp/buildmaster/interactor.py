@@ -313,6 +313,17 @@ class BuilderSlave(object):
         """
         file_url = self.getURL(sha_sum)
         try:
+            # Select download behaviour according to the
+            # buildmaster.download_in_subprocess feature rule: if enabled,
+            # defer the download to a subprocess; if disabled, download the
+            # file asynchronously in Twisted.  We've found that in practice
+            # the asynchronous approach only works well up to a bit over a
+            # hundred builders, and beyond that it struggles to keep up with
+            # incoming packets in time to avoid TCP timeouts (perhaps
+            # because of too much synchronous work being done on the reactor
+            # thread).  The exact reason for this is as yet unproven, so we
+            # use a feature rule to allow us to try out different
+            # approaches.
             if self._download_in_subprocess:
                 yield self.process_pool.doWork(
                     DownloadCommand,
