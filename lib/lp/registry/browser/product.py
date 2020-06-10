@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for products."""
@@ -274,6 +274,11 @@ class ProductNavigation(
     @stepthrough('+commercialsubscription')
     def traverse_commercialsubscription(self, name):
         return self.context.commercial_subscription
+
+    @stepthrough('+series')
+    def traverse_series(self, name):
+        series = self.context.getSeries(name)
+        return self.redirectSubTree(canonical_url(series), status=303)
 
     def traverse(self, name):
         return self.context.getSeries(name)
