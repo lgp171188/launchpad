@@ -52,7 +52,7 @@
     </tal:view>
 
     <tal:view condition="view/private">
-      <meta name="referrer" content="origin-when-cross-origin">
+      <meta name="referrer" content="origin-when-cross-origin"/>
     </tal:view>
 
     <metal:page-javascript

@@ -227,3 +227,26 @@ class TestBaseLayout(TestCaseWithFactory):
         content = extract_text(find_tag_by_id(view(), 'maincontent'))
         self.assertNotIn(
             'The information in this page is not shared with you.', content)
+
+    def test_referrer_policy_set_private_view(self):
+        owner = self.factory.makePerson()
+        with person_logged_in(owner):
+            team = self.factory.makeTeam(
+                displayname='Waffles', owner=owner,
+                visibility=PersonVisibility.PRIVATE)
+            archive = self.factory.makeArchive(private=True, owner=team)
+            archive.newSubscription(self.user, registrant=owner)
+        with person_logged_in(self.user):
+            view = self.makeTemplateView('main_side', context=team)
+            content = BeautifulSoup(view())
+        referrer = content.find('meta', content="origin-when-cross-origin")
+        self.assertIsNotNone(referrer)
+        self.assertEqual(referrer.get('content'), 'origin-when-cross-origin')
+        self.assertEqual(referrer.get('name'), 'referrer')
+
+    def test_referrer_policy_set_public_view(self):
+        view = self.makeTemplateView('main_side')
+        content = BeautifulSoup(view())
+        referrer = content.find('meta', content="origin-when-cross-origin")
+        self.assertIsNone(referrer)
+
