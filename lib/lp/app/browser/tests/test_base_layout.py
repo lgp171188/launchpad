@@ -20,6 +20,7 @@ from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    login,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -229,17 +230,17 @@ class TestBaseLayout(TestCaseWithFactory):
             'The information in this page is not shared with you.', content)
 
     def test_referrer_policy_set_private_view(self):
+        login('admin@canonical.com')
         owner = self.factory.makePerson()
         with person_logged_in(owner):
             team = self.factory.makeTeam(
-                displayname='Waffles', owner=owner,
+                owner=owner,
                 visibility=PersonVisibility.PRIVATE)
-            archive = self.factory.makeArchive(private=True, owner=team)
-            archive.newSubscription(self.user, registrant=owner)
-        with person_logged_in(self.user):
-            view = self.makeTemplateView('main_side', context=team)
-            content = BeautifulSoup(view())
-        referrer = content.find('meta', content="origin-when-cross-origin")
+        view = self.makeTemplateView('main_side', context=team)
+        content = BeautifulSoup(view())
+        referrer = content.find('meta',
+                                {'name': 'referrer',
+                                 'content': 'origin-when-cross-origin'})
         self.assertIsNotNone(referrer)
         self.assertEqual(referrer.get('content'), 'origin-when-cross-origin')
         self.assertEqual(referrer.get('name'), 'referrer')
