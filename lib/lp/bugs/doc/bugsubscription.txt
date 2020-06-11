@@ -365,11 +365,12 @@ INotificationRecipientSet instance for us:
 You can query for the addresses and reasons:
 
     >>> addresses = recipients.getEmails()
-    >>> [(address, recipients.getReason(address)[1]) for address in addresses]
-    [('foo.bar@canonical.com', 'Subscriber'),
-     ('mark@example.com', 'Subscriber'),
-     ('no-priv@canonical.com', u'Subscriber (linux-source-2.6.15 in Ubuntu)'),
-     ('test@canonical.com', 'Assignee')]
+    >>> for address in addresses:
+    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    foo.bar@canonical.com: Subscriber
+    mark@example.com: Subscriber
+    no-priv@canonical.com: Subscriber (linux-source-2.6.15 in Ubuntu)
+    test@canonical.com: Assignee
 
 If IBug.getBugNotificationRecipients() is passed a  BugNotificationLevel
 in its `level` parameter, only structural subscribers with that
@@ -378,10 +379,11 @@ notification level or higher will be returned.
     >>> recipients = linux_source_bug.getBugNotificationRecipients(
     ...     level=BugNotificationLevel.COMMENTS)
     >>> addresses = recipients.getEmails()
-    >>> [(address, recipients.getReason(address)[1]) for address in addresses]
-    [('foo.bar@canonical.com', 'Subscriber'),
-     ('mark@example.com', 'Subscriber'),
-     ('test@canonical.com', 'Assignee')]
+    >>> for address in addresses:
+    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    foo.bar@canonical.com: Subscriber
+    mark@example.com: Subscriber
+    test@canonical.com: Assignee
 
 When Sample Person is unsubscribed from linux_source_bug, they are no
 longer included in the result of getBugNotificationRecipients() for
@@ -391,10 +393,11 @@ the COMMENTS level...
     >>> recipients = linux_source_bug.getBugNotificationRecipients(
     ...     level=BugNotificationLevel.COMMENTS)
     >>> addresses = recipients.getEmails()
-    >>> [(address, recipients.getReason(address)[1]) for address in addresses]
-    [('foo.bar@canonical.com', 'Subscriber'),
-     ('mark@example.com', 'Subscriber'),
-     ('test@canonical.com', 'Assignee')]
+    >>> for address in addresses:
+    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    foo.bar@canonical.com: Subscriber
+    mark@example.com: Subscriber
+    test@canonical.com: Assignee
 
 ...but remains included for the level LIFECYCLE.
 
@@ -402,11 +405,12 @@ the COMMENTS level...
     >>> recipients = linux_source_bug.getBugNotificationRecipients(
     ...     level=BugNotificationLevel.LIFECYCLE)
     >>> addresses = recipients.getEmails()
-    >>> [(address, recipients.getReason(address)[1]) for address in addresses]
-    [('foo.bar@canonical.com', 'Subscriber'),
-     ('mark@example.com', 'Subscriber'),
-     ('no-priv@canonical.com', u'Subscriber (linux-source-2.6.15 in Ubuntu)'),
-     ('test@canonical.com', 'Assignee')]
+    >>> for address in addresses:
+    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    foo.bar@canonical.com: Subscriber
+    mark@example.com: Subscriber
+    no-priv@canonical.com: Subscriber (linux-source-2.6.15 in Ubuntu)
+    test@canonical.com: Assignee
 
 To find out if someone is already directly subscribed to a bug, call
 IBug.isSubscribed, passing in an IPerson:
