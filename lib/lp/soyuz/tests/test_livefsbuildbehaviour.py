@@ -11,6 +11,7 @@ from datetime import datetime
 import os.path
 
 import pytz
+from testscenarios import load_tests_apply_scenarios
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
@@ -342,3 +343,6 @@ class TestVerifySuccessfulBuildForLiveFSBuild(
 class TestHandleStatusForLiveFSBuild(
     MakeLiveFSBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with LiveFS builds."""
+
+
+load_tests = load_tests_apply_scenarios

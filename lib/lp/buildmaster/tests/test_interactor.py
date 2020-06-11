@@ -18,6 +18,10 @@ import tempfile
 from lpbuildd.slave import BuilderStatus
 from lpbuildd.tests.harness import BuilddSlaveTestSetup
 from six.moves import xmlrpc_client
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from testtools.matchers import (
     ContainsAll,
     HasLength,
@@ -49,6 +53,8 @@ from lp.buildmaster.interactor import (
     BuilderSlave,
     extract_vitals_from_db,
     LimitedHTTPConnectionPool,
+    make_download_process_pool,
+    shut_down_default_process_pool,
     )
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
@@ -67,6 +73,7 @@ from lp.buildmaster.tests.mock_slaves import (
     WaitingSlave,
     )
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.twistedsupport.testing import TReqFixture
 from lp.services.twistedsupport.treq import check_status
 from lp.soyuz.model.binarypackagebuildbehaviour import (
@@ -122,6 +129,10 @@ class MockBuilderFactory(BaseBuilderFactory):
 class TestBuilderInteractor(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+
+    def setUp(self):
+        super(TestBuilderInteractor, self).setUp()
+        self.addCleanup(shut_down_default_process_pool)
 
     def test_extractBuildStatus_baseline(self):
         # extractBuildStatus picks the name of the build status out of a
@@ -478,6 +489,7 @@ class TestSlave(TestCase):
     def setUp(self):
         super(TestSlave, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.addCleanup(shut_down_default_process_pool)
 
     def test_abort(self):
         slave = self.slave_helper.getClientSlave()
@@ -679,6 +691,7 @@ class TestSlaveTimeouts(TestCase):
         self.proxy = DeadProxy("url")
         self.slave = self.slave_helper.getClientSlave(
             reactor=self.clock, proxy=self.proxy)
+        self.addCleanup(shut_down_default_process_pool)
 
     def assertCancelled(self, d, timeout=None):
         self.clock.advance((timeout or config.builddmaster.socket_timeout) + 1)
@@ -719,6 +732,7 @@ class TestSlaveConnectionTimeouts(TestCase):
         super(TestSlaveConnectionTimeouts, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
+        self.addCleanup(shut_down_default_process_pool)
 
     def tearDown(self):
         # We need to remove any DelayedCalls that didn't actually get called.
@@ -744,8 +758,13 @@ class TestSlaveConnectionTimeouts(TestCase):
         return assert_fails_with(d, defer.CancelledError)
 
 
-class TestSlaveWithLibrarian(TestCaseWithFactory):
+class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
     """Tests that need more of Launchpad to run."""
+
+    scenarios = [
+        ('download_in_twisted', {'download_in_subprocess': False}),
+        ('download_in_subprocess', {'download_in_subprocess': True}),
+        ]
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
@@ -753,7 +772,12 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
 
     def setUp(self):
         super(TestSlaveWithLibrarian, self).setUp()
+        if self.download_in_subprocess:
+            self.useFixture(FeatureFixture(
+                {'buildmaster.download_in_subprocess': 'on'}))
         self.slave_helper = self.useFixture(SlaveTestHelpers())
+        if self.download_in_subprocess:
+            self.addCleanup(shut_down_default_process_pool)
 
     def test_ensurepresent_librarian(self):
         # ensurepresent, when given an http URL for a file will download the
@@ -835,10 +859,17 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
     def test_getFiles_open_connections(self):
         # getFiles honours the configured limit on active download
         # connections.
-        pool = LimitedHTTPConnectionPool(default_reactor, 2)
         contents = [self.factory.getUniqueString() for _ in range(10)]
         self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave(pool=pool)
+        pool = LimitedHTTPConnectionPool(default_reactor, 2)
+        if self.download_in_subprocess:
+            process_pool = make_download_process_pool(min=1, max=2)
+            process_pool.start()
+            self.addCleanup(process_pool.stop)
+        else:
+            process_pool = None
+        slave = self.slave_helper.getClientSlave(
+            pool=pool, process_pool=process_pool)
         files = []
         content_map = {}
 
@@ -848,11 +879,15 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
             for sha1, local_file in files:
                 with open(local_file) as f:
                     self.assertEqual(content_map[sha1], f.read())
-            # Only two connections were used.
             port = BuilddSlaveTestSetup().daemon_port
-            self.assertThat(
-                slave.pool._connections,
-                MatchesDict({("http", "localhost", port): HasLength(2)}))
+            if self.download_in_subprocess:
+                # Only two workers were used.
+                self.assertEqual(2, len(process_pool.processes))
+            else:
+                # Only two connections were used.
+                self.assertThat(
+                    slave.pool._connections,
+                    MatchesDict({("http", "localhost", port): HasLength(2)}))
             return slave.pool.closeCachedConnections()
 
         def finished_uploading(ignored):
@@ -887,3 +922,6 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         with open(temp_name) as f:
             self.assertEqual(b'', f.read())
         yield slave.pool.closeCachedConnections()
+
+
+load_tests = load_tests_apply_scenarios

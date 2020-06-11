@@ -617,7 +617,8 @@ class Archive(SQLBase):
                             distroseries=None, pocket=None,
                             exact_match=False, created_since_date=None,
                             eager_load=False, component_name=None,
-                            order_by_date=False, include_removed=True):
+                            order_by_date=False, include_removed=True,
+                            only_unpublished=False):
         """See `IArchive`."""
         clauses = [SourcePackagePublishingHistory.archiveID == self.id]
 
@@ -692,6 +693,10 @@ class Archive(SQLBase):
 
         if not include_removed:
             clauses.append(SourcePackagePublishingHistory.dateremoved == None)
+
+        if only_unpublished:
+            clauses.append(
+                SourcePackagePublishingHistory.datepublished == None)
 
         store = Store.of(self)
         resultset = store.find(
@@ -803,7 +808,7 @@ class Archive(SQLBase):
         self, name=None, version=None, status=None, distroarchseries=None,
         pocket=None, exact_match=False, created_since_date=None,
         ordered=True, order_by_date=False, include_removed=True,
-        need_bpr=False):
+        only_unpublished=False, need_bpr=False):
         """Base clauses for binary publishing queries.
 
         Returns a list of 'clauses' (to be joined in the callsite).
@@ -880,13 +885,18 @@ class Archive(SQLBase):
         if not include_removed:
             clauses.append(BinaryPackagePublishingHistory.dateremoved == None)
 
+        if only_unpublished:
+            clauses.append(
+                BinaryPackagePublishingHistory.datepublished == None)
+
         return clauses, order_by
 
     def getAllPublishedBinaries(self, name=None, version=None, status=None,
                                 distroarchseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
                                 ordered=True, order_by_date=False,
-                                include_removed=True, eager_load=False):
+                                include_removed=True, only_unpublished=False,
+                                eager_load=False):
         """See `IArchive`."""
         # Circular imports.
         from lp.registry.model.distroseries import DistroSeries
@@ -896,7 +906,8 @@ class Archive(SQLBase):
             name=name, version=version, status=status, pocket=pocket,
             distroarchseries=distroarchseries, exact_match=exact_match,
             created_since_date=created_since_date, ordered=ordered,
-            order_by_date=order_by_date, include_removed=include_removed)
+            order_by_date=order_by_date, include_removed=include_removed,
+            only_unpublished=only_unpublished)
 
         result = Store.of(self).find(
             BinaryPackagePublishingHistory, *clauses).order_by(*order_by)

@@ -43,10 +43,7 @@ from lp.services.scripts.base import (
     LaunchpadScriptFailure,
     )
 from lp.services.utils import file_exists
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.scripts.custom_uploads_copier import CustomUploadsCopier
 
@@ -265,10 +262,10 @@ class PublishFTPMaster(LaunchpadCronScript):
         self.logger.debug("Querying which suites are pending publication...")
 
         archive = distribution.main_archive
-        pending = PackagePublishingStatus.PENDING
-        pending_sources = list(archive.getPublishedSources(status=pending))
+        pending_sources = list(archive.getPublishedSources(
+            only_unpublished=True))
         pending_binaries = list(archive.getAllPublishedBinaries(
-            status=pending))
+            only_unpublished=True))
         load_related(
             DistroArchSeries, pending_binaries, ['distroarchseriesID'])
         return set(

@@ -543,7 +543,8 @@ class IArchiveSubscriberView(Interface):
                             distroseries=None, pocket=None,
                             exact_match=False, created_since_date=None,
                             eager_load=False, component_name=None,
-                            order_by_date=False):
+                            order_by_date=False, include_removed=True,
+                            only_unpublished=False):
         """All `ISourcePackagePublishingHistory` target to this archive.
 
         :param name: source name filter (exact match or SQL LIKE controlled
@@ -566,6 +567,10 @@ class IArchiveSubscriberView(Interface):
             If not specified, publications are ordered by source
             package name (lexicographically), then by descending version
             and then descending ID.
+        :param include_removed: If True, include publications that have been
+            removed from disk as well as those that have not.
+        :param only_unpublished: If True, only include publications that
+            have never been published to disk.
 
         :return: SelectResults containing `ISourcePackagePublishingHistory`,
             ordered by name. If there are multiple results for the same
@@ -1239,6 +1244,7 @@ class IArchiveView(IHasBuildRecords):
                                 distroarchseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
                                 ordered=True, order_by_date=False,
+                                include_removed=True, only_unpublished=False,
                                 eager_load=False):
         """All `IBinaryPackagePublishingHistory` target to this archive.
 
@@ -1260,6 +1266,10 @@ class IArchiveView(IHasBuildRecords):
         :param order_by_date: Order publications by descending creation date
             and then by descending ID.  This is suitable for applications
             that need to catch up with publications since their last run.
+        :param include_removed: If True, include publications that have been
+            removed from disk as well as those that have not.
+        :param only_unpublished: If True, only include publications that
+            have never been published to disk.
 
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """

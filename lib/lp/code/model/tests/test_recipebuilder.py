@@ -11,6 +11,7 @@ import os.path
 import shutil
 import tempfile
 
+from testscenarios import load_tests_apply_scenarios
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
@@ -457,3 +458,6 @@ class TestVerifySuccessfulBuildForSPRBuild(
 class TestHandleStatusForSPRBuild(
     MakeSPRecipeBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with SPRecipe builds."""
+
+
+load_tests = load_tests_apply_scenarios

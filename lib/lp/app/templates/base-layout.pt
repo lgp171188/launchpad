@@ -51,6 +51,10 @@
         tal:attributes="content view/page_description/fmt:strip-email/fmt:shorten/500" />
     </tal:view>
 
+    <tal:view condition="view/private">
+      <meta name="referrer" content="origin-when-cross-origin"/>
+    </tal:view>
+
     <metal:page-javascript
         use-macro="context/@@+base-layout-macros/page-javascript" />
     <tal:view condition="not: view/macro:is-page-contentless">
