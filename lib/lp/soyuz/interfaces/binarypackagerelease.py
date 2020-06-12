@@ -11,8 +11,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import (
     Reference,
@@ -104,9 +104,9 @@ class IBinaryPackageRelease(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IBinaryPackageReleaseDownloadCount(Interface):
     """Daily download count of a binary package release in an archive."""
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), required=True, readonly=True)
     archive = exported(Reference(

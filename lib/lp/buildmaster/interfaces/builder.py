@@ -19,12 +19,12 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -219,6 +219,7 @@ class IBuilderEdit(Interface):
         """Update the clean status."""
 
 
+@exported_as_webservice_entry()
 class IBuilder(IBuilderEdit, IBuilderView):
     """Build-slave information and state.
 
@@ -231,7 +232,6 @@ class IBuilder(IBuilderEdit, IBuilderView):
     representation, including the field/properties: virtualized, builderok,
     status, failnotes and currentjob.
     """
-    export_as_webservice_entry()
 
 
 class IBuilderSetAdmin(Interface):
@@ -252,6 +252,7 @@ class IBuilderSetAdmin(Interface):
         """
 
 
+@exported_as_webservice_collection(IBuilder)
 class IBuilderSet(IBuilderSetAdmin):
     """Collections of builders.
 
@@ -260,7 +261,6 @@ class IBuilderSet(IBuilderSetAdmin):
     Methods on this interface should deal with the set of Builders:
     methods that affect a single Builder should be on IBuilder.
     """
-    export_as_webservice_collection(IBuilder)
     title = Attribute('Title')
 
     def __iter__():

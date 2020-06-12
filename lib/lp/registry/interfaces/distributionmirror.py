@@ -23,10 +23,10 @@ from lazr.enum import (
     DBItem,
     )
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     mutator_for,
     operation_parameters,
     )
@@ -320,9 +320,9 @@ class DistroMirrorRsyncURIField(DistroMirrorURIField):
         return getUtility(IDistributionMirrorSet).getByRsyncUrl(url)
 
 
+@exported_as_webservice_entry()
 class IDistributionMirror(Interface):
     """A mirror of a given distribution."""
-    export_as_webservice_entry()
 
     id = Int(title=_('The unique id'), required=True, readonly=True)
     owner = exported(PublicPersonChoice(

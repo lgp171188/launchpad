@@ -10,8 +10,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -31,9 +31,9 @@ from lp.registry.interfaces.person import IPerson
 from lp.services.messages.interfaces.message import IMessage
 
 
+@exported_as_webservice_entry()
 class ICodeReviewComment(Interface):
     """A link between a merge proposal and a message."""
-    export_as_webservice_entry()
 
     id = exported(
         Int(

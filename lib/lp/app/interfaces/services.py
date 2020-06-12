@@ -12,8 +12,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from zope.interface import Interface
 from zope.schema import TextLine
@@ -31,7 +31,6 @@ class IService(Interface):
                 'The name of the service, used to generate the url.')))
 
 
+@exported_as_webservice_entry(publish_web_link=False, as_of='beta')
 class IServiceFactory(Interface):
     """Interface representing a factory used to access named services."""
-
-    export_as_webservice_entry(publish_web_link=False, as_of='beta')

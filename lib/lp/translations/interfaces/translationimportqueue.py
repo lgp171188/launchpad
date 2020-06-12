@@ -13,11 +13,11 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
@@ -120,11 +120,11 @@ class SpecialTranslationImportTargetFilter(DBEnumeratedType):
         """)
 
 
+@exported_as_webservice_entry(
+    singular_name='translation_import_queue_entry',
+    plural_name='translation_import_queue_entries')
 class ITranslationImportQueueEntry(Interface):
     """An entry of the Translation Import Queue."""
-    export_as_webservice_entry(
-        singular_name='translation_import_queue_entry',
-        plural_name='translation_import_queue_entries')
 
     id = exported(Int(title=_('The entry ID'), required=True, readonly=True))
 
@@ -290,9 +290,9 @@ class ITranslationImportQueueEntry(Interface):
         """
 
 
+@exported_as_webservice_collection(ITranslationImportQueueEntry)
 class ITranslationImportQueue(Interface):
     """A set of files to be imported into Rosetta."""
-    export_as_webservice_collection(ITranslationImportQueueEntry)
 
     def __iter__():
         """Iterate over all entries in the queue."""

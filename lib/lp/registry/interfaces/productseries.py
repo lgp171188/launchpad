@@ -18,11 +18,11 @@ __all__ = [
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     exported,
+    exported_as_webservice_entry,
     operation_parameters,
     rename_parameters_as,
     )
@@ -336,20 +336,19 @@ class IProductSeriesView(
         """
 
 
+@exported_as_webservice_entry('project_series')
 class IProductSeries(IProductSeriesEditRestricted, IProductSeriesPublic,
                      IProductSeriesView, IProductSeriesLimitedView,
                      IStructuralSubscriptionTarget, IBugTarget):
     """A series of releases. For example '2.0' or '1.3' or 'dev'."""
-    export_as_webservice_entry('project_series')
 
 
+# XXX: EdwinGrubbs 2010-11-18 bug=677671
+# lazr.restful can't batch a DecoratedResultSet returning basic
+# python types such as dicts, so this interface is necessary.
+@exported_as_webservice_entry('timeline_project_series')
 class ITimelineProductSeries(Interface):
     """Minimal product series info for the timeline."""
-
-    # XXX: EdwinGrubbs 2010-11-18 bug=677671
-    # lazr.restful can't batch a DecoratedResultSet returning basic
-    # python types such as dicts, so this interface is necessary.
-    export_as_webservice_entry('timeline_project_series')
 
     name = IProductSeries['name']
 
