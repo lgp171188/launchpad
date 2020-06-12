@@ -17,11 +17,13 @@ from testtools.matchers import (
     Not,
     )
 from zope.schema.vocabulary import SimpleVocabulary
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.webapp import canonical_url
+from lp.services.webapp.publisher import RedirectionView
 from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
@@ -30,13 +32,59 @@ from lp.testing import (
     record_two_runs,
     TestCaseWithFactory,
     )
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    ZopelessDatabaseLayer,
+    )
 from lp.testing.pages import (
     extract_text,
     find_tag_by_id,
     find_tags_by_class,
     )
+from lp.testing.publication import test_traverse
 from lp.testing.views import create_initialized_view
+
+
+class TestDistributionNavigation(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def assertRedirects(self, url, expected_url):
+        _, view, _ = test_traverse(url)
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(expected_url, removeSecurityProxy(view).target)
+
+    def test_classic_series_url(self):
+        distroseries = self.factory.makeDistroSeries()
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/%s" % (
+                distroseries.distribution.name, distroseries.name))
+        self.assertEqual(distroseries, obj)
+
+    def test_classic_series_url_with_alias(self):
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.development_series_alias = "devel"
+        self.assertRedirects(
+            "http://launchpad.test/%s/devel" % distroseries.distribution.name,
+            "http://launchpad.test/%s/%s" % (
+                distroseries.distribution.name, distroseries.name))
+
+    def test_new_series_url_redirects(self):
+        distroseries = self.factory.makeDistroSeries()
+        self.assertRedirects(
+            "http://launchpad.test/%s/+series/%s" % (
+                distroseries.distribution.name, distroseries.name),
+            "http://launchpad.test/%s/%s" % (
+                distroseries.distribution.name, distroseries.name))
+
+    def test_new_series_url_with_alias_redirects(self):
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.development_series_alias = "devel"
+        self.assertRedirects(
+            "http://launchpad.test/%s/+series/devel" % (
+                distroseries.distribution.name),
+            "http://launchpad.test/%s/%s" % (
+                distroseries.distribution.name, distroseries.name))
 
 
 class TestDistributionPage(TestCaseWithFactory):
