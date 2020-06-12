@@ -70,7 +70,6 @@ from lp.registry.interfaces.product import (
     NoSuchProduct,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
-from lp.services.database.interfaces import IStore
 from lp.services.macaroons.interfaces import (
     IMacaroonIssuer,
     NO_USER,
@@ -591,17 +590,27 @@ class GitAPI(LaunchpadXMLRPCView):
             self, requester, repository, auth_params):
         """Makes sure the requester has permission to change repository
         creation status."""
+        naked_repo = removeSecurityProxy(repository)
         if requester == LAUNCHPAD_ANONYMOUS:
             requester = None
-        naked_repo = removeSecurityProxy(repository)
-        verified = self._verifyAuthParams(requester, naked_repo, auth_params)
+
+        verified = self._verifyAuthParams(requester, repository, auth_params)
         if verified is not None and verified.user is NO_USER:
+            # For internal-services authentication, we check if its using a
+            # suitable macaroon that specifically grants access to this
+            # repository.  This is only permitted for macaroons not bound to
+            # a user.
             if not _can_internal_issuer_write(verified):
                 raise faults.Unauthorized()
+        else:
+            # This checks `requester` against `repo.registrant` because the
+            # requester should be the only user able to confirm/abort
+            # repository creation while it's being created.
+            if requester != naked_repo.registrant:
+                raise faults.Unauthorized()
 
-        if (requester != naked_repo.owner
-                or naked_repo.status != GitRepositoryStatus.CREATING):
-            raise faults.GitRepositoryNotFound(str(repository.id))
+        if naked_repo.status != GitRepositoryStatus.CREATING:
+            raise faults.Unauthorized()
 
     def _confirmRepoCreation(self, requester, repository_id, auth_params):
         naked_repo = removeSecurityProxy(
@@ -611,7 +620,6 @@ class GitAPI(LaunchpadXMLRPCView):
         self._validateRequesterCanManageRepoCreation(
             requester, naked_repo, auth_params)
         naked_repo.status = GitRepositoryStatus.AVAILABLE
-        IStore(naked_repo).flush()
 
     def confirmRepoCreation(self, repository_id, auth_params):
         """See `IGitAPI`."""
@@ -638,7 +646,6 @@ class GitAPI(LaunchpadXMLRPCView):
             raise faults.GitRepositoryNotFound(str(repository_id))
         self._validateRequesterCanManageRepoCreation(
             requester, naked_repo, auth_params)
-
         naked_repo.destroySelf()
 
     def abortRepoCreation(self, repository_id, auth_params):
