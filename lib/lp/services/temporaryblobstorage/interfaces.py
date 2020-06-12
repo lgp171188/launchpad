@@ -13,10 +13,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_parameters,
     rename_parameters_as,
     )
@@ -41,11 +41,11 @@ class BlobTooLarge(Exception):
     pass
 
 
+@exported_as_webservice_entry(
+    singular_name='temporary_blob', plural_name='temporary_blobs',
+    as_of="beta")
 class ITemporaryBlobStorage(Interface):
     """A blob which we will store in the database temporarily."""
-    export_as_webservice_entry(
-        singular_name='temporary_blob', plural_name='temporary_blobs',
-        as_of="beta")
 
     uuid = exported(
         Text(title=_('UUID'), required=True, readonly=True),
@@ -64,9 +64,9 @@ class ITemporaryBlobStorage(Interface):
         """Returns a dict containing the processed blob data."""
 
 
+@exported_as_webservice_collection(ITemporaryBlobStorage)
 class ITemporaryStorageManager(Interface):
     """A tool to create temporary blobs."""
-    export_as_webservice_collection(ITemporaryBlobStorage)
 
     def new(blob, expires=None):
         """Create a new blob for storage in the database, returning the

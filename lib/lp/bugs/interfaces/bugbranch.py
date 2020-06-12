@@ -11,8 +11,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import ReferenceChoice
 from zope.interface import (
@@ -28,10 +28,9 @@ from lp.registry.interfaces.person import IPerson
 from lp.services.fields import BugField
 
 
+@exported_as_webservice_entry()
 class IBugBranch(IHasBug):
     """A branch linked to a bug."""
-
-    export_as_webservice_entry()
 
     bug = exported(
         BugField(

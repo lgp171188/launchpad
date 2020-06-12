@@ -16,9 +16,9 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_factory_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -47,6 +47,7 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
@@ -107,7 +108,11 @@ class IOCIProjectEditableAttributes(IBugTarget):
     distribution = exported(ReferenceChoice(
         title=_("The distribution that this OCI project is associated with."),
         schema=IDistribution, vocabulary="Distribution",
-        required=True, readonly=False))
+        required=False, readonly=False))
+    project = exported(ReferenceChoice(
+        title=_('The project that this OCI project is associated with.'),
+        schema=IProduct, vocabulary='Product',
+        required=False, readonly=False))
     name = exported(TextLine(
         title=_("Name"), required=True, readonly=False,
         constraint=name_validator,
@@ -120,9 +125,10 @@ class IOCIProjectEditableAttributes(IBugTarget):
     description = exported(Text(
         title=_("The description for this OCI project."),
         required=True, readonly=False))
-    pillar = exported(Reference(
-        IDistribution,
-        title=_("The pillar containing this target."), readonly=True))
+    pillar = Reference(
+        Interface,
+        title=_("The pillar containing this target."),
+        required=True, readonly=False)
 
 
 class IOCIProjectEdit(Interface):
@@ -173,12 +179,11 @@ class IOCIProjectLegitimate(Interface):
         """Create an IOCIRecipe for this project."""
 
 
+@exported_as_webservice_entry(
+    publish_web_link=True, as_of="devel", singular_name="oci_project")
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                   IOCIProjectEditableAttributes, IOCIProjectLegitimate):
     """A project containing Open Container Initiative recipes."""
-
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel", singular_name="oci_project")
 
 
 class IOCIProjectSet(Interface):
@@ -189,8 +194,13 @@ class IOCIProjectSet(Interface):
             bugfiling_duplicate_search=False):
         """Create an `IOCIProject`."""
 
-    def getByDistributionAndName(distribution, name):
-        """Get the OCIProjects for a given distribution."""
+    def getByPillarAndName(pillar, name):
+        """Get the OCIProjects for a given distribution or project.
+
+        :param pillar: An instance of Distribution or Product.
+        :param name: The OCIProject name to find.
+        :return: The OCIProject found.
+        """
 
     def findByDistributionAndName(distribution, name_substring):
         """Find OCIProjects for a given distribution that contains the

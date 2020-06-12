@@ -11,8 +11,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from zope.interface import (
     Attribute,
@@ -31,9 +31,9 @@ from lp.services.fields import (
     )
 
 
+@exported_as_webservice_entry()
 class IBugActivity(Interface):
     """A log of all things that have happened to a bug."""
-    export_as_webservice_entry()
 
     bug = exported(
         BugField(title=_('Bug'), readonly=True))

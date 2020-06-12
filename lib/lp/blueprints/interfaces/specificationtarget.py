@@ -13,9 +13,9 @@ __all__ = [
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -86,12 +86,11 @@ class IHasSpecifications(Interface):
         """
 
 
+@exported_as_webservice_entry(as_of="devel")
 class ISpecificationTarget(IHasSpecifications):
     """An interface for the objects which actually have unique
     specifications directly attached to them.
     """
-
-    export_as_webservice_entry(as_of="devel")
 
     @operation_parameters(
         name=TextLine(title=_('The name of the specification')))

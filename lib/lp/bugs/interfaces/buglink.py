@@ -14,8 +14,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -57,12 +57,12 @@ class IObjectUnlinkedEvent(IObjectEvent):
     user = Attribute("The user who unlinked the object.")
 
 
+@exported_as_webservice_entry(as_of="beta")
 class IBugLinkTarget(Interface):
     """An entity which can be linked to bugs.
 
     Examples include an ISpecification.
     """
-    export_as_webservice_entry(as_of="beta")
 
     bugs = exported(
         CollectionField(title=_("Bugs related to this object."),

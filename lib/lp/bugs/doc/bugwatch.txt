@@ -317,14 +317,14 @@ tasks, because it's not a valid person and only valid persons can get karma.
 
 Finally, let's make sure that bug notifications were added:
 
-    >>> from lp.bugs.model.bugnotification import (
-    ...     BugNotification)
-    >>> unsent_notifications = (
-    ...     BugNotification.selectBy(date_emailed=None, orderBy='id'))
+    >>> from lp.bugs.model.bugnotification import BugNotification
+    >>> from lp.services.database.interfaces import IStore
+    >>> unsent_notifications = IStore(BugNotification).find(
+    ...     BugNotification, date_emailed=None).order_by(BugNotification.id)
 
     >>> for bug_notification in unsent_notifications:
     ...     print("Bug %s changed by %s:" % (
-    ...         bug_notification.bug.id,
+    ...         bug_notification.bug_id,
     ...         bug_notification.message.owner.displayname))
     ...     print(bug_notification.message.text_contents)
     Bug 1 changed by Bug Watch Updater:

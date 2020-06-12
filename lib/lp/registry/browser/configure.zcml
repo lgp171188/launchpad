@@ -1231,6 +1231,13 @@
         template="../templates/person-oauth-tokens.pt"
         />
     <browser:page
+        name="+oci-registry-credentials"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonOCIRegistryCredentialsView"
+        permission="launchpad.Edit"
+        template="../templates/person-ociregistrycredentials.pt"
+        />
+    <browser:page
         name="+livefs"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonLiveFSView"

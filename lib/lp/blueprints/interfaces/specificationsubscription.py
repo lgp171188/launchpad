@@ -11,8 +11,8 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
+    exported_as_webservice_entry,
     operation_for_version,
     REQUEST_USER,
     )
@@ -29,10 +29,9 @@ from lp import _
 from lp.services.fields import PersonChoice
 
 
+@exported_as_webservice_entry(publish_web_link=False, as_of='devel')
 class ISpecificationSubscription(Interface):
     """A subscription for a person to a specification."""
-
-    export_as_webservice_entry(publish_web_link=False, as_of='devel')
 
     id = Int(
         title=_('ID'), required=True, readonly=True)

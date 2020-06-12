@@ -60,14 +60,14 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -2282,11 +2282,11 @@ class IArchiveRestricted(Interface):
             "with a higher score will build sooner.")))
 
 
+@exported_as_webservice_entry()
 class IArchive(IArchivePublic, IArchiveAppend, IArchiveEdit, IArchiveDelete,
                IArchiveSubscriberView, IArchiveView, IArchiveAdmin,
                IArchiveRestricted):
     """Main Archive interface."""
-    export_as_webservice_entry()
 
 
 class IPPA(IArchive):
@@ -2304,10 +2304,9 @@ class IArchiveEditDependenciesForm(Interface):
         title=_('Add PPA dependency'), required=False, vocabulary='PPA')
 
 
+@exported_as_webservice_collection(IArchive)
 class IArchiveSet(Interface):
     """Interface for ArchiveSet"""
-
-    export_as_webservice_collection(IArchive)
 
     title = Attribute('Title')
 

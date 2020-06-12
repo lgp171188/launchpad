@@ -10,8 +10,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import ReferenceChoice
 from zope.interface import Interface
@@ -27,14 +27,13 @@ from lp import _
 from lp.services.fields import PublicPersonChoice
 
 
+@exported_as_webservice_entry()
 class ICommercialSubscription(Interface):
     """A Commercial Subscription for a Product.
 
     If the product has a licence which does not qualify for free
     hosting, a subscription needs to be purchased.
     """
-    # Mark commercial subscriptions as exported entries for the Launchpad API.
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), readonly=True, required=True)
 

@@ -16,6 +16,8 @@ __all__ = [
     'Greatest',
     'get_where_for_reference',
     'IsDistinctFrom',
+    'IsFalse',
+    'IsTrue',
     'NullCount',
     'NullsFirst',
     'NullsLast',
@@ -210,6 +212,26 @@ class ArrayIntersects(CompoundOper):
     """True iff the arrays have at least one element in common."""
     __slots__ = ()
     oper = "&&"
+
+
+class IsTrue(SuffixExpr):
+    """True iff the input Boolean expression is `TRUE`.
+
+    Unlike `expr` or `expr == True`, this returns `FALSE` when
+    `expr IS NULL`.
+    """
+    __slots__ = ()
+    suffix = "IS TRUE"
+
+
+class IsFalse(SuffixExpr):
+    """True iff the input Boolean expression is `FALSE`.
+
+    Unlike `Not(expr)` or `expr == False`, this returns `FALSE` when
+    `expr IS NULL`.
+    """
+    __slots__ = ()
+    suffix = "IS FALSE"
 
 
 class IsDistinctFrom(CompoundOper):

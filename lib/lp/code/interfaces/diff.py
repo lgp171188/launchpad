@@ -12,8 +12,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -84,6 +84,7 @@ class IIncrementalDiff(Interface):
         IRevision, readonly=True, title=_('The new revision of the diff.'))
 
 
+@exported_as_webservice_entry()
 class IPreviewDiff(IDiff):
     """A diff generated to show actual diff between two branches.
 
@@ -91,7 +92,6 @@ class IPreviewDiff(IDiff):
     trying to determine the effective changes of landing the source branch on
     the target branch.
     """
-    export_as_webservice_entry()
 
     source_revision_id = exported(
         TextLine(

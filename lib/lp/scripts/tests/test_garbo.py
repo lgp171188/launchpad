@@ -46,6 +46,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.model.answercontact import AnswerContact
 from lp.app.enums import InformationType
+from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.model.bugnotification import (
     BugNotification,
     BugNotificationRecipient,
@@ -109,6 +110,7 @@ from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import TimeLimitedToken
+from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.messages.model.message import Message
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
 from lp.services.scripts.tests import run_script
@@ -790,14 +792,18 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     def test_BugNotificationPruner(self):
         # Create some sample data
         switch_dbuser('testadmin')
+        bug = getUtility(IBugSet).get(1)
+        message = getUtility(IMessageSet).get(
+            'foo@example.com-332342--1231')[0]
+        person = self.factory.makePerson()
         notification = BugNotification(
-            messageID=1,
-            bugID=1,
+            message=message,
+            bug=bug,
             is_comment=True,
             date_emailed=None)
         BugNotificationRecipient(
             bug_notification=notification,
-            personID=1,
+            person=person,
             reason_header='Whatever',
             reason_body='Whatever')
         # We don't create an entry exactly 30 days old to avoid
@@ -806,12 +812,12 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             message = Message(rfc822msgid=str(delta))
             notification = BugNotification(
                 message=message,
-                bugID=1,
+                bug=bug,
                 is_comment=True,
                 date_emailed=UTC_NOW + SQL("interval '%d days'" % delta))
             BugNotificationRecipient(
                 bug_notification=notification,
-                personID=1,
+                person=person,
                 reason_header='Whatever',
                 reason_body='Whatever')
 

@@ -10,9 +10,9 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     )
 from lazr.restful.fields import (
@@ -105,11 +105,10 @@ class ISourcePackageRecipeBuildEdit(Interface):
         """Delete the build itself."""
 
 
+@exported_as_webservice_entry()
 class ISourcePackageRecipeBuild(ISourcePackageRecipeBuildView,
                                 ISourcePackageRecipeBuildEdit):
     """A build of a source package."""
-
-    export_as_webservice_entry()
 
 
 class ISourcePackageRecipeBuildSource(ISpecificBuildFarmJobSource):

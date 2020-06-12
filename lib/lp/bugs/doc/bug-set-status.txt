@@ -41,7 +41,9 @@ It also emits an ObjectModifiedEvent so that BugNotification and
 BugActivity records are created.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     No Privileges Person
     >>> print(latest_notification.message.text_contents)

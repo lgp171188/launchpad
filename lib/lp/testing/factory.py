@@ -503,8 +503,8 @@ class ObjectFactory(
         if scheme is None:
             scheme = 'http'
         if host is None:
-            host = "%s.domain.com" % self.getUniqueString('domain')
-        return '%s://%s/%s' % (scheme, host, self.getUniqueString('path'))
+            host = "%s.domain.com" % self.getUniqueUnicode('domain')
+        return '%s://%s/%s' % (scheme, host, self.getUniqueUnicode('path'))
 
     def getUniqueDate(self):
         """Return a unique date since January 1 2009.
@@ -532,9 +532,9 @@ class ObjectFactory(
         elif rcstype == 'cvs':
             assert url is None
             if cvs_root is None:
-                cvs_root = self.getUniqueString()
+                cvs_root = self.getUniqueUnicode()
             if cvs_module is None:
-                cvs_module = self.getUniqueString()
+                cvs_module = self.getUniqueUnicode()
         elif rcstype == 'git':
             assert cvs_root is cvs_module is None
             if url is None:
@@ -1841,7 +1841,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeGitRefRemote(self, repository_url=None, path=None):
         """Create an object representing a ref in a remote repository."""
         if repository_url is None:
-            repository_url = self.getUniqueURL().decode('utf-8')
+            repository_url = self.getUniqueURL()
         if path is None:
             path = self.getUniqueString('refs/heads/path').decode('utf-8')
         return getUtility(IGitRefRemoteSet).new(repository_url, path)
@@ -2526,7 +2526,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         The machine will be in the OFFLINE state."""
         if hostname is None:
-            hostname = self.getUniqueString('machine-')
+            hostname = self.getUniqueUnicode('machine-')
         if set_online:
             state = CodeImportMachineState.ONLINE
         else:
@@ -3417,7 +3417,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                         by_maintainer=False):
         """Create a `TranslationImportQueueEntry`."""
         if path is None:
-            path = self.getUniqueString() + '.pot'
+            path = self.getUniqueUnicode() + '.pot'
 
         for_distro = not (distroseries is None and sourcepackagename is None)
         for_project = productseries is not None
@@ -3441,7 +3441,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             uploader = self.makePerson()
 
         if content is None:
-            content = self.getUniqueString()
+            content = self.getUniqueBytes()
 
         if format is None:
             format = TranslationFileFormat.PO
@@ -3449,8 +3449,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if status is None:
             status = RosettaImportStatus.NEEDS_REVIEW
 
-        if type(content) == unicode:
-            content = content.encode('utf-8')
+        content = six.ensure_binary(content)
 
         entry = getUtility(ITranslationImportQueue).addOrUpdateEntry(
             path=path, content=content, by_maintainer=by_maintainer,
@@ -4784,7 +4783,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if target is None:
             target = self.makeGitRepository()
         if delivery_url is None:
-            delivery_url = self.getUniqueURL().decode('utf-8')
+            delivery_url = self.getUniqueURL()
         return getUtility(IWebhookSet).new(
             target, self.makePerson(), delivery_url, event_types or [],
             active, secret)
@@ -5078,7 +5077,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if url is None:
-            url = six.ensure_text(self.getUniqueURL())
+            url = self.getUniqueURL()
         if credentials is None:
             credentials = {
                 'username': self.getUniqueUnicode(),

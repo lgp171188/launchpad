@@ -28,14 +28,14 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -1248,13 +1248,11 @@ class IBranchEdit(IWebhookTarget):
         """
 
 
+@exported_as_webservice_entry(plural_name='branches')
 class IBranch(IBranchPublic, IBranchView, IBranchEdit,
               IBranchEditableAttributes, IBranchModerate,
               IBranchModerateAttributes, IBranchAnyone):
     """A Bazaar branch."""
-
-    # Mark branches as exported entries for the Launchpad API.
-    export_as_webservice_entry(plural_name='branches')
 
     # This is redefined from IPrivacy.private and is read only. This attribute
     # is true if this branch is explicitly private or any of its stacked on
@@ -1276,10 +1274,9 @@ class IBranch(IBranchPublic, IBranchView, IBranchEdit,
         """Set the branch privacy for this branch."""
 
 
+@exported_as_webservice_collection(IBranch)
 class IBranchSet(Interface):
     """Interface representing the set of branches."""
-
-    export_as_webservice_collection(IBranch)
 
     def getRecentlyChangedBranches(
         branch_count=None,

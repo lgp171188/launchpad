@@ -13,8 +13,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -78,13 +78,11 @@ class IOCIProjectSeriesEdit(Interface):
     """IOCIProjectSeries attributes that require launchpad.Edit permission."""
 
 
+@exported_as_webservice_entry(
+    publish_web_link=True, as_of="devel", singular_name="oci_project_series")
 class IOCIProjectSeries(IOCIProjectSeriesView, IOCIProjectSeriesEdit,
                         IOCIProjectSeriesEditableAttributes):
     """A series of an Open Container Initiative project.
 
     This is used to allow tracking bugs against multiple versions of images.
     """
-
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel",
-        singular_name="oci_project_series")

@@ -842,7 +842,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             """ % sqlvalues(self.id, name))
 
     def getOCIProject(self, name):
-        oci_project = getUtility(IOCIProjectSet).getByDistributionAndName(
+        oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
             self, name)
         return oci_project
 
