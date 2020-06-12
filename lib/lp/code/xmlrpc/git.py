@@ -639,7 +639,7 @@ class GitAPI(LaunchpadXMLRPCView):
         self._validateRequesterCanManageRepoCreation(
             requester, naked_repo, auth_params)
 
-        naked_repo.destroySelf(reclaim_space=False)
+        naked_repo.destroySelf()
 
     def abortRepoCreation(self, repository_id, auth_params):
         """See `IGitAPI`."""

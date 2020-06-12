@@ -1614,7 +1614,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             And(GitJob.job == Job.id, GitJob.repository == self))
         Store.of(self).find(Job, Job.id.is_in(affected_jobs)).remove()
 
-    def destroySelf(self, break_references=False, reclaim_space=True):
+    def destroySelf(self, break_references=False):
         """See `IGitRepository`."""
         # Circular import.
         from lp.code.interfaces.gitjob import (
@@ -1645,7 +1645,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         Store.of(self).remove(self)
         # And now create a job to remove the repository from storage when
         # it's done.
-        if reclaim_space:
+        if self.status == GitRepositoryStatus.AVAILABLE:
             getUtility(IReclaimGitRepositorySpaceJobSource).create(
                 repository_name, repository_path)
 

@@ -744,7 +744,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_confirm_git_repository_creation_of_non_existing_repository(self):
         owner = self.factory.makePerson()
         repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
-        repo.destroySelf(reclaim_space=False)
+        repo.status = GitRepositoryStatus.CREATING
+        repo.destroySelf()
 
         expected_failure = faults.GitRepositoryNotFound(str(repo.id))
         self.assertConfirmRepoCreationFails(expected_failure, owner, repo)
@@ -768,7 +769,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_abort_git_repository_creation_of_non_existing_repository(self):
         owner = self.factory.makePerson()
         repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
-        repo.destroySelf(reclaim_space=False)
+        repo.status = GitRepositoryStatus.CREATING
+        repo.destroySelf()
 
         expected_failure = faults.GitRepositoryNotFound(str(repo.id))
         self.assertAbortRepoCreationFails(expected_failure, owner, repo)
