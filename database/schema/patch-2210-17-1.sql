@@ -9,6 +9,9 @@ UPDATE GitRepository SET status = 2 WHERE status IS NULL;
 ALTER TABLE GitRepository
     ALTER COLUMN status SET NOT NULL;
 
-CREATE INDEX gitrepository__status__idx ON GitRepository (status);
+CREATE INDEX gitrepository__date_created__status__idx
+    ON GitRepository (date_created)
+    -- 1 == CREATING
+    WHERE status = 1;
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 17, 1);
