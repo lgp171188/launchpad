@@ -155,16 +155,16 @@ class GitRepositoryStatus(DBEnumeratedType):
     The current situation of this Git Repository.
     """
 
-    AVAILABLE = DBItem(1, """
-        Available
-
-        This repository is available to be used.
-        """)
-
-    CREATING = DBItem(2, """
+    CREATING = DBItem(1, """
         Creating
 
         This repository is being created on git hosting system.
+        """)
+
+    AVAILABLE = DBItem(2, """
+        Available
+
+        This repository is available to be used.
         """)
 
 
