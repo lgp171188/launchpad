@@ -9,6 +9,7 @@ from zope.component import getUtility
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.model.bugnotification import BugNotification
 from lp.bugs.scripts.bugnotification import construct_email_notifications
+from lp.services.database.interfaces import IStore
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import TestCaseWithFactory
@@ -46,7 +47,8 @@ class TestAssignmentNotification(TestCaseWithFactory):
             self.master_bug_task.transitionToStatus(
                 BugTaskStatus.CONFIRMED, self.user)
         transaction.commit()
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
+        latest_notification = IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
         notifications, omitted, messages = construct_email_notifications(
             [latest_notification])
         self.assertEqual(

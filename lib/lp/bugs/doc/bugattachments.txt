@@ -237,7 +237,9 @@ Since the ObjectCreatedEvent was generated, a notification about the
 attachment was added.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.text_contents)
     ** Attachment added: "RA.txt"
        http://.../RA.txt
@@ -475,9 +477,8 @@ The libraryfile of this bug attachment is marked as "deleted".
 Deleting an attachment causes a notification to be sent. It's worth
 noting that the notification still includes the URL to the attachment.
 
-    >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> latest_notification = BugNotification
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> latest_notification.is_comment
     False
     >>> print(latest_notification.message.text_contents)

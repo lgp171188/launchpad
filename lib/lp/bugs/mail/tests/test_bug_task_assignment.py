@@ -8,6 +8,7 @@ from zope.component import getUtility
 
 from lp.bugs.model.bugnotification import BugNotification
 from lp.bugs.scripts.bugnotification import construct_email_notifications
+from lp.services.database.interfaces import IStore
 from lp.services.mail import stub
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.snapshot import notify_modified
@@ -91,7 +92,8 @@ class TestAssignmentNotification(TestCaseWithFactory):
         task changes and ensure the assignee is not one."""
         with notify_modified(self.bug_task, ['assignee'], user=self.user):
             self.bug_task.transitionToAssignee(self.person_assigned)
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
+        latest_notification = IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
         notifications, omitted, messages = construct_email_notifications(
             [latest_notification])
         self.assertEqual(len(notifications), 1,
@@ -106,7 +108,8 @@ class TestAssignmentNotification(TestCaseWithFactory):
         task changes."""
         with notify_modified(self.bug_task, ['assignee'], user=self.user):
             self.bug_task.transitionToAssignee(self.team_assigned)
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
+        latest_notification = IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
         notifications, omitted, messages = construct_email_notifications(
             [latest_notification])
         self.assertEqual(len(notifications), 1,

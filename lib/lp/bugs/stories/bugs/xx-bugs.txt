@@ -40,5 +40,5 @@ Bar. First, let's clear out the notification table:
 
 After the comment has been submitted, a notification is added:
 
-  >>> BugNotification.select().count()
+  >>> IStore(BugNotification).find(BugNotification).count()
   1

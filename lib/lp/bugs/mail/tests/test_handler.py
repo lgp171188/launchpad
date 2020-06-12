@@ -30,6 +30,7 @@ from lp.bugs.mail.handler import (
 from lp.bugs.model.bugnotification import BugNotification
 from lp.registry.enums import BugSharingPolicy
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing import (
@@ -220,7 +221,8 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
 
     @staticmethod
     def getLatestBugNotification():
-        return BugNotification.selectFirst(orderBy='-id')
+        return IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
 
     def test_new_bug(self):
         project = self.factory.makeProduct(name='fnord')
@@ -322,7 +324,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
         self.assertEqual(1, len(bug.bugtasks))
         self.assertEqual(project, bug.bugtasks[0].target)
         recipients = set()
-        for notification in BugNotification.select():
+        for notification in IStore(BugNotification).find(BugNotification):
             for recipient in notification.recipients:
                 recipients.add(recipient.person)
         self.assertContentEqual([maintainer], recipients)

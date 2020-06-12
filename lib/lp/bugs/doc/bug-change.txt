@@ -107,7 +107,9 @@ BugActivity entries are added when addChange() is called.
 As are BugNotifications.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.text_contents)
     Some message text
 
@@ -131,7 +133,8 @@ But if getBugActivity() returns None, no activity entries will be added.
 
 And if getBugNotification() returns None, no notification will be added.
 
-    >>> new_latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> new_latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> new_latest_notification.id == latest_notification.id
     True
 
@@ -158,7 +161,8 @@ bug's target for Meta data changes, but not for lifecycle changes.
     ...     filter.bug_notification_level = BugNotificationLevel.METADATA
     >>> example_bug.addChange(
     ...     TestBugChange(when=nowish, person=example_person))
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.text_contents)
     Some message text
 
