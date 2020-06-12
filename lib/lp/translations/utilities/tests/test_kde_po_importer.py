@@ -3,6 +3,8 @@
 
 """KDE PO importer tests."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from io import BytesIO
@@ -31,7 +33,7 @@ from lp.translations.utilities.tests.test_gettext_po_importer import (
     )
 
 
-test_kde_template = r'''
+test_kde_template = br'''
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -46,7 +48,7 @@ msgid "_: Context\nMessage"
 msgstr ""
 '''
 
-test_kde_translation_file = r'''
+test_kde_translation_file = br'''
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"

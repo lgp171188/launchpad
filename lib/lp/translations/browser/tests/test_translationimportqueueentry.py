@@ -3,6 +3,8 @@
 
 """Unit tests for translation import queue views."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from datetime import datetime
 
 from pytz import timezone
@@ -58,8 +60,8 @@ class TestTranslationImportQueueEntryView(WithScenarios, TestCaseWithFactory):
     def _makeEntry(self, productseries=None, distroseries=None,
                    sourcepackagename=None, filename=None, potemplate=None):
         if filename is None:
-            filename = self.factory.getUniqueString() + '.pot'
-        contents = self.factory.getUniqueString()
+            filename = self.factory.getUniqueUnicode() + '.pot'
+        contents = self.factory.getUniqueBytes()
         entry = self.queue.addOrUpdateEntry(
             filename, contents, False, self.uploader,
             productseries=productseries, distroseries=distroseries,
