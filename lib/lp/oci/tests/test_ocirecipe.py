@@ -412,7 +412,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_newPushRule(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
-        url = ensure_text(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         image_name = ensure_text(self.factory.getUniqueString())
         credentials = {
             "username": "test-username", "password": "test-password"}
@@ -452,7 +452,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_newPushRule_same_details(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
-        url = ensure_text(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         image_name = ensure_text(self.factory.getUniqueString())
         credentials = {
             "username": "test-username", "password": "test-password"}
