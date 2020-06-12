@@ -29,6 +29,10 @@ import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+from six.moves.collections_abc import (
+    Iterable,
+    Set,
+    )
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -2259,8 +2263,61 @@ def load_people(*where):
         need_preferred_email=True)
 
 
-class BugSubscriberSet(frozenset):
-    """A set of bug subscribers
+class FrozenSetBasedSet(Set):
+    """A subclassable immutable set.
+
+    On Python 3, we can't simply subclass `frozenset`: set operations such
+    as union will create a new set, but it will be a plain `frozenset` and
+    will lack the appropriate custom properties.  However, the `Set` ABC
+    (which is in fact an immutable set; `MutableSet` is a separate ABC)
+    knows to create new sets using the same class.  Take advantage of this
+    with a trivial implementation of `Set` that backs straight onto a
+    `frozenset`.
+
+    The ABC doesn't implement the non-operator versions of set methods such
+    as `union`, so do that here, at least for those methods we actually use.
+    """
+
+    def __init__(self, iterable=None):
+        self._frozenset = (
+            frozenset() if iterable is None else frozenset(iterable))
+
+    def __iter__(self):
+        return iter(self._frozenset)
+
+    def __contains__(self, value):
+        return value in self._frozenset
+
+    def __len__(self):
+        return len(self._frozenset)
+
+    def issubset(self, other):
+        return self <= self._from_iterable(other)
+
+    def issuperset(self, other):
+        return self >= self._from_iterable(other)
+
+    def union(self, *others):
+        for other in others:
+            if not isinstance(other, Iterable):
+                raise NotImplementedError
+        return self._from_iterable(value for value in chain(self, *others))
+
+    def intersection(self, *others):
+        for other in others:
+            if not isinstance(other, Iterable):
+                raise NotImplementedError
+        return self._from_iterable(
+            value for value in chain(*others) if value in self)
+
+    def difference(self, *others):
+        other = self._from_iterable([]).union(*others)
+        return self._from_iterable(
+            value for value in self if value not in other)
+
+
+class BugSubscriberSet(FrozenSetBasedSet):
+    """An immutable set of bug subscribers.
 
     Every member should provide `IPerson`.
     """
@@ -2274,8 +2331,8 @@ class BugSubscriberSet(frozenset):
         return tuple(sorted(self, key=person_sort_key))
 
 
-class BugSubscriptionSet(frozenset):
-    """A set of bug subscriptions."""
+class BugSubscriptionSet(FrozenSetBasedSet):
+    """An immutable set of bug subscriptions."""
 
     @cachedproperty
     def sorted(self):
@@ -2299,7 +2356,7 @@ class BugSubscriptionSet(frozenset):
             return BugSubscriberSet(load_people(condition))
 
 
-class StructuralSubscriptionSet(frozenset):
+class StructuralSubscriptionSet(FrozenSetBasedSet):
     """A set of structural subscriptions."""
 
     @cachedproperty
