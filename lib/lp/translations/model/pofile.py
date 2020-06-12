@@ -15,6 +15,7 @@ __all__ = [
 import datetime
 
 import pytz
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -981,7 +982,7 @@ class POFile(SQLBase, POFileMixIn):
             template_mail = 'poimport-not-exported-from-rosetta.txt'
             import_rejected = True
             entry_to_import.setErrorOutput(
-                "File was not exported from Launchpad.")
+                u"File was not exported from Launchpad.")
         except (MixedNewlineMarkersError, TranslationFormatSyntaxError,
                 TranslationFormatInvalidInputError,
                 UnicodeDecodeError) as exception:
@@ -995,7 +996,7 @@ class POFile(SQLBase, POFileMixIn):
             else:
                 template_mail = 'poimport-syntax-error.txt'
             import_rejected = True
-            error_text = str(exception)
+            error_text = six.text_type(exception)
             entry_to_import.setErrorOutput(error_text)
             needs_notification_for_imported = True
         except OutdatedTranslationError as exception:
@@ -1005,15 +1006,15 @@ class POFile(SQLBase, POFileMixIn):
                 logger.info('Got an old version for %s' % self.title)
             template_mail = 'poimport-got-old-version.txt'
             import_rejected = True
-            error_text = str(exception)
+            error_text = six.text_type(exception)
             entry_to_import.setErrorOutput(
-                "Outdated translation.  " + error_text)
+                u"Outdated translation.  " + error_text)
         except TooManyPluralFormsError:
             if logger:
                 logger.warning("Too many plural forms.")
             template_mail = 'poimport-too-many-plural-forms.txt'
             import_rejected = True
-            entry_to_import.setErrorOutput("Too many plural forms.")
+            entry_to_import.setErrorOutput(u"Too many plural forms.")
         else:
             # The import succeeded.  There may still be non-fatal errors
             # or warnings for individual messages (kept as a list in
@@ -1047,7 +1048,7 @@ class POFile(SQLBase, POFileMixIn):
             data = self._prepare_pomessage_error_message(errors, replacements)
             subject, template_mail, errorsdetails = data
             entry_to_import.setErrorOutput(
-                "Imported, but with errors:\n" + errorsdetails)
+                u"Imported, but with errors:\n" + errorsdetails)
         else:
             # The import was successful.
             template_mail = 'poimport-confirmation.txt'

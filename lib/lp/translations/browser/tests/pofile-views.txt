@@ -403,7 +403,7 @@ Get it and check that some attributes are set as they should.
 
     >>> from lp.translations.enums import RosettaImportStatus
     >>> entry = translationimportqueue.getAllEntries(
-    ...     import_status=RosettaImportStatus.NEEDS_REVIEW)[-1]
+    ...     import_status=RosettaImportStatus.NEEDS_REVIEW).last()
     >>> entry.pofile == pofile_es
     True
 

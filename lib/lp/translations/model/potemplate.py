@@ -944,7 +944,7 @@ class POTemplate(SQLBase, RosettaStats):
                 template_mail = 'poimport-syntax-error.txt'
             entry_to_import.setStatus(RosettaImportStatus.FAILED,
                                       rosetta_experts)
-            error_text = str(exception)
+            error_text = six.text_type(exception)
             entry_to_import.setErrorOutput(error_text)
         else:
             error_text = None

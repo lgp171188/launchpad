@@ -3417,7 +3417,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                         by_maintainer=False):
         """Create a `TranslationImportQueueEntry`."""
         if path is None:
-            path = self.getUniqueString() + '.pot'
+            path = self.getUniqueUnicode() + '.pot'
 
         for_distro = not (distroseries is None and sourcepackagename is None)
         for_project = productseries is not None
@@ -3441,7 +3441,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             uploader = self.makePerson()
 
         if content is None:
-            content = self.getUniqueString()
+            content = self.getUniqueBytes()
 
         if format is None:
             format = TranslationFileFormat.PO
@@ -3449,8 +3449,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if status is None:
             status = RosettaImportStatus.NEEDS_REVIEW
 
-        if type(content) == unicode:
-            content = content.encode('utf-8')
+        content = six.ensure_binary(content)
 
         entry = getUtility(ITranslationImportQueue).addOrUpdateEntry(
             path=path, content=content, by_maintainer=by_maintainer,
