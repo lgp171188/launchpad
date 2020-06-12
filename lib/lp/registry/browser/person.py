@@ -30,6 +30,7 @@ __all__ = [
     'PersonLiveFSView',
     'PersonNavigation',
     'PersonOAuthTokensView',
+    'PersonOCIRegistryCredentialsView',
     'PersonOverviewMenu',
     'PersonOwnedTeamsView',
     'PersonRdfContentsView',
@@ -133,6 +134,9 @@ from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
 from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
 from lp.registry.browser import BaseRdfView
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.menu import (
@@ -570,6 +574,15 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
             return None
         return irc_nick
 
+    @stepthrough('+oci-registry-credential')
+    def traverse_oci_registry_credential(self, id):
+        """Traverse to this person's OCI registry credentials
+        on the webservice layer."""
+        oci_credentials = getUtility(IOCIRegistryCredentialsSet).get(id)
+        if oci_credentials is None or oci_credentials.person != self.context:
+            return None
+        return oci_credentials
+
     @stepto('+archivesubscriptions')
     def traverse_archive_subscription(self):
         """Traverse to the archive subscription for this person."""
@@ -802,6 +815,7 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         'view_ppa_subscriptions',
         'ppa',
         'oauth_tokens',
+        'oci_registry_credentials',
         'related_software_summary',
         'view_recipes',
         'view_snaps',
@@ -822,6 +836,12 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         request_tokens = self.context.oauth_request_tokens
         enabled = bool(access_tokens or request_tokens)
         return Link(target, text, enabled=enabled, icon='info')
+
+    @enabled_with_permission('launchpad.Edit')
+    def oci_registry_credentials(self):
+        target = '+oci-registry-credentials'
+        text = 'OCI registry credentials'
+        return Link(target, text, icon='info')
 
     @enabled_with_permission('launchpad.Edit')
     def editlanguages(self):
@@ -3619,6 +3639,23 @@ class PersonOAuthTokensView(LaunchpadView):
                 "revoked already?" % consumer.key)
         self.request.response.redirect(
             canonical_url(self.context, view_name='+oauth-tokens'))
+
+
+class PersonOCIRegistryCredentialsView(LaunchpadView):
+    """View for Person:+oci-registry-credentials."""
+
+    @cachedproperty
+    def oci_registry_credentials(self):
+        return list(getUtility(
+            IOCIRegistryCredentialsSet).findByOwner(self.context))
+
+    @property
+    def page_title(self):
+        return "OCI registry credentials"
+
+    @property
+    def has_credentials(self):
+        return len(self.oci_registry_credentials) > 0
 
 
 class PersonLiveFSView(LaunchpadView):
