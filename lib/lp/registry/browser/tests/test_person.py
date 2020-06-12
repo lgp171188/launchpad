@@ -1349,9 +1349,6 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
                 credentials.get('username'),
                 view.oci_registry_credentials[0].getCredentials()['username'])
             self.assertEqual(url, view.oci_registry_credentials[0].url)
-            self.assertEqual(
-                self.user.display_name,
-                view.oci_registry_credentials[0].owner.display_name)
 
 
 class TestPersonLiveFSView(BrowserTestCase):

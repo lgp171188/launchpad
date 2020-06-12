@@ -3648,9 +3648,11 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
         return list(getUtility(
             IOCIRegistryCredentialsSet).findByOwner(self.context))
 
+    page_title = "OCI registry credentials"
+
     @property
-    def page_title(self):
-        return "OCI registry credentials"
+    def label(self):
+        return "OCI registry credentials for %s" % self.context.display_name
 
     @property
     def has_credentials(self):
