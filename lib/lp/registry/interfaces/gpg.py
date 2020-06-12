@@ -12,8 +12,8 @@ __all__ = [
 
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from zope.interface import (
     Attribute,
@@ -34,10 +34,9 @@ from lp.services.gpg.interfaces import (
     )
 
 
+@exported_as_webservice_entry('gpg_key')
 class IGPGKey(IHasOwner):
     """OpenPGP support"""
-
-    export_as_webservice_entry('gpg_key')
 
     keysize = Int(title=_("Keysize"), required=True)
     algorithm = Choice(title=_("Algorithm"), required=True,

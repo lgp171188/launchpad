@@ -11,9 +11,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     REQUEST_USER,
     )
@@ -34,13 +34,12 @@ from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.fields import PersonChoice
 
 
+# XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IGitSubscription(Interface):
     """The relationship between a person and a Git repository."""
-
-    # XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
     id = Int(title=_("ID"), readonly=True, required=True)
     person_id = Int(title=_("Person ID"), required=True, readonly=True)

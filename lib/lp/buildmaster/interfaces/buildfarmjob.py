@@ -15,8 +15,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import (
@@ -65,10 +65,9 @@ class IBuildFarmJobDB(Interface):
         description=_("The specific type of job."))
 
 
+@exported_as_webservice_entry(as_of='beta')
 class IBuildFarmJob(Interface):
     """Operations that jobs for the build farm must implement."""
-
-    export_as_webservice_entry(as_of='beta')
 
     id = Attribute('The build farm job ID.')
 

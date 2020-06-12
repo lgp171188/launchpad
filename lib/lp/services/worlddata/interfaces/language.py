@@ -19,10 +19,10 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_returns_collection_of,
     )
 from zope.interface import (
@@ -57,9 +57,9 @@ class TextDirection(DBEnumeratedType):
         """)
 
 
+@exported_as_webservice_entry()
 class ILanguage(Interface):
     """A Language."""
-    export_as_webservice_entry()
 
     id = Attribute("This Language ID.")
 
@@ -173,6 +173,7 @@ class ILanguage(Interface):
                 'must be set together, or not at all.')
 
 
+@exported_as_webservice_collection(ILanguage)
 class ILanguageSet(Interface):
     """The collection of languages.
 
@@ -180,8 +181,6 @@ class ILanguageSet(Interface):
     If you want to access all languages known to Launchpad, use
     the getAllLanguages method.
     """
-
-    export_as_webservice_collection(ILanguage)
 
     @export_read_operation()
     @operation_returns_collection_of(ILanguage)

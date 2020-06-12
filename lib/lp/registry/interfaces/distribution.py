@@ -20,12 +20,12 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -703,6 +703,7 @@ class IDistributionPublic(
         """Create an `IOCIProject` for this distro."""
 
 
+@exported_as_webservice_entry(as_of="beta")
 class IDistribution(
     IDistributionEditRestricted, IDistributionPublic, IHasBugSupervisor,
     IFAQTarget, IQuestionTarget, IStructuralSubscriptionTarget):
@@ -720,12 +721,11 @@ class IDistribution(
             source_name="apport",
             distro_series=series)[0].source_package_version
     """
-    export_as_webservice_entry(as_of="beta")
 
 
+@exported_as_webservice_collection(IDistribution)
 class IDistributionSet(Interface):
     """Interface for DistrosSet"""
-    export_as_webservice_collection(IDistribution)
 
     title = Attribute('Title')
 

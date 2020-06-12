@@ -18,12 +18,12 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_operation_as,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -684,12 +684,11 @@ class ISpecificationDriverRestricted(Interface):
         """
 
 
+@exported_as_webservice_entry(as_of="beta")
 class ISpecification(ISpecificationPublic, ISpecificationView,
                      ISpecificationEditRestricted,
                      ISpecificationDriverRestricted, IBugLinkTarget):
     """A Specification."""
-
-    export_as_webservice_entry(as_of="beta")
 
     @mutator_for(ISpecificationView['workitems_text'])
     @operation_parameters(new_work_items=WorkItemsText())
@@ -724,9 +723,9 @@ class ISpecification(ISpecificationPublic, ISpecificationView,
         """
 
 
+@exported_as_webservice_collection(ISpecification)
 class ISpecificationSet(IHasSpecifications):
     """A container for specifications."""
-    export_as_webservice_collection(ISpecification)
 
     @collection_default_content()
     def empty_list():

@@ -28,10 +28,10 @@ from lazr.enum import (
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -312,6 +312,7 @@ class ISourcePackageRecipeDelete(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class ISourcePackageRecipe(ISourcePackageRecipeData,
     ISourcePackageRecipeEdit, ISourcePackageRecipeEditableAttributes,
     ISourcePackageRecipeView):
@@ -320,7 +321,6 @@ class ISourcePackageRecipe(ISourcePackageRecipeData,
     More precisely, it describes how to combine a number of branches into a
     debianized source tree.
     """
-    export_as_webservice_entry()
 
 
 class ISourcePackageRecipeSource(Interface):

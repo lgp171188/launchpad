@@ -21,9 +21,9 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     )
 from lazr.restful.fields import (
@@ -257,11 +257,11 @@ class IOCIRecipeBuildAdmin(Interface):
         """Change the build's score."""
 
 
+@exported_as_webservice_entry(
+    publish_web_link=True, as_of="devel", singular_name="oci_recipe_build")
 class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
                       IOCIRecipeBuildView):
     """A build record for an OCI recipe."""
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel", singular_name="oci_recipe_build")
 
 
 class IOCIRecipeBuildSet(ISpecificBuildFarmJobSource):

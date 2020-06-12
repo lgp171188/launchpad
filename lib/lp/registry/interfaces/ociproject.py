@@ -16,9 +16,9 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_factory_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -173,12 +173,11 @@ class IOCIProjectLegitimate(Interface):
         """Create an IOCIRecipe for this project."""
 
 
+@exported_as_webservice_entry(
+    publish_web_link=True, as_of="devel", singular_name="oci_project")
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                   IOCIProjectEditableAttributes, IOCIProjectLegitimate):
     """A project containing Open Container Initiative recipes."""
-
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel", singular_name="oci_project")
 
 
 class IOCIProjectSet(Interface):

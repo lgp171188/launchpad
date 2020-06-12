@@ -11,9 +11,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
@@ -33,9 +33,9 @@ from lp.code.interfaces.branch import IBranch
 from lp.services.fields import PersonChoice
 
 
+@exported_as_webservice_entry()
 class IBranchSubscription(Interface):
     """The relationship between a person and a branch."""
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), readonly=True, required=True)
     person_id = Int(title=_('Person ID'), required=True, readonly=True)
