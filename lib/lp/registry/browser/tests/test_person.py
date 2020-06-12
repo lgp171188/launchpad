@@ -34,6 +34,11 @@ from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.blueprints.enums import SpecificationImplementationStatus
 from lp.buildmaster.enums import BuildStatus
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.browser.person import PersonView
 from lp.registry.browser.team import TeamInvitationView
 from lp.registry.enums import PersonVisibility
@@ -364,6 +369,30 @@ class TestPersonIndexView(BrowserTestCase):
         self.factory.makeGPGKey(person)
         view = create_initialized_view(person, '+index')
         self.assertTrue(view.should_show_gpgkeys_section)
+
+    def test_show_oci_registry_credentials_link(self):
+        person = self.factory.makePerson()
+        view = create_initialized_view(person, '+index', principal=person)
+        with person_logged_in(person):
+            markup = self.get_markup(view, person)
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCIRegistryCredentials link', 'a',
+                attrs={
+                    'href':
+                        'http://launchpad.test/~%s/+oci-registry-credentials'
+                        % person.name},
+                text='OCI registry credentials'))
+        self.assertThat(markup, link_match)
+
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCIRegistryCredentials missing link', 'a',
+                text='OCI registry credentials'))
+
+        login(ANONYMOUS)
+        markup = self.get_markup(view, person)
+        self.assertNotIn(link_match, markup)
 
     def test_ppas_query_count(self):
         owner = self.factory.makePerson()
@@ -1279,6 +1308,47 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
                     '?batch=5&memo=5&start=5'))},
                 text='Next'))
         self.assertThat(view(), next_match)
+
+
+class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
+                                           OCIConfigHelperMixin):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonOCIRegistryCredentialsView, self).setUp()
+        self.setConfig()
+        self.person = self.factory.makePerson(
+            name="test-person", displayname="Test Person")
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, name="shiny", displayname="Shiny")
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distroseries.distribution.name:
+                self.distroseries.name,
+        }))
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        self.recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+    def test_view_oci_registry_credentials_on_person_page(self):
+        # Verify view helper attributes.
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.user,
+            url=url,
+            credentials=credentials)
+        view = create_initialized_view(self.user, '+oci-registry-credentials')
+        self.assertEqual('OCI registry credentials', view.page_title)
+        with person_logged_in(self.user):
+            self.assertEqual(
+                credentials.get('username'),
+                view.oci_registry_credentials[0].getCredentials()['username'])
+            self.assertEqual(url, view.oci_registry_credentials[0].url)
 
 
 class TestPersonLiveFSView(BrowserTestCase):
