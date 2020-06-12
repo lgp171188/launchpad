@@ -576,8 +576,7 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
 
     @stepthrough('+oci-registry-credential')
     def traverse_oci_registry_credential(self, id):
-        """Traverse to this person's OCI registry credentials
-        on the webservice layer."""
+        """Traverse to this person's OCI registry credentials."""
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).get(id)
         if oci_credentials is None or oci_credentials.person != self.context:
             return None
