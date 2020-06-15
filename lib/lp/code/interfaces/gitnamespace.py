@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for a Git repository namespace."""
@@ -200,7 +200,7 @@ class IGitNamespaceSet(Interface):
     """Interface for getting Git repository namespaces."""
 
     def get(person, project=None, distribution=None, sourcepackagename=None,
-            ociprojectname=None):
+            oci_project=None):
         """Return the appropriate `IGitNamespace` for the given objects."""
 
 
@@ -212,11 +212,7 @@ def get_git_namespace(target, owner):
             owner, distribution=target.distribution,
             sourcepackagename=target.sourcepackagename)
     elif IOCIProject.providedBy(target):
-        # This will eventually be allowable, but is not right now.
-        assert target.distribution is not None
-        return getUtility(IGitNamespaceSet).get(
-            owner, distribution=target.distribution,
-            ociprojectname=target.ociprojectname)
+        return getUtility(IGitNamespaceSet).get(owner, oci_project=target)
     elif target is None or IPerson.providedBy(target):
         return getUtility(IGitNamespaceSet).get(owner)
     else:
