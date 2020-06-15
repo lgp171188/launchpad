@@ -39,16 +39,15 @@ from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
+from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitrepository import (
     GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE,
     IGitRepository,
     IGitRepositorySet,
     )
-from lp.code.model.gitrepository import GitRepository
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
-from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
@@ -286,27 +285,29 @@ class TestGitAPIMixin:
 
     def assertConfirmsRepoCreation(self, requester, git_repository,
                                    can_authenticate=True, macaroon_raw=None):
+        translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
             macaroon_raw=macaroon_raw)
         request_id = auth_params["request-id"]
         result = self.assertDoesNotFault(
-            request_id, "confirmRepoCreation", git_repository.id, auth_params)
+            request_id, "confirmRepoCreation", translated_path, auth_params)
         login(ANONYMOUS)
         self.assertIsNone(result)
         Store.of(git_repository).invalidate(git_repository)
-        self.assertEqual(git_repository.status, GitRepositoryStatus.AVAILABLE)
+        self.assertEqual(GitRepositoryStatus.AVAILABLE, git_repository.status)
 
     def assertConfirmRepoCreationFails(
             self, failure, requester, git_repository, can_authenticate=True,
             macaroon_raw=None):
+        translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
             macaroon_raw=macaroon_raw)
         request_id = auth_params["request-id"]
         original_status = git_repository.status
         self.assertFault(
-            failure, request_id, "confirmRepoCreation", git_repository.id,
+            failure, request_id, "confirmRepoCreation", translated_path,
             auth_params)
         store = Store.of(git_repository)
         if store:
@@ -323,39 +324,36 @@ class TestGitAPIMixin:
 
     def assertAbortsRepoCreation(self, requester, git_repository,
                                    can_authenticate=True, macaroon_raw=None):
-        store = Store.of(git_repository)
-        repository_id = git_repository.id
+        translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
             macaroon_raw=macaroon_raw)
         request_id = auth_params["request-id"]
         result = self.assertDoesNotFault(
-            request_id, "abortRepoCreation", repository_id, auth_params)
+            request_id, "abortRepoCreation", translated_path, auth_params)
         login(ANONYMOUS)
         self.assertIsNone(result)
-        self.assertEqual(0, store.find(
-            GitRepository, GitRepository.id == repository_id).count())
+        self.assertIsNone(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
 
     def assertAbortRepoCreationFails(
             self, failure, requester, git_repository, can_authenticate=True,
             macaroon_raw=None):
-        repository_id = git_repository.id
+        translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
             macaroon_raw=macaroon_raw)
         request_id = auth_params["request-id"]
         original_status = git_repository.status
         self.assertFault(
-            failure, request_id, "abortRepoCreation", git_repository.id,
+            failure, request_id, "abortRepoCreation", translated_path,
             auth_params)
 
         # If it's not expected to fail because the repo isn't there,
         # make sure the repository was not changed in any way.
         if not isinstance(failure, faults.GitRepositoryNotFound):
-            store = IStore(GitRepository)
-            store.invalidate()
-            repo = store.find(
-                GitRepository, GitRepository.id == repository_id).one()
+            repo = removeSecurityProxy(
+                getUtility(IGitLookup).getByHostingPath(translated_path))
             self.assertEqual(GitRepositoryStatus.CREATING, repo.status)
             self.assertEqual(original_status, git_repository.status)
 

@@ -612,25 +612,25 @@ class GitAPI(LaunchpadXMLRPCView):
         if naked_repo.status != GitRepositoryStatus.CREATING:
             raise faults.Unauthorized()
 
-    def _confirmRepoCreation(self, requester, repository_id, auth_params):
+    def _confirmRepoCreation(self, requester, translated_path, auth_params):
         naked_repo = removeSecurityProxy(
-            getUtility(IGitLookup).get(repository_id))
+            getUtility(IGitLookup).getByHostingPath(translated_path))
         if naked_repo is None:
-            raise faults.GitRepositoryNotFound(str(repository_id))
+            raise faults.GitRepositoryNotFound(translated_path)
         self._validateRequesterCanManageRepoCreation(
             requester, naked_repo, auth_params)
         naked_repo.status = GitRepositoryStatus.AVAILABLE
 
-    def confirmRepoCreation(self, repository_id, auth_params):
+    def confirmRepoCreation(self, translated_path, auth_params):
         """See `IGitAPI`."""
         logger = self._getLogger(auth_params.get("request-id"))
         requester_id = _get_requester_id(auth_params)
         logger.info(
-            "Request received: confirmRepoCreation('%s')", repository_id)
+            "Request received: confirmRepoCreation('%s')", translated_path)
         try:
             result = run_with_login(
                 requester_id, self._confirmRepoCreation,
-                repository_id, auth_params)
+                translated_path, auth_params)
         except Exception as e:
             result = e
         if isinstance(result, xmlrpc_client.Fault):
@@ -639,25 +639,25 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("confirmRepoCreation succeeded: %s" % result)
         return result
 
-    def _abortRepoCreation(self, requester, repository_id, auth_params):
+    def _abortRepoCreation(self, requester, translated_path, auth_params):
         naked_repo = removeSecurityProxy(
-            getUtility(IGitLookup).get(repository_id))
+            getUtility(IGitLookup).getByHostingPath(translated_path))
         if naked_repo is None:
-            raise faults.GitRepositoryNotFound(str(repository_id))
+            raise faults.GitRepositoryNotFound(translated_path)
         self._validateRequesterCanManageRepoCreation(
             requester, naked_repo, auth_params)
         naked_repo.destroySelf()
 
-    def abortRepoCreation(self, repository_id, auth_params):
+    def abortRepoCreation(self, translated_path, auth_params):
         """See `IGitAPI`."""
         logger = self._getLogger(auth_params.get("request-id"))
         requester_id = _get_requester_id(auth_params)
         logger.info(
-            "Request received: abortRepoCreation('%s')", repository_id)
+            "Request received: abortRepoCreation('%s')", translated_path)
         try:
             result = run_with_login(
                 requester_id, self._abortRepoCreation,
-                repository_id, auth_params)
+                translated_path, auth_params)
         except Exception as e:
             result = e
         if isinstance(result, xmlrpc_client.Fault):
