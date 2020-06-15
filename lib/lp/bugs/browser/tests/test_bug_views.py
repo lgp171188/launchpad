@@ -186,7 +186,7 @@ class TestEmailObfuscated(BrowserTestCase):
     def test_user_sees_email_address(self):
         """A logged-in user can see the email address on the page."""
         browser = self.getBrowserForBugWithEmail(no_login=False)
-        self.assertEqual(7, browser.contents.count(self.email_address))
+        self.assertEqual(8, browser.contents.count(self.email_address))
 
     def test_anonymous_sees_not_email_address(self):
         """The anonymous user cannot see the email address on the page."""
