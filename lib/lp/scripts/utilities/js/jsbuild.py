@@ -352,7 +352,12 @@ class Builder:
                 combined_css.update()
 
     def do_build(self):
-        for entry in scandir.scandir(self.src_dir):
+        # We need this to be both repeatable and in the desired order
+        dir_list = sorted(
+            scandir.scandir(self.src_dir),
+            key=lambda x: x.name.lower(),
+            reverse=True)
+        for entry in dir_list:
             if not entry.is_dir():
                 continue
             self.build_assets(entry.name)
