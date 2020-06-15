@@ -34,6 +34,7 @@ from testtools.matchers import (
     EndsWith,
     Equals,
     Is,
+    IsInstance,
     LessThan,
     MatchesDict,
     MatchesListwise,
@@ -3731,6 +3732,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(201, response.status)
         repository = webservice.get(response.getHeader("Location")).jsonBody()
         self.assertThat(repository, ContainsDict({
+            "id": IsInstance(int),
             "repository_type": Equals("Hosted"),
             "registrant_link": EndsWith(owner_url),
             "owner_link": EndsWith(owner_url),
@@ -3739,7 +3741,6 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             "owner_default": Is(False),
             "target_default": Is(False),
             }))
-        self.assertIn('id', repository.keys())
         self.assertEqual(1, hosting_fixture.create.call_count)
 
     def test_new_project(self):
