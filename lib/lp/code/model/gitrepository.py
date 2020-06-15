@@ -296,7 +296,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         dbName='repository_type', enum=GitRepositoryType, notNull=True)
 
     status = EnumCol(
-        dbName='status', enum=GitRepositoryStatus, notNull=True)
+        dbName='status', enum=GitRepositoryStatus, notNull=True,
+        default=GitRepositoryStatus.AVAILABLE)
 
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
@@ -355,6 +356,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             assert IDistribution.providedBy(target.pillar)
             self.ociprojectname = target.ociprojectname
             self.distribution = target.pillar
+        # XXX pappacena 2020-06-08: We should simplify this once the value of
+        # GitRepository.status column is backfilled.
         self.status = (status if status is not None
                        else GitRepositoryStatus.AVAILABLE)
         self.owner_default = False
