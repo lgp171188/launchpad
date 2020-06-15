@@ -131,7 +131,7 @@ def git_repository_name_validator(name):
 class IGitRepositoryView(IHasRecipes):
     """IGitRepository attributes that require launchpad.View permission."""
 
-    id = Int(title=_("ID"), readonly=True, required=True)
+    id = exported(Int(title=_("ID"), readonly=True, required=True))
 
     date_created = exported(Datetime(
         title=_("Date created"), required=True, readonly=True))
