@@ -204,7 +204,7 @@ class IOCIProjectSet(Interface):
         """
 
     def findByPillarAndName(pillar, name_substring):
-        """Find OCIProjects for a given pillar that contains the provided
+        """Find OCIProjects for a given pillar that contain the provided
         name."""
 
     def preloadDataForOCIProjects(oci_projects):
