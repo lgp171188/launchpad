@@ -14,14 +14,16 @@ __all__ = [
     ]
 
 
+from datetime import datetime
 import json
 import os
 
+import pytz
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
-from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonError,
@@ -141,6 +143,8 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
                     digest)
                 if oci_file:
                     librarian_file = oci_file.library_file
+                    unsecure_file = removeSecurityProxy(oci_file)
+                    unsecure_file.date_last_used = datetime.now(pytz.UTC)
                 # If it doesn't, we need to download it
                 else:
                     files.add(layer_filename)
