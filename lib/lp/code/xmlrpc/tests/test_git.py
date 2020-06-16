@@ -300,7 +300,6 @@ class TestGitAPIMixin:
             "trailing": "",
             "private": private,
             "creation_params": {
-                "repository_id": repository.id,
                 "clone_from": (cloned_from.getInternalPath() if cloned_from
                                else None)}
             }, translation)

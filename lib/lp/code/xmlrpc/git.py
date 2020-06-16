@@ -397,7 +397,6 @@ class GitAPI(LaunchpadXMLRPCView):
                     requester, path, auth_params)
                 clone_from = repo.getClonedFrom()
                 result["creation_params"] = {
-                    "repository_id": repo.id,
                     "clone_from": (clone_from.getInternalPath() if clone_from
                                    else None)
                 }
