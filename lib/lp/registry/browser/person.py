@@ -7,6 +7,7 @@ __metaclass__ = type
 __all__ = [
     'BeginTeamClaimView',
     'CommonMenuLinks',
+    'PersonEditOCIRegistryCredentialsView',
     'EmailToPersonView',
     'PeopleSearchView',
     'PersonAccountAdministerView',
@@ -90,7 +91,9 @@ from zope.interface import (
 from zope.interface.exceptions import Invalid
 from zope.publisher.interfaces import NotFound
 from zope.schema import (
+    Bool,
     Choice,
+    Password,
     Text,
     TextLine,
     )
@@ -134,8 +137,10 @@ from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
 from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
+    OCIRegistryCredentialsAlreadyExist,
     )
 from lp.registry.browser import BaseRdfView
 from lp.registry.browser.branding import BrandingChangeView
@@ -3657,6 +3662,291 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
     @property
     def has_credentials(self):
         return len(self.oci_registry_credentials) > 0
+
+
+class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
+    """View for Person:+edit-oci-registry-credentials."""
+
+    @cachedproperty
+    def oci_registry_credentials(self):
+        return list(getUtility(
+            IOCIRegistryCredentialsSet).findByOwner(self.context))
+
+    class schema(Interface):
+        """Schema for editing registry credentials."""
+
+    def _getFieldName(self, name, credentials_id):
+        """Get the combined field name for an `OCIRegistryCredentials` ID.
+
+        In order to be able to render a table, we encode the credentials ID
+        in the form field name.
+        """
+        return "%s.%d" % (name, credentials_id)
+
+    def _parseFieldName(self, field_name):
+        """Parse a combined field name as described in `_getFieldName`.
+
+        :raises UnexpectedFormData: if the field name cannot be parsed or
+            the `OCIRegistryCredentials` cannot be found.
+        """
+        field_bits = field_name.split(".")
+        if len(field_bits) != 2:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        field_type = field_bits[0]
+        try:
+            credentials_id = int(field_bits[1])
+        except ValueError:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        return field_type, credentials_id
+
+    def setUpWidgets(self):
+        LaunchpadFormView.setUpWidgets(self)
+
+    def setUpFields(self):
+        """See `LaunchpadFormView`."""
+        LaunchpadFormView.setUpFields(self)
+
+        owner_fields = []
+        username_fields = []
+        password_fields = []
+        url_fields = []
+        delete_fields = []
+
+        for elem in self.oci_registry_credentials:
+            owner_fields.append(
+                Choice(
+                    title=u'Owner',
+                    vocabulary=(
+                        'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
+                    default=elem.owner.name,
+                    __name__=self._getFieldName('owner', elem.id)))
+            username_fields.append(
+                TextLine(
+                    title=u'Username',
+                    __name__=self._getFieldName('username', elem.id),
+                    default=elem.username,
+                    required=False, readonly=False))
+            password_fields.append(
+                Password(
+                    title=u'Password',
+                    __name__=self._getFieldName('password', elem.id),
+                    default=None,
+                    required=False, readonly=False))
+            password_fields.append(
+                Password(
+                    title=u'Confirm password',
+                    __name__=self._getFieldName('confirm_password', elem.id),
+                    default=None,
+                    required=False, readonly=False))
+            url_fields.append(
+                TextLine(
+                    title=u'Registry URL',
+                    __name__=self._getFieldName('url', elem.id),
+                    default=elem.url,
+                    required=True, readonly=False))
+            delete_fields.append(
+                Bool(
+                    title=u'Delete',
+                    __name__=self._getFieldName('delete', elem.id),
+                    default=False,
+                    required=True, readonly=False))
+        # The fields from the Add New Credentials
+        url_fields.append(
+            TextLine(
+                title=u'Registry URL',
+                __name__=u'add_url',
+                required=False, readonly=False))
+        username_fields.append(
+            TextLine(
+                title=u'Username',
+                __name__=u'add_username',
+                required=False, readonly=False))
+        password_fields.append(
+            Password(
+                title=u'Password',
+                __name__=u'add_password',
+                required=False, readonly=False))
+        password_fields.append(
+            Password(
+                title=u'Confirm password',
+                __name__=u'add_confirm_password',
+                required=False, readonly=False))
+        self.form_fields += FormFields(*owner_fields)
+        self.form_fields += FormFields(*username_fields)
+        self.form_fields += FormFields(*password_fields)
+        self.form_fields += FormFields(*url_fields)
+        self.form_fields += FormFields(*delete_fields)
+
+    @property
+    def label(self):
+        return 'Edit OCI registry credentials'
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    def getCredentialsWidgets(self, credentials):
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+        owner_field_name = (
+                "field." + self._getFieldName("owner", credentials.id))
+        username_field_name = (
+                "field." + self._getFieldName("username", credentials.id))
+        password_field_name = (
+                "field." + self._getFieldName("password", credentials.id))
+        confirm_password_field_name = (
+                "field." + self._getFieldName("confirm_password",
+                                              credentials.id))
+        url_field_name = "field." + self._getFieldName("url", credentials.id)
+        delete_field_name = (
+                "field." + self._getFieldName("delete", credentials.id))
+        return {
+            "owner": widgets_by_name[owner_field_name],
+            "username": widgets_by_name[username_field_name],
+            "password": widgets_by_name[password_field_name],
+            "confirm_password": widgets_by_name[confirm_password_field_name],
+            "url": widgets_by_name[url_field_name],
+            "delete": widgets_by_name[delete_field_name]
+        }
+
+    def parseData(self, data):
+        """Rearrange form data to make it easier to process."""
+        parsed_data = {}
+        add_url = data["add_url"]
+        add_username = data["add_username"]
+        add_password = data["add_password"]
+        add_confirm_password = data["add_confirm_password"]
+        if add_url or add_username or add_password or add_confirm_password:
+            parsed_data.setdefault(None, {
+                "username": add_username,
+                "password": add_password,
+                "confirm_password": add_confirm_password,
+                "url": add_url,
+                "action": "add",
+            })
+        for field_name in sorted(
+                name for name in data if name.split(".")[0] == "owner"):
+            _, credentials_id = self._parseFieldName(field_name)
+            owner_field_name = self._getFieldName(
+                "owner", credentials_id)
+            username_field_name = self._getFieldName(
+                "username", credentials_id)
+            password_field_name = self._getFieldName(
+                "password", credentials_id)
+            confirm_password_field_name = self._getFieldName(
+                "confirm_password", credentials_id)
+            url_field_name = self._getFieldName("url", credentials_id)
+            delete_field_name = self._getFieldName("delete", credentials_id)
+            if data.get(delete_field_name):
+                action = "delete"
+            else:
+                action = "change"
+            parsed_data.setdefault(credentials_id, {
+                "username": data.get(username_field_name),
+                "password": data.get(password_field_name),
+                "confirm_password": data.get(confirm_password_field_name),
+                "url": data.get(url_field_name),
+                "owner": data.get(owner_field_name),
+                "action": action,
+            })
+
+        return parsed_data
+
+    def updateCredentialsFromData(self, parsed_data):
+        credentials_map = {
+            credentials.id: credentials
+            for credentials in self.oci_registry_credentials}
+
+        for credentials_id, parsed_credentials in parsed_data.items():
+            credentials = credentials_map.get(credentials_id)
+            action = parsed_credentials["action"]
+
+            if action == "change":
+                username = parsed_credentials["username"]
+                password = parsed_credentials["password"]
+                confirm_password = parsed_credentials["confirm_password"]
+                owner = parsed_credentials["owner"]
+                if password or confirm_password:
+                    if password != confirm_password:
+                        self.setFieldError(
+                            self._getFieldName(
+                                "confirm_password", credentials_id),
+                            "Passwords do not match.")
+                    else:
+                        credentials.setCredentials({
+                            "username": username,
+                            "password": password,
+                        })
+                elif username != credentials.username:
+                    removeSecurityProxy(credentials).username = username
+                elif parsed_credentials["url"] != credentials.url:
+                    credentials.url = parsed_credentials["url"]
+                if owner != credentials.owner:
+                    credentials.owner = owner
+            elif action == "delete":
+                push_rule_set = getUtility(IOCIPushRuleSet)
+                if not push_rule_set.findByRegistryCredentials(
+                        credentials).is_empty():
+                    self.setFieldError(
+                        self._getFieldName("delete", credentials_id),
+                        "These credentials cannot be deleted as there are "
+                        "push rules defined that still use them.")
+                else:
+                    credentials.destroySelf()
+            elif action == "add":
+                parsed_add_credentials = parsed_data[credentials]
+                url = parsed_add_credentials["url"]
+                password = parsed_add_credentials["password"]
+                confirm_password = parsed_add_credentials["confirm_password"]
+                username = parsed_add_credentials["username"]
+                if url:
+                    if password or confirm_password:
+                        if password == confirm_password:
+                            credentials = {
+                                'username': username,
+                                'password': password}
+                            try:
+                                getUtility(IOCIRegistryCredentialsSet).new(
+                                    owner=removeSecurityProxy(self.context),
+                                    url=url,
+                                    credentials=credentials)
+                            except OCIRegistryCredentialsAlreadyExist:
+                                self.setFieldError("add_url",
+                                                   "Credentials already exist "
+                                                   "with the same URL and "
+                                                   "username.")
+                        else:
+                            self.setFieldError("add_password",
+                                               "Please make sure the new "
+                                               "password matches the "
+                                               "confirm password field.")
+                    else:
+                        credentials = {'username': username}
+                        try:
+                            getUtility(IOCIRegistryCredentialsSet).new(
+                                owner=removeSecurityProxy(self.context),
+                                url=url,
+                                credentials=credentials)
+                        except OCIRegistryCredentialsAlreadyExist:
+                            self.setFieldError("add_url",
+                                               "Credentials already exist "
+                                               "with the same URL and "
+                                               "username.")
+                else:
+                    self.setFieldError("add_url",
+                                       "Registry URL cannot be empty.")
+            else:
+                raise AssertionError("unknown action: %s" % action)
+
+    @action("Save")
+    def save(self, action, data):
+        parsed_data = self.parseData(data)
+        self.updateCredentialsFromData(parsed_data)
+
+        if not self.errors:
+            self.request.response.addNotification("Saved credentials")
+            self.next_url = canonical_url(self.context)
 
 
 class PersonLiveFSView(LaunchpadView):
