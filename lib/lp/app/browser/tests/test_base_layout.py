@@ -251,3 +251,22 @@ class TestBaseLayout(TestCaseWithFactory):
         referrer = content.find('meta', content="origin-when-cross-origin")
         self.assertIsNone(referrer)
 
+    def test_opengraph_metadata(self):
+        view = self.makeTemplateView('main_side')
+        content = BeautifulSoup(view())
+
+        # https://ogp.me/ - "The four required properties for every page are:"
+        og_title = content.find('meta', {'property': 'og:title'})
+        self.assertIsNotNone(og_title)
+        og_type = content.find('meta', {'property': 'og:type'})
+        self.assertIsNotNone(og_type)
+        og_image = content.find('meta', {'property': 'og:image'})
+        self.assertIsNotNone(og_image)
+        og_url = content.find('meta', {'property': 'og:url'})
+        self.assertIsNotNone(og_url)
+
+        # And some basic validity checks
+        self.assertEqual(og_type.get('content'), 'website')
+        self.assertIn('png', og_image.get('content'))
+        self.assertIn('Test', og_title.get('content'))
+        self.assertIn('http', og_url.get('content'))

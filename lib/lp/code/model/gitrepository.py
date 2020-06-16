@@ -152,7 +152,6 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
     IAccessPolicySource,
     )
-from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
@@ -312,8 +311,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     sourcepackagename_id = Int(name='sourcepackagename', allow_none=True)
     sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
 
-    ociprojectname_id = Int(name='ociprojectname', allow_none=True)
-    ociprojectname = Reference(ociprojectname_id, 'OCIProjectName.id')
+    oci_project_id = Int(name='oci_project', allow_none=True)
+    oci_project = Reference(oci_project_id, 'OCIProject.id')
 
     name = Unicode(name='name', allow_none=False)
 
@@ -347,10 +346,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             self.distribution = target.distribution
             self.sourcepackagename = target.sourcepackagename
         elif IOCIProject.providedBy(target):
-            # XXX twom 2019-10-28 This should have support for product
-            assert IDistribution.providedBy(target.pillar)
-            self.ociprojectname = target.ociprojectname
-            self.distribution = target.pillar
+            self.oci_project = target
         self.owner_default = False
         self.target_default = False
 
@@ -384,11 +380,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             fmt = "~%(owner)s/%(distribution)s/+source/%(source)s"
             names["distribution"] = self.distribution.name
             names["source"] = self.sourcepackagename.name
-        elif (self.distribution is not None
-              and self.ociprojectname is not None):
-            fmt = "~%(owner)s/%(distribution)s/+oci/%(ociproject)s"
-            names["distribution"] = self.distribution.name
-            names["ociproject"] = self.ociprojectname.name
+        elif self.oci_project is not None:
+            fmt = "~%(owner)s/%(pillar)s/+oci/%(ociproject)s"
+            names["pillar"] = self.oci_project.pillar.name
+            names["ociproject"] = self.oci_project.ociprojectname.name
         else:
             fmt = "~%(owner)s"
         fmt += "/+git/%(repository)s"
@@ -405,9 +400,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         elif (self.distribution is not None
               and self.sourcepackagename is not None):
             return self.distribution.getSourcePackage(self.sourcepackagename)
-        elif (self.distribution is not None
-              and self.ociprojectname is not None):
-            return self.distribution.getOCIProject(self.ociprojectname.name)
+        elif self.oci_project is not None:
+            return self.oci_project
         else:
             return self.owner
 
@@ -1762,9 +1756,7 @@ class GitRepositorySet:
             clauses.append(
                 GitRepository.sourcepackagename == target.sourcepackagename)
         elif IOCIProject.providedBy(target):
-            clauses.append(GitRepository.distribution == target.distribution)
-            clauses.append(
-                GitRepository.ociprojectname == target.ociprojectname)
+            clauses.append(GitRepository.oci_project == target)
         else:
             raise GitTargetError(
                 "Personal repositories cannot be defaults for any target.")
@@ -1783,9 +1775,7 @@ class GitRepositorySet:
             clauses.append(
                 GitRepository.sourcepackagename == target.sourcepackagename)
         elif IOCIProject.providedBy(target):
-            clauses.append(GitRepository.distribution == target.distribution)
-            clauses.append(
-                GitRepository.ociprojectname == target.ociprojectname)
+            clauses.append(GitRepository.oci_project == target)
         else:
             raise GitTargetError(
                 "Personal repositories cannot be defaults for any target.")
