@@ -220,8 +220,8 @@ class TestOCIProjectEditView(BrowserTestCase):
             oci_project, user=oci_project.pillar.owner)
         self.submitEditForm(browser, "two")
         self.assertEqual(
-            "There is already an OCI project in %s with this name." % (
-                pillar_display_name),
+            "There is already an OCI project in distribution %s with this "
+            "name." % (pillar_display_name),
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
     def test_edit_oci_project_invalid_name(self):
@@ -359,9 +359,11 @@ class TestOCIProjectAddView(BrowserTestCase):
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Create OCI Project").click()
 
+        expected_msg = (
+            "There is already an OCI project in distribution %s with this "
+            "name." % distribution.display_name)
         self.assertEqual(
-            "There is already an OCI project in %s with this name." % (
-                distribution.display_name),
+            expected_msg,
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
     def test_create_oci_project_no_permission(self):
