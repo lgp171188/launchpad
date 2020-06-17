@@ -1386,9 +1386,14 @@ class TestPersonLiveFSView(BrowserTestCase):
             soupmatchers.Tag(
                 'Livefs date created', 'td',
                 text='%s' % date_formatter.displaydate()))
+        series_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs series', 'td',
+                text='%s' % livefs.distro_series.display_name))
         with person_logged_in(self.person):
             self.assertThat(view.render(), link_match)
             self.assertThat(view.render(), date_created_match)
+            self.assertThat(view.render(), series_match)
 
     def test_displays_no_livefs(self):
         view = create_initialized_view(
