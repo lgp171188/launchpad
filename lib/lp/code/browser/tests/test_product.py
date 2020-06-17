@@ -426,3 +426,17 @@ class TestCanConfigureBranches(TestCaseWithFactory):
         login_person(product.owner)
         view = create_view(product, '+branches')
         self.assertTrue(view.can_configure_branches())
+
+
+class TestProductOverviewOCIProject(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_displays_create_oci_project_link(self):
+        product = self.factory.makeProduct()
+
+        browser = self.getUserBrowser(
+            canonical_url(product), user=product.owner)
+        text = extract_text(find_tag_by_id(browser.contents, 'global-actions'))
+
+        self.assertIn("Create an OCI Project", text)

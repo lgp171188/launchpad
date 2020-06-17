@@ -28,6 +28,7 @@ from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
@@ -38,6 +39,7 @@ from lp.registry.interfaces.ociprojectname import (
     IOCIProjectName,
     IOCIProjectNameSet,
     )
+from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.webapp import (
     canonical_url,
@@ -51,6 +53,15 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+
+
+def getPillarFieldName(pillar):
+    if IDistribution.providedBy(pillar):
+        return 'distribution'
+    elif IProduct.providedBy(pillar):
+        return 'project'
+    raise NotImplementedError("This view only supports distribution or "
+                              "project as pillars for OCIProject.")
 
 
 class OCIProjectAddView(LaunchpadFormView):
@@ -85,10 +96,10 @@ class OCIProjectAddView(LaunchpadFormView):
         oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
             self.context, oci_project_name.name)
         if oci_project:
-            self.setFieldError(
-                    'name',
-                    'There is already an OCI project in %s with this name.' % (
-                        self.context.display_name))
+            pillar_type = getPillarFieldName(self.context)
+            msg = ('There is already an OCI project in %s %s with this name.'
+                   % (pillar_type, self.context.display_name))
+            self.setFieldError('name', msg)
 
 
 class OCIProjectFormatterAPI(CustomizableFormatter):
@@ -170,10 +181,19 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     schema = IOCIProject
     field_names = [
-        'distribution',
         'name',
         'official_recipe',
         ]
+
+    def setUpFields(self):
+        pillar_key = getPillarFieldName(self.context.pillar)
+        self.field_names = [pillar_key] + self.field_names
+
+        super(OCIProjectEditView, self).setUpFields()
+
+        # Set the correct pillar field as mandatory
+        pillar_field = self.form_fields.get(pillar_key).field
+        pillar_field.required = True
 
     def extendFields(self):
         official_recipe = self.context.getOfficialRecipe()
@@ -191,16 +211,17 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     def validate(self, data):
         super(OCIProjectEditView, self).validate(data)
-        distribution = data.get('distribution')
+        pillar_type_field = getPillarFieldName(self.context.pillar)
+        pillar = data.get(pillar_type_field)
         name = data.get('name')
-        if distribution and name:
+        if pillar and name:
             oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
-                distribution, name)
+                pillar, name)
             if oci_project is not None and oci_project != self.context:
                 self.setFieldError(
                     'name',
-                    'There is already an OCI project in %s with this name.' % (
-                        distribution.display_name))
+                    'There is already an OCI project in %s %s with this name.'
+                    % (pillar_type_field, pillar.display_name))
 
     @action('Update OCI project', name='update')
     def update_action(self, action, data):
