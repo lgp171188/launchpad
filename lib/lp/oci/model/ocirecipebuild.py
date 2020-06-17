@@ -93,6 +93,9 @@ class OCIFile(Storm):
 
     layer_file_digest = Unicode(name='layer_file_digest', allow_none=True)
 
+    date_last_used = DateTime(
+        name='date_last_used', tzinfo=pytz.UTC, allow_none=False)
+
     def __init__(self, build, library_file, layer_file_digest=None):
         """Construct a `OCIFile`."""
         super(OCIFile, self).__init__()

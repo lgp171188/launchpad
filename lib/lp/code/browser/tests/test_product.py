@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the product view classes and templates."""
@@ -426,3 +426,18 @@ class TestCanConfigureBranches(TestCaseWithFactory):
         login_person(product.owner)
         view = create_view(product, '+branches')
         self.assertTrue(view.can_configure_branches())
+
+
+class TestProductOverviewOCIProject(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_displays_create_and_list_oci_project_link(self):
+        product = self.factory.makeProduct()
+
+        browser = self.getUserBrowser(
+            canonical_url(product), user=product.owner)
+        text = extract_text(find_tag_by_id(browser.contents, 'global-actions'))
+
+        self.assertIn("Search for OCI Project", text)
+        self.assertIn("Create an OCI Project", text)

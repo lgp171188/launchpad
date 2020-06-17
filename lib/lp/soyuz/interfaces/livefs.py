@@ -27,12 +27,12 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -284,22 +284,20 @@ class ILiveFSAdminAttributes(Interface):
             "Only build this live filesystem image on virtual builders.")))
 
 
+# XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(
+    singular_name="livefs", plural_name="livefses", as_of="beta")
 class ILiveFS(
     ILiveFSView, ILiveFSEdit, ILiveFSEditableAttributes,
     ILiveFSModerateAttributes, ILiveFSAdminAttributes):
     """A buildable live filesystem image."""
 
-    # XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(
-        singular_name="livefs", plural_name="livefses", as_of="beta")
 
-
+@exported_as_webservice_collection(ILiveFS)
 class ILiveFSSet(Interface):
     """A utility to create and access live filesystems."""
-
-    export_as_webservice_collection(ILiveFS)
 
     @call_with(registrant=REQUEST_USER)
     @export_factory_operation(

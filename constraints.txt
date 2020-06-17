@@ -229,7 +229,7 @@ lazr.delegates==2.0.4
 lazr.enum==1.2
 lazr.jobrunner==0.16
 lazr.lifecycle==1.2
-lazr.restful==0.21.1
+lazr.restful==0.22.0
 lazr.restfulclient==0.14.3
 lazr.sshserver==0.1.10
 lazr.uri==1.0.3
@@ -299,7 +299,7 @@ SimpleTAL==4.3
 soupmatchers==0.4
 soupsieve==1.9
 # lp:~launchpad-committers/storm/lp
-storm==0.23+lp415
+storm==0.24+lp416
 subprocess32==3.2.6
 subvertpy==0.9.1
 tenacity==6.1.0
@@ -318,7 +318,7 @@ wadllib==1.3.2
 waitress==1.3.1
 webencodings==0.5.1
 WebOb==1.8.5
-WebTest==2.0.33
+WebTest==2.0.35
 wsgi-intercept==1.9.2
 WSGIProxy2==0.4.6
 wsgiref==0.1.2

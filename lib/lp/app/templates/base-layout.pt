@@ -49,6 +49,19 @@
       <meta name="description"
         tal:condition="view/page_description | nothing"
         tal:attributes="content view/page_description/fmt:strip-email/fmt:shorten/500" />
+      <meta property="og:description"
+        tal:condition="view/page_description | nothing"
+        tal:attributes="content view/page_description/fmt:strip-email/fmt:shorten/500" />
+    </tal:view>
+
+    <meta property="og:title" tal:attributes="content view/fmt:pagetitle" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/@@/launchpad.png" />
+    <meta property="og:url" tal:attributes="content python: view.recommended_canonical_url or request.URL" />
+    <meta property="og:site_name" content="Launchpad" />
+
+    <tal:view condition="view/private">
+      <meta name="referrer" content="origin-when-cross-origin"/>
     </tal:view>
 
     <metal:page-javascript

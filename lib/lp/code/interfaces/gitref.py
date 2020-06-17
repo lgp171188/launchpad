@@ -16,11 +16,11 @@ from textwrap import dedent
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -460,13 +460,12 @@ class IGitRefEdit(Interface):
         """
 
 
+# XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IGitRef(IGitRefView, IGitRefEdit):
     """A reference in a Git repository."""
-
-    # XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
 
 class IGitRefSet(Interface):

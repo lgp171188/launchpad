@@ -3,6 +3,8 @@
 
 """Gettext PO importer tests."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from io import BytesIO
@@ -27,7 +29,7 @@ from lp.translations.interfaces.translationimportqueue import (
 from lp.translations.utilities.gettext_po_importer import GettextPOImporter
 
 
-test_template = r'''
+test_template = br'''
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -38,7 +40,7 @@ msgid "foo"
 msgstr ""
 '''
 
-test_translation_file = r'''
+test_translation_file = br'''
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"

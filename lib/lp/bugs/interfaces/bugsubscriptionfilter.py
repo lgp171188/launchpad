@@ -11,11 +11,11 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     REQUEST_USER,
     )
@@ -149,11 +149,11 @@ class IBugSubscriptionFilterMethodsProtected(Interface):
         structural subscription."""
 
 
+@exported_as_webservice_entry()
 class IBugSubscriptionFilter(
     IBugSubscriptionFilterAttributes, IBugSubscriptionFilterMethodsProtected,
     IBugSubscriptionFilterMethodsPublic):
     """A bug subscription filter."""
-    export_as_webservice_entry()
 
 
 class IBugSubscriptionFilterMute(Interface):

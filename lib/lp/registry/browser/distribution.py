@@ -42,7 +42,6 @@ from collections import defaultdict
 import datetime
 
 from lazr.restful.utils import smartquote
-import six
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
@@ -106,7 +105,6 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
     )
-from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.feeds.browser import FeedsMixin
@@ -121,7 +119,6 @@ from lp.services.webapp import (
     canonical_url,
     ContextMenu,
     enabled_with_permission,
-    GetitemNavigation,
     LaunchpadView,
     Link,
     Navigation,
@@ -140,7 +137,7 @@ from lp.soyuz.interfaces.archive import IArchiveSet
 
 
 class DistributionNavigation(
-    GetitemNavigation, BugTargetTraversalMixin, QuestionTargetTraversalMixin,
+    Navigation, BugTargetTraversalMixin, QuestionTargetTraversalMixin,
     FAQTargetNavigationMixin, StructuralSubscriptionTargetTraversalMixin,
     PillarNavigationMixin, TargetDefaultVCSNavigationMixin):
 
@@ -178,12 +175,24 @@ class DistributionNavigation(
     def traverse_archive(self, name):
         return self.context.getArchive(name)
 
-    def traverse(self, name):
+    def _resolveSeries(self, name):
         try:
-            return super(DistributionNavigation, self).traverse(name)
+            return self.context[name], False
         except NotFoundError:
             resolved = self.context.resolveSeriesAlias(name)
-            return self.redirectSubTree(canonical_url(resolved), status=303)
+            return resolved, True
+
+    @stepthrough('+series')
+    def traverse_series(self, name):
+        series, _ = self._resolveSeries(name)
+        return self.redirectSubTree(canonical_url(series), status=303)
+
+    def traverse(self, name):
+        series, is_alias = self._resolveSeries(name)
+        if is_alias:
+            return self.redirectSubTree(canonical_url(series), status=303)
+        else:
+            return series
 
 
 class DistributionSetNavigation(Navigation):
@@ -1376,50 +1385,3 @@ class DistributionPublisherConfigView(LaunchpadFormView):
         self.request.response.addInfoNotification(
             'Your changes have been applied.')
         self.next_url = canonical_url(self.context)
-
-
-class DistributionOCIProjectSearchView(LaunchpadView):
-    """Page to search for OCI projects of a given distribution."""
-    page_title = ''
-
-    @property
-    def label(self):
-        return "Search OCI projects in %s" % self.context.title
-
-    @property
-    def text(self):
-        text = self.request.get("text", None)
-        if isinstance(text, list):
-            # The user may have URL hacked a query string with more than one
-            # "text" parameter. We'll take the last one.
-            text = text[-1]
-        return text
-
-    @property
-    def search_requested(self):
-        return self.text is not None
-
-    @property
-    def title(self):
-        return self.context.name
-
-    @cachedproperty
-    def count(self):
-        """Return the number of matched search results."""
-        return self.batchnav.batch.total()
-
-    @cachedproperty
-    def batchnav(self):
-        """Return the batch navigator for the search results."""
-        return BatchNavigator(self.search_results, self.request)
-
-    @cachedproperty
-    def preloaded_batch(self):
-        projects = self.batchnav.batch
-        getUtility(IOCIProjectSet).preloadDataForOCIProjects(projects)
-        return projects
-
-    @property
-    def search_results(self):
-        return getUtility(IOCIProjectSet).findByDistributionAndName(
-            self.context, self.text or six.ensure_text(''))

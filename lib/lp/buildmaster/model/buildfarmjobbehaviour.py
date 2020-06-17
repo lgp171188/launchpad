@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Base and idle BuildFarmJobBehaviour classes."""
@@ -175,9 +175,9 @@ class BuildFarmJobBehaviourBase:
         :return: A Deferred that calls back with a librarian file alias.
         """
         out_file_fd, out_file_name = tempfile.mkstemp(suffix=".buildlog")
-        out_file = os.fdopen(out_file_fd, "r+")
+        os.close(out_file_fd)
 
-        def got_file(ignored, filename, out_file, out_file_name):
+        def got_file(ignored, filename, out_file_name):
             try:
                 # If the requested file is the 'buildlog' compress it
                 # using gzip before storing in Librarian.
@@ -189,8 +189,8 @@ class BuildFarmJobBehaviourBase:
                     copy_and_close(out_file, gz_file)
                     os.remove(out_file_name.replace('.gz', ''))
 
-                # Reopen the file, seek to its end position, count and seek
-                # to beginning, ready for adding to the Librarian.
+                # Open the file, seek to its end position, count and seek to
+                # beginning, ready for adding to the Librarian.
                 out_file = open(out_file_name)
                 out_file.seek(0, 2)
                 bytes_written = out_file.tell()
@@ -201,14 +201,13 @@ class BuildFarmJobBehaviourBase:
                     contentType=filenameToContentType(filename),
                     restricted=private)
             finally:
-                # Remove the temporary file.  getFile() closes the file
-                # object.
+                # Remove the temporary file.
                 os.remove(out_file_name)
 
             return library_file.id
 
-        d = self._slave.getFile(file_sha1, out_file)
-        d.addCallback(got_file, filename, out_file, out_file_name)
+        d = self._slave.getFile(file_sha1, out_file_name)
+        d.addCallback(got_file, filename, out_file_name)
         return d
 
     def getLogFileName(self):

@@ -61,9 +61,9 @@ class BugSubscriberTestCase(TestCaseWithFactory):
     def getNotifiedPersons(self, include_all=False):
         notified_persons = Store.of(self.bug).find(
             Person,
-            BugNotification.id == BugNotificationRecipient.bug_notificationID,
-            BugNotificationRecipient.personID == Person.id,
-            BugNotification.bugID == self.bug.id)
+            BugNotification.id == BugNotificationRecipient.bug_notification_id,
+            BugNotificationRecipient.person_id == Person.id,
+            BugNotification.bug == self.bug)
         if include_all:
             return list(notified_persons)
         else:

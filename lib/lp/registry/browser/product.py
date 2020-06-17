@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for products."""
@@ -275,6 +275,15 @@ class ProductNavigation(
     def traverse_commercialsubscription(self, name):
         return self.context.commercial_subscription
 
+    @stepthrough('+oci')
+    def traverse_oci(self, name):
+        return self.context.getOCIProject(name)
+
+    @stepthrough('+series')
+    def traverse_series(self, name):
+        series = self.context.getSeries(name)
+        return self.redirectSubTree(canonical_url(series), status=303)
+
     def traverse(self, name):
         return self.context.getSeries(name)
 
@@ -499,6 +508,15 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
     def sharing(self):
         return Link('+sharing', 'Sharing', icon='edit')
 
+    def search_oci_project(self):
+        text = 'Search for OCI Project'
+        return Link('+search-oci-project', text, icon='info')
+
+    @enabled_with_permission('launchpad.Driver')
+    def new_oci_project(self):
+        text = 'Create an OCI Project'
+        return Link('+new-oci-project', text, icon='add')
+
 
 class IProductEditMenu(Interface):
     """A marker interface for the 'Change details' navigation menu."""
@@ -517,7 +535,8 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
 
     @cachedproperty
     def links(self):
-        links = ['edit', 'review_license', 'administer', 'sharing']
+        links = ['edit', 'review_license', 'administer', 'sharing',
+                 'search_oci_project', 'new_oci_project']
         add_subscribe_link(links)
         return links
 

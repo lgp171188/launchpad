@@ -17,9 +17,9 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -74,10 +74,9 @@ class CveStatus(DBEnumeratedType):
         """)
 
 
+@exported_as_webservice_entry()
 class ICve(Interface):
     """A single CVE database entry."""
-
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), required=True, readonly=True)
     sequence = exported(
@@ -131,10 +130,9 @@ class ICve(Interface):
         """Remove a CveReference."""
 
 
+@exported_as_webservice_collection(ICve)
 class ICveSet(Interface):
     """The set of ICve objects."""
-
-    export_as_webservice_collection(ICve)
 
     title = Attribute('Title')
 

@@ -217,12 +217,6 @@
     <class class="lp.services.database.sqlbase.SQLBase">
         <implements interface="lp.services.database.interfaces.IDBObject" />
     </class>
-    <!-- XXX cjwatson 2020-05-19: Revert this once
-         https://code.launchpad.net/~cjwatson/storm/reference-set-getslice
-         is merged into our version of Storm. -->
-    <class class="storm.references.BoundReferenceSet">
-        <allow attributes="__getslice__" />
-    </class>
 
     <!-- Default favicon -->
     <browser:favicon for="*" file="../../../canonical/launchpad/images/launchpad.png" />

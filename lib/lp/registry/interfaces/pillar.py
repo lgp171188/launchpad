@@ -10,9 +10,9 @@ __metaclass__ = type
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_entry,
     operation_parameters,
     operation_returns_collection_of,
     REQUEST_USER,
@@ -53,13 +53,13 @@ __all__ = [
     ]
 
 
+@exported_as_webservice_entry()
 class IPillar(IHeadingContext):
     """An object that might be a project, a project group, or a distribution.
 
     This is a polymorphic object served by the pillar set. Check the
     individual object to see what type it is.
     """
-    export_as_webservice_entry()
     active = exported(
         Bool(title=_('Active'),
              description=_("Whether or not this item is active.")))
@@ -124,6 +124,7 @@ class IPillarName(Interface):
     pillar = Attribute('The pillar object')
 
 
+@exported_as_webservice_entry('pillars')
 class IPillarNameSet(Interface):
     """An object for searching across projects, project groups, and distros.
 
@@ -132,7 +133,6 @@ class IPillarNameSet(Interface):
     types of pillars. It also gives you access to pillars that have
     been flagged by administrators as "featured" pillars.
     """
-    export_as_webservice_entry('pillars')
 
     def __contains__(name):
         """True if the given name is an active Pillar or an alias to one."""

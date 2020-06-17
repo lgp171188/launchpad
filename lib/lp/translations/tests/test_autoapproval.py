@@ -8,6 +8,8 @@ Documentation-style tests go in there, ones that go systematically
 through the possibilities should go here.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from contextlib import contextmanager
 from datetime import (
     datetime,
@@ -16,6 +18,7 @@ from datetime import (
 
 from fixtures import FakeLogger
 from pytz import UTC
+from storm.locals import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -189,7 +192,7 @@ class TestGuessPOFileCustomLanguageCode(TestCaseWithFactory,
     def _makeQueueEntry(self, language_code):
         """Create translation import queue entry."""
         return self.queue.addOrUpdateEntry(
-            "%s.po" % language_code, 'contents', True, self.product.owner,
+            "%s.po" % language_code, b'contents', True, self.product.owner,
             productseries=self.series)
 
     def _setCustomLanguageCode(self, language_code, target_language_code):
@@ -606,13 +609,13 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
         template.path = 'program/program.pot'
         self.producttemplate2.path = 'errors/errors.pot'
         entry1 = queue.addOrUpdateEntry(
-            'program/nl.po', 'contents', False, template.owner,
+            'program/nl.po', b'contents', False, template.owner,
             productseries=template.productseries)
 
         # The clashing entry goes through approval unsuccessfully, but
         # without causing breakage.
         queue.addOrUpdateEntry(
-            'program/nl.po', 'other contents', False, template.owner,
+            'program/nl.po', b'other contents', False, template.owner,
             productseries=template.productseries, potemplate=template)
 
         self.becomeTheGardener()
@@ -626,7 +629,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
         template.iscurrent = False
         queue = getUtility(ITranslationImportQueue)
         entry = queue.addOrUpdateEntry(
-            pofile.path, 'contents', False, self.factory.makePerson(),
+            pofile.path, b'contents', False, self.factory.makePerson(),
             productseries=template.productseries)
 
         self.assertEqual(None, entry.getGuessedPOFile())
@@ -645,7 +648,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
 
         queue = getUtility(ITranslationImportQueue)
         entry = queue.addOrUpdateEntry(
-            current_pofile.path, 'contents', False, self.factory.makePerson(),
+            current_pofile.path, b'contents', False, self.factory.makePerson(),
             productseries=series)
 
         self.assertEqual(current_pofile, entry.getGuessedPOFile())
@@ -662,7 +665,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
 
         queue = TranslationImportQueue()
         entry = queue.addOrUpdateEntry(
-            'test.pot', 'contents', False, template.owner,
+            'test.pot', b'contents', False, template.owner,
             productseries=template.productseries)
 
         self.assertEqual(template, entry.guessed_potemplate)
@@ -675,7 +678,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
 
         queue = TranslationImportQueue()
         entry = queue.addOrUpdateEntry(
-            'other.pot', 'contents', False, template.owner,
+            'other.pot', b'contents', False, template.owner,
             productseries=template.productseries)
 
         self.assertEqual(None, entry.guessed_potemplate)
@@ -691,7 +694,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
 
         queue = TranslationImportQueue()
         entry = queue.addOrUpdateEntry(
-            'test.pot', 'contents', False, template.owner,
+            'test.pot', b'contents', False, template.owner,
             productseries=template.productseries)
 
         self.assertEqual(None, entry.guessed_potemplate)
@@ -709,7 +712,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
 
         queue = TranslationImportQueue()
         entry = queue.addOrUpdateEntry(
-            'test.pot', 'contents', False, template.owner,
+            'test.pot', b'contents', False, template.owner,
             productseries=template.productseries)
 
         self.assertEqual(template, entry.guessed_potemplate)
@@ -724,10 +727,10 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
         queue = TranslationImportQueue()
         template = self.factory.makePOTemplate()
         old_entry = queue.addOrUpdateEntry(
-            template.path, '# Content here', False, template.owner,
+            template.path, b'# Content here', False, template.owner,
             productseries=template.productseries)
         new_entry = queue.addOrUpdateEntry(
-            template.path, '# Content here', False, template.owner,
+            template.path, b'# Content here', False, template.owner,
             productseries=template.productseries, potemplate=template)
 
         # Before approval, the two entries differ in that the new one
@@ -785,7 +788,7 @@ class TestKdePOFileGuess(TestCaseWithFactory, GardenerDbUserMixin):
             translation_domain='kde4')
         self.pofile_nl = nl_template.newPOFile('nl')
 
-        self.pocontents = """
+        self.pocontents = b"""
             msgid "foo"
             msgstr ""
             """
@@ -836,7 +839,7 @@ class TestGetPOFileFromLanguage(TestCaseWithFactory, GardenerDbUserMixin):
         template.iscurrent = True
 
         entry = self.queue.addOrUpdateEntry(
-            'nl.po', '# ...', False, template.owner, productseries=trunk)
+            'nl.po', b'# ...', False, template.owner, productseries=trunk)
 
         self.becomeTheGardener()
         pofile = entry._get_pofile_from_language('nl', 'domain')
@@ -854,7 +857,7 @@ class TestGetPOFileFromLanguage(TestCaseWithFactory, GardenerDbUserMixin):
         template.iscurrent = False
 
         entry = self.queue.addOrUpdateEntry(
-            'nl.po', '# ...', False, template.owner, productseries=trunk)
+            'nl.po', b'# ...', False, template.owner, productseries=trunk)
 
         self.becomeTheGardener()
         pofile = entry._get_pofile_from_language('nl', 'domain')
@@ -873,7 +876,7 @@ class TestGetPOFileFromLanguage(TestCaseWithFactory, GardenerDbUserMixin):
         self.factory.makePOTMsgSet(template, "translator-credits")
 
         entry = self.queue.addOrUpdateEntry(
-            'nl.po', '# ...', False, template.owner, productseries=trunk)
+            'nl.po', b'# ...', False, template.owner, productseries=trunk)
 
         self.becomeTheGardener()
         pofile = entry._get_pofile_from_language('nl', 'domain')
@@ -896,7 +899,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
             translations_usage=ServiceUsage.LAUNCHPAD)
         trunk = product.getSeries('trunk')
         entry = self.queue.addOrUpdateEntry(
-            path, '# contents', False, product.owner, productseries=trunk)
+            path, b'# contents', False, product.owner, productseries=trunk)
         if status is not None:
             entry.status = status
         return entry
@@ -906,7 +909,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
         package = self.factory.makeSourcePackage()
         owner = package.distroseries.owner
         entry = self.queue.addOrUpdateEntry(
-            path, '# contents', False, owner,
+            path, b'# contents', False, owner,
             sourcepackagename=package.sourcepackagename,
             distroseries=package.distroseries)
         if status is not None:
@@ -917,7 +920,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
         """Make an entry's timestamps older by a given interval."""
         entry.dateimported -= interval
         entry.date_status_changed -= interval
-        entry.syncUpdate()
+        Store.of(entry).flush()
 
     def _exists(self, entry_id):
         """Is the entry with the given id still on the queue?"""
@@ -932,7 +935,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
                         getUtility(ILaunchpadCelebrities).rosetta_experts)
         if when is not None:
             entry.date_status_changed = when
-        entry.syncUpdate()
+        Store.of(entry).flush()
 
     def test_cleanUpObsoleteEntries_unaffected_statuses(self):
         # _cleanUpObsoleteEntries leaves entries in states without
@@ -1106,7 +1109,7 @@ class TestAutoApprovalNewPOFile(TestCaseWithFactory, GardenerDbUserMixin):
     def _makeQueueEntry(self, series):
         """Create translation import queue entry."""
         return self.queue.addOrUpdateEntry(
-            "%s.po" % self.language.code, 'contents', True,
+            "%s.po" % self.language.code, b'contents', True,
             self.product.owner, productseries=series)
 
     def test_getGuessedPOFile_creates_POFile(self):

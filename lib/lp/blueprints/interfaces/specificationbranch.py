@@ -11,10 +11,10 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_operation_as,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     )
 from lazr.restful.fields import (
@@ -33,10 +33,9 @@ from lp.code.interfaces.branch import IBranch
 from lp.registry.interfaces.person import IPerson
 
 
+@exported_as_webservice_entry(as_of="beta")
 class ISpecificationBranch(Interface):
     """A branch linked to a specification."""
-
-    export_as_webservice_entry(as_of="beta")
 
     id = Int(title=_("Specification Branch #"))
     specification = exported(

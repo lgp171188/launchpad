@@ -21,10 +21,10 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -323,9 +323,9 @@ class ISourcePackageEdit(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class ISourcePackage(ISourcePackagePublic, ISourcePackageEdit):
     """A source package associated to a particular distribution series."""
-    export_as_webservice_entry()
 
 
 class ISourcePackageFactory(Interface):

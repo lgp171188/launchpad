@@ -46,6 +46,30 @@ class TestOCIProject(TestCaseWithFactory):
         with admin_logged_in():
             self.assertProvides(oci_project, IOCIProject)
 
+    def test_product_pillar(self):
+        product = self.factory.makeProduct(name="some-project")
+        oci_project = self.factory.makeOCIProject(pillar=product)
+        self.assertEqual(product, oci_project.pillar)
+
+    def test_prevents_moving_pillar_to_invalid_type(self):
+        project = self.factory.makeProduct()
+        distro = self.factory.makeDistribution()
+
+        project_oci_project = self.factory.makeOCIProject(pillar=project)
+        distro_oci_project = self.factory.makeOCIProject(pillar=distro)
+
+        with admin_logged_in():
+            project_oci_project.pillar = distro
+            self.assertEqual(project_oci_project.distribution, distro)
+            self.assertIsNone(project_oci_project.project)
+
+            distro_oci_project.pillar = project
+            self.assertIsNone(distro_oci_project.distribution)
+            self.assertEqual(distro_oci_project.project, project)
+
+            self.assertRaises(
+                ValueError, setattr, distro_oci_project, 'pillar', 'Invalid')
+
     def test_newSeries(self):
         driver = self.factory.makePerson()
         distribution = self.factory.makeDistribution(driver=driver)
@@ -144,7 +168,7 @@ class TestOCIProjectSet(TestCaseWithFactory):
 
         with person_logged_in(registrant):
             fetched_result = getUtility(
-                IOCIProjectSet).getByDistributionAndName(
+                IOCIProjectSet).getByPillarAndName(
                     distribution, oci_project.ociprojectname.name)
             self.assertEqual(oci_project, fetched_result)
 
@@ -287,6 +311,5 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             other_user = self.factory.makePerson()
             distro = removeSecurityProxy(self.factory.makeDistribution(
                 owner=other_user))
-            url = api_url(distro)
 
         self.assertCanCreateOCIProject(distro, self.person)

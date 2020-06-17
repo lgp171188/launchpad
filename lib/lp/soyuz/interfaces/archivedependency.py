@@ -10,8 +10,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -27,9 +27,9 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.interfaces.archive import IArchive
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IArchiveDependency(Interface):
     """ArchiveDependency interface."""
-    export_as_webservice_entry(publish_web_link=False)
 
     id = Int(title=_("The archive ID."), readonly=True)
 

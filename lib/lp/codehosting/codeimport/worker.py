@@ -74,6 +74,7 @@ from lazr.uri import (
     )
 from pymacaroons import Macaroon
 import SCM
+import six
 from six.moves.urllib.parse import (
     urlsplit,
     urlunsplit,
@@ -736,7 +737,8 @@ class PullingImportWorker(ToBzrImportWorker):
                 "Getting exising bzr branch from central store.")
             bazaar_branch = self.getBazaarBranch()
             try:
-                remote_branch = opener.open(self.source_details.url)
+                remote_branch = opener.open(
+                    six.ensure_str(self.source_details.url))
             except TooManyRedirections:
                 self._logger.info("Too many redirections.")
                 return CodeImportWorkerExitCode.FAILURE_INVALID

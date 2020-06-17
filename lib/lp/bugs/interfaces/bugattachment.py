@@ -19,9 +19,9 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
@@ -121,6 +121,7 @@ class IBugAttachmentEdit(Interface):
         """Remove the attachment from the bug."""
 
 
+@exported_as_webservice_entry()
 class IBugAttachment(IBugAttachmentView, IBugAttachmentEdit):
     """A file attachment to an IBug.
 
@@ -150,7 +151,6 @@ class IBugAttachment(IBugAttachmentView, IBugAttachmentEdit):
             print "owner:", message.owner.display_name.encode('utf-8')
             print "created:", message.date_created
     """
-    export_as_webservice_entry()
 
 
 # Need to do this here because of circular imports.

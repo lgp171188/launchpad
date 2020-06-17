@@ -13,10 +13,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -40,16 +40,16 @@ class ProcessorNotFound(NameLookupFailed):
     _message_prefix = 'No such processor'
 
 
+# XXX: BradCrittenden 2011-06-20 bug=760849: The following use of 'beta'
+# is a work-around to allow the WADL to be generated.  It is a bald-faced
+# lie, though.  The class is being exported in 'devel' but in order to get
+# the WADL generation work it must be back-dated to the earliest version.
+# Note that individual attributes and methods can and must truthfully set
+# 'devel' as their version.
+@exported_as_webservice_entry(publish_web_link=False, as_of='beta')
 class IProcessor(Interface):
     """The SQLObject Processor Interface"""
 
-    # XXX: BradCrittenden 2011-06-20 bug=760849: The following use of 'beta'
-    # is a work-around to allow the WADL to be generated.  It is a bald-faced
-    # lie, though.  The class is being exported in 'devel' but in order to get
-    # the WADL generation work it must be back-dated to the earliest version.
-    # Note that individual attributes and methods can and must truthfully set
-    # 'devel' as their version.
-    export_as_webservice_entry(publish_web_link=False, as_of='beta')
     id = Attribute("The Processor ID")
     name = exported(
         TextLine(title=_("Name"),
@@ -88,9 +88,9 @@ class IProcessor(Interface):
         as_of='devel', readonly=True)
 
 
+@exported_as_webservice_collection(IProcessor)
 class IProcessorSet(Interface):
     """Operations related to Processor instances."""
-    export_as_webservice_collection(IProcessor)
 
     @operation_parameters(
         name=TextLine(required=True))

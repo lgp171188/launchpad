@@ -13,11 +13,11 @@ import shutil
 import tempfile
 
 from storm.store import Store
+from testscenarios import load_tests_apply_scenarios
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import defer
-from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -634,5 +634,8 @@ class TestVerifySuccessfulBuildForBinaryPackageBuild(
 
 
 class TestHandleStatusForBinaryPackageBuild(
-    MakeBinaryPackageBuildMixin, TestHandleStatusMixin, TrialTestCase):
+    MakeBinaryPackageBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with binary builds."""
+
+
+load_tests = load_tests_apply_scenarios

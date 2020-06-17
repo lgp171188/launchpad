@@ -19,8 +19,8 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 import six
 from six.moves import http_client
@@ -69,10 +69,9 @@ SSH_TEXT_TO_KEY_TYPE = {
     }
 
 
+@exported_as_webservice_entry('ssh_key')
 class ISSHKey(Interface):
     """SSH public key"""
-
-    export_as_webservice_entry('ssh_key')
 
     id = Int(title=_("Database ID"), required=True, readonly=True)
     person = Int(title=_("Owner"), required=True, readonly=True)
