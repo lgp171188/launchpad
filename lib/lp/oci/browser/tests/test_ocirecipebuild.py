@@ -22,7 +22,9 @@ from zope.testbrowser.browser import LinkNotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url
 from lp.testing import (
     ANONYMOUS,
@@ -106,6 +108,52 @@ class TestOCIRecipeBuildView(BrowserTestCase):
         self.assertTrue(oci_file.library_file.deleted)
         build_view = create_initialized_view(build, "+index")
         self.assertEqual([], build_view.files)
+
+    def test_registry_upload_status_in_progress(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        getUtility(IOCIRegistryUploadJobSource).create(build)
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                "registry upload status", "li",
+                attrs={"id": "registry-upload-status"},
+                text=re.compile(r"^\s*Registry upload in progress\s*$"))))
+
+    def test_registry_upload_status_completed(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.COMPLETED
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                "registry upload status", "li",
+                attrs={"id": "registry-upload-status"},
+                text=re.compile(r"^\s*Registry upload complete\s*$"))))
+
+    def test_registry_upload_status_failed(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.FAILED
+        naked_job.error_summary = (
+            "Upload of test-digest for test-image failed")
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Within(
+                soupmatchers.Tag(
+                    "registry upload status", "li",
+                    attrs={"id": "registry-upload-status"},
+                    text=re.compile(
+                        r"^\s*Registry upload failed:\s+"
+                        r"Upload of test-digest for test-image failed\s*$")),
+                soupmatchers.Tag(
+                    "retry button", "input",
+                    attrs={
+                        "type": "submit",
+                        "name": "field.actions.upload",
+                        "value": "Retry",
+                        }))))
 
 
 class TestOCIRecipeBuildOperations(BrowserTestCase):

@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -285,6 +285,11 @@ def iter_authorization(objecttoauthorize, permission, principal, cache,
     if ILaunchpadPrincipal.providedBy(principal):
         check_auth = lambda authorization: (
             authorization.checkAuthenticated(IPersonRoles(principal.person)))
+    elif IPersonRoles.providedBy(principal):
+        # In some cases it's cumbersome to get hold of a proper principal,
+        # so also allow passing an IPersonRoles directly.
+        check_auth = lambda authorization: (
+            authorization.checkAuthenticated(principal))
     else:
         check_auth = lambda authorization: (
             authorization.checkUnauthenticated())

@@ -113,6 +113,7 @@ bugs.
 
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.model.bugnotification import BugNotification
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing import ANONYMOUS, login, logout
     >>> from zope.component import getUtility
 
@@ -125,7 +126,8 @@ bugs.
     ...         activity.person.name))
     bug, added bug, salgado
 
-    >>> for notification in BugNotification.selectBy(bug=bug, orderBy='id'):
+    >>> for notification in IStore(BugNotification).find(
+    ...         BugNotification, bug=bug).order_by(BugNotification.id):
     ...     print('%s, %s, %s' % (
     ...         notification.message.owner.name, notification.is_comment,
     ...         notification.message.text_contents))

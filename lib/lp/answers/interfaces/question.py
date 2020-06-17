@@ -15,10 +15,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_factory_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -56,10 +56,9 @@ from lp.services.fields import PublicPersonChoice
 from lp.services.worlddata.interfaces.language import ILanguage
 
 
+@exported_as_webservice_entry(as_of='beta')
 class IQuestion(IHasOwner):
     """A single question, often a support request."""
-
-    export_as_webservice_entry(as_of='beta')
 
     id = exported(Int(
         title=_('Question Number'), required=True, readonly=True,

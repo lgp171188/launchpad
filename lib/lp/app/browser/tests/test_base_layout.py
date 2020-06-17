@@ -20,6 +20,7 @@ from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    login,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -227,3 +228,45 @@ class TestBaseLayout(TestCaseWithFactory):
         content = extract_text(find_tag_by_id(view(), 'maincontent'))
         self.assertNotIn(
             'The information in this page is not shared with you.', content)
+
+    def test_referrer_policy_set_private_view(self):
+        login('admin@canonical.com')
+        owner = self.factory.makePerson()
+        with person_logged_in(owner):
+            team = self.factory.makeTeam(
+                owner=owner,
+                visibility=PersonVisibility.PRIVATE)
+        view = self.makeTemplateView('main_side', context=team)
+        content = BeautifulSoup(view())
+        referrer = content.find('meta',
+                                {'name': 'referrer',
+                                 'content': 'origin-when-cross-origin'})
+        self.assertIsNotNone(referrer)
+        self.assertEqual(referrer.get('content'), 'origin-when-cross-origin')
+        self.assertEqual(referrer.get('name'), 'referrer')
+
+    def test_referrer_policy_set_public_view(self):
+        view = self.makeTemplateView('main_side')
+        content = BeautifulSoup(view())
+        referrer = content.find('meta', content="origin-when-cross-origin")
+        self.assertIsNone(referrer)
+
+    def test_opengraph_metadata(self):
+        view = self.makeTemplateView('main_side')
+        content = BeautifulSoup(view())
+
+        # https://ogp.me/ - "The four required properties for every page are:"
+        og_title = content.find('meta', {'property': 'og:title'})
+        self.assertIsNotNone(og_title)
+        og_type = content.find('meta', {'property': 'og:type'})
+        self.assertIsNotNone(og_type)
+        og_image = content.find('meta', {'property': 'og:image'})
+        self.assertIsNotNone(og_image)
+        og_url = content.find('meta', {'property': 'og:url'})
+        self.assertIsNotNone(og_url)
+
+        # And some basic validity checks
+        self.assertEqual(og_type.get('content'), 'website')
+        self.assertIn('png', og_image.get('content'))
+        self.assertIn('Test', og_title.get('content'))
+        self.assertIn('http', og_url.get('content'))

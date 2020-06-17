@@ -49,12 +49,12 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -1895,12 +1895,12 @@ class IPersonSettings(IPersonSettingsViewRestricted, IPersonSettingsModerate):
     """A person's settings."""
 
 
+@exported_as_webservice_entry(plural_name='people')
 class IPerson(IPersonPublic, IPersonLimitedView, IPersonViewRestricted,
               IPersonEditRestricted, IPersonModerate,
               IPersonModerateRestricted, IPersonSpecialRestricted,
               IPersonSettings, IHasStanding, ISetLocation, IHeadingContext):
     """A Person."""
-    export_as_webservice_entry(plural_name='people')
 
 
 # Set the schemas to the newly defined interface for classes that deferred
@@ -2027,6 +2027,7 @@ class ITeamPublic(Interface):
         """
 
 
+@exported_as_webservice_entry('team')
 class ITeam(IPerson, ITeamPublic):
     """A group of people and other teams.
 
@@ -2045,7 +2046,6 @@ class ITeam(IPerson, ITeamPublic):
     - ITeam extends IPerson.
     - The teamowner should never be None.
     """
-    export_as_webservice_entry('team')
 
     # Logo, Mugshot and display_name are here so that they can have a
     # description on a Team which is different to the description they have on
@@ -2072,9 +2072,9 @@ class ITeam(IPerson, ITeamPublic):
             "Launchpad."))
 
 
+@exported_as_webservice_collection(IPerson)
 class IPersonSet(Interface):
     """The set of Persons."""
-    export_as_webservice_collection(IPerson)
 
     title = Attribute('Title')
 

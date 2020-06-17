@@ -1231,6 +1231,20 @@
         template="../templates/person-oauth-tokens.pt"
         />
     <browser:page
+        name="+oci-registry-credentials"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonOCIRegistryCredentialsView"
+        permission="launchpad.Edit"
+        template="../templates/person-ociregistrycredentials.pt"
+        />
+    <browser:page
+        name="+livefs"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonLiveFSView"
+        permission="launchpad.View"
+        template="../templates/person-livefses.pt"
+        />
+    <browser:page
         name="+index"
         for="lp.registry.interfaces.person.ITeam"
         class="lp.registry.browser.team.TeamIndexView"

@@ -60,14 +60,14 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -461,6 +461,12 @@ class IArchiveSubscriberView(Interface):
             "explicit publish flag and any other constraints."))
     series_with_sources = Attribute(
         "DistroSeries to which this archive has published sources")
+    signing_key_fingerprint = exported(
+        Text(
+            title=_("Archive signing key fingerprint"), required=False,
+            description=_("A OpenPGP signing key fingerprint (40 chars) "
+                          "for this PPA or None if there is no signing "
+                          "key available.")))
     signing_key = Object(
         title=_('Repository signing key.'), required=False, schema=IGPGKey)
 
@@ -537,7 +543,8 @@ class IArchiveSubscriberView(Interface):
                             distroseries=None, pocket=None,
                             exact_match=False, created_since_date=None,
                             eager_load=False, component_name=None,
-                            order_by_date=False):
+                            order_by_date=False, include_removed=True,
+                            only_unpublished=False):
         """All `ISourcePackagePublishingHistory` target to this archive.
 
         :param name: source name filter (exact match or SQL LIKE controlled
@@ -560,6 +567,10 @@ class IArchiveSubscriberView(Interface):
             If not specified, publications are ordered by source
             package name (lexicographically), then by descending version
             and then descending ID.
+        :param include_removed: If True, include publications that have been
+            removed from disk as well as those that have not.
+        :param only_unpublished: If True, only include publications that
+            have never been published to disk.
 
         :return: SelectResults containing `ISourcePackagePublishingHistory`,
             ordered by name. If there are multiple results for the same
@@ -1183,13 +1194,6 @@ class IArchiveView(IHasBuildRecords):
         description=_(
             "The password used by the build farm to access the archive."))
 
-    signing_key_fingerprint = exported(
-        Text(
-            title=_("Archive signing key fingerprint"), required=False,
-            description=_("A OpenPGP signing key fingerprint (40 chars) "
-                          "for this PPA or None if there is no signing "
-                          "key available.")))
-
     @call_with(eager_load=True)
     @rename_parameters_as(
         name="binary_name", distroarchseries="distro_arch_series")
@@ -1240,6 +1244,7 @@ class IArchiveView(IHasBuildRecords):
                                 distroarchseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
                                 ordered=True, order_by_date=False,
+                                include_removed=True, only_unpublished=False,
                                 eager_load=False):
         """All `IBinaryPackagePublishingHistory` target to this archive.
 
@@ -1261,6 +1266,10 @@ class IArchiveView(IHasBuildRecords):
         :param order_by_date: Order publications by descending creation date
             and then by descending ID.  This is suitable for applications
             that need to catch up with publications since their last run.
+        :param include_removed: If True, include publications that have been
+            removed from disk as well as those that have not.
+        :param only_unpublished: If True, only include publications that
+            have never been published to disk.
 
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """
@@ -2273,11 +2282,11 @@ class IArchiveRestricted(Interface):
             "with a higher score will build sooner.")))
 
 
+@exported_as_webservice_entry()
 class IArchive(IArchivePublic, IArchiveAppend, IArchiveEdit, IArchiveDelete,
                IArchiveSubscriberView, IArchiveView, IArchiveAdmin,
                IArchiveRestricted):
     """Main Archive interface."""
-    export_as_webservice_entry()
 
 
 class IPPA(IArchive):
@@ -2295,10 +2304,9 @@ class IArchiveEditDependenciesForm(Interface):
         title=_('Add PPA dependency'), required=False, vocabulary='PPA')
 
 
+@exported_as_webservice_collection(IArchive)
 class IArchiveSet(Interface):
     """Interface for ArchiveSet"""
-
-    export_as_webservice_collection(IArchive)
 
     title = Attribute('Title')
 

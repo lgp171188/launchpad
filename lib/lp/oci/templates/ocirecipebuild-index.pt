@@ -136,6 +136,36 @@
            tal:attributes="href context/upload_log_url">uploadlog</a>
         (<span tal:replace="file/content/filesize/fmt:bytes" />)
       </li>
+      <li id="registry-upload-status"
+          tal:define="job context/last_registry_upload_job"
+          tal:condition="job">
+        <tal:pending
+            condition="context/registry_upload_status/enumvalue:PENDING">
+          Registry upload in progress
+        </tal:pending>
+        <tal:failed-upload
+            condition="context/registry_upload_status/enumvalue:FAILEDTOUPLOAD">
+          Registry upload failed:
+          <span tal:replace="context/registry_upload_error_summary" />
+          <form action="" method="POST">
+            <input type="submit" name="field.actions.upload" value="Retry" />
+          </form>
+        </tal:failed-upload>
+        <tal:uploaded
+            condition="context/registry_upload_status/enumvalue:UPLOADED">
+          Registry upload complete
+        </tal:uploaded>
+      </li>
+      <li id="registry-upload-status"
+          tal:condition="python:
+            context.status.title == 'Successfully built' and
+            context.recipe.can_upload_to_registry and
+            context.last_registry_upload_job is None">
+        <form action="" method="POST">
+          <input type="submit" name="field.actions.upload"
+                 value="Upload this build to registries" />
+        </form>
+      </li>
     </ul>
 
     <div

@@ -8,23 +8,25 @@ __all__ = [
     'POExportRequestSet',
     ]
 
-from sqlobject import ForeignKey
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Store,
+    )
 from zope.interface import implementer
 
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     ISlaveStore,
     IStore,
     )
-from lp.services.database.sqlbase import (
-    quote,
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import quote
+from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.poexportrequest import (
     IPOExportRequest,
     IPOExportRequestSet,
@@ -158,7 +160,7 @@ class POExportRequestSet:
             POExportRequest.person == head.person,
             POExportRequest.format == head.format,
             POExportRequest.date_created == head.date_created).order_by(
-                POExportRequest.potemplateID)
+                POExportRequest.potemplate_id)
 
         summary = [
             (request.id, request.pofile or request.potemplate)
@@ -172,27 +174,35 @@ class POExportRequestSet:
 
     def removeRequest(self, request_ids):
         """See `IPOExportRequestSet`."""
-        if len(request_ids) > 0:
-            # Storm 0.15 does not have direct support for deleting based
-            # on is_in expressions and such, so do it the hard way.
-            ids_string = ', '.join(sqlvalues(*request_ids))
-            IMasterStore(POExportRequest).execute("""
-                DELETE FROM POExportRequest
-                WHERE id in (%s)
-                """ % ids_string)
+        if request_ids:
+            IMasterStore(POExportRequest).find(
+                POExportRequest,
+                POExportRequest.id.is_in(request_ids)).remove()
 
 
 @implementer(IPOExportRequest)
-class POExportRequest(SQLBase):
+class POExportRequest(StormBase):
 
-    _table = 'POExportRequest'
+    __storm_table__ = 'POExportRequest'
 
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    date_created = UtcDateTimeCol(dbName='date_created', default=DEFAULT)
-    potemplate = ForeignKey(dbName='potemplate', foreignKey='POTemplate',
-        notNull=True)
-    pofile = ForeignKey(dbName='pofile', foreignKey='POFile')
-    format = EnumCol(dbName='format', schema=TranslationFileFormat,
-        default=TranslationFileFormat.PO, notNull=True)
+    id = Int(primary=True)
+
+    person_id = Int(
+        name='person', allow_none=False, validator=validate_public_person)
+    person = Reference(person_id, 'Person.id')
+
+    date_created = DateTime(
+        tzinfo=pytz.UTC, name='date_created', default=DEFAULT)
+
+    potemplate_id = Int(name='potemplate', allow_none=False)
+    potemplate = Reference(potemplate_id, 'POTemplate.id')
+
+    pofile_id = Int(name='pofile', allow_none=True)
+    pofile = Reference(pofile_id, 'POFile.id')
+
+    format = DBEnum(
+        name='format', enum=TranslationFileFormat,
+        default=TranslationFileFormat.PO, allow_none=False)
+
+    def destroySelf(self):
+        Store.of(self).remove(self)

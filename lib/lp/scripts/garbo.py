@@ -70,6 +70,7 @@ from lp.code.model.revision import (
     RevisionCache,
     )
 from lp.hardwaredb.model.hwdb import HWSubmission
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -1569,6 +1570,19 @@ class SnapFilePruner(BulkPruner):
         """ % (SnapBuildJobType.STORE_UPLOAD.value, JobStatus.COMPLETED.value)
 
 
+class OCIFilePruner(BulkPruner):
+    """Prune old `OCIFile`s that have expired."""
+    target_table_class = OCIFile
+    ids_to_prune_query = """
+        SELECT DISTINCT OCIFile.id
+        FROM OCIFile
+        WHERE
+            OCIFile.date_last_used <
+                CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('7 days' AS INTERVAL)
+        """
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -1851,6 +1865,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         HWSubmissionEmailLinker,
         LiveFSFilePruner,
         LoginTokenPruner,
+        OCIFilePruner,
         ObsoleteBugAttachmentPruner,
         OldTimeLimitedTokenDeleter,
         POTranslationPruner,

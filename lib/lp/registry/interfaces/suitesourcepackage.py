@@ -9,8 +9,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -26,10 +26,9 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 
 
+@exported_as_webservice_entry()
 class ISuiteSourcePackage(Interface):
     """A source package that's on a pocket."""
-
-    export_as_webservice_entry()
 
     displayname = exported(
         TextLine(

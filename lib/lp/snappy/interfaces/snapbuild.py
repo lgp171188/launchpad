@@ -22,10 +22,10 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     )
@@ -329,13 +329,12 @@ class ISnapBuildAdmin(Interface):
         """Change the build's score."""
 
 
+# XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ISnapBuild(ISnapBuildView, ISnapBuildEdit, ISnapBuildAdmin):
     """Build information for snap package builds."""
-
-    # XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
 
 class ISnapBuildSet(ISpecificBuildFarmJobSource):

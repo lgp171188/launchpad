@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test live filesystem build behaviour."""
@@ -10,13 +10,12 @@ __metaclass__ = type
 from datetime import datetime
 import os.path
 
-import fixtures
 import pytz
+from testscenarios import load_tests_apply_scenarios
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import defer
-from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.component import getUtility
 from zope.security.proxy import Proxy
 
@@ -342,6 +341,8 @@ class TestVerifySuccessfulBuildForLiveFSBuild(
 
 
 class TestHandleStatusForLiveFSBuild(
-    MakeLiveFSBuildMixin, TestHandleStatusMixin, TrialTestCase,
-    fixtures.TestWithFixtures):
+    MakeLiveFSBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with LiveFS builds."""
+
+
+load_tests = load_tests_apply_scenarios

@@ -23,9 +23,9 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_parameters,
     REQUEST_USER,
     )
@@ -115,13 +115,13 @@ class TeamMembershipStatus(DBEnumeratedType):
 ACTIVE_STATES = [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
 
 
+@exported_as_webservice_entry()
 class ITeamMembership(Interface):
     """TeamMembership for Users.
 
     This table includes *direct* team members only.  Indirect memberships are
     handled by the TeamParticipation table.
     """
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), required=True, readonly=True)
     team = exported(

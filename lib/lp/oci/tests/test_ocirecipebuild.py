@@ -29,14 +29,19 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.oci.interfaces.ocirecipebuild import (
+    CannotScheduleRegistryUpload,
     IOCIFileSet,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
+    OCIRecipeBuildRegistryUploadStatus,
     )
+from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -79,7 +84,7 @@ class TestOCIFileSet(TestCaseWithFactory):
         self.assertIsNone(result)
 
 
-class TestOCIRecipeBuild(TestCaseWithFactory):
+class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
@@ -254,6 +259,38 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
         self.assertEqual(1, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
+    def test_updateStatus_failure_does_not_trigger_registry_uploads(self):
+        # A failed OCIRecipeBuild does not trigger registry uploads.
+        self.setConfig()
+        self.factory.makeOCIPushRule(self.build.recipe)
+        with dbuser(config.builddmaster.dbuser):
+            self.build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        self.assertContentEqual([], self.build.registry_upload_jobs)
+
+    def test_updateStatus_fullybuilt_not_configured(self):
+        # A completed OCIRecipeBuild does not trigger registry uploads if
+        # the recipe is not properly configured for that.
+        logger = self.useFixture(FakeLogger())
+        with dbuser(config.builddmaster.dbuser):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertEqual(0, len(list(self.build.registry_upload_jobs)))
+        self.assertIn(
+            "%r is not configured for upload to registries." % (
+                self.build.recipe),
+            logger.output.splitlines())
+
+    def test_updateStatus_fullybuilt_triggers_registry_uploads(self):
+        # A completed OCIRecipeBuild triggers registry uploads.
+        self.setConfig()
+        logger = self.useFixture(FakeLogger())
+        self.factory.makeOCIPushRule(self.build.recipe)
+        with dbuser(config.builddmaster.dbuser):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertEqual(1, len(list(self.build.registry_upload_jobs)))
+        self.assertIn(
+            "Scheduling upload of %r to registries." % self.build,
+            logger.output.splitlines())
+
     def test_eta(self):
         # OCIRecipeBuild.eta returns a non-None value when it should, or
         # None when there's no start time.
@@ -280,6 +317,184 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         clear_property_cache(self.build)
         self.assertFalse(self.build.estimate)
+
+    def test_registry_upload_status_unscheduled(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED,
+            build.registry_upload_status)
+
+    def test_registry_upload_status_pending(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        getUtility(IOCIRegistryUploadJobSource).create(build)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.PENDING,
+            build.registry_upload_status)
+
+    def test_registry_upload_status_uploaded(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.COMPLETED
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.UPLOADED,
+            build.registry_upload_status)
+
+    def test_registry_upload_status_failed_to_upload(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.FAILED
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.FAILEDTOUPLOAD,
+            build.registry_upload_status)
+
+    def test_registry_upload_error_summary_no_job(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        self.assertIsNone(build.registry_upload_error_summary)
+
+    def test_registry_upload_error_summary_job_no_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        getUtility(IOCIRegistryUploadJobSource).create(build)
+        self.assertIsNone(build.registry_upload_error_summary)
+
+    def test_registry_upload_error_summary_job_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        removeSecurityProxy(job).error_summary = "Boom"
+        self.assertEqual("Boom", build.registry_upload_error_summary)
+
+    def test_registry_upload_errors_no_job(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        self.assertEqual([], build.registry_upload_errors)
+
+    def test_registry_upload_errors_job_no_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        getUtility(IOCIRegistryUploadJobSource).create(build)
+        self.assertEqual([], build.registry_upload_errors)
+
+    def test_registry_upload_errors_job_error(self):
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(IOCIRegistryUploadJobSource).create(build)
+        removeSecurityProxy(job).errors = [
+            {"code": "BOOM", "message": "Boom", "detail": "It went boom"},
+            ]
+        self.assertEqual(
+            [{"code": "BOOM", "message": "Boom", "detail": "It went boom"}],
+            build.registry_upload_errors)
+
+    def test_scheduleRegistryUpload(self):
+        # A build not previously uploaded to a registry can be uploaded
+        # manually.
+        self.setConfig()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeOCIPushRule(recipe=self.build.recipe)
+        self.factory.makeOCIFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        self.build.scheduleRegistryUpload()
+        [job] = getUtility(IOCIRegistryUploadJobSource).iterReady()
+        self.assertEqual(JobStatus.WAITING, job.job.status)
+        self.assertEqual(self.build, job.build)
+
+    def test_scheduleRegistryUpload_not_configured(self):
+        # A build that is not properly configured cannot be uploaded to
+        # registries.
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertRaisesWithContent(
+            CannotScheduleRegistryUpload,
+            "Cannot upload this build to registries because the recipe is not "
+            "properly configured.",
+            self.build.scheduleRegistryUpload)
+        self.assertEqual(
+            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+
+    def test_scheduleRegistryUpload_no_files(self):
+        # A build with no files cannot be uploaded to registries.
+        self.setConfig()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeOCIPushRule(recipe=self.build.recipe)
+        self.assertRaisesWithContent(
+            CannotScheduleRegistryUpload,
+            "Cannot upload this build because it has no files.",
+            self.build.scheduleRegistryUpload)
+        self.assertEqual(
+            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+
+    def test_scheduleRegistryUpload_already_in_progress(self):
+        # A build with an upload already in progress will not have another
+        # one created.
+        self.setConfig()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeOCIPushRule(recipe=self.build.recipe)
+        self.factory.makeOCIFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        old_job = getUtility(IOCIRegistryUploadJobSource).create(self.build)
+        self.assertRaisesWithContent(
+            CannotScheduleRegistryUpload,
+            "An upload of this build is already in progress.",
+            self.build.scheduleRegistryUpload)
+        self.assertEqual(
+            [old_job],
+            list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+
+    def test_scheduleRegistryUpload_already_uploaded(self):
+        # A build with an upload that has already completed will not have
+        # another one created.
+        self.setConfig()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeOCIPushRule(recipe=self.build.recipe)
+        self.factory.makeOCIFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        old_job = getUtility(IOCIRegistryUploadJobSource).create(self.build)
+        removeSecurityProxy(old_job).job._status = JobStatus.COMPLETED
+        self.assertRaisesWithContent(
+            CannotScheduleRegistryUpload,
+            "Cannot upload this build because it has already been uploaded.",
+            self.build.scheduleRegistryUpload)
+        self.assertEqual(
+            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+
+    def test_scheduleRegistryUpload_triggers_webhooks(self):
+        # Scheduling a registry upload triggers webhooks on the
+        # corresponding recipe.
+        self.setConfig()
+        logger = self.useFixture(FakeLogger())
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeOCIFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        self.factory.makeOCIPushRule(recipe=self.build.recipe)
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.scheduleRegistryUpload()
+        expected_payload = {
+            "recipe_build": Equals(
+                canonical_url(self.build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "recipe": Equals(
+                canonical_url(self.build.recipe, force_local_path=True)),
+            "build_request": Is(None),
+            "status": Equals("Successfully built"),
+            "registry_upload_status": Equals("Pending"),
+            }
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery, MatchesStructure(
+                event_type=Equals("oci-recipe:build:0.1"),
+                payload=MatchesDict(expected_payload)))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "oci-recipe:build:0.1",
+                     MatchesDict(expected_payload))]))
 
 
 class TestOCIRecipeBuildSet(TestCaseWithFactory):

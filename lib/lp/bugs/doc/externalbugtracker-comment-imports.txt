@@ -431,13 +431,13 @@ watch, there can be a lot of comments. To avoid causing a lot of email
 notifications to be sent, only one notification is sent for all the
 comments.
 
-    >>> from lp.bugs.model.bugnotification import (
-    ...     BugNotification)
+    >>> from lp.bugs.model.bugnotification import BugNotification
+    >>> from lp.services.database.interfaces import IStore
     >>> old_notifications = set()
     >>> def get_new_notifications(bug):
     ...     new_notifications = [
-    ...         notification for notification in (
-    ...             BugNotification.selectBy(bug=bug, orderBy='id'))
+    ...         notification for notification in IStore(BugNotification).find(
+    ...             BugNotification, bug=bug).order_by(BugNotification.id)
     ...         if notification not in old_notifications]
     ...     old_notifications.update(new_notifications)
     ...     return new_notifications

@@ -1,14 +1,19 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for the CodeImportResult table."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = ['CodeImportResult', 'CodeImportResultSet']
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Unicode,
     )
 from zope.interface import implementer
 
@@ -19,36 +24,53 @@ from lp.code.interfaces.codeimportresult import (
     )
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ICodeImportResult)
-class CodeImportResult(SQLBase):
+class CodeImportResult(StormBase):
     """See `ICodeImportResult`."""
 
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    __storm_table__ = 'CodeImportResult'
 
-    code_import = ForeignKey(
-        dbName='code_import', foreignKey='CodeImport', notNull=True)
+    id = Int(primary=True)
 
-    machine = ForeignKey(
-        dbName='machine', foreignKey='CodeImportMachine', notNull=True)
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
 
-    requesting_user = ForeignKey(
-        dbName='requesting_user', foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+    code_import_id = Int(name='code_import', allow_none=False)
+    code_import = Reference(code_import_id, 'CodeImport.id')
 
-    log_excerpt = StringCol(default=None)
+    machine_id = Int(name='machine', allow_none=False)
+    machine = Reference(machine_id, 'CodeImportMachine.id')
 
-    log_file = ForeignKey(
-        dbName='log_file', foreignKey='LibraryFileAlias', default=None)
+    requesting_user_id = Int(
+        name='requesting_user', allow_none=True,
+        validator=validate_public_person, default=None)
+    requesting_user = Reference(requesting_user_id, 'Person.id')
 
-    status = EnumCol(
-        enum=CodeImportResultStatus, notNull=True)
+    log_excerpt = Unicode(allow_none=True, default=None)
 
-    date_job_started = UtcDateTimeCol(notNull=True)
+    log_file_id = Int(name='log_file', allow_none=True, default=None)
+    log_file = Reference(log_file_id, 'LibraryFileAlias.id')
+
+    status = DBEnum(enum=CodeImportResultStatus, allow_none=False)
+
+    date_job_started = DateTime(tzinfo=pytz.UTC, allow_none=False)
+
+    def __init__(self, code_import, machine, status, date_job_started,
+                 requesting_user=None, log_excerpt=None, log_file=None,
+                 date_created=UTC_NOW):
+        super(CodeImportResult, self).__init__()
+        self.code_import = code_import
+        self.machine = machine
+        self.status = status
+        self.date_job_started = date_job_started
+        self.requesting_user = requesting_user
+        self.log_excerpt = log_excerpt
+        self.log_file = log_file
+        self.date_created = date_created
 
     @property
     def date_job_finished(self):
@@ -69,8 +91,10 @@ class CodeImportResultSet(object):
         """See `ICodeImportResultSet`."""
         if date_job_finished is None:
             date_job_finished = UTC_NOW
-        return CodeImportResult(
+        result = CodeImportResult(
             code_import=code_import, machine=machine,
             requesting_user=requesting_user, log_excerpt=log_excerpt,
             log_file=log_file, status=status,
             date_job_started=date_job_started, date_created=date_job_finished)
+        IStore(CodeImportResult).add(result)
+        return result

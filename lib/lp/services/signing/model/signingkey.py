@@ -106,13 +106,21 @@ class SigningKey(StormBase):
         signing_service = getUtility(ISigningServiceClient)
         generated_key = signing_service.inject(
             key_type, private_key, public_key, description, created_at)
-        signing_key = SigningKey(
-            key_type=key_type, fingerprint=generated_key['fingerprint'],
-            public_key=bytes(public_key),
-            description=description, date_created=created_at)
+        fingerprint = generated_key['fingerprint']
+
         store = IMasterStore(SigningKey)
-        store.add(signing_key)
-        return signing_key
+        # Check if the key is already saved in the database.
+        db_key = store.find(
+            SigningKey,
+            SigningKey.key_type == key_type,
+            SigningKey.fingerprint == fingerprint).one()
+        if db_key is None:
+            db_key = SigningKey(
+                key_type=key_type, fingerprint=fingerprint,
+                public_key=bytes(public_key),
+                description=description, date_created=created_at)
+            store.add(db_key)
+        return db_key
 
     def sign(self, message, message_name):
         if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):

@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build behaviour."""
@@ -19,6 +19,7 @@ import fixtures
 from pymacaroons import Macaroon
 import pytz
 from six.moves.urllib_parse import urlsplit
+from testscenarios import load_tests_apply_scenarios
 from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,
@@ -39,7 +40,6 @@ from twisted.internet import (
     defer,
     reactor,
     )
-from twisted.trial.unittest import TestCase as TrialTestCase
 from twisted.web import (
     server,
     xmlrpc,
@@ -843,6 +843,8 @@ class TestVerifySuccessfulBuildForSnapBuild(
 
 
 class TestHandleStatusForSnapBuild(
-    MakeSnapBuildMixin, TestHandleStatusMixin, TrialTestCase,
-    fixtures.TestWithFixtures):
+    MakeSnapBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with Snap builds."""
+
+
+load_tests = load_tests_apply_scenarios

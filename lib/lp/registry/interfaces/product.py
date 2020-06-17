@@ -33,13 +33,13 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -899,6 +899,7 @@ class IProductEditRestricted(IOfficialBugTagTargetRestricted):
         """
 
 
+@exported_as_webservice_entry('project')
 class IProduct(
     IBugTarget, IHasBugSupervisor, IHasDrivers, IProductEditRestricted,
     IProductModerateRestricted, IProductDriverRestricted, IProductView,
@@ -913,8 +914,6 @@ class IProduct(
     Mozilla App Suite as Products, among others.
     """
 
-    export_as_webservice_entry('project')
-
     drivers = Attribute(
         "Presents the drivers of this project as a list. A list is "
         "required because there might be a project driver and also a "
@@ -926,8 +925,8 @@ patch_collection_property(IProjectGroup, 'products', IProduct)
 patch_reference_property(IProductRelease, 'product', IProduct)
 
 
+@exported_as_webservice_collection(IProduct)
 class IProductSet(Interface):
-    export_as_webservice_collection(IProduct)
 
     title = Attribute("The set of Products registered in the Launchpad")
 

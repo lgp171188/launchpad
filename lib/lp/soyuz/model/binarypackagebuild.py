@@ -1231,7 +1231,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             BinaryPackageBuild, build_farm_job_id=bfj_id).one()
 
     @staticmethod
-    def addCandidateSelectionCriteria(processor, virtualized):
+    def addCandidateSelectionCriteria():
         """See `ISpecificBuildFarmJobSource`."""
         private_statuses = (
             PackagePublishingStatus.PUBLISHED,

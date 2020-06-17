@@ -139,8 +139,7 @@ References header.
     ...     owner=sample_person, title="New bug", comment="New bug.",
     ...     target=bug_one.default_bugtask.target)
     >>> bug = getUtility(IBugSet).createBug(params)
-    >>> notifications = IStore(BugNotification).find(
-    ...     BugNotification, BugNotification.bug == bug)
+    >>> notifications = IStore(BugNotification).find(BugNotification, bug=bug)
     >>> messages = [emails for notifications, omitted, emails in
     ...     get_email_notifications(notifications)]
     >>> len(messages)

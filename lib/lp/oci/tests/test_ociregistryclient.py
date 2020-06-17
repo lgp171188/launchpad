@@ -7,9 +7,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from functools import partial
 import json
 import os
 import tarfile
+import uuid
 
 from fixtures import MockPatch
 from requests.exceptions import (
@@ -20,17 +22,28 @@ import responses
 from six import StringIO
 from tenacity import RetryError
 from testtools.matchers import (
+    AfterPreprocessing,
     Equals,
+    Is,
+    MatchesAll,
     MatchesDict,
+    MatchesException,
     MatchesListwise,
+    MatchesStructure,
+    Raises,
     )
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.oci.interfaces.ociregistryclient import (
+    BlobUploadFailed,
+    ManifestUploadFailed,
+    )
 from lp.oci.model.ociregistryclient import (
     BearerTokenRegistryClient,
     OCIRegistryAuthenticationError,
     OCIRegistryClient,
+    proxy_urlfetch,
     RegistryHTTPClient,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
@@ -42,7 +55,21 @@ from lp.testing.layers import (
     )
 
 
-class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
+class SpyProxyCallsMixin:
+    def setupProxySpy(self):
+        self.proxy_call_count = 0
+
+        def count_proxy_call_count(*args, **kwargs):
+            self.proxy_call_count += 1
+            return proxy_urlfetch(*args, **kwargs)
+
+        self.useFixture(MockPatch(
+            'lp.oci.model.ociregistryclient.proxy_urlfetch',
+            side_effect=count_proxy_call_count))
+
+
+class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
+                            TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
     retry_count = 0
@@ -50,6 +77,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
     def setUp(self):
         super(TestOCIRegistryClient, self).setUp()
         self.setConfig()
+        self.setupProxySpy()
         self.manifest = [{
             "Config": "config_file_1.json",
             "Layers": ["layer_1/layer.tar", "layer_2/layer.tar"]}]
@@ -251,18 +279,21 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         push_rule.registry_credentials.setCredentials({})
         self.client._upload(
             "test-digest", push_rule, None, http_client)
+
+        self.assertEqual(len(responses.calls), self.proxy_call_count)
         # There should be no auth headers for these calls
         for call in responses.calls:
             self.assertNotIn('Authorization', call.request.headers.keys())
 
     @responses.activate
-    def test_upload_raises_non_404(self):
+    def test_upload_check_existing_raises_non_404(self):
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
         blobs_url = "{}/blobs/{}".format(
             http_client.api_url, "test-digest")
         responses.add("HEAD", blobs_url, status=500)
         push_rule = self.build.recipe.push_rules[0]
+        self.assertEqual(len(responses.calls), self.proxy_call_count)
         self.assertRaises(
             HTTPError,
             self.client._upload,
@@ -284,6 +315,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             "test-digest", push_rule, None,
             http_client)
 
+        self.assertEqual(len(responses.calls), self.proxy_call_count)
         for call in responses.calls:
             self.assertEqual(
                 'Basic dXNlcjpwYXNzd29yZA==',
@@ -297,7 +329,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             raise ConnectionError
 
         self.useFixture(MockPatch(
-            'lp.oci.model.ociregistryclient.urlfetch',
+            'lp.oci.model.ociregistryclient.proxy_urlfetch',
             side_effect=count_retries
         ))
         # Patch sleep so we don't need to change our arguments and the
@@ -316,13 +348,141 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             5, self.client._upload.retry.statistics["attempt_number"])
         self.assertEqual(5, self.retry_count)
 
+    @responses.activate
+    def test_upload_put_blob_raises_error(self):
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        put_errors = [
+            {
+                "code": "BLOB_UPLOAD_INVALID",
+                "message": "blob upload invalid",
+                "detail": [],
+                },
+            ]
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add(
+            "PUT", upload_url, status=400, json={"errors": put_errors})
+        self.assertThat(
+            partial(
+                self.client._upload,
+                "test-digest", push_rule, None, http_client),
+            Raises(MatchesException(
+                BlobUploadFailed,
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Upload of {} for {} failed".format(
+                                "test-digest", push_rule.image_name))),
+                    MatchesStructure.byEquality(errors=put_errors)))))
 
-class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
+    @responses.activate
+    def test_upload_put_blob_raises_non_201_success(self):
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add("PUT", upload_url, status=200)
+        self.assertThat(
+            partial(
+                self.client._upload,
+                "test-digest", push_rule, None, http_client),
+            Raises(MatchesException(
+                BlobUploadFailed,
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Upload of {} for {} failed".format(
+                                "test-digest", push_rule.image_name))),
+                    MatchesStructure(errors=Is(None))))))
+
+    @responses.activate
+    def test_upload_put_manifest_raises_error(self):
+        self._makeFiles()
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+
+        manifests_url = "{}/v2/{}/manifests/edge".format(
+            push_rule.registry_credentials.url,
+            push_rule.image_name)
+        put_errors = [
+            {
+                "code": "MANIFEST_INVALID",
+                "message": "manifest invalid",
+                "detail": [],
+                },
+            ]
+        responses.add(
+            "PUT", manifests_url, status=400, json={"errors": put_errors})
+
+        self.assertThat(
+            partial(self.client.upload, self.build),
+            Raises(MatchesException(
+                ManifestUploadFailed,
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Failed to upload manifest for {} in {}".format(
+                                self.build.recipe.name, self.build.id))),
+                    MatchesStructure.byEquality(errors=put_errors)))))
+
+    @responses.activate
+    def test_upload_put_manifest_raises_non_201_success(self):
+        self._makeFiles()
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+
+        manifests_url = "{}/v2/{}/manifests/edge".format(
+            push_rule.registry_credentials.url,
+            push_rule.image_name)
+        responses.add("PUT", manifests_url, status=200)
+
+        self.assertThat(
+            partial(self.client.upload, self.build),
+            Raises(MatchesException(
+                ManifestUploadFailed,
+                MatchesAll(
+                    AfterPreprocessing(
+                        str,
+                        Equals(
+                            "Failed to upload manifest for {} in {}".format(
+                                self.build.recipe.name, self.build.id))),
+                    MatchesStructure(errors=Is(None))))))
+
+
+class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
+                             TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestRegistryHTTPClient, self).setUp()
         self.setConfig()
+        self.setupProxySpy()
 
     @responses.activate
     def test_get_default_client_instance(self):
@@ -339,6 +499,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(RegistryHTTPClient, type(instance))
 
         self.assertEqual(1, len(responses.calls))
+        self.assertEqual(1, self.proxy_call_count)
         call = responses.calls[0]
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
@@ -359,6 +520,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(BearerTokenRegistryClient, type(instance))
 
         self.assertEqual(1, len(responses.calls))
+        self.assertEqual(1, self.proxy_call_count)
         call = responses.calls[0]
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
@@ -379,16 +541,19 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(RegistryHTTPClient, type(instance))
 
         self.assertEqual(1, len(responses.calls))
+        self.assertEqual(1, self.proxy_call_count)
         call = responses.calls[0]
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
 
-class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
+class TestBearerTokenRegistryClient(OCIConfigHelperMixin,
+                                    SpyProxyCallsMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestBearerTokenRegistryClient, self).setUp()
         self.setConfig()
+        self.setupProxySpy()
 
     def makeOCIPushRule(self):
         credentials = self.factory.makeOCIRegistryCredentials(
@@ -446,6 +611,7 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
         # Check that the 3 requests were made in order.
         self.assertEqual(3, len(responses.calls))
+        self.assertEqual(3, self.proxy_call_count)
         failed_call, auth_call, success_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
@@ -476,6 +642,7 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
         # Check that the 3 requests were made in order.
         self.assertEqual(3, len(responses.calls))
+        self.assertEqual(3, self.proxy_call_count)
         failed_call, auth_call, second_failed_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)
@@ -505,6 +672,7 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertRaises(HTTPError, client.request, url)
 
         self.assertEqual(2, len(responses.calls))
+        self.assertEqual(2, self.proxy_call_count)
         failed_call, auth_call = responses.calls
 
         self.assertEqual(url, failed_call.request.url)

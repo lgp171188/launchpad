@@ -47,13 +47,13 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -293,13 +293,12 @@ class SnapBuildRequestStatus(EnumeratedType):
         """)
 
 
+# XXX cjwatson 2018-06-14 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ISnapBuildRequest(Interface):
     """A request to build a snap package."""
-
-    # XXX cjwatson 2018-06-14 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
@@ -839,21 +838,19 @@ class ISnapAdminAttributes(Interface):
             "Resources hosted on Launchpad itself are always allowed.")))
 
 
+# XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ISnap(
     ISnapView, ISnapEdit, ISnapEditableAttributes, ISnapAdminAttributes,
     IPrivacy):
     """A buildable snap package."""
 
-    # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
-
+@exported_as_webservice_collection(ISnap)
 class ISnapSet(Interface):
     """A utility to create and access snap packages."""
-
-    export_as_webservice_collection(ISnap)
 
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(

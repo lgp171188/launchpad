@@ -42,11 +42,11 @@ from lazr.enum import (
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -388,9 +388,9 @@ class IBugTaskDelete(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IBugTask(IHasBug, IBugTaskDelete):
     """A bug needing fixing in a particular product or package."""
-    export_as_webservice_entry()
 
     id = Int(title=_("Bug Task #"))
     bug = exported(

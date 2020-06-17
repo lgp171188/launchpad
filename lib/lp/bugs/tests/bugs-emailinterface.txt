@@ -90,8 +90,10 @@ bug got submitted correctly:
     >>> from lp.services.mail import stub
     >>> bugset = getUtility(IBugSet)
     >>> from lp.bugs.model.bugnotification import BugNotification
+    >>> from lp.services.database.interfaces import IStore
     >>> def get_latest_added_bug():
-    ...     latest_notification = BugNotification.selectFirst(orderBy='-id')
+    ...     latest_notification = IStore(BugNotification).find(
+    ...         BugNotification).order_by(BugNotification.id).last()
     ...     return latest_notification.bug
     >>> bug = get_latest_added_bug()
 
@@ -129,7 +131,8 @@ The owner of the bug was set to the submitter:
 
 A notification was added:
 
-    >>> bug_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> bug_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(bug_notification.message.owner.displayname)
     Foo Bar
 
@@ -174,7 +177,8 @@ this:
 
 A notification was added:
 
-    >>> bug_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> bug_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(bug_notification.message.owner.displayname)
     Sample Person
 
@@ -1084,7 +1088,8 @@ created:
 
 A notification was added:
 
-    >>> bug_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> bug_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(bug_notification.message.text_contents)
     ** Also affects: debian
     ...
@@ -1660,7 +1665,8 @@ edited:
     >>> print(linux_task.status.name)
     CONFIRMED
 
-    >>> bug_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> bug_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(bug_notification.bug.id)
     10
     >>> print(bug_notification.message.text_contents)
@@ -1686,8 +1692,9 @@ The user is a bug supervisors of the upstream product
     mozilla-firefox (Ubuntu): New, assigned to no one
     mozilla-firefox (Debian): Confirmed, assigned to no one
 
-    >>> pending_notifications = BugNotification.select(
-    ...     orderBy='-id', limit=2)
+    >>> from storm.locals import Desc
+    >>> pending_notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(Desc(BugNotification.id))[:2]
     >>> for bug_notification in pending_notifications:
     ...     print(bug_notification.bug.id)
     ...     print(bug_notification.message.text_contents)
@@ -1727,7 +1734,8 @@ The user is a package bug supervisor
     mozilla-firefox (Ubuntu): Confirmed, assigned to Helge Kreutzmann
     mozilla-firefox (Debian): Confirmed, assigned to no one
 
-    >>> pending_notifications = BugNotification.select(orderBy='-id', limit=2)
+    >>> pending_notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(Desc(BugNotification.id))[:2]
     >>> for bug_notification in pending_notifications:
     ...     print(bug_notification.bug.id)
     ...     print(bug_notification.message.text_contents)
@@ -1758,7 +1766,8 @@ The user is a distribution member
     mozilla-firefox (Ubuntu): New, assigned to Sample Person
     mozilla-firefox (Debian): Confirmed, assigned to no one
 
-    >>> pending_notifications = BugNotification.select(orderBy='-id', limit=2)
+    >>> pending_notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(Desc(BugNotification.id))[:2]
     >>> for bug_notification in pending_notifications:
     ...     print(bug_notification.bug.id)
     ...     print(bug_notification.message.text_contents)
@@ -2452,7 +2461,8 @@ An email may contain more than one attachment; all of them are stored.
 
 A bugnotification is sent for each attached file.
 
-    >>> bug_notifications = BugNotification.select(orderBy='-id', limit=3)
+    >>> bug_notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(Desc(BugNotification.id))[:3]
     >>> for bug_notification in bug_notifications:
     ...     print('-------------------')
     ...     print(bug_notification.message.chunks[0].content)

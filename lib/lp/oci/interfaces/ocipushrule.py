@@ -14,10 +14,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -114,12 +114,11 @@ class IOCIPushRuleEdit(Interface):
         """Destroy this push rule."""
 
 
+@exported_as_webservice_entry(
+    publish_web_link=True, as_of="devel", singular_name="oci_push_rule")
 class IOCIPushRule(IOCIPushRuleEdit, IOCIPushRuleEditableAttributes,
                    IOCIPushRuleView):
     """A rule for pushing builds of an OCI recipe to a registry."""
-
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel", singular_name="oci_push_rule")
 
 
 class IOCIPushRuleSet(Interface):

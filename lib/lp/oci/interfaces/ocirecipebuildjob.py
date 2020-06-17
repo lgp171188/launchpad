@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCIRecipe build job interfaces"""
@@ -13,12 +13,15 @@ __all__ = [
     ]
 
 from lazr.restful.fields import Reference
-from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
     Interface,
     )
-from zope.schema import TextLine
+from zope.schema import (
+    Dict,
+    List,
+    TextLine,
+    )
 
 from lp import _
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
@@ -45,8 +48,17 @@ class IOCIRecipeBuildJob(Interface):
 class IOCIRegistryUploadJob(IRunnableJob):
     """A Job that uploads an OCI image to a registry."""
 
-    error_message = TextLine(
-        title=_("Error message"), required=False, readonly=True)
+    error_summary = TextLine(
+        title=_("Error summary"), required=False, readonly=True)
+
+    errors = List(
+        title=_("Detailed registry upload errors"),
+        description=_(
+            "A list of errors, as described in "
+            "https://docs.docker.com/registry/spec/api/#errors, from the last "
+            "attempt to run this job."),
+        value_type=Dict(key_type=TextLine()),
+        required=False, readonly=True)
 
 
 class IOCIRegistryUploadJobSource(IJobSource):

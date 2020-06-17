@@ -15,7 +15,6 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
-from lp.registry.model.ociproject import OCIProject
 from storm.expr import (
     And,
     Asc,
@@ -56,6 +55,7 @@ from lp.code.model.gitrule import GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
 from lp.registry.model.distribution import Distribution
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -210,8 +210,9 @@ class GenericGitCollection:
         for cache in caches.values():
             cache.code_import = None
         for code_import in IStore(CodeImport).find(
-                CodeImport, CodeImport.git_repositoryID.is_in(repository_ids)):
-            caches[code_import.git_repositoryID].code_import = code_import
+                CodeImport,
+                CodeImport.git_repository_id.is_in(repository_ids)):
+            caches[code_import.git_repository_id].code_import = code_import
 
     @staticmethod
     def _convertListingSortToOrderBy(sort_by):
