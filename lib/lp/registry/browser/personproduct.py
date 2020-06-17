@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Views, menus and traversal related to PersonProducts."""
@@ -10,19 +10,23 @@ __all__ = [
     'PersonProductNavigation',
     ]
 
-
-from zope.component import queryAdapter
+from zope.component import (
+    getUtility,
+    queryAdapter,
+    )
 from zope.interface import implementer
 from zope.traversing.interfaces import IPathAdapter
 
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import PersonTargetDefaultVCSNavigationMixin
 from lp.code.interfaces.branchnamespace import get_branch_namespace
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.services.webapp import (
     canonical_url,
     Navigation,
     StandardLaunchpadFacets,
+    stepthrough,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
@@ -32,6 +36,12 @@ class PersonProductNavigation(PersonTargetDefaultVCSNavigationMixin,
                               Navigation):
     """Navigation to branches for this person/product."""
     usedfor = IPersonProduct
+
+    @stepthrough('+oci')
+    def traverse_oci(self, name):
+        oci_project = self.context.product.getOCIProject(name)
+        return getUtility(IPersonOCIProjectFactory).create(
+            self.context.person, oci_project)
 
     def traverse(self, branch_name):
         """Look for a branch in the person/product namespace."""

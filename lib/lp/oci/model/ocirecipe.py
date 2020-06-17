@@ -36,6 +36,7 @@ from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
@@ -56,6 +57,7 @@ from lp.oci.interfaces.ocirecipe import (
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
     OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_BUILD_DISTRIBUTION,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
@@ -67,6 +69,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     )
 from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.model.distribution import Distribution
@@ -221,9 +224,20 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def distribution(self):
-        # XXX twom 2019-12-05 This may need to change when an OCIProject
-        # pillar isn't just a distribution
-        return self.oci_project.distribution
+        if self.oci_project.distribution:
+            return self.oci_project.distribution
+        # For OCI projects that are not based on distribution, we use the
+        # default distribution set by the following feature flag (or
+        # defaults to Ubuntu, if none is set).
+        distro_name = getFeatureFlag(OCI_RECIPE_BUILD_DISTRIBUTION)
+        if not distro_name:
+            return getUtility(ILaunchpadCelebrities).ubuntu
+        distro = getUtility(IDistributionSet).getByName(distro_name)
+        if not distro:
+            raise ValueError(
+                "'%s' is not a valid value for feature flag '%s'" %
+                (distro_name, OCI_RECIPE_BUILD_DISTRIBUTION))
+        return distro
 
     @property
     def distro_series(self):
@@ -242,9 +256,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         """See `IOCIRecipe`."""
         clauses = [Processor.id == DistroArchSeries.processor_id]
         if self.distro_series is not None:
+            enabled_archs_resultset = removeSecurityProxy(
+                self.distro_series.enabled_architectures)
             clauses.append(DistroArchSeries.id.is_in(
-                self.distro_series.enabled_architectures.get_select_expr(
-                    DistroArchSeries.id)))
+                enabled_archs_resultset.get_select_expr(DistroArchSeries.id)))
         else:
             # We might not know the series if the OCI project's distribution
             # has no series at all, which can happen in tests.  Fall back to
