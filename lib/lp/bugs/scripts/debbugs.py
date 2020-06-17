@@ -1,6 +1,8 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function
+
 import cStringIO
 from datetime import datetime
 import email
@@ -271,6 +273,6 @@ if __name__ == '__main__':
 
     for bug in Database('/srv/debzilla.no-name-yet.com/debbugs'):
         try:
-            print bug, bug.subject
+            print(bug, bug.subject)
         except Exception as e:
-            print >>sys.stderr, '%s: %s' % (e.__class__.__name__, str(e))
+            print('%s: %s' % (e.__class__.__name__, str(e)), file=sys.stderr)

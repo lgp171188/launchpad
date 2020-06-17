@@ -12,7 +12,9 @@ __all__ = [
     'celery_enabled',
     'JobRunner',
     'JobRunnerProcess',
+    'QuietAMPConnector',
     'TwistedJobRunner',
+    'VirtualEnvProcessStarter',
     ]
 
 

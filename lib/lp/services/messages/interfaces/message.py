@@ -22,9 +22,9 @@ __all__ = [
 from lazr.delegates import delegate_to
 from lazr.restful.declarations import (
     accessor_for,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     )
 from lazr.restful.fields import (
@@ -51,13 +51,13 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.services.webservice.apihelpers import patch_reference_property
 
 
+@exported_as_webservice_entry('message')
 class IMessage(Interface):
     """A message.
 
     This is like an email (RFC822) message, though it could be created through
     the web as well.
     """
-    export_as_webservice_entry('message')
 
     id = Int(title=_('ID'), required=True, readonly=True)
     datecreated = exported(

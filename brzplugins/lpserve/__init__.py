@@ -332,7 +332,7 @@ class LPForkingService(object):
     DEFAULT_PATH = '/var/run/launchpad_forking_service.sock'
 
     # Permissions on the master socket (rw-rw----)
-    DEFAULT_PERMISSIONS = 00660
+    DEFAULT_PERMISSIONS = 0o0660
 
     # Wait no more than 5 minutes for children.
     WAIT_FOR_CHILDREN_TIMEOUT = 5 * 60

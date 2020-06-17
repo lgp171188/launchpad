@@ -17,7 +17,6 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from lazr.lifecycle.event import ObjectCreatedEvent
 import six
 from storm.databases.postgres import JSON
 from storm.locals import (
@@ -26,7 +25,6 @@ from storm.locals import (
     )
 import transaction
 from zope.component import getUtility
-from zope.event import notify
 from zope.interface import (
     implementer,
     provider,
@@ -38,7 +36,10 @@ from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRegistryUploadJob,
     IOCIRegistryUploadJobSource,
     )
-from lp.oci.interfaces.ociregistryclient import IOCIRegistryClient
+from lp.oci.interfaces.ociregistryclient import (
+    IOCIRegistryClient,
+    OCIRegistryError,
+    )
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -161,12 +162,16 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     @classmethod
     def create(cls, build):
         """See `IOCIRegistryUploadJobSource`"""
-        oci_build_job = OCIRecipeBuildJob(
-            build, cls.class_job_type, {})
-        job = cls(oci_build_job)
-        job.celeryRunOnCommit()
-        del get_property_cache(build).last_registry_upload_job
-        notify(ObjectCreatedEvent(build))
+        edited_fields = set()
+        with notify_modified(build, edited_fields) as before_modification:
+            oci_build_job = OCIRecipeBuildJob(
+                build, cls.class_job_type, {})
+            job = cls(oci_build_job)
+            job.celeryRunOnCommit()
+            del get_property_cache(build).last_registry_upload_job
+            upload_status = build.registry_upload_status
+            if upload_status != before_modification.registry_upload_status:
+                edited_fields.add("registry_upload_status")
         return job
 
     # Ideally we'd just override Job._set_status or similar, but
@@ -203,34 +208,24 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         self._do_lifecycle("resume", *args, **kwargs)
 
     @property
-    def error_message(self):
+    def error_summary(self):
         """See `IOCIRegistryUploadJob`."""
-        return self.json_data.get("error_message")
+        return self.json_data.get("error_summary")
 
-    @error_message.setter
-    def error_message(self, message):
+    @error_summary.setter
+    def error_summary(self, summary):
         """See `IOCIRegistryUploadJob`."""
-        self.json_data["error_message"] = message
-
-    @property
-    def error_detail(self):
-        """See `IOCIRegistryUploadJob`."""
-        return self.json_data.get("error_detail")
-
-    @error_detail.setter
-    def error_detail(self, detail):
-        """See `IOCIRegistryUploadJob`."""
-        self.json_data["error_detail"] = detail
+        self.json_data["error_summary"] = summary
 
     @property
-    def error_messages(self):
+    def errors(self):
         """See `IOCIRegistryUploadJob`."""
-        return self.json_data.get("error_messages")
+        return self.json_data.get("errors")
 
-    @error_messages.setter
-    def error_messages(self, messages):
+    @errors.setter
+    def errors(self, errors):
         """See `IOCIRegistryUploadJob`."""
-        self.json_data["error_messages"] = messages
+        self.json_data["errors"] = errors
 
     def run(self):
         """See `IRunnableJob`."""
@@ -240,10 +235,13 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         try:
             try:
                 client.upload(self.build)
+            except OCIRegistryError as e:
+                self.error_summary = str(e)
+                self.errors = e.errors
+                raise
             except Exception as e:
-                self.error_message = str(e)
-                self.error_messages = getattr(e, "messages", None)
-                self.error_detail = getattr(e, "detail", None)
+                self.error_summary = str(e)
+                self.errors = None
                 raise
         except Exception:
             transaction.commit()

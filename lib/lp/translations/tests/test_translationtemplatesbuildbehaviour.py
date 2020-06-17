@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for TranslationTemplatesBuildBehaviour."""
@@ -245,11 +245,12 @@ class TestTranslationTemplatesBuildBehaviour(
         queue_item.markAsBuilding(self.factory.makeBuilder())
         slave = behaviour._slave
 
-        def fake_getFile(sum, file):
+        def fake_getFile(sum, path):
             dummy_tar = os.path.join(
                 os.path.dirname(__file__), 'dummy_templates.tar.gz')
-            tar_file = open(dummy_tar)
-            copy_and_close(tar_file, file)
+            tar_file = open(dummy_tar, 'rb')
+            with open(path, 'wb') as f:
+                copy_and_close(tar_file, f)
             return defer.succeed(None)
 
         slave.getFile = fake_getFile

@@ -10,8 +10,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -24,10 +24,9 @@ from lp import _
 from lp.services.fields import PersonChoice
 
 
+@exported_as_webservice_entry(publish_web_link=False, as_of='devel')
 class IQuestionSubscription(Interface):
     """A subscription for a person to a question."""
-
-    export_as_webservice_entry(publish_web_link=False, as_of='devel')
 
     id = Int(title=_('ID'), readonly=True, required=True)
     person = exported(PersonChoice(

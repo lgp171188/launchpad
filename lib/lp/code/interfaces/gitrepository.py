@@ -22,14 +22,14 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -131,7 +131,7 @@ def git_repository_name_validator(name):
 class IGitRepositoryView(IHasRecipes):
     """IGitRepository attributes that require launchpad.View permission."""
 
-    id = Int(title=_("ID"), readonly=True, required=True)
+    id = exported(Int(title=_("ID"), readonly=True, required=True))
 
     date_created = exported(Datetime(
         title=_("Date created"), required=True, readonly=True))
@@ -913,26 +913,23 @@ class IGitRepositoryEdit(IWebhookTarget):
         """
 
 
+# XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 class IGitRepository(IGitRepositoryView, IGitRepositoryModerateAttributes,
                      IGitRepositoryModerate, IGitRepositoryEditableAttributes,
                      IGitRepositoryEdit):
     """A Git repository."""
-
-    # Mark repositories as exported entries for the Launchpad API.
-    # XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 
     private = exported(Bool(
         title=_("Private"), required=False, readonly=True,
         description=_("This repository is visible only to its subscribers.")))
 
 
+@exported_as_webservice_collection(IGitRepository)
 class IGitRepositorySet(Interface):
     """Interface representing the set of Git repositories."""
-
-    export_as_webservice_collection(IGitRepository)
 
     @call_with(
         repository_type=GitRepositoryType.HOSTED,

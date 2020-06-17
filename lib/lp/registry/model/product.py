@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes including and related to Product."""
@@ -142,6 +142,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import (
     IPersonSet,
@@ -1139,6 +1140,23 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     def bugtargetname(self):
         """See `IBugTarget`."""
         return self.name
+
+    def getOCIProject(self, name):
+        return getUtility(IOCIProjectSet).getByPillarAndName(
+            self, name)
+
+    def canAdministerOCIProjects(self, person):
+        if person is None:
+            return False
+        # XXX: pappacena 2020-05-25: Maybe we should have an attribute named
+        # oci_project_admin on Product too, the same way we have on
+        # Distribution.
+        if person.inTeam(self.driver):
+            return True
+        person_roles = IPersonRoles(person)
+        if person_roles.in_admin or person_roles.isOwner(self):
+            return True
+        return False
 
     def getPackage(self, distroseries):
         """See `IProduct`."""

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the database garbage collector."""
@@ -46,6 +46,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.model.answercontact import AnswerContact
 from lp.app.enums import InformationType
+from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.model.bugnotification import (
     BugNotification,
     BugNotificationRecipient,
@@ -69,6 +70,8 @@ from lp.code.model.gitjob import (
     GitJob,
     GitRefScanJob,
     )
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -109,6 +112,7 @@ from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import TimeLimitedToken
+from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.messages.model.message import Message
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
 from lp.services.scripts.tests import run_script
@@ -509,17 +513,17 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             config.codeimport.consecutive_failure_limit - 1)
 
         switch_dbuser('testadmin')
-        code_import_id = self.factory.makeCodeImport().id
-        machine_id = self.factory.makeCodeImportMachine().id
-        requester_id = self.factory.makePerson().id
+        code_import = self.factory.makeCodeImport()
+        machine = self.factory.makeCodeImportMachine()
+        requester = self.factory.makePerson()
         transaction.commit()
 
         def new_code_import_result(timestamp):
             switch_dbuser('testadmin')
             CodeImportResult(
                 date_created=timestamp,
-                code_importID=code_import_id, machineID=machine_id,
-                requesting_userID=requester_id,
+                code_import=code_import, machine=machine,
+                requesting_user=requester,
                 status=CodeImportResultStatus.FAILURE,
                 date_job_started=timestamp)
             transaction.commit()
@@ -790,14 +794,18 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     def test_BugNotificationPruner(self):
         # Create some sample data
         switch_dbuser('testadmin')
+        bug = getUtility(IBugSet).get(1)
+        message = getUtility(IMessageSet).get(
+            'foo@example.com-332342--1231')[0]
+        person = self.factory.makePerson()
         notification = BugNotification(
-            messageID=1,
-            bugID=1,
+            message=message,
+            bug=bug,
             is_comment=True,
             date_emailed=None)
         BugNotificationRecipient(
             bug_notification=notification,
-            personID=1,
+            person=person,
             reason_header='Whatever',
             reason_body='Whatever')
         # We don't create an entry exactly 30 days old to avoid
@@ -806,12 +814,12 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             message = Message(rfc822msgid=str(delta))
             notification = BugNotification(
                 message=message,
-                bugID=1,
+                bug=bug,
                 is_comment=True,
                 date_emailed=UTC_NOW + SQL("interval '%d days'" % delta))
             BugNotificationRecipient(
                 bug_notification=notification,
-                personID=1,
+                person=person,
                 reason_header='Whatever',
                 reason_body='Whatever')
 
@@ -1056,6 +1064,48 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         switch_dbuser('testadmin')
         self.assertEqual(1, store.find(SnapBuildJob).count())
+
+    def test_OCIFileJobPruner(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        ocifile = self.factory.makeOCIFile()
+        ocifile.date_last_used = THIRTY_DAYS_AGO
+        self.assertEqual(1, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(0, store.find(OCIFile).count())
+
+    def test_OCIFileJobPruner_doesnt_prune_recent(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        self.factory.makeOCIFile()
+        self.assertEqual(1, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(1, store.find(OCIFile).count())
+
+    def test_OCIFileJobPruner_mixed_dates(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        ocifile = self.factory.makeOCIFile()
+        ocifile.date_last_used = THIRTY_DAYS_AGO
+        self.factory.makeOCIFile()
+        self.assertEqual(2, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(1, store.find(OCIFile).count())
 
     def test_WebhookJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.

@@ -1,10 +1,14 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# -*- coding: utf-8 -*-
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import unicode_literals
 
 __metaclass__ = type
 
 import doctest
 import email
+from operator import attrgetter
 import re
 from textwrap import dedent
 
@@ -24,11 +28,17 @@ from zope.publisher.interfaces import NotFound
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import TextAreaEditorWidget
+from lp.app.browser.tales import DateTimeFormatterAPI
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.blueprints.enums import SpecificationImplementationStatus
 from lp.buildmaster.enums import BuildStatus
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.browser.person import PersonView
 from lp.registry.browser.team import TeamInvitationView
 from lp.registry.enums import PersonVisibility
@@ -43,6 +53,7 @@ from lp.registry.model.karma import KarmaCategory
 from lp.registry.model.milestone import milestone_sort_key
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.log.logger import DevNullLogger
@@ -61,6 +72,7 @@ from lp.soyuz.enums import (
     ArchiveStatus,
     PackagePublishingStatus,
     )
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
     ANONYMOUS,
@@ -357,6 +369,30 @@ class TestPersonIndexView(BrowserTestCase):
         self.factory.makeGPGKey(person)
         view = create_initialized_view(person, '+index')
         self.assertTrue(view.should_show_gpgkeys_section)
+
+    def test_show_oci_registry_credentials_link(self):
+        person = self.factory.makePerson()
+        view = create_initialized_view(person, '+index', principal=person)
+        with person_logged_in(person):
+            markup = self.get_markup(view, person)
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCIRegistryCredentials link', 'a',
+                attrs={
+                    'href':
+                        'http://launchpad.test/~%s/+oci-registry-credentials'
+                        % person.name},
+                text='OCI registry credentials'))
+        self.assertThat(markup, link_match)
+
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCIRegistryCredentials missing link', 'a',
+                text='OCI registry credentials'))
+
+        login(ANONYMOUS)
+        markup = self.get_markup(view, person)
+        self.assertNotIn(link_match, markup)
 
     def test_ppas_query_count(self):
         owner = self.factory.makePerson()
@@ -1272,6 +1308,188 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
                     '?batch=5&memo=5&start=5'))},
                 text='Next'))
         self.assertThat(view(), next_match)
+
+
+class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
+                                           OCIConfigHelperMixin):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonOCIRegistryCredentialsView, self).setUp()
+        self.setConfig()
+        self.person = self.factory.makePerson(
+            name="test-person", displayname="Test Person")
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, name="shiny", displayname="Shiny")
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distroseries.distribution.name:
+                self.distroseries.name,
+        }))
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        self.recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+    def test_view_oci_registry_credentials_on_person_page(self):
+        # Verify view helper attributes.
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.user,
+            url=url,
+            credentials=credentials)
+        view = create_initialized_view(self.user, '+oci-registry-credentials')
+        self.assertEqual('OCI registry credentials', view.page_title)
+        with person_logged_in(self.user):
+            self.assertEqual(
+                credentials.get('username'),
+                view.oci_registry_credentials[0].getCredentials()['username'])
+            self.assertEqual(url, view.oci_registry_credentials[0].url)
+
+
+class TestPersonLiveFSView(BrowserTestCase):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonLiveFSView, self).setUp()
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
+        self.person = self.factory.makePerson(
+            name="test-person", displayname="Test Person")
+
+    def makeLiveFS(self, count=1):
+        with person_logged_in(self.person):
+            return [
+                self.factory.makeLiveFS(
+                    registrant=self.person, owner=self.person)
+                for _ in range(count)]
+
+    def test_displays_livefs(self):
+        livefs = self.factory.makeLiveFS(
+            registrant=self.person, owner=self.person)
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
+
+        expected_url = "/~%s/+livefs/%s/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name)
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs name link', 'a',
+                attrs={'href': expected_url},
+                text=livefs.name))
+        date_formatter = DateTimeFormatterAPI(livefs.date_created)
+        date_created_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs date created', 'td',
+                text='%s' % date_formatter.displaydate()))
+        with person_logged_in(self.person):
+            self.assertThat(view.render(), link_match)
+            self.assertThat(view.render(), date_created_match)
+
+    def test_displays_no_livefs(self):
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
+        no_livefs_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'No livefs', 'p',
+                text='There are no live filesystems for %s'
+                % self.person.display_name))
+        with person_logged_in(self.person):
+            self.assertThat(view.render(), no_livefs_match)
+
+    def test_paginates_livefs(self):
+        batch_size = 5
+        self.pushConfig("launchpad", default_batch_size=batch_size)
+        livefs = self.makeLiveFS(10)
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
+        no_livefs_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Top livefs paragraph', 'strong',
+                text="10"))
+        first_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Navigation first', 'span',
+                attrs={'class': 'first inactive'},
+                text="First"))
+        previous_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Navigation previous', 'span',
+                attrs={'class': 'previous inactive'},
+                text="Previous"))
+        with person_logged_in(self.person):
+            self.assertThat(view.render(), no_livefs_match)
+            self.assertThat(view.render(), first_match)
+            self.assertThat(view.render(), previous_match)
+            self.assertThat(view.render(), soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    soupmatchers.Tag(
+                        "next element", "a",
+                        attrs={"id": "lower-batch-nav-batchnav-next"}),
+                    soupmatchers.Tag(
+                        "next link", "strong",
+                        text='Next'))))
+            self.assertThat(view.render(), soupmatchers.HTMLContains(
+                    soupmatchers.Tag(
+                        "last element", "a",
+                        attrs={"id": "lower-batch-nav-batchnav-last"},
+                        text='Last')))
+
+            # Assert we're listing the first set of live filesystems
+            items = sorted(livefs, key=attrgetter('name'))
+            for lfs in items[:batch_size]:
+                expected_url = "/~%s/+livefs/%s/%s/%s" % (
+                    lfs.owner.name, lfs.distro_series.distribution.name,
+                    lfs.distro_series.name, lfs.name)
+                link_match = soupmatchers.HTMLContains(
+                    soupmatchers.Tag(
+                        'Livefs name link', 'a',
+                        attrs={'href': expected_url},
+                        text=lfs.name))
+                self.assertThat(view.render(), link_match)
+
+    def test_displays_livefs_only_for_owner(self):
+        livefs = self.factory.makeLiveFS(
+            registrant=self.person, owner=self.person)
+        different_owner = self.factory.makePerson(
+            name="different-person", displayname="Different Person")
+        livefs_different_owner = self.factory.makeLiveFS(
+            registrant=different_owner, owner=different_owner)
+        view = create_initialized_view(
+            self.person, "+livefs", principal=self.person)
+        expected_url = "/~%s/+livefs/%s/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name)
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs name link', 'a',
+                attrs={'href': expected_url},
+                text=livefs.name))
+        date_formatter = DateTimeFormatterAPI(livefs.date_created)
+        date_created_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs date created', 'td',
+                text='%s' % date_formatter.displaydate()))
+
+        different_owner_url = "/~%s/+livefs/%s/%s/%s" % (
+                livefs_different_owner.owner.name,
+                livefs_different_owner.distro_series.distribution.name,
+                livefs_different_owner.distro_series.name,
+                livefs_different_owner.name)
+        different_owner_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Livefs name link', 'a',
+                attrs={'href': different_owner_url},
+                text=livefs_different_owner.name))
+
+        with person_logged_in(self.person):
+            self.assertThat(view.render(), link_match)
+            self.assertThat(view.render(), date_created_match)
+            self.assertNotIn(different_owner_match, view.render())
 
 
 class TestPersonRelatedPackagesFailedBuild(TestCaseWithFactory):

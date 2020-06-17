@@ -13,9 +13,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     export_destructor_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     )
 from lazr.restful.fields import Reference
@@ -89,14 +89,13 @@ class IFAQPublic(IHasOwner):
         _('The set of questions linked to this FAQ.'))
 
 
+@exported_as_webservice_entry('faq', as_of='beta')
 class IFAQ(IFAQPublic):
     """A document containing the answer to a commonly asked question.
 
     The answer can be in the document itself or can be hosted on a separate
     web site and referred to by URL.
     """
-
-    export_as_webservice_entry('faq', as_of='beta')
 
     @export_destructor_operation()
     @operation_for_version('devel')

@@ -41,7 +41,9 @@ those notifications look like.
     >>> firefox_crashes = firefox.createBug(params)
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -68,7 +70,8 @@ bugactivity.txt, but for now here is a small demo.
     >>> with notify_modified(firefox_crashes, ["description"]):
     ...     firefox_crashes.description = "a new description"
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -107,7 +110,8 @@ bug. Let's take a look at each type.
     >>> notify(ObjectCreatedEvent(
     ...     firefox_crashes_in_debian, firefox_crashes_in_debian.owner))
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -133,7 +137,8 @@ bug. Let's take a look at each type.
     >>> notify(ObjectCreatedEvent(
     ...     firefox_crashes_in_sid, firefox_crashes_in_sid.owner))
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -161,7 +166,8 @@ bug. Let's take a look at each type.
     >>> notify(ObjectCreatedEvent(
     ...     evolution_crashes_too, evolution_crashes_too.owner))
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -183,7 +189,8 @@ bug. Let's take a look at each type.
     >>> notify(ObjectCreatedEvent(
     ...     firefox_crashes_in_trunk, firefox_crashes_in_trunk.owner))
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -205,7 +212,8 @@ bug. Let's take a look at each type.
     ...     bug=firefox_crashes, owner=current_user)
     >>> notify(ObjectCreatedEvent(comment_on_firefox_crashes_in_debian))
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -228,7 +236,8 @@ task Fixed, and assigns themselves to it.
     ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
     ...     firefox_crashes_in_debian.transitionToAssignee(bug_submitter)
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -244,7 +253,8 @@ task Fixed, and assigns themselves to it.
     ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
     ...     firefox_crashes_in_trunk.transitionToAssignee(bug_submitter)
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -269,7 +279,8 @@ this document:
     >>> bug = Bug.get(1)
     >>> bugcve = cve.linkBug(bug) # note this creates the event and notifies
 
-    >>> latest_notification = BugNotification.selectFirst(orderBy='-id')
+    >>> latest_notification = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id).last()
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -285,7 +296,8 @@ During bulk imports or changes of bugs, we often want to suppress
 email notifications.  Due to the previous operation, there is a
 pending bug notification for bug 1:
 
-    >>> notifications = BugNotification.selectBy(bugID=1, date_emailed=None)
+    >>> notifications = IStore(BugNotification).find(
+    ...     BugNotification, bug_id=1, date_emailed=None)
     >>> notifications.count()
     1
 
@@ -293,6 +305,7 @@ This notification can be expired using the expireNotifications()
 method:
 
     >>> bug.expireNotifications()
-    >>> notifications = BugNotification.selectBy(bugID=1, date_emailed=None)
+    >>> notifications = IStore(BugNotification).find(
+    ...     BugNotification, bug_id=1, date_emailed=None)
     >>> notifications.count()
     0

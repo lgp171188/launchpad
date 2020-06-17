@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -52,12 +52,11 @@ class LanguageNotFound(NotFoundError):
     """Raised when a a language does not exist in the database."""
 
 
+@exported_as_webservice_entry(
+    singular_name='translation_template',
+    plural_name='translation_templates')
 class IPOTemplate(IRosettaStats):
     """A translation template."""
-
-    export_as_webservice_entry(
-        singular_name='translation_template',
-        plural_name='translation_templates')
 
     id = exported(Int(
         title=u"The translation template id.",

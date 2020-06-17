@@ -163,6 +163,11 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.date_last_modified = date_created
         self.git_ref = git_ref
 
+    def __repr__(self):
+        return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
+            self.owner.name, self.oci_project.pillar.name,
+            self.oci_project.name, self.name)
+
     @property
     def valid_webhook_event_types(self):
         return ["oci-recipe:build:0.1"]

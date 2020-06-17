@@ -206,7 +206,6 @@ class TestWebhookSetBase:
 
     def test__checkVisibility_public_artifact(self):
         target = self.makeTarget()
-        login_person(target.owner)
         self.assertTrue(WebhookSet._checkVisibility(target, target.owner))
 
     def test_trigger(self):
@@ -252,7 +251,12 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
         owner = self.factory.makePerson()
         target = self.makeTarget(
             owner=owner, information_type=InformationType.PROPRIETARY)
-        login_person(owner)
+        self.assertTrue(WebhookSet._checkVisibility(target, owner))
+
+    def test__checkVisibility_private_artifact_team_owned(self):
+        owner = self.factory.makeTeam()
+        target = self.makeTarget(
+            owner=owner, information_type=InformationType.PROPRIETARY)
         self.assertTrue(WebhookSet._checkVisibility(target, owner))
 
     def test__checkVisibility_lost_access_to_private_artifact(self):
@@ -269,9 +273,9 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
             policy=policy, grantee=grantee_team)
         grantee_member = self.factory.makePerson(member_of=[grantee_team])
         target = self.makeTarget(owner=grantee_member, project=project)
-        login_person(grantee_member)
         self.assertTrue(WebhookSet._checkVisibility(target, grantee_member))
-        grantee_member.leave(grantee_team)
+        with person_logged_in(grantee_member):
+            grantee_member.leave(grantee_team)
         self.assertFalse(WebhookSet._checkVisibility(target, grantee_member))
 
     def test__checkVisibility_with_different_context(self):
@@ -286,7 +290,6 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
             owner=owner, project=project, source=source, reviewer=reviewer)
         mp2 = self.makeMergeProposal(
             project=project, source=source, reviewer=reviewer)
-        login_person(owner)
         self.assertTrue(
             WebhookSet._checkVisibility(mp1, mp1.merge_target.owner))
         self.assertFalse(
@@ -343,7 +346,6 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
         event_type = 'merge-proposal:0.1'
         hook = self.factory.makeWebhook(
             target=target, event_types=[event_type])
-        login_person(source.owner)
         getUtility(IWebhookSet).trigger(
             target, event_type, {'some': 'payload'}, context=mp)
         with admin_logged_in():

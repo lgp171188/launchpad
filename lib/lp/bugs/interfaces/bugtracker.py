@@ -26,12 +26,12 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -216,6 +216,7 @@ SINGLE_PRODUCT_BUGTRACKERTYPES = [
     ]
 
 
+@exported_as_webservice_entry()
 class IBugTracker(Interface):
     """A remote bug system.
 
@@ -235,7 +236,6 @@ class IBugTracker(Interface):
             print "%s at %s" %(tracker.bug_tracker_type, tracker.base_url)
 
     """
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'))
     bugtrackertype = exported(
@@ -438,13 +438,13 @@ class IBugTracker(Interface):
         """
 
 
+@exported_as_webservice_collection(IBugTracker)
 class IBugTrackerSet(Interface):
     """A set of IBugTracker's.
 
     Each BugTracker is a distinct instance of a bug tracking tool. For
     example, bugzilla.mozilla.org is distinct from bugzilla.gnome.org.
     """
-    export_as_webservice_collection(IBugTracker)
 
     title = Attribute('Title')
 
@@ -549,6 +549,7 @@ class IBugTrackerAliasSet(Interface):
         """Query IBugTrackerAliases by BugTracker."""
 
 
+@exported_as_webservice_entry()
 class IBugTrackerComponent(Interface):
     """The software component in the remote bug tracker.
 
@@ -556,7 +557,6 @@ class IBugTrackerComponent(Interface):
     they affect.  This class provides a mapping of this upstream component
     to the corresponding source package in the distro.
     """
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), required=True, readonly=True)
     is_visible = exported(Bool(
@@ -593,13 +593,13 @@ class IBugTrackerComponent(Interface):
         Reference(title=_('Component Group'), schema=Interface))
 
 
+@exported_as_webservice_entry()
 class IBugTrackerComponentGroup(Interface):
     """A collection of components in a remote bug tracker.
 
     Some bug trackers organize sets of components into higher level groups,
     such as Bugzilla's 'product'.
     """
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'))
     name = exported(

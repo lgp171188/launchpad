@@ -10,8 +10,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from zope.component import getUtility
 from zope.interface import (
@@ -46,12 +46,11 @@ from lp.translations.interfaces.rosettastats import IRosettaStats
 from lp.translations.interfaces.translationsperson import ITranslationsPerson
 
 
+@exported_as_webservice_entry(
+    singular_name="translation_file",
+    plural_name="translation_files")
 class IPOFile(IRosettaStats):
     """A translation file."""
-
-    export_as_webservice_entry(
-        singular_name="translation_file",
-        plural_name="translation_files")
 
     id = exported(Int(
         title=_('The translation file id.'), required=True, readonly=True))

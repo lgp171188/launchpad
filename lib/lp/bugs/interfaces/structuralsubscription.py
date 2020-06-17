@@ -14,12 +14,12 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -99,11 +99,10 @@ class IStructuralSubscriptionRestricted(Interface):
         """Delete this structural subscription filter."""
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IStructuralSubscription(
     IStructuralSubscriptionPublic, IStructuralSubscriptionRestricted):
     """A subscription to a Launchpad structure."""
-
-    export_as_webservice_entry(publish_web_link=False)
 
 
 class IStructuralSubscriptionTargetRead(Interface):
@@ -233,10 +232,10 @@ class IStructuralSubscriptionTargetWrite(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IStructuralSubscriptionTarget(IStructuralSubscriptionTargetRead,
                                     IStructuralSubscriptionTargetWrite):
     """A Launchpad Structure allowing users to subscribe to it."""
-    export_as_webservice_entry()
 
 
 class IStructuralSubscriptionTargetHelper(Interface):

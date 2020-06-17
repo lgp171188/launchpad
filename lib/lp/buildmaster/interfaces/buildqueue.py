@@ -144,3 +144,11 @@ class IBuildQueueSet(Interface):
 
     def preloadForBuildFarmJobs(builds):
         """Preload buildqueue_record for the given IBuildFarmJobs."""
+
+    def findBuildCandidates(processor, virtualized, limit):
+        """Find candidate jobs for dispatch to idle builders.
+
+        :return: A sequence of up to `limit` `IBuildQueue` items with the
+            highest score that are for the given `processor` and that match
+            the given value of `virtualized`.
+        """

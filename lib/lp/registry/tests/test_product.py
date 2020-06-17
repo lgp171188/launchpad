@@ -587,7 +587,7 @@ class TestProduct(TestCaseWithFactory):
                 CannotChangeInformationType,
                 'This project has queued translations.'):
                 raise error
-        removeSecurityProxy(entry).delete(entry.id)
+        Store.of(entry).remove(entry)
         with person_logged_in(product.owner):
             for info_type in PRIVATE_PROJECT_TYPES:
                 self.assertContentEqual(

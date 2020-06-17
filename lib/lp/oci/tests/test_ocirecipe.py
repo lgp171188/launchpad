@@ -13,6 +13,7 @@ from six import (
     string_types,
     )
 from storm.exceptions import LostObjectError
+from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -24,6 +25,7 @@ from testtools.matchers import (
     )
 import transaction
 from zope.component import getUtility
+from zope.schema import ValidationError
 from zope.security.interfaces import (
     ForbiddenAttribute,
     Unauthorized,
@@ -410,7 +412,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_newPushRule(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
-        url = ensure_text(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         image_name = ensure_text(self.factory.getUniqueString())
         credentials = {
             "username": "test-username", "password": "test-password"}
@@ -432,10 +434,25 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 push_rule,
                 recipe.push_rules[0])
 
+    def test_newPushRule_invalid_url(self):
+        self.setConfig()
+        recipe = self.factory.makeOCIRecipe()
+        url = 'asdf://foo.com'
+        image_name = ensure_text(self.factory.getUniqueString())
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+
+        with person_logged_in(recipe.owner):
+            self.assertRaises(
+                ValidationError, recipe.newPushRule,
+                recipe.owner, url, image_name, credentials)
+            # Avoid trying to flush the incomplete object on cleanUp.
+            Store.of(recipe).rollback()
+
     def test_newPushRule_same_details(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
-        url = ensure_text(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         image_name = ensure_text(self.factory.getUniqueString())
         credentials = {
             "username": "test-username", "password": "test-password"}
@@ -481,7 +498,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
             oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
-            self.assertEqual(3, recorder.count)
+            self.assertEqual(2, recorder.count)
 
         self.assertIsNone(oci_project2.getOfficialRecipe())
         self.assertEqual(

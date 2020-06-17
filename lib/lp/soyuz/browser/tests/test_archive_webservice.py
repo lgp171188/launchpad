@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -7,7 +7,9 @@ __metaclass__ = type
 
 from datetime import timedelta
 import json
+import os.path
 
+import responses
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -18,9 +20,11 @@ from testtools.matchers import (
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.enums import (
     ArchivePermissionType,
@@ -39,6 +43,7 @@ from lp.testing import (
     record_two_runs,
     TestCaseWithFactory,
     )
+from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
@@ -132,6 +137,82 @@ class TestArchiveWebservice(TestCaseWithFactory):
 
         # A random user can't delete someone else's PPA.
         self.assertEqual(401, ws.delete(ppa_url).status)
+
+
+class TestSigningKey(TestCaseWithFactory):
+    """Test signing-key-related information for archives.
+
+    We just use `responses` to mock the keyserver here; the details of its
+    implementation aren't especially important, we can't use
+    `InProcessKeyServerFixture` because the keyserver operations are
+    synchronous, and `responses` is much faster than `KeyServerTac`.
+    """
+
+    layer = DatabaseFunctionalLayer
+
+    def _setUpSigningKey(self, archive):
+        key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
+        gpghandler = getUtility(IGPGHandler)
+        with open(key_path, "rb") as key_file:
+            secret_key = gpghandler.importSecretKey(key_file.read())
+        public_key = gpghandler.retrieveKey(secret_key.fingerprint)
+        public_key_data = public_key.export()
+        removeSecurityProxy(archive).signing_key_fingerprint = (
+            public_key.fingerprint)
+        key_url = gpghandler.getURLForKeyInServer(
+            public_key.fingerprint, action="get")
+        responses.add("GET", key_url, body=public_key_data)
+        gpghandler.resetLocalState()
+        return public_key.fingerprint, public_key_data
+
+    @responses.activate
+    def test_signing_key_public(self):
+        # Anyone can read signing key information for public archives.
+        archive = self.factory.makeArchive()
+        fingerprint, public_key_data = self._setUpSigningKey(archive)
+        archive_url = api_url(archive)
+        ws = webservice_for_person(
+            self.factory.makePerson(), default_api_version="devel")
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertEqual(fingerprint, ws_archive["signing_key_fingerprint"])
+        response = ws.named_get(archive_url, "getSigningKeyData")
+        self.assertEqual(200, response.status)
+        self.assertEqual(public_key_data, response.jsonBody())
+
+    @responses.activate
+    def test_signing_key_private_subscriber(self):
+        # Subscribers can read signing key information for private archives.
+        archive = self.factory.makeArchive(private=True)
+        fingerprint, public_key_data = self._setUpSigningKey(archive)
+        subscriber = self.factory.makePerson()
+        with person_logged_in(archive.owner):
+            archive.newSubscription(subscriber, archive.owner)
+        archive_url = api_url(archive)
+        ws = webservice_for_person(
+            subscriber, permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel")
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertEqual(fingerprint, ws_archive["signing_key_fingerprint"])
+        response = ws.named_get(archive_url, "getSigningKeyData")
+        self.assertEqual(200, response.status)
+        self.assertEqual(public_key_data, response.jsonBody())
+
+    @responses.activate
+    def test_signing_key_private_non_subscriber(self):
+        # Non-subscribers cannot read signing key information (or indeed
+        # anything else) for private archives.
+        archive = self.factory.makeArchive(private=True)
+        fingerprint, public_key_data = self._setUpSigningKey(archive)
+        archive_url = api_url(archive)
+        ws = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel")
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertEqual(
+            "tag:launchpad.net:2008:redacted",
+            ws_archive["signing_key_fingerprint"])
+        response = ws.named_get(archive_url, "getSigningKeyData")
+        self.assertEqual(401, response.status)
 
 
 class TestExternalDependencies(TestCaseWithFactory):

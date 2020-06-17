@@ -3464,7 +3464,7 @@ class EditOCIProject(AuthorizationBase):
         """Maintainers, drivers, and admins can drive projects."""
         return (user.in_admin or
                 user.isDriver(self.obj.pillar) or
-                user.inTeam(self.obj.pillar.oci_project_admin))
+                self.obj.pillar.canAdministerOCIProjects(user))
 
 
 class EditOCIProjectSeries(DelegatedAuthorization):

@@ -18,8 +18,8 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from six.moves import http_client
@@ -93,9 +93,9 @@ VALID_EMAIL_STATUSES = (
     EmailAddressStatus.PREFERRED)
 
 
+@exported_as_webservice_entry(plural_name='email_addresses')
 class IEmailAddress(IHasOwner):
     """The object that stores the `IPerson`'s emails."""
-    export_as_webservice_entry(plural_name='email_addresses')
 
     id = Int(title=_('ID'), required=True, readonly=True)
     email = exported(

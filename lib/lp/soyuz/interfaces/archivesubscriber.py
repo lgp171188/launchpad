@@ -14,9 +14,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     REQUEST_USER,
     )
@@ -122,9 +122,9 @@ class IArchiveSubscriberEdit(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IArchiveSubscriber(IArchiveSubscriberView, IArchiveSubscriberEdit):
     """An interface for archive subscribers."""
-    export_as_webservice_entry()
 
 
 class IArchiveSubscriberSetView(Interface):

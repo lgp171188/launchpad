@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Builder interfaces."""
@@ -19,12 +19,12 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -208,22 +208,6 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
     def failBuilder(reason):
         """Mark builder as failed for a given reason."""
 
-    def acquireBuildCandidate():
-        """Acquire a build candidate in an atomic fashion.
-
-        When retrieiving a candidate we need to mark it as building
-        immediately so that it is not dispatched by another builder in the
-        build manager.
-
-        We can consider this to be atomic because although the build manager
-        is a Twisted app and gives the appearance of doing lots of things at
-        once, it's still single-threaded so no more than one builder scan
-        can be in this code at the same time.
-
-        If there's ever more than one build manager running at once, then
-        this code will need some sort of mutex.
-        """
-
 
 class IBuilderEdit(Interface):
 
@@ -235,6 +219,7 @@ class IBuilderEdit(Interface):
         """Update the clean status."""
 
 
+@exported_as_webservice_entry()
 class IBuilder(IBuilderEdit, IBuilderView):
     """Build-slave information and state.
 
@@ -247,7 +232,6 @@ class IBuilder(IBuilderEdit, IBuilderView):
     representation, including the field/properties: virtualized, builderok,
     status, failnotes and currentjob.
     """
-    export_as_webservice_entry()
 
 
 class IBuilderSetAdmin(Interface):
@@ -268,6 +252,7 @@ class IBuilderSetAdmin(Interface):
         """
 
 
+@exported_as_webservice_collection(IBuilder)
 class IBuilderSet(IBuilderSetAdmin):
     """Collections of builders.
 
@@ -276,7 +261,6 @@ class IBuilderSet(IBuilderSetAdmin):
     Methods on this interface should deal with the set of Builders:
     methods that affect a single Builder should be on IBuilder.
     """
-    export_as_webservice_collection(IBuilder)
     title = Attribute('Title')
 
     def __iter__():
@@ -297,6 +281,9 @@ class IBuilderSet(IBuilderSetAdmin):
 
     def get(builder_id):
         """Return the IBuilder with the given builderid."""
+
+    def preloadProcessors(builders):
+        """Preload processors for a collection of `IBuilder`s."""
 
     @collection_default_content()
     def getBuilders():

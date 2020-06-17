@@ -12,9 +12,9 @@ __all__ = [
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     REQUEST_USER,
     )
@@ -35,10 +35,9 @@ from lp.services.fields import PersonChoice
 from lp.services.webservice.apihelpers import patch_reference_property
 
 
+@exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IBugSubscription(Interface):
     """The relationship between a person and a bug."""
-
-    export_as_webservice_entry(publish_web_link=False, as_of="beta")
 
     id = Int(title=_('ID'), readonly=True, required=True)
     person = exported(PersonChoice(

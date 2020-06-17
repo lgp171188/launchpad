@@ -20,7 +20,10 @@ from lp.app.browser.launchpadform import (
     action,
     LaunchpadFormView,
     )
-from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
+from lp.oci.interfaces.ocirecipebuild import (
+    CannotScheduleRegistryUpload,
+    IOCIRecipeBuild,
+    )
 from lp.services.librarian.browser import (
     FileNavigationMixin,
     ProxiedLibraryFileAlias,
@@ -92,6 +95,18 @@ class OCIRecipeBuildView(LaunchpadFormView):
     @property
     def next_url(self):
         return canonical_url(self.context)
+
+    @action("Upload build to registries", name="upload")
+    def upload_action(self, action, data):
+        """Schedule an upload of this build to each configured registry."""
+        try:
+            self.context.scheduleRegistryUpload()
+        except CannotScheduleRegistryUpload as e:
+            self.request.response.addWarningNotification(str(e))
+        else:
+            self.request.response.addInfoNotification(
+                "An upload has been scheduled and will run as soon as "
+                "possible.")
 
 
 class OCIRecipeBuildCancelView(LaunchpadFormView):

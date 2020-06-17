@@ -13,9 +13,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     collection_default_content,
-    export_as_webservice_collection,
     export_operation_as,
     export_read_operation,
+    exported_as_webservice_collection,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -140,10 +140,9 @@ class ISearchableByQuestionOwner(IQuestionCollection):
         """
 
 
+@exported_as_webservice_collection(Interface)
 class IQuestionSet(IQuestionCollection):
     """A utility that contain all the questions published in Launchpad."""
-
-    export_as_webservice_collection(Interface)
 
     title = Attribute('Title')
 

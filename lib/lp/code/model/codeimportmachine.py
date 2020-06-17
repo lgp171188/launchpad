@@ -12,10 +12,13 @@ __all__ = [
     'CodeImportMachineSet',
     ]
 
-from sqlobject import StringCol
+import pytz
 from storm.locals import (
+    DateTime,
     Desc,
+    Int,
     ReferenceSet,
+    Unicode,
     )
 from zope.component import getUtility
 from zope.interface import implementer
@@ -33,33 +36,43 @@ from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ICodeImportMachine)
-class CodeImportMachine(SQLBase):
+class CodeImportMachine(StormBase):
     """See `ICodeImportMachine`."""
 
-    _defaultOrder = ['hostname']
+    __storm_table__ = 'CodeImportMachine'
+    __storm_order__ = 'hostname'
 
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
+    id = Int(primary=True)
 
-    hostname = StringCol(default=None)
-    state = EnumCol(enum=CodeImportMachineState, notNull=True,
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+
+    hostname = Unicode(allow_none=False)
+    state = DBEnum(
+        enum=CodeImportMachineState, allow_none=False,
         default=CodeImportMachineState.OFFLINE)
-    heartbeat = UtcDateTimeCol(notNull=False)
+    heartbeat = DateTime(tzinfo=pytz.UTC, allow_none=True)
 
     current_jobs = ReferenceSet(
-        '<primary key>', 'CodeImportJob.machine_id',
+        id, 'CodeImportJob.machine_id',
         order_by=('CodeImportJob.date_started', 'CodeImportJob.id'))
 
     events = ReferenceSet(
-        '<primary key>', 'CodeImportEvent.machine_id',
+        id, 'CodeImportEvent.machine_id',
         order_by=(
             Desc('CodeImportEvent.date_created'),
             Desc('CodeImportEvent.id')))
+
+    def __init__(self, hostname, heartbeat=None):
+        super(CodeImportMachine, self).__init__()
+        self.hostname = hostname
+        self.heartbeat = heartbeat
+        self.state = CodeImportMachineState.OFFLINE
 
     def shouldLookForJob(self, worker_limit):
         """See `ICodeImportMachine`."""
@@ -116,11 +129,12 @@ class CodeImportMachineSet(object):
 
     def getAll(self):
         """See `ICodeImportMachineSet`."""
-        return CodeImportMachine.select()
+        return IStore(CodeImportMachine).find(CodeImportMachine)
 
     def getByHostname(self, hostname):
         """See `ICodeImportMachineSet`."""
-        return CodeImportMachine.selectOneBy(hostname=hostname)
+        return IStore(CodeImportMachine).find(
+            CodeImportMachine, CodeImportMachine.hostname == hostname).one()
 
     def new(self, hostname, state=CodeImportMachineState.OFFLINE):
         """See `ICodeImportMachineSet`."""
@@ -130,4 +144,5 @@ class CodeImportMachineSet(object):
         elif state != CodeImportMachineState.OFFLINE:
             raise AssertionError(
                 "Invalid machine creation state: %r." % state)
+        IStore(CodeImportMachine).add(machine)
         return machine

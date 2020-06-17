@@ -11,9 +11,14 @@ __all__ = [
 ]
 
 
+from functools import partial
 import hashlib
 from io import BytesIO
 import json
+try:
+    from json.decoder import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
 import logging
 import tarfile
 
@@ -44,6 +49,9 @@ from lp.services.timeout import urlfetch
 
 log = logging.getLogger(__name__)
 
+# Helper function to call urlfetch(use_proxy=True, *args, **kwargs)
+proxy_urlfetch = partial(urlfetch, use_proxy=True)
+
 
 @implementer(IOCIRegistryClient)
 class OCIRegistryClient:
@@ -56,6 +64,18 @@ class OCIRegistryClient:
             return json.loads(reference.read())
         finally:
             reference.close()
+
+    @classmethod
+    def _makeRegistryError(cls, error_class, summary, response):
+        errors = None
+        if response.content:
+            try:
+                response_data = response.json()
+            except JSONDecodeError:
+                pass
+            else:
+                errors = response_data.get("errors")
+        return error_class(summary, errors)
 
     # Retry this on a ConnectionError, 5 times with 3 seconds wait.
     # Log each attempt so we can see they are happening.
@@ -93,16 +113,20 @@ class OCIRegistryClient:
         post_location = post_response.headers["Location"]
         query_parsed = {"digest": digest}
 
-        put_response = http_client.request(
-            post_location,
-            params=query_parsed,
-            data=fileobj,
-            method="PUT")
-
+        try:
+            put_response = http_client.request(
+                post_location,
+                params=query_parsed,
+                data=fileobj,
+                method="PUT")
+        except HTTPError as http_error:
+            put_response = http_error.response
         if put_response.status_code != 201:
-            msg = "Upload of {} for {} failed".format(
-                digest, push_rule.image_name)
-            raise BlobUploadFailed(msg)
+            raise cls._makeRegistryError(
+                BlobUploadFailed,
+                "Upload of {} for {} failed".format(
+                    digest, push_rule.image_name),
+                put_response)
 
     @classmethod
     def _upload_layer(cls, digest, push_rule, lfa, http_client):
@@ -252,19 +276,24 @@ class OCIRegistryClient:
                     preloaded_data[section["Config"]])
 
                 # Upload the registry manifest
-                manifest_response = http_client.requestPath(
-                    "/manifests/{}".format(tag),
-                    json=registry_manifest,
-                    headers={
-                        "Content-Type":
-                            "application/"
-                            "vnd.docker.distribution.manifest.v2+json"
-                        },
-                    method="PUT")
+                try:
+                    manifest_response = http_client.requestPath(
+                        "/manifests/{}".format(tag),
+                        json=registry_manifest,
+                        headers={
+                            "Content-Type":
+                                "application/"
+                                "vnd.docker.distribution.manifest.v2+json"
+                            },
+                        method="PUT")
+                except HTTPError as http_error:
+                    manifest_response = http_error.response
                 if manifest_response.status_code != 201:
-                    raise ManifestUploadFailed(
+                    raise cls._makeRegistryError(
+                        ManifestUploadFailed,
                         "Failed to upload manifest for {} in {}".format(
-                            build.recipe.name, build.id))
+                            build.recipe.name, build.id),
+                        manifest_response)
 
 
 class OCIRegistryAuthenticationError(Exception):
@@ -295,7 +324,7 @@ class RegistryHTTPClient:
         username, password = self.credentials
         if username is not None:
             request_kwargs.setdefault("auth", (username, password))
-        return urlfetch(url, **request_kwargs)
+        return proxy_urlfetch(url, **request_kwargs)
 
     def requestPath(self, path, *args, **request_kwargs):
         """Shortcut to do a request to {self.api_url}/{path}."""
@@ -307,7 +336,7 @@ class RegistryHTTPClient:
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule and registry's authentication flow."""
         try:
-            urlfetch("{}/v2/".format(push_rule.registry_url))
+            proxy_urlfetch("{}/v2/".format(push_rule.registry_url))
             # No authorization error? Just return the basic RegistryHTTPClient.
             return RegistryHTTPClient(push_rule)
         except HTTPError as e:
@@ -388,7 +417,7 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
             headers = request_kwargs.pop("headers", {})
             if self.auth_token is not None:
                 headers["Authorization"] = "Bearer %s" % self.auth_token
-            return urlfetch(url, headers=headers, **request_kwargs)
+            return proxy_urlfetch(url, headers=headers, **request_kwargs)
         except HTTPError as e:
             if auth_retry and e.response.status_code == 401:
                 self.authenticate(e.response)

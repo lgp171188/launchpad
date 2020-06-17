@@ -11,6 +11,7 @@ __all__ = [
     'SlaveScanner',
     ]
 
+from collections import defaultdict
 import datetime
 import functools
 import logging
@@ -49,6 +50,8 @@ from lp.buildmaster.interfaces.builder import (
     CannotResumeHost,
     IBuilderSet,
     )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.services.database.bulk import dbify_value
@@ -72,11 +75,145 @@ JOB_RESET_THRESHOLD = 3
 BUILDER_FAILURE_THRESHOLD = 5
 
 
-class BuilderFactory:
+def build_candidate_sort_key(candidate):
+    # Sort key for build candidates.  This must match the ordering used in
+    # BuildQueueSet.findBuildCandidates.
+    return -candidate.lastscore, candidate.id
+
+
+class PrefetchedBuildCandidates:
+    """A set of build candidates updated using efficient bulk queries.
+
+    `pop` doesn't touch the DB directly.  It works from cached data updated
+    by `prefetchForBuilder`.
+    """
+
+    def __init__(self, all_vitals):
+        self.builder_groups = defaultdict(list)
+        for vitals in all_vitals:
+            for builder_group_key in self._getBuilderGroupKeys(vitals):
+                self.builder_groups[builder_group_key].append(vitals)
+        self.candidates = defaultdict(list)
+        self.sort_keys = {}
+
+    @staticmethod
+    def _getBuilderGroupKeys(vitals):
+        return [
+            (processor_name, vitals.virtualized)
+            for processor_name in vitals.processor_names + [None]]
+
+    @staticmethod
+    def _getSortKey(candidate):
+        # Sort key for build candidates.  This must match the ordering used in
+        # BuildQueueSet.findBuildCandidates.
+        return -candidate.lastscore, candidate.id
+
+    def _addCandidates(self, builder_group_key, candidates):
+        for candidate in candidates:
+            self.candidates[builder_group_key].append(candidate.id)
+            self.sort_keys[candidate.id] = self._getSortKey(candidate)
+
+    def prefetchForBuilder(self, vitals):
+        """Ensure that the prefetched cache is populated for this builder."""
+        missing_builder_group_keys = (
+            set(self._getBuilderGroupKeys(vitals)) - set(self.candidates))
+        if not missing_builder_group_keys:
+            return
+        processor_set = getUtility(IProcessorSet)
+        processors_by_name = {
+            processor_name: (
+                processor_set.getByName(processor_name)
+                if processor_name is not None else None)
+            for processor_name, _ in missing_builder_group_keys}
+        bq_set = getUtility(IBuildQueueSet)
+        for builder_group_key in missing_builder_group_keys:
+            processor_name, virtualized = builder_group_key
+            self._addCandidates(
+                builder_group_key,
+                bq_set.findBuildCandidates(
+                    processors_by_name[processor_name], virtualized,
+                    len(self.builder_groups[builder_group_key])))
+
+    def pop(self, vitals):
+        """Return a suitable build candidate for this builder.
+
+        The candidate is removed from the cache, but the caller must ensure
+        that it is marked as building, otherwise it will come back the next
+        time the cache is updated (typically on the next scan cycle).
+        """
+        builder_group_keys = self._getBuilderGroupKeys(vitals)
+        # Take the first entry from the pre-sorted list of candidates for
+        # each builder group, and then re-sort the combined list in exactly
+        # the same way.
+        grouped_candidates = sorted(
+            [(builder_group_key, self.candidates[builder_group_key][0])
+             for builder_group_key in builder_group_keys
+             if self.candidates[builder_group_key]],
+            key=lambda key_candidate: self.sort_keys[key_candidate[1]])
+        if grouped_candidates:
+            builder_group_key, candidate_id = grouped_candidates[0]
+            self.candidates[builder_group_key].pop(0)
+            del self.sort_keys[candidate_id]
+            return getUtility(IBuildQueueSet).get(candidate_id)
+        else:
+            return None
+
+
+class BaseBuilderFactory:
+
+    date_updated = None
+
+    def update(self):
+        """Update the factory's view of the world."""
+        raise NotImplementedError
+
+    def prescanUpdate(self):
+        """Update the factory's view of the world before each scan."""
+        raise NotImplementedError
+
+    def __getitem__(self, name):
+        """Get the named `Builder` Storm object."""
+        return getUtility(IBuilderSet).getByName(name)
+
+    def getVitals(self, name):
+        """Get the named `BuilderVitals` object."""
+        raise NotImplementedError
+
+    def iterVitals(self):
+        """Iterate over all `BuilderVitals` objects."""
+        raise NotImplementedError
+
+    def findBuildCandidate(self, vitals):
+        """Find the next build candidate for this `BuilderVitals`, or None."""
+        raise NotImplementedError
+
+    def acquireBuildCandidate(self, vitals, builder):
+        """Acquire and return a build candidate in an atomic fashion.
+
+        If we succeed, mark it as building immediately so that it is not
+        dispatched to another builder by the build manager.
+
+        We can consider this to be atomic, because although the build
+        manager is a Twisted app and gives the appearance of doing lots of
+        things at once, it's still single-threaded so no more than one
+        builder scan can be in this code at the same time (as long as we
+        don't yield).
+
+        If there's ever more than one build manager running at once, then
+        this code will need some sort of mutex.
+        """
+        candidate = self.findBuildCandidate(vitals)
+        if candidate is not None:
+            candidate.markAsBuilding(builder)
+            transaction.commit()
+        return candidate
+
+
+class BuilderFactory(BaseBuilderFactory):
     """A dumb builder factory that just talks to the DB."""
 
     def update(self):
-        """Update the factory's view of the world.
+        """See `BaseBuilderFactory`.
 
         For the basic BuilderFactory this is a no-op, but others might do
         something.
@@ -84,7 +221,7 @@ class BuilderFactory:
         return
 
     def prescanUpdate(self):
-        """Update the factory's view of the world before each scan.
+        """See `BaseBuilderFactory`.
 
         For the basic BuilderFactory this means ending the transaction
         to ensure that data retrieved is up to date.
@@ -95,61 +232,66 @@ class BuilderFactory:
     def date_updated(self):
         return datetime.datetime.utcnow()
 
-    def __getitem__(self, name):
-        """Get the named `Builder` Storm object."""
-        return getUtility(IBuilderSet).getByName(name)
-
     def getVitals(self, name):
-        """Get the named `BuilderVitals` object."""
+        """See `BaseBuilderFactory`."""
         return extract_vitals_from_db(self[name])
 
     def iterVitals(self):
-        """Iterate over all `BuilderVitals` objects."""
+        """See `BaseBuilderFactory`."""
         return (
             extract_vitals_from_db(b)
             for b in getUtility(IBuilderSet).__iter__())
 
+    def findBuildCandidate(self, vitals):
+        """See `BaseBuilderFactory`."""
+        candidates = PrefetchedBuildCandidates([vitals])
+        candidates.prefetchForBuilder(vitals)
+        return candidates.pop(vitals)
 
-class PrefetchedBuilderFactory:
+
+class PrefetchedBuilderFactory(BaseBuilderFactory):
     """A smart builder factory that does efficient bulk queries.
 
     `getVitals` and `iterVitals` don't touch the DB directly. They work
     from cached data updated by `update`.
     """
 
-    date_updated = None
-
     def update(self):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         transaction.abort()
-        builders_and_bqs = IStore(Builder).using(
+        builders_and_current_bqs = list(IStore(Builder).using(
             Builder, LeftJoin(BuildQueue, BuildQueue.builderID == Builder.id)
-            ).find((Builder, BuildQueue))
+            ).find((Builder, BuildQueue)))
+        getUtility(IBuilderSet).preloadProcessors(
+            [b for b, _ in builders_and_current_bqs])
         self.vitals_map = dict(
             (b.name, extract_vitals_from_db(b, bq))
-            for b, bq in builders_and_bqs)
+            for b, bq in builders_and_current_bqs)
+        self.candidates = PrefetchedBuildCandidates(
+            list(self.vitals_map.values()))
         transaction.abort()
         self.date_updated = datetime.datetime.utcnow()
 
     def prescanUpdate(self):
-        """See `BuilderFactory`.
+        """See `BaseBuilderFactory`.
 
         This is a no-op, as the data was already brought sufficiently up
         to date by update().
         """
         return
 
-    def __getitem__(self, name):
-        """See `BuilderFactory`."""
-        return getUtility(IBuilderSet).getByName(name)
-
     def getVitals(self, name):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         return self.vitals_map[name]
 
     def iterVitals(self):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         return (b for n, b in sorted(six.iteritems(self.vitals_map)))
+
+    def findBuildCandidate(self, vitals):
+        """See `BaseBuilderFactory`."""
+        self.candidates.prefetchForBuilder(vitals)
+        return self.candidates.pop(vitals)
 
 
 def judge_failure(builder_count, job_count, exc, retry=True):
@@ -517,7 +659,8 @@ class SlaveScanner:
                 # attempt to just retry the scan; we need to reset
                 # the job so the dispatch will be reattempted.
                 builder = self.builder_factory[self.builder_name]
-                d = interactor.findAndStartJob(vitals, builder, slave)
+                d = interactor.findAndStartJob(
+                    vitals, builder, slave, self.builder_factory)
                 d.addErrback(functools.partial(self._scanFailed, False))
                 yield d
                 if builder.currentjob is not None:

@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for product views."""
@@ -52,7 +52,10 @@ from lp.registry.interfaces.product import (
 from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.webapp.publisher import canonical_url
+from lp.services.webapp.publisher import (
+    canonical_url,
+    RedirectionView,
+    )
 from lp.services.webapp.vhosts import allvhosts
 from lp.testing import (
     BrowserTestCase,
@@ -66,17 +69,44 @@ from lp.testing.fixture import DemoMode
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
+    ZopelessDatabaseLayer,
     )
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
     find_tag_by_id,
     )
+from lp.testing.publication import test_traverse
 from lp.testing.service_usage_helpers import set_service_usage
 from lp.testing.views import (
     create_initialized_view,
     create_view,
     )
+
+
+class TestProductNavigation(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def assertRedirects(self, url, expected_url):
+        _, view, _ = test_traverse(url)
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(expected_url, removeSecurityProxy(view).target)
+
+    def test_classic_series_url(self):
+        productseries = self.factory.makeProductSeries()
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/%s" % (
+                productseries.product.name, productseries.name))
+        self.assertEqual(productseries, obj)
+
+    def test_new_series_url_redirects(self):
+        productseries = self.factory.makeProductSeries()
+        self.assertRedirects(
+            "http://launchpad.test/%s/+series/%s" % (
+                productseries.product.name, productseries.name),
+            "http://launchpad.test/%s/%s" % (
+                productseries.product.name, productseries.name))
 
 
 class TestProductConfiguration(BrowserTestCase):

@@ -432,7 +432,7 @@ class TestProductOverviewOCIProject(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def test_displays_list_oci_projects_link(self):
+    def test_displays_create_and_list_oci_project_link(self):
         product = self.factory.makeProduct()
 
         browser = self.getUserBrowser(
@@ -440,3 +440,4 @@ class TestProductOverviewOCIProject(TestCaseWithFactory):
         text = extract_text(find_tag_by_id(browser.contents, 'global-actions'))
 
         self.assertIn("Search for OCI Project", text)
+        self.assertIn("Create an OCI Project", text)
