@@ -509,6 +509,10 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
     def sharing(self):
         return Link('+sharing', 'Sharing', icon='edit')
 
+    def search_oci_project(self):
+        text = 'Search for OCI Project'
+        return Link('+search-oci-project', text, icon='info')
+
     @enabled_with_permission('launchpad.Driver')
     def new_oci_project(self):
         text = 'Create an OCI Project'
@@ -533,7 +537,7 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
     @cachedproperty
     def links(self):
         links = ['edit', 'review_license', 'administer', 'sharing',
-                 'new_oci_project']
+                 'search_oci_project', 'new_oci_project']
         add_subscribe_link(links)
         return links
 

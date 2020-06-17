@@ -41,16 +41,19 @@ from lp.registry.interfaces.ociprojectname import (
     )
 from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
+from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
     ContextMenu,
     enabled_with_permission,
+    LaunchpadView,
     Link,
     Navigation,
     NavigationMenu,
     StandardLaunchpadFacets,
     stepthrough,
     )
+from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 
@@ -234,3 +237,50 @@ class OCIProjectEditView(LaunchpadEditFormView):
         return canonical_url(self.context)
 
     cancel_url = next_url
+
+
+class OCIProjectSearchView(LaunchpadView):
+    """Page to search for OCI projects of a given pillar."""
+    page_title = ''
+
+    @property
+    def label(self):
+        return "Search OCI projects in %s" % self.context.title
+
+    @property
+    def text(self):
+        text = self.request.get("text", None)
+        if isinstance(text, list):
+            # The user may have URL hacked a query string with more than one
+            # "text" parameter. We'll take the last one.
+            text = text[-1]
+        return text
+
+    @property
+    def search_requested(self):
+        return self.text is not None
+
+    @property
+    def title(self):
+        return self.context.name
+
+    @cachedproperty
+    def count(self):
+        """Return the number of matched search results."""
+        return self.batchnav.batch.total()
+
+    @cachedproperty
+    def batchnav(self):
+        """Return the batch navigator for the search results."""
+        return BatchNavigator(self.search_results, self.request)
+
+    @cachedproperty
+    def preloaded_batch(self):
+        projects = self.batchnav.batch
+        getUtility(IOCIProjectSet).preloadDataForOCIProjects(projects)
+        return projects
+
+    @property
+    def search_results(self):
+        return getUtility(IOCIProjectSet).findByPillarAndName(
+            self.context, self.text or '')
