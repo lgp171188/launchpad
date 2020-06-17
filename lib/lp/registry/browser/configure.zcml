@@ -2170,11 +2170,25 @@
         template="../templates/ociproject-new.pt"
         />
     <browser:page
+        name="+new-oci-project"
+        for="lp.registry.interfaces.product.IProduct"
+        class="lp.registry.browser.ociproject.OCIProjectAddView"
+        permission="launchpad.AnyPerson"
+        template="../templates/ociproject-new.pt"
+        />
+    <browser:page
         name="+search-oci-project"
         for="lp.registry.interfaces.distribution.IDistribution"
-        class="lp.registry.browser.distribution.DistributionOCIProjectSearchView"
+        class="lp.registry.browser.ociproject.OCIProjectSearchView"
         permission="zope.Public"
-        template="../templates/distribution-search-oci-projects.pt"
+        template="../templates/search-oci-projects.pt"
+        />
+    <browser:page
+        name="+search-oci-project"
+        for="lp.registry.interfaces.product.IProduct"
+        class="lp.registry.browser.ociproject.OCIProjectSearchView"
+        permission="zope.Public"
+        template="../templates/search-oci-projects.pt"
         />
     <browser:page
         name="+search"

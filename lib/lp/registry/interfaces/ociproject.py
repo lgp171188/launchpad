@@ -202,9 +202,9 @@ class IOCIProjectSet(Interface):
         :return: The OCIProject found.
         """
 
-    def findByDistributionAndName(distribution, name_substring):
-        """Find OCIProjects for a given distribution that contains the
-        provided name."""
+    def findByPillarAndName(pillar, name_substring):
+        """Find OCIProjects for a given pillar that contain the provided
+        name."""
 
     def preloadDataForOCIProjects(oci_projects):
         """Preload data for the given list of OCIProject objects."""

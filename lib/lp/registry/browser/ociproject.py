@@ -28,6 +28,7 @@ from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
@@ -38,19 +39,32 @@ from lp.registry.interfaces.ociprojectname import (
     IOCIProjectName,
     IOCIProjectNameSet,
     )
+from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
+from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
     ContextMenu,
     enabled_with_permission,
+    LaunchpadView,
     Link,
     Navigation,
     NavigationMenu,
     StandardLaunchpadFacets,
     stepthrough,
     )
+from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+
+
+def getPillarFieldName(pillar):
+    if IDistribution.providedBy(pillar):
+        return 'distribution'
+    elif IProduct.providedBy(pillar):
+        return 'project'
+    raise NotImplementedError("This view only supports distribution or "
+                              "project as pillars for OCIProject.")
 
 
 class OCIProjectAddView(LaunchpadFormView):
@@ -85,10 +99,10 @@ class OCIProjectAddView(LaunchpadFormView):
         oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
             self.context, oci_project_name.name)
         if oci_project:
-            self.setFieldError(
-                    'name',
-                    'There is already an OCI project in %s with this name.' % (
-                        self.context.display_name))
+            pillar_type = getPillarFieldName(self.context)
+            msg = ('There is already an OCI project in %s %s with this name.'
+                   % (pillar_type, self.context.display_name))
+            self.setFieldError('name', msg)
 
 
 class OCIProjectFormatterAPI(CustomizableFormatter):
@@ -170,10 +184,19 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     schema = IOCIProject
     field_names = [
-        'distribution',
         'name',
         'official_recipe',
         ]
+
+    def setUpFields(self):
+        pillar_key = getPillarFieldName(self.context.pillar)
+        self.field_names = [pillar_key] + self.field_names
+
+        super(OCIProjectEditView, self).setUpFields()
+
+        # Set the correct pillar field as mandatory
+        pillar_field = self.form_fields.get(pillar_key).field
+        pillar_field.required = True
 
     def extendFields(self):
         official_recipe = self.context.getOfficialRecipe()
@@ -191,16 +214,17 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     def validate(self, data):
         super(OCIProjectEditView, self).validate(data)
-        distribution = data.get('distribution')
+        pillar_type_field = getPillarFieldName(self.context.pillar)
+        pillar = data.get(pillar_type_field)
         name = data.get('name')
-        if distribution and name:
+        if pillar and name:
             oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
-                distribution, name)
+                pillar, name)
             if oci_project is not None and oci_project != self.context:
                 self.setFieldError(
                     'name',
-                    'There is already an OCI project in %s with this name.' % (
-                        distribution.display_name))
+                    'There is already an OCI project in %s %s with this name.'
+                    % (pillar_type_field, pillar.display_name))
 
     @action('Update OCI project', name='update')
     def update_action(self, action, data):
@@ -213,3 +237,50 @@ class OCIProjectEditView(LaunchpadEditFormView):
         return canonical_url(self.context)
 
     cancel_url = next_url
+
+
+class OCIProjectSearchView(LaunchpadView):
+    """Page to search for OCI projects of a given pillar."""
+    page_title = ''
+
+    @property
+    def label(self):
+        return "Search OCI projects in %s" % self.context.title
+
+    @property
+    def text(self):
+        text = self.request.get("text", None)
+        if isinstance(text, list):
+            # The user may have URL hacked a query string with more than one
+            # "text" parameter. We'll take the last one.
+            text = text[-1]
+        return text
+
+    @property
+    def search_requested(self):
+        return self.text is not None
+
+    @property
+    def title(self):
+        return self.context.name
+
+    @cachedproperty
+    def count(self):
+        """Return the number of matched search results."""
+        return self.batchnav.batch.total()
+
+    @cachedproperty
+    def batchnav(self):
+        """Return the batch navigator for the search results."""
+        return BatchNavigator(self.search_results, self.request)
+
+    @cachedproperty
+    def preloaded_batch(self):
+        projects = self.batchnav.batch
+        getUtility(IOCIProjectSet).preloadDataForOCIProjects(projects)
+        return projects
+
+    @property
+    def search_results(self):
+        return getUtility(IOCIProjectSet).findByPillarAndName(
+            self.context, self.text or '')

@@ -269,11 +269,11 @@ class OCIProjectSet:
             OCIProjectName.name == name).one()
         return target
 
-    def findByDistributionAndName(self, distribution, name_substring):
+    def findByPillarAndName(self, pillar, name_substring):
         """See `IOCIProjectSet`."""
         return IStore(OCIProject).find(
             OCIProject,
-            OCIProject.distribution == distribution,
+            self._get_pillar_attribute(pillar) == pillar,
             OCIProject.ociprojectname == OCIProjectName.id,
             OCIProjectName.name.contains_string(name_substring))
 
