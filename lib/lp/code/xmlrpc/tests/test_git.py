@@ -43,6 +43,7 @@ from lp.code.interfaces.gitrepository import (
     IGitRepositorySet,
     )
 from lp.code.tests.helpers import GitHostingFixture
+from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -154,6 +155,7 @@ class TestGitAPIMixin:
             transport=XMLRPCTestTransport())
         self.hosting_fixture = self.useFixture(GitHostingFixture())
         self.repository_set = getUtility(IGitRepositorySet)
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: True}))
 
     def assertFault(self, expected_fault, request_id, func_name,
                     *args, **kwargs):
@@ -281,7 +283,7 @@ class TestGitAPIMixin:
             translation)
 
     def assertCreates(self, requester, path, can_authenticate=False,
-                      private=False):
+                      private=False, async_create=True):
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate)
         request_id = auth_params["request-id"]
@@ -294,18 +296,29 @@ class TestGitAPIMixin:
         self.assertEqual(requester, repository.registrant)
 
         cloned_from = repository.getClonedFrom()
-        self.assertEqual({
+        expected_translation = {
             "path": repository.getInternalPath(),
             "writable": True,
             "trailing": "",
-            "private": private,
-            "creation_params": {
+            "private": private}
+
+        # This should be the case if GIT_ASYNC_CREATE_REPO feature flag is
+        # enabled.
+        if async_create:
+            expected_translation["creation_params"] = {
                 "clone_from": (cloned_from.getInternalPath() if cloned_from
                                else None)}
-            }, translation)
-        self.assertEqual(0, self.hosting_fixture.create.call_count)
+            expected_status = GitRepositoryStatus.CREATING
+            expected_hosting_calls = 0
+        else:
+            expected_status = GitRepositoryStatus.AVAILABLE
+            expected_hosting_calls = 1
+
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)
-        self.assertEqual(GitRepositoryStatus.CREATING, repository.status)
+        self.assertEqual(expected_translation, translation)
+        self.assertEqual(
+            expected_hosting_calls, self.hosting_fixture.create.call_count)
+        self.assertEqual(expected_status, repository.status)
         return repository
 
     def assertCreatesFromClone(self, requester, path, cloned_from,
@@ -740,13 +753,21 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         path = u"/%s" % repository.target.name
         self.assertTranslates(requester, path, repository, False)
 
-    def test_translatePath_create_project(self):
+    def test_translatePath_create_project_async(self):
         # translatePath creates a project repository that doesn't exist, if
         # it can.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         self.assertCreates(
             requester, u"/~%s/%s/+git/random" % (requester.name, project.name))
+
+    def test_translatePath_create_project_sync(self):
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: ''}))
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        self.assertCreates(
+            requester, u"/~%s/%s/+git/random" % (requester.name, project.name),
+            async_create=False)
 
     def test_translatePath_create_project_blocks_duplicate_calls(self):
         # translatePath creates a project repository that doesn't exist,

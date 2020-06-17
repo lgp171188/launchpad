@@ -5,6 +5,7 @@
 
 __metaclass__ = type
 __all__ = [
+    'GIT_ASYNC_CREATE_REPO',
     'GitAPI',
     ]
 
@@ -70,6 +71,7 @@ from lp.registry.interfaces.product import (
     NoSuchProduct,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.services.features import getFeatureFlag
 from lp.services.macaroons.interfaces import (
     IMacaroonIssuer,
     NO_USER,
@@ -82,6 +84,9 @@ from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
 from lp.xmlrpc import faults
 from lp.xmlrpc.helpers import return_fault
+
+
+GIT_ASYNC_CREATE_REPO = 'git.codehosting.async-create.enabled'
 
 
 def _get_requester_id(auth_params):
@@ -356,10 +361,16 @@ class GitAPI(LaunchpadXMLRPCView):
                 # it on hosting service. It should be created by the hosting
                 # service as a result of pathTranslate call indicating that
                 # the repo was just created in Launchpad.
+                if getFeatureFlag(GIT_ASYNC_CREATE_REPO):
+                    with_hosting = False
+                    status = GitRepositoryStatus.CREATING
+                else:
+                    with_hosting = True
+                    status = GitRepositoryStatus.AVAILABLE
                 namespace.createRepository(
                     GitRepositoryType.HOSTED, requester, repository_name,
                     target_default=target_default, owner_default=owner_default,
-                    with_hosting=False, status=GitRepositoryStatus.CREATING)
+                    with_hosting=with_hosting, status=status)
             except LaunchpadValidationError as e:
                 # Despite the fault name, this just passes through the
                 # exception text so there's no need for a new Git-specific
@@ -395,11 +406,16 @@ class GitAPI(LaunchpadXMLRPCView):
                 self._createRepository(requester, path)
                 repo, result = self._performLookup(
                     requester, path, auth_params)
-                clone_from = repo.getClonedFrom()
-                result["creation_params"] = {
-                    "clone_from": (clone_from.getInternalPath() if clone_from
-                                   else None)
-                }
+
+                # If the repo should be created asynchronously, we must
+                # include the extra parameter instructing code hosting
+                # service to do so.
+                if getFeatureFlag(GIT_ASYNC_CREATE_REPO):
+                    clone_from = repo.getClonedFrom()
+                    result["creation_params"] = {
+                        "clone_from": (clone_from.getInternalPath()
+                                       if clone_from else None)
+                    }
             if result is None:
                 raise faults.GitRepositoryNotFound(path)
             if permission != "read" and not result["writable"]:
