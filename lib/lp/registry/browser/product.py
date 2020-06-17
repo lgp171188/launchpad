@@ -435,7 +435,6 @@ class ProductNavigationMenu(NavigationMenu):
     facet = 'overview'
     links = [
         'details',
-        'new_oci_project',
         'announcements',
         'downloads',
         ]

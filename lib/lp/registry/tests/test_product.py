@@ -1,4 +1,4 @@
-# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -124,6 +124,7 @@ from lp.translations.interfaces.customlanguagecode import (
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
     )
+
 
 PRIVATE_PROJECT_TYPES = [InformationType.PROPRIETARY]
 
@@ -843,8 +844,9 @@ class TestProduct(TestCaseWithFactory):
             'bug_reported_acknowledgement', 'bug_reporting_guidelines',
             'bug_sharing_policy', 'bug_subscriptions', 'bug_supervisor',
             'bug_tracking_usage', 'bugtargetname',
-            'bugtracker', 'canUserAlterAnswerContact', 'codehosting_usage',
-            'coming_sprints', 'commercial_subscription',
+            'bugtracker', 'canAdministerOCIProjects',
+            'canUserAlterAnswerContact',
+            'codehosting_usage', 'coming_sprints', 'commercial_subscription',
             'commercial_subscription_is_due', 'createBug',
             'createCustomLanguageCode', 'custom_language_codes',
             'date_next_suggest_packaging', 'datecreated', 'description',
@@ -863,8 +865,8 @@ class TestProduct(TestCaseWithFactory):
             'getEffectiveTranslationPermission', 'getExternalBugTracker',
             'getFAQ', 'getFirstEntryToImport', 'getLinkedBugWatches',
             'getMergeProposals', 'getMilestone', 'getMilestonesAndReleases',
-            'getQuestion', 'getQuestionLanguages', 'getPackage', 'getRelease',
-            'getSeries', 'getSubscription',
+            'getOCIProject', 'getQuestion', 'getQuestionLanguages',
+            'getPackage', 'getRelease', 'getSeries', 'getSubscription',
             'getSubscriptions', 'getSupportedLanguages', 'getTimeline',
             'getTopContributors', 'getTopContributorsGroupedByCategory',
             'getTranslationGroups', 'getTranslationImportQueueEntries',
