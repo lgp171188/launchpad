@@ -3672,8 +3672,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         return list(getUtility(
             IOCIRegistryCredentialsSet).findByOwner(self.context))
 
-    class schema(Interface):
-        """Schema for editing registry credentials."""
+    schema = Interface
 
     def _getFieldName(self, name, credentials_id):
         """Get the combined field name for an `OCIRegistryCredentials` ID.
