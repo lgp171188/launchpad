@@ -31,10 +31,10 @@ from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
     )
 from storm.expr import LeftJoin
+from storm.references import ReferenceSet
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
@@ -100,6 +100,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
     cursor,
@@ -206,11 +207,12 @@ class Question(SQLBase, BugLinkTargetMixin):
         dbName='faq', foreignKey='FAQ', notNull=False, default=None)
 
     # useful joins
-    subscriptions = SQLMultipleJoin('QuestionSubscription',
-        joinColumn='question', orderBy='id')
-    subscribers = SQLRelatedJoin('Person',
-        joinColumn='question', otherColumn='person',
-        intermediateTable='QuestionSubscription', orderBy='name')
+    subscriptions = ReferenceSet(
+        'id', 'QuestionSubscription.question_id',
+        order_by='QuestionSubscription.id')
+    subscribers = ReferenceSet(
+        'id', 'QuestionSubscription.question_id',
+        'QuestionSubscription.person_id', 'Person.id', order_by='Person.name')
     messages = SQLMultipleJoin('QuestionMessage', joinColumn='question',
         prejoins=['message'], orderBy=['QuestionMessage.id'])
     reopenings = SQLMultipleJoin('QuestionReopening', orderBy='datecreated',
@@ -261,8 +263,11 @@ class Question(SQLBase, BugLinkTargetMixin):
 
     def isSubscribed(self, person):
         """See `IQuestion`."""
-        return bool(
-            QuestionSubscription.selectOneBy(question=self, person=person))
+        store = IStore(QuestionSubscription)
+        return not store.find(
+            QuestionSubscription,
+            QuestionSubscription.question == self,
+            QuestionSubscription.person == person).is_empty()
 
     # Workflow methods
 
@@ -536,9 +541,7 @@ class Question(SQLBase, BugLinkTargetMixin):
                         '%s does not have permission to unsubscribe %s.' % (
                             unsubscribed_by.displayname,
                             person.displayname))
-                store = Store.of(sub)
-                sub.destroySelf()
-                store.flush()
+                Store.of(sub).remove(sub)
                 return
 
     def getDirectSubscribers(self):
