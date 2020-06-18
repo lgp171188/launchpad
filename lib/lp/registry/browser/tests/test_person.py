@@ -1358,22 +1358,17 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         newurl = unicode(self.factory.getUniqueURL())
         third_url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
-        credentials2 = {'username': 'foo2', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             owner=self.user,
             url=url,
             credentials=credentials)
-        IStore(registry_credentials).flush()
-        registry_credentials_id = removeSecurityProxy(registry_credentials).id
-        getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.user,
-            url=newurl,
-            credentials=credentials2)
+
         browser = self.getViewBrowser(
             self.user, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
 
         # Change only the username
+        registry_credentials_id = removeSecurityProxy(registry_credentials).id
         username_control = browser.getControl(
             name="field.username.%d" % registry_credentials_id)
         username_control.value = 'different_username'
@@ -1457,12 +1452,11 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
             creds = list(getUtility(
                 IOCIRegistryCredentialsSet).findByOwner(
                 self.user))
-
-        self.assertEqual(url, creds[1].url)
-        self.assertThat(
-        removeSecurityProxy(creds[1]).getCredentials(),
-            MatchesDict({"username": Equals("new_username"),
-            "password": Equals("password")}))
+            self.assertEqual(url, creds[1].url)
+            self.assertThat(
+                removeSecurityProxy(creds[1]).getCredentials(),
+                MatchesDict({"username": Equals("new_username"),
+                "password": Equals("password")}))
 
     def test_delete_oci_registry_creds_on_person_page(self):
         # Test that we do not delete creds when there are
