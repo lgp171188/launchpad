@@ -10,8 +10,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -29,13 +29,12 @@ from lp.answers.enums import (
 from lp.services.messages.interfaces.message import IMessage
 
 
+@exported_as_webservice_entry(as_of='devel')
 class IQuestionMessage(IMessage):
     """A message part of a question.
 
     It adds attributes to the IMessage interface.
     """
-    export_as_webservice_entry(as_of='devel')
-
     # This is really an Object field with schema=IQuestion, but that
     # would create a circular dependency between IQuestion
     # and IQuestionMessage

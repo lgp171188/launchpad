@@ -13,10 +13,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -43,11 +43,10 @@ from lp.services.fields import (
 from lp.translations.enums import TranslationPermission
 
 
+@exported_as_webservice_entry(
+    singular_name='translation_group', plural_name='translation_groups')
 class ITranslationGroup(IHasOwner):
     """A TranslationGroup."""
-
-    export_as_webservice_entry(
-        singular_name='translation_group', plural_name='translation_groups')
 
     id = Int(
             title=_('Translation Group ID'), required=True, readonly=True,
@@ -161,10 +160,9 @@ class ITranslationGroup(IHasOwner):
         """
 
 
+@exported_as_webservice_collection(ITranslationGroup)
 class ITranslationGroupSet(Interface):
     """A container for translation groups."""
-
-    export_as_webservice_collection(ITranslationGroup)
 
     title = Attribute('Title')
 

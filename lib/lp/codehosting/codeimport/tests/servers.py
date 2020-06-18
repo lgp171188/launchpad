@@ -55,6 +55,7 @@ from dulwich.web import (
     WSGIRequestHandlerLogger,
     WSGIServerLogger,
     )
+import six
 from subvertpy import SubversionException
 import subvertpy.ra
 import subvertpy.repos
@@ -68,7 +69,7 @@ def local_path_to_url(local_path):
     This implementation is unusual in that it returns a file://localhost/ URL.
     This is to work around the valid_vcs_details constraint on CodeImport.
     """
-    return 'file://localhost' + escape(
+    return u'file://localhost' + escape(
         os.path.normpath(os.path.abspath(local_path)))
 
 
@@ -113,7 +114,7 @@ class SubversionServer(Server):
     def get_url(self):
         """Return a URL to the Subversion repository."""
         if self._use_svn_serve:
-            return 'svn://localhost/'
+            return u'svn://localhost/'
         else:
             return local_path_to_url(self.repository_path)
 
@@ -226,7 +227,7 @@ class CVSServer(Server):
 
     def getRoot(self):
         """Return the CVS root for this server."""
-        return self._repository_path
+        return six.ensure_text(self._repository_path)
 
     @run_in_temporary_directory
     def makeModule(self, module_name, tree_contents):
@@ -332,7 +333,7 @@ class GitServer(Server):
         """Return a URL to the Git repository."""
         if self._use_server:
             host, port = self._server.get_address()
-            return 'http://%s:%d/%s' % (host, port, repository_name)
+            return u'http://%s:%d/%s' % (host, port, repository_name)
         else:
             return local_path_to_url(
                 os.path.join(self.repository_store, repository_name))
@@ -395,7 +396,7 @@ class BzrServer(Server):
 
     def get_url(self):
         if self._use_server:
-            return self._bzrserver.get_url()
+            return six.ensure_text(self._bzrserver.get_url())
         else:
             return local_path_to_url(self.repository_path)
 

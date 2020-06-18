@@ -1216,10 +1216,11 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def expireNotifications(self):
         """See `IBug`."""
-        for notification in BugNotification.selectBy(
-                bug=self, date_emailed=None):
-            notification.date_emailed = UTC_NOW
-            notification.syncUpdate()
+        store = IStore(BugNotification)
+        notifications = store.find(
+            BugNotification, bug=self, date_emailed=None)
+        notifications.set(date_emailed=UTC_NOW)
+        store.flush()
 
     def newMessage(self, owner=None, subject=None,
                    content=None, parent=None, bugwatch=None,

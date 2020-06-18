@@ -21,10 +21,10 @@ from lazr.enum import (
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
@@ -97,12 +97,12 @@ class BugNominationStatus(DBEnumeratedType):
         """)
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IBugNomination(IHasBug, IHasOwner):
     """A nomination for a bug to be fixed in a specific series.
 
     A nomination can apply to an IDistroSeries or an IProductSeries.
     """
-    export_as_webservice_entry(publish_web_link=False)
 
     # We want to customize the titles and descriptions of some of the
     # attributes of our parent interfaces, so we redefine those specific

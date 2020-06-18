@@ -18,13 +18,13 @@ __all__ = [
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -231,10 +231,9 @@ class IAbstractMilestone(IMilestoneData):
         """
 
 
+@exported_as_webservice_entry()
 class IMilestone(IAbstractMilestone):
     """Actual interface for milestones."""
-
-    export_as_webservice_entry()
 
     @operation_parameters(
         tags=List(
@@ -315,14 +314,14 @@ class IMilestoneSet(Interface):
         """Return all visible milestones."""
 
 
+@exported_as_webservice_entry(as_of="beta")
 class IProjectGroupMilestone(IAbstractMilestone):
     """A marker interface for milestones related to a project"""
-    export_as_webservice_entry(as_of="beta")
 
 
+@exported_as_webservice_entry()
 class IHasMilestones(Interface):
     """An interface for classes providing milestones."""
-    export_as_webservice_entry()
 
     has_milestones = Bool(title=_("Whether the object has any milestones."))
 

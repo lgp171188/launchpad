@@ -30,11 +30,11 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -767,12 +767,11 @@ class IBranchMergeProposalAnyAllowedPerson(IBugLinkTarget):
         """Unlink a bug from this merge proposal."""
 
 
+@exported_as_webservice_entry()
 class IBranchMergeProposal(IBranchMergeProposalPublic,
                            IBranchMergeProposalView, IBranchMergeProposalEdit,
                            IBranchMergeProposalAnyAllowedPerson):
     """Branch merge proposals show intent of landing one branch on another."""
-
-    export_as_webservice_entry()
 
 
 class IBranchMergeProposalJob(Interface):

@@ -11,8 +11,11 @@ __all__ = [
 from collections import namedtuple
 import logging
 import os.path
+import sys
 import tempfile
+import traceback
 
+from ampoule.pool import ProcessPool
 from six.moves.urllib.parse import urlparse
 import transaction
 from twisted.internet import (
@@ -31,6 +34,10 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
+from lp.buildmaster.downloader import (
+    DownloadCommand,
+    DownloadProcess,
+    )
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
     BuilderResetProtocol,
@@ -45,6 +52,11 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
+from lp.services.job.runner import (
+    QuietAMPConnector,
+    VirtualEnvProcessStarter,
+    )
 from lp.services.twistedsupport import cancel_on_timeout
 from lp.services.twistedsupport.processmonitor import ProcessWithTimeout
 from lp.services.webapp import urlappend
@@ -126,6 +138,8 @@ class LimitedHTTPConnectionPool(HTTPConnectionPool):
 
 
 _default_pool = None
+_default_process_pool = None
+_default_process_pool_shutdown = None
 
 
 def default_pool(reactor=None):
@@ -145,6 +159,44 @@ def default_pool(reactor=None):
     return _default_pool
 
 
+def make_download_process_pool(**kwargs):
+    """Make a pool of processes for downloading files."""
+    env = {"PATH": os.environ["PATH"]}
+    if "LPCONFIG" in os.environ:
+        env["LPCONFIG"] = os.environ["LPCONFIG"]
+    starter = VirtualEnvProcessStarter(env=env)
+    starter.connectorFactory = QuietAMPConnector
+    kwargs = dict(kwargs)
+    kwargs.setdefault("max", config.builddmaster.download_connections)
+    return ProcessPool(DownloadProcess, starter=starter, **kwargs)
+
+
+def default_process_pool(reactor=None):
+    global _default_process_pool, _default_process_pool_shutdown
+    if reactor is None:
+        reactor = default_reactor
+    if _default_process_pool is None:
+        _default_process_pool = make_download_process_pool()
+        _default_process_pool.start()
+        shutdown_id = reactor.addSystemEventTrigger(
+            "during", "shutdown", _default_process_pool.stop)
+        _default_process_pool_shutdown = (reactor, shutdown_id)
+    return _default_process_pool
+
+
+@defer.inlineCallbacks
+def shut_down_default_process_pool():
+    """Shut down the default process pool.  Used in test cleanup."""
+    global _default_process_pool, _default_process_pool_shutdown
+    if _default_process_pool is not None:
+        yield _default_process_pool.stop()
+        _default_process_pool = None
+    if _default_process_pool_shutdown is not None:
+        reactor, shutdown_id = _default_process_pool_shutdown
+        reactor.removeSystemEventTrigger(shutdown_id)
+        _default_process_pool_shutdown = None
+
+
 class BuilderSlave(object):
     """Add in a few useful methods for the XMLRPC slave.
 
@@ -157,7 +209,8 @@ class BuilderSlave(object):
     # many false positives in your test run and will most likely break
     # production.
 
-    def __init__(self, proxy, builder_url, vm_host, timeout, reactor, pool):
+    def __init__(self, proxy, builder_url, vm_host, timeout, reactor,
+                 pool=None, process_pool=None):
         """Initialize a BuilderSlave.
 
         :param proxy: An XML-RPC proxy, implementing 'callRemote'. It must
@@ -173,13 +226,21 @@ class BuilderSlave(object):
         if reactor is None:
             reactor = default_reactor
         self.reactor = reactor
+        self._download_in_subprocess = bool(
+            getFeatureFlag('buildmaster.download_in_subprocess'))
         if pool is None:
             pool = default_pool(reactor=reactor)
         self.pool = pool
+        if self._download_in_subprocess:
+            if process_pool is None:
+                process_pool = default_process_pool(reactor=reactor)
+            self.process_pool = process_pool
+        else:
+            self.process_pool = None
 
     @classmethod
     def makeBuilderSlave(cls, builder_url, vm_host, timeout, reactor=None,
-                         proxy=None, pool=None):
+                         proxy=None, pool=None, process_pool=None):
         """Create and return a `BuilderSlave`.
 
         :param builder_url: The URL of the slave buildd machine,
@@ -189,6 +250,7 @@ class BuilderSlave(object):
         :param reactor: Used by tests to override the Twisted reactor.
         :param proxy: Used By tests to override the xmlrpc.Proxy.
         :param pool: Used by tests to override the HTTPConnectionPool.
+        :param process_pool: Used by tests to override the ProcessPool.
         """
         rpc_url = urlappend(builder_url.encode('utf-8'), 'rpc')
         if proxy is None:
@@ -197,7 +259,9 @@ class BuilderSlave(object):
             server_proxy.queryFactory = QuietQueryFactory
         else:
             server_proxy = proxy
-        return cls(server_proxy, builder_url, vm_host, timeout, reactor, pool)
+        return cls(
+            server_proxy, builder_url, vm_host, timeout, reactor,
+            pool=pool, process_pool=process_pool)
 
     def _with_timeout(self, d, timeout=None):
         return cancel_on_timeout(d, timeout or self.timeout, self.reactor)
@@ -236,44 +300,56 @@ class BuilderSlave(object):
         """Get the URL for a file on the builder with a given SHA-1."""
         return urlappend(self._file_cache_url, sha1).encode('utf8')
 
-    def getFile(self, sha_sum, file_to_write, logger=None):
+    @defer.inlineCallbacks
+    def getFile(self, sha_sum, path_to_write, logger=None):
         """Fetch a file from the builder.
 
         :param sha_sum: The sha of the file (which is also its name on the
             builder)
-        :param file_to_write: A file name or file-like object to write
-            the file to
+        :param path_to_write: A file name to write the file to
         :param logger: An optional logger.
         :return: A Deferred that calls back when the download is done, or
             errback with the error string.
         """
         file_url = self.getURL(sha_sum)
-        d = Agent(self.reactor, pool=self.pool).request("GET", file_url)
-
-        def got_response(response):
-            finished = defer.Deferred()
-            response.deliverBody(FileWritingProtocol(finished, file_to_write))
-            return finished
-
-        def log_success(result):
-            logger.info("Grabbed %s" % file_url)
-            return result
-
-        def log_failure(failure):
-            logger.info("Failed to grab %s: %s\n%s" % (
-                file_url, failure.getErrorMessage(), failure.getTraceback()))
-            return failure
-
-        d.addCallback(got_response)
-        if logger is not None:
-            d.addCallbacks(log_success, log_failure)
-        return d
+        try:
+            # Select download behaviour according to the
+            # buildmaster.download_in_subprocess feature rule: if enabled,
+            # defer the download to a subprocess; if disabled, download the
+            # file asynchronously in Twisted.  We've found that in practice
+            # the asynchronous approach only works well up to a bit over a
+            # hundred builders, and beyond that it struggles to keep up with
+            # incoming packets in time to avoid TCP timeouts (perhaps
+            # because of too much synchronous work being done on the reactor
+            # thread).  The exact reason for this is as yet unproven, so we
+            # use a feature rule to allow us to try out different
+            # approaches.
+            if self._download_in_subprocess:
+                yield self.process_pool.doWork(
+                    DownloadCommand,
+                    file_url=file_url, path_to_write=path_to_write,
+                    timeout=self.timeout)
+            else:
+                response = yield Agent(self.reactor, pool=self.pool).request(
+                    "GET", file_url)
+                finished = defer.Deferred()
+                response.deliverBody(
+                    FileWritingProtocol(finished, path_to_write))
+                yield finished
+            if logger is not None:
+                logger.info("Grabbed %s" % file_url)
+        except Exception as e:
+            if logger is not None:
+                logger.info("Failed to grab %s: %s\n%s" % (
+                    file_url, e,
+                    " ".join(traceback.format_exception(*sys.exc_info()))))
+            raise
 
     def getFiles(self, files, logger=None):
         """Fetch many files from the builder.
 
         :param files: A sequence of pairs of the builder file name to
-            retrieve and the file name or file object to write the file to.
+            retrieve and the file name to write the file to.
         :param logger: An optional logger.
 
         :return: A DeferredList that calls back when the download is done.

@@ -34,6 +34,7 @@ from testtools.matchers import (
     EndsWith,
     Equals,
     Is,
+    IsInstance,
     LessThan,
     MatchesDict,
     MatchesListwise,
@@ -1426,8 +1427,7 @@ class TestGitRepositoryNamespace(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository(target=oci_project)
         namespace = getUtility(IGitNamespaceSet).get(
-            person=repository.owner, distribution=oci_project.pillar,
-            ociprojectname=oci_project.ociprojectname)
+            person=repository.owner, oci_project=oci_project)
         self.assertEqual(namespace, repository.namespace)
 
 
@@ -3752,6 +3752,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(201, response.status)
         repository = webservice.get(response.getHeader("Location")).jsonBody()
         self.assertThat(repository, ContainsDict({
+            "id": IsInstance(int),
             "repository_type": Equals("Hosted"),
             "registrant_link": EndsWith(owner_url),
             "owner_link": EndsWith(owner_url),

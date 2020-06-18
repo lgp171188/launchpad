@@ -10,8 +10,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import (
@@ -41,6 +41,7 @@ from lp.registry.interfaces.role import IHasDrivers
 from lp.soyuz.enums import ArchivePurpose
 
 
+@exported_as_webservice_entry()
 class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
                                  IHasMergeProposals, IHasOfficialBugTags,
                                  IStructuralSubscriptionTarget,
@@ -51,8 +52,6 @@ class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
     Create IDistributionSourcePackages by invoking
     `IDistribution.getSourcePackage()`.
     """
-
-    export_as_webservice_entry()
 
     distribution = exported(
         Reference(IDistribution, title=_("The distribution.")))

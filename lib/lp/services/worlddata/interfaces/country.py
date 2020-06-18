@@ -13,10 +13,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_parameters,
     operation_returns_entry,
     )
@@ -37,10 +37,9 @@ from lp.services.fields import (
     )
 
 
+@exported_as_webservice_entry(plural_name='countries', publish_web_link=False)
 class ICountry(Interface):
     """The country description."""
-    export_as_webservice_entry(
-        plural_name='countries', publish_web_link=False)
 
     id = Int(
         title=_('Country ID'), required=True, readonly=True,
@@ -67,9 +66,9 @@ class ICountry(Interface):
                           "that country.")
 
 
+@exported_as_webservice_collection(ICountry)
 class ICountrySet(Interface):
     """A container for countries."""
-    export_as_webservice_collection(ICountry)
 
     def __getitem__(key):
         """Get a country."""

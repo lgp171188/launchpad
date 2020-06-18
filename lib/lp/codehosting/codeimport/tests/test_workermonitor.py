@@ -672,7 +672,7 @@ def nuke_codeimport_sample_data():
     """Delete all the sample data that might interfere with tests."""
     for job in IStore(CodeImportJob).find(CodeImportJob):
         job.destroySelf()
-    for code_import in CodeImport.select():
+    for code_import in IStore(CodeImport).find(CodeImport):
         code_import.destroySelf()
 
 
@@ -736,7 +736,7 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
         self.foreign_commit_count = 2
 
         return self.factory.makeCodeImport(
-            cvs_root=cvs_server.getRoot(), cvs_module='trunk')
+            cvs_root=cvs_server.getRoot(), cvs_module=u'trunk')
 
     def makeSVNCodeImport(self):
         """Make a `CodeImport` that points to a real Subversion repository."""

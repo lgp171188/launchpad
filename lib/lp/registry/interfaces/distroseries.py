@@ -18,11 +18,11 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -974,10 +974,10 @@ class IDistroSeriesEditRestricted(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IDistroSeries(IDistroSeriesEditRestricted, IDistroSeriesPublic,
                     IStructuralSubscriptionTarget):
     """A series of an operating system distribution."""
-    export_as_webservice_entry()
 
 
 # We assign the schema for an `IHasBugs` method argument here

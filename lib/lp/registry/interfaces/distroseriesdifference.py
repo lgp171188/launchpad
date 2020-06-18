@@ -16,9 +16,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_parameters,
     REQUEST_USER,
     )
@@ -282,11 +282,11 @@ class IDistroSeriesDifferenceAdmin(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IDistroSeriesDifference(IDistroSeriesDifferencePublic,
                               IDistroSeriesDifferenceEdit,
                               IDistroSeriesDifferenceAdmin):
     """An interface for a package difference between two distroseries."""
-    export_as_webservice_entry()
 
 
 class IDistroSeriesDifferenceSource(Interface):

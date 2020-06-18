@@ -3,6 +3,8 @@
 
 """Tests for the `TranslationBuildApprover`."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from zope.component import getUtility
@@ -31,7 +33,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         """Create a list of queue entries and approve them."""
         return [
             approver.approve(self.queue.addOrUpdateEntry(
-                path, "#Dummy content.", False, self.uploader,
+                path, b"#Dummy content.", False, self.uploader,
                 productseries=series))
             for path in filenames]
 

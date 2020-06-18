@@ -26,11 +26,11 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     accessor_for,
     call_with,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -1009,9 +1009,9 @@ class IBugAppend(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IBug(IBugPublic, IBugView, IBugAppend, IHasLinkedBranches):
     """The core bug entry."""
-    export_as_webservice_entry()
 
     linked_bugbranches = exported(
         CollectionField(

@@ -28,11 +28,11 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -580,10 +580,10 @@ class ISourcePackagePublishingHistoryEdit(IPublishingEdit):
         """
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class ISourcePackagePublishingHistory(ISourcePackagePublishingHistoryPublic,
                                       ISourcePackagePublishingHistoryEdit):
     """A source package publishing history record."""
-    export_as_webservice_entry(publish_web_link=False)
 
 
 #
@@ -880,10 +880,10 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
         """
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IBinaryPackagePublishingHistory(IBinaryPackagePublishingHistoryPublic,
                                       IBinaryPackagePublishingHistoryEdit):
     """A binary package publishing record."""
-    export_as_webservice_entry(publish_web_link=False)
 
 
 class IPublishingSet(Interface):

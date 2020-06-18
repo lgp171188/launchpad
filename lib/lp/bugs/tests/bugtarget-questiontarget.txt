@@ -128,8 +128,11 @@ question and that the bugtasks are Invalid.
     >>> 'test@canonical.com' in recipients.getEmails()
     True
 
+    >>> from storm.locals import Desc
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> bug_notifications = BugNotification.select(orderBy='-id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> bug_notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(Desc(BugNotification.id))
     >>> for notification in bug_notifications:
     ...     print(notification.message.text_contents)
     ** Converted to question:

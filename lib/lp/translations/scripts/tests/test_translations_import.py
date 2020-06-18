@@ -1,6 +1,8 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import logging
 import re
 
@@ -47,7 +49,7 @@ class TestTranslationsImport(TestCaseWithFactory):
         """Produce a queue entry."""
         uploader = kwargs.pop('uploader', self.owner)
         return self.queue.addOrUpdateEntry(
-            path, '# Nothing here', False, uploader, **kwargs)
+            path, b'# Nothing here', False, uploader, **kwargs)
 
     def _makeApprovedEntry(self, uploader):
         """Produce an approved queue entry."""

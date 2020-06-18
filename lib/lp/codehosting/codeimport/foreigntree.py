@@ -9,6 +9,7 @@ __all__ = ['CVSWorkingTree']
 import os
 
 import CVS
+import six
 
 
 class CVSWorkingTree:
@@ -21,8 +22,8 @@ class CVSWorkingTree:
         :param cvs_module: The module in the CVS repository.
         :param local_path: The local path to check the working tree out to.
         """
-        self.root = cvs_root
-        self.module = cvs_module
+        self.root = six.ensure_str(cvs_root)
+        self.module = six.ensure_str(cvs_module)
         self.local_path = os.path.abspath(local_path)
 
     def checkout(self):

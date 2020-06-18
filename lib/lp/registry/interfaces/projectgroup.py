@@ -14,10 +14,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_parameters,
     operation_returns_collection_of,
     )
@@ -352,21 +352,19 @@ class IProjectGroupPublic(
     product_milestones = Attribute('all the milestones for all the products.')
 
 
+@exported_as_webservice_entry('project_group')
 class IProjectGroup(IProjectGroupPublic,
                     IProjectGroupModerate,
                     IStructuralSubscriptionTarget,
                     ITranslationPolicy):
     """A ProjectGroup."""
 
-    export_as_webservice_entry('project_group')
-
 
 # Interfaces for set
 
+@exported_as_webservice_collection(IProjectGroup)
 class IProjectGroupSet(Interface):
     """The collection of projects."""
-
-    export_as_webservice_collection(IProjectGroup)
 
     title = Attribute('Title')
 

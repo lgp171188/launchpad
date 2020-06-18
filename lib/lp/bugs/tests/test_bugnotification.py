@@ -23,6 +23,7 @@ from lp.bugs.model.bugnotification import (
     )
 from lp.bugs.model.bugsubscriptionfilter import BugSubscriptionFilterMute
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.messages.model.message import MessageSet
 from lp.services.webapp.snapshot import notify_modified
@@ -372,7 +373,8 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
         # bug, not to subscribers of the master bug.
         self.dupe_bug.newMessage(
             self.dupe_bug.owner, subject='subject', content='content')
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
+        latest_notification = IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
         recipients = set(
             recipient.person
             for recipient in latest_notification.recipients)
@@ -383,7 +385,8 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
         with notify_modified(
                 self.dupe_bug, ['description'], user=self.dupe_bug.owner):
             self.dupe_bug.description = 'A changed description'
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
+        latest_notification = IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
         recipients = set(
             recipient.person
             for recipient in latest_notification.recipients)
@@ -397,7 +400,8 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
         # provided by the Bug.addChange mechanism.
         branch = self.factory.makeBranch(owner=self.dupe_bug.owner)
         self.dupe_bug.linkBranch(branch, self.dupe_bug.owner)
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
+        latest_notification = IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
         recipients = set(
             recipient.person
             for recipient in latest_notification.recipients)

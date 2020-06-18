@@ -10,10 +10,10 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_parameters,
     REQUEST_USER,
     )
@@ -140,6 +140,7 @@ class ICodeReviewVoteReferenceEdit(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class ICodeReviewVoteReference(ICodeReviewVoteReferencePublic,
                                ICodeReviewVoteReferenceEdit):
     """A reference to a vote on a IBranchMergeProposal.
@@ -147,5 +148,3 @@ class ICodeReviewVoteReference(ICodeReviewVoteReferencePublic,
     There is at most one reference to a vote for each reviewer on a given
     branch merge proposal.
     """
-
-    export_as_webservice_entry()

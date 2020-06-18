@@ -17,11 +17,11 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -125,13 +125,12 @@ class ISnappySeriesEditableAttributes(Interface):
             "supported for this snappy series.")))
 
 
+# XXX cjwatson 2016-04-13 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(plural_name="snappy_serieses", as_of="beta")
 class ISnappySeries(ISnappySeriesView, ISnappySeriesEditableAttributes):
     """A series for snap packages in the store."""
-
-    # XXX cjwatson 2016-04-13 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(plural_name="snappy_serieses", as_of="beta")
 
 
 class ISnappyDistroSeries(Interface):
@@ -162,10 +161,9 @@ class ISnappySeriesSetEdit(Interface):
         """Create an `ISnappySeries`."""
 
 
+@exported_as_webservice_collection(ISnappySeries)
 class ISnappySeriesSet(ISnappySeriesSetEdit):
     """Interface representing the set of snappy series."""
-
-    export_as_webservice_collection(ISnappySeries)
 
     def __iter__():
         """Iterate over `ISnappySeries`."""
