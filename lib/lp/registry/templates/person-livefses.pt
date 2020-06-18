@@ -26,6 +26,7 @@
         <tbody>
           <tr class="head">
             <th>Name</th>
+            <th>Series</th>
             <th>Date created</th>
           </tr>
 
@@ -34,6 +35,7 @@
               <a tal:content="filesystem/name"
                  tal:attributes="href filesystem/fmt:url" />
             </td>
+            <td tal:content="filesystem/distro_series/display_name " />
             <td tal:content="filesystem/date_created/fmt:displaydate" />
           </tr>
         </tbody>
