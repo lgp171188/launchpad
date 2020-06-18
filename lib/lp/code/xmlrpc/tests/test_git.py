@@ -8,6 +8,7 @@ __metaclass__ = type
 import uuid
 
 from fixtures import FakeLogger
+from lp.code.errors import GitRepositoryCreationFault
 from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
@@ -1101,6 +1102,28 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertFalse(repository.target_default)
         self.assertTrue(repository.owner_default)
         self.assertEqual(team, repository.owner)
+
+    def test_translatePath_create_broken_hosting_service(self):
+        # If the hosting service is down, trying to create a repository
+        # fails and doesn't leave junk around in the Launchpad database.
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: ''}))
+        self.hosting_fixture.create.failure = GitRepositoryCreationFault(
+            "nothing here", path="123")
+        requester = self.factory.makePerson()
+        initial_count = getUtility(IAllGitRepositories).count()
+        oops_id = self.assertOopsOccurred(
+            requester, u"/~%s/+git/random" % requester.name,
+            permission="write")
+        login(ANONYMOUS)
+        self.assertEqual(
+            initial_count, getUtility(IAllGitRepositories).count())
+        # The error report OOPS ID should match the fault, and the traceback
+        # text should show the underlying exception.
+        self.assertEqual(1, len(self.oopses))
+        self.assertEqual(oops_id, self.oopses[0]["id"])
+        self.assertIn(
+            "GitRepositoryCreationFault: nothing here",
+            self.oopses[0]["tb_text"])
 
     def test_translatePath_code_import(self):
         # A code import worker with a suitable macaroon can write to a
