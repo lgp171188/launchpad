@@ -3858,13 +3858,13 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                         "confirm_password", credentials.id),
                     "Passwords do not match.")
             else:
-                credentials.setCredentials({
-                    "username": username,
-                    "password": password,
-                })
+                credentials.setCredentials(
+                    {"username": username,
+                     "password": password})
                 credentials.url = parsed_credentials["url"]
         elif username != credentials.username:
             removeSecurityProxy(credentials).username = username
+            credentials.url = parsed_credentials["url"]
         elif parsed_credentials["url"] != credentials.url:
             credentials.url = parsed_credentials["url"]
         if owner != credentials.owner:
@@ -3875,7 +3875,8 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         if not push_rule_set.findByRegistryCredentials(
                 credentials).is_empty():
             self.setFieldError(
-                self._getFieldName("delete", credentials.id),
+                self._getFieldName(
+                    "delete", credentials.id),
                 "These credentials cannot be deleted as there are "
                 "push rules defined that still use them.")
         else:
@@ -3889,10 +3890,11 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         if url:
             if password or confirm_password:
                 if not password == confirm_password:
-                    self.setFieldError("add_password",
-                                       "Please make sure the new "
-                                       "password matches the "
-                                       "confirm password field.")
+                    self.setFieldError(
+                        "add_password",
+                        "Please make sure the new "
+                        "password matches the "
+                        "confirm password field.")
                     return
 
                 credentials = {
@@ -3900,29 +3902,31 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                     'password': password}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=removeSecurityProxy(self.context),
+                        owner=self.context,
                         url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
-                    self.setFieldError("add_url",
-                                       "Credentials already exist "
-                                       "with the same URL and "
-                                       "username.")
+                    self.setFieldError(
+                        "add_url",
+                        "Credentials already exist "
+                        "with the same URL and "
+                        "username.")
             else:
                 credentials = {'username': username}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=removeSecurityProxy(self.context),
+                        owner=self.context,
                         url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
-                    self.setFieldError("add_url",
-                                       "Credentials already exist "
-                                       "with the same URL and "
-                                       "username.")
+                    self.setFieldError(
+                        "add_url",
+                        "Credentials already exist "
+                        "with the same URL and username.")
         else:
-            self.setFieldError("add_url",
-                               "Registry URL cannot be empty.")
+            self.setFieldError(
+                "add_url",
+                "Registry URL cannot be empty.")
 
     def updateCredentialsFromData(self, parsed_data):
         credentials_map = {
