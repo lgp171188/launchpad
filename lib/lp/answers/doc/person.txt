@@ -226,7 +226,7 @@ subscribed to...
     >>> pt_BR_question = getUtility(IQuestionSet).get(13)
     >>> login('foo.bar@canonical.com')
     >>> pt_BR_question.subscribe(foo_bar_raw)
-    <QuestionSubscription...>
+    <lp.answers.model.questionsubscription.QuestionSubscription...>
 
     >>> print(', '.join(
     ...     sorted(language.code
