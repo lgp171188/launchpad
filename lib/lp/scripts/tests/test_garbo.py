@@ -56,7 +56,10 @@ from lp.code.bzr import (
     BranchFormat,
     RepositoryFormat,
     )
-from lp.code.enums import CodeImportResultStatus
+from lp.code.enums import (
+    CodeImportResultStatus,
+    GitRepositoryStatus,
+    )
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.branchjob import (
@@ -70,6 +73,7 @@ from lp.code.model.gitjob import (
     GitJob,
     GitRefScanJob,
     )
+from lp.code.model.gitrepository import GitRepository
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
@@ -1106,6 +1110,46 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         switch_dbuser('testadmin')
         self.assertEqual(1, store.find(OCIFile).count())
+
+    def test_GitRepositoryPruner_removes_staled_creations(self):
+        # Garbo removes GitRepository with status = CREATING for too long.
+        switch_dbuser('testadmin')
+        store = IMasterStore(GitRepository)
+        now = datetime.now(UTC)
+        recently = now - timedelta(minutes=1)
+        long_ago = now - timedelta(minutes=40)
+
+        # Creating a bunch of old staled repositories to be deleted,
+        # to make sure the chunk size is beign respected.
+        for i in range(5):
+            repo = removeSecurityProxy(self.factory.makeGitRepository())
+            repo.date_created = long_ago
+            repo.status = GitRepositoryStatus.CREATING
+            long_ago += timedelta(seconds=1)
+
+        recent_creating, old_available, recent_available = [
+            removeSecurityProxy(self.factory.makeGitRepository())
+            for _ in range(3)]
+
+        recent_creating.date_created = recently
+        recent_creating.status = GitRepositoryStatus.CREATING
+
+        old_available.date_created = long_ago
+        old_available.status = GitRepositoryStatus.AVAILABLE
+
+        recent_available.date_created = recently
+        recent_available.status = GitRepositoryStatus.AVAILABLE
+
+        self.assertEqual(8, store.find(GitRepository).count())
+
+        self.runFrequently(maximum_chunk_size=2)
+
+        switch_dbuser('testadmin')
+        remaining_repos = store.find(GitRepository)
+        self.assertEqual(3, remaining_repos.count())
+        self.assertEqual(
+            {old_available, recent_available, recent_creating},
+            set(remaining_repos))
 
     def test_WebhookJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
