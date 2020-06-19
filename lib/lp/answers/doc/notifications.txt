@@ -310,7 +310,7 @@ giveInfo() transitions, let's see the other ones.
     # sent.
 
     >>> ubuntu_question.subscribe(sample_person)
-    <QuestionSubscription ...>
+    <lp.answers.model.questionsubscription.QuestionSubscription ...>
 
 
 Notifications for expireQuestion()
