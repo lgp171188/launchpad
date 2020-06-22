@@ -1238,6 +1238,12 @@
         template="../templates/person-ociregistrycredentials.pt"
         />
     <browser:page
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonEditOCIRegistryCredentialsView"
+        permission="launchpad.Edit"
+        name="+edit-oci-registry-credentials"
+        template="../templates/person-edit-ociregistrycredentials.pt" />
+    <browser:page
         name="+livefs"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonLiveFSView"
