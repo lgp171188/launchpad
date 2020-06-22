@@ -43,6 +43,7 @@ from lp.oci.interfaces.ocirecipe import (
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
     OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_BUILD_DISTRIBUTION,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeBuildRequestStatus,
@@ -93,6 +94,45 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         target = self.factory.makeOCIRecipe()
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipe)
+
+    def test_default_distribution_on_project_pillar(self):
+        # If OCI_RECIPE_BUILD_DISTRIBUTION flag is not set, we use Ubuntu.
+        project = self.factory.makeProduct()
+        oci_project = self.factory.makeOCIProject(pillar=project)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        self.assertEqual('ubuntu', recipe.distribution.name)
+
+    def test_feature_flag_distribution_on_project_pillar(self):
+        # With the OCI_RECIPE_BUILD_DISTRIBUTION feature flag set, we should
+        # use the distribution with the given name.
+        distro_name = "mydistro"
+        distribution = self.factory.makeDistribution(name=distro_name)
+        project = self.factory.makeProduct()
+        oci_project = self.factory.makeOCIProject(pillar=project)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        with FeatureFixture({OCI_RECIPE_BUILD_DISTRIBUTION: distro_name}):
+            self.assertEqual(distribution, recipe.distribution)
+
+    def test_feature_flag_inexisting_distribution_on_project_pillar(self):
+        # If we mistakenly set the flag to a non-existing distribution,
+        # things should break explicitly.
+        project = self.factory.makeProduct()
+        oci_project = self.factory.makeOCIProject(pillar=project)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        with FeatureFixture({OCI_RECIPE_BUILD_DISTRIBUTION: "banana-distro"}):
+            expected_msg = (
+                "'banana-distro' is not a valid value for feature flag '%s'"
+                % OCI_RECIPE_BUILD_DISTRIBUTION)
+            self.assertRaisesWithContent(
+                ValueError, expected_msg, getattr, recipe, 'distribution')
+
+    def test_distribution_for_distro_based_oci_project(self):
+        # For distribution-based OCI projects, we should use OCIProject's
+        # distribution as the recipe distribution.
+        distribution = self.factory.makeDistribution()
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        self.assertEqual(distribution, recipe.distribution)
 
     def test_initial_date_last_modified(self):
         # The initial value of date_last_modified is date_created.
@@ -412,7 +452,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_newPushRule(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
-        url = ensure_text(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         image_name = ensure_text(self.factory.getUniqueString())
         credentials = {
             "username": "test-username", "password": "test-password"}
@@ -452,7 +492,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_newPushRule_same_details(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
-        url = ensure_text(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         image_name = ensure_text(self.factory.getUniqueString())
         credentials = {
             "username": "test-username", "password": "test-password"}

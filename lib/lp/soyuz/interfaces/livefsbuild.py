@@ -12,10 +12,10 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     )
@@ -183,13 +183,12 @@ class ILiveFSBuildAdmin(Interface):
         """Change the build's score."""
 
 
+# XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(singular_name="livefs_build", as_of="beta")
 class ILiveFSBuild(ILiveFSBuildView, ILiveFSBuildEdit, ILiveFSBuildAdmin):
     """Build information for live filesystem builds."""
-
-    # XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(singular_name="livefs_build", as_of="beta")
 
 
 class ILiveFSBuildSet(ISpecificBuildFarmJobSource):

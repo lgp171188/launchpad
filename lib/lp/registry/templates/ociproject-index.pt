@@ -28,11 +28,14 @@
   <div metal:fill-slot="main">
     <h2>OCI project information</h2>
     <div class="two-column-list">
-      <dl id="distribution" tal:define="distribution context/distribution">
-        <dt>Distribution:</dt>
+      <dl id="pillar" tal:define="pillar context/pillar">
+        <dt>
+            <span tal:condition="context/distribution">Distribution:</span>
+            <span tal:condition="context/project">Project:</span>
+        </dt>
         <dd>
-          <a tal:attributes="href distribution/fmt:url"
-             tal:content="distribution/display_name"/>
+          <a tal:attributes="href pillar/fmt:url"
+             tal:content="pillar/display_name"/>
           <a tal:replace="structure context/menu:overview/edit/fmt:icon"/>
         </dd>
       </dl>

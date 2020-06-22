@@ -20,6 +20,7 @@ from lp.bugs.interfaces.bugtask import (
 from lp.bugs.interfaces.cve import ICveSet
 from lp.bugs.model.bugnotification import BugNotification
 from lp.bugs.scripts.bugnotification import construct_email_notifications
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
@@ -80,8 +81,8 @@ class TestBugChanges(TestCaseWithFactory):
             bug = self.bug
         old_activities = set(bug.activity)
         old_notification_ids = set(
-            notification.id for notification in (
-                BugNotification.selectBy(bug=bug)))
+            notification.id for notification in IStore(BugNotification).find(
+                BugNotification, bug=bug))
 
         if append:
             self.old_activities.update(old_activities)
@@ -107,8 +108,8 @@ class TestBugChanges(TestCaseWithFactory):
     def getNewNotifications(self, bug=None):
         if bug is None:
             bug = self.bug
-        bug_notifications = BugNotification.selectBy(
-            bug=bug, orderBy='id')
+        bug_notifications = IStore(BugNotification).find(
+            BugNotification, bug=bug).order_by(BugNotification.id)
         new_notifications = [
             notification for notification in bug_notifications
             if notification.id not in self.old_notification_ids]
@@ -1506,8 +1507,8 @@ class TestBugChanges(TestCaseWithFactory):
 
         # Ensure that only the people subscribed to the bug that
         # gets marked as a duplicate are notified.
-        master_notifications = BugNotification.selectBy(
-            bug=self.bug, orderBy='id')
+        master_notifications = IStore(BugNotification).find(
+            BugNotification, bug=self.bug).order_by(BugNotification.id)
         new_notifications = [
             notification for notification in master_notifications
             if notification.id not in self.old_notification_ids]

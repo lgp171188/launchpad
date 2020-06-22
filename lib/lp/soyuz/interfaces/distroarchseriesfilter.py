@@ -13,8 +13,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -96,6 +96,10 @@ class IDistroArchSeriesFilterEdit(Interface):
         """Delete this filter."""
 
 
+# XXX cjwatson 2019-10-04 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IDistroArchSeriesFilter(
         IDistroArchSeriesFilterView, IDistroArchSeriesFilterEdit):
     """A filter for packages to be included in or excluded from a DAS.
@@ -107,10 +111,6 @@ class IDistroArchSeriesFilter(
     exclude some packages ("this architecture can't handle some packages so
     we want to make them go away centrally").
     """
-    # XXX cjwatson 2019-10-04 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
 
 class IDistroArchSeriesFilterSet(Interface):

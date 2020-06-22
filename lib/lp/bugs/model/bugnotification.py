@@ -17,19 +17,17 @@ from datetime import (
     )
 
 import pytz
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import (
     In,
     Join,
     LeftJoin,
     )
 from storm.locals import (
+    Bool,
+    DateTime,
     Int,
     Reference,
+    Unicode,
     )
 from storm.store import Store
 from zope.component import getUtility
@@ -51,34 +49,52 @@ from lp.bugs.model.structuralsubscription import StructuralSubscription
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database import bulk
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import Message
 
 
 @implementer(IBugNotification)
-class BugNotification(SQLBase):
+class BugNotification(StormBase):
     """A textual representation about a bug change."""
 
-    message = ForeignKey(dbName='message', notNull=True, foreignKey='Message')
-    activity = ForeignKey(
-        dbName='activity', notNull=False, foreignKey='BugActivity')
-    bug = ForeignKey(dbName='bug', notNull=True, foreignKey='Bug')
-    is_comment = BoolCol(notNull=True)
-    date_emailed = UtcDateTimeCol(notNull=False)
-    status = EnumCol(
-        dbName='status',
-        schema=BugNotificationStatus, default=BugNotificationStatus.PENDING,
-        notNull=True)
+    __storm_table__ = 'BugNotification'
+
+    id = Int(primary=True)
+
+    message_id = Int(name='message', allow_none=False)
+    message = Reference(message_id, 'Message.id')
+
+    activity_id = Int('activity', allow_none=True)
+    activity = Reference(activity_id, 'BugActivity.id')
+
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    is_comment = Bool(allow_none=False)
+    date_emailed = DateTime(tzinfo=pytz.UTC, allow_none=True)
+    status = DBEnum(
+        name='status',
+        enum=BugNotificationStatus, default=BugNotificationStatus.PENDING,
+        allow_none=False)
+
+    def __init__(self, bug, is_comment, message, date_emailed=None,
+                 activity=None, status=BugNotificationStatus.PENDING):
+        self.bug = bug
+        self.is_comment = is_comment
+        self.message = message
+        self.date_emailed = date_emailed
+        self.activity = activity
+        self.status = status
 
     @property
     def recipients(self):
         """See `IBugNotification`."""
-        return BugNotificationRecipient.selectBy(
-            bug_notification=self, orderBy='id')
+        return IStore(BugNotificationRecipient).find(
+            BugNotificationRecipient,
+            BugNotificationRecipient.bug_notification == self).order_by(
+                BugNotificationRecipient.id)
 
     @property
     def bug_filters(self):
@@ -88,6 +104,9 @@ class BugNotification(SQLBase):
             (BugSubscriptionFilter.id ==
              BugNotificationFilter.bug_subscription_filter_id),
             BugNotificationFilter.bug_notification == self)
+
+    def destroySelf(self):
+        Store.of(self).remove(self)
 
 
 @implementer(IBugNotificationSet)
@@ -129,7 +148,7 @@ class BugNotificationSet:
             elif (last_omitted_notification is not None and
                 notification.message.ownerID ==
                    last_omitted_notification.message.ownerID and
-                notification.bugID == last_omitted_notification.bugID and
+                notification.bug_id == last_omitted_notification.bug_id and
                 last_omitted_notification.message.datecreated -
                 notification.message.datecreated < interval):
                 last_omitted_notification = notification
@@ -137,7 +156,7 @@ class BugNotificationSet:
                 last_omitted_notification = None
                 pending_notifications.append(notification)
                 people_ids.add(notification.message.ownerID)
-                bug_ids.add(notification.bugID)
+                bug_ids.add(notification.bug_id)
         # Now we do some calls that are purely for caching.
         # Converting these into lists forces the queries to execute.
         if pending_notifications:
@@ -308,15 +327,27 @@ class BugNotificationSet:
 
 
 @implementer(IBugNotificationRecipient)
-class BugNotificationRecipient(SQLBase):
+class BugNotificationRecipient(StormBase):
     """A recipient of a bug notification."""
 
-    bug_notification = ForeignKey(
-        dbName='bug_notification', notNull=True, foreignKey='BugNotification')
-    person = ForeignKey(
-        dbName='person', notNull=True, foreignKey='Person')
-    reason_header = StringCol(dbName='reason_header', notNull=True)
-    reason_body = StringCol(dbName='reason_body', notNull=True)
+    __storm_table__ = 'BugNotificationRecipient'
+
+    id = Int(primary=True)
+
+    bug_notification_id = Int(name='bug_notification', allow_none=False)
+    bug_notification = Reference(bug_notification_id, 'BugNotification.id')
+
+    person_id = Int(name='person', allow_none=False)
+    person = Reference(person_id, 'Person.id')
+
+    reason_header = Unicode(name='reason_header', allow_none=False)
+    reason_body = Unicode(name='reason_body', allow_none=False)
+
+    def __init__(self, bug_notification, person, reason_header, reason_body):
+        self.bug_notification = bug_notification
+        self.person = person
+        self.reason_header = reason_header
+        self.reason_body = reason_body
 
 
 @implementer(IBugNotificationFilter)

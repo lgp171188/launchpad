@@ -272,8 +272,8 @@ class GenericBranchCollection:
             cache._associatedSuiteSourcePackages.append(
                 link.suite_sourcepackage)
         for code_import in IStore(CodeImport).find(
-            CodeImport, CodeImport.branchID.is_in(branch_ids)):
-            cache = caches[code_import.branchID]
+                CodeImport, CodeImport.branch_id.is_in(branch_ids)):
+            cache = caches[code_import.branch_id]
             cache.code_import = code_import
 
     @staticmethod

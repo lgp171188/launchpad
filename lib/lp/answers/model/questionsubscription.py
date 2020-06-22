@@ -1,17 +1,19 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""SQLBase implementation of IQuestionSubscription."""
+"""StormBase implementation of IQuestionSubscription."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
 __all__ = ['QuestionSubscription']
 
 import pytz
-from sqlobject import ForeignKey
 from storm.locals import (
     DateTime,
     Int,
+    Reference,
     )
 from zope.interface import implementer
 
@@ -19,28 +21,29 @@ from lp.answers.interfaces.questionsubscription import IQuestionSubscription
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.role import IPersonRoles
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IQuestionSubscription)
-class QuestionSubscription(SQLBase):
+class QuestionSubscription(StormBase):
     """A subscription for person to a question."""
 
-    _table = 'QuestionSubscription'
+    __storm_table__ = 'QuestionSubscription'
 
     id = Int(primary=True)
-    question_id = Int("question", allow_none=False)
-    question = ForeignKey(
-        dbName='question', foreignKey='Question', notNull=True)
+    question_id = Int(name="question", allow_none=False)
+    question = Reference(question_id, 'Question.id')
 
     person_id = Int(
-        "person", allow_none=False, validator=validate_public_person)
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        name="person", allow_none=False, validator=validate_public_person)
+    person = Reference(person_id, 'Person.id')
 
     date_created = DateTime(
         allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+
+    def __init__(self, question, person):
+        self.question = question
+        self.person = person
 
     def canBeUnsubscribedByUser(self, user):
         """See `IQuestionSubscription`."""

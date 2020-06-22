@@ -9,8 +9,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_read_operation,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -25,15 +25,15 @@ from lp import _
 from lp.translations.enums import RosettaImportStatus
 
 
+@exported_as_webservice_entry(
+    singular_name='object_with_translation_imports',
+    plural_name='objects_with_translation_imports')
 class IHasTranslationImports(Interface):
     """An entity that has a translation import queue.
 
     Examples include `ProductSeries`, `SourcePackage`, `DistroSeries`,
     and `Person`.
     """
-    export_as_webservice_entry(
-        singular_name='object_with_translation_imports',
-        plural_name='objects_with_translation_imports')
 
     def getFirstEntryToImport():
         """Return the first entry of the queue ready to be imported."""

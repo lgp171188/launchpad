@@ -13,8 +13,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import (
@@ -39,9 +39,9 @@ from lp.soyuz.interfaces.component import IComponent
 from lp.soyuz.interfaces.packageset import IPackageset
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IArchivePermission(Interface):
     """The interface for `ArchivePermission`."""
-    export_as_webservice_entry(publish_web_link=False)
 
     id = Attribute("The archive permission ID.")
 

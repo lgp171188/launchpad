@@ -28,10 +28,10 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -117,10 +117,9 @@ class IPackageUploadQueue(Interface):
     """
 
 
+@exported_as_webservice_entry(publish_web_link=True, as_of="devel")
 class IPackageUploadLog(Interface):
     """A log entry recording a change in a package upload's status."""
-
-    export_as_webservice_entry(publish_web_link=True, as_of="devel")
 
     id = Int(title=_('ID'), required=True, readonly=True)
 
@@ -155,10 +154,9 @@ class IPackageUploadLog(Interface):
             required=False, readonly=True))
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IPackageUpload(Interface):
     """A Queue item for the archive uploader."""
-
-    export_as_webservice_entry(publish_web_link=False)
 
     id = exported(
         Int(

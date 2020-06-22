@@ -648,7 +648,8 @@ Emails are sent out by adding entries to the bugnotification table. We
 need to know how many messages are currently in that table.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> bn_set = BugNotification.select(BugNotification.q.bugID == bug_one.id)
+    >>> from lp.services.database.interfaces import IStore
+    >>> bn_set = IStore(BugNotification).find(BugNotification, bug=bug_one)
     >>> start_bugnotification_count = bn_set.count()
 
 Add 'new-tag' multiple times so that we can verify that it will only be added
@@ -666,11 +667,11 @@ once.
 Since the 'new-tag' was added, a new entry in the bugnotification table
 should exist.
 
-    >>> bn_set = BugNotification.select(BugNotification.q.bugID == bug_one.id,
-    ...                                 orderBy = BugNotification.q.id)
+    >>> bn_set = IStore(BugNotification).find(
+    ...     BugNotification, bug=bug_one).order_by(BugNotification.id)
     >>> start_bugnotification_count == bn_set.count() - 1
     True
-    >>> bn_set[-1].message.text_contents
+    >>> bn_set.last().message.text_contents
     u'** Tags added: new-tag'
 
 

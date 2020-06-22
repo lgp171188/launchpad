@@ -3,6 +3,8 @@
 
 """Database classes including and related to CodeImport."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -13,12 +15,7 @@ __all__ = [
 from datetime import timedelta
 
 from lazr.lifecycle.event import ObjectCreatedEvent
-from sqlobject import (
-    ForeignKey,
-    IntervalCol,
-    SQLObjectNotFound,
-    StringCol,
-    )
+import pytz
 from storm.expr import (
     And,
     Desc,
@@ -26,10 +23,13 @@ from storm.expr import (
     Select,
     )
 from storm.locals import (
+    DateTime,
     Int,
     Reference,
     ReferenceSet,
     Store,
+    TimeDelta,
+    Unicode,
     )
 from zope.component import getUtility
 from zope.event import notify
@@ -71,34 +71,44 @@ from lp.code.model.codeimportresult import CodeImportResult
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ICodeImport)
-class CodeImport(SQLBase):
+class CodeImport(StormBase):
     """See `ICodeImport`."""
-    _table = 'CodeImport'
-    _defaultOrder = ['id']
 
-    def __init__(self, target=None, *args, **kwargs):
-        if target is not None:
-            assert 'branch' not in kwargs
-            assert 'repository' not in kwargs
-            if IBranch.providedBy(target):
-                kwargs['branch'] = target
-            elif IGitRepository.providedBy(target):
-                kwargs['git_repository'] = target
-            else:
-                raise AssertionError("Unknown code import target %s" % target)
-        super(CodeImport, self).__init__(*args, **kwargs)
+    __storm_table__ = 'CodeImport'
+    __storm_order__ = 'id'
 
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    branch = ForeignKey(dbName='branch', foreignKey='Branch', notNull=False)
-    git_repositoryID = Int(name='git_repository', allow_none=True)
-    git_repository = Reference(git_repositoryID, 'GitRepository.id')
+    id = Int(primary=True)
+
+    def __init__(self, registrant, owner, target, review_status, rcs_type=None,
+                 url=None, cvs_root=None, cvs_module=None):
+        super(CodeImport, self).__init__()
+        self.registrant = registrant
+        self.owner = owner
+        if IBranch.providedBy(target):
+            self.branch = target
+            self.git_repository = None
+        elif IGitRepository.providedBy(target):
+            self.branch = None
+            self.git_repository = target
+        else:
+            raise AssertionError("Unknown code import target %s" % target)
+        self.review_status = review_status
+        self.rcs_type = rcs_type
+        self.url = url
+        self.cvs_root = cvs_root
+        self.cvs_module = cvs_module
+
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    branch_id = Int(name='branch', allow_none=True)
+    branch = Reference(branch_id, 'Branch.id')
+    git_repository_id = Int(name='git_repository', allow_none=True)
+    git_repository = Reference(git_repository_id, 'GitRepository.id')
 
     @property
     def target(self):
@@ -108,21 +118,23 @@ class CodeImport(SQLBase):
             assert self.git_repository is not None
             return self.git_repository
 
-    registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    assignee = ForeignKey(
-        dbName='assignee', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=False, default=None)
+    registrant_id = Int(
+        name='registrant', allow_none=False, validator=validate_public_person)
+    registrant = Reference(registrant_id, 'Person.id')
+    owner_id = Int(
+        name='owner', allow_none=False, validator=validate_public_person)
+    owner = Reference(owner_id, 'Person.id')
+    assignee_id = Int(
+        name='assignee', allow_none=True, validator=validate_public_person,
+        default=None)
+    assignee = Reference(assignee_id, 'Person.id')
 
-    review_status = EnumCol(schema=CodeImportReviewStatus, notNull=True,
+    review_status = DBEnum(
+        enum=CodeImportReviewStatus, allow_none=False,
         default=CodeImportReviewStatus.REVIEWED)
 
-    rcs_type = EnumCol(schema=RevisionControlSystems,
-        notNull=False, default=None)
+    rcs_type = DBEnum(
+        enum=RevisionControlSystems, allow_none=True, default=None)
 
     @property
     def target_rcs_type(self):
@@ -131,14 +143,14 @@ class CodeImport(SQLBase):
         else:
             return TargetRevisionControlSystems.GIT
 
-    cvs_root = StringCol(default=None)
+    cvs_root = Unicode(default=None)
 
-    cvs_module = StringCol(default=None)
+    cvs_module = Unicode(default=None)
 
-    url = StringCol(default=None)
+    url = Unicode(default=None)
 
-    date_last_successful = UtcDateTimeCol(default=None)
-    update_interval = IntervalCol(default=None)
+    date_last_successful = DateTime(tzinfo=pytz.UTC, default=None)
+    update_interval = TimeDelta(default=None)
 
     @property
     def effective_update_interval(self):
@@ -159,8 +171,7 @@ class CodeImport(SQLBase):
         seconds = default_interval_dict.get(self.rcs_type, 21600)
         return timedelta(seconds=seconds)
 
-    import_job = Reference("<primary key>", "CodeImportJob.code_import_id",
-                           on_remote=True)
+    import_job = Reference(id, "CodeImportJob.code_import_id", on_remote=True)
 
     def getImportDetailsForDisplay(self):
         """See `ICodeImport`."""
@@ -187,7 +198,7 @@ class CodeImport(SQLBase):
                 CodeImportJobWorkflow().deletePendingJob(self)
 
     results = ReferenceSet(
-        '<primary key>', 'CodeImportResult.code_import_id',
+        id, 'CodeImportResult.code_import_id',
         order_by=Desc('CodeImportResult.date_job_started'))
 
     @property
@@ -272,6 +283,11 @@ class CodeImport(SQLBase):
             getUtility(ICodeImportJobWorkflow).requestJob(
                 self.import_job, requester)
 
+    def destroySelf(self):
+        if self.import_job is not None:
+            self.import_job.destroySelf()
+        Store.of(self).remove(self)
+
 
 @implementer(ICodeImportSet)
 class CodeImportSet:
@@ -336,6 +352,7 @@ class CodeImportSet:
             rcs_type=rcs_type, url=url,
             cvs_root=cvs_root, cvs_module=cvs_module,
             review_status=review_status)
+        IStore(CodeImport).add(code_import)
 
         getUtility(ICodeImportEventSet).newCreate(code_import, registrant)
         notify(ObjectCreatedEvent(code_import))
@@ -348,21 +365,25 @@ class CodeImportSet:
 
     def delete(self, code_import):
         """See `ICodeImportSet`."""
-        if code_import.import_job is not None:
-            removeSecurityProxy(code_import.import_job).destroySelf()
-        CodeImport.delete(code_import.id)
+        # XXX cjwatson 2020-03-13: This means that in terms of Zope
+        # permissions anyone can delete a code import, which seems
+        # unfortunate, although it appears to have been this way even before
+        # converting CodeImport to Storm.
+        removeSecurityProxy(code_import).destroySelf()
 
     def get(self, id):
         """See `ICodeImportSet`."""
-        try:
-            return CodeImport.get(id)
-        except SQLObjectNotFound:
+        code_import = IStore(CodeImport).get(CodeImport, id)
+        if code_import is None:
             raise NotFoundError(id)
+        return code_import
 
     def getByCVSDetails(self, cvs_root, cvs_module):
         """See `ICodeImportSet`."""
-        return CodeImport.selectOneBy(
-            cvs_root=cvs_root, cvs_module=cvs_module)
+        return IStore(CodeImport).find(
+            CodeImport,
+            CodeImport.cvs_root == cvs_root,
+            CodeImport.cvs_module == cvs_module).one()
 
     def getByURL(self, url, target_rcs_type):
         """See `ICodeImportSet`."""
@@ -378,10 +399,12 @@ class CodeImportSet:
 
     def getByBranch(self, branch):
         """See `ICodeImportSet`."""
-        return CodeImport.selectOneBy(branch=branch)
+        return IStore(CodeImport).find(
+            CodeImport, CodeImport.branch == branch).one()
 
     def getByGitRepository(self, repository):
-        return CodeImport.selectOneBy(git_repository=repository)
+        return IStore(CodeImport).find(
+            CodeImport, CodeImport.git_repository == repository).one()
 
     def search(self, review_status=None, rcs_type=None, target_rcs_type=None):
         """See `ICodeImportSet`."""

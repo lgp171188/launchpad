@@ -21,6 +21,7 @@ __all__ = [
     'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
     'OCI_RECIPE_ALLOW_CREATE',
+    'OCI_RECIPE_BUILD_DISTRIBUTION',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     ]
 
@@ -28,10 +29,10 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_factory_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -80,6 +81,7 @@ from lp.services.webhooks.interfaces import IWebhookTarget
 
 OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
 OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
+OCI_RECIPE_BUILD_DISTRIBUTION = 'oci.default_build_distribution'
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -137,11 +139,11 @@ class CannotModifyOCIRecipeProcessor(Exception):
             self._fmt % {'processor': processor.name})
 
 
+@exported_as_webservice_entry(
+    publish_web_link=True, as_of="devel",
+    singular_name="oci_recipe_build_request")
 class IOCIRecipeBuildRequest(Interface):
     """A request to build an OCI Recipe."""
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel",
-        singular_name="oci_recipe_build_request")
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
@@ -407,12 +409,11 @@ class IOCIRecipeAdminAttributes(Interface):
         readonly=False))
 
 
+@exported_as_webservice_entry(
+    publish_web_link=True, as_of="devel", singular_name="oci_recipe")
 class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes,
                  IOCIRecipeAdminAttributes):
     """A recipe for building Open Container Initiative images."""
-
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel", singular_name="oci_recipe")
 
 
 class IOCIRecipeSet(Interface):

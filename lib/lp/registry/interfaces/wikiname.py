@@ -7,8 +7,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -22,9 +22,9 @@ from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import URIField
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IWikiName(IHasOwner):
     """Wiki for Users"""
-    export_as_webservice_entry(publish_web_link=False)
     id = Int(title=_("Database ID"), required=True, readonly=True)
     # schema=Interface will be overridden in person.py because of circular
     # dependencies.

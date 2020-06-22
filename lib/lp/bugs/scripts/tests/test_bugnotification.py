@@ -1,6 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-"""Tests for construction bug notification emails for sending."""
+"""Tests for constructing bug notification emails for sending."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -15,7 +17,6 @@ import StringIO
 import unittest
 
 import pytz
-from storm.store import Store
 from testtools.matchers import (
     MatchesRegex,
     Not,
@@ -75,10 +76,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
@@ -1008,14 +1006,9 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
     def addNotificationRecipient(self, notification, person):
         # Manually insert BugNotificationRecipient for
         # construct_email_notifications to work.
-        # Not sure why using SQLObject constructor doesn't work (it
-        # tries to insert a row with only the ID which fails).
-        Store.of(notification).execute("""
-            INSERT INTO BugNotificationRecipient
-              (bug_notification, person, reason_header, reason_body)
-              VALUES (%s, %s, %s, %s)""" % sqlvalues(
-                          notification, person,
-                          u'reason header', u'reason body'))
+        BugNotificationRecipient(
+            bug_notification=notification, person=person,
+            reason_header='reason header', reason_body='reason body')
 
     def addNotification(self, person):
         # Add a notification along with recipient data.
@@ -1176,8 +1169,8 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
 def fetch_notifications(subscriber, bug):
     return IStore(BugNotification).find(
         BugNotification,
-        BugNotification.id == BugNotificationRecipient.bug_notificationID,
-        BugNotificationRecipient.personID == subscriber.id,
+        BugNotification.id == BugNotificationRecipient.bug_notification_id,
+        BugNotificationRecipient.person == subscriber,
         BugNotification.bug == bug)
 
 

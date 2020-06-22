@@ -26,11 +26,11 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -125,9 +125,8 @@ class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
         super(ValidWebhookEventTypeVocabulary, self).__init__(terms)
 
 
+@exported_as_webservice_entry(as_of='beta')
 class IWebhook(Interface):
-
-    export_as_webservice_entry(as_of='beta')
 
     id = Int(title=_("ID"), readonly=True, required=True)
 
@@ -207,9 +206,8 @@ class IWebhookSet(Interface):
         """Trigger subscribed webhooks to deliver a payload."""
 
 
+@exported_as_webservice_entry(as_of='beta')
 class IWebhookTarget(Interface):
-
-    export_as_webservice_entry(as_of='beta')
 
     webhooks = exported(doNotSnapshot(CollectionField(
         title=_("Webhooks for this target."),
@@ -261,10 +259,9 @@ class IWebhookJobSource(IJobSource):
         """Delete all `IWebhookJob`s for the given `IWebhook`."""
 
 
+@exported_as_webservice_entry('webhook_delivery', as_of='beta')
 class IWebhookDeliveryJob(IRunnableJob):
     """A Job that delivers an event to a webhook consumer."""
-
-    export_as_webservice_entry('webhook_delivery', as_of='beta')
 
     webhook = exported(Reference(
         title=_("Webhook"),

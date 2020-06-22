@@ -3,6 +3,8 @@
 
 """Translation Importer tests."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from io import BytesIO
@@ -233,7 +235,7 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         existing_translation = self.factory.makeCurrentTranslationMessage(
             pofile=pofile, potmsgset=potmsgset1)
 
-        text = """
+        text = b"""
             msgid ""
             msgstr ""
             "MIME-Version: 1.0\\n"

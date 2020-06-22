@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of `IGitNamespace`."""
@@ -300,7 +300,8 @@ class PersonalGitNamespace(_BaseGitNamespace):
             GitRepository.owner == self.owner,
             GitRepository.project == None,
             GitRepository.distribution == None,
-            GitRepository.sourcepackagename == None)
+            GitRepository.sourcepackagename == None,
+            GitRepository.oci_project == None)
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
@@ -317,7 +318,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
         repository.project = None
         repository.distribution = None
         repository.sourcepackagename = None
-        repository.ociprojectname = None
+        repository.oci_project = None
         repository.target_default = False
         repository.owner_default = False
 
@@ -398,7 +399,7 @@ class ProjectGitNamespace(_BaseGitNamespace):
         repository.project = self.project
         repository.distribution = None
         repository.sourcepackagename = None
-        repository.ociprojectname = None
+        repository.oci_project = None
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -494,7 +495,7 @@ class PackageGitNamespace(_BaseGitNamespace):
         repository.project = None
         repository.distribution = dsp.distribution
         repository.sourcepackagename = dsp.sourcepackagename
-        repository.ociprojectname = None
+        repository.oci_project = None
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -561,13 +562,9 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
         self.oci_project = oci_project
 
     def _getRepositoriesClause(self):
-        # XXX cjwatson 2019-11-25: This will eventually need project support,
-        # but assert that we have a distribution for now.
-        assert self.oci_project.distribution is not None
         return And(
             GitRepository.owner == self.owner,
-            GitRepository.distribution == self.oci_project.distribution,
-            GitRepository.ociprojectname == self.oci_project.ociprojectname)
+            GitRepository.oci_project == self.oci_project)
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
@@ -583,12 +580,10 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
         return IHasGitRepositories(self.oci_project)
 
     def _retargetRepository(self, repository):
-        ocip = self.oci_project
-        # XXX cjwatson 2019-11-25: This will eventually need project support.
         repository.project = None
-        repository.distribution = ocip.distribution
+        repository.distribution = None
         repository.sourcepackagename = None
-        repository.ociprojectname = ocip.ociprojectname
+        repository.oci_project = self.oci_project
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -630,37 +625,24 @@ class GitNamespaceSet:
     """Only implementation of `IGitNamespaceSet`."""
 
     def get(self, person, project=None, distribution=None,
-            sourcepackagename=None, ociprojectname=None):
+            sourcepackagename=None, oci_project=None):
         """See `IGitNamespaceSet`."""
         # XXX cjwatson 2019-11-25: This will eventually need project-based
         # OCIProject support.
         if project is not None:
             assert (distribution is None and sourcepackagename is None
-                    and ociprojectname is None), (
+                    and oci_project is None), (
                 "project implies no distribution, sourcepackagename"
-                " or ociprojectname. "
+                " or oci_project. "
                 "Got %r, %r, %r, %r."
-                % (project, distribution, sourcepackagename, ociprojectname))
+                % (project, distribution, sourcepackagename, oci_project))
             return ProjectGitNamespace(person, project)
         elif distribution is not None:
-            assert (sourcepackagename is None or ociprojectname is None), (
-                "One of sourcepackagename and ociprojectname must be set."
-                "Got %r, %r."
-                % (sourcepackagename, ociprojectname))
-            assert not (sourcepackagename and ociprojectname), (
-                "Only one of sourcepackagename and ociprojectname can be set."
-                "Got %r, %r."
-                % (sourcepackagename, ociprojectname))
-            if sourcepackagename is not None:
-                return PackageGitNamespace(
-                    person, distribution.getSourcePackage(sourcepackagename))
-            elif ociprojectname is not None:
-                return OCIProjectGitNamespace(
-                    person, distribution.getOCIProject(ociprojectname.name))
-            else:
-                raise AssertionError(
-                    "distribution implies sourcepackagename or "
-                    "ociprojectname. Got %r, %r, %r"
-                    % (distribution, sourcepackagename, ociprojectname))
+            assert (sourcepackagename is not None), (
+                "sourcepackagename must be set. Got %r." % (sourcepackagename))
+            return PackageGitNamespace(
+                person, distribution.getSourcePackage(sourcepackagename))
+        elif oci_project is not None:
+            return OCIProjectGitNamespace(person, oci_project)
         else:
             return PersonalGitNamespace(person)

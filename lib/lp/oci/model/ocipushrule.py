@@ -69,7 +69,7 @@ class OCIPushRule(Storm):
 
     def destroySelf(self):
         """See `IOCIPushRule`."""
-        IStore(OCIPushRule).get(self.id).remove()
+        IStore(OCIPushRule).remove(self)
 
 
 @implementer(IOCIPushRuleSet)
@@ -90,3 +90,9 @@ class OCIPushRuleSet:
     def getByID(self, id):
         """See `IOCIPushRuleSet`."""
         return IStore(OCIPushRule).get(OCIPushRule, id)
+
+    def findByRegistryCredentials(self, credentials):
+        store = IStore(OCIPushRule)
+        return store.find(
+            OCIPushRule,
+            OCIPushRule.registry_credentials == credentials)

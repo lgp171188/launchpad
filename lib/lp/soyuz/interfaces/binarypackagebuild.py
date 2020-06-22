@@ -20,10 +20,10 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -307,11 +307,11 @@ class IBinaryPackageBuildAdmin(Interface):
         """Change the build's score."""
 
 
+@exported_as_webservice_entry(singular_name='build', plural_name='builds')
 class IBinaryPackageBuild(
     IBinaryPackageBuildView, IBinaryPackageBuildEdit,
     IBinaryPackageBuildRestricted, IBinaryPackageBuildAdmin):
     """A Build interface"""
-    export_as_webservice_entry(singular_name='build', plural_name='builds')
 
 
 class BuildSetStatus(EnumeratedType):

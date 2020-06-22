@@ -40,6 +40,7 @@ from lp.registry.interfaces.person import (
     )
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import cursor
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
@@ -453,7 +454,8 @@ class ImportBugTestCase(TestCase):
         logout()
 
     def assertNoPendingNotifications(self, bug):
-        notifications = BugNotification.selectBy(bug=bug, date_emailed=None)
+        notifications = IStore(BugNotification).find(
+            BugNotification, bug=bug, date_emailed=None)
         count = notifications.count()
         self.assertEqual(count, 0,
                          'Found %d pending notifications for bug %d'

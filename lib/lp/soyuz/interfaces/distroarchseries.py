@@ -16,10 +16,10 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -341,9 +341,9 @@ class IDistroArchSeriesModerate(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IDistroArchSeries(IDistroArchSeriesPublic, IDistroArchSeriesModerate):
     """An architecture for a distroseries."""
-    export_as_webservice_entry()
 
 
 class IPocketChroot(Interface):

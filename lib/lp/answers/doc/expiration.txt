@@ -80,7 +80,7 @@ somebody are subject to expiration.
     # to make sure that DB permissions are correct.
     >>> admin_team = getUtility(IPersonSet).getByName('admins')
     >>> old_open_question.subscribe(admin_team)
-    <QuestionSubscription...>
+    <lp.answers.model.questionsubscription.QuestionSubscription...>
     >>> salgado = getUtility(IPersonSet).getByName('salgado')
     >>> old_open_question.target.addAnswerContact(salgado, salgado)
     True
