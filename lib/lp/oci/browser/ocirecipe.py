@@ -184,6 +184,15 @@ class OCIRecipeView(LaunchpadView):
     def builds(self):
         return builds_for_recipe(self.context)
 
+    @cachedproperty
+    def push_rules(self):
+        return list(
+            getUtility(IOCIPushRuleSet).findByRecipe(self.context))
+
+    @property
+    def has_push_rules(self):
+        return len(self.push_rules) > 0
+
     @property
     def person_picker(self):
         field = copy_field(
