@@ -646,7 +646,7 @@ class GitAPI(LaunchpadXMLRPCView):
             raise faults.GitRepositoryNotFound(translated_path)
         self._validateRequesterCanManageRepoCreation(
             requester, naked_repo, auth_params)
-        naked_repo.destroySelf()
+        naked_repo.destroySelf(break_references=True)
 
     def abortRepoCreation(self, translated_path, auth_params):
         """See `IGitAPI`."""

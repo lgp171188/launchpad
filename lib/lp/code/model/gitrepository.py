@@ -1608,12 +1608,6 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             And(GitJob.job == Job.id, GitJob.repository == self))
         Store.of(self).find(Job, Job.id.is_in(affected_jobs)).remove()
 
-    def _deleteCodeImport(self):
-        code_import_set = getUtility(ICodeImportSet)
-        code_import = code_import_set.getByGitRepository(self)
-        if code_import is not None:
-            code_import_set.delete(code_import)
-
     def destroySelf(self, break_references=False):
         """See `IGitRepository`."""
         # Circular import.
@@ -1631,7 +1625,6 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         self._deleteRepositoryAccessGrants()
         self._deleteRepositorySubscriptions()
         self._deleteJobs()
-        self._deleteCodeImport()
         getUtility(IWebhookSet).delete(self.webhooks)
         self.getActivity().remove()
         # We intentionally skip the usual destructors; the only other useful
