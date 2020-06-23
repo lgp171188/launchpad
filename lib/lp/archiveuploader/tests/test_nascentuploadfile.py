@@ -535,7 +535,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         self.assertEqual(
             "empty_0.1_all.deb: extracting control file raised "
             "<type 'exceptions.KeyError'>: u'banana not found'."
-            " giving up.", error.message)
+            " giving up.", str(error))
 
     def test_verifyDebTimestamp_SystemError(self):
         # verifyDebTimestamp produces a reasonable error if we provoke a
