@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for project news and announcement."""
@@ -169,17 +169,41 @@ class HasAnnouncements:
                     (Announcement.product = %s OR Announcement.project = %s)
                     """ % sqlvalues(self.id, self.projectgroup)
         elif IProjectGroup.providedBy(self):
-            query += """ AND
-                (Announcement.project = %s OR Announcement.product IN
-                    (SELECT id FROM Product WHERE project = %s))
+            query += """ AND (
+                Announcement.project = %s
+                OR Announcement.product IN (
+                    SELECT Product.id FROM Product
+                    INNER JOIN Person
+                        ON Person.id = Product.owner
+                    WHERE
+                        Product.project = %s AND Product.active
+                        AND (
+                            Person.teamOwner IS NOT NULL
+                            OR EXISTS (
+                                SELECT 1 FROM KarmaTotalCache
+                                WHERE person = Product.owner
+                                    AND karma_total > 0))))
                     """ % sqlvalues(self.id, self.id)
         elif IDistribution.providedBy(self):
             query += (' AND Announcement.distribution = %s'
                 % sqlvalues(self.id))
         elif IAnnouncementSet.providedBy(self):
-            # There is no need to filter for pillar if we are looking for
-            # all announcements.
-            pass
+            # Just filter out inactive projects, mostly to exclude spam.
+            query += """ AND (
+                Announcement.product IS NULL
+                OR EXISTS (
+                    SELECT 1 FROM Product
+                    INNER JOIN Person
+                        ON Person.id = Product.owner
+                    WHERE
+                        Product.id = Announcement.product AND Product.active
+                        AND (
+                            Person.teamOwner IS NOT NULL
+                            OR EXISTS (
+                                SELECT 1 FROM KarmaTotalCache
+                                WHERE person = Product.owner
+                                    AND karma_total > 0))))
+                """
         else:
             raise AssertionError('Unsupported announcement target')
         return Announcement.select(query, limit=limit)
