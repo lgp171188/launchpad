@@ -48,6 +48,7 @@ class SystemErrorView(LaunchpadView):
     # Override this in subclasses.  A value of None means "don't set this"
     response_code = http_client.INTERNAL_SERVER_ERROR
 
+    show_opengraph_meta = False
     show_tracebacks = False
     debugging = False
     specialuser = False
@@ -186,8 +187,6 @@ class NotFoundView(SystemErrorView):
     page_title = 'Error: Page not found'
 
     response_code = http_client.NOT_FOUND
-
-    show_opengraph_meta = False
 
     def __call__(self):
         return self.index()
