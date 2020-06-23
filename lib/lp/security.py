@@ -1574,13 +1574,28 @@ class OnlyVcsImportsAndAdmins(AuthorizationBase):
         return user.in_admin or user.in_vcs_imports
 
 
-class EditCodeImport(OnlyVcsImportsAndAdmins):
+class EditCodeImport(AuthorizationBase):
     """Control who can edit the object view of a CodeImport.
 
     Currently, we restrict the visibility of the new code import
-    system to members of ~vcs-imports and Launchpad admins.
+    system to owners, members of ~vcs-imports and Launchpad admins.
     """
     permission = 'launchpad.Edit'
+    usedfor = ICodeImport
+
+    def checkAuthenticated(self, user):
+        return (user.inTeam(self.obj.owner) or
+                user.in_admin or
+                user.in_vcs_imports)
+
+
+class ModerateCodeImport(OnlyVcsImportsAndAdmins):
+    """Control who can moderate a CodeImport.
+
+    Currently, we restrict the visibility of code import moderation
+    system to members of ~vcs-imports and Launchpad admins.
+    """
+    permission = 'launchpad.Moderate'
     usedfor = ICodeImport
 
 

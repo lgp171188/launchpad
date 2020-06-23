@@ -96,3 +96,9 @@ class OCIPushRuleSet:
         return store.find(
             OCIPushRule,
             OCIPushRule.recipe == recipe)
+
+    def findByRegistryCredentials(self, credentials):
+        store = IStore(OCIPushRule)
+        return store.find(
+            OCIPushRule,
+            OCIPushRule.registry_credentials == credentials)

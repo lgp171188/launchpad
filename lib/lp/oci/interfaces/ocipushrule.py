@@ -130,5 +130,8 @@ class IOCIPushRuleSet(Interface):
     def findByRecipe(self, recipe):
         """Find matching `IOCIPushRule`s by recipe."""
 
+    def findByRegistryCredentials(self, credentials):
+        """Find matching `IOCIPushRule` by credentials."""
+
     def getByID(id):
         """Get a single `IOCIPushRule` by its ID."""
