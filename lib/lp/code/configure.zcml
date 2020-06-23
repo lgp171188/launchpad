@@ -658,7 +658,8 @@
                        getImportDetailsForDisplay"/>
     <require
        permission="launchpad.Edit"
-       set_attributes="url"/>
+       attributes="updateURL"/>
+
     <require
        permission="launchpad.AnyPerson"
        attributes="tryFailingImportAgain

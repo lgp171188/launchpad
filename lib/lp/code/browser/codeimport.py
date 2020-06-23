@@ -570,9 +570,8 @@ def _makeEditAction(label, status, text):
                     'The code import has been ' + text + '.')
         elif self._is_edit_user and "url" in data:
             # Edit users can only change URL
-            new_url = data["url"]
-            if self.code_import.url != new_url:
-                self.code_import.url = new_url
+            event = self.code_import.updateURL(data["url"], self.user)
+            if event is not None:
                 self.request.response.addNotification(
                     'The code import URL has been updated.')
         else:
