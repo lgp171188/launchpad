@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the code import browser code."""
@@ -13,12 +13,14 @@ from testtools.matchers import StartsWith
 from zope.security.interfaces import Unauthorized
 
 from lp.code.enums import (
+    CodeImportReviewStatus,
     RevisionControlSystems,
     TargetRevisionControlSystems,
     )
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.webapp import canonical_url
 from lp.testing import (
+    admin_logged_in,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -72,10 +74,50 @@ class TestImportDetails(TestCaseWithFactory):
             code_import, 'git-import-details',
             'This repository is an import of the Git repository')
 
-    def test_branch_owner_of_import_forbidden(self):
+    def test_other_users_are_forbidden_to_change_codeimport(self):
         # Unauthorized users are forbidden to edit an import.
         cimport = self.factory.makeCodeImport()
-        with person_logged_in(cimport.branch.owner):
+        another_person = self.factory.makePerson()
+        with person_logged_in(another_person):
             self.assertRaises(
                 Unauthorized, create_initialized_view, cimport.branch,
                 '+edit-import')
+
+    def test_branch_owner_of_import_can_edit_it(self):
+        # Owners are allowed to edit code import.
+        cimport = self.factory.makeCodeImport()
+        with person_logged_in(cimport.branch.owner):
+            view = create_initialized_view(
+                cimport.branch, '+edit-import', form={
+                    "field.actions.update": "update",
+                    "field.url": "http://foo.test"
+                })
+            self.assertEqual([], view.errors)
+            self.assertEqual('http://foo.test', cimport.url)
+
+    def test_branch_owner_of_import_cannot_change_status(self):
+        # Owners are allowed to edit code import.
+        cimport = self.factory.makeCodeImport()
+        original_url = cimport.url
+        with person_logged_in(cimport.branch.owner):
+            view = create_initialized_view(
+                cimport.branch, '+edit-import', form={
+                    "field.actions.suspend": "Suspend",
+                    "field.url": "http://foo.test"
+                })
+            self.assertEqual([], view.errors)
+            self.assertEqual(original_url, cimport.url)
+
+    def test_admin_can_change_code_import_status(self):
+        # Owners are allowed to edit code import.
+        cimport = self.factory.makeCodeImport()
+        with admin_logged_in():
+            view = create_initialized_view(
+                cimport.branch, '+edit-import', form={
+                    "field.actions.suspend": "Suspend",
+                    "field.url": "http://foo.test"
+                })
+            self.assertEqual([], view.errors)
+            self.assertEqual("http://foo.test", cimport.url)
+            self.assertEqual(
+                CodeImportReviewStatus.SUSPENDED, cimport.review_status)

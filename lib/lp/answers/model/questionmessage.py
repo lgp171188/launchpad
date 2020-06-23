@@ -10,7 +10,10 @@ __all__ = [
     ]
 
 from lazr.delegates import delegate_to
-from sqlobject import ForeignKey
+from storm.locals import (
+    Int,
+    Reference,
+    )
 from zope.interface import implementer
 
 from lp.answers.enums import (
@@ -19,40 +22,44 @@ from lp.answers.enums import (
     )
 from lp.answers.interfaces.questionmessage import IQuestionMessage
 from lp.registry.interfaces.person import validate_public_person
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 from lp.services.messages.interfaces.message import IMessage
 from lp.services.propertycache import cachedproperty
 
 
 @implementer(IQuestionMessage)
 @delegate_to(IMessage, context='message')
-class QuestionMessage(SQLBase):
+class QuestionMessage(StormBase):
     """A table linking questions and messages."""
 
-    _table = 'QuestionMessage'
+    __storm_table__ = 'QuestionMessage'
 
-    question = ForeignKey(
-        dbName='question', foreignKey='Question', notNull=True)
-    message = ForeignKey(dbName='message', foreignKey='Message', notNull=True)
+    id = Int(primary=True)
+    question_id = Int(name="question", allow_none=False)
+    question = Reference(question_id, 'Question.id')
 
-    action = EnumCol(
-        schema=QuestionAction, notNull=True, default=QuestionAction.COMMENT)
+    message_id = Int(name="message", allow_none=False)
+    message = Reference(message_id, 'Message.id')
 
-    new_status = EnumCol(
-        schema=QuestionStatus, notNull=True, default=QuestionStatus.OPEN)
+    action = DBEnum(
+        name='action', enum=QuestionAction, default=QuestionAction.COMMENT,
+        allow_none=False)
 
-    owner = ForeignKey(dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+    new_status = DBEnum(
+        name='new_status', enum=QuestionStatus, default=QuestionStatus.OPEN,
+        allow_none=False)
 
-    def __init__(self, **kwargs):
-        if 'owner' not in kwargs:
-            # Although a trigger will set the owner after the SQL
-            # INSERT has been executed, we must specify the parameter
-            # explicitly to fulfill the DB constraint OWNER NOT NULL,
-            # otherweise we'll get an error from the DB server.
-            kwargs['owner'] = kwargs['message'].owner
-        super(QuestionMessage, self).__init__(**kwargs)
+    owner_id = Int(
+        name="owner", allow_none=False, validator=validate_public_person)
+    owner = Reference(owner_id, 'Person.id')
+
+    def __init__(self, question, message, action, new_status, owner):
+        self.question = question
+        self.message = message
+        self.action = action
+        self.new_status = new_status
+        self.owner = owner if owner else self.message.owner
 
     def __iter__(self):
         """See IMessage."""

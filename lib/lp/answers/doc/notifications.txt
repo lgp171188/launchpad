@@ -707,7 +707,7 @@ the notifications.
 
     >>> pt_BR_question.giveInfo(
     ...     "Veja o screenshot: http://tinyurl.com/y8jq8z")
-    <QuestionMessage...>
+    <lp.answers.model.questionmessage.QuestionMessage...>
 
     >>> ignore = pop_questionemailjobs()
 

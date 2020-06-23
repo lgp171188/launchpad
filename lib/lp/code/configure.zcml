@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -657,11 +657,15 @@
                        consecutive_failure_count
                        getImportDetailsForDisplay"/>
     <require
+       permission="launchpad.Edit"
+       attributes="updateURL"/>
+
+    <require
        permission="launchpad.AnyPerson"
        attributes="tryFailingImportAgain
                    requestImport"/>
     <require
-       permission="launchpad.Edit"
+       permission="launchpad.Moderate"
        attributes="updateFromData"/>
 
     <!-- ICodeImport has no set_schema, because all modifications should be

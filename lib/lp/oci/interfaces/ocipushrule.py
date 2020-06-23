@@ -127,5 +127,8 @@ class IOCIPushRuleSet(Interface):
     def new(recipe, registry_credentials, image_name):
         """Create an `IOCIPushRule`."""
 
+    def findByRegistryCredentials(self, credentials):
+        """Find matching `IOCIPushRule` by credentials."""
+
     def getByID(id):
         """Get a single `IOCIPushRule` by its ID."""
