@@ -65,13 +65,13 @@ somebody are subject to expiration.
     >>> recent_open_question = questionset.get(2)
     >>> recent_open_question.giveInfo(
     ...     'SVG works better now, but is still broken')
-    <QuestionMessage...>
+    <lp.answers.model.questionmessage.QuestionMessage...>
 
     # This one was put in the NEEDSINFO state recently.
     >>> recent_needsinfo_question = questionset.get(4)
     >>> recent_needsinfo_question.requestInfo(
     ...     no_priv, 'What URL were you visiting?')
-    <QuestionMessage...>
+    <lp.answers.model.questionmessage.QuestionMessage...>
 
     # Old open questions.
     >>> old_open_question = questionset.get(5)

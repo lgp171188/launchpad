@@ -214,7 +214,7 @@ Let's say they confirm the previous answer, in this case, the question
 will move to the 'SOLVED' state. Note that the UI doesn't enable the
 user to enter a confirmation message at that stage.
 
-    >>> answer_message_number = firefox_question.messages.count() - 1
+    >>> answer_message_number = len(firefox_question.messages) - 1
     >>> workflow_harness.submit(
     ...     'confirm', {'answer_id': answer_message_number,
     ...                 'field.message': ''})
