@@ -61,20 +61,31 @@ class TestAnnouncement(TestCaseWithFactory):
 class TestAnnouncementPage(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
-    def assertShowsAnnouncements(self, context, view_name=None, user=None,
-                                 cleanup_announcements=True):
+    def assertHidesUnwantedAnnouncements(
+            self, context, view_name=None, user=None):
+        """
+        Makes sure that unwanted announcements are not shown for the given
+        context.
+
+        This test method creates a set of possible announcements that
+        should be specifically shown or hidden for the given context (
+        IProjectGroup instance or IAnnouncementSet, for example).
+
+        :param context: HasAnnouncements subclass, that routes to an
+                        announcements page.
+        :param view_name: View name of the announcements.
+        :param user: Loggin with this user when showing the announcements page.
+        """
         # cleanup announcements from test data to make sure we are not
         # hiding new announcements because of pagination.
-        if cleanup_announcements:
-            store = IStore(Announcement)
-            for i in store.find(Announcement):
-                store.remove(i)
-            store.flush()
+        store = IStore(Announcement)
+        for i in store.find(Announcement):
+            store.remove(i)
+        store.flush()
 
         real_user = self.factory.makePerson(karma=500)
         team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED)
-        spammer = self.factory.makePerson(karma=0)
 
         if IProjectGroup.providedBy(context):
             project_group = context
@@ -99,12 +110,6 @@ class TestAnnouncementPage(BrowserTestCase):
             publication_date=datetime.now(utc))
         removeSecurityProxy(inactive_product).active = False
 
-        spam_product = self.factory.makeProduct(
-            owner=spammer, projectgroup=project_group)
-        spam_announcement = spam_product.announce(
-            spammer, "This is just spam", "Buy something now",
-            publication_date=datetime.now(utc))
-
         browser = self.getViewBrowser(context, view_name, user=user)
         contents = six.ensure_str(browser.contents, "utf-8")
 
@@ -117,15 +122,12 @@ class TestAnnouncementPage(BrowserTestCase):
         self.assertNotIn(inactive_announcement.title, contents)
         self.assertNotIn(inactive_announcement.summary, contents)
 
-        self.assertNotIn(spam_announcement.title, contents)
-        self.assertNotIn(spam_announcement.summary, contents)
-
     def test_announcement_page_filter_out_inactive_projects(self):
         user = self.factory.makePerson()
         context = getUtility(IAnnouncementSet)
-        self.assertShowsAnnouncements(context, None, user)
+        self.assertHidesUnwantedAnnouncements(context, None, user)
 
     def test_project_group_announcement_filter_out_inactive_projects(self):
         user = self.factory.makePerson()
         context = self.factory.makeProject()  # actually, a IProjectGroup
-        self.assertShowsAnnouncements(context, None, user)
+        self.assertHidesUnwantedAnnouncements(context, None, user)

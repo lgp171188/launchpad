@@ -172,17 +172,8 @@ class HasAnnouncements:
             query += """ AND (
                 Announcement.project = %s
                 OR Announcement.product IN (
-                    SELECT Product.id FROM Product
-                    INNER JOIN Person
-                        ON Person.id = Product.owner
-                    WHERE
-                        Product.project = %s AND Product.active
-                        AND (
-                            Person.teamOwner IS NOT NULL
-                            OR EXISTS (
-                                SELECT 1 FROM KarmaTotalCache
-                                WHERE person = Product.owner
-                                    AND karma_total > 0))))
+                    SELECT id FROM Product
+                    WHERE Product.project = %s AND Product.active))
                     """ % sqlvalues(self.id, self.id)
         elif IDistribution.providedBy(self):
             query += (' AND Announcement.distribution = %s'
@@ -192,17 +183,8 @@ class HasAnnouncements:
             query += """ AND (
                 Announcement.product IS NULL
                 OR EXISTS (
-                    SELECT 1 FROM Product
-                    INNER JOIN Person
-                        ON Person.id = Product.owner
-                    WHERE
-                        Product.id = Announcement.product AND Product.active
-                        AND (
-                            Person.teamOwner IS NOT NULL
-                            OR EXISTS (
-                                SELECT 1 FROM KarmaTotalCache
-                                WHERE person = Product.owner
-                                    AND karma_total > 0))))
+                    SELECT 1 FROM Product WHERE
+                    Product.id = Announcement.product AND Product.active))
                 """
         else:
             raise AssertionError('Unsupported announcement target')
