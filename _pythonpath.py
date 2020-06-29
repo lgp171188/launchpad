@@ -20,7 +20,7 @@ else:
 top = os.path.dirname(os.path.abspath(os.path.realpath(filename)))
 
 env = os.path.join(top, 'env')
-stdlib_dir = os.path.join(env, 'lib', 'python%s' % sys.version[:3])
+stdlib_dir = os.path.join(env, 'lib', 'python%s.%s' % sys.version_info[:2])
 
 if ('site' in sys.modules and
     not sys.modules['site'].__file__.startswith(
@@ -52,7 +52,7 @@ if not sys.executable.startswith(top + os.sep) or 'site' not in sys.modules:
     os.environ['PATH'] = (
         os.path.join(env, 'bin') + os.pathsep + os.environ.get('PATH', ''))
     site_packages = os.path.join(
-        env, 'lib', 'python%s' % sys.version[:3], 'site-packages')
+        env, 'lib', 'python%s.%s' % sys.version_info[:2], 'site-packages')
     import site
     site.addsitedir(site_packages)
     if orig_disable_sitecustomize is not None:
