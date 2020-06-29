@@ -6,6 +6,8 @@
 """Generate a preamble for slonik(1) scripts based on the current LPCONFIG.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = []
 
@@ -29,7 +31,7 @@ if __name__ == '__main__':
     scripts.execute_zcml_for_scripts(use_web_security=False)
 
     con = connect()
-    print '# slonik(1) preamble generated %s' % time.ctime()
-    print '# LPCONFIG=%s' % config.instance_name
-    print
-    print replication.helpers.preamble(con)
+    print('# slonik(1) preamble generated %s' % time.ctime())
+    print('# LPCONFIG=%s' % config.instance_name)
+    print()
+    print(replication.helpers.preamble(con))
