@@ -181,6 +181,7 @@ from lp.registry.browser.pillar import (
     PillarViewMixin,
     )
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import (
     IProduct,
@@ -509,8 +510,13 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
         return Link('+sharing', 'Sharing', icon='edit')
 
     def search_oci_project(self):
+        pillar = self.context.context
+        oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
+            pillar, u'')
         text = 'Search for OCI Project'
-        return Link('+search-oci-project', text, icon='info')
+        link = Link('+search-oci-project', text, icon='info')
+        link.enabled = not oci_projects.is_empty()
+        return link
 
     @enabled_with_permission('launchpad.Driver')
     def new_oci_project(self):

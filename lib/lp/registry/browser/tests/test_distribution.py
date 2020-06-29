@@ -111,6 +111,32 @@ class TestDistributionPage(TestCaseWithFactory):
             )
         self.assertThat(view.render(), series_matches)
 
+    def test_distributionpage_search_oci_project_link_is_hidden(self):
+        # User can't see the +search-oci-project link if there are no
+        # available OCI projects.
+        admin = login_celebrity('admin')
+        browser = self.getUserBrowser(canonical_url(self.distro), user=admin)
+        matchers = Not(soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'link to search oci project', 'a',
+                attrs={'href': canonical_url(
+                    self.distro, view_name='+search-oci-project')},
+                text='Search for OCI Project')))
+        self.assertThat(browser.contents, matchers)
+
+    def test_distributionpage_search_oci_project_link_is_shown(self):
+        # User can see the +search-oci-project link if there are OCI projects.
+        self.factory.makeOCIProject(pillar=self.distro)
+        admin = login_celebrity('admin')
+        browser = self.getUserBrowser(canonical_url(self.distro), user=admin)
+        matchers = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'link to search oci project', 'a',
+                attrs={'href': canonical_url(
+                    self.distro, view_name='+search-oci-project')},
+                text='Search for OCI Project'))
+        self.assertThat(browser.contents, matchers)
+
     def test_distributionpage_addseries_link_noadmin(self):
         # A non-admin does not see the +addseries link nor the series
         # header (since there is no series yet).

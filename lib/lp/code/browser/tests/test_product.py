@@ -434,10 +434,25 @@ class TestProductOverviewOCIProject(TestCaseWithFactory):
 
     def test_displays_create_and_list_oci_project_link(self):
         product = self.factory.makeProduct()
+        self.factory.makeOCIProject(pillar=product)
 
         browser = self.getUserBrowser(
             canonical_url(product), user=product.owner)
         text = extract_text(find_tag_by_id(browser.contents, 'global-actions'))
 
+        # Search link should be available because we have an OCI project
+        # created.
         self.assertIn("Search for OCI Project", text)
+        self.assertIn("Create an OCI Project", text)
+
+    def test_show_create_and_hide_list_oci_project_link(self):
+        product = self.factory.makeProduct()
+
+        browser = self.getUserBrowser(
+            canonical_url(product), user=product.owner)
+        text = extract_text(find_tag_by_id(browser.contents, 'global-actions'))
+
+        # Search link should not be available, since do not have any OCI
+        # project created.
+        self.assertNotIn("Search for OCI Project", text)
         self.assertIn("Create an OCI Project", text)

@@ -105,6 +105,7 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.feeds.browser import FeedsMixin
@@ -323,8 +324,13 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
         return Link('+new-oci-project', text, icon='add')
 
     def search_oci_project(self):
+        pillar = self.context
+        oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
+            pillar, u'')
         text = 'Search for OCI Project'
-        return Link('+search-oci-project', text, icon='info')
+        link = Link('+search-oci-project', text, icon='info')
+        link.enabled = not oci_projects.is_empty()
+        return link
 
     @cachedproperty
     def links(self):
