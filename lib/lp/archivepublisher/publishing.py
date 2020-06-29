@@ -1427,7 +1427,7 @@ class Publisher(object):
             {"md5sum": {"md5sum": ..., "size": ..., "name": ...}}), or None
             if the file could not be found.
         """
-        open_func = open
+        open_func = partial(open, mode='rb')
         full_name = os.path.join(
             self._config.distsroot, suite, subpath or '.',
             real_file_name or file_name)
@@ -1453,7 +1453,7 @@ class Publisher(object):
             for archive_hash in archive_hashes}
         size = 0
         with open_func(full_name) as in_file:
-            for chunk in iter(lambda: in_file.read(256 * 1024), ""):
+            for chunk in iter(lambda: in_file.read(256 * 1024), b""):
                 for hashobj in hashes.values():
                     hashobj.update(chunk)
                 size += len(chunk)
@@ -1569,7 +1569,7 @@ class DirectoryHash:
             (checksum_file, archive_hash.hash_factory())
             for (_, checksum_file, archive_hash) in self.checksum_hash]
         with open(path, 'rb') as in_file:
-            for chunk in iter(lambda: in_file.read(256 * 1024), ""):
+            for chunk in iter(lambda: in_file.read(256 * 1024), b""):
                 for (checksum_file, hashobj) in hashes:
                     hashobj.update(chunk)
 
