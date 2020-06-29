@@ -5,12 +5,13 @@
 
 __metaclass__ = type
 
-from cStringIO import StringIO
 import hashlib
+import io
 import os.path
 import time
 
 from mock import patch
+import six
 from swiftclient import client as swiftclient
 import transaction
 
@@ -52,7 +53,7 @@ class TestFeedSwift(TestCase):
         # considered potential in-progress uploads.
         the_past = time.time() - 25 * 60 * 60
         self.librarian_client = LibrarianClient()
-        self.contents = [str(i) * i for i in range(1, 5)]
+        self.contents = [str(i).encode('ASCII') * i for i in range(1, 5)]
         self.lfa_ids = [
             self.add_file('file_{0}'.format(i), content, when=the_past)
             for i, content in enumerate(self.contents)]
@@ -71,7 +72,7 @@ class TestFeedSwift(TestCase):
     @write_transaction
     def add_file(self, name, content, when=None, content_type='text/plain'):
         lfa_id = self.librarian_client.addFile(
-            name=name, size=len(content), file=StringIO(content),
+            name=name, size=len(content), file=io.BytesIO(content),
             contentType=content_type)
         if when is None:
             when = 0  # Very very old
@@ -190,7 +191,8 @@ class TestFeedSwift(TestCase):
         # to be done in multiple chunks, but small enough that it is
         # stored in Swift as a single object.
         size = 512 * 1024  # 512KB
-        expected_content = ''.join(chr(i % 256) for i in range(0, size))
+        expected_content = b''.join(
+            six.int2byte(i % 256) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
 
         # Data round trips when served from disk.
@@ -205,7 +207,8 @@ class TestFeedSwift(TestCase):
         # stored in Swift as a single object.
         size = LibrarianStorage.CHUNK_SIZE * 50
         self.assertTrue(size > 1024 * 1024)
-        expected_content = ''.join(chr(i % 256) for i in range(0, size))
+        expected_content = b''.join(
+            six.int2byte(i % 256) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
         lfc = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id).content
 
@@ -227,7 +230,8 @@ class TestFeedSwift(TestCase):
         # stored in Swift as a single object.
         size = LibrarianStorage.CHUNK_SIZE * 50 + 1
         self.assertTrue(size > 1024 * 1024)
-        expected_content = ''.join(chr(i % 256) for i in range(0, size))
+        expected_content = b''.join(
+            six.int2byte(i % 256) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
         lfc = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id).content
 
@@ -246,7 +250,8 @@ class TestFeedSwift(TestCase):
         # it as multiple objects plus a manifest.
         size = LibrarianStorage.CHUNK_SIZE * 50
         self.assertTrue(size > 1024 * 1024)
-        expected_content = ''.join(chr(i % 256) for i in range(0, size))
+        expected_content = b''.join(
+            six.int2byte(i % 256) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
         lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id)
         lfc = lfa.content
@@ -269,7 +274,7 @@ class TestFeedSwift(TestCase):
         # magic manifest header is set correctly.
         container, name = swift.swift_location(lfc.id)
         headers, obj = swift_client.get_object(container, name)
-        self.assertEqual(obj, '')
+        self.assertEqual(obj, b'')
 
         # The segments we expect are all in their expected locations.
         _, obj1 = swift_client.get_object(container, '{0}/0000'.format(name))
@@ -288,62 +293,62 @@ class TestHashStream(TestCase):
 
     def test_read(self):
         empty_md5 = 'd41d8cd98f00b204e9800998ecf8427e'
-        s = swift.HashStream(StringIO('make me a coffee'))
+        s = swift.HashStream(io.BytesIO(b'make me a coffee'))
         self.assertEqual(s.hash.hexdigest(), empty_md5)
         data = s.read()
-        self.assertEqual(data, 'make me a coffee')
+        self.assertEqual(data, b'make me a coffee')
         self.assertEqual(s.hash.hexdigest(),
                          '17dfd3e9f99a2260552e898406c696e9')
 
     def test_partial_read(self):
         empty_sha1 = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
         s = swift.HashStream(
-            StringIO('make me another coffee'), hash_factory=hashlib.sha1)
+            io.BytesIO(b'make me another coffee'), hash_factory=hashlib.sha1)
         self.assertEqual(s.hash.hexdigest(), empty_sha1)
         chunk = s.read(4)
-        self.assertEqual(chunk, 'make')
+        self.assertEqual(chunk, b'make')
         self.assertEqual(s.hash.hexdigest(),
                          '5821eb27d7b71c9078000da31a5a654c97e401b9')
         chunk = s.read()
-        self.assertEqual(chunk, ' me another coffee')
+        self.assertEqual(chunk, b' me another coffee')
         self.assertEqual(s.hash.hexdigest(),
                          '8c826e573016ce05f3968044f82507b46fd2aa93')
 
     def test_limited_length(self):
-        base_stream = StringIO('make me a coffee')
+        base_stream = io.BytesIO(b'make me a coffee')
         s = swift.HashStream(base_stream, length=8)
         chunk = s.read(4)
-        self.assertEqual(chunk, 'make')
+        self.assertEqual(chunk, b'make')
         self.assertEqual(s.hash.hexdigest(),
                          '099dafc678df7d266c25f95ccf6cde22')
         chunk = s.read(8)
-        self.assertEqual(chunk, ' me ')
+        self.assertEqual(chunk, b' me ')
         self.assertEqual(s.hash.hexdigest(),
                          '10a0334e435b75f35b1923842bd87f81')
-        self.assertEqual(s.read(), '')
+        self.assertEqual(s.read(), b'')
         self.assertEqual(s.tell(), 8)
         self.assertEqual(base_stream.tell(), 8)
 
     def test_tell(self):
-        s = swift.HashStream(StringIO('hurry up with that coffee'))
+        s = swift.HashStream(io.BytesIO(b'hurry up with that coffee'))
         self.assertEqual(s.tell(), 0)
         s.read(4)
         self.assertEqual(s.tell(), 4)
 
     def test_seek(self):
-        s = swift.HashStream(StringIO('hurry up with that coffee'))
+        s = swift.HashStream(io.BytesIO(b'hurry up with that coffee'))
         s.seek(0)
         self.assertEqual(s.tell(), 0)
         s.seek(6)
         self.assertEqual(s.tell(), 6)
         chunk = s.read()
-        self.assertEqual(chunk, 'up with that coffee')
+        self.assertEqual(chunk, b'up with that coffee')
         self.assertEqual(s.hash.hexdigest(),
                          '0687b12af46824e3584530c5262fed36')
 
         # Seek also must reset the hash.
         s.seek(2)
         chunk = s.read(3)
-        self.assertEqual(chunk, 'rry')
+        self.assertEqual(chunk, b'rry')
         self.assertEqual(s.hash.hexdigest(),
                          '35cd51ccd493b67542201d20b6ed7db9')
