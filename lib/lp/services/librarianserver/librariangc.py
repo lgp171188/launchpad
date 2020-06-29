@@ -101,7 +101,7 @@ def open_stream(content_id):
 
 def sha1_file(content_id):
     file = open_stream(content_id)
-    chunks_iter = iter(lambda: file.read(STREAM_CHUNK_SIZE), '')
+    chunks_iter = iter(lambda: file.read(STREAM_CHUNK_SIZE), b'')
     length = 0
     hasher = hashlib.sha1()
     for chunk in chunks_iter:
