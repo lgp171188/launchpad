@@ -54,8 +54,8 @@ __all__ = [
     ]
 
 
+import io
 import re
-from StringIO import StringIO
 from textwrap import dedent
 
 from lazr.restful.fields import Reference
@@ -698,7 +698,7 @@ class BaseImageUpload(Bytes):
             raise LaunchpadValidationError(_(dedent("""
                 This image exceeds the maximum allowed size in bytes.""")))
         try:
-            pil_image = PIL.Image.open(StringIO(image))
+            pil_image = PIL.Image.open(io.BytesIO(image))
         except (IOError, ValueError):
             raise LaunchpadValidationError(_(dedent("""
                 The file uploaded was not recognized as an image; please
