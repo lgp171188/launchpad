@@ -339,8 +339,9 @@ class TestProductView(BrowserTestCase):
             'meta_noindex', 'meta', attrs={
                 'name': 'robots', 'content': 'noindex,nofollow'})
 
-    def test_robots_noindex_for_probationary_products(self):
-        # Probationary project pages should have noindex meta tag for robots.
+    def test_robots_noindex_for_probationary_product_owners(self):
+        # The index page for a project with a probationary owner should have
+        # noindex meta tag for robots.
         product = removeSecurityProxy(self.factory.makeProduct())
         owner = product.owner
         with person_logged_in(owner):
@@ -349,7 +350,8 @@ class TestProductView(BrowserTestCase):
             browser.contents, HTMLContains(self.tag_meta_noindex))
 
     def test_robots_without_noindex_for_valid_products(self):
-        # Probationary project page shouldn't have noindex meta tag for robots.
+        # The index page for a project with a non-probationary owner shouldn't
+        # have noindex meta tag for robots.
         owner = self.factory.makePerson(karma=15)
         product = removeSecurityProxy(self.factory.makeProduct(owner=owner))
         with person_logged_in(owner):
