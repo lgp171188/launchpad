@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -48,6 +48,7 @@ class SystemErrorView(LaunchpadView):
     # Override this in subclasses.  A value of None means "don't set this"
     response_code = http_client.INTERNAL_SERVER_ERROR
 
+    show_opengraph_meta = False
     show_tracebacks = False
     debugging = False
     specialuser = False
