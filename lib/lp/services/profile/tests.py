@@ -394,7 +394,7 @@ class BaseRequestEndHandlerTest(BaseTest):
 
     def getAddedResponse(self, request,
                          start=EXAMPLE_HTML_START, end=EXAMPLE_HTML_END):
-        output = request.response.consumeBody()
+        output = request.response.consumeBody().decode('UTF-8')
         return output[len(start):-len(end)]
 
     def getMemoryLog(self):
@@ -590,7 +590,7 @@ class TestBothProfilersRequestEndHandler(BaseRequestEndHandlerTest):
         # to verify that these two files are different.
         data = []
         for filename in self.getAllProfilePaths():
-            with open(filename) as f:
+            with open(filename, 'rb') as f:
                 data.append(f.read())
         self.assertEqual(2, len(data))
         self.assertNotEqual(data[0], data[1])
@@ -797,7 +797,8 @@ def test_suite():
     suite = unittest.TestSuite()
 
     doctest = LayeredDocFileSuite(
-        './profiling.txt', setUp=setUp, tearDown=tearDown,
+        './profiling.txt',
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadFunctionalLayer, stdout_logging_level=logging.WARNING)
     suite.addTest(doctest)
     suite.addTest(unittest.TestLoader().loadTestsFromName(__name__))
