@@ -940,6 +940,10 @@ class ProductDownloadFileMixin:
 class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
                   FeedsMixin, ProductDownloadFileMixin):
 
+    @cachedproperty
+    def is_probationary_or_invalid_project(self):
+        return not self.context.active or self.context.owner.is_probationary
+
     @property
     def maintainer_widget(self):
         return InlinePersonEditPickerWidget(
