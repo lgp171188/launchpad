@@ -384,6 +384,16 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         return urlunsplit(url)
 
     @property
+    def git_ssh_url_non_owner(self):
+        """The git+ssh:// URL for this repository, adjusted for this user.
+        The user is not the owner of the repository."""
+        base_url = urlsplit(self.git_ssh_url)
+        url = list(base_url)
+        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        url[2] = url[2].replace(self.context.owner.name, self.user.name)
+        return urlunsplit(url)
+
+    @property
     def user_can_push(self):
         """Whether the user can push to this branch."""
         return (

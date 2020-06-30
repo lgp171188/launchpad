@@ -77,17 +77,32 @@
 
       <tal:cannot-push condition="not:view/user_can_push">
         <tal:individual condition="not:context/owner/is_team">
-          You cannot push to this <tal:kind replace="kind" />. Only
+          You cannot push directly to this <tal:kind replace="kind" />. Only
           <a tal:attributes="href context/owner/fmt:url"
              tal:content="context/owner/displayname">Person</a>
           can push to this <tal:kind replace="kind" />.
         </tal:individual>
         <tal:team condition="context/owner/is_team">
-          You cannot push to this <tal:kind replace="kind" />. Members of
+          You cannot push directly to this <tal:kind replace="kind" />. Members of
           <a tal:attributes="href context/owner/fmt:url"
              tal:content="context/owner/displayname">Team</a>
           can push to this <tal:kind replace="kind" />.
         </tal:team>
+          <dl id="push-url">
+            <dt>To fork this repository and propose fixes from there, push to this repository:</dt>
+            <dd>
+              <tt class="command">
+              git push
+              <span class="ssh-url" tal:content="view/git_ssh_url_non_owner" />
+              <tal:branch condition="branch_name|nothing" replace="branch_name" />
+              </tt>
+            </dd>
+          </dl>
+          <p tal:condition="not:view/user/sshkeys" id="ssh-key-directions">
+            To authenticate with the Launchpad Git hosting service, you need to
+            <a tal:attributes="href string:${view/user/fmt:url}/+editsshkeys">
+              register an SSH key</a>.
+          </p>
       </tal:cannot-push>
     </tal:logged-in>
 
