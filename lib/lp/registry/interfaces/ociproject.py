@@ -55,8 +55,7 @@ from lp.services.fields import (
     PublicPersonChoice,
     )
 
-# XXX: pappacena 2020-04-20: It is ok to remove the feature flag since we
-# already have in place the correct permission check for this feature.
+
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 

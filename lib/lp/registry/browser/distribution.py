@@ -105,9 +105,13 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
     )
-from lp.registry.interfaces.ociproject import IOCIProjectSet
+from lp.registry.interfaces.ociproject import (
+    IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.features import getFeatureFlag
 from lp.services.feeds.browser import FeedsMixin
 from lp.services.geoip.helpers import (
     ipaddress_from_request,
@@ -320,16 +324,21 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
         return Link('+sharing', 'Sharing', icon='edit')
 
     def new_oci_project(self):
-        text = 'Create an OCI Project'
-        return Link('+new-oci-project', text, icon='add')
+        text = 'Create an OCI project'
+        link = Link('+new-oci-project', text, icon='add')
+        link.enabled = (
+            bool(getFeatureFlag(OCI_PROJECT_ALLOW_CREATE))
+            and self.context.canAdministerOCIProjects(self.user))
+        return link
 
     def search_oci_project(self):
-        pillar = self.context
         oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
-            pillar, u'')
-        text = 'Search for OCI Project'
+            self.context, u'')
+        text = 'Search for OCI project'
         link = Link('+search-oci-project', text, icon='info')
-        link.enabled = not oci_projects.is_empty()
+        link.enabled = (
+            bool(getFeatureFlag(OCI_PROJECT_ALLOW_CREATE))
+            and not oci_projects.is_empty())
         return link
 
     @cachedproperty

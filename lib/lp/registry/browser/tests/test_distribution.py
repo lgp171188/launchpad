@@ -21,7 +21,9 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
+from lp.registry.interfaces.ociproject import OCI_PROJECT_ALLOW_CREATE
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.services.webapp.publisher import RedirectionView
 from lp.testing import (
@@ -92,6 +94,7 @@ class TestDistributionPage(TestCaseWithFactory):
         self.simple_user = self.factory.makePerson()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: True}))
         self.useFixture(FakeLogger())
 
     def test_distributionpage_addseries_link(self):
@@ -121,7 +124,7 @@ class TestDistributionPage(TestCaseWithFactory):
                 'link to search oci project', 'a',
                 attrs={'href': canonical_url(
                     self.distro, view_name='+search-oci-project')},
-                text='Search for OCI Project')))
+                text='Search for OCI project')))
         self.assertThat(browser.contents, matchers)
 
     def test_distributionpage_search_oci_project_link_is_shown(self):
@@ -134,8 +137,52 @@ class TestDistributionPage(TestCaseWithFactory):
                 'link to search oci project', 'a',
                 attrs={'href': canonical_url(
                     self.distro, view_name='+search-oci-project')},
-                text='Search for OCI Project'))
+                text='Search for OCI project'))
         self.assertThat(browser.contents, matchers)
+
+    def test_distributionpage_oci_links_are_hidden_if_disabled_flag(self):
+        # User can't see OCI project create/search links if the feature flag
+        # is disabled.
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+        user = self.factory.makePerson()
+        browser = self.getUserBrowser(canonical_url(self.distro), user=user)
+
+        self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'link to search oci project', 'a',
+                attrs={'href': canonical_url(
+                    self.distro, view_name='+search-oci-project')},
+                text='Search for OCI project'))))
+
+        self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'link to create oci project', 'a',
+                attrs={'href': canonical_url(
+                    self.distro, view_name='+new-oci-project')},
+                text='Create an OCI project'))))
+
+    def test_distributionpage_oci_links_for_user_no_permission(self):
+        # User can't see OCI project create links if the the user
+        # doesn't have permission to create OCI projects.
+        self.factory.makeOCIProject(pillar=self.distro)
+        user = self.factory.makePerson()
+        browser = self.getUserBrowser(canonical_url(self.distro), user=user)
+
+        # User can see search link
+        self.assertThat(browser.contents, soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'link to search oci project', 'a',
+                attrs={'href': canonical_url(
+                    self.distro, view_name='+search-oci-project')},
+                text='Search for OCI project')))
+
+        # User cannot see "new-oci-project" link.
+        self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'link to create oci project', 'a',
+                attrs={'href': canonical_url(
+                    self.distro, view_name='+new-oci-project')},
+                text='Create an OCI project'))))
 
     def test_distributionpage_addseries_link_noadmin(self):
         # A non-admin does not see the +addseries link nor the series

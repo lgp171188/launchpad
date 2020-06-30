@@ -23,6 +23,8 @@ from lp.app.enums import (
 from lp.code.enums import BranchType
 from lp.code.interfaces.revision import IRevisionSet
 from lp.registry.enums import BranchSharingPolicy
+from lp.registry.interfaces.ociproject import OCI_PROJECT_ALLOW_CREATE
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.testing import (
     ANONYMOUS,
@@ -432,7 +434,11 @@ class TestProductOverviewOCIProject(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def test_displays_create_and_list_oci_project_link(self):
+    def setUp(self, user=ANONYMOUS):
+        super(TestProductOverviewOCIProject, self).setUp(user)
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: True}))
+
+    def test_displays_create_and_list_oci_project_link_for_owner(self):
         product = self.factory.makeProduct()
         self.factory.makeOCIProject(pillar=product)
 
@@ -442,10 +448,10 @@ class TestProductOverviewOCIProject(TestCaseWithFactory):
 
         # Search link should be available because we have an OCI project
         # created.
-        self.assertIn("Search for OCI Project", text)
-        self.assertIn("Create an OCI Project", text)
+        self.assertIn("Search for OCI project", text)
+        self.assertIn("Create an OCI project", text)
 
-    def test_show_create_and_hide_list_oci_project_link(self):
+    def test_show_create_and_hide_list_oci_project_link_for_owner(self):
         product = self.factory.makeProduct()
 
         browser = self.getUserBrowser(
@@ -454,5 +460,28 @@ class TestProductOverviewOCIProject(TestCaseWithFactory):
 
         # Search link should not be available, since do not have any OCI
         # project created.
-        self.assertNotIn("Search for OCI Project", text)
-        self.assertIn("Create an OCI Project", text)
+        self.assertNotIn("Search for OCI project", text)
+        self.assertIn("Create an OCI project", text)
+
+    def test_hide_all_oci_links_if_feature_flag_is_disabled(self):
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+        product = self.factory.makeProduct()
+
+        browser = self.getUserBrowser(
+            canonical_url(product), user=product.owner)
+        text = extract_text(find_tag_by_id(browser.contents, 'global-actions'))
+
+        self.assertNotIn("Search for OCI project", text)
+        self.assertNotIn("Create an OCI project", text)
+
+    def test_hide_create_oci_links_if_user_doesnt_have_permission(self):
+        product = self.factory.makeProduct()
+        self.factory.makeOCIProject(pillar=product)
+
+        user = self.factory.makePerson()
+        browser = self.getUserBrowser(canonical_url(product), user=user)
+        text = extract_text(find_tag_by_id(browser.contents, 'global-actions'))
+
+        # Allow searching, but not creating.
+        self.assertIn("Search for OCI project", text)
+        self.assertNotIn("Create an OCI project", text)
