@@ -7,6 +7,9 @@
 """
 Add full text indexes to the launchpad database
 """
+
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import _pythonpath
@@ -157,7 +160,7 @@ def sexecute(con, sql):
     SQL script. Otherwise execute on the DB.
     """
     if slonik_sql is not None:
-        print >> slonik_sql, dedent(sql + ';')
+        print(dedent(sql + ';'), file=slonik_sql)
     else:
         execute(con, sql)
 
