@@ -14,6 +14,7 @@ from datetime import (
     )
 
 import pytz
+from storm.store import Store
 from zope.component import getUtility
 
 from lp.registry.interfaces.personnotification import IPersonNotificationSet
@@ -74,9 +75,9 @@ class PersonNotificationManager:
             self.logger.info(
                 "Deleting %d old notification(s)." % to_delete.count())
             for notification in to_delete:
-                notification.destroySelf()
+                Store.of(notification).remove(notification)
             self.txn.commit()
         if extra_notifications is not None:
             for notification in extra_notifications:
-                notification.destroySelf()
+                Store.of(notification).remove(notification)
                 self.txn.commit()

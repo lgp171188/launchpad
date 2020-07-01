@@ -40,7 +40,7 @@ class TestPersonNotification(TestCaseWithFactory):
         # The to_addresses list is the user's preferred email address.
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, 'subject', 'body')
+            user, u'subject', u'body')
         email = '%s <%s>' % (
             user.displayname, removeSecurityProxy(user.preferredemail).email)
         self.assertEqual([email], notification.to_addresses)
@@ -51,7 +51,7 @@ class TestPersonNotification(TestCaseWithFactory):
         user = self.factory.makePerson()
         user.setPreferredEmail(None)
         notification = self.notification_set.addNotification(
-            user, 'subject', 'body')
+            user, u'subject', u'body')
         self.assertEqual([], notification.to_addresses)
         self.assertFalse(notification.can_send)
 
@@ -59,7 +59,7 @@ class TestPersonNotification(TestCaseWithFactory):
         # The to_addresses list is the team admin addresses.
         team = self.factory.makeTeam()
         notification = self.notification_set.addNotification(
-            team, 'subject', 'body')
+            team, u'subject', u'body')
         email = removeSecurityProxy(team.teamowner.preferredemail).email
         self.assertEqual([email], notification.to_addresses)
         self.assertTrue(notification.can_send)
@@ -84,7 +84,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     def test_sendNotifications_sent(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, 'subject', 'body')
+            user, u'subject', u'body')
         unsent = self.manager.sendNotifications()
         self.assertEqual(None, unsent)
         self.assertIsNotNone(notification.date_emailed)
@@ -92,7 +92,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     def test_sendNotifications_unsent(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, 'subject', 'body')
+            user, u'subject', u'body')
         user.setPreferredEmail(None)
         unsent = self.manager.sendNotifications()
         self.assertEqual([notification], unsent)
@@ -102,7 +102,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
         team = self.factory.makeTeam()
         self.assertIs(None, team.preferredemail)
         notification = self.notification_set.addNotification(
-            team, 'subject', 'body')
+            team, u'subject', u'body')
         unsent = self.manager.sendNotifications()
         self.assertEqual(None, unsent)
         self.assertIsNotNone(notification.date_emailed)
@@ -110,7 +110,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     def test_purgeNotifications_old(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, 'subject', 'body')
+            user, u'subject', u'body')
         age = timedelta(
             days=int(config.person_notification.retained_days) + 1)
         naked_notification = removeSecurityProxy(notification)
@@ -123,7 +123,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     def test_purgeNotifications_extra(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, 'subject', 'body')
+            user, u'subject', u'body')
         user.setPreferredEmail(None)
         self.manager.purgeNotifications(extra_notifications=[notification])
         notifcations = self.notification_set.getNotificationsToSend()
