@@ -519,9 +519,7 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
             product, u'')
         text = 'Search for OCI project'
         link = Link('+search-oci-project', text, icon='info')
-        link.enabled = (
-            bool(getFeatureFlag(OCI_PROJECT_ALLOW_CREATE))
-            and not oci_projects.is_empty())
+        link.enabled = not oci_projects.is_empty()
         return link
 
     @enabled_with_permission('launchpad.Driver')
