@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -49,8 +53,8 @@ def guess(s):
 
     ASCII is easy
 
-    >>> guess('hello')
-    u'hello'
+    >>> print(guess(b'hello'))
+    hello
 
     Unicode raises an exception to annoy lazy programmers. It should also
     catches bugs as if you have valid Unicode you shouldn't be going anywhere
@@ -63,18 +67,18 @@ def guess(s):
 
     UTF-8 is our best guess
 
-    >>> guess(u'100% Pure Beef\N{TRADE MARK SIGN}'.encode('UTF-8'))
-    u'100% Pure Beef\u2122'
+    >>> print(guess(u'100% Pure Beef\N{TRADE MARK SIGN}'.encode('UTF-8')))
+    100% Pure Beef™
 
     But we fall back to ISO-8859-1 if UTF-8 fails
 
     >>> u = u'Ol\N{LATIN SMALL LETTER E WITH ACUTE}'
     >>> u.encode('UTF-8') == u.encode('ISO-8859-1')
     False
-    >>> guess(u.encode('UTF-8'))
-    u'Ol\xe9'
-    >>> guess(u.encode('ISO-8859-1'))
-    u'Ol\xe9'
+    >>> print(guess(u.encode('UTF-8')))
+    Olé
+    >>> print(guess(u.encode('ISO-8859-1')))
+    Olé
 
     However, if the string contains ISO-8859-1 control characters, it is
     probably a CP1252 document (Windows).
@@ -82,22 +86,22 @@ def guess(s):
     >>> u = u'Show me the \N{EURO SIGN}'
     >>> u.encode('UTF-8') == u.encode('CP1252')
     False
-    >>> guess(u.encode('UTF-8'))
-    u'Show me the \u20ac'
-    >>> guess(u.encode('CP1252'))
-    u'Show me the \u20ac'
+    >>> print(guess(u.encode('UTF-8')))
+    Show me the €
+    >>> print(guess(u.encode('CP1252')))
+    Show me the €
 
     We also check for characters common in ISO-8859-15 that are uncommon
     in ISO-8859-1, and use ISO-8859-15 if they are found.
 
     >>> u = u'\N{LATIN SMALL LETTER S WITH CARON}'
-    >>> guess(u.encode('iso-8859-15'))
-    u'\u0161'
+    >>> print(guess(u.encode('iso-8859-15')))
+    š
 
     Strings with a BOM are unambiguous.
 
-    >>> guess(u'hello'.encode('UTF-16'))
-    u'hello'
+    >>> print(guess(u'hello'.encode('UTF-16')))
+    hello
 
     However, UTF-16 strings without a BOM will be interpreted as ISO-8859-1.
     I doubt this is a problem, as we are unlikely to see this except with
@@ -105,59 +109,60 @@ def guess(s):
     at the moment like ISO-2022-jp, BIG5, SHIFT-JIS etc. will be a bigger
     problem.
 
-    >>> guess(u'hello'.encode('UTF-16be'))
-    u'\x00h\x00e\x00l\x00l\x00o'
+    >>> guess(u'hello'.encode('UTF-16be')) == u'\x00h\x00e\x00l\x00l\x00o'
+    True
 
     '''
 
     # Calling this method with a Unicode argument indicates a hidden bug
     # that will bite you eventually -- StuartBishop 20050709
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         raise TypeError(
                 'encoding.guess called with Unicode string %r' % (s,)
                 )
 
     # Attempt to use an objects default Unicode conversion, for objects
     # that can encode themselves as ASCII.
-    try:
-        return unicode(s)
-    except UnicodeDecodeError:
-        pass
+    if not isinstance(s, bytes):
+        try:
+            return six.text_type(s)
+        except UnicodeDecodeError:
+            pass
 
     # Detect BOM
     try:
         for bom, encoding in _boms:
             if s.startswith(bom):
-                return unicode(s[len(bom):], encoding)
+                return six.text_type(s[len(bom):], encoding)
     except UnicodeDecodeError:
         pass
 
     # Try preferred encoding
     try:
-        return unicode(s, 'UTF-8')
+        return six.text_type(s, 'UTF-8')
     except UnicodeDecodeError:
         pass
 
     # If we have characters in this range, it is probably CP1252
-    if re.search(r"[\x80-\x9f]", s) is not None:
+    if re.search(br"[\x80-\x9f]", s) is not None:
         try:
-            return unicode(s, 'CP1252')
+            return six.text_type(s, 'CP1252')
         except UnicodeDecodeError:
             pass
 
     # If we have characters in this range, it is probably ISO-8859-15
-    if re.search(r"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s) is not None:
+    if re.search(br"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s) is not None:
         try:
-            return unicode(s, 'ISO-8859-15')
+            return six.text_type(s, 'ISO-8859-15')
         except UnicodeDecodeError:
             pass
 
     # Otherwise we default to ISO-8859-1
-    return unicode(s, 'ISO-8859-1', 'replace')
+    return six.text_type(s, 'ISO-8859-1', 'replace')
 
 
 def escape_nonascii_uniquely(bogus_string):
-    """Replace non-ascii characters with a hex representation.
+    r"""Replace non-ascii characters with a hex representation.
 
     This is mainly for preventing emails with invalid characters from causing
     oopses. The nonascii characters could have been removed or just converted
@@ -166,24 +171,16 @@ def escape_nonascii_uniquely(bogus_string):
     all the nonascii characters have been replaced with the same ascii
     character.
 
-    Unfortunately, all the strings below are actually part of this
-    function's docstring, so python processes the backslash once before
-    doctest, and then python processes it again when doctest runs the
-    test. This makes it confusing, since four backslashes will get
-    converted into a single ascii character.
-
-    >>> print len('\xa9'), len('\\xa9'), len('\\\\xa9')
-    1 1 4
-    >>> print escape_nonascii_uniquely('hello \xa9')
-    hello \\xa9
-    >>> print escape_nonascii_uniquely('hello \\xa9')
-    hello \\xa9
+    >>> print(len('\xa9'), len('\\xa9'))
+    1 4
+    >>> print(escape_nonascii_uniquely('hello \xa9'))
+    hello \xa9
 
     This string only has ascii characters, so escape_nonascii_uniquely()
     actually has no effect.
 
-    >>> print escape_nonascii_uniquely('hello \\\\xa9')
-    hello \\xa9
+    >>> print(escape_nonascii_uniquely('hello \\xa9'))
+    hello \xa9
     """
     nonascii_regex = re.compile(r'[\200-\377]')
 
@@ -198,19 +195,22 @@ def escape_nonascii_uniquely(bogus_string):
 
 
 def is_ascii_only(string):
-    """Ensure that the string contains only ASCII characters.
+    r"""Ensure that the string contains only ASCII characters.
 
         >>> is_ascii_only(u'ascii only')
         True
-        >>> is_ascii_only('ascii only')
+        >>> is_ascii_only(b'ascii only')
         True
-        >>> is_ascii_only('\xf4')
+        >>> is_ascii_only(b'\xf4')
         False
         >>> is_ascii_only(u'\xf4')
         False
     """
     try:
-        string.encode('ascii')
+        if isinstance(string, bytes):
+            string.decode('ascii')
+        else:
+            string.encode('ascii')
     except UnicodeError:
         return False
     else:
