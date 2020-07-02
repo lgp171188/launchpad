@@ -295,7 +295,8 @@ setproctitle==1.1.7
 setuptools-git==1.2
 setuptools-scm==3.4.3
 simplejson==3.8.2
-SimpleTAL==4.3
+SimpleTAL==4.3; python_version < "3"
+SimpleTAL==5.2; python_version >= "3"
 soupmatchers==0.4
 soupsieve==1.9
 # lp:~launchpad-committers/storm/lp
