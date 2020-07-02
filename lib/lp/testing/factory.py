@@ -455,7 +455,7 @@ class ObjectFactory(
             don't care.
         :return: A hexadecimal string, with 'a'-'f' in lower case.
         """
-        hex_number = '%x' % self.getUniqueInteger()
+        hex_number = u'%x' % self.getUniqueInteger()
         if digits is not None:
             hex_number = hex_number.zfill(digits)
         return hex_number
@@ -4205,7 +4205,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if fingerprint is None:
             fingerprint = self.getUniqueUnicode('fingerprint')
         if public_key is None:
-            public_key = self.getUniqueHexString(64)
+            public_key = self.getUniqueHexString(64).encode('ASCII')
         store = IMasterStore(SigningKey)
         signing_key = SigningKey(
             key_type=key_type, fingerprint=fingerprint, public_key=public_key,
