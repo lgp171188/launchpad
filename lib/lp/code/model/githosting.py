@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the Git hosting service."""
@@ -90,13 +90,15 @@ class GitHostingClient:
     def _delete(self, path, **kwargs):
         return self._request("delete", path, **kwargs)
 
-    def create(self, path, clone_from=None):
+    def create(self, path, clone_from=None, async_create=False):
         """See `IGitHostingClient`."""
         try:
             if clone_from:
                 request = {"repo_path": path, "clone_from": clone_from}
             else:
                 request = {"repo_path": path}
+            if async_create:
+                request['async'] = True
             self._post("/repo", json=request)
         except requests.RequestException as e:
             raise GitRepositoryCreationFault(

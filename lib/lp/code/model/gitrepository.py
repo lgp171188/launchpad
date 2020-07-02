@@ -359,7 +359,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         self.owner_default = False
         self.target_default = False
 
-    def _createOnHostingService(self, clone_from_repository=None):
+    def _createOnHostingService(
+            self, clone_from_repository=None, async_create=False):
         """Create this repository on the hosting service."""
         hosting_path = self.getInternalPath()
         if clone_from_repository is not None:
@@ -367,7 +368,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         else:
             clone_from_path = None
         getUtility(IGitHostingClient).create(
-            hosting_path, clone_from=clone_from_path)
+            hosting_path, clone_from=clone_from_path,
+            async_create=async_create)
 
     @property
     def valid_webhook_event_types(self):
