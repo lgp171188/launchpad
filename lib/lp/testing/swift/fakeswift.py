@@ -102,7 +102,7 @@ class FakeKeystone(resource.Resource):
 
     def getChild(self, path, request):
         """See `twisted.web.resource.Resource.getChild`."""
-        if path in ("v2.0", "tokens"):
+        if path in (b"v2.0", b"tokens"):
             return self
         return resource.NoResource("Not a valid keystone URL.")
 
@@ -522,7 +522,7 @@ class FakeSwift(resource.Resource):
 
     def getChild(self, name, request):
         """See `twisted.web.resource.Resource.getChild`."""
-        if name == "v1" or name.startswith("AUTH_"):
+        if name == b"v1" or name.startswith(b"AUTH_"):
             return self
 
         resource = self._getResource(name, request)
@@ -556,8 +556,8 @@ class Root(resource.Resource):
         self.keystone = FakeKeystone(
             self, allow_default_access=allow_default_access)
         self.swift = FakeSwift(self)
-        self.putChild("keystone", self.keystone)
-        self.putChild("swift", self.swift)
+        self.putChild(b"keystone", self.keystone)
+        self.putChild(b"swift", self.swift)
 
     def getCatalog(self, tenant, request):
         """Compute service catalog for the given request and tenant."""

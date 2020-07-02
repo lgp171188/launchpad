@@ -91,8 +91,8 @@ def setUpListener(uploadPort, webPort, restricted):
         librarianService)
     root = fatweb.LibraryFileResource(
         librarian_storage, upstreamHost, upstreamPort)
-    root.putChild('search', fatweb.DigestSearchResource(librarian_storage))
-    root.putChild('robots.txt', fatweb.robotsTxt)
+    root.putChild(b'search', fatweb.DigestSearchResource(librarian_storage))
+    root.putChild(b'robots.txt', fatweb.robotsTxt)
     site = server.Site(root)
     site.displayTracebacks = False
     strports.service("tcp:%d" % webPort, site).setServiceParent(
