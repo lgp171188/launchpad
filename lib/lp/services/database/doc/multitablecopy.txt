@@ -70,7 +70,7 @@ in any old order.  We must follow the list of tables we gave, in that order:
     >>> numeric_holding_table = copier.getHoldingTableName('numeric')
     >>> copier.extract('numeric', where_clause="n <= 2")
     >>> cur.execute("SELECT count(*) FROM %s" % numeric_holding_table)
-    >>> print cur.fetchall()[0][0]
+    >>> print(cur.fetchall()[0][0])
     2
 
 Since we haven't extracted all tables yet, we're not allowed to move to the
@@ -93,14 +93,14 @@ We now have two holding tables, one with some of the values from numeric, the
 other with all values from textual:
 
     >>> cur.execute("SELECT count(*) FROM %s" % numeric_holding_table)
-    >>> print cur.fetchall()[0][0]
+    >>> print(cur.fetchall()[0][0])
     2
 
     >>> textual_holding_table = copier.getHoldingTableName('textual')
     >>> cur.execute("SELECT count(*) FROM %s" % textual_holding_table)
-    >>> print cur.fetchall()[0][0]
+    >>> print(cur.fetchall()[0][0])
     3
-    >>> print len(textual_values)
+    >>> print(len(textual_values))
     3
 
 Meanwhile we're still free to play with our original table, and manipulate the
@@ -133,14 +133,14 @@ We now see the extra data in the original tables:
 
     >>> cur.execute("SELECT n FROM numeric ORDER BY n")
     >>> for row in cur.fetchall():
-    ...     print row[0]
+    ...     print(row[0])
     1
     2
     3
     4
     5
     >>> cur.execute("SELECT count(*) FROM textual")
-    >>> print cur.fetchall()[0][0]
+    >>> print(cur.fetchall()[0][0])
     7
 
 And the holding tables are gone.
@@ -179,7 +179,7 @@ tables that are being copied.
     ...     WHERE textual = textual.id
     ...     ORDER BY n""")
     >>> for numeric, textual in cur.fetchall():
-    ...     print numeric, textual
+    ...     print(numeric, textual)
     1   one
     2   two
     3   three
@@ -207,11 +207,11 @@ from numeric that referred to it into a holding table for numeric.
 
     >>> cur.execute("SELECT t FROM %s" % textual_holding_table)
     >>> for row in cur.fetchall():
-    ...     print row[0]
+    ...     print(row[0])
     many
     >>> cur.execute("SELECT n FROM %s" % numeric_holding_table)
     >>> for row in cur.fetchall():
-    ...     print row[0]
+    ...     print(row[0])
     5
     6
     7
@@ -226,7 +226,7 @@ from numeric that referred to it into a holding table for numeric.
     ...     FROM numeric,textual
     ...     WHERE numeric.textual=textual.id""")
     >>> for numeric, textual in cur.fetchall():
-    ...     print numeric, textual
+    ...     print(numeric, textual)
     1   one
     2   two
     3   three
@@ -252,7 +252,7 @@ pass a where_clause argument of "false":
     >>> cur = cursor()
     >>> cur.execute(
     ...     "SELECT count(*) FROM %s" % copier.getHoldingTableName('textual'))
-    >>> print cur.fetchone()[0]
+    >>> print(cur.fetchone()[0])
     0
 
 After that, the table has been extracted and you can merrily proceed.  Of
@@ -263,7 +263,7 @@ skipped table, they will not have any rows extracted either.
 
     >>> cur.execute(
     ...     "SELECT count(*) FROM %s" % copier.getHoldingTableName('numeric'))
-    >>> print cur.fetchone()[0]
+    >>> print(cur.fetchone()[0])
     0
 
     >>> copier.dropHoldingTables()
@@ -293,7 +293,7 @@ up with incomplete data that should be deleted:
 
     >>> cur.execute("SELECT t, count(*) FROM textual GROUP BY t ORDER BY t")
     >>> for textual, count in cur.fetchall():
-    ...     print textual, count
+    ...     print(textual, count)
     lots     1
     many     1
     one      2
@@ -341,7 +341,7 @@ original words twice.
 
     >>> cur.execute("SELECT t, count(*) FROM textual GROUP BY t ORDER BY t")
     >>> for textual, count in cur.fetchall():
-    ...     print textual, count
+    ...     print(textual, count)
     lots   2
     many   2
     one    4
@@ -381,7 +381,7 @@ This time we run to completion without problems.
     ...     LEFT JOIN textual tt on nt.textual = tt.id
     ...     ORDER BY n""")
     >>> for numeric, textual in cur.fetchall():
-    ...     print numeric, (textual or "null")
+    ...     print(numeric, (textual or "null"))
     1    one
     2    two
     3    three
@@ -413,7 +413,7 @@ This time we run to completion without problems.
     ...     LEFT JOIN textual tt on nt.textual = tt.id
     ...     ORDER BY n""")
     >>> for numeric, textual in cur.fetchall():
-    ...     print numeric, (textual or "null")
+    ...     print(numeric, (textual or "null"))
     1    one
     2    two
     3    three
@@ -446,7 +446,7 @@ value also occurs in another table.
     >>> holding_table = copier.getHoldingTableName('numeric')
     >>> cur.execute("SELECT n FROM %s ORDER BY n" % holding_table)
     >>> for number, in cur.fetchall():
-    ...     print number
+    ...     print(number)
     2
     4
     6
@@ -466,7 +466,7 @@ table names get uncomfortably long.
     ...     external_joins=['double dub', 'double quad'])
     >>> cur.execute("SELECT n FROM %s ORDER BY n" % holding_table)
     >>> for number, in cur.fetchall():
-    ...     print number
+    ...     print(number)
     4
     12
 
@@ -506,7 +506,7 @@ textual.
     ...         has_id = "Yes"
     ...     else:
     ...         has_id = "No"
-    ...     print (textual or "null"), has_id
+    ...     print((textual or "null"), has_id)
     one   Yes
     two   No
 
@@ -531,7 +531,7 @@ valid new_id in the textual holding table.
     ...     FROM %s num JOIN %s AS text ON num.textual = text.new_id
     ...     """ % (numeric_holding_table, textual_holding_table))
     >>> for n, t in cur.fetchall():
-    ...     print n, t
+    ...     print(n, t)
     1   one
     2   two
 
@@ -558,7 +558,7 @@ Only the non-inert extracted rows will be copied.
     ...     ORDER BY t
     ...     """)
     >>> for t, count in cur.fetchall():
-    ...     print t, count
+    ...     print(t, count)
     one  2
 
 However, all extracted rows of the referring table are copied, regardless of
@@ -572,7 +572,7 @@ whether they point to an inert or a non-inert row in the first table.
     ...     ORDER BY n
     ...     """)
     >>> for n, count in cur.fetchall():
-    ...     print n, count
+    ...     print(n, count)
     1   2
     2   2
 
@@ -596,10 +596,10 @@ being poured from and the name of the source table that data is being poured
 back into.
 
     >>> def textual_prepour(holding_table, source_table):
-    ...     print "Pouring textual"
+    ...     print("Pouring textual")
 
     >>> def numeric_prepour(holding_table, source_table):
-    ...     print "Pouring numeric"
+    ...     print("Pouring numeric")
 
 "Batch preparation" callbacks will be called at the beginning of every batch
 of data that is poured.  Each invocation runs in the same transaction as the
@@ -611,8 +611,8 @@ poured.
     >>> def textual_batch(
     ...     holding_table, source_table, batch_size, lowest_id, highest_id):
     ...     """Print information about each batch of textual being poured."""
-    ...     print "Pouring text from %s to %s" % (
-    ...         holding_table, source_table)
+    ...     print("Pouring text from %s to %s" % (
+    ...         holding_table, source_table))
 
     >>> copier = MultiTableCopy(
     ...     'test', ['textual', 'numeric'], minimum_batch_size=1)
@@ -626,8 +626,8 @@ other callbacks on other tables.
     >>> def numeric_batch(
     ...     holding_table, source_table, batch_size, lowest_id, highest_id):
     ...     """Print information about each batch of numeric being poured."""
-    ...     print "Pouring numbers from %s to %s" % (
-    ...         holding_table, source_table)
+    ...     print("Pouring numbers from %s to %s" % (
+    ...         holding_table, source_table))
 
     >>> copier.extract(
     ...     'numeric', joins=['textual'],

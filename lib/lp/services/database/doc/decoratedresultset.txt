@@ -49,7 +49,7 @@ definition), so all the normal methods can be used. Iterating over the
 decorated result set produces the decorated results:
 
     >>> for dist in decorated_result_set:
-    ...     print dist
+    ...     print(dist)
     Dist name is: debian
     Dist name is: gentoo
     ...
@@ -58,7 +58,7 @@ decorated result set produces the decorated results:
 Splicing works as normal:
 
     >>> for dist in decorated_result_set[1:3]:
-    ...     print dist
+    ...     print(dist)
     Dist name is: gentoo
     Dist name is: guadalinex
 
@@ -68,7 +68,7 @@ decorated results:
     >>> decorated_result_set.config(return_both=True)
     <lp.services.database.decoratedresultset.DecoratedResultSet object at ...>
     >>> for dist in decorated_result_set:
-    ...     print dist
+    ...     print(dist)
     (<Distribution 'Debian' (debian)>, u'Dist name is: debian')
     (<Distribution 'Gentoo' (gentoo)>, u'Dist name is: gentoo')
     ...
@@ -81,7 +81,7 @@ This works even if there are multiple levels:
     >>> drs_squared = DecoratedResultSet(
     ...     decorated_result_set, lambda x: len(x)).config(return_both=True)
     >>> for dist in drs_squared:
-    ...     print dist
+    ...     print(dist)
     (<Distribution 'Debian' (debian)>, 20)
     (<Distribution 'Gentoo' (gentoo)>, 20)
     ...
@@ -133,7 +133,7 @@ bulk_decorator argument permits operations to be performed over large
 chunks of results at once.
 
     >>> def all_ones(rows):
-    ...     print "that's a chunk of %d" % len(rows)
+    ...     print("that's a chunk of %d" % len(rows))
     ...     return (1 for row in rows)
     >>> drs = DecoratedResultSet(results, bulk_decorator=all_ones)
     >>> list(drs)
@@ -190,9 +190,9 @@ DecoratedResultSet can inform its hooks about slice data if slice_info=True is
 passed.
 
     >>> def pre_iter(rows, slice):
-    ...     print "pre iter", len(rows), slice.start, slice.stop
+    ...     print("pre iter", len(rows), slice.start, slice.stop)
     >>> def decorate(row, row_index):
-    ...     print "row", row.id, row_index
+    ...     print("row", row.id, row_index)
     >>> _ = result_set.order_by(Distribution.id)
     >>> drs = DecoratedResultSet(
     ...     result_set, decorate, pre_iter, slice_info=True)
