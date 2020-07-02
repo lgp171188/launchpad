@@ -12,6 +12,7 @@ __all__ = [
     ]
 
 from collections import defaultdict
+from functools import reduce
 
 from storm.expr import (
     And,

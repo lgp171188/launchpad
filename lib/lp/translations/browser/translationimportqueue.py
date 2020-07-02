@@ -13,6 +13,7 @@ __all__ = [
     'TranslationImportQueueView',
     ]
 
+from functools import reduce
 import os
 
 from lazr.restful.interface import copy_field

@@ -11,6 +11,8 @@ __all__ = [
     'search_bugs',
     ]
 
+from functools import reduce
+
 from lazr.enum import BaseItem
 from storm.expr import (
     Alias,
