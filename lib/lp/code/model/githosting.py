@@ -98,7 +98,12 @@ class GitHostingClient:
             else:
                 request = {"repo_path": path}
             if async_create:
+                # XXX pappacena 2020-07-02: async forces to clone_refs
+                # because it's only used in situations where this is
+                # desirable for now. We might need to add "clone_refs" as
+                # parameter in the future.
                 request['async'] = True
+                request['clone_refs'] = clone_from is not None
             self._post("/repo", json=request)
         except requests.RequestException as e:
             raise GitRepositoryCreationFault(

@@ -1704,13 +1704,28 @@ class GitRepositorySet:
 
     def new(self, repository_type, registrant, owner, target, name,
             information_type=None, date_created=DEFAULT, description=None,
-            with_hosting=False):
+            with_hosting=False, async_hosting=False):
         """See `IGitRepositorySet`."""
         namespace = get_git_namespace(target, owner)
         return namespace.createRepository(
             repository_type, registrant, name,
             information_type=information_type, date_created=date_created,
-            description=description, with_hosting=with_hosting)
+            description=description, with_hosting=with_hosting,
+            async_hosting=async_hosting)
+
+    def fork(self, origin, user):
+        repository = self.new(
+            repository_type=GitRepositoryType.HOSTED,
+            registrant=user, owner=user, target=origin.target,
+            name=origin.name,
+            information_type=origin.information_type,
+            date_created=UTC_NOW, description=origin.description,
+            with_hosting=True, async_hosting=True)
+        # XXX pappacena 2020-07-02: move this status change to be a
+        # parameter on self.new / namespace.createRepository.
+        removeSecurityProxy(repository).status = GitRepositoryStatus.CREATING
+        IStore(repository).flush()
+        return repository
 
     def getByPath(self, user, path):
         """See `IGitRepositorySet`."""

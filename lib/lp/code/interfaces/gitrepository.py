@@ -964,6 +964,14 @@ class IGitRepositorySet(Interface):
         :param with_hosting: Create the repository on the hosting service.
         """
 
+    def fork(origin, user):
+        """Fork a repository to the given user's account.
+
+        :param origin: The original GitRepository.
+        :param user: The user forking the repository.
+        :return: The newly created GitRepository."""
+        pass
+
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @call_with(user=REQUEST_USER)
     @operation_parameters(

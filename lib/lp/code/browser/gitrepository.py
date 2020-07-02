@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository views."""
@@ -98,7 +98,10 @@ from lp.code.errors import (
     )
 from lp.code.interfaces.gitnamespace import get_git_namespace
 from lp.code.interfaces.gitref import IGitRefBatchNavigator
-from lp.code.interfaces.gitrepository import IGitRepository
+from lp.code.interfaces.gitrepository import (
+    IGitRepository,
+    IGitRepositorySet,
+    )
 from lp.code.vocabularies.gitrule import GitPermissionsVocabulary
 from lp.registry.interfaces.person import (
     IPerson,
@@ -452,6 +455,25 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         if not scan_job:
             return False
         return scan_job.job.status == JobStatus.FAILED
+
+    @property
+    def show_fork_link(self):
+        # XXX pappacena 2020-07-02: When to not show?
+        return True
+
+
+class GitRepositoryForkView(LaunchpadEditFormView):
+
+    schema = Interface
+
+    field_names = []
+
+    @action('Fork', name='fork')
+    def rescan(self, action, data):
+        forked = getUtility(IGitRepositorySet).fork(
+            self.context, self.user)
+        self.request.response.addNotification("Repository forked.")
+        self.next_url = canonical_url(forked)
 
 
 class GitRepositoryRescanView(LaunchpadEditFormView):
