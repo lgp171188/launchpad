@@ -48,7 +48,7 @@ DB schema objects should be comparable correctly when proxied...
     >>> from lp.registry.interfaces.distroseries import IDistroSeriesSet
     >>> from lp.registry.interfaces.series import SeriesStatus
     >>> hoary = getUtility(IDistroSeriesSet).get(3)
-    >>> print hoary.status.name
+    >>> print(hoary.status.name)
     DEVELOPMENT
     >>> hoary.status == SeriesStatus.DEVELOPMENT
     True
