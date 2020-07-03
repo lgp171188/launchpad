@@ -1676,17 +1676,17 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     @cachedproperty
     def openpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getOpenPolls()
+        return list(IPollSubset(self.context).getOpenPolls())
 
     @cachedproperty
     def closedpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getClosedPolls()
+        return list(IPollSubset(self.context).getClosedPolls())
 
     @cachedproperty
     def notyetopenedpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getNotYetOpenedPolls()
+        return list(IPollSubset(self.context).getNotYetOpenedPolls())
 
     @cachedproperty
     def contributions(self):

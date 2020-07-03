@@ -89,29 +89,29 @@ class PollSubset:
         """See IPollSubset."""
         assert self.team is not None, (
             'team cannot be None to call this method.')
-        return getUtility(IPollSet).selectByTeam(self.team)
+        return getUtility(IPollSet).findByTeam(self.team)
 
     def getOpenPolls(self, when=None):
         """See IPollSubset."""
         assert self.team is not None, (
             'team cannot be None to call this method.')
-        return getUtility(IPollSet).selectByTeam(
-            self.team, [PollStatus.OPEN], orderBy='datecloses', when=when)
+        return getUtility(IPollSet).findByTeam(
+            self.team, [PollStatus.OPEN], order_by='datecloses', when=when)
 
     def getClosedPolls(self, when=None):
         """See IPollSubset."""
         assert self.team is not None, (
             'team cannot be None to call this method.')
-        return getUtility(IPollSet).selectByTeam(
-            self.team, [PollStatus.CLOSED], orderBy='datecloses', when=when)
+        return getUtility(IPollSet).findByTeam(
+            self.team, [PollStatus.CLOSED], order_by='datecloses', when=when)
 
     def getNotYetOpenedPolls(self, when=None):
         """See IPollSubset."""
         assert self.team is not None, (
             'team cannot be None to call this method.')
-        return getUtility(IPollSet).selectByTeam(
+        return getUtility(IPollSet).findByTeam(
             self.team, [PollStatus.NOT_YET_OPENED],
-            orderBy='dateopens', when=when)
+            order_by='dateopens', when=when)
 
 
 def productseries_to_product(productseries):
