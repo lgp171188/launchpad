@@ -22,7 +22,7 @@
   />
   <br />
 
-  <p tal:condition="not: context/getActiveOptions">
+  <p tal:condition="python: context.getActiveOptions().is_empty()">
     This poll does not yet have any voting options. Please <a
     href="+newoption">add an option</a>. Note, you need more than one option
     for a real poll, of course :-)
