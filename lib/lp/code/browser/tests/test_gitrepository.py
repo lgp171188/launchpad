@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for GitRepositoryView."""
@@ -18,6 +18,10 @@ from textwrap import dedent
 from fixtures import FakeLogger
 import pytz
 import soupmatchers
+from soupmatchers import (
+    Tag,
+    HTMLContains,
+    )
 from storm.store import Store
 from testtools.matchers import (
     AfterPreprocessing,
@@ -28,6 +32,7 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
+    Not,
     )
 import transaction
 from zope.component import getUtility
@@ -456,6 +461,39 @@ class TestGitRepositoryView(BrowserTestCase):
         view = create_initialized_view(repository, '+index')
         result = view.show_rescan_link
         self.assertTrue(result)
+
+    def test_hide_fork_link_for_repos_targeting_person(self):
+        person = self.factory.makePerson()
+        another_person = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(target=person)
+        browser = self.getViewBrowser(
+            repository, '+index', user=another_person)
+        fork_link = Tag(
+            "fork link", "a",
+            text="Fork it to your account",
+            attrs={"class": "sprite add subscribe-self",
+                   "href": "+fork"})
+        self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
+
+    def test_show_fork_link_for_the_right_users(self):
+        another_person = self.factory.makePerson()
+        repository = self.factory.makeGitRepository()
+        repo_owner = repository.owner
+
+        fork_link = Tag(
+            "fork link", "a",
+            text="Fork it to your account",
+            attrs={"class": "sprite add subscribe-self",
+                   "href": "+fork"})
+
+        # Do not show the link for the repository owner.
+        browser = self.getViewBrowser(repository, '+index', user=repo_owner)
+        self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
+
+        # Shows for another person.
+        browser = self.getViewBrowser(
+            repository, '+index', user=another_person)
+        self.assertThat(browser.contents, HTMLContains(fork_link))
 
 
 class TestGitRepositoryViewPrivateArtifacts(BrowserTestCase):

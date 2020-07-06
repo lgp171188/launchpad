@@ -457,8 +457,14 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         return scan_job.job.status == JobStatus.FAILED
 
     @property
-    def show_fork_link(self):
-        # XXX pappacena 2020-07-02: When to not show?
+    def allow_fork(self):
+        # Users cannot fork repositories which target is a user.
+        if IPerson.providedBy(self.context.target):
+            return False
+        # User cannot fork repositories they already own (not that forking a
+        # repository owned by a team the user is in is still fine).
+        if self.context.owner == self.user:
+            return False
         return True
 
 
@@ -468,12 +474,16 @@ class GitRepositoryForkView(LaunchpadEditFormView):
 
     field_names = []
 
-    @action('Fork', name='fork')
-    def rescan(self, action, data):
+    @action('Fork it', name='fork')
+    def fork(self, action, data):
         forked = getUtility(IGitRepositorySet).fork(
             self.context, self.user)
         self.request.response.addNotification("Repository forked.")
         self.next_url = canonical_url(forked)
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
 
 
 class GitRepositoryRescanView(LaunchpadEditFormView):

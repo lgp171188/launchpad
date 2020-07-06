@@ -34,6 +34,10 @@
         </tt>
       </tal:ssh>
     </dd>
+
+    <dt tal:condition="view/allow_fork">
+      <a href="+fork" class="sprite add subscribe-self">Fork it to your account</a>
+    </dt>
   </dl>
 
   <div id="push-directions"
