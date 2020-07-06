@@ -1639,8 +1639,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         Store.of(self).remove(self)
         # And now create a job to remove the repository from storage when
         # it's done.
-        getUtility(IReclaimGitRepositorySpaceJobSource).create(
-            repository_name, repository_path)
+        if self.status == GitRepositoryStatus.AVAILABLE:
+            getUtility(IReclaimGitRepositorySpaceJobSource).create(
+                repository_name, repository_path)
 
 
 class DeletionOperation:
