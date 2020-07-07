@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for a Person."""
@@ -76,6 +76,7 @@ from storm.info import ClassAlias
 from storm.locals import (
     Int,
     Reference,
+    ReferenceSet,
     )
 from storm.store import (
     EmptyResultSet,
@@ -611,7 +612,7 @@ class Person(
     hide_email_addresses = BoolCol(notNull=True, default=False)
     verbose_bugnotifications = BoolCol(notNull=True, default=True)
 
-    signedcocs = SQLMultipleJoin('SignedCodeOfConduct', joinColumn='owner')
+    signedcocs = ReferenceSet('<primary key>', 'SignedCodeOfConduct.owner_id')
     _ircnicknames = SQLMultipleJoin('IrcID', joinColumn='person')
     jabberids = SQLMultipleJoin('JabberID', joinColumn='person')
 
@@ -2951,7 +2952,8 @@ class Person(
         """See `IPerson`."""
         # Also assigned to by self._members.
         store = Store.of(self)
-        query = And(SignedCodeOfConduct.ownerID == self.id,
+        query = And(
+            SignedCodeOfConduct.owner_id == self.id,
             Person._is_ubuntu_coc_signer_condition())
         return not store.find(SignedCodeOfConduct, query).is_empty()
 
@@ -2967,13 +2969,13 @@ class Person(
     def activesignatures(self):
         """See `IPerson`."""
         sCoC_util = getUtility(ISignedCodeOfConductSet)
-        return sCoC_util.searchByUser(self.id)
+        return sCoC_util.searchByUser(self)
 
     @property
     def inactivesignatures(self):
         """See `IPerson`."""
         sCoC_util = getUtility(ISignedCodeOfConductSet)
-        return sCoC_util.searchByUser(self.id, active=False)
+        return sCoC_util.searchByUser(self, active=False)
 
     @cachedproperty
     def archive(self):
@@ -3944,7 +3946,7 @@ class PersonSet:
                         tables=[SignedCodeOfConduct],
                         where=And(
                             Person._is_ubuntu_coc_signer_condition(),
-                            SignedCodeOfConduct.ownerID == Person.id))),
+                            SignedCodeOfConduct.owner_id == Person.id))),
                     name='is_ubuntu_coc_signer'))
         if need_location or need_api:
             # New people have no location rows

@@ -1,7 +1,9 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Code of Conduct views."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -50,7 +52,7 @@ class TestSignedCodeOfConductAckView(TestCaseWithFactory):
             self.signed_coc_set, name="+new", form=form,
             principal=self.admin)
         self.assertEqual([], view.errors)
-        results = self.signed_coc_set.searchByUser(self.owner.id)
+        results = self.signed_coc_set.searchByUser(self.owner)
         self.assertEqual(1, results.count())
         signed_coc = results[0]
         self.assertEqual(self.admin, signed_coc.recipient)
@@ -71,7 +73,6 @@ class SignCodeOfConductTestCase(TestCaseWithFactory):
         """Return a SignedCodeOfConduct using dummy text."""
         signed_coc = SignedCodeOfConduct(
             owner=user, signing_key_fingerprint=gpg_key.fingerprint,
-            signing_key_owner=gpg_key.owner,
             signedcode="Dummy CoC signed text.", active=True)
         return signed_coc
 
