@@ -76,7 +76,7 @@ class _BaseGitNamespace:
                          reviewer=None, information_type=None,
                          date_created=DEFAULT, description=None,
                          target_default=False, owner_default=False,
-                         with_hosting=False):
+                         with_hosting=False, async_hosting=False):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
 
@@ -141,7 +141,8 @@ class _BaseGitNamespace:
                 clone_from_repository = None
 
             repository._createOnHostingService(
-                clone_from_repository=clone_from_repository)
+                clone_from_repository=clone_from_repository,
+                async_create=async_hosting)
 
         return repository
 

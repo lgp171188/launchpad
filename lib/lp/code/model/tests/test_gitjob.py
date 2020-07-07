@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `GitJob`s."""
@@ -24,6 +24,7 @@ from testtools.matchers import (
     MatchesStructure,
     )
 import transaction
+from zope.component import getUtility
 from zope.interface import providedBy
 from zope.security.proxy import removeSecurityProxy
 
@@ -31,6 +32,7 @@ from lp.code.adapters.gitrepository import GitRepositoryDelta
 from lp.code.enums import (
     GitGranteeType,
     GitObjectType,
+    GitRepositoryStatus,
     )
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG,
@@ -40,17 +42,21 @@ from lp.code.interfaces.gitjob import (
     IGitRefScanJob,
     IReclaimGitRepositorySpaceJob,
     )
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.gitjob import (
     describe_repository_delta,
     GitJob,
     GitJobDerived,
     GitJobType,
     GitRefScanJob,
+    GitRepositoryConfirmCreationJob,
     ReclaimGitRepositorySpaceJob,
     )
+from lp.code.model.gitrepository import GitRepository
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.utils import seconds_since_epoch
@@ -482,6 +488,71 @@ class TestDescribeRepositoryDelta(TestCaseWithFactory):
             [],
             ["Removed access for repository owner to refs/heads/*: push"],
             snapshot, repository)
+
+
+class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
+    """Tests for `GitRepositoryConfirmCreationJob`."""
+
+    layer = ZopelessDatabaseLayer
+
+    def test_confirms_repository_creation(self):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        project = self.factory.makeProduct()
+        repo = self.factory.makeGitRepository(target=project)
+
+        another_user = self.factory.makePerson()
+        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+        self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
+
+        # Run the job that checks if repository was confirmed
+        [job] = GitRepositoryConfirmCreationJob.iterReady()
+        self.assertEqual(forked, job.repository)
+        with dbuser("branchscanner"):
+            JobRunner([job]).runAll()
+
+        self.assertEqual(
+            [((forked.getInternalPath(), ), {})],
+            hosting_fixture.getProperties.calls)
+        self.assertEqual(GitRepositoryStatus.AVAILABLE, forked.status)
+
+    def test_aborts_repository_creation(self):
+        # Makes sure that after max_retries, the job gives up and deletes
+        # the repository being created.
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        hosting_fixture.getProperties.result["is_available"] = False
+        project = self.factory.makeProduct()
+        repo = self.factory.makeGitRepository(target=project)
+
+        another_user = self.factory.makePerson()
+        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+        self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
+
+        # Run the job that checks if repository was confirmed
+        [job] = GitRepositoryConfirmCreationJob.iterReady()
+
+        # Asserts that the first run raises an error that should be retried.
+        self.assertRaises(
+            GitRepositoryConfirmCreationJob.RepositoryNotReady, job.run)
+        self.assertIn(
+            GitRepositoryConfirmCreationJob.RepositoryNotReady,
+            GitRepositoryConfirmCreationJob.retry_error_types)
+
+        # Pretends that this is the last retry.
+        job.max_retries = 2
+        job.attempt_count = 2
+        self.assertEqual(forked, job.repository)
+        with dbuser("branchscanner"):
+            JobRunner([job]).runAll()
+
+        self.assertEqual(
+            0, len(list(GitRepositoryConfirmCreationJob.iterReady())))
+        # Asserts it called twice the git hosting service to get properties.
+        self.assertEqual(
+            [((forked.getInternalPath(), ), {})] * 2,
+            hosting_fixture.getProperties.calls)
+        store = IStore(forked)
+        resultset = store.find(GitRepository, GitRepository.id == forked.id)
+        self.assertEqual(0, resultset.count())
 
 
 # XXX cjwatson 2015-03-12: We should test that the jobs work via Celery too,

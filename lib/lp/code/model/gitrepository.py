@@ -116,7 +116,10 @@ from lp.code.interfaces.gitcollection import (
     IGitCollection,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
-from lp.code.interfaces.gitjob import IGitRefScanJobSource
+from lp.code.interfaces.gitjob import (
+    IGitRefScanJobSource,
+    IGitRepositoryConfirmCreationJobSource,
+    )
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitnamespace import (
     get_git_namespace,
@@ -359,7 +362,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         self.owner_default = False
         self.target_default = False
 
-    def _createOnHostingService(self, clone_from_repository=None):
+    def _createOnHostingService(
+            self, clone_from_repository=None, async_create=False):
         """Create this repository on the hosting service."""
         hosting_path = self.getInternalPath()
         if clone_from_repository is not None:
@@ -367,7 +371,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         else:
             clone_from_path = None
         getUtility(IGitHostingClient).create(
-            hosting_path, clone_from=clone_from_path)
+            hosting_path, clone_from=clone_from_path,
+            async_create=async_create)
 
     @property
     def valid_webhook_event_types(self):
@@ -1703,13 +1708,29 @@ class GitRepositorySet:
 
     def new(self, repository_type, registrant, owner, target, name,
             information_type=None, date_created=DEFAULT, description=None,
-            with_hosting=False):
+            with_hosting=False, async_hosting=False):
         """See `IGitRepositorySet`."""
         namespace = get_git_namespace(target, owner)
         return namespace.createRepository(
             repository_type, registrant, name,
             information_type=information_type, date_created=date_created,
             description=description, with_hosting=with_hosting)
+
+    def fork(self, origin, user):
+        repository = self.new(
+            repository_type=GitRepositoryType.HOSTED,
+            registrant=user, owner=user, target=origin.target,
+            name=origin.name,
+            information_type=origin.information_type,
+            date_created=UTC_NOW, description=origin.description,
+            with_hosting=True)
+        # XXX pappacena 2020-07-02: move this status change to be a
+        # parameter on self.new / namespace.createRepository.
+        removeSecurityProxy(repository).status = GitRepositoryStatus.CREATING
+        IStore(repository).flush()
+        # Start pooling job to check when the repository will be ready.
+        getUtility(IGitRepositoryConfirmCreationJobSource).create(repository)
+        return repository
 
     def getByPath(self, user, path):
         """See `IGitRepositorySet`."""

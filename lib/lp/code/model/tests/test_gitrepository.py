@@ -117,6 +117,7 @@ from lp.code.model.gitjob import (
     GitJob,
     GitJobType,
     GitRefScanJob,
+    GitRepositoryConfirmCreationJob,
     ReclaimGitRepositorySpaceJob,
     )
 from lp.code.model.gitrepository import (
@@ -3558,6 +3559,26 @@ class TestGitRepositorySet(TestCaseWithFactory):
                 repo2, self.repository_set.getDefaultRepository(project))
             self.assertFalse(repo1.target_default)
             self.assertTrue(repo2.target_default)
+
+    def test_fork_git_repository_creates_status_check_job(self):
+        self.useFixture(GitHostingFixture())
+        project = self.factory.makeProduct()
+        repo = self.factory.makeGitRepository(target=project)
+
+        another_user = self.factory.makePerson()
+        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+
+        self.assertThat(forked, MatchesStructure(
+            status=Equals(GitRepositoryStatus.CREATING),
+            repository_type=Equals(GitRepositoryType.HOSTED),
+            target=Equals(project),
+            information_type=Equals(repo.information_type),
+            description=Equals(repo.description),
+            registrant=Equals(another_user),
+            owner=Equals(another_user)))
+
+        [job] = GitRepositoryConfirmCreationJob.iterReady()
+        self.assertEqual(forked, job.repository)
 
 
 class TestGitRepositorySetDefaultsMixin:
