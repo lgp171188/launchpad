@@ -1785,7 +1785,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if name is None:
-            name = self.getUniqueString('gitrepository').decode('utf-8')
+            name = self.getUniqueUnicode('gitrepository')
 
         if target is _DEFAULT:
             target = self.makeProduct()
@@ -1824,7 +1824,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if repository is None:
             repository = self.makeGitRepository(**repository_kwargs)
         if paths is None:
-            paths = [self.getUniqueString('refs/heads/path').decode('utf-8')]
+            paths = [self.getUniqueUnicode('refs/heads/path')]
         refs_info = {
             path: {
                 u"sha1": unicode(
@@ -1843,7 +1843,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if repository_url is None:
             repository_url = self.getUniqueURL()
         if path is None:
-            path = self.getUniqueString('refs/heads/path').decode('utf-8')
+            path = self.getUniqueUnicode('refs/heads/path')
         return getUtility(IGitRefRemoteSet).new(repository_url, path)
 
     def makeGitRule(self, repository=None, ref_pattern=u"refs/heads/*",
@@ -3081,7 +3081,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             distroseries = self.makeSourcePackageRecipeDistroseries()
 
         if name is None:
-            name = self.getUniqueString('spr-name').decode('utf8')
+            name = self.getUniqueUnicode('spr-name')
         if description is None:
             description = self.getUniqueString(
                 'spr-description').decode('utf8')
