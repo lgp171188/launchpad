@@ -40,7 +40,7 @@ from soupsieve import escape as css_escape
 import transaction
 from webtest import TestRequest
 from zope.app.wsgi.testlayer import (
-    FakeResponse as _FakeResponse,
+    FakeResponse,
     NotInBrowserLayer,
     )
 from zope.component import getUtility
@@ -99,30 +99,6 @@ SAMPLEDATA_ACCESS_SECRETS = {
     u'salgado-change-anything': u'test',
     u'nopriv-read-nonprivate': u'mystery',
     }
-
-
-class FakeResponse(_FakeResponse):
-    """A fake response for use in tests.
-
-    This is like `zope.app.wsgi.testlayer.FakeResponse`, but does a better
-    job of emulating `zope.app.testing.functional` by using the request's
-    `SERVER_PROTOCOL` in the response.
-    """
-
-    def __init__(self, response, request):
-        self.response = response
-        self.request = request
-
-    def getOutput(self):
-        output = super(FakeResponse, self).getOutput()
-        protocol = self.request.environ['SERVER_PROTOCOL']
-        if not isinstance(protocol, bytes):
-            protocol = protocol.encode('ISO-8859-1')
-        return (
-            (b'%s %s\n' % (protocol, self.response.status)) +
-            output.split(b'\n', 1)[1])
-
-    __str__ = getOutput
 
 
 def http(string, handle_errors=True):
