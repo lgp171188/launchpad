@@ -39,6 +39,7 @@ from six.moves.urllib_parse import (
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
+from zope.formlib.form import FormFields
 from zope.formlib.textwidgets import IntWidget
 from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import (
@@ -474,10 +475,18 @@ class GitRepositoryForkView(LaunchpadEditFormView):
 
     field_names = []
 
+    def setUpFields(self):
+        super(GitRepositoryForkView, self).setUpFields()
+        owner_field = Choice(
+            vocabulary='AllUserTeamsParticipationPlusSelf',
+            title=u'Fork to the following owner', required=True,
+            __name__=u'owner')
+        self.form_fields += FormFields(owner_field)
+
     @action('Fork it', name='fork')
     def fork(self, action, data):
         forked = getUtility(IGitRepositorySet).fork(
-            self.context, self.user)
+            self.context, data['owner'])
         self.request.response.addNotification("Repository forked.")
         self.next_url = canonical_url(forked)
 
