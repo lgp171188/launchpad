@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository views."""
@@ -100,7 +100,7 @@ from lp.code.errors import (
 from lp.code.interfaces.gitnamespace import get_git_namespace
 from lp.code.interfaces.gitref import IGitRefBatchNavigator
 from lp.code.interfaces.gitrepository import (
-    ContributorGitIdentityMixin,
+    ContributorGitIdentity,
     IGitRepository,
     )
 from lp.code.vocabularies.gitrule import GitPermissionsVocabulary
@@ -401,13 +401,12 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
                 "/~%s" % self.user.name, 1)
             return urlunsplit(url)
         else:
-            contributor = ContributorGitIdentityMixin(
-                False,
-                True,
-                self.user,
-                self.context.target,
-                self.context.unique_name,
-                self.context)
+            contributor = ContributorGitIdentity(
+                owner=self.user,
+                target=self.context.target,
+                owner_default=True,
+                target_default=False,
+                repository=self.context)
             base_url = urlutils.join(
                 config.codehosting.git_ssh_root, contributor.shortened_path)
             url = list(urlsplit(base_url))

@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for GitRepositoryView."""
@@ -335,8 +335,9 @@ class TestGitRepositoryView(BrowserTestCase):
                      (self.user.name, self.user.name,
                       repository.target.name, repository.name)))
         with person_logged_in(self.user):
-            self.assertThat(view.render(), git_push_url_text_match)
-            self.assertThat(view.render(), git_push_url_hint_match)
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_push_url_text_match)
+            self.assertThat(rendered_view, git_push_url_hint_match)
 
     def test_no_push_directions_for_imported_repository(self):
         # Imported repositories never show push directions.
