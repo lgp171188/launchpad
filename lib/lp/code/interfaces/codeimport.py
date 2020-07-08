@@ -192,6 +192,17 @@ class ICodeImport(Interface):
             None if no changes were made.
         """
 
+    def updateURL(new_url, user):
+        """Update the URL for this `CodeImport`.
+
+        A separate setter as it has lower permissions than updateFromData.
+        :param new_url: string of the proposed new URL.
+        :param user: user who made the change, to record in the
+            `CodeImportEvent`.  May be ``None``.
+        :return: The MODIFY `CodeImportEvent`, if any changes were made, or
+            None if no changes were made.
+        """
+
     def tryFailingImportAgain(user):
         """Try a failing import again.
 

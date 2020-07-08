@@ -335,6 +335,29 @@ class TestProductView(BrowserTestCase):
     def setUp(self):
         super(TestProductView, self).setUp()
         self.product = self.factory.makeProduct(name='fnord')
+        self.tag_meta_noindex = Tag(
+            'meta_noindex', 'meta', attrs={
+                'name': 'robots', 'content': 'noindex,nofollow'})
+
+    def test_robots_noindex_for_probationary_product_owners(self):
+        # The index page for a project with a probationary owner should have
+        # noindex meta tag for robots.
+        product = removeSecurityProxy(self.factory.makeProduct())
+        owner = product.owner
+        with person_logged_in(owner):
+            browser = self.getViewBrowser(product, '+index', user=owner)
+        self.assertThat(
+            browser.contents, HTMLContains(self.tag_meta_noindex))
+
+    def test_robots_without_noindex_for_valid_products(self):
+        # The index page for a project with a non-probationary owner shouldn't
+        # have noindex meta tag for robots.
+        owner = self.factory.makePerson(karma=15)
+        product = removeSecurityProxy(self.factory.makeProduct(owner=owner))
+        with person_logged_in(owner):
+            browser = self.getViewBrowser(product, '+index', user=owner)
+        self.assertThat(
+            browser.contents, Not(HTMLContains(self.tag_meta_noindex)))
 
     def test_code_link_bzr(self):
         branch = self.factory.makeBranch(target=self.product)

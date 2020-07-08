@@ -181,6 +181,10 @@ from lp.registry.browser.pillar import (
     PillarViewMixin,
     )
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.ociproject import (
+    IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import (
     IProduct,
@@ -198,6 +202,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.features import getFeatureFlag
 from lp.services.feeds.browser import FeedsMixin
 from lp.services.fields import (
     PillarAliases,
@@ -509,13 +514,23 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
         return Link('+sharing', 'Sharing', icon='edit')
 
     def search_oci_project(self):
-        text = 'Search for OCI Project'
-        return Link('+search-oci-project', text, icon='info')
+        product = self.context.context
+        oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
+            product, u'')
+        text = 'Search for OCI project'
+        link = Link('+search-oci-project', text, icon='info')
+        link.enabled = not oci_projects.is_empty()
+        return link
 
     @enabled_with_permission('launchpad.Driver')
     def new_oci_project(self):
-        text = 'Create an OCI Project'
-        return Link('+new-oci-project', text, icon='add')
+        text = 'Create an OCI project'
+        link = Link('+new-oci-project', text, icon='add')
+        product = self.context.context
+        link.enabled = (
+            bool(getFeatureFlag(OCI_PROJECT_ALLOW_CREATE))
+            and product.canAdministerOCIProjects(self.user))
+        return link
 
 
 class IProductEditMenu(Interface):
@@ -939,6 +954,10 @@ class ProductDownloadFileMixin:
 @implementer(IProductActionMenu)
 class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
                   FeedsMixin, ProductDownloadFileMixin):
+
+    @cachedproperty
+    def is_probationary_or_invalid_project(self):
+        return not self.context.active or self.context.owner.is_probationary
 
     @property
     def maintainer_widget(self):

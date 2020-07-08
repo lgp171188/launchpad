@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 from datetime import datetime
+from functools import reduce
 import re
 
 from iso8601 import (

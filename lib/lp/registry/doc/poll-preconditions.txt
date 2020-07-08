@@ -18,9 +18,9 @@ should be threated as so.
 
   >>> pollset = getUtility(IPollSet)
   >>> director_election = pollset.getByTeamAndName(ubuntu_team,
-  ...                                              'director-2004')
+  ...                                              u'director-2004')
   >>> director_options = director_election.getActiveOptions()
-  >>> leader_election = pollset.getByTeamAndName(ubuntu_team, 'leader-2004')
+  >>> leader_election = pollset.getByTeamAndName(ubuntu_team, u'leader-2004')
   >>> leader_options = leader_election.getActiveOptions()
   >>> opendate = leader_election.dateopens
   >>> onesec = timedelta(seconds=1)

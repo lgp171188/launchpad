@@ -37,15 +37,15 @@ class DistributionMirrorTestHTTPServer(Resource):
     def getChild(self, name, request):
         protocol = self.protocol
         port = request.getHost().port
-        if name == 'valid-mirror':
+        if name == b'valid-mirror':
             leaf = self.__class__()
             leaf.isLeaf = True
             return leaf
-        elif name == 'timeout':
+        elif name == b'timeout':
             return NeverFinishResource()
-        elif name == 'error':
+        elif name == b'error':
             return FiveHundredResource()
-        elif name == 'redirect-to-valid-mirror':
+        elif name == b'redirect-to-valid-mirror':
             assert request.path != name, (
                 'When redirecting to a valid mirror the path must have more '
                 'than one component.')
@@ -55,11 +55,11 @@ class DistributionMirrorTestHTTPServer(Resource):
                     protocol, port, remaining_path))
             leaf.isLeaf = True
             return leaf
-        elif name == 'redirect-infinite-loop':
+        elif name == b'redirect-infinite-loop':
             return RedirectingResource(
                 '%s://localhost:%s/redirect-infinite-loop' %
                 (protocol, port))
-        elif name == 'redirect-unknown-url-scheme':
+        elif name == b'redirect-unknown-url-scheme':
             return RedirectingResource(
                 'ssh://localhost/redirect-unknown-url-scheme')
         else:

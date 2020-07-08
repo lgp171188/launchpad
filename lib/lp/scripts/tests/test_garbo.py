@@ -96,6 +96,7 @@ from lp.scripts.garbo import (
     load_garbo_job_state,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
+    ProductVCSPopulator,
     save_garbo_job_state,
     UnusedPOTMsgSetPruner,
     UnusedSessionPruner,
@@ -1387,6 +1388,24 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runDaily()
 
         self.assertEqual(VCSType.GIT, product.vcs)
+
+    def test_ProductVCSPopulator_findProducts_filters_correctly(self):
+        switch_dbuser('testadmin')
+
+        # Create 2 products: one with VCS set, and another one without.
+        product = self.factory.makeProduct()
+        self.assertIsNone(product.vcs)
+
+        product_with_vcs = self.factory.makeProduct(vcs=VCSType.GIT)
+        self.assertIsNotNone(product_with_vcs.vcs)
+
+        populator = ProductVCSPopulator(None)
+        # Consider only products created by this test.
+        populator.start_at = product.id
+
+        rs = populator.findProducts()
+        self.assertEqual(1, rs.count())
+        self.assertEqual(product, rs.one())
 
     def test_PopulateDistributionSourcePackageCache(self):
         switch_dbuser('testadmin')

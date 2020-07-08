@@ -68,7 +68,7 @@ class LibraryFileResource(resource.Resource):
         self.upstreamPort = upstreamPort
 
     def getChild(self, name, request):
-        if name == '':
+        if name == b'':
             # Root resource
             return defaultResource
         try:

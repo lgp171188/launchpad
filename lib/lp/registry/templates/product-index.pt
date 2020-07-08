@@ -25,6 +25,8 @@
           });
       </script>
     </tal:uses_launchpad_bugtracker>
+    <meta tal:condition="view/is_probationary_or_invalid_project"
+          name="robots" content="noindex,nofollow" />
 
     <meta name="go-import" tal:condition="view/golang_import_spec"
           tal:attributes="content view/golang_import_spec" />

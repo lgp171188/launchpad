@@ -1,6 +1,8 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'Poll',
@@ -16,16 +18,16 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from sqlobject import (
-    AND,
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    OR,
-    SQLObjectNotFound,
-    StringCol,
+from storm.locals import (
+    And,
+    Bool,
+    DateTime,
+    Int,
+    Or,
+    Reference,
+    Store,
+    Unicode,
     )
-from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -44,43 +46,57 @@ from lp.registry.interfaces.poll import (
     PollSecrecy,
     PollStatus,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormbase import StormBase
 from lp.services.tokens import create_token
 
 
 @implementer(IPoll)
-class Poll(SQLBase):
+class Poll(StormBase):
     """See IPoll."""
-    _table = 'Poll'
+    __storm_table__ = 'Poll'
     sortingColumns = ['title', 'id']
-    _defaultOrder = sortingColumns
+    __storm_order__ = sortingColumns
 
-    team = ForeignKey(
-        dbName='team', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+    id = Int(primary=True)
 
-    name = StringCol(dbName='name', notNull=True)
+    team_id = Int(
+        name='team', validator=validate_public_person, allow_none=False)
+    team = Reference(team_id, 'Person.id')
 
-    title = StringCol(dbName='title', notNull=True, unique=True)
+    name = Unicode(name='name', allow_none=False)
 
-    dateopens = UtcDateTimeCol(dbName='dateopens', notNull=True)
+    title = Unicode(name='title', allow_none=False)
 
-    datecloses = UtcDateTimeCol(dbName='datecloses', notNull=True)
+    dateopens = DateTime(tzinfo=pytz.UTC, name='dateopens', allow_none=False)
 
-    proposition = StringCol(dbName='proposition',  notNull=True)
+    datecloses = DateTime(tzinfo=pytz.UTC, name='datecloses', allow_none=False)
 
-    type = EnumCol(dbName='type', enum=PollAlgorithm,
-                   default=PollAlgorithm.SIMPLE)
+    proposition = Unicode(name='proposition', allow_none=False)
 
-    allowspoilt = BoolCol(dbName='allowspoilt', default=True, notNull=True)
+    type = DBEnum(
+        name='type', enum=PollAlgorithm, default=PollAlgorithm.SIMPLE)
 
-    secrecy = EnumCol(dbName='secrecy', enum=PollSecrecy,
-                      default=PollSecrecy.SECRET)
+    allowspoilt = Bool(name='allowspoilt', default=True, allow_none=False)
+
+    secrecy = DBEnum(
+        name='secrecy', enum=PollSecrecy, default=PollSecrecy.SECRET)
+
+    def __init__(self, team, name, title, proposition, dateopens, datecloses,
+                 secrecy=PollSecrecy.SECRET, allowspoilt=True,
+                 type=PollAlgorithm.SIMPLE):
+        super(Poll, self).__init__()
+        self.team = team
+        self.name = name
+        self.title = title
+        self.proposition = proposition
+        self.dateopens = dateopens
+        self.datecloses = datecloses
+        self.secrecy = secrecy
+        self.allowspoilt = allowspoilt
+        self.type = type
 
     def newOption(self, name, title, active=True):
         """See IPoll."""
@@ -116,20 +132,20 @@ class Poll(SQLBase):
 
     def getAllOptions(self):
         """See IPoll."""
-        return getUtility(IPollOptionSet).selectByPoll(self)
+        return getUtility(IPollOptionSet).findByPoll(self)
 
     def getActiveOptions(self):
         """See IPoll."""
-        return getUtility(IPollOptionSet).selectByPoll(self, only_active=True)
+        return getUtility(IPollOptionSet).findByPoll(self, only_active=True)
 
     def getVotesByPerson(self, person):
         """See IPoll."""
-        return Vote.selectBy(person=person, poll=self)
+        return IStore(Vote).find(Vote, person=person, poll=self)
 
     def personVoted(self, person):
         """See IPoll."""
-        results = VoteCast.selectBy(person=person, poll=self)
-        return bool(results.count())
+        results = IStore(VoteCast).find(VoteCast, person=person, poll=self)
+        return not results.is_empty()
 
     def removeOption(self, option, when=None):
         """See IPoll."""
@@ -141,7 +157,7 @@ class Poll(SQLBase):
 
     def getOptionByName(self, name):
         """See IPoll."""
-        return PollOption.selectOneBy(poll=self, name=name)
+        return IStore(PollOption).find(PollOption, poll=self, name=name).one()
 
     def _assertEverythingOkAndGetVoter(self, person, when=None):
         """Use assertions to Make sure all pre-conditions for a person to vote
@@ -210,7 +226,7 @@ class Poll(SQLBase):
     def getTotalVotes(self):
         """See IPoll."""
         assert self.isClosed()
-        return Vote.selectBy(poll=self).count()
+        return IStore(Vote).find(Vote, poll=self).count()
 
     def getWinners(self):
         """See IPoll."""
@@ -235,7 +251,7 @@ class Poll(SQLBase):
         results = Store.of(self).execute(query).get_all()
         if not results:
             return None
-        return [PollOption.get(id) for (id,) in results]
+        return [IStore(PollOption).get(PollOption, id) for (id,) in results]
 
     def getPairwiseMatrix(self):
         """See IPoll."""
@@ -278,59 +294,72 @@ class PollSet:
     def new(self, team, name, title, proposition, dateopens, datecloses,
             secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE):
         """See IPollSet."""
-        return Poll(team=team, name=name, title=title,
-                proposition=proposition, dateopens=dateopens,
-                datecloses=datecloses, secrecy=secrecy,
-                allowspoilt=allowspoilt, type=poll_type)
+        poll = Poll(
+            team=team, name=name, title=title,
+            proposition=proposition, dateopens=dateopens,
+            datecloses=datecloses, secrecy=secrecy,
+            allowspoilt=allowspoilt, type=poll_type)
+        IStore(Poll).add(poll)
+        return poll
 
-    def selectByTeam(self, team, status=PollStatus.ALL, orderBy=None,
-                     when=None):
+    def findByTeam(self, team, status=PollStatus.ALL, order_by=None,
+                   when=None):
         """See IPollSet."""
         if when is None:
             when = datetime.now(pytz.timezone('UTC'))
 
-        if orderBy is None:
-            orderBy = Poll.sortingColumns
+        if order_by is None:
+            order_by = Poll.sortingColumns
 
         status = set(status)
         status_clauses = []
         if PollStatus.OPEN in status:
-            status_clauses.append(AND(Poll.q.dateopens <= when,
-                                    Poll.q.datecloses > when))
+            status_clauses.append(
+                And(Poll.dateopens <= when, Poll.datecloses > when))
         if PollStatus.CLOSED in status:
-            status_clauses.append(Poll.q.datecloses <= when)
+            status_clauses.append(Poll.datecloses <= when)
         if PollStatus.NOT_YET_OPENED in status:
-            status_clauses.append(Poll.q.dateopens > when)
+            status_clauses.append(Poll.dateopens > when)
 
         assert len(status_clauses) > 0, "No poll statuses were selected"
 
-        results = Poll.select(AND(Poll.q.teamID == team.id,
-                                  OR(*status_clauses)))
+        results = IStore(Poll).find(
+            Poll, Poll.team == team, Or(*status_clauses))
 
-        return results.orderBy(orderBy)
+        return results.order_by(order_by)
 
     def getByTeamAndName(self, team, name, default=None):
         """See IPollSet."""
-        query = AND(Poll.q.teamID == team.id, Poll.q.name == name)
-        try:
-            return Poll.selectOne(query)
-        except SQLObjectNotFound:
-            return default
+        poll = IStore(Poll).find(Poll, team=team, name=name).one()
+        return poll if poll is not None else default
 
 
 @implementer(IPollOption)
-class PollOption(SQLBase):
+class PollOption(StormBase):
     """See IPollOption."""
-    _table = 'PollOption'
-    _defaultOrder = ['title', 'id']
+    __storm_table__ = 'PollOption'
+    __storm_order__ = ['title', 'id']
 
-    poll = ForeignKey(dbName='poll', foreignKey='Poll', notNull=True)
+    id = Int(primary=True)
 
-    name = StringCol(notNull=True)
+    poll_id = Int(name='poll', allow_none=False)
+    poll = Reference(poll_id, 'Poll.id')
 
-    title = StringCol(notNull=True)
+    name = Unicode(allow_none=False)
 
-    active = BoolCol(notNull=True, default=False)
+    title = Unicode(allow_none=False)
+
+    active = Bool(allow_none=False, default=False)
+
+    def __init__(self, poll, name, title, active=False):
+        super(PollOption, self).__init__()
+        self.poll = poll
+        self.name = name
+        self.title = title
+        self.active = active
+
+    def destroySelf(self):
+        IStore(PollOption).remove(self)
 
 
 @implementer(IPollOptionSet)
@@ -339,36 +368,43 @@ class PollOptionSet:
 
     def new(self, poll, name, title, active=True):
         """See IPollOptionSet."""
-        return PollOption(poll=poll, name=name, title=title, active=active)
+        option = PollOption(poll=poll, name=name, title=title, active=active)
+        IStore(PollOption).add(option)
+        return option
 
-    def selectByPoll(self, poll, only_active=False):
+    def findByPoll(self, poll, only_active=False):
         """See IPollOptionSet."""
-        query = PollOption.q.pollID == poll.id
+        clauses = [PollOption.poll == poll]
         if only_active:
-            query = AND(query, PollOption.q.active == True)
-        return PollOption.select(query)
+            clauses.append(PollOption.active)
+        return IStore(PollOption).find(PollOption, *clauses)
 
     def getByPollAndId(self, poll, option_id, default=None):
         """See IPollOptionSet."""
-        query = AND(PollOption.q.pollID == poll.id,
-                    PollOption.q.id == option_id)
-        try:
-            return PollOption.selectOne(query)
-        except SQLObjectNotFound:
-            return default
+        option = IStore(PollOption).find(
+            PollOption, poll=poll, id=option_id).one()
+        return option if option is not None else default
 
 
 @implementer(IVoteCast)
-class VoteCast(SQLBase):
+class VoteCast(StormBase):
     """See IVoteCast."""
-    _table = 'VoteCast'
-    _defaultOrder = 'id'
+    __storm_table__ = 'VoteCast'
+    __storm_order__ = 'id'
 
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+    id = Int(primary=True)
 
-    poll = ForeignKey(dbName='poll', foreignKey='Poll', notNull=True)
+    person_id = Int(
+        name='person', validator=validate_public_person, allow_none=False)
+    person = Reference(person_id, 'Person.id')
+
+    poll_id = Int(name='poll', allow_none=False)
+    poll = Reference(poll_id, 'Poll.id')
+
+    def __init__(self, person, poll):
+        super(VoteCast, self).__init__()
+        self.person = person
+        self.poll = poll
 
 
 @implementer(IVoteCastSet)
@@ -377,26 +413,39 @@ class VoteCastSet:
 
     def new(self, poll, person):
         """See IVoteCastSet."""
-        return VoteCast(poll=poll, person=person)
+        vote_cast = VoteCast(poll=poll, person=person)
+        IStore(VoteCast).add(vote_cast)
+        return vote_cast
 
 
 @implementer(IVote)
-class Vote(SQLBase):
+class Vote(StormBase):
     """See IVote."""
-    _table = 'Vote'
-    _defaultOrder = ['preference', 'id']
+    __storm_table__ = 'Vote'
+    __storm_order__ = ['preference', 'id']
 
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_public_person)
+    id = Int(primary=True)
 
-    poll = ForeignKey(dbName='poll', foreignKey='Poll', notNull=True)
+    person_id = Int(name='person', validator=validate_public_person)
+    person = Reference(person_id, 'Person.id')
 
-    option = ForeignKey(dbName='option', foreignKey='PollOption')
+    poll_id = Int(name='poll', allow_none=False)
+    poll = Reference(poll_id, 'Poll.id')
 
-    preference = IntCol(dbName='preference')
+    option_id = Int(name='option')
+    option = Reference(option_id, 'PollOption.id')
 
-    token = StringCol(dbName='token', notNull=True, unique=True)
+    preference = Int(name='preference')
+
+    token = Unicode(name='token', allow_none=False)
+
+    def __init__(self, poll, token, person=None, option=None, preference=None):
+        super(Vote, self).__init__()
+        self.poll = poll
+        self.token = token
+        self.person = person
+        self.option = option
+        self.preference = preference
 
 
 @implementer(IVoteSet)
@@ -405,16 +454,19 @@ class VoteSet:
 
     def new(self, poll, option, preference, token, person):
         """See IVoteSet."""
-        return Vote(poll=poll, option=option, preference=preference,
-                    token=token, person=person)
+        vote = Vote(
+            poll=poll, option=option, preference=preference, token=token,
+            person=person)
+        IStore(Vote).add(vote)
+        return vote
 
     def getByToken(self, token):
         """See IVoteSet."""
-        return Vote.selectBy(token=token)
+        return IStore(Vote).find(Vote, token=token)
 
     def getVotesByOption(self, option):
         """See IVoteSet."""
         if option.poll.type != PollAlgorithm.SIMPLE:
             raise OptionIsNotFromSimplePoll(
                 '%r is not an option of a simple-style poll.' % option)
-        return Vote.selectBy(option=option).count()
+        return IStore(Vote).find(Vote, option=option).count()

@@ -563,10 +563,10 @@ class BaseBinaryUploadFile(PackageUploadFile):
             deb_file = apt_inst.DebFile(self.filepath)
             control_file = deb_file.control.extractdata("control")
             control_lines = apt_pkg.TagSection(control_file, bytes=True)
-        except Exception:
+        except Exception as e:
             yield UploadError(
-                "%s: extracting control file raised %s, giving up."
-                 % (self.filename, sys.exc_type))
+                "%s: extracting control file raised %s: %s. giving up."
+                 % (self.filename, sys.exc_type, e))
             return
 
         for mandatory_field in self.mandatory_fields:

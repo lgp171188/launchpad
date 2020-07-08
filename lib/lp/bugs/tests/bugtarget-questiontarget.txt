@@ -103,7 +103,7 @@ bug.
     # Bugs save the Bug.description as the first message;
     # questions do not.
 
-    >>> question.messages.count() == bug.messages.count() - 1
+    >>> len(question.messages) == bug.messages.count() - 1
     True
 
     >>> question.messages[-1].text_contents == bug.messages[-1].text_contents

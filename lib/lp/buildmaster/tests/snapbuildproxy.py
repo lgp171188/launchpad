@@ -81,7 +81,7 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
     def start(self):
         root = resource.Resource()
         self.tokens = ProxyAuthAPITokensResource()
-        root.putChild("tokens", self.tokens)
+        root.putChild(b"tokens", self.tokens)
         endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
         site = server.Site(self.tokens)
         self.addCleanup(site.stopFactory)

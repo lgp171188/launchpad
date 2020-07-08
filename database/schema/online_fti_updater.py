@@ -7,6 +7,9 @@
 Rebuild the full text indexes in a more friendly fashion, enabling this to
 be done without downtime.
 """
+
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import _pythonpath
@@ -22,7 +25,7 @@ def main():
     cur = con.cursor()
 
     for table, ignored in ALL_FTI:
-        print 'Doing %(table)s' % vars(),
+        print('Doing %(table)s' % vars(), end='')
         cur.execute("SELECT id FROM %(table)s" % vars())
         ids = [row[0] for row in cur.fetchall()]
         for id in ids:
@@ -30,8 +33,8 @@ def main():
                     "UPDATE %(table)s SET fti=NULL WHERE id=%(id)s" % vars()
                     )
             if id % 100 == 0:
-                print '.',
-        print
+                print('.', end='')
+        print()
 
 if __name__ == '__main__':
     main()

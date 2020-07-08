@@ -2203,6 +2203,20 @@ class TestBranchMergeProposal(BrowserTestCase):
         view = create_initialized_view(bmp, '+index')
         self.assertFalse(view.show_rescan_link)
 
+    def test_opengraph_description_is_commit(self):
+        bmp = self.factory.makeBranchMergeProposalForGit()
+        target_job = getUtility(IGitRefScanJobSource).create(
+            bmp.target_git_repository)
+        removeSecurityProxy(target_job).job._status = JobStatus.COMPLETED
+        source_job = getUtility(IGitRefScanJobSource).create(
+            bmp.source_git_repository)
+        removeSecurityProxy(source_job).job._status = JobStatus.COMPLETED
+        view = create_initialized_view(bmp, '+index')
+        self.assertEqual(
+            view.opengraph_description, view.context.commit_message)
+        self.assertEqual(
+            view.page_description, bmp.description)
+
 
 class TestBranchMergeProposalRescanView(BrowserTestCase):
 
