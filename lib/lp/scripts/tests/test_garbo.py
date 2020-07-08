@@ -1112,18 +1112,26 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser('testadmin')
         self.assertEqual(1, store.find(OCIFile).count())
 
-    def test_GitRepositoryPruner_removes_staled_creations(self):
+    def test_GitRepositoryPruner_removes_stale_creations(self):
         # Garbo removes GitRepository with status = CREATING for too long.
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         switch_dbuser('testadmin')
         store = IMasterStore(GitRepository)
         now = datetime.now(UTC)
-        recently = now - timedelta(minutes=1)
-        long_ago = now - timedelta(minutes=40)
+        recently = now - timedelta(minutes=2)
+        long_ago = now - timedelta(minutes=65)
 
-        # Creating a bunch of old staled repositories to be deleted,
-        # to make sure the chunk size is beign respected.
+        # Creating a bunch of old stale repositories to be deleted,
+        # to make sure the chunk size is being respected.
         for i in range(5):
             repo = removeSecurityProxy(self.factory.makeGitRepository())
+            [ref1, ref2] = self.factory.makeGitRefs(
+                repository=repo, paths=["a", "b"])
+            self.factory.makeBranchMergeProposalForGit(
+                target_ref=ref1, source_ref=ref2)
+            self.factory.makeSourcePackageRecipe(branches=[ref1])
+            self.factory.makeSnap(git_ref=ref2)
+            self.factory.makeOCIRecipe(git_ref=ref1)
             repo.date_created = long_ago
             repo.status = GitRepositoryStatus.CREATING
             long_ago += timedelta(seconds=1)

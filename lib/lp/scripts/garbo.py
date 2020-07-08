@@ -34,6 +34,7 @@ import pytz
 import simplejson
 from storm.expr import (
     And,
+    Cast,
     In,
     Join,
     Max,
@@ -1590,14 +1591,14 @@ class GitRepositoryPruner(TunableLoop):
     """Remove GitRepositories that are "CREATING" for far too long."""
 
     maximum_chunk_size = 500
-    repository_creation_timeout = timedelta(minutes=30)
+    repository_creation_timeout = timedelta(hours=1)
 
     def __init__(self, log, abort_time=None):
         super(GitRepositoryPruner, self).__init__(log, abort_time)
         self.store = IMasterStore(GitRepository)
 
     def findRepositories(self):
-        min_date = datetime.now(pytz.UTC) - self.repository_creation_timeout
+        min_date = UTC_NOW - Cast(self.repository_creation_timeout, "interval")
         repositories = self.store.find(
             GitRepository,
             GitRepository.status == GitRepositoryStatus.CREATING,
@@ -1609,7 +1610,7 @@ class GitRepositoryPruner(TunableLoop):
 
     def __call__(self, chunk_size):
         for repository in self.findRepositories()[:chunk_size]:
-            repository.destroySelf()
+            repository.destroySelf(break_references=True)
         transaction.commit()
 
 
