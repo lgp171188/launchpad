@@ -185,7 +185,7 @@ def test_suite():
 
     testname = 'bugtarget-questiontarget.txt'
     for setUpMethod in setUpMethods:
-        id_ext = "%s-%s" % (testname, setUpMethod.func_name)
+        id_ext = "%s-%s" % (testname, setUpMethod.__name__)
         test = LayeredDocFileSuite(
             testname,
             id_extensions=[id_ext],
