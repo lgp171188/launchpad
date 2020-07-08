@@ -4470,9 +4470,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if blob_file is not None:
             blob_path = os.path.join(
                 config.root, 'lib/lp/bugs/tests/testfiles', blob_file)
-            blob = open(blob_path).read()
+            with open(blob_path, 'rb') as blob_file:
+                blob = blob_file.read()
         if blob is None:
-            blob = self.getUniqueString()
+            blob = self.getUniqueBytes()
         new_uuid = getUtility(ITemporaryStorageManager).new(blob, expires)
 
         return getUtility(ITemporaryStorageManager).fetch(new_uuid)
@@ -4483,7 +4484,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         It doesn't actually run the job. It fakes it, and uses a fake
         librarian file so as to work without the librarian.
         """
-        blob = TemporaryBlobStorage(uuid=str(uuid.uuid1()), file_alias=1)
+        blob = TemporaryBlobStorage(
+            uuid=six.text_type(uuid.uuid1()), file_alias=1)
         job = getUtility(IProcessApportBlobJobSource).create(blob)
         job.job.start()
         removeSecurityProxy(job).metadata = {

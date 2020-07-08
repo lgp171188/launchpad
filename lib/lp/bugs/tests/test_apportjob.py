@@ -7,11 +7,11 @@ __metaclass__ = type
 
 import os
 
-from sqlobject import SQLObjectNotFound
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.apportjob import (
     ApportJobType,
     IApportJob,
@@ -221,10 +221,10 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
             "match original BLOB.")
 
         # If the UUID doesn't exist, getByBlobUUID() will raise a
-        # SQLObjectNotFound error.
+        # NotFoundError.
         self.assertRaises(
-            SQLObjectNotFound,
-            getUtility(IProcessApportBlobJobSource).getByBlobUUID, 'foobar')
+            NotFoundError,
+            getUtility(IProcessApportBlobJobSource).getByBlobUUID, u'foobar')
 
     def test_create_job_creates_only_one(self):
         # IProcessApportBlobJobSource.create() will create only one
