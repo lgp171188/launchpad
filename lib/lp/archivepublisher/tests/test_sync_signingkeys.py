@@ -113,17 +113,25 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
     def test_get_keys_per_type(self):
         keys_dir = self.signing_root_dir
 
-        # Create fake uefi keys, and missing opal pem
-        for filename in ["uefi.key", "uefi.crt", "opal.x509"]:
+        # Create fake UEFI and FIT keys, and missing OPAL PEM.
+        for filename in ("uefi.key", "uefi.crt", "opal.x509"):
             with open(os.path.join(keys_dir, filename), 'wb') as fd:
+                fd.write(b"something something")
+        # Create fake FIT keys, which live in a subdirectory.
+        os.makedirs(os.path.join(keys_dir, "fit"))
+        for filename in ("fit.key", "fit.crt"):
+            with open(os.path.join(keys_dir, "fit", filename), 'wb') as fd:
                 fd.write(b"something something")
 
         script = self.makeScript([])
         self.assertThat(script.getKeysPerType(keys_dir), MatchesDict({
             SigningKeyType.UEFI: Equals(
                 (os.path.join(keys_dir, "uefi.key"),
-                 os.path.join(keys_dir, "uefi.crt")))
-        }))
+                 os.path.join(keys_dir, "uefi.crt"))),
+            SigningKeyType.FIT: Equals(
+                (os.path.join(keys_dir, "fit", "fit.key"),
+                 os.path.join(keys_dir, "fit", "fit.crt"))),
+            }))
 
     def test_get_series_paths(self):
         distro = self.factory.makeDistribution()
@@ -153,14 +161,21 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         archive_root = key_dirs[None]
 
-        # Create fake uefi keys for the root
-        for filename in ["uefi.key", "uefi.crt"]:
+        # Create fake UEFI keys for the root
+        for filename in ("uefi.key", "uefi.crt"):
             with open(os.path.join(archive_root, filename), 'wb') as fd:
                 fd.write(b"Root %s" % filename)
 
-        # Create fake opal keys for series1
-        for filename in ["opal.pem", "opal.x509", "kmod.pem", "kmod.x509"]:
+        # Create fake OPAL and Kmod keys for series1
+        for filename in ("opal.pem", "opal.x509", "kmod.pem", "kmod.x509"):
             with open(os.path.join(key_dirs[series1], filename), 'wb') as fd:
+                fd.write(b"Series 1 %s" % filename)
+
+        # Create fake FIT keys for series1
+        os.makedirs(os.path.join(key_dirs[series1], "fit"))
+        for filename in ("fit.key", "fit.crt"):
+            with open(os.path.join(key_dirs[series1], "fit", filename),
+                      'wb') as fd:
                 fd.write(b"Series 1 %s" % filename)
 
         script = self.makeScript([])
@@ -177,6 +192,10 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                 archive, SigningKeyType.OPAL, series1,
                 os.path.join(key_dirs[series1], "opal.pem"),
                 os.path.join(key_dirs[series1], "opal.x509")),
+            mock.call(
+                archive, SigningKeyType.FIT, series1,
+                os.path.join(key_dirs[series1], "fit", "fit.key"),
+                os.path.join(key_dirs[series1], "fit", "fit.crt")),
             mock.call(
                 archive, SigningKeyType.UEFI, None,
                 os.path.join(archive_root, "uefi.key"),
@@ -201,6 +220,12 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                 os.path.join(key_dirs[series1], "opal.pem"),
                 os.path.join(key_dirs[series1], "opal.x509"),
                 SigningKeyType.OPAL, series1.name),
+            content)
+        self.assertIn(
+            tpl % (
+                os.path.join(key_dirs[series1], "fit", "fit.key"),
+                os.path.join(key_dirs[series1], "fit", "fit.crt"),
+                SigningKeyType.FIT, series1.name),
             content)
         self.assertIn(
             tpl % (

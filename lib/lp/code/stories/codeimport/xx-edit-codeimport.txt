@@ -76,8 +76,7 @@ and a 404 if the branch doesn't have an import.
 
     >>> import_browser.open(svn_import_location)
     >>> import_browser.getLink('Edit import source or review import')
-    Traceback (most recent call last):
-    LinkNotFoundError
+    <Link text='Edit import source or review import' url='.../+edit-import'>
 
 
 == Import details for a import that has been imported successfully ==

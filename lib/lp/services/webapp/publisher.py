@@ -369,6 +369,17 @@ class LaunchpadView(UserAttributeCache):
         return getattr(self.context, 'description', None)
 
     @property
+    def opengraph_description(self):
+        """Return a string for the description used in the OpenGraph metadata
+
+        Some pages may wish to override the values used in the OpenGraph
+        metadata to provide more useful link previews.
+
+        Default to the page_description in the base views.
+        """
+        return self.page_description
+
+    @property
     def template(self):
         """The page's template, if configured in zcml."""
         return self.index

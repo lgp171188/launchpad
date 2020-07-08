@@ -79,7 +79,7 @@ You cannot use integers or strings as EnumCol values:
     ...
     TypeError: Not a DBItem: 2
 
-    >>> t.foo = "TWO"
+    >>> t.foo = six.ensure_str("TWO")
     Traceback (most recent call last):
     ...
     TypeError: Not a DBItem: 'TWO'

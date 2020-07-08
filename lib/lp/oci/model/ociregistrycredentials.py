@@ -122,11 +122,13 @@ class OCIRegistryCredentials(Storm):
     def username(self):
         return self._credentials.get('username')
 
+    @username.setter
+    def username(self, value):
+        self._credentials['username'] = value
+
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""
-        store = IStore(OCIRegistryCredentials)
-        store.find(
-            OCIRegistryCredentials, OCIRegistryCredentials.id == self).remove()
+        IStore(OCIRegistryCredentials).remove(self)
 
 
 @implementer(IOCIRegistryCredentialsSet)

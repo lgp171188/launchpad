@@ -16,6 +16,8 @@ and improve APIs as needed.
 
 """
 
+from __future__ import absolute_import, print_function
+
 __metatype__ = type
 __all__ = [
     'classesWithMostRefs',
@@ -94,15 +96,15 @@ def dump_garbage():
     """
 
     # force collection
-    print "\nGARBAGE:"
+    print("\nGARBAGE:")
     gc.collect()
 
-    print "\nGARBAGE OBJECTS:"
+    print("\nGARBAGE OBJECTS:")
     for x in gc.garbage:
         s = str(x)
         if len(s) > 80:
             s = s[:80]
-        print type(x), "\n  ", s
+        print(type(x), "\n  ", s)
 
 
 # This is spiv's reference count code, under 'MIT Licence if I'm pressed'.
@@ -183,7 +185,7 @@ def deltaCounts(counts1, counts2, n=30):
 def printCounts(counts, file=None):
     for c, obj in counts:
         if file is None:
-            print c, obj
+            print(c, obj)
         else:
             file.write("%s %s\n" % (c, obj))
 

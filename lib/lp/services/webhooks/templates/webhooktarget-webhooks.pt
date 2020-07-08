@@ -18,8 +18,8 @@
       <div>
         <div class="beta" style="display: inline">
           <img class="beta" alt="[BETA]" src="/@@/beta" /></div>
-        The only currently supported events are Git and Bazaar pushes and
-        snap package builds. We'll be rolling out webhooks for more soon.
+        The supported events are Git and Bazaar pushes,
+        snap package builds, and OCI image builds.
       </div>
       <ul class="horizontal">
         <li>

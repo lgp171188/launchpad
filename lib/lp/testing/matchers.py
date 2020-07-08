@@ -58,7 +58,7 @@ class BrowsesWithQueryLimit(Matcher):
     glue to use a userbrowser and view an object.
     """
 
-    def __init__(self, query_limit, user, view_name="+index", **options):
+    def __init__(self, query_limit, user, view_name=None, **options):
         """Create a BrowsesWithQueryLimit checking for limit query_limit.
 
         :param query_limit: The number of queries permited for the page.

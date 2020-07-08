@@ -618,3 +618,83 @@ class GitAPI(LaunchpadXMLRPCView):
                 [(ref_path.data, permissions)
                  for ref_path, permissions in result])
         return result
+
+    def _validateRequesterCanManageRepoCreation(
+            self, requester, repository, auth_params):
+        """Makes sure the requester has permission to change repository
+        creation status."""
+        naked_repo = removeSecurityProxy(repository)
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
+
+        verified = self._verifyAuthParams(requester, repository, auth_params)
+        if verified is not None and verified.user is NO_USER:
+            # For internal-services authentication, we check if its using a
+            # suitable macaroon that specifically grants access to this
+            # repository.  This is only permitted for macaroons not bound to
+            # a user.
+            if not _can_internal_issuer_write(verified):
+                raise faults.Unauthorized()
+        else:
+            # This checks `requester` against `repo.registrant` because the
+            # requester should be the only user able to confirm/abort
+            # repository creation while it's being created.
+            if requester != naked_repo.registrant:
+                raise faults.Unauthorized()
+
+        if naked_repo.status != GitRepositoryStatus.CREATING:
+            raise faults.Unauthorized()
+
+    def _confirmRepoCreation(self, requester, translated_path, auth_params):
+        naked_repo = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
+        if naked_repo is None:
+            raise faults.GitRepositoryNotFound(translated_path)
+        self._validateRequesterCanManageRepoCreation(
+            requester, naked_repo, auth_params)
+        naked_repo.status = GitRepositoryStatus.AVAILABLE
+
+    def confirmRepoCreation(self, translated_path, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: confirmRepoCreation('%s')", translated_path)
+        try:
+            result = run_with_login(
+                requester_id, self._confirmRepoCreation,
+                translated_path, auth_params)
+        except Exception as e:
+            result = e
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("confirmRepoCreation failed: %r", result)
+        else:
+            logger.info("confirmRepoCreation succeeded: %s" % result)
+        return result
+
+    def _abortRepoCreation(self, requester, translated_path, auth_params):
+        naked_repo = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
+        if naked_repo is None:
+            raise faults.GitRepositoryNotFound(translated_path)
+        self._validateRequesterCanManageRepoCreation(
+            requester, naked_repo, auth_params)
+        naked_repo.destroySelf(break_references=True)
+
+    def abortRepoCreation(self, translated_path, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: abortRepoCreation('%s')", translated_path)
+        try:
+            result = run_with_login(
+                requester_id, self._abortRepoCreation,
+                translated_path, auth_params)
+        except Exception as e:
+            result = e
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("abortRepoCreation failed: %r", result)
+        else:
+            logger.info("abortRepoCreation succeeded: %s" % result)
+        return result

@@ -250,6 +250,12 @@ class CodeImport(StormBase):
             code_import_updated(self, event, new_whiteboard, user)
         return event
 
+    def updateURL(self, new_url, user):
+        if self.url != new_url:
+            data = {"url": new_url}
+            event = self.updateFromData(data, user)
+            return event
+
     def __repr__(self):
         return "<CodeImport for %s>" % self.target.unique_name
 

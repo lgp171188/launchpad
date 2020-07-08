@@ -3,13 +3,15 @@
 
 """An IMailer that stores messages in a specified mbox file."""
 
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-
+from contextlib import closing
 import email
 from email.utils import make_msgid
 from logging import getLogger
+import mailbox
 
 from zope.component import getUtility
 from zope.interface import implementer
@@ -21,10 +23,7 @@ COMMASPACE = ', '
 
 @implementer(IMailer)
 class MboxMailer:
-    """
-    Stores the message in a Unix mailbox file.  This will be so much cooler
-    when we can use Python 2.5's mailbox module.
-    """
+    """Stores the message in a Unix mailbox file."""
 
     def __init__(self, filename, overwrite, mailer=None):
         self.filename = filename
@@ -33,8 +32,8 @@ class MboxMailer:
             # this is effectively an overwrite.  Note that because IMailer
             # doesn't have a close() method, we can't leave the file open
             # here, otherwise it will never get closed.
-            mbox_file = open(self.filename, 'w')
-            mbox_file.close()
+            with open(self.filename, 'w'):
+                pass
         self.mailer = mailer
 
     def send(self, fromaddr, toaddrs, message):
@@ -56,11 +55,12 @@ class MboxMailer:
         # zap it first just in case.
         del msg['message-id']
         msg['Message-ID'] = message_id = make_msgid()
-        mbox_file = open(self.filename, 'a')
-        try:
-            print >> mbox_file, msg
-        finally:
-            mbox_file.close()
+        with closing(mailbox.mbox(self.filename)) as mbox:
+            mbox.lock()
+            try:
+                mbox.add(msg)
+            finally:
+                mbox.unlock()
         if self.mailer is not None:
             # Forward the message on to the chained mailer, if there is one.
             # This allows for example, the mboxMailer to be used in the test

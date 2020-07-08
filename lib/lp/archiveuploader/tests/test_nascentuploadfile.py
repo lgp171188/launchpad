@@ -41,7 +41,10 @@ from lp.archiveuploader.nascentuploadfile import (
 from lp.archiveuploader.tests import AbsolutelyAnythingGoesUploadPolicy
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.services.compat import lzma
+from lp.services.compat import (
+    lzma,
+    mock,
+    )
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
 from lp.soyuz.enums import (
@@ -516,6 +519,23 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             None, control_format="gz", data_format="xz")
         uploadfile.extractAndParseControl()
         self.assertEqual([], list(uploadfile.verifyFormat()))
+
+    @mock.patch("lp.archiveuploader.nascentuploadfile.apt_inst")
+    def test_extractAndParseControl_UploadError_message(self, m_apt_inst):
+        # extractAndParseControl should yield a reasonable error message if
+        # apt_inst.DebFile raises an exception
+        m_apt_inst.DebFile.side_effect = KeyError("banana not found")
+        uploadfile = self.createDebBinaryUploadFile(
+            "empty_0.1_all.deb", "main/admin", "extra", "empty", "0.1", None,
+            members=[])
+        errors = list(uploadfile.extractAndParseControl())
+        self.assertEqual(1, len(errors))
+        error = errors[0]
+        self.assertIsInstance(error, UploadError)
+        self.assertEqual(
+            "empty_0.1_all.deb: extracting control file raised "
+            "<type 'exceptions.KeyError'>: u'banana not found'."
+            " giving up.", str(error))
 
     def test_verifyDebTimestamp_SystemError(self):
         # verifyDebTimestamp produces a reasonable error if we provoke a

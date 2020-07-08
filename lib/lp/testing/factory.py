@@ -38,7 +38,7 @@ import os
 from StringIO import StringIO
 import sys
 from textwrap import dedent
-from types import InstanceType
+import types
 import uuid
 import warnings
 
@@ -455,7 +455,7 @@ class ObjectFactory(
             don't care.
         :return: A hexadecimal string, with 'a'-'f' in lower case.
         """
-        hex_number = '%x' % self.getUniqueInteger()
+        hex_number = u'%x' % self.getUniqueInteger()
         if digits is not None:
             hex_number = hex_number.zfill(digits)
         return hex_number
@@ -1785,7 +1785,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if name is None:
-            name = self.getUniqueString('gitrepository').decode('utf-8')
+            name = self.getUniqueUnicode('gitrepository')
 
         if target is _DEFAULT:
             target = self.makeProduct()
@@ -1824,7 +1824,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if repository is None:
             repository = self.makeGitRepository(**repository_kwargs)
         if paths is None:
-            paths = [self.getUniqueString('refs/heads/path').decode('utf-8')]
+            paths = [self.getUniqueUnicode('refs/heads/path')]
         refs_info = {
             path: {
                 u"sha1": unicode(
@@ -1843,7 +1843,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if repository_url is None:
             repository_url = self.getUniqueURL()
         if path is None:
-            path = self.getUniqueString('refs/heads/path').decode('utf-8')
+            path = self.getUniqueUnicode('refs/heads/path')
         return getUtility(IGitRefRemoteSet).new(repository_url, path)
 
     def makeGitRule(self, repository=None, ref_pattern=u"refs/heads/*",
@@ -3081,7 +3081,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             distroseries = self.makeSourcePackageRecipeDistroseries()
 
         if name is None:
-            name = self.getUniqueString('spr-name').decode('utf8')
+            name = self.getUniqueUnicode('spr-name')
         if description is None:
             description = self.getUniqueString(
                 'spr-description').decode('utf8')
@@ -4205,7 +4205,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if fingerprint is None:
             fingerprint = self.getUniqueUnicode('fingerprint')
         if public_key is None:
-            public_key = self.getUniqueHexString(64)
+            public_key = self.getUniqueHexString(64).encode('ASCII')
         store = IMasterStore(SigningKey)
         signing_key = SigningKey(
             key_type=key_type, fingerprint=fingerprint, public_key=public_key,
@@ -5105,16 +5105,18 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
 # other Python libraries.
-unwrapped_types = frozenset((
-        BaseRecipeBranch,
-        DSCFile,
-        InstanceType,
-        Message,
-        datetime,
-        int,
-        str,
-        unicode,
-        ))
+unwrapped_types = {
+    BaseRecipeBranch,
+    DSCFile,
+    Message,
+    datetime,
+    int,
+    str,
+    six.text_type,
+    }
+if sys.version_info[0] < 3:
+    unwrapped_types.add(types.InstanceType)
+unwrapped_types = frozenset(unwrapped_types)
 
 
 def is_security_proxied_or_harmless(obj):

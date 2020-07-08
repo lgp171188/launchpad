@@ -9,8 +9,8 @@ First we create a new poll to use throughout this test.
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> factory.makePoll(getUtility(IPersonSet).getByName('ubuntu-team'),
-    ...                  'dpl-2080', 'dpl-2080', 'dpl-2080')
-    <Poll...
+    ...                  u'dpl-2080', u'dpl-2080', u'dpl-2080')
+    <lp.registry.model.poll.Poll...
     >>> logout()
 
 Now we'll try to change its name to something that is already in use.

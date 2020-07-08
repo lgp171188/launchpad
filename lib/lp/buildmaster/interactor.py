@@ -168,6 +168,13 @@ def make_download_process_pool(**kwargs):
     starter.connectorFactory = QuietAMPConnector
     kwargs = dict(kwargs)
     kwargs.setdefault("max", config.builddmaster.download_connections)
+    # ampoule defaults to stopping child processes after they've been idle
+    # for 20 seconds, which is a bit eager since that's close to our scan
+    # interval.  Bump this to five minutes so that we have less unnecessary
+    # process stop/start activity.  This isn't essential tuning so isn't
+    # currently configurable, but if we find we need to tweak it further
+    # then we should add a configuration setting for it.
+    kwargs.setdefault("maxIdle", 300)
     return ProcessPool(DownloadProcess, starter=starter, **kwargs)
 
 

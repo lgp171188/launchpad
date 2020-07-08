@@ -22,7 +22,7 @@ concerned).
     >>> def print_vocab_branches(vocab, search):
     ...     terms = vocab.searchForTerms(search)
     ...     for name in sorted(term.value.unique_name for term in terms):
-    ...         print name
+    ...         print(name)
 
     >>> print_vocab_branches(branch_vocabulary, 'main')
     ~justdave/+junk/main
@@ -42,11 +42,11 @@ branch unique name as an ID:
 
     >>> from lp.code.interfaces.branchlookup import IBranchLookup
     >>> branch = getUtility(IBranchLookup).get(15)
-    >>> print branch.unique_name
+    >>> print(branch.unique_name)
     ~name12/gnome-terminal/main
     >>> from zope.security.proxy import removeSecurityProxy
     >>> term = removeSecurityProxy(branch_vocabulary).toTerm(branch)
-    >>> print term.token
+    >>> print(term.token)
     ~name12/gnome-terminal/main
 
 The BranchVocabulary recognises both unique names and URLs as tokens:
