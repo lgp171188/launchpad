@@ -4675,9 +4675,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return fileupload
 
     def makeCommercialSubscription(self, product, expired=False,
-                                   voucher_id='new'):
+                                   voucher_id=u'new'):
         """Create a commercial subscription for the given product."""
-        if CommercialSubscription.selectOneBy(product=product) is not None:
+        if IStore(CommercialSubscription).find(
+                CommercialSubscription, product=product).one() is not None:
             raise AssertionError(
                 "The product under test already has a CommercialSubscription.")
         if expired:
@@ -4691,7 +4692,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             registrant=product.owner,
             purchaser=product.owner,
             sales_system_id=voucher_id,
-            whiteboard='')
+            whiteboard=u'')
         del get_property_cache(product).commercial_subscription
         return commercial_subscription
 
@@ -4699,7 +4700,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """Give 'person' a commercial subscription."""
         product = self.makeProduct(owner=person)
         self.makeCommercialSubscription(
-            product, voucher_id=self.getUniqueString())
+            product, voucher_id=self.getUniqueUnicode())
 
     def makeLiveFS(self, registrant=None, owner=None, distroseries=None,
                    name=None, metadata=None, require_virtualized=True,
