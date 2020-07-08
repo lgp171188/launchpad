@@ -507,7 +507,7 @@ class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
         # Run the job that checks if repository was confirmed
         [job] = GitRepositoryConfirmCreationJob.iterReady()
         self.assertEqual(forked, job.repository)
-        with dbuser("branchscanner"):
+        with dbuser("gitrepo-creator"):
             JobRunner([job]).runAll()
 
         self.assertEqual(
@@ -541,7 +541,7 @@ class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
         job.max_retries = 2
         job.attempt_count = 2
         self.assertEqual(forked, job.repository)
-        with dbuser("branchscanner"):
+        with dbuser("gitrepo-creator"):
             JobRunner([job]).runAll()
 
         self.assertEqual(
