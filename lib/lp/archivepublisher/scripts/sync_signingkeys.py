@@ -63,7 +63,9 @@ class SyncSigningKeysScript(LaunchpadScript):
             SigningKeyType.KMOD: ("kmod.pem", "kmod.x509"),
             SigningKeyType.OPAL: ("opal.pem", "opal.x509"),
             SigningKeyType.SIPL: ("sipl.pem", "sipl.x509"),
-            SigningKeyType.FIT: ("fit.key", "fit.crt"),
+            SigningKeyType.FIT: (
+                os.path.join("fit", "fit.key"),
+                os.path.join("fit", "fit.crt")),
         }
         found_keys_per_type = {}
         for key_type in SigningKeyType.items:
