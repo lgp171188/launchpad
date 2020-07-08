@@ -8,7 +8,6 @@ __metaclass__ = type
 import uuid
 
 from fixtures import FakeLogger
-from lp.code.errors import GitRepositoryCreationFault
 from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
@@ -35,6 +34,7 @@ from lp.code.enums import (
     GitRepositoryType,
     TargetRevisionControlSystems,
     )
+from lp.code.errors import GitRepositoryCreationFault
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.interfaces.gitcollection import IAllGitRepositories
@@ -395,14 +395,26 @@ class TestGitAPIMixin:
                                else None)}
             expected_status = GitRepositoryStatus.CREATING
             expected_hosting_calls = 0
+            expected_hosting_call_args = []
+            expected_hosting_call_kwargs = []
         else:
             expected_status = GitRepositoryStatus.AVAILABLE
             expected_hosting_calls = 1
+            expected_hosting_call_args = [(repository.getInternalPath(),)]
+            expected_hosting_call_kwargs = [
+                {"clone_from": (cloned_from.getInternalPath()
+                                if cloned_from else None)}]
 
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)
         self.assertEqual(expected_translation, translation)
         self.assertEqual(
             expected_hosting_calls, self.hosting_fixture.create.call_count)
+        self.assertEqual(
+            expected_hosting_call_args,
+            self.hosting_fixture.create.extract_args())
+        self.assertEqual(
+            expected_hosting_call_kwargs,
+            self.hosting_fixture.create.extract_kwargs())
         self.assertEqual(expected_status, repository.status)
         return repository
 

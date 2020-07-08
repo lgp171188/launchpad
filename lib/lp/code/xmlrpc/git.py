@@ -5,7 +5,6 @@
 
 __metaclass__ = type
 __all__ = [
-    'GIT_ASYNC_CREATE_REPO',
     'GitAPI',
     ]
 
@@ -407,10 +406,11 @@ class GitAPI(LaunchpadXMLRPCView):
                 repo, result = self._performLookup(
                     requester, path, auth_params)
 
-                # If the repo should be created asynchronously, we must
-                # include the extra parameter instructing code hosting
-                # service to do so.
-                if getFeatureFlag(GIT_ASYNC_CREATE_REPO):
+                # If the recently-created repo is in "CREATING" status,
+                # it should be created asynchronously by hosting service
+                # receiving this response. So, we must include the extra
+                # parameter instructing code hosting service to do so.
+                if repo.status == GitRepositoryStatus.CREATING:
                     clone_from = repo.getClonedFrom()
                     result["creation_params"] = {
                         "clone_from": (clone_from.getInternalPath()

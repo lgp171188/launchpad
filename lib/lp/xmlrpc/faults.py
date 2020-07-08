@@ -388,7 +388,7 @@ class GitRepositoryNotFound(PathTranslationError):
 
 
 class GitRepositoryBeingCreated(PathTranslationError):
-    """Raised when a Git repository path is currently beign created on
+    """Raised when a Git repository path is currently being created on
     hosting service."""
 
     msg_template = "Repository '%(path)s' creation is in progress."
