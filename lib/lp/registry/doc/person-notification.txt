@@ -18,7 +18,7 @@ To add a new notification we need the recipient, the email body and its
 subject.
 
     >>> notification = notification_set.addNotification(
-    ...     mark, 'subject', 'body')
+    ...     mark, u'subject', u'body')
     >>> verifyObject(IPersonNotification, notification)
     True
     >>> notification.person.name
@@ -65,14 +65,14 @@ The send-person-notifications script will send all pending
 notifications.
 
     >>> notification = notification_set.addNotification(
-    ...     mark, 'subject2', 'body2')
+    ...     mark, u'subject2', u'body2')
 
 This includes notifications to teams owned by other teams.
 
     >>> owning_team = factory.makeTeam()
     >>> team = factory.makeTeam(owner=owning_team)
     >>> team_notification = notification_set.addNotification(
-    ...     team, 'subject3', 'body3')
+    ...     team, u'subject3', u'body3')
     >>> [n.subject for n in notification_set.getNotificationsToSend()]
     [u'subject2', u'subject3']
     >>> transaction.commit()

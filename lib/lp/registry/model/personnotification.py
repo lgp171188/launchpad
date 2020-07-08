@@ -1,7 +1,9 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person notifications."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
@@ -12,13 +14,13 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from storm.base import Storm
 from storm.locals import (
     DateTime,
     Int,
     Unicode,
     )
 from storm.references import Reference
+from storm.store import Store
 from zope.interface import implementer
 
 from lp.registry.interfaces.personnotification import (
@@ -28,6 +30,7 @@ from lp.registry.interfaces.personnotification import (
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.mail.sendmail import (
     format_address,
     simple_sendmail,
@@ -36,13 +39,13 @@ from lp.services.propertycache import cachedproperty
 
 
 @implementer(IPersonNotification)
-class PersonNotification(Storm):
+class PersonNotification(StormBase):
     """See `IPersonNotification`."""
 
     __storm_table__ = 'PersonNotification'
     id = Int(primary=True)
-    personID = Int('person')
-    person = Reference(personID, "Person.id")
+    person_id = Int('person', allow_none=False)
+    person = Reference(person_id, "Person.id")
 
     date_created = DateTime(tzinfo=pytz.UTC, name='date_created',
                             allow_none=False, default=UTC_NOW)
@@ -85,6 +88,10 @@ class PersonNotification(Storm):
         simple_sendmail(from_addr, to_addresses, self.subject, self.body)
         self.date_emailed = datetime.now(pytz.timezone('UTC'))
 
+    def destroySelf(self):
+        """See `IPersonNotification`."""
+        Store.of(self).remove(self)
+
 
 @implementer(IPersonNotificationSet)
 class PersonNotificationSet:
@@ -95,7 +102,8 @@ class PersonNotificationSet:
         store = IStore(PersonNotification)
         return store.find(
             PersonNotification,
-            PersonNotification.date_emailed == None).order_by(
+            PersonNotification.date_emailed == None
+        ).order_by(
             PersonNotification.date_created,
             PersonNotification.id)
 
