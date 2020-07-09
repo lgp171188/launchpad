@@ -31,6 +31,7 @@ from zope.component import getUtility
 from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
 from lp.services.compat import mock
+from lp.services.config import config
 from lp.services.config.fixture import (
     ConfigFixture,
     ConfigUseFixture,
@@ -43,6 +44,7 @@ from lp.services.signing.testing.fixture import SigningServiceFixture
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.soyuz.model.archive import Archive
 from lp.testing import TestCaseWithFactory
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.script import run_script
 
@@ -65,7 +67,9 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.useFixture(ConfigUseFixture(config_name))
 
     def makeScript(self, test_args):
-        script = SyncSigningKeysScript("test-sync", test_args=test_args)
+        script = SyncSigningKeysScript(
+            "test-sync", dbuser=config.archivepublisher.dbuser,
+            test_args=test_args)
         script.logger = BufferLogger()
         return script
 
@@ -258,8 +262,10 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         script = self.makeScript([])
 
-        result_with_series = script.inject(
-            archive, SigningKeyType.UEFI, series, priv_key_path, pub_key_path)
+        with dbuser(config.archivepublisher.dbuser):
+            result_with_series = script.inject(
+                archive, SigningKeyType.UEFI, series,
+                priv_key_path, pub_key_path)
 
         self.assertThat(result_with_series, MatchesStructure.byEquality(
             archive=archive,
@@ -278,8 +284,10 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
              u"UEFI key for %s" % archive.reference, now.replace(tzinfo=utc)),
             signing_service_client.inject.call_args[0])
 
-        result_no_series = script.inject(
-            archive, SigningKeyType.UEFI, None, priv_key_path, pub_key_path)
+        with dbuser(config.archivepublisher.dbuser):
+            result_no_series = script.inject(
+                archive, SigningKeyType.UEFI, None,
+                priv_key_path, pub_key_path)
 
         self.assertThat(result_no_series, MatchesStructure.byEquality(
             archive=archive,
@@ -316,8 +324,9 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         key_type = expected_arch_signing_key.key_type
 
         script = self.makeScript([])
-        got_arch_key = script.inject(
-            archive, key_type, series, priv_key_path, pub_key_path)
+        with dbuser(config.archivepublisher.dbuser):
+            got_arch_key = script.inject(
+                archive, key_type, series, priv_key_path, pub_key_path)
         self.assertEqual(expected_arch_signing_key, got_arch_key)
 
         self.assertIn(
