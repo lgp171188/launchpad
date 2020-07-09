@@ -465,10 +465,10 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
 
     @property
     def allow_fork(self):
-        # Users cannot fork repositories which target is a user.
+        # Users cannot fork repositories that targets a user.
         if IPerson.providedBy(self.context.target):
             return False
-        # User cannot fork repositories they already own (not that forking a
+        # User cannot fork repositories they already own (note that forking a
         # repository owned by a team the user is in is still fine).
         if self.context.owner == self.user:
             return False
@@ -491,8 +491,12 @@ class GitRepositoryForkView(LaunchpadEditFormView):
 
     @action('Fork it', name='fork')
     def fork(self, action, data):
-        forked = getUtility(IGitRepositorySet).fork(
-            self.context, data['owner'])
+        new_owner = data.get("owner")
+        if not new_owner or not self.user.inTeam(new_owner):
+            self.request.response.addNotification(
+                "You should select a valid user to fork the repository.")
+            return
+        forked = getUtility(IGitRepositorySet).fork(self.context, new_owner)
         self.request.response.addNotification("Repository forked.")
         self.next_url = canonical_url(forked)
 

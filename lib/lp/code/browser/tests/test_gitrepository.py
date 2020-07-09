@@ -22,6 +22,7 @@ from soupmatchers import (
     Tag,
     HTMLContains,
     )
+from storm.expr import Desc
 from storm.store import Store
 from testtools.matchers import (
     AfterPreprocessing,
@@ -57,6 +58,7 @@ from lp.code.enums import (
     )
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.gitjob import GitRefScanJob
+from lp.code.model.gitrepository import GitRepository
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.enums import (
     BranchSharingPolicy,
@@ -69,6 +71,7 @@ from lp.registry.interfaces.person import (
     )
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp.publisher import canonical_url
@@ -2007,3 +2010,116 @@ class TestGitRepositoryActivityView(BrowserTestCase):
             create_activity,
             2)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+
+class TestGitRepositoryForkView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def getReposOwnedBy(self, user):
+        rs = IStore(GitRepository).find(GitRepository)
+        return rs.find(GitRepository.owner == user).order_by(
+            Desc(GitRepository.date_created))
+
+    def test_fork_page_shows_input(self):
+        with admin_logged_in():
+            repository = self.factory.makeGitRepository()
+            owner = removeSecurityProxy(repository.owner)
+
+            team = self.factory.makeTeam(members=[owner])
+            another_person = self.factory.makePerson()
+
+            select_owner = Tag(
+                "owner selector", "select",
+                attrs={"id": "field.owner", "name": "field.owner"})
+
+            def person_option_tag(person):
+                return Tag(
+                    "option for %s" % person, "option",
+                    text="%s (%s)" % (person.displayname, person.name),
+                    attrs=dict(value=person.name))
+
+            option_owner = person_option_tag(owner)
+            option_team = person_option_tag(team)
+            option_another_person = person_option_tag(another_person)
+
+        browser = self.getViewBrowser(
+            repository, "+fork", rootsite="code", user=owner)
+
+        html = browser.contents
+        self.assertThat(html, HTMLContains(select_owner))
+        self.assertThat(html, HTMLContains(option_owner))
+        self.assertThat(html, HTMLContains(option_team))
+        self.assertThat(html, Not(HTMLContains(option_another_person)))
+
+    def test_fork_page_submit_to_self(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+
+        with person_logged_in(another_person):
+            view = create_initialized_view(repository, name="+fork", form={
+                "field.owner": another_person.name,
+                "field.actions.fork": "Fork it"})
+
+            forked = self.getReposOwnedBy(another_person)[0]
+            self.assertNotEqual(forked, repository)
+            self.assertEqual(another_person, forked.owner)
+
+            notifications = view.request.response.notifications
+            self.assertEqual(1, len(notifications))
+            self.assertEqual("Repository forked.", notifications[0].message)
+
+            self.assertEqual(canonical_url(forked), view.next_url)
+
+    def test_fork_page_submit_to_team(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[another_person])
+
+        with person_logged_in(another_person):
+            view = create_initialized_view(repository, name="+fork", form={
+                "field.owner": team.name,
+                "field.actions.fork": "Fork it"})
+
+            forked = self.getReposOwnedBy(team)[0]
+            self.assertNotEqual(forked, repository)
+            self.assertEqual(team, forked.owner)
+
+            notifications = view.request.response.notifications
+            self.assertEqual(1, len(notifications))
+            self.assertEqual("Repository forked.", notifications[0].message)
+
+            self.assertEqual(canonical_url(forked), view.next_url)
+
+    def test_fork_page_submit_missing_user(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+
+        with person_logged_in(another_person):
+            view = create_initialized_view(repository, name="+fork", form={
+                "field.actions.fork": "Fork it"})
+
+            # No repository should have been created.
+            self.assertEqual(0, self.getReposOwnedBy(another_person).count())
+            notifications = view.request.response.notifications
+            self.assertEqual(1, len(notifications))
+            self.assertEqual(
+                "You should select a valid user to fork the repository.",
+                notifications[0].message)
+
+            self.assertEqual(None, view.next_url)
+
+    def test_fork_page_submit_invalid_user(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+        invalid_person = self.factory.makePerson()
+
+        with person_logged_in(another_person):
+            create_initialized_view(repository, name="+fork", form={
+                "field.owner": invalid_person.name,
+                "field.actions.fork": "Fork it"})
+            self.assertEqual(0, self.getReposOwnedBy(invalid_person).count())
