@@ -433,7 +433,7 @@ class GitRepositoryConfirmCreationJob(GitJobDerived):
 
     retry_error_types = (RepositoryNotReady, )
     retry_delay = timedelta(seconds=5)
-    max_retries = 60  # 60 retires * 5 seconds = 5 minutes
+    max_retries = 600  # 600 retires * 5 seconds = 50 minutes
 
     @classmethod
     def create(cls, repository):
@@ -446,19 +446,35 @@ class GitRepositoryConfirmCreationJob(GitJobDerived):
         return job
 
     def run(self):
-        """See `IGitRepositoryModifiedMailJob`."""
+        """See `GitRepositoryConfirmCreationJob`."""
+        log.debug(
+            "Trying to confirm availability of git repository %s",
+            self.repository)
         hosting_path = self.repository.getInternalPath()
         props = getUtility(IGitHostingClient).getProperties(
             hosting_path)
-        if props["is_available"]:
+        log.debug(
+            "Git repository %s properties on code hosting: %s",
+            self.repository, props)
+        if props.get("is_available"):
             naked_repo = removeSecurityProxy(self.repository)
             naked_repo.status = GitRepositoryStatus.AVAILABLE
             IStore(naked_repo).flush()
+            log.info(
+                "Git repository %s availability confirmed.", self.repository)
+            return
 
         # If we didn't reach the max retries, raise something to retry in
         # some seconds.
         if self.attempt_count < self.max_retries:
-            raise GitRepositoryConfirmCreationJob.RepositoryNotReady
+            log.info(
+                "Git repository %s is not available on code hosting yet. "
+                "Retrying later.",
+                self.repository)
+            raise GitRepositoryConfirmCreationJob.RepositoryNotReady()
 
         # We have tried enough. We should abort this repository creation.
+        log.error(
+            "Git repository %s availability could not be confirmed. Removing.",
+            self.repository)
         self.repository.destroySelf(break_references=True)
