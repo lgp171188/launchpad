@@ -70,7 +70,8 @@ Filing bugs with Apport also allows us to get to the bug filing interface.
     >>> anon_browser.getControl(name='field.blob').add_file(
     ...     extra_filebug_data, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click()
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
     >>> from lp.bugs.interfaces.apportjob import IProcessApportBlobJobSource
     >>> login('foo.bar@canonical.com')
     >>> job = getUtility(IProcessApportBlobJobSource).getByBlobUUID(

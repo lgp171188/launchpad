@@ -9,9 +9,12 @@ __all__ = ['CommercialSubscription']
 import datetime
 
 import pytz
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Store,
+    Unicode,
     )
 from zope.interface import implementer
 
@@ -21,27 +24,46 @@ from lp.registry.interfaces.commercialsubscription import (
     )
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ICommercialSubscription)
-class CommercialSubscription(SQLBase):
+class CommercialSubscription(StormBase):
 
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=True)
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_last_modified = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_starts = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_expires = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person', default=None,
-        storm_validator=validate_public_person)
-    purchaser = ForeignKey(
-        dbName='purchaser', foreignKey='Person', default=None,
-        storm_validator=validate_public_person)
-    sales_system_id = StringCol(notNull=True)
-    whiteboard = StringCol(default=None)
+    __storm_table__ = 'CommercialSubscription'
+
+    id = Int(primary=True)
+
+    product_id = Int(name='product', allow_none=False)
+    product = Reference(product_id, 'Product.id')
+
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_last_modified = DateTime(
+        tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_starts = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_expires = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+
+    registrant_id = Int(
+        name='registrant', allow_none=False, validator=validate_public_person)
+    registrant = Reference(registrant_id, 'Person.id')
+
+    purchaser_id = Int(
+        name='purchaser', allow_none=False, validator=validate_public_person)
+    purchaser = Reference(purchaser_id, 'Person.id')
+
+    sales_system_id = Unicode(allow_none=False)
+    whiteboard = Unicode(default=None)
+
+    def __init__(self, product, date_starts, date_expires, registrant,
+                 purchaser, sales_system_id, whiteboard):
+        super(CommercialSubscription, self).__init__()
+        self.product = product
+        self.date_starts = date_starts
+        self.date_expires = date_expires
+        self.registrant = registrant
+        self.purchaser = purchaser
+        self.sales_system_id = sales_system_id
+        self.whiteboard = whiteboard
 
     @property
     def is_active(self):
@@ -54,4 +76,4 @@ class CommercialSubscription(SQLBase):
         if self.is_active:
             raise CannotDeleteCommercialSubscription(
                 "This CommercialSubscription is still active.")
-        self.destroySelf()
+        Store.of(self).remove(self)

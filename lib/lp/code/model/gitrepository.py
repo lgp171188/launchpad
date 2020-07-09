@@ -374,6 +374,31 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             hosting_path, clone_from=clone_from_path,
             async_create=async_create)
 
+    def getClonedFrom(self):
+        """See `IGitRepository`"""
+        repository_set = getUtility(IGitRepositorySet)
+        registrant = self.registrant
+
+        # If repository has target_default, clone from default.
+        clone_from_repository = None
+        try:
+            default = repository_set.getDefaultRepository(
+                self.target)
+            if default is not None and default.visibleByUser(registrant):
+                clone_from_repository = default
+            else:
+                default = repository_set.getDefaultRepositoryForOwner(
+                    self.owner, self.target)
+                if (default is not None and
+                        default.visibleByUser(registrant)):
+                    clone_from_repository = default
+        except GitTargetError:
+            pass  # Ignore Personal repositories.
+        if clone_from_repository == self:
+            clone_from_repository = None
+
+        return clone_from_repository
+
     @property
     def valid_webhook_event_types(self):
         return ["git:push:0.1", "merge-proposal:0.1"]
@@ -1708,13 +1733,15 @@ class GitRepositorySet:
 
     def new(self, repository_type, registrant, owner, target, name,
             information_type=None, date_created=DEFAULT, description=None,
-            with_hosting=False, async_hosting=False):
+            with_hosting=False, async_hosting=False,
+            status=GitRepositoryStatus.AVAILABLE):
         """See `IGitRepositorySet`."""
         namespace = get_git_namespace(target, owner)
         return namespace.createRepository(
             repository_type, registrant, name,
             information_type=information_type, date_created=date_created,
-            description=description, with_hosting=with_hosting)
+            description=description, with_hosting=with_hosting,
+            async_hosting=async_hosting, status=status)
 
     def fork(self, origin, user):
         repository = self.new(
@@ -1723,11 +1750,8 @@ class GitRepositorySet:
             name=origin.name,
             information_type=origin.information_type,
             date_created=UTC_NOW, description=origin.description,
-            with_hosting=True)
-        # XXX pappacena 2020-07-02: move this status change to be a
-        # parameter on self.new / namespace.createRepository.
-        removeSecurityProxy(repository).status = GitRepositoryStatus.CREATING
-        IStore(repository).flush()
+            with_hosting=True, async_hosting=True,
+            status=GitRepositoryStatus.CREATING)
         # Start pooling job to check when the repository will be ready.
         getUtility(IGitRepositoryConfirmCreationJobSource).create(repository)
         return repository

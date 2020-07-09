@@ -3272,7 +3272,8 @@ class TestGitRepositorySet(TestCaseWithFactory):
         self.assertThat(repository, MatchesStructure.byEquality(
             registrant=owner, owner=owner, target=target, name=name))
         self.assertEqual(
-            [((repository.getInternalPath(),), {"clone_from": None})],
+            [((repository.getInternalPath(),),
+              {'async_create': False, "clone_from": None})],
             hosting_fixture.create.calls)
 
     def test_provides_IGitRepositorySet(self):

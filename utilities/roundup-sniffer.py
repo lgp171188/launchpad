@@ -87,7 +87,7 @@ class RoundupSniffer:
         return list(bugs)
 
     def get_text_values(self, bug):
-        raise NotImplementedError(self.get_text_values.func_name)
+        raise NotImplementedError(self.get_text_values.__name__)
 
 
 class MplayerStatusSniffer(RoundupSniffer):

@@ -332,7 +332,7 @@ zope.app.http==4.0.1
 zope.app.publication==4.3.1
 zope.app.publisher==4.2.0
 zope.app.server==4.0.0
-zope.app.wsgi==4.1.0
+zope.app.wsgi==4.3.0
 zope.server==4.0.2
 zope.testbrowser==5.5.1
 zope.vocabularyregistry==1.1.1

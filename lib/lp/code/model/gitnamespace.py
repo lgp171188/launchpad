@@ -32,15 +32,14 @@ from lp.app.interfaces.services import IService
 from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
-    CodeReviewNotificationLevel,
-    )
+    CodeReviewNotificationLevel, GitRepositoryStatus,
+)
 from lp.code.errors import (
     GitDefaultConflict,
     GitRepositoryCreationForbidden,
     GitRepositoryCreatorNotMemberOfOwnerTeam,
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
-    GitTargetError,
     )
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitnamespace import (
@@ -76,7 +75,8 @@ class _BaseGitNamespace:
                          reviewer=None, information_type=None,
                          date_created=DEFAULT, description=None,
                          target_default=False, owner_default=False,
-                         with_hosting=False, async_hosting=False):
+                         with_hosting=False, async_hosting=False,
+                         status=GitRepositoryStatus.AVAILABLE):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
 
@@ -91,7 +91,7 @@ class _BaseGitNamespace:
         repository = GitRepository(
             repository_type, registrant, self.owner, self.target, name,
             information_type, date_created, reviewer=reviewer,
-            description=description)
+            description=description, status=status)
         repository._reconcileAccess()
 
         # The owner of the repository should also be automatically subscribed
@@ -122,24 +122,7 @@ class _BaseGitNamespace:
             IStore(repository).flush()
             assert repository.id is not None
 
-            # If repository has target_default, clone from default.
-            clone_from_repository = None
-            try:
-                default = repository_set.getDefaultRepository(
-                    repository.target)
-                if default is not None and default.visibleByUser(registrant):
-                    clone_from_repository = default
-                else:
-                    default = repository_set.getDefaultRepositoryForOwner(
-                        repository.owner, repository.target)
-                    if (default is not None and
-                            default.visibleByUser(registrant)):
-                        clone_from_repository = default
-            except GitTargetError:
-                pass  # Ignore Personal repositories.
-            if clone_from_repository == repository:
-                clone_from_repository = None
-
+            clone_from_repository = repository.getClonedFrom()
             repository._createOnHostingService(
                 clone_from_repository=clone_from_repository,
                 async_create=async_hosting)

@@ -213,6 +213,9 @@ class IGitRepositoryView(IHasRecipes):
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
 
+    def getClonedFrom():
+        """Returns from which repository the given repo is a clone from."""
+
     @operation_parameters(
         reviewer=Reference(
             title=_("A person for which the reviewer status is in question."),
