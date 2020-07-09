@@ -1151,7 +1151,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         self.assertEqual(8, store.find(GitRepository).count())
 
-        self.runFrequently(maximum_chunk_size=2)
+        self.runHourly(maximum_chunk_size=2)
 
         switch_dbuser('testadmin')
         remaining_repos = store.find(GitRepository)

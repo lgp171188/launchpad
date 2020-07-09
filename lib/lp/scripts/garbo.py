@@ -1843,7 +1843,6 @@ class FrequentDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         AntiqueSessionPruner,
         BugSummaryJournalRollup,
         BugWatchScheduler,
-        GitRepositoryPruner,
         OpenIDConsumerAssociationPruner,
         OpenIDConsumerNoncePruner,
         PopulateDistributionSourcePackageCache,
@@ -1866,6 +1865,7 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     tunable_loops = [
         BugHeatUpdater,
         DuplicateSessionPruner,
+        GitRepositoryPruner,
         RevisionCachePruner,
         UnusedSessionPruner,
         ]
