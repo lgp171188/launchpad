@@ -34,7 +34,6 @@ from six.moves.urllib.parse import (
     quote,
     urlencode,
     )
-from sqlobject import SQLObjectNotFound
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.form import Fields
@@ -841,7 +840,7 @@ class FileBugViewBase(LaunchpadFormView):
         try:
             return getUtility(IProcessApportBlobJobSource).getByBlobUUID(
                 self.extra_data_token)
-        except SQLObjectNotFound:
+        except NotFoundError:
             return None
 
     @property

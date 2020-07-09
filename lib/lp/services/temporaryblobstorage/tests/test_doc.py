@@ -9,6 +9,8 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.pages import setUpGlobs
+from lp.testing.systemdocs import setUp
 
 
 here = os.path.dirname(os.path.realpath(__file__))
@@ -17,4 +19,7 @@ special = {}
 
 
 def test_suite():
-    return build_test_suite(here, special, layer=LaunchpadFunctionalLayer)
+    return build_test_suite(
+        here, special, layer=LaunchpadFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True),
+        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
