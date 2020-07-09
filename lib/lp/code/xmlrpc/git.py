@@ -70,6 +70,7 @@ from lp.registry.interfaces.product import (
     NoSuchProduct,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.services.features import getFeatureFlag
 from lp.services.macaroons.interfaces import (
     IMacaroonIssuer,
     NO_USER,
@@ -82,6 +83,9 @@ from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
 from lp.xmlrpc import faults
 from lp.xmlrpc.helpers import return_fault
+
+
+GIT_ASYNC_CREATE_REPO = 'git.codehosting.async-create.enabled'
 
 
 def _get_requester_id(auth_params):
@@ -215,9 +219,13 @@ class GitAPI(LaunchpadXMLRPCView):
             raise faults.Unauthorized()
 
     def _performLookup(self, requester, path, auth_params):
+        """Perform a translation path lookup.
+
+        :return: A tuple with the repository object and a dict with
+                 translation information."""
         repository, extra_path = getUtility(IGitLookup).getByPath(path)
         if repository is None:
-            return None
+            return None, None
 
         verified = self._verifyAuthParams(requester, repository, auth_params)
         naked_repository = removeSecurityProxy(repository)
@@ -237,7 +245,7 @@ class GitAPI(LaunchpadXMLRPCView):
             try:
                 hosting_path = repository.getInternalPath()
             except Unauthorized:
-                return None
+                return naked_repository, None
             writable = (
                 repository.repository_type == GitRepositoryType.HOSTED and
                 check_permission("launchpad.Edit", repository))
@@ -250,7 +258,7 @@ class GitAPI(LaunchpadXMLRPCView):
                     writable = True
             private = repository.private
 
-        return {
+        return naked_repository, {
             "path": hosting_path,
             "writable": writable,
             "trailing": extra_path,
@@ -348,10 +356,20 @@ class GitAPI(LaunchpadXMLRPCView):
 
         try:
             try:
+                # Creates the repository on the database, but do not create
+                # it on hosting service. It should be created by the hosting
+                # service as a result of pathTranslate call indicating that
+                # the repo was just created in Launchpad.
+                if getFeatureFlag(GIT_ASYNC_CREATE_REPO):
+                    with_hosting = False
+                    status = GitRepositoryStatus.CREATING
+                else:
+                    with_hosting = True
+                    status = GitRepositoryStatus.AVAILABLE
                 namespace.createRepository(
                     GitRepositoryType.HOSTED, requester, repository_name,
                     target_default=target_default, owner_default=owner_default,
-                    with_hosting=True)
+                    with_hosting=with_hosting, status=status)
             except LaunchpadValidationError as e:
                 # Despite the fault name, this just passes through the
                 # exception text so there's no need for a new Git-specific
@@ -378,11 +396,26 @@ class GitAPI(LaunchpadXMLRPCView):
         if requester == LAUNCHPAD_ANONYMOUS:
             requester = None
         try:
-            result = self._performLookup(requester, path, auth_params)
+            repo, result = self._performLookup(requester, path, auth_params)
+            if repo and repo.status == GitRepositoryStatus.CREATING:
+                raise faults.GitRepositoryBeingCreated(path)
+
             if (result is None and requester is not None and
                 permission == "write"):
                 self._createRepository(requester, path)
-                result = self._performLookup(requester, path, auth_params)
+                repo, result = self._performLookup(
+                    requester, path, auth_params)
+
+                # If the recently-created repo is in "CREATING" status,
+                # it should be created asynchronously by hosting service
+                # receiving this response. So, we must include the extra
+                # parameter instructing code hosting service to do so.
+                if repo.status == GitRepositoryStatus.CREATING:
+                    clone_from = repo.getClonedFrom()
+                    result["creation_params"] = {
+                        "clone_from": (clone_from.getInternalPath()
+                                       if clone_from else None)
+                    }
             if result is None:
                 raise faults.GitRepositoryNotFound(path)
             if permission != "read" and not result["writable"]:

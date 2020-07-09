@@ -46,6 +46,7 @@ from lp.code.interfaces.gitrepository import (
     IGitRepositorySet,
     )
 from lp.code.tests.helpers import GitHostingFixture
+from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -157,6 +158,7 @@ class TestGitAPIMixin:
             transport=XMLRPCTestTransport())
         self.hosting_fixture = self.useFixture(GitHostingFixture())
         self.repository_set = getUtility(IGitRepositorySet)
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: True}))
 
     def assertFault(self, expected_fault, request_id, func_name,
                     *args, **kwargs):
@@ -366,7 +368,7 @@ class TestGitAPIMixin:
             macaroon_raw)
 
     def assertCreates(self, requester, path, can_authenticate=False,
-                      private=False):
+                      private=False, async_create=True):
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate)
         request_id = auth_params["request-id"]
@@ -377,22 +379,49 @@ class TestGitAPIMixin:
             requester, path.lstrip("/"))
         self.assertIsNotNone(repository)
         self.assertEqual(requester, repository.registrant)
-        self.assertEqual(
-            {"path": repository.getInternalPath(), "writable": True,
-             "trailing": "", "private": private},
-            translation)
-        self.assertEqual(
-            (repository.getInternalPath(),),
-            self.hosting_fixture.create.extract_args()[0])
+
+        cloned_from = repository.getClonedFrom()
+        expected_translation = {
+            "path": repository.getInternalPath(),
+            "writable": True,
+            "trailing": "",
+            "private": private}
+
+        # This should be the case if GIT_ASYNC_CREATE_REPO feature flag is
+        # enabled.
+        if async_create:
+            expected_translation["creation_params"] = {
+                "clone_from": (cloned_from.getInternalPath() if cloned_from
+                               else None)}
+            expected_status = GitRepositoryStatus.CREATING
+            expected_hosting_calls = 0
+            expected_hosting_call_args = []
+            expected_hosting_call_kwargs = []
+        else:
+            expected_status = GitRepositoryStatus.AVAILABLE
+            expected_hosting_calls = 1
+            expected_hosting_call_args = [(repository.getInternalPath(),)]
+            expected_hosting_call_kwargs = [
+                {"clone_from": (cloned_from.getInternalPath()
+                                if cloned_from else None)}]
+
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)
+        self.assertEqual(expected_translation, translation)
+        self.assertEqual(
+            expected_hosting_calls, self.hosting_fixture.create.call_count)
+        self.assertEqual(
+            expected_hosting_call_args,
+            self.hosting_fixture.create.extract_args())
+        self.assertEqual(
+            expected_hosting_call_kwargs,
+            self.hosting_fixture.create.extract_kwargs())
+        self.assertEqual(expected_status, repository.status)
         return repository
 
     def assertCreatesFromClone(self, requester, path, cloned_from,
                                can_authenticate=False):
         self.assertCreates(requester, path, can_authenticate)
-        self.assertEqual(
-            {"clone_from": cloned_from.getInternalPath()},
-            self.hosting_fixture.create.extract_kwargs()[0])
+        self.assertEqual(0, self.hosting_fixture.create.call_count)
 
     def assertHasRefPermissions(self, requester, repository, ref_paths,
                                 permissions, macaroon_raw=None):
@@ -1182,13 +1211,36 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         path = u"/%s" % repository.target.name
         self.assertTranslates(requester, path, repository, False)
 
-    def test_translatePath_create_project(self):
+    def test_translatePath_create_project_async(self):
         # translatePath creates a project repository that doesn't exist, if
         # it can.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         self.assertCreates(
             requester, u"/~%s/%s/+git/random" % (requester.name, project.name))
+
+    def test_translatePath_create_project_sync(self):
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: ''}))
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        self.assertCreates(
+            requester, u"/~%s/%s/+git/random" % (requester.name, project.name),
+            async_create=False)
+
+    def test_translatePath_create_project_blocks_duplicate_calls(self):
+        # translatePath creates a project repository that doesn't exist,
+        # but blocks any further request to create the same repository.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        path = u"/~%s/%s/+git/random" % (requester.name, project.name)
+        self.assertCreates(requester, path)
+
+        auth_params = _make_auth_params(
+            requester, can_authenticate=True)
+        request_id = auth_params["request-id"]
+        self.assertFault(
+            faults.GitRepositoryBeingCreated,
+            request_id, "translatePath", path, "write", auth_params)
 
     def test_translatePath_create_project_clone_from_target_default(self):
         # translatePath creates a project repository cloned from the target
@@ -1511,6 +1563,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_translatePath_create_broken_hosting_service(self):
         # If the hosting service is down, trying to create a repository
         # fails and doesn't leave junk around in the Launchpad database.
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: ''}))
         self.hosting_fixture.create.failure = GitRepositoryCreationFault(
             "nothing here", path="123")
         requester = self.factory.makePerson()
