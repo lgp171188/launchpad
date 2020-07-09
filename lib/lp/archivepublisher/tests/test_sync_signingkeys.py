@@ -21,6 +21,7 @@ from fixtures import (
 from pytz import utc
 from testtools.content import text_content
 from testtools.matchers import (
+    ContainsAll,
     Equals,
     MatchesDict,
     MatchesStructure,
@@ -114,6 +115,22 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         archives = list(script.getArchives())
         self.assertEqual(all_archives[2:5], archives)
 
+    def test_fetch_archives_with_reference(self):
+        all_archives = list(self.makeArchives())
+        script = self.makeScript(["--archive", all_archives[0].reference])
+        archives = list(script.getArchives())
+        self.assertEqual([all_archives[0]], archives)
+
+    def test_get_key_types(self):
+        script = self.makeScript([])
+        key_types = script.getKeyTypes()
+        self.assertEqual(SigningKeyType.items, key_types)
+
+    def test_get_key_types_with_selection(self):
+        script = self.makeScript(["--type", "UEFI"])
+        key_types = script.getKeyTypes()
+        self.assertEqual([SigningKeyType.UEFI], key_types)
+
     def test_get_keys_per_type(self):
         keys_dir = self.signing_root_dir
 
@@ -182,8 +199,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                       'wb') as fd:
                 fd.write(b"Series 1 %s" % filename)
 
-        script = self.makeScript([])
-        script.getArchives = mock.Mock(return_value=[archive])
+        script = self.makeScript(["--archive", archive.reference])
         script.inject = mock.Mock()
         script.main()
 
@@ -237,6 +253,103 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                 os.path.join(archive_root, "uefi.crt"),
                 SigningKeyType.UEFI, None),
             content)
+
+    def test_process_archive_dry_run(self):
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+
+        distro = self.factory.makeDistribution()
+        series1 = self.factory.makeDistroSeries(distribution=distro)
+        series2 = self.factory.makeDistroSeries(distribution=distro)
+
+        archive = self.factory.makeArchive(distribution=distro)
+        key_dirs = self.makeArchiveSigningDir(archive, [series1, series2])
+
+        archive_root = key_dirs[None]
+
+        archive_signing_key_fit = self.factory.makeArchiveSigningKey(
+            archive=archive, distro_series=series1,
+            signing_key=self.factory.makeSigningKey(
+                key_type=SigningKeyType.FIT))
+        fingerprint_fit = archive_signing_key_fit.signing_key.fingerprint
+
+        transaction.commit()
+
+        # Create fake UEFI keys for the root
+        for filename in ("uefi.key", "uefi.crt"):
+            with open(os.path.join(archive_root, filename), 'wb') as fd:
+                fd.write(b"Root %s" % filename)
+
+        # Create fake OPAL and Kmod keys for series1
+        for filename in ("opal.pem", "opal.x509", "kmod.pem", "kmod.x509"):
+            with open(os.path.join(key_dirs[series1], filename), 'wb') as fd:
+                fd.write(b"Series 1 %s" % filename)
+
+        # Create fake FIT keys for series1
+        os.makedirs(os.path.join(key_dirs[series1], "fit"))
+        for filename in ("fit.key", "fit.crt"):
+            with open(os.path.join(key_dirs[series1], "fit", filename),
+                      'wb') as fd:
+                fd.write(b"Series 1 %s" % filename)
+
+        script = self.makeScript(
+            ["--archive", archive.reference, "--overwrite", "--dry-run"])
+        script.main()
+
+        self.assertEqual(0, signing_service_client.inject.call_count)
+
+        # No changes are committed to the database.
+        archive_signing_key_set = getUtility(IArchiveSigningKeySet)
+        self.assertIsNone(
+            archive_signing_key_set.getSigningKey(
+                SigningKeyType.UEFI, archive, None, exact_match=True))
+        self.assertIsNone(
+            archive_signing_key_set.getSigningKey(
+                SigningKeyType.KMOD, archive, series1, exact_match=True))
+        self.assertIsNone(
+            archive_signing_key_set.getSigningKey(
+                SigningKeyType.OPAL, archive, series1, exact_match=True))
+        self.assertThat(
+            archive_signing_key_set.getSigningKey(
+                SigningKeyType.FIT, archive, series1, exact_match=True),
+            MatchesStructure.byEquality(fingerprint=fingerprint_fit))
+
+        # Check the log messages.
+        found_tpl = "INFO Found key files %s / %s (type=%s, series=%s)."
+        overwrite_tpl = (
+            "INFO Overwriting existing signing key for %s / %s / %s")
+        inject_tpl = "INFO Would inject signing key for %s / %s / %s"
+        self.assertThat(
+            script.logger.content.as_text().splitlines(),
+            ContainsAll([
+                "INFO #0 - Processing keys for archive %s." %
+                    archive.reference,
+                found_tpl % (
+                    os.path.join(archive_root, "uefi.key"),
+                    os.path.join(archive_root, "uefi.crt"),
+                    SigningKeyType.UEFI, None),
+                inject_tpl % (SigningKeyType.UEFI, archive.reference, None),
+                found_tpl % (
+                    os.path.join(key_dirs[series1], "kmod.pem"),
+                    os.path.join(key_dirs[series1], "kmod.x509"),
+                    SigningKeyType.KMOD, series1.name),
+                inject_tpl % (
+                    SigningKeyType.KMOD, archive.reference, series1.name),
+                found_tpl % (
+                    os.path.join(key_dirs[series1], "opal.pem"),
+                    os.path.join(key_dirs[series1], "opal.x509"),
+                    SigningKeyType.OPAL, series1.name),
+                inject_tpl % (
+                    SigningKeyType.OPAL, archive.reference, series1.name),
+                found_tpl % (
+                    os.path.join(key_dirs[series1], "fit", "fit.key"),
+                    os.path.join(key_dirs[series1], "fit", "fit.crt"),
+                    SigningKeyType.FIT, series1.name),
+                overwrite_tpl % (
+                    SigningKeyType.FIT, archive.reference, series1.name),
+                inject_tpl % (
+                    SigningKeyType.FIT, archive.reference, series1.name),
+                ]))
 
     def test_inject(self):
         signing_service_client = self.useFixture(
@@ -332,6 +445,55 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.assertIn(
             "Signing key for %s / %s / %s already exists" %
             (key_type, archive.reference, series.name),
+            script.logger.content.as_text())
+
+    def test_inject_existing_key_with_overwrite(self):
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+
+        now = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.archivepublisher.scripts.sync_signingkeys.datetime')).mock
+        mock_datetime.now = lambda: now
+
+        distro = self.factory.makeDistribution()
+        series = self.factory.makeDistroSeries(distribution=distro)
+        archive = self.factory.makeArchive(distribution=distro)
+
+        tmpdir = self.useFixture(TempDir()).path
+        priv_key_path = os.path.join(tmpdir, "priv.key")
+        pub_key_path = os.path.join(tmpdir, "pub.crt")
+        with open(priv_key_path, 'wb') as fd:
+            fd.write(b"Private key content")
+        with open(pub_key_path, 'wb') as fd:
+            fd.write(b"Public key content")
+
+        self.factory.makeArchiveSigningKey(
+            archive=archive, distro_series=series,
+            signing_key=self.factory.makeSigningKey(
+                key_type=SigningKeyType.UEFI))
+
+        script = self.makeScript(["--overwrite"])
+        with dbuser(config.archivepublisher.dbuser):
+            result = script.inject(
+                archive, SigningKeyType.UEFI, series,
+                priv_key_path, pub_key_path)
+
+        self.assertThat(result, MatchesStructure(
+            archive=Equals(archive),
+            earliest_distro_series=Equals(series),
+            key_type=Equals(SigningKeyType.UEFI),
+            signing_key=MatchesStructure.byEquality(
+                key_type=SigningKeyType.UEFI,
+                public_key=b"Public key content")))
+        self.assertEqual(
+            [(SigningKeyType.UEFI, b"Private key content",
+              b"Public key content",
+              "UEFI key for %s" % archive.reference, now.replace(tzinfo=utc))],
+            signing_service_client.inject.call_args)
+        self.assertIn(
+            "Overwriting existing signing key for %s / %s / %s" %
+            (SigningKeyType.UEFI, archive.reference, series.name),
             script.logger.content.as_text())
 
     def runScript(self):
