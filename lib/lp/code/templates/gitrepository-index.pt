@@ -45,8 +45,7 @@
        tal:content="structure context/description/fmt:text-to-html" />
 
   <div class="yui-g first">
-    <div id="repository-management" class="portlet"
-        tal:define="allow_fork view/allow_fork">
+    <div id="repository-management" class="portlet">
       <tal:repository-management
           replace="structure context/@@++repository-management" />
     </div>
