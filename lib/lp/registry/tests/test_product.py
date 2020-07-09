@@ -1582,7 +1582,7 @@ class ProductLicensingTestCase(TestCaseWithFactory):
         product = self.factory.makeProduct()
         self.factory.makeCommercialSubscription(product)
         with celebrity_logged_in('admin'):
-            product.commercial_subscription.sales_system_id = 'testing'
+            product.commercial_subscription.sales_system_id = u'testing'
             date_expires = product.commercial_subscription.date_expires
         with person_logged_in(product.owner):
             product.licenses = [License.OTHER_PROPRIETARY]

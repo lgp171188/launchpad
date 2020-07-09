@@ -1153,7 +1153,7 @@ class Person(
                 Product, TeamParticipation.teamID == Product._ownerID),
             Join(
                 CommercialSubscription,
-                CommercialSubscription.productID == Product.id)
+                CommercialSubscription.product_id == Product.id)
             ).find(
                 Person,
                 CommercialSubscription.date_expires > datetime.now(
