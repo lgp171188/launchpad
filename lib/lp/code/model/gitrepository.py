@@ -116,7 +116,10 @@ from lp.code.interfaces.gitcollection import (
     IGitCollection,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
-from lp.code.interfaces.gitjob import IGitRefScanJobSource
+from lp.code.interfaces.gitjob import (
+    IGitRefScanJobSource,
+    IGitRepositoryConfirmCreationJobSource,
+    )
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitnamespace import (
     get_git_namespace,
@@ -370,6 +373,31 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         getUtility(IGitHostingClient).create(
             hosting_path, clone_from=clone_from_path,
             async_create=async_create)
+
+    def getClonedFrom(self):
+        """See `IGitRepository`"""
+        repository_set = getUtility(IGitRepositorySet)
+        registrant = self.registrant
+
+        # If repository has target_default, clone from default.
+        clone_from_repository = None
+        try:
+            default = repository_set.getDefaultRepository(
+                self.target)
+            if default is not None and default.visibleByUser(registrant):
+                clone_from_repository = default
+            else:
+                default = repository_set.getDefaultRepositoryForOwner(
+                    self.owner, self.target)
+                if (default is not None and
+                        default.visibleByUser(registrant)):
+                    clone_from_repository = default
+        except GitTargetError:
+            pass  # Ignore Personal repositories.
+        if clone_from_repository == self:
+            clone_from_repository = None
+
+        return clone_from_repository
 
     @property
     def valid_webhook_event_types(self):
@@ -1641,8 +1669,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         Store.of(self).remove(self)
         # And now create a job to remove the repository from storage when
         # it's done.
-        getUtility(IReclaimGitRepositorySpaceJobSource).create(
-            repository_name, repository_path)
+        if self.status == GitRepositoryStatus.AVAILABLE:
+            getUtility(IReclaimGitRepositorySpaceJobSource).create(
+                repository_name, repository_path)
 
 
 class DeletionOperation:
@@ -1704,14 +1733,15 @@ class GitRepositorySet:
 
     def new(self, repository_type, registrant, owner, target, name,
             information_type=None, date_created=DEFAULT, description=None,
-            with_hosting=False, async_hosting=False):
+            with_hosting=False, async_hosting=False,
+            status=GitRepositoryStatus.AVAILABLE):
         """See `IGitRepositorySet`."""
         namespace = get_git_namespace(target, owner)
         return namespace.createRepository(
             repository_type, registrant, name,
             information_type=information_type, date_created=date_created,
             description=description, with_hosting=with_hosting,
-            async_hosting=async_hosting)
+            async_hosting=async_hosting, status=status)
 
     def fork(self, origin, user):
         repository = self.new(
@@ -1720,11 +1750,10 @@ class GitRepositorySet:
             name=origin.name,
             information_type=origin.information_type,
             date_created=UTC_NOW, description=origin.description,
-            with_hosting=True, async_hosting=True)
-        # XXX pappacena 2020-07-02: move this status change to be a
-        # parameter on self.new / namespace.createRepository.
-        removeSecurityProxy(repository).status = GitRepositoryStatus.CREATING
-        IStore(repository).flush()
+            with_hosting=True, async_hosting=True,
+            status=GitRepositoryStatus.CREATING)
+        # Start pooling job to check when the repository will be ready.
+        getUtility(IGitRepositoryConfirmCreationJobSource).create(repository)
         return repository
 
     def getByPath(self, user, path):

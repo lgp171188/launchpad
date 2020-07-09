@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for internal Git APIs."""
@@ -91,4 +91,27 @@ class IGitAPI(Interface):
             specified repository. A `GitRepositoryNotFound` fault is returned
             if no repository can be found for 'translated_path',
             or an `Unauthorized` fault for unauthorized push attempts.
+        """
+
+    def confirmRepoCreation(repository_id):
+        """Confirm that repository creation.
+
+        When code hosting finishes creating the repository locally,
+        it should call back this method to confirm that the repository was
+        created, and Launchpad should make the repository available for end
+        users.
+
+        :param repository_id: The database ID of the repository, provided by
+                    translatePath call when repo creation is necessary.
+        """
+
+    def abortRepoCreation(repository_id):
+        """Abort the creation of a repository, removing it from database.
+
+        When code hosting fails to create a repository locally, it should
+        call back this method to indicate that the operation failed and the
+        repository should be removed from Launchpad's database.
+
+        :param repository_id: The database ID of the repository, provided by
+                    translatePath call when repo creation is necessary.
         """

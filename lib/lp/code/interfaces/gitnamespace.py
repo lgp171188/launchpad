@@ -40,7 +40,7 @@ class IGitNamespace(Interface):
     def createRepository(repository_type, registrant, name,
                          information_type=None, date_created=None,
                          target_default=False, owner_default=False,
-                         with_hosting=False, async_hosting=False):
+                         with_hosting=False, async_hosting=False, status=None):
         """Create and return an `IGitRepository` in this namespace.
 
         :param with_hosting: If True, also creates the repository on git

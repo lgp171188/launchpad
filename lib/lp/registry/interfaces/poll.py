@@ -296,16 +296,16 @@ class IPollSet(Interface):
             secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE):
         """Create a new Poll for the given team."""
 
-    def selectByTeam(team, status=PollStatus.ALL, orderBy=None, when=None):
+    def findByTeam(team, status=PollStatus.ALL, order_by=None, when=None):
         """Return all Polls for the given team, filtered by status.
 
         :status: is a sequence containing as many values as you want from
         PollStatus.
 
-        :orderBy: can be either a string with the column name you want to sort
-        or a list of column names as strings.
-        If no orderBy is specified the results will be ordered using the
-        default ordering specified in Poll._defaultOrder.
+        :order_by: can be either a string with the column name you want to
+        sort or a list of column names as strings.
+        If no order_by is specified the results will be ordered using the
+        default ordering specified in Poll.sortingColumns.
 
         The optional :when argument is used only by our tests, to test if the
         poll is/was/will-be open at a specific date.
@@ -407,7 +407,7 @@ class IPollOptionSet(Interface):
     def new(poll, name, title, active=True):
         """Create a new PollOption."""
 
-    def selectByPoll(poll, only_active=False):
+    def findByPoll(poll, only_active=False):
         """Return all PollOptions of the given poll.
 
         If :only_active is True, then return only the active polls.

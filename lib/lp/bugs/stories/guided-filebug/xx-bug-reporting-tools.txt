@@ -35,7 +35,8 @@ to give the data to the +filebug page.
 To avoid having the tool from parsing the HTML page, the token is
 returned as a X-Launchpad-Blob-Token header in the response as well:
 
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
 
 This token we can now pass to the +filebug page by appending it to the
 URL as an extra path component, like '+filebug/12345abcde'.
@@ -162,7 +163,8 @@ that will be used to automatically fill in a suggested title.
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
     >>> process_blob(blob_token)
 
     >>> user_browser.open(
@@ -191,7 +193,8 @@ initialized with that value.
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
     >>> process_blob(blob_token)
 
     >>> user_browser.open(
@@ -264,7 +267,8 @@ Once we submit the bug report...
     ...     extra_filebug_data_with_hwdb_submission, 'not/important',
     ...     'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
     >>> process_blob(blob_token)
 
     >>> filebug_url = (

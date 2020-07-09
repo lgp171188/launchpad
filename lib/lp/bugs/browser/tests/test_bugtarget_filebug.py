@@ -1,6 +1,8 @@
 # Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from textwrap import dedent
@@ -524,7 +526,7 @@ class FileBugViewBaseExtraDataTestCase(FileBugViewMixin, TestCaseWithFactory):
 
             --boundary--
             """ % command
-        extra_data = dedent(raw_data)
+        extra_data = dedent(raw_data).encode("UTF-8")
         temp_storage_manager = getUtility(ITemporaryStorageManager)
         token = temp_storage_manager.new(extra_data)
         transaction.commit()
@@ -687,7 +689,7 @@ class FileBugViewBaseExtraDataTestCase(FileBugViewMixin, TestCaseWithFactory):
         self.assertEqual(
             'text/plain; charset=utf-8', attachment.libraryfile.mimetype)
         self.assertEqual(
-            'This is an attachment.\n\n', attachment.libraryfile.read())
+            b'This is an attachment.\n\n', attachment.libraryfile.read())
         self.assertEqual(2, bug.messages.count())
         self.assertEqual(2, len(bug.messages[1].bugattachments))
         notifications = [

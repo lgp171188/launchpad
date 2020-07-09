@@ -50,8 +50,8 @@
         tal:condition="view/page_description | nothing"
         tal:attributes="content view/page_description/fmt:strip-email/fmt:shorten/500" />
       <meta property="og:description"
-        tal:condition="view/page_description | nothing"
-        tal:attributes="content view/page_description/fmt:strip-email/fmt:shorten/500" />
+        tal:condition="view/opengraph_description | nothing"
+        tal:attributes="content view/opengraph_description/fmt:strip-email/fmt:shorten/500" />
     </tal:view>
 
     <tal:comment condition="nothing">

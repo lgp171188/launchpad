@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """GitJob interfaces."""
@@ -9,6 +9,8 @@ __all__ = [
     'IGitJob',
     'IGitRefScanJob',
     'IGitRefScanJobSource',
+    'IGitRepositoryConfirmCreationJob',
+    'IGitRepositoryConfirmCreationJobSource',
     'IGitRepositoryModifiedMailJob',
     'IGitRepositoryModifiedMailJobSource',
     'IReclaimGitRepositorySpaceJob',
@@ -92,4 +94,19 @@ class IGitRepositoryModifiedMailJobSource(IJobSource):
         :param user: The `IPerson` who modified the repository.
         :param repository_delta: An `IGitRepositoryDelta` describing the
             changes.
+        """
+
+
+class IGitRepositoryConfirmCreationJob(IRunnableJob):
+    """"A Job to confirm the async creation of a GitRepository on code
+    hosting service."""
+
+
+class IGitRepositoryConfirmCreationJobSource(IJobSource):
+
+    def create(repository):
+        """Confirms or abort a repository creation by checking it on the
+        code hosting service.
+
+        :param repository: The `IGitRepository` in process of creation.
         """

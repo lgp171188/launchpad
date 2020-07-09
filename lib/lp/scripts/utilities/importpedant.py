@@ -3,14 +3,15 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import __builtin__
 import atexit
 import itertools
 from operator import attrgetter
 import types
 
+from six.moves import builtins
 
-original_import = __builtin__.__import__
+
+original_import = builtins.__import__
 naughty_imports = set()
 
 # Silence bogus warnings from Hardy's python-pkg-resources package.
@@ -321,5 +322,5 @@ def report_naughty_imports():
 
 
 def install_import_pedant():
-    __builtin__.__import__ = import_pedant
+    builtins.__import__ = import_pedant
     atexit.register(report_naughty_imports)

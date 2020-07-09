@@ -20,10 +20,10 @@ If we add a new blob, it will not show up in the temporary_blobs entries set.
 
     >>> testfiles = os.path.join(config.root,
     ...     'lib/lp/bugs/tests/testfiles')
-    >>> blob_file = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data.msg'))
-    >>> blob_data = blob_file.read()
-    >>> print blob_data[307:373]
+    >>> with open(os.path.join(testfiles, 'extra_filebug_data.msg'),
+    ...           'rb') as blob_file:
+    ...     blob_data = blob_file.read()
+    >>> print(blob_data[307:373].decode('UTF-8'))
     --boundary
     Content-disposition: attachment; filename='attachment1'
 
@@ -63,15 +63,15 @@ It's possible to see whether a blob has been processed by calling its
 hasBeenProcessed() method. In the case of the blob we created above, it
 hasn't been processed because no job was created to process it.
 
-    >>> print webservice.named_get(
-    ...     blob['self_link'], 'hasBeenProcessed').jsonBody()
+    >>> print(webservice.named_get(
+    ...     blob['self_link'], 'hasBeenProcessed').jsonBody())
     False
 
 However, since the blob has not been processed there will be no
 job processed data at this point.
 
-    >>> print webservice.named_get(
-    ...     blob['self_link'], 'getProcessedData').jsonBody()
+    >>> print(webservice.named_get(
+    ...     blob['self_link'], 'getProcessedData').jsonBody())
     None
 
 Once the blob has been processed, its hasBeenProcessed() method will
@@ -86,8 +86,8 @@ return True.
     >>> job.run()
     >>> logout()
 
-    >>> print webservice.named_get(
-    ...     blob['self_link'], 'hasBeenProcessed').jsonBody()
+    >>> print(webservice.named_get(
+    ...     blob['self_link'], 'hasBeenProcessed').jsonBody())
     True
 
 And now the blob's parsed-out metadata is now accessible.
@@ -95,12 +95,12 @@ And now the blob's parsed-out metadata is now accessible.
     >>> metadata = webservice.named_get(
     ...     blob['self_link'], 'getProcessedData').jsonBody()
 
-    >>> print metadata['extra_description']
+    >>> print(metadata['extra_description'])
     This should be added to the description.
 
-    >>> print len(metadata['comments'])
+    >>> print(len(metadata['comments']))
     2
 
     >>> attachment = metadata['attachments'][0]
-    >>> print attachment['description']
+    >>> print(attachment['description'])
     attachment1

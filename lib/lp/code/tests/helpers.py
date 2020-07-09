@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions for code testing live here."""
@@ -49,8 +49,8 @@ from lp.code.model.seriessourcepackagebranch import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.sqlbase import cursor
-from lp.services.propertycache import get_property_cache
 from lp.services.memcache.testing import MemcacheFixture
+from lp.services.propertycache import get_property_cache
 from lp.testing import (
     run_with_login,
     time_counter,
@@ -345,7 +345,7 @@ class GitHostingFixture(fixtures.Fixture):
                  merges=None, blob=None, disable_memcache=True):
         self.create = FakeMethod()
         self.getProperties = FakeMethod(
-            result={"default_branch": default_branch})
+            result={"default_branch": default_branch, "is_available": True})
         self.setProperties = FakeMethod()
         self.getRefs = FakeMethod(result=({} if refs is None else refs))
         self.getCommits = FakeMethod(

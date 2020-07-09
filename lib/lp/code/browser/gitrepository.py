@@ -89,6 +89,7 @@ from lp.code.browser.widgets.gitrepositorytarget import (
     )
 from lp.code.enums import (
     GitGranteeType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.errors import (
@@ -456,6 +457,11 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         if not scan_job:
             return False
         return scan_job.job.status == JobStatus.FAILED
+
+    def warning_message(self):
+        if self.context.status == GitRepositoryStatus.CREATING:
+            return "This repository is being created."
+        return None
 
     @property
     def allow_fork(self):
@@ -1326,6 +1332,8 @@ class GitRepositoryDeletionView(LaunchpadFormView):
 
         Uses display_deletion_requirements as its source data.
         """
+        if self.context.status == GitRepositoryStatus.CREATING:
+            return False
         return len([item for item, action, reason, allowed in
             self.display_deletion_requirements if not allowed]) == 0
 
@@ -1365,6 +1373,12 @@ class GitRepositoryDeletionView(LaunchpadFormView):
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
+    @property
+    def warning_message(self):
+        if self.context.status == GitRepositoryStatus.CREATING:
+            return "This repository is being created and cannot be deleted."
+        return None
 
 
 class GitRepositoryActivityView(LaunchpadView):

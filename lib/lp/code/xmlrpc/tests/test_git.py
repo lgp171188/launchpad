@@ -12,6 +12,7 @@ from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
 from six.moves.urllib.parse import quote
+from storm.store import Store
 from testtools.matchers import (
     Equals,
     IsInstance,
@@ -29,6 +30,7 @@ from lp.app.enums import InformationType
 from lp.buildmaster.enums import BuildStatus
 from lp.code.enums import (
     GitGranteeType,
+    GitRepositoryStatus,
     GitRepositoryType,
     TargetRevisionControlSystems,
     )
@@ -37,12 +39,14 @@ from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
+from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitrepository import (
     GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE,
     IGitRepository,
     IGitRepositorySet,
     )
 from lp.code.tests.helpers import GitHostingFixture
+from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -154,6 +158,7 @@ class TestGitAPIMixin:
             transport=XMLRPCTestTransport())
         self.hosting_fixture = self.useFixture(GitHostingFixture())
         self.repository_set = getUtility(IGitRepositorySet)
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: True}))
 
     def assertFault(self, expected_fault, request_id, func_name,
                     *args, **kwargs):
@@ -280,8 +285,90 @@ class TestGitAPIMixin:
              "writable": writable, "trailing": trailing, "private": private},
             translation)
 
+    def assertConfirmsRepoCreation(self, requester, git_repository,
+                                   can_authenticate=True, macaroon_raw=None):
+        translated_path = git_repository.getInternalPath()
+        auth_params = _make_auth_params(
+            requester, can_authenticate=can_authenticate,
+            macaroon_raw=macaroon_raw)
+        request_id = auth_params["request-id"]
+        result = self.assertDoesNotFault(
+            request_id, "confirmRepoCreation", translated_path, auth_params)
+        login(ANONYMOUS)
+        self.assertIsNone(result)
+        Store.of(git_repository).invalidate(git_repository)
+        self.assertEqual(GitRepositoryStatus.AVAILABLE, git_repository.status)
+
+    def assertConfirmRepoCreationFails(
+            self, failure, requester, git_repository, can_authenticate=True,
+            macaroon_raw=None):
+        translated_path = git_repository.getInternalPath()
+        auth_params = _make_auth_params(
+            requester, can_authenticate=can_authenticate,
+            macaroon_raw=macaroon_raw)
+        request_id = auth_params["request-id"]
+        original_status = git_repository.status
+        self.assertFault(
+            failure, request_id, "confirmRepoCreation", translated_path,
+            auth_params)
+        store = Store.of(git_repository)
+        if store:
+            store.invalidate(git_repository)
+        self.assertEqual(original_status, git_repository.status)
+
+    def assertConfirmRepoCreationUnauthorized(
+            self, requester, git_repository, can_authenticate=True,
+            macaroon_raw=None):
+        failure = faults.Unauthorized
+        self.assertConfirmRepoCreationFails(
+            failure, requester, git_repository, can_authenticate,
+            macaroon_raw)
+
+    def assertAbortsRepoCreation(self, requester, git_repository,
+                                   can_authenticate=True, macaroon_raw=None):
+        translated_path = git_repository.getInternalPath()
+        auth_params = _make_auth_params(
+            requester, can_authenticate=can_authenticate,
+            macaroon_raw=macaroon_raw)
+        request_id = auth_params["request-id"]
+        result = self.assertDoesNotFault(
+            request_id, "abortRepoCreation", translated_path, auth_params)
+        login(ANONYMOUS)
+        self.assertIsNone(result)
+        self.assertIsNone(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
+
+    def assertAbortRepoCreationFails(
+            self, failure, requester, git_repository, can_authenticate=True,
+            macaroon_raw=None):
+        translated_path = git_repository.getInternalPath()
+        auth_params = _make_auth_params(
+            requester, can_authenticate=can_authenticate,
+            macaroon_raw=macaroon_raw)
+        request_id = auth_params["request-id"]
+        original_status = git_repository.status
+        self.assertFault(
+            failure, request_id, "abortRepoCreation", translated_path,
+            auth_params)
+
+        # If it's not expected to fail because the repo isn't there,
+        # make sure the repository was not changed in any way.
+        if not isinstance(failure, faults.GitRepositoryNotFound):
+            repo = removeSecurityProxy(
+                getUtility(IGitLookup).getByHostingPath(translated_path))
+            self.assertEqual(GitRepositoryStatus.CREATING, repo.status)
+            self.assertEqual(original_status, git_repository.status)
+
+    def assertAbortRepoCreationUnauthorized(
+            self, requester, git_repository, can_authenticate=True,
+            macaroon_raw=None):
+        failure = faults.Unauthorized
+        self.assertAbortRepoCreationFails(
+            failure, requester, git_repository, can_authenticate,
+            macaroon_raw)
+
     def assertCreates(self, requester, path, can_authenticate=False,
-                      private=False):
+                      private=False, async_create=True):
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate)
         request_id = auth_params["request-id"]
@@ -292,22 +379,49 @@ class TestGitAPIMixin:
             requester, path.lstrip("/"))
         self.assertIsNotNone(repository)
         self.assertEqual(requester, repository.registrant)
-        self.assertEqual(
-            {"path": repository.getInternalPath(), "writable": True,
-             "trailing": "", "private": private},
-            translation)
-        self.assertEqual(
-            (repository.getInternalPath(),),
-            self.hosting_fixture.create.extract_args()[0])
+
+        cloned_from = repository.getClonedFrom()
+        expected_translation = {
+            "path": repository.getInternalPath(),
+            "writable": True,
+            "trailing": "",
+            "private": private}
+
+        # This should be the case if GIT_ASYNC_CREATE_REPO feature flag is
+        # enabled.
+        if async_create:
+            expected_translation["creation_params"] = {
+                "clone_from": (cloned_from.getInternalPath() if cloned_from
+                               else None)}
+            expected_status = GitRepositoryStatus.CREATING
+            expected_hosting_calls = 0
+            expected_hosting_call_args = []
+            expected_hosting_call_kwargs = []
+        else:
+            expected_status = GitRepositoryStatus.AVAILABLE
+            expected_hosting_calls = 1
+            expected_hosting_call_args = [(repository.getInternalPath(),)]
+            expected_hosting_call_kwargs = [
+                {"clone_from": (cloned_from.getInternalPath()
+                                if cloned_from else None)}]
+
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)
+        self.assertEqual(expected_translation, translation)
+        self.assertEqual(
+            expected_hosting_calls, self.hosting_fixture.create.call_count)
+        self.assertEqual(
+            expected_hosting_call_args,
+            self.hosting_fixture.create.extract_args())
+        self.assertEqual(
+            expected_hosting_call_kwargs,
+            self.hosting_fixture.create.extract_kwargs())
+        self.assertEqual(expected_status, repository.status)
         return repository
 
     def assertCreatesFromClone(self, requester, path, cloned_from,
                                can_authenticate=False):
         self.assertCreates(requester, path, can_authenticate)
-        self.assertEqual(
-            {"clone_from": cloned_from.getInternalPath()},
-            self.hosting_fixture.create.extract_kwargs()[0])
+        self.assertEqual(0, self.hosting_fixture.create.call_count)
 
     def assertHasRefPermissions(self, requester, repository, ref_paths,
                                 permissions, macaroon_raw=None):
@@ -660,6 +774,367 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
 
+    def test_confirm_git_repository_creation(self):
+        owner = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
+        repo.status = GitRepositoryStatus.CREATING
+        self.assertConfirmsRepoCreation(owner, repo)
+
+    def test_only_requester_can_confirm_git_repository_creation(self):
+        requester = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository())
+        repo.status = GitRepositoryStatus.CREATING
+
+        self.assertConfirmRepoCreationUnauthorized(requester, repo)
+
+    def test_confirm_git_repository_creation_of_non_existing_repository(self):
+        owner = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
+        repo.status = GitRepositoryStatus.CREATING
+        repo.destroySelf()
+
+        expected_failure = faults.GitRepositoryNotFound(str(repo.id))
+        self.assertConfirmRepoCreationFails(expected_failure, owner, repo)
+
+    def test_confirm_git_repository_creation_public_code_import(self):
+        # A code import worker with a suitable macaroon can write to a
+        # repository associated with a running code import job.
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        code_imports = [
+            self.factory.makeCodeImport(
+                target_rcs_type=TargetRevisionControlSystems.GIT)
+            for _ in range(2)]
+        with celebrity_logged_in("vcs_imports"):
+            jobs = [
+                self.factory.makeCodeImportJob(code_import=code_import)
+                for code_import in code_imports]
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroons = [
+            removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
+
+        repo = removeSecurityProxy(code_imports[0].git_repository)
+        repo.status = GitRepositoryStatus.CREATING
+
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+        with celebrity_logged_in("vcs_imports"):
+            getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[1].serialize())
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=Macaroon(
+                location=config.vhost.mainsite.hostname,
+                identifier="another",
+                key="another-secret").serialize())
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo, macaroon_raw="nonsense")
+        self.assertConfirmRepoCreationUnauthorized(
+            code_imports[0].registrant, repo,
+            macaroon_raw=macaroons[0].serialize())
+        self.assertConfirmsRepoCreation(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+
+    def test_confirm_git_repository_creation_private_code_import(self):
+        # A code import worker with a suitable macaroon can write to a
+        # repository associated with a running private code import job.
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        code_imports = [
+            self.factory.makeCodeImport(
+                target_rcs_type=TargetRevisionControlSystems.GIT)
+            for _ in range(2)]
+        private_repository = code_imports[0].git_repository
+        removeSecurityProxy(
+            private_repository).transitionToInformationType(
+            InformationType.PRIVATESECURITY, private_repository.owner)
+        with celebrity_logged_in("vcs_imports"):
+            jobs = [
+                self.factory.makeCodeImportJob(code_import=code_import)
+                for code_import in code_imports]
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroons = [
+            removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
+
+        repo = removeSecurityProxy(code_imports[0].git_repository)
+        repo.status = GitRepositoryStatus.CREATING
+
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+        with celebrity_logged_in("vcs_imports"):
+            getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[1].serialize())
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=Macaroon(
+                location=config.vhost.mainsite.hostname,
+                identifier="another",
+                key="another-secret").serialize())
+        self.assertConfirmRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw="nonsense")
+        self.assertConfirmRepoCreationUnauthorized(
+            code_imports[0].registrant, repo,
+            macaroon_raw=macaroons[0].serialize())
+        self.assertConfirmsRepoCreation(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+
+    def test_confirm_git_repository_creation_user_macaroon(self):
+        # A user with a suitable macaroon can write to the corresponding
+        # repository, but not others, even if they own them.
+        self.pushConfig("codehosting",
+                        git_macaroon_secret_key="some-secret")
+        requester = self.factory.makePerson()
+        repositories = [
+            self.factory.makeGitRepository(owner=requester) for _ in
+            range(2)]
+        repositories.append(self.factory.makeGitRepository(
+            owner=requester,
+            information_type=InformationType.PRIVATESECURITY))
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        with person_logged_in(requester):
+            macaroons = [
+                removeSecurityProxy(issuer).issueMacaroon(
+                    repository, user=requester)
+                for repository in repositories]
+        for i, repository in enumerate(repositories):
+            login(ANONYMOUS)
+            repository = removeSecurityProxy(repository)
+            repository.status = GitRepositoryStatus.CREATING
+
+            correct_macaroon = macaroons[i]
+            wrong_macaroon = macaroons[(i + 1) % len(macaroons)]
+
+            self.assertConfirmRepoCreationUnauthorized(
+                requester, repository, macaroon_raw=wrong_macaroon.serialize())
+            self.assertConfirmRepoCreationUnauthorized(
+                requester, repository,
+                macaroon_raw=Macaroon(
+                    location=config.vhost.mainsite.hostname,
+                    identifier="another",
+                    key="another-secret").serialize())
+            self.assertConfirmRepoCreationUnauthorized(
+                requester, repository, macaroon_raw="nonsense")
+            self.assertConfirmsRepoCreation(
+                requester, repository,
+                macaroon_raw=correct_macaroon.serialize())
+
+    def test_confirm_git_repository_creation_user_mismatch(self):
+        # confirmRepoCreation refuses macaroons in the case where the user
+        # doesn't match what the issuer claims was verified.
+        issuer = DummyMacaroonIssuer()
+
+        self.useFixture(ZopeUtilityFixture(
+            issuer, IMacaroonIssuer, name="test"))
+        repository = self.factory.makeGitRepository()
+
+        macaroon = issuer.issueMacaroon(repository)
+        requesters = [self.factory.makePerson() for _ in range(2)]
+        for verified_user, unauthorized in (
+                (NO_USER, requesters + [None]),
+                (requesters[0], [LAUNCHPAD_SERVICES, requesters[1], None]),
+                (None, [LAUNCHPAD_SERVICES] + requesters + [None]),
+        ):
+            repository = removeSecurityProxy(repository)
+            repository.status = GitRepositoryStatus.CREATING
+            issuer._verified_user = verified_user
+            for requester in unauthorized:
+                login(ANONYMOUS)
+                self.assertConfirmRepoCreationUnauthorized(
+                    requester, repository,
+                    macaroon_raw=macaroon.serialize())
+
+    def test_abort_repo_creation(self):
+        requester = self.factory.makePerson()
+        repo = self.factory.makeGitRepository(owner=requester)
+        repo = removeSecurityProxy(repo)
+        repo.status = GitRepositoryStatus.CREATING
+        self.assertAbortsRepoCreation(requester, repo)
+
+    def test_only_requester_can_abort_git_repository_creation(self):
+        requester = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository())
+        repo.status = GitRepositoryStatus.CREATING
+
+        self.assertAbortRepoCreationUnauthorized(requester, repo)
+
+    def test_abort_git_repository_creation_public_code_import(self):
+        # A code import worker with a suitable macaroon can write to a
+        # repository associated with a running code import job.
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        code_imports = [
+            self.factory.makeCodeImport(
+                target_rcs_type=TargetRevisionControlSystems.GIT)
+            for _ in range(2)]
+        with celebrity_logged_in("vcs_imports"):
+            jobs = [
+                self.factory.makeCodeImportJob(code_import=code_import)
+                for code_import in code_imports]
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroons = [
+            removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
+
+        repo = removeSecurityProxy(code_imports[0].git_repository)
+        repo.status = GitRepositoryStatus.CREATING
+
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+        with celebrity_logged_in("vcs_imports"):
+            getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[1].serialize())
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=Macaroon(
+                location=config.vhost.mainsite.hostname,
+                identifier="another",
+                key="another-secret").serialize())
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo, macaroon_raw="nonsense")
+        self.assertAbortRepoCreationUnauthorized(
+            code_imports[0].registrant, repo,
+            macaroon_raw=macaroons[0].serialize())
+        self.assertConfirmsRepoCreation(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+
+    def test_abort_git_repository_creation_private_code_import(self):
+        # A code import worker with a suitable macaroon can write to a
+        # repository associated with a running private code import job.
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        code_imports = [
+            self.factory.makeCodeImport(
+                target_rcs_type=TargetRevisionControlSystems.GIT)
+            for _ in range(2)]
+        private_repository = code_imports[0].git_repository
+        removeSecurityProxy(
+            private_repository).transitionToInformationType(
+            InformationType.PRIVATESECURITY, private_repository.owner)
+        with celebrity_logged_in("vcs_imports"):
+            jobs = [
+                self.factory.makeCodeImportJob(code_import=code_import)
+                for code_import in code_imports]
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroons = [
+            removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
+
+        repo = removeSecurityProxy(code_imports[0].git_repository)
+        repo.status = GitRepositoryStatus.CREATING
+
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+        with celebrity_logged_in("vcs_imports"):
+            getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[1].serialize())
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=Macaroon(
+                location=config.vhost.mainsite.hostname,
+                identifier="another",
+                key="another-secret").serialize())
+        self.assertAbortRepoCreationUnauthorized(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw="nonsense")
+        self.assertAbortRepoCreationUnauthorized(
+            code_imports[0].registrant, repo,
+            macaroon_raw=macaroons[0].serialize())
+        self.assertAbortsRepoCreation(
+            LAUNCHPAD_SERVICES, repo,
+            macaroon_raw=macaroons[0].serialize())
+
+    def test_abort_git_repository_creation_user_macaroon(self):
+        # A user with a suitable macaroon can write to the corresponding
+        # repository, but not others, even if they own them.
+        self.pushConfig("codehosting",
+                        git_macaroon_secret_key="some-secret")
+        requester = self.factory.makePerson()
+        repositories = [
+            self.factory.makeGitRepository(owner=requester) for _ in
+            range(2)]
+        repositories.append(self.factory.makeGitRepository(
+            owner=requester,
+            information_type=InformationType.PRIVATESECURITY))
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        with person_logged_in(requester):
+            macaroons = [
+                removeSecurityProxy(issuer).issueMacaroon(
+                    repository, user=requester)
+                for repository in repositories]
+        for i, repository in enumerate(repositories):
+            login(ANONYMOUS)
+            repository = removeSecurityProxy(repository)
+            repository.status = GitRepositoryStatus.CREATING
+
+            correct_macaroon = macaroons[i]
+            wrong_macaroon = macaroons[(i + 1) % len(macaroons)]
+
+            self.assertAbortRepoCreationUnauthorized(
+                requester, repository, macaroon_raw=wrong_macaroon.serialize())
+            self.assertAbortRepoCreationUnauthorized(
+                requester, repository,
+                macaroon_raw=Macaroon(
+                    location=config.vhost.mainsite.hostname,
+                    identifier="another",
+                    key="another-secret").serialize())
+            self.assertAbortRepoCreationUnauthorized(
+                requester, repository, macaroon_raw="nonsense")
+            self.assertAbortsRepoCreation(
+                requester, repository,
+                macaroon_raw=correct_macaroon.serialize())
+
+    def test_abort_git_repository_creation_user_mismatch(self):
+        # confirmRepoCreation refuses macaroons in the case where the user
+        # doesn't match what the issuer claims was verified.
+        issuer = DummyMacaroonIssuer()
+
+        self.useFixture(ZopeUtilityFixture(
+            issuer, IMacaroonIssuer, name="test"))
+        repository = self.factory.makeGitRepository()
+
+        macaroon = issuer.issueMacaroon(repository)
+        requesters = [self.factory.makePerson() for _ in range(2)]
+        for verified_user, unauthorized in (
+                (NO_USER, requesters + [None]),
+                (requesters[0], [LAUNCHPAD_SERVICES, requesters[1], None]),
+                (None, [LAUNCHPAD_SERVICES] + requesters + [None]),
+        ):
+            repository = removeSecurityProxy(repository)
+            repository.status = GitRepositoryStatus.CREATING
+            issuer._verified_user = verified_user
+            for requester in unauthorized:
+                login(ANONYMOUS)
+                self.assertAbortRepoCreationUnauthorized(
+                    requester, repository,
+                    macaroon_raw=macaroon.serialize())
+
+    def test_abort_git_repository_creation_of_non_existing_repository(self):
+        owner = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
+        repo.status = GitRepositoryStatus.CREATING
+        repo.destroySelf()
+
+        expected_failure = faults.GitRepositoryNotFound(str(repo.id))
+        self.assertAbortRepoCreationFails(expected_failure, owner, repo)
+
     def test_translatePath_cannot_translate(self):
         # Sometimes translatePath will not know how to translate a path.
         # When this happens, it returns a Fault saying so, including the
@@ -736,13 +1211,36 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         path = u"/%s" % repository.target.name
         self.assertTranslates(requester, path, repository, False)
 
-    def test_translatePath_create_project(self):
+    def test_translatePath_create_project_async(self):
         # translatePath creates a project repository that doesn't exist, if
         # it can.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         self.assertCreates(
             requester, u"/~%s/%s/+git/random" % (requester.name, project.name))
+
+    def test_translatePath_create_project_sync(self):
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: ''}))
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        self.assertCreates(
+            requester, u"/~%s/%s/+git/random" % (requester.name, project.name),
+            async_create=False)
+
+    def test_translatePath_create_project_blocks_duplicate_calls(self):
+        # translatePath creates a project repository that doesn't exist,
+        # but blocks any further request to create the same repository.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        path = u"/~%s/%s/+git/random" % (requester.name, project.name)
+        self.assertCreates(requester, path)
+
+        auth_params = _make_auth_params(
+            requester, can_authenticate=True)
+        request_id = auth_params["request-id"]
+        self.assertFault(
+            faults.GitRepositoryBeingCreated,
+            request_id, "translatePath", path, "write", auth_params)
 
     def test_translatePath_create_project_clone_from_target_default(self):
         # translatePath creates a project repository cloned from the target
@@ -1065,6 +1563,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_translatePath_create_broken_hosting_service(self):
         # If the hosting service is down, trying to create a repository
         # fails and doesn't leave junk around in the Launchpad database.
+        self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: ''}))
         self.hosting_fixture.create.failure = GitRepositoryCreationFault(
             "nothing here", path="123")
         requester = self.factory.makePerson()
@@ -1270,7 +1769,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 (requesters[0], [requesters[0]],
                  [LAUNCHPAD_SERVICES, requesters[1], None]),
                 (None, [], [LAUNCHPAD_SERVICES] + requesters + [None]),
-                ):
+        ):
             issuer._verified_user = verified_user
             for requester in authorized:
                 login(ANONYMOUS)

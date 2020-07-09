@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -11,6 +11,8 @@ __all__ = [
     'GitRepositoryModifiedMailJob',
     'ReclaimGitRepositorySpaceJob',
     ]
+
+from datetime import timedelta
 
 from lazr.delegates import delegate_to
 from lazr.enum import (
@@ -37,12 +39,15 @@ from lp.app.errors import NotFoundError
 from lp.code.enums import (
     GitActivityType,
     GitPermissionType,
+    GitRepositoryStatus,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitjob import (
     IGitJob,
     IGitRefScanJob,
     IGitRefScanJobSource,
+    IGitRepositoryConfirmCreationJob,
+    IGitRepositoryConfirmCreationJobSource,
     IGitRepositoryModifiedMailJob,
     IGitRepositoryModifiedMailJobSource,
     IReclaimGitRepositorySpaceJob,
@@ -98,6 +103,13 @@ class GitJobType(DBEnumeratedType):
 
         This job runs against a repository to send emails about
         modifications.
+        """)
+
+    REPOSITORY_CONFIRM_ASYNC_CREATION = DBItem(3, """
+        Repository confirm async creation
+
+        This job runs to pool code hosting to confirm or abort an async
+        repository creation request.
         """)
 
 
@@ -404,3 +416,49 @@ class GitRepositoryModifiedMailJob(GitJobDerived):
     def run(self):
         """See `IGitRepositoryModifiedMailJob`."""
         self.getMailer().sendAll()
+
+
+@implementer(IGitRepositoryConfirmCreationJob)
+@provider(IGitRepositoryConfirmCreationJobSource)
+class GitRepositoryConfirmCreationJob(GitJobDerived):
+    """A job that checks if an async repository creation has finished
+    already."""
+
+    class RepositoryNotReady(Exception):
+        pass
+
+    class_job_type = GitJobType.REPOSITORY_CONFIRM_ASYNC_CREATION
+
+    config = config.IGitRepositoryModifiedMailJobSource
+
+    retry_error_types = (RepositoryNotReady, )
+    retry_delay = timedelta(seconds=5)
+    max_retries = 60  # 60 retires * 5 seconds = 5 minutes
+
+    @classmethod
+    def create(cls, repository):
+        """See ``"""
+        metadata = {}
+        git_job = GitJob(repository, cls.class_job_type, metadata)
+
+        job = cls(git_job)
+        job.celeryRunOnCommit()
+        return job
+
+    def run(self):
+        """See `IGitRepositoryModifiedMailJob`."""
+        hosting_path = self.repository.getInternalPath()
+        props = getUtility(IGitHostingClient).getProperties(
+            hosting_path)
+        if props["is_available"]:
+            naked_repo = removeSecurityProxy(self.repository)
+            naked_repo.status = GitRepositoryStatus.AVAILABLE
+            IStore(naked_repo).flush()
+
+        # If we didn't reach the max retries, raise something to retry in
+        # some seconds.
+        if self.attempt_count < self.max_retries:
+            raise GitRepositoryConfirmCreationJob.RepositoryNotReady
+
+        # We have tried enough. We should abort this repository creation.
+        self.repository.destroySelf(break_references=True)

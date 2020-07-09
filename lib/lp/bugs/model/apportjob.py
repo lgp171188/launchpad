@@ -14,7 +14,6 @@ from cStringIO import StringIO
 from lazr.delegates import delegate_to
 import simplejson
 import six
-from sqlobject import SQLObjectNotFound
 from storm.expr import And
 from storm.locals import (
     Int,
@@ -27,6 +26,7 @@ from zope.interface import (
     provider,
     )
 
+from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.apportjob import (
     ApportJobType,
     IApportJob,
@@ -104,7 +104,7 @@ class ApportJob(StormBase):
         """Return the instance of this class whose key is supplied."""
         instance = IStore(cls).get(cls, key)
         if instance is None:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 'No occurrence of %s has key %s' % (cls.__name__, key))
         return instance
 
@@ -136,12 +136,12 @@ class ApportJobDerived(
 
         :return: the ApportJob with the specified id, as the current
                  ApportJobDerived subclass.
-        :raises: SQLObjectNotFound if there is no job with the specified id,
+        :raises: NotFoundError if there is no job with the specified id,
                  or its job_type does not match the desired subclass.
         """
         job = ApportJob.get(job_id)
         if job.job_type != cls.class_job_type:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 'No object found with id %d and type %s' % (job_id,
                 cls.class_job_type.title))
         return cls(job)
@@ -211,7 +211,7 @@ class ProcessApportBlobJob(ApportJobDerived):
         job_for_blob = jobs_for_blob.one()
 
         if job_for_blob is None:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 "No ProcessApportBlobJob found for UUID %s" % uuid)
 
         return cls(job_for_blob)

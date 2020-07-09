@@ -376,7 +376,7 @@ class CommericialExpirationMixin:
             )
         conditions = [
             Product.active == True,
-            CommercialSubscription.productID == Product.id,
+            CommercialSubscription.product == Product.id,
             CommercialSubscription.date_expires >= earliest_date,
             CommercialSubscription.date_expires < latest_date,
             Not(Product.id.is_in(Select(
