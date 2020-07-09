@@ -32,8 +32,9 @@ from lp.app.interfaces.services import IService
 from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
-    CodeReviewNotificationLevel, GitRepositoryStatus,
-)
+    CodeReviewNotificationLevel,
+    GitRepositoryStatus,
+    )
 from lp.code.errors import (
     GitDefaultConflict,
     GitRepositoryCreationForbidden,
