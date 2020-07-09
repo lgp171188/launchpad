@@ -312,7 +312,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             fd.write(b"Public key content")
 
         expected_arch_signing_key = self.factory.makeArchiveSigningKey(
-            archive=archive, distro_series=series).signing_key
+            archive=archive, distro_series=series)
         key_type = expected_arch_signing_key.key_type
 
         script = self.makeScript([])

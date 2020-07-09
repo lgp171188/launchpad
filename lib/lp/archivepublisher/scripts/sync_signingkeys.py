@@ -102,13 +102,13 @@ class SyncSigningKeysScript(LaunchpadScript):
 
     def inject(self, archive, key_type, series, priv_key_path, pub_key_path):
         arch_signing_key_set = getUtility(IArchiveSigningKeySet)
-        existing_signing_key = arch_signing_key_set.getSigningKey(
+        existing_archive_signing_key = arch_signing_key_set.get(
             key_type, archive, series, exact_match=True)
-        if existing_signing_key is not None:
+        if existing_archive_signing_key is not None:
             self.logger.info("Signing key for %s / %s / %s already exists",
                              key_type, archive.reference,
                              series.name if series else None)
-            return existing_signing_key
+            return existing_archive_signing_key
 
         with open(priv_key_path, 'rb') as fd:
             private_key = fd.read()
