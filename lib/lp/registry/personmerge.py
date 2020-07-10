@@ -977,11 +977,11 @@ def merge_people(from_person, to_person, reviewer, delete=False):
     if to_person.is_team:
         mail_text = get_email_template(
             'team-merged.txt', app='registry')
-        subject = 'Launchpad teams merged'
+        subject = u'Launchpad teams merged'
     else:
         mail_text = get_email_template(
             'person-merged.txt', app='registry')
-        subject = 'Launchpad accounts merged'
+        subject = u'Launchpad accounts merged'
     mail_text = mail_text % {
         'dupename': from_person.name,
         'person': to_person.name,
