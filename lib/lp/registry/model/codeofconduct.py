@@ -21,7 +21,6 @@ from storm.locals import (
     Int,
     Not,
     Reference,
-    SQL,
     Unicode,
     )
 from zope.component import getUtility
@@ -39,11 +38,9 @@ from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    quote,
-    )
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import fti_search
 from lp.services.gpg.interfaces import (
     GPGKeyExpired,
     GPGKeyNotFoundError,
@@ -360,7 +357,7 @@ class SignedCodeOfConductSet:
         # the name shoudl work like a filter, if you don't enter anything
         # you get everything.
         if displayname:
-            clauses.append(SQL('Person.fti @@ ftq(%s)' % quote(displayname)))
+            clauses.append(fti_search(Person, displayname))
 
         # Attempt to search for directive
         if searchfor == 'activeonly':
