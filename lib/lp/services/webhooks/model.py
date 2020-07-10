@@ -14,7 +14,10 @@ from datetime import (
     datetime,
     timedelta,
     )
+import re
+import socket
 
+import ipaddress
 import iso8601
 from lazr.delegates import delegate_to
 from lazr.enum import (
@@ -23,6 +26,7 @@ from lazr.enum import (
     )
 from pytz import utc
 import six
+from six.moves.urllib.parse import urlsplit
 from storm.expr import Desc
 from storm.properties import (
     Bool,
@@ -436,6 +440,14 @@ class WebhookDeliveryJob(WebhookJobDerived):
     # retry_automatically and raising a fatal exception instead.
     max_retries = 1000
 
+    # Reduce the max retries for URL with hosts matching one of the
+    # following pattern, or to invalid IP addresses (such as localhost or
+    # multicast).
+    limited_effort_host_patterns = [
+        re.compile(r".*\.lxd$"),
+    ]
+    limited_effort_retry_period = timedelta(minutes=5)
+
     config = config.IWebhookDeliveryJobSource
 
     @classmethod
@@ -449,6 +461,30 @@ class WebhookDeliveryJob(WebhookJobDerived):
             "Scheduled %r (%s): %s" %
             (job, event_type, _redact_payload(event_type, payload)))
         return job
+
+    def is_limited_effort_delivery(self):
+        """Checks if the webhook delivery URL should have limited effort on
+        delivery, reducing the number of retries.
+
+        We do limited effort to deliver in any of the following situations:
+            - URL's host resolves to a loopback or invalid IP address
+            - URL's host matches one of the self.limited_effort_host_patterns
+        """
+        url = self.webhook.delivery_url
+        netloc = six.text_type(urlsplit(url).netloc)
+        if any(i.match(netloc) for i in self.limited_effort_host_patterns):
+            return True
+        try:
+            ip = ipaddress.ip_address(netloc)
+        except (ValueError, ipaddress.AddressValueError):
+            try:
+                resolved_addr = six.text_type(socket.gethostbyname(netloc))
+                ip = ipaddress.ip_address(resolved_addr)
+            except socket.error:
+                # If we could not resolve, we limit the effort to delivery.
+                return True
+        return ip.is_loopback or ip.is_unspecified or (
+                not ip.is_global and not ip.is_private)
 
     @property
     def pending(self):
@@ -518,7 +554,9 @@ class WebhookDeliveryJob(WebhookJobDerived):
     def retry_automatically(self):
         if 'result' not in self.json_data:
             return False
-        if self.json_data['result'].get('connection_error') is not None:
+        if self.is_limited_effort_delivery():
+            duration = self.limited_effort_retry_period
+        elif self.json_data['result'].get('connection_error') is not None:
             duration = timedelta(days=1)
         else:
             status_code = self.json_data['result']['response']['status_code']

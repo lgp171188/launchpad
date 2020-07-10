@@ -717,6 +717,43 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.WAITING, job.status)
         self.assertIs(None, job.date_first_sent)
 
+    def assertRetriesWithLimitedEffort(self, url):
+        client = MockWebhookClient(response_status=503)
+        self.useFixture(ZopeUtilityFixture(client, IWebhookClient))
+
+        hook = self.factory.makeWebhook(delivery_url=url)
+        job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
+        self.assertTrue(job.is_limited_effort_delivery())
+
+        # Running it will fail because the server returns 503 error,
+        # but set the job status to WAITING, so it can be retried.
+        self.assertEqual(False, self.runJob(job))
+        self.assertEqual(JobStatus.WAITING, job.status)
+
+        # Force the next attempt to fail hard by pretending it was more
+        # than job.limited_effort_retry_period later.
+        self.assertTrue(job.retry_automatically)
+        a_while_ago = timedelta(minutes=5, seconds=1)
+        job.json_data['date_first_sent'] = (
+            job.date_first_sent - a_while_ago).isoformat()
+        self.assertFalse(job.retry_automatically)
+
+        self.assertEqual(False, self.runJob(job))
+        self.assertEqual(JobStatus.FAILED, job.status)
+
+    def test_retries_matching_url_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(u"http://foo.lxd/path")
+
+    def test_retries_localhost_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(u"localhost")
+        self.assertRetriesWithLimitedEffort(u"127.0.0.1")
+
+    def test_broadcast_address_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(u"224.0.18.255")
+
+    def test_multicast_address_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(u"224.0.0.255")
+
 
 class TestViaCronscript(TestCaseWithFactory):
 
