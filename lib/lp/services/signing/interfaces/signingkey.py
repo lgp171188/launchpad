@@ -117,14 +117,22 @@ class IArchiveSigningKeySet(Interface):
                  False if it was updated).
         """
 
-    def getSigningKey(key_type, archive, distro_series, exact_match=False):
-        """Get the most suitable key for a given archive / distro series
-        pair.
+    def get(key_type, archive, distro_series, exact_match=False):
+        """Get the most suitable ArchiveSigningKey for a given context.
 
         :param exact_match: If True, returns the ArchiveSigningKey matching
-                            exactly the given key_type, archive and
-                            distro_series. If False, gets the best match.
-        :return: The most suitable key
+            exactly the given key_type, archive and distro_series. If False,
+            gets the best match.
+        :return: The most suitable key, or None.
+        """
+
+    def getSigningKey(key_type, archive, distro_series, exact_match=False):
+        """Get the most suitable SigningKey for a given context.
+
+        :param exact_match: If True, returns the SigningKey matching exactly
+            the given key_type, archive and distro_series. If False, gets
+            the best match.
+        :return: The most suitable key, or None.
         """
 
     def generate(key_type, description, archive, earliest_distro_series=None):
