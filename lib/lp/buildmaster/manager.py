@@ -260,7 +260,7 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
         """See `BaseBuilderFactory`."""
         transaction.abort()
         builders_and_current_bqs = list(IStore(Builder).using(
-            Builder, LeftJoin(BuildQueue, BuildQueue.builderID == Builder.id)
+            Builder, LeftJoin(BuildQueue, BuildQueue.builder == Builder.id)
             ).find((Builder, BuildQueue)))
         getUtility(IBuilderSet).preloadProcessors(
             [b for b, _ in builders_and_current_bqs])
