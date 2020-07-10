@@ -136,7 +136,7 @@ files match the uploaded ones.
     ...         assert get_md5(filename) == get_md5(upload_filename)
 
 Finally, we'll just create an entirely empty upload folder. We rely for
-our tests on a poppy-like naming system, ie. that the upload folder
+our tests on a txpkgupload-like naming system, ie. that the upload folder
 end with 000004 (being our fourth upload).
 
     >>> os.mkdir("%s/fake_upload_000004" % incoming_dir)
