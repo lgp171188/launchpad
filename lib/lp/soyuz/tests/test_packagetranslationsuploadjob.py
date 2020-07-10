@@ -69,8 +69,8 @@ class LocalTestHelper(TestCaseWithFactory):
         """Create an LibraryFileAlias containing dummy translation data."""
         if tar_content is None:
             tar_content = {
-                'source/po/foo.pot': 'Foo template',
-                'source/po/eo.po': 'Foo translation',
+                'source/po/foo.pot': b'Foo template',
+                'source/po/eo.po': b'Foo translation',
                 }
         tarfile_content = LaunchpadWriteTarFile.files_to_string(
             tar_content)
@@ -128,7 +128,7 @@ class TestPackageTranslationsUploadJob(LocalTestHelper):
 
     def test_smoke(self):
         tar_content = {
-            'source/po/foobar.pot': 'FooBar template',
+            'source/po/foobar.pot': b'FooBar template',
         }
         spr, sp, job = self.makeJob(tar_content=tar_content)
         transaction.commit()
