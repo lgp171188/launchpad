@@ -1409,11 +1409,6 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `HasCustomLanguageCodesMixin`."""
         return CustomLanguageCode.product == self
 
-    def createCustomLanguageCode(self, language_code, language):
-        """See `IHasCustomLanguageCodes`."""
-        return CustomLanguageCode(
-            product=self, language_code=language_code, language=language)
-
     def userCanEdit(self, user):
         """See `IProduct`."""
         if user is None:

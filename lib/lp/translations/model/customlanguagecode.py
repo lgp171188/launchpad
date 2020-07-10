@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for `ICustomLanguageCode`."""
@@ -10,36 +10,62 @@ __all__ = [
     'HasCustomLanguageCodesMixin',
     ]
 
-
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+from storm.locals import (
+    And,
+    Int,
+    Reference,
+    Unicode,
     )
-from storm.expr import And
 from zope.interface import implementer
 
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
+from lp.registry.interfaces.product import IProduct
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.customlanguagecode import ICustomLanguageCode
 
 
 @implementer(ICustomLanguageCode)
-class CustomLanguageCode(SQLBase):
+class CustomLanguageCode(StormBase):
     """See `ICustomLanguageCode`."""
 
-    _table = 'CustomLanguageCode'
+    __storm_table__ = 'CustomLanguageCode'
 
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=False, default=None)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=False,
-        default=None)
-    sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', foreignKey='SourcePackageName',
-        notNull=False, default=None)
-    language_code = StringCol(dbName='language_code', notNull=True)
-    language = ForeignKey(
-        dbName='language', foreignKey='Language', notNull=False, default=None)
+    id = Int(primary=True)
+
+    product_id = Int(name='product', allow_none=True, default=None)
+    product = Reference(product_id, 'Product.id')
+
+    distribution_id = Int(name='distribution', allow_none=True, default=None)
+    distribution = Reference(distribution_id, 'Distribution.id')
+
+    sourcepackagename_id = Int(
+        name='sourcepackagename', allow_none=True, default=None)
+    sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
+
+    language_code = Unicode(name='language_code', allow_none=False)
+
+    language_id = Int(name='language', allow_none=True, default=None)
+    language = Reference(language_id, 'Language.id')
+
+    def __init__(self, translation_target, language_code, language=None):
+        super(CustomLanguageCode, self).__init__()
+        self.product = None
+        self.distribution = None
+        self.sourcepackagename = None
+        if IProduct.providedBy(translation_target):
+            self.product = translation_target
+        elif IDistributionSourcePackage.providedBy(translation_target):
+            self.distribution = translation_target.distribution
+            self.sourcepackagename = translation_target.sourcepackagename
+        else:
+            raise ValueError(
+                "Expected IProduct or IDistributionSourcePackage, got %r" %
+                translation_target)
+        self.language_code = language_code
+        self.language = language
 
     @property
     def translation_target(self):
@@ -66,8 +92,10 @@ class HasCustomLanguageCodesMixin:
         raise NotImplementedError("composeCustomLanguageCodeMatch")
 
     def createCustomLanguageCode(self, language_code, language):
-        """Define in child.  See `IHasCustomLanguageCodes`."""
-        raise NotImplementedError("createCustomLanguageCode")
+        """See `IHasCustomLanguageCodes`."""
+        return CustomLanguageCode(
+            translation_target=self,
+            language_code=language_code, language=language)
 
     def _queryCustomLanguageCodes(self, language_code=None):
         """Query `CustomLanguageCodes` belonging to `self`.
