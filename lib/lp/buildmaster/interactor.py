@@ -22,6 +22,7 @@ from twisted.internet import (
     defer,
     reactor as default_reactor,
     )
+from twisted.internet.interfaces import IReactorCore
 from twisted.internet.protocol import Protocol
 from twisted.web import xmlrpc
 from twisted.web.client import (
@@ -185,9 +186,10 @@ def default_process_pool(reactor=None):
     if _default_process_pool is None:
         _default_process_pool = make_download_process_pool()
         _default_process_pool.start()
-        shutdown_id = reactor.addSystemEventTrigger(
-            "during", "shutdown", _default_process_pool.stop)
-        _default_process_pool_shutdown = (reactor, shutdown_id)
+        if IReactorCore.providedBy(reactor):
+            shutdown_id = reactor.addSystemEventTrigger(
+                "during", "shutdown", _default_process_pool.stop)
+            _default_process_pool_shutdown = (reactor, shutdown_id)
     return _default_process_pool
 
 
@@ -233,8 +235,11 @@ class BuilderSlave(object):
         if reactor is None:
             reactor = default_reactor
         self.reactor = reactor
-        self._download_in_subprocess = bool(
-            getFeatureFlag('buildmaster.download_in_subprocess'))
+        download_in_subprocess_flag = getFeatureFlag(
+            'buildmaster.download_in_subprocess')
+        self._download_in_subprocess = (
+            bool(download_in_subprocess_flag)
+            if download_in_subprocess_flag is not None else True)
         if pool is None:
             pool = default_pool(reactor=reactor)
         self.pool = pool
