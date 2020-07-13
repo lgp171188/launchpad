@@ -16,11 +16,9 @@ import pytz
 from zope.component import getUtility
 from zope.testing.loghandler import Handler
 
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.hardwaredb.interfaces.hwdb import (
     HWBus,
     HWSubmissionFormat,
-    HWSubmissionProcessingStatus,
     IHWDeviceDriverLinkSet,
     IHWDeviceSet,
     IHWDriverSet,
@@ -38,13 +36,10 @@ from lp.hardwaredb.scripts.hwdbsubmissions import (
     PCI_SUBCLASS_BRIDGE_PCI,
     PCI_SUBCLASS_SERIALBUS_USB,
     PCI_SUBCLASS_STORAGE_SATA,
-    process_pending_submissions,
     SubmissionParser,
     UdevDevice,
     )
 from lp.services.config import config
-from lp.services.librarian.interfaces.client import LibrarianServerError
-from lp.services.librarianserver.testing.server import fillLibrarianFile
 from lp.testing import (
     TestCase,
     validate_mock_class,
@@ -5376,152 +5371,3 @@ class TestHWDBSubmissionTablePopulation(TestCaseHWDB):
             '/devices/LNXSYSTM:00': 'A udev device',
             }
         self.assertEqual('A udev device', submission_parser.root_device)
-
-    def testPendingSubmissionProcessing(self):
-        """Test of process_pending_submissions().
-
-        Run process_pending_submissions with three submissions; one
-        of the submisisons contains invalid data.
-        """
-        # We have already one submisson with the status SUBMITTED in the
-        # DB sample data; let's fill the associated Librarian file with
-        # some test data.
-        submission_set = getUtility(IHWSubmissionSet)
-        submission = submission_set.getBySubmissionKey(
-            'test_submission_id_1')
-        submission_data = self.getSampleData(
-            'simple_valid_hwdb_submission.xml')
-        fillLibrarianFile(submission.raw_submission.id, submission_data)
-
-        submission_data = self.getSampleData('real_hwdb_submission.xml.bz2')
-        submission_key = 'submission-6'
-        self.createSubmissionData(submission_data, False, submission_key)
-
-        submission_key = 'private-submission'
-        self.createSubmissionData(submission_data, False, submission_key,
-                                  private=True)
-
-        submission_key = 'submission-7'
-        submission_data = """<?xml version="1.0" ?>
-        <foo>
-           This does not pass the RelaxNG validation.
-        </foo>
-        """
-        self.createSubmissionData(submission_data, False, submission_key)
-        process_pending_submissions(self.layer.txn, self.log)
-
-        janitor = getUtility(ILaunchpadCelebrities).janitor
-        valid_submissions = submission_set.getByStatus(
-            HWSubmissionProcessingStatus.PROCESSED, user=janitor)
-        valid_submission_keys = [
-            submission.submission_key for submission in valid_submissions]
-        self.assertEqual(
-            valid_submission_keys,
-            [u'test_submission_id_1', u'sample-submission', u'submission-6',
-             u'private-submission'],
-            'Unexpected set of valid submissions: %r' % valid_submission_keys)
-
-        invalid_submissions = submission_set.getByStatus(
-            HWSubmissionProcessingStatus.INVALID, user=janitor)
-        invalid_submission_keys = [
-            submission.submission_key for submission in invalid_submissions]
-        self.assertEqual(
-            invalid_submission_keys, [u'submission-7'],
-            'Unexpected set of invalid submissions: %r'
-            % invalid_submission_keys)
-
-        new_submissions = submission_set.getByStatus(
-            HWSubmissionProcessingStatus.SUBMITTED, user=janitor)
-        new_submission_keys = [
-            submission.submission_key for submission in new_submissions]
-        self.assertEqual(
-            new_submission_keys, [],
-            'Unexpected set of new submissions: %r' % new_submission_keys)
-
-        messages = [record.getMessage() for record in self.handler.records]
-        messages = '\n'.join(messages)
-        self.assertEqual(
-            messages,
-            "Parsing submission submission-7: root node is not '<system>'\n"
-            "Processed 3 valid and 1 invalid HWDB submissions",
-            'Unexpected log messages: %r' % messages)
-
-    def testOopsLogging(self):
-        """Test if OOPSes are properly logged."""
-        def processSubmission(self, submission):
-            x = 1
-            x = x / 0
-        process_submission_regular = SubmissionParser.processSubmission
-        SubmissionParser.processSubmission = processSubmission
-
-        process_pending_submissions(self.layer.txn, self.log)
-
-        error_report = self.oopses[0]
-        self.assertEqual('ZeroDivisionError', error_report['type'])
-        self.assertStartsWith(
-                error_report['req_vars']['error-explanation'],
-                'Exception while processing HWDB')
-
-        messages = [record.getMessage() for record in self.handler.records]
-        messages = '\n'.join(messages)
-        expected_message = (
-            'Exception while processing HWDB submission '
-            'test_submission_id_1 (OOPS-')
-        self.assertTrue(
-                messages.startswith(expected_message),
-                'Unexpected log message: %r' % messages)
-
-        SubmissionParser.processSubmission = process_submission_regular
-
-    def testProcessingLoopExceptionHandling(self):
-        """Test of the exception handling of ProcessingLoop.__call__()"""
-        def processSubmission(self, submission):
-            """Force failures during submission processing."""
-            if submission.submission_key == 'submission-2':
-                raise LibrarianServerError('Librarian does not respond')
-            else:
-                return True
-
-        process_submission_regular = SubmissionParser.processSubmission
-        SubmissionParser.processSubmission = processSubmission
-
-        self.createSubmissionData(data='whatever', compress=False,
-                                  submission_key='submission-1')
-        self.createSubmissionData(data='whatever', compress=False,
-                                  submission_key='submission-2')
-
-        # When we call process_pending_submissions(), submission-2 will
-        # cause an exception
-        self.assertRaises(
-            LibrarianServerError, process_pending_submissions,
-            self.layer.txn, self.log)
-        error_report = self.oopses[0]
-        self.assertEqual('LibrarianServerError', error_report['type'])
-        self.assertEqual('Librarian does not respond', error_report['value'])
-
-        messages = [record.getMessage() for record in self.handler.records]
-        messages = '\n'.join(messages)
-        expected_message = (
-            'Could not reach the Librarian while processing HWDB '
-            'submission submission-2 (OOPS-')
-        self.assertTrue(
-                messages.startswith(expected_message),
-                'Unexpected log messages: %r' % messages)
-
-        # Though processing the second submission caused an exception,
-        # the first one has been corretly marked as being processed...
-        self.layer.txn.begin()
-        submission_set = getUtility(IHWSubmissionSet)
-        submission_1 = submission_set.getBySubmissionKey('submission-1')
-        self.assertEqual(
-            submission_1.status, HWSubmissionProcessingStatus.PROCESSED,
-            'Unexpected status of submission 1: %s' % submission_1.status)
-
-        # ... while the second submission has the status SUBMITTED.
-        submission_set = getUtility(IHWSubmissionSet)
-        submission_2 = submission_set.getBySubmissionKey('submission-2')
-        self.assertEqual(
-            submission_2.status, HWSubmissionProcessingStatus.SUBMITTED,
-            'Unexpected status of submission 1: %s' % submission_2.status)
-
-        SubmissionParser.processSubmission = process_submission_regular
