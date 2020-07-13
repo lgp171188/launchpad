@@ -12,6 +12,7 @@ from datetime import (
 import re
 
 from fixtures import FakeLogger
+from fixtures._fixtures.mockpatch import MockPatch
 from pytz import utc
 import requests
 import requests.exceptions
@@ -41,6 +42,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
+from lp.services.compat import mock
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
@@ -745,14 +747,26 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         self.assertRetriesWithLimitedEffort(u"http://foo.lxd/path")
 
     def test_retries_localhost_with_limited_effort(self):
-        self.assertRetriesWithLimitedEffort(u"localhost")
-        self.assertRetriesWithLimitedEffort(u"127.0.0.1")
+        self.assertRetriesWithLimitedEffort(u"http://localhost/")
+        self.assertRetriesWithLimitedEffort(u"http://127.0.0.1/")
 
     def test_broadcast_address_with_limited_effort(self):
-        self.assertRetriesWithLimitedEffort(u"224.0.18.255")
+        """Checks if we limit the delivery effort for broadcast addresses."""
+        # Pretend to be connected to a 192.168.1.0/24 network.
+        networks = {'eth0': [mock.Mock(broadcast='192.168.1.255')]}
+        self.useFixture(
+            MockPatch("lp.services.webhooks.model.psutil.net_if_addrs",
+                      return_value=networks))
+
+        self.assertRetriesWithLimitedEffort(u"http://192.168.1.255/")
 
     def test_multicast_address_with_limited_effort(self):
-        self.assertRetriesWithLimitedEffort(u"224.0.0.255")
+        self.assertRetriesWithLimitedEffort(u"http://224.0.18.255/")
+        self.assertRetriesWithLimitedEffort(u"http://224.0.0.255/")
+
+    def test_not_resolvable_address_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(
+            u"http://could.not.resolve.name.foo/")
 
 
 class TestViaCronscript(TestCaseWithFactory):

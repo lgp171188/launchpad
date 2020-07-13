@@ -24,6 +24,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import psutil
 from pytz import utc
 import six
 from six.moves.urllib.parse import urlsplit
@@ -462,6 +463,17 @@ class WebhookDeliveryJob(WebhookJobDerived):
             (job, event_type, _redact_payload(event_type, payload)))
         return job
 
+    def _get_broadcast_addresses(self):
+        addrs = []
+        for net, addresses in psutil.net_if_addrs().items():
+            for i in addresses:
+                try:
+                    addrs.append(
+                        ipaddress.ip_address(six.text_type(i.broadcast)))
+                except (ValueError, ipaddress.AddressValueError):
+                    pass
+        return addrs
+
     def is_limited_effort_delivery(self):
         """Checks if the webhook delivery URL should have limited effort on
         delivery, reducing the number of retries.
@@ -483,8 +495,10 @@ class WebhookDeliveryJob(WebhookJobDerived):
             except socket.error:
                 # If we could not resolve, we limit the effort to delivery.
                 return True
-        return ip.is_loopback or ip.is_unspecified or (
-                not ip.is_global and not ip.is_private)
+        return (
+            ip.is_loopback or ip.is_unspecified or ip.is_multicast
+            or ip in self._get_broadcast_addresses()
+            or (not ip.is_global and not ip.is_private))
 
     @property
     def pending(self):
