@@ -158,9 +158,8 @@ class OCIRecipeContextMenu(ContextMenu):
 
     @enabled_with_permission('launchpad.Edit')
     def edit_push_rules(self):
-        return Link('+edit-push-rules',
-                    'Edit push rules',
-                    icon='edit')
+        return Link(
+            '+edit-push-rules', 'Edit push rules', icon='edit')
 
 
 class OCIProjectRecipesView(LaunchpadView):
