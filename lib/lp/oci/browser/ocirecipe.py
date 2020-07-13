@@ -11,6 +11,8 @@ __all__ = [
     'OCIRecipeAdminView',
     'OCIRecipeContextMenu',
     'OCIRecipeDeleteView',
+    'OCIRecipeEditCredentialsView',
+    'OCIRecipeEditPushRulesView',
     'OCIRecipeEditView',
     'OCIRecipeNavigation',
     'OCIRecipeNavigationMenu',
@@ -23,11 +25,16 @@ from lazr.restful.interface import (
     use_template,
     )
 from zope.component import getUtility
+from zope.formlib.form import FormFields
 from zope.interface import Interface
 from zope.schema import (
+    Bool,
     Choice,
     List,
+    Password,
+    TextLine,
     )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.launchpadform import (
     action,
@@ -36,6 +43,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
+from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
@@ -50,6 +58,10 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeFeatureDisabled,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    OCIRegistryCredentialsAlreadyExist,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
@@ -138,11 +150,17 @@ class OCIRecipeContextMenu(ContextMenu):
 
     facet = 'overview'
 
-    links = ('request_builds',)
+    links = ('request_builds', 'edit_push_rules')
 
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
         return Link('+request-builds', 'Request builds', icon='add')
+
+    @enabled_with_permission('launchpad.Edit')
+    def edit_push_rules(self):
+        return Link('+edit-push-rules',
+                    'Edit push rules',
+                    icon='edit')
 
 
 class OCIProjectRecipesView(LaunchpadView):
@@ -243,6 +261,457 @@ def new_builds_notification_text(builds, already_pending=None):
         return builds_text
 
 
+class OCIRecipeEditCredentialsView(LaunchpadFormView):
+    """View for +ocirecipe-edit-credentials.pt."""
+
+    @cachedproperty
+    def oci_registry_credentials(self):
+        return list(getUtility(
+            IOCIRegistryCredentialsSet).findByOwner(self.context.owner))
+
+    schema = Interface
+
+    def _getFieldName(self, name, credentials_id):
+        """Get the combined field name for an `OCIRegistryCredentials` ID.
+
+        In order to be able to render a table, we encode the credentials ID
+        in the form field name.
+        """
+        return "%s.%d" % (name, credentials_id)
+
+    def getEditFieldsRow(self, credentials=None):
+        id = getattr(credentials, 'id', None)
+        owner = Choice(
+            title=u'Owner',
+            vocabulary=(
+                'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
+            default=credentials.owner.name,
+            __name__=self._getFieldName('owner', id))
+
+        username = TextLine(
+            title=u'Username',
+            __name__=self._getFieldName('username', id),
+            default=credentials.username,
+            required=False, readonly=False)
+
+        password = Password(
+            title=u'Password',
+            __name__=self._getFieldName('password', id),
+            default=None,
+            required=False, readonly=False)
+
+        confirm_password = Password(
+            title=u'Confirm password',
+            __name__=self._getFieldName('confirm_password', id),
+            default=None,
+            required=False, readonly=False)
+
+        url = TextLine(
+            title=u'Registry URL',
+            __name__=self._getFieldName('url', id),
+            default=credentials.url,
+            required=True, readonly=False)
+
+        delete = Bool(
+            title=u'Delete',
+            __name__=self._getFieldName('delete', id),
+            default=False,
+            required=True, readonly=False)
+
+        return owner, username, password, confirm_password, url, delete
+
+    def getAddFieldsRow(self):
+        add_url = TextLine(
+            title=u'Registry URL',
+            __name__=u'add_url',
+            required=False, readonly=False)
+        add_username = TextLine(
+            title=u'Username',
+            __name__=u'add_username',
+            required=False, readonly=False)
+        add_password = Password(
+            title=u'Password',
+            __name__=u'add_password',
+            required=False, readonly=False)
+        add_confirm_password = Password(
+            title=u'Confirm password',
+            __name__=u'add_confirm_password',
+            required=False, readonly=False)
+
+        return add_url, add_username, add_password, add_confirm_password
+
+    def _parseFieldName(self, field_name):
+        """Parse a combined field name as described in `_getFieldName`.
+
+        :raises UnexpectedFormData: if the field name cannot be parsed or
+            the `OCIRegistryCredentials` cannot be found.
+        """
+        field_bits = field_name.split(".")
+        if len(field_bits) != 2:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        field_type = field_bits[0]
+        try:
+            credentials_id = int(field_bits[1])
+        except ValueError:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        return field_type, credentials_id
+
+    def setUpFields(self):
+        """See `LaunchpadFormView`."""
+        LaunchpadFormView.setUpFields(self)
+
+        for elem in self.oci_registry_credentials:
+            fields = self.getEditFieldsRow(elem)
+            self.form_fields += FormFields(*fields)
+
+        add_fields = self.getAddFieldsRow()
+        self.form_fields += FormFields(*add_fields)
+
+    @property
+    def label(self):
+        return 'Edit OCI registry credentials'
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    def getCredentialsWidgets(self, credentials):
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+        owner_field_name = (
+                "field." + self._getFieldName("owner", credentials.id))
+        username_field_name = (
+                "field." + self._getFieldName("username", credentials.id))
+        password_field_name = (
+                "field." + self._getFieldName("password", credentials.id))
+        confirm_password_field_name = (
+                "field." + self._getFieldName("confirm_password",
+                                              credentials.id))
+        url_field_name = "field." + self._getFieldName("url", credentials.id)
+        delete_field_name = (
+                "field." + self._getFieldName("delete", credentials.id))
+        return {
+            "owner": widgets_by_name[owner_field_name],
+            "username": widgets_by_name[username_field_name],
+            "password": widgets_by_name[password_field_name],
+            "confirm_password": widgets_by_name[confirm_password_field_name],
+            "url": widgets_by_name[url_field_name],
+            "delete": widgets_by_name[delete_field_name]
+        }
+
+    def parseData(self, data):
+        """Rearrange form data to make it easier to process."""
+        parsed_data = {}
+        add_url = data["add_url"]
+        add_username = data["add_username"]
+        add_password = data["add_password"]
+        add_confirm_password = data["add_confirm_password"]
+        if add_url or add_username or add_password or add_confirm_password:
+            parsed_data.setdefault(None, {
+                "username": add_username,
+                "password": add_password,
+                "confirm_password": add_confirm_password,
+                "url": add_url,
+                "action": "add",
+            })
+        for field_name in (
+                name for name in data if name.split(".")[0] == "owner"):
+            _, credentials_id = self._parseFieldName(field_name)
+            owner_field_name = self._getFieldName(
+                "owner", credentials_id)
+            username_field_name = self._getFieldName(
+                "username", credentials_id)
+            password_field_name = self._getFieldName(
+                "password", credentials_id)
+            confirm_password_field_name = self._getFieldName(
+                "confirm_password", credentials_id)
+            url_field_name = self._getFieldName("url", credentials_id)
+            delete_field_name = self._getFieldName("delete", credentials_id)
+            if data.get(delete_field_name):
+                action = "delete"
+            else:
+                action = "change"
+            parsed_data.setdefault(credentials_id, {
+                "username": data.get(username_field_name),
+                "password": data.get(password_field_name),
+                "confirm_password": data.get(confirm_password_field_name),
+                "url": data.get(url_field_name),
+                "owner": data.get(owner_field_name),
+                "action": action,
+            })
+
+        return parsed_data
+
+    def changeCredentials(self, parsed_credentials, credentials):
+        username = parsed_credentials["username"]
+        password = parsed_credentials["password"]
+        confirm_password = parsed_credentials["confirm_password"]
+        owner = parsed_credentials["owner"]
+        if password or confirm_password:
+            if password != confirm_password:
+                self.setFieldError(
+                    self._getFieldName(
+                        "confirm_password", credentials.id),
+                    "Passwords do not match.")
+            else:
+                credentials.setCredentials(
+                    {"username": username,
+                     "password": password})
+                credentials.url = parsed_credentials["url"]
+        elif username != credentials.username:
+            removeSecurityProxy(credentials).username = username
+            credentials.url = parsed_credentials["url"]
+        elif parsed_credentials["url"] != credentials.url:
+            credentials.url = parsed_credentials["url"]
+        if owner != credentials.owner:
+            credentials.owner = owner
+
+    def deleteCredentials(self, credentials):
+        push_rule_set = getUtility(IOCIPushRuleSet)
+        if not push_rule_set.findByRegistryCredentials(
+                credentials).is_empty():
+            self.setFieldError(
+                self._getFieldName(
+                    "delete", credentials.id),
+                "These credentials cannot be deleted as there are "
+                "push rules defined that still use them.")
+        else:
+            credentials.destroySelf()
+
+    def addCredentials(self, parsed_add_credentials):
+        url = parsed_add_credentials["url"]
+        password = parsed_add_credentials["password"]
+        confirm_password = parsed_add_credentials["confirm_password"]
+        username = parsed_add_credentials["username"]
+        if url:
+            if password or confirm_password:
+                if not password == confirm_password:
+                    self.setFieldError(
+                        "add_password",
+                        "Please make sure the new "
+                        "password matches the "
+                        "confirm password field.")
+                    return
+
+                credentials = {
+                    'username': username,
+                    'password': password}
+                try:
+                    getUtility(IOCIRegistryCredentialsSet).new(
+                        owner=self.context.owner,
+                        url=url,
+                        credentials=credentials)
+                except OCIRegistryCredentialsAlreadyExist:
+                    self.setFieldError(
+                        "add_url",
+                        "Credentials already exist "
+                        "with the same URL and "
+                        "username.")
+            else:
+                credentials = {'username': username}
+                try:
+                    getUtility(IOCIRegistryCredentialsSet).new(
+                        owner=self.context.owner,
+                        url=url,
+                        credentials=credentials)
+                except OCIRegistryCredentialsAlreadyExist:
+                    self.setFieldError(
+                        "add_url",
+                        "Credentials already exist "
+                        "with the same URL and username.")
+        else:
+            self.setFieldError(
+                "add_url",
+                "Registry URL cannot be empty.")
+
+    def updateCredentialsFromData(self, parsed_data):
+        credentials_map = {
+            credentials.id: credentials
+            for credentials in self.oci_registry_credentials}
+
+        for credentials_id, parsed_credentials in parsed_data.items():
+            credentials = credentials_map.get(credentials_id)
+            action = parsed_credentials["action"]
+
+            if action == "change":
+                self.changeCredentials(parsed_credentials, credentials)
+            elif action == "delete":
+                self.deleteCredentials(credentials)
+            elif action == "add":
+                parsed_add_credentials = parsed_data[credentials]
+                self.addCredentials(parsed_add_credentials)
+            else:
+                raise AssertionError("unknown action: %s" % action)
+
+    @action("Save")
+    def save(self, action, data):
+        parsed_data = self.parseData(data)
+        self.updateCredentialsFromData(parsed_data)
+
+        if not self.errors:
+            self.request.response.addNotification("Saved credentials")
+            self.next_url = canonical_url(self.context)
+
+
+class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
+    """View for +ocirecipe-edit-push-rules.pt."""
+
+    class schema(Interface):
+        """Schema for editing push rules."""
+
+    @cachedproperty
+    def push_rules(self):
+        return list(
+            getUtility(IOCIPushRuleSet).findByRecipe(self.context))
+
+    @property
+    def has_push_rules(self):
+        return len(self.push_rules) > 0
+
+    def _getFieldName(self, name, rule_id):
+        """Get the combined field name for an `OCIPushRule` ID.
+
+        In order to be able to render a table, we encode the rule ID
+        in the form field name.
+        """
+        return "%s.%d" % (name, rule_id)
+
+    def _parseFieldName(self, field_name):
+        """Parse a combined field name as described in `_getFieldName`.
+
+        :raises UnexpectedFormData: if the field name cannot be parsed or
+            the `OCIPushRule` cannot be found.
+        """
+        field_bits = field_name.split(".")
+        if len(field_bits) != 2:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        field_type = field_bits[0]
+        try:
+            rule_id = int(field_bits[1])
+        except ValueError:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        return field_type, rule_id
+
+    def setUpFields(self):
+        """See `LaunchpadEditFormView`."""
+        LaunchpadEditFormView.setUpFields(self)
+
+        image_fields = []
+        delete_fields = []
+        creds = []
+        for elem in list(self.context.push_rules):
+            image_fields.append(
+                TextLine(
+                    title=u'Image name',
+                    __name__=self._getFieldName('image_name', elem.id),
+                    default=elem.image_name,
+                    required=True, readonly=False))
+            delete_fields.append(
+                Bool(
+                    title=u'Delete',
+                    __name__=self._getFieldName('delete', elem.id),
+                    default=False,
+                    required=True, readonly=False))
+            creds.append(
+                TextLine(
+                    title=u'Username',
+                    __name__=self._getFieldName('username', elem.id),
+                    default=elem.registry_credentials.username,
+                    required=True, readonly=True))
+            creds.append(
+                TextLine(
+                    title=u'Registry URL',
+                    __name__=self._getFieldName('url', elem.id),
+                    default=elem.registry_credentials.url,
+                    required=True, readonly=True))
+
+        self.form_fields += FormFields(*image_fields)
+        self.form_fields += FormFields(*creds)
+        self.form_fields += FormFields(*delete_fields)
+
+    @property
+    def label(self):
+        return 'Edit OCI push rules for %s' % self.context.name
+
+    page_title = 'Edit OCI push rules'
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    def getRulesWidgets(self, rule):
+
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+        image_field_name = (
+                "field." + self._getFieldName("image_name", rule.id))
+        username_field_name = (
+                "field." + self._getFieldName("username", rule.id))
+        url_field_name = (
+                "field." + self._getFieldName("url", rule.id))
+        delete_field_name = (
+                "field." + self._getFieldName("delete", rule.id))
+        return {
+            "image_name": widgets_by_name[image_field_name],
+            "username": widgets_by_name[username_field_name],
+            "url": widgets_by_name[url_field_name],
+            "delete": widgets_by_name[delete_field_name],
+        }
+
+    def parseData(self, data):
+        """Rearrange form data to make it easier to process."""
+        parsed_data = {}
+
+        for field_name in sorted(
+                name for name in data if name.split(".")[0] == "image_name"):
+            _, rule_id = self._parseFieldName(field_name)
+            image_field_name = self._getFieldName("image_name", rule_id)
+            delete_field_name = self._getFieldName("delete", rule_id)
+            if data.get(delete_field_name):
+                action = "delete"
+            else:
+                action = "change"
+            parsed_data.setdefault(rule_id, {
+                "image_name": data.get(image_field_name),
+                "action": action,
+            })
+
+        return parsed_data
+
+    def updatePushRulesFromData(self, parsed_data):
+        rules_map = {
+            rule.id: rule
+            for rule in self.context.push_rules}
+        for rule_id, parsed_rules in parsed_data.items():
+            rule = rules_map.get(rule_id)
+            action = parsed_rules["action"]
+
+            if action == "change":
+                image_name = parsed_rules["image_name"]
+                if not image_name:
+                    self.setFieldError(
+                        self._getFieldName(
+                            "image_name", rule_id),
+                        "Image name must be set.")
+                else:
+                    removeSecurityProxy(rule).image_name = image_name
+            elif action == "delete":
+                removeSecurityProxy(rule).destroySelf()
+            else:
+                raise AssertionError("unknown action: %s" % action)
+
+    @action("Save")
+    def save(self, action, data):
+        parsed_data = self.parseData(data)
+        self.updatePushRulesFromData(parsed_data)
+
+        if not self.errors:
+            self.request.response.addNotification("Saved push rules")
+            self.next_url = canonical_url(self.context)
+
+
 class OCIRecipeRequestBuildsView(LaunchpadFormView):
     """A view for requesting builds of an OCI recipe."""
 
@@ -322,6 +791,7 @@ class IOCIRecipeEditSchema(Interface):
         "build_file",
         "build_daily",
         "require_virtualized",
+        "push_rules",
         ])
 
 
@@ -453,6 +923,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
         "git_ref",
         "build_file",
         "build_daily",
+        "push_rules",
         )
     custom_widget_git_ref = GitRefWidget
 
