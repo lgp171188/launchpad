@@ -342,9 +342,9 @@ class TestHandleStatusMixin(WithScenarios):
 
     def setUp(self):
         super(TestHandleStatusMixin, self).setUp()
-        if self.download_in_subprocess:
+        if not self.download_in_subprocess:
             self.useFixture(FeatureFixture(
-                {'buildmaster.download_in_subprocess': 'on'}))
+                {'buildmaster.download_in_subprocess': ''}))
         self.factory = LaunchpadObjectFactory()
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that

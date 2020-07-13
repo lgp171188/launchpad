@@ -175,6 +175,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.addCleanup(shut_down_default_process_pool)
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
@@ -429,8 +430,8 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         super(TestHandleStatusForOCIRecipeBuild, self).setUp()
         self.useFixture(fixtures.FakeLogger())
         features = {OCI_RECIPE_ALLOW_CREATE: 'on'}
-        if self.download_in_subprocess:
-            features['buildmaster.download_in_subprocess'] = 'on'
+        if not self.download_in_subprocess:
+            features['buildmaster.download_in_subprocess'] = ''
         self.useFixture(FeatureFixture(features))
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
