@@ -633,7 +633,7 @@ class BuilderInteractor(object):
         """
         builder_status = slave_status["builder_status"]
         if builder_status == "BuilderStatus.ABORTING":
-            logtail = "Waiting for slave process to be terminated"
+            logtail = u"Waiting for slave process to be terminated"
         elif slave_status.get("logtail") is not None:
             # slave_status["logtail"] is normally an xmlrpc_client.Binary
             # instance, and the contents might include invalid UTF-8 due to
@@ -644,7 +644,7 @@ class BuilderInteractor(object):
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
             # in going through contortions to store them.
-            logtail = logtail.replace("\0", "")
+            logtail = logtail.replace(u"\0", u"")
         else:
             logtail = None
         return logtail
