@@ -3,6 +3,8 @@
 
 """Validators for the clean-username (`Person.name`) attribute."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import re
