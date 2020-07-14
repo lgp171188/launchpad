@@ -408,6 +408,13 @@ class IOCIRecipeAdminAttributes(Interface):
         value_type=Reference(schema=IProcessor),
         readonly=False))
 
+    allow_internet = exported(Bool(
+        title=_("Allow external network access"),
+        required=True, readonly=False,
+        description=_(
+            "Allow access to external network resources via a proxy.  "
+            "Resources hosted on Launchpad itself are always allowed.")))
+
 
 @exported_as_webservice_entry(
     publish_web_link=True, as_of="devel", singular_name="oci_recipe")
@@ -421,7 +428,8 @@ class IOCIRecipeSet(Interface):
 
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            build_daily=False, processors=None, date_created=DEFAULT):
+            build_daily=False, processors=None, date_created=DEFAULT,
+            allow_internet=True):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
