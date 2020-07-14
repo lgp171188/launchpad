@@ -32,7 +32,6 @@ from zope.schema import (
     List,
     TextLine,
     )
-from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.launchpadform import (
     action,
@@ -396,9 +395,9 @@ class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
                             "image_name", rule_id),
                         "Image name must be set.")
                 else:
-                    removeSecurityProxy(rule).image_name = image_name
+                    rule.setNewImageName(image_name)
             elif action == "delete":
-                removeSecurityProxy(rule).destroySelf()
+                rule.destroySelf()
             else:
                 raise AssertionError("unknown action: %s" % action)
 
