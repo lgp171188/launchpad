@@ -295,14 +295,17 @@ class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
         login_person(self.person)
         recipe = self.factory.makeOCIRecipe(registrant=self.person)
         self.assertTrue(recipe.require_virtualized)
+        self.assertTrue(recipe.allow_internet)
 
         browser = self.getViewBrowser(recipe, user=commercial_admin)
         browser.getLink("Administer OCI recipe").click()
         browser.getControl("Require virtualized builders").selected = False
+        browser.getControl("Allow external network access").selected = False
         browser.getControl("Update OCI recipe").click()
 
         login_person(self.person)
         self.assertFalse(recipe.require_virtualized)
+        self.assertFalse(recipe.allow_internet)
 
     def test_admin_recipe_sets_date_last_modified(self):
         # Administering an OCI recipe sets the date_last_modified property.
