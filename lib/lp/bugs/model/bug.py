@@ -2796,8 +2796,7 @@ class FileBugData:
 
     def __init__(self, initial_summary=None, initial_tags=None,
                  private=None, subscribers=None, extra_description=None,
-                 comments=None, attachments=None,
-                 hwdb_submission_keys=None):
+                 comments=None, attachments=None):
         if initial_tags is None:
             initial_tags = []
         if subscribers is None:
@@ -2806,8 +2805,6 @@ class FileBugData:
             comments = []
         if attachments is None:
             attachments = []
-        if hwdb_submission_keys is None:
-            hwdb_submission_keys = []
 
         self.initial_summary = initial_summary
         self.private = private
@@ -2816,7 +2813,6 @@ class FileBugData:
         self.subscribers = subscribers
         self.comments = comments
         self.attachments = attachments
-        self.hwdb_submission_keys = hwdb_submission_keys
 
     def asDict(self):
         """Return the FileBugData instance as a dict."""

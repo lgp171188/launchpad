@@ -270,7 +270,6 @@ class ProcessApportBlobJob(ApportJobDerived):
                 subscribers=processed_data['subscribers'],
                 extra_description=processed_data['extra_description'],
                 comments=processed_data['comments'],
-                hwdb_submission_keys=processed_data['hwdb_submission_keys'],
                 attachments=attachment_data)
         else:
             return FileBugData()

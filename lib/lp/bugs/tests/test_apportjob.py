@@ -120,10 +120,6 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
         self.assertEqual(
             filebug_data.comments, data_dict['comments'],
             "Values for comments do not match")
-        self.assertEqual(
-            filebug_data.hwdb_submission_keys,
-            data_dict['hwdb_submission_keys'],
-            "Values for hwdb_submission_keys do not match")
 
         # The attachments list of the data_dict dict will be of
         # the same length as the attachments list in the filebug_data

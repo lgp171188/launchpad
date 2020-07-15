@@ -121,7 +121,6 @@ from lp.bugs.model.structuralsubscription import (
     get_structural_subscriptions_for_target,
     )
 from lp.bugs.utilities.filebugdataparser import FileBugData
-from lp.hardwaredb.interfaces.hwdb import IHWSubmissionSet
 from lp.registry.browser.product import ProductConfigureBase
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
@@ -651,13 +650,6 @@ class FileBugViewBase(LaunchpadFormView):
                     notifications.append(
                         '%s has been subscribed to this bug.' %
                         person.displayname)
-
-        submission_set = getUtility(IHWSubmissionSet)
-        for submission_key in extra_data.hwdb_submission_keys:
-            submission = submission_set.getBySubmissionKey(
-                submission_key, self.user)
-            if submission is not None:
-                bug.linkHWSubmission(submission)
 
         # Give the user some feedback on the bug just opened.
         for notification in notifications:
