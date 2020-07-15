@@ -121,6 +121,7 @@ class MakeOCIBuildMixin:
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+        self.addCleanup(shut_down_default_process_pool)
 
         # Taken from test_archivedependencies.py
         for component_name in ("main", "universe"):
@@ -175,7 +176,6 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
-        self.addCleanup(shut_down_default_process_pool)
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
