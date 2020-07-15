@@ -725,6 +725,9 @@ class TestSlaveConnectionTimeouts(TestCase):
     # Testing that we can override the default 30 second connection
     # timeout.
 
+    # The timeouts in test_connection_timeout are relative to the artificial
+    # Clock rather than to true wallclock time, so it's not a problem for
+    # this timeout to be shorter than them.
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
     def setUp(self):
