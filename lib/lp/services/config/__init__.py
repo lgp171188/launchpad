@@ -257,9 +257,6 @@ class LaunchpadConfig:
         # The defined servers.
         self.servers = root_options.servers
 
-        # The number of configured threads.
-        self.threads = root_options.threads
-
     def generate_overrides(self):
         """Ensure correct config.zcml overrides will be called.
 

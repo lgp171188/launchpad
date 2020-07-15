@@ -89,9 +89,6 @@ ZConfig.
     >>> len(config.servers)
     4
 
-    >>> config.threads
-    4
-
 
 Working with test configurations
 --------------------------------
