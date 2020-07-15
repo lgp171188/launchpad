@@ -22,6 +22,7 @@ from twisted.internet import (
     defer,
     reactor as default_reactor,
     )
+from twisted.internet.interfaces import IReactorCore
 from twisted.internet.protocol import Protocol
 from twisted.web import xmlrpc
 from twisted.web.client import (
@@ -185,9 +186,10 @@ def default_process_pool(reactor=None):
     if _default_process_pool is None:
         _default_process_pool = make_download_process_pool()
         _default_process_pool.start()
-        shutdown_id = reactor.addSystemEventTrigger(
-            "during", "shutdown", _default_process_pool.stop)
-        _default_process_pool_shutdown = (reactor, shutdown_id)
+        if IReactorCore.providedBy(reactor):
+            shutdown_id = reactor.addSystemEventTrigger(
+                "during", "shutdown", _default_process_pool.stop)
+            _default_process_pool_shutdown = (reactor, shutdown_id)
     return _default_process_pool
 
 
@@ -233,8 +235,11 @@ class BuilderSlave(object):
         if reactor is None:
             reactor = default_reactor
         self.reactor = reactor
-        self._download_in_subprocess = bool(
-            getFeatureFlag('buildmaster.download_in_subprocess'))
+        download_in_subprocess_flag = getFeatureFlag(
+            'buildmaster.download_in_subprocess')
+        self._download_in_subprocess = (
+            bool(download_in_subprocess_flag)
+            if download_in_subprocess_flag is not None else True)
         if pool is None:
             pool = default_pool(reactor=reactor)
         self.pool = pool
@@ -633,7 +638,7 @@ class BuilderInteractor(object):
         """
         builder_status = slave_status["builder_status"]
         if builder_status == "BuilderStatus.ABORTING":
-            logtail = "Waiting for slave process to be terminated"
+            logtail = u"Waiting for slave process to be terminated"
         elif slave_status.get("logtail") is not None:
             # slave_status["logtail"] is normally an xmlrpc_client.Binary
             # instance, and the contents might include invalid UTF-8 due to
@@ -644,7 +649,7 @@ class BuilderInteractor(object):
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
             # in going through contortions to store them.
-            logtail = logtail.replace("\0", "")
+            logtail = logtail.replace(u"\0", u"")
         else:
             logtail = None
         return logtail

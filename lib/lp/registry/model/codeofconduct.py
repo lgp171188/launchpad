@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A module for CodeOfConduct (CoC) related classes.
@@ -15,12 +15,14 @@ import os
 
 import pytz
 import scandir
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
+from storm.locals import (
+    Bool,
+    DateTime,
+    Int,
+    Not,
+    Reference,
+    Unicode,
     )
-from storm.properties import Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -35,12 +37,10 @@ from lp.registry.interfaces.codeofconduct import (
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    quote,
-    SQLBase,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import flush_database_updates
+from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import fti_search
 from lp.services.gpg.interfaces import (
     GPGKeyExpired,
     GPGKeyNotFoundError,
@@ -175,27 +175,39 @@ class CodeOfConductSet:
 
 
 @implementer(ISignedCodeOfConduct)
-class SignedCodeOfConduct(SQLBase):
+class SignedCodeOfConduct(StormBase):
     """Code of Conduct."""
 
-    _table = 'SignedCodeOfConduct'
+    __storm_table__ = 'SignedCodeOfConduct'
 
-    owner = ForeignKey(foreignKey="Person", dbName="owner", notNull=True)
+    id = Int(primary=True)
 
-    signedcode = StringCol(dbName='signedcode', notNull=False, default=None)
+    owner_id = Int(name='owner', allow_none=False)
+    owner = Reference(owner_id, 'Person.id')
+
+    signedcode = Unicode(name='signedcode', allow_none=True, default=None)
 
     signing_key_fingerprint = Unicode()
 
-    datecreated = UtcDateTimeCol(dbName='datecreated', notNull=True,
-                                 default=UTC_NOW)
+    datecreated = DateTime(
+        tzinfo=pytz.UTC, name='datecreated', allow_none=False,
+        default=UTC_NOW)
 
-    recipient = ForeignKey(foreignKey="Person", dbName="recipient",
-                           notNull=False, default=None)
+    recipient_id = Int(name='recipient', allow_none=True, default=None)
+    recipient = Reference(recipient_id, 'Person.id')
 
-    admincomment = StringCol(dbName='admincomment', notNull=False,
-                             default=None)
+    admincomment = Unicode(name='admincomment', allow_none=True, default=None)
 
-    active = BoolCol(dbName='active', notNull=True, default=False)
+    active = Bool(name='active', allow_none=False, default=False)
+
+    def __init__(self, owner, signedcode=None, signing_key_fingerprint=None,
+            recipient=None, active=False):
+        super(SignedCodeOfConduct, self).__init__()
+        self.owner = owner
+        self.signedcode = signedcode
+        self.signing_key_fingerprint = signing_key_fingerprint
+        self.recipient = recipient
+        self.active = active
 
     @cachedproperty
     def signingkey(self):
@@ -242,11 +254,11 @@ class SignedCodeOfConductSet:
 
     def __getitem__(self, id):
         """Get a Signed CoC Entry."""
-        return SignedCodeOfConduct.get(id)
+        return IStore(SignedCodeOfConduct).get(SignedCodeOfConduct, int(id))
 
     def __iter__(self):
         """Iterate through the Signed CoC."""
-        return iter(SignedCodeOfConduct.select())
+        return iter(IStore(SignedCodeOfConduct).find(SignedCodeOfConduct))
 
     def verifyAndStore(self, user, signedcode):
         """See ISignedCodeOfConductSet."""
@@ -327,15 +339,15 @@ class SignedCodeOfConductSet:
 
     def searchByDisplayname(self, displayname, searchfor=None):
         """See ISignedCodeOfConductSet."""
-        clauseTables = ['Person']
+        # Circular import.
+        from lp.registry.model.person import Person
 
         # XXX: cprov 2005-02-27:
         # FTI presents problems when query by incomplete names
         # and I'm not sure if the best solution here is to use
         # trivial ILIKE query. Oppinion required on Review.
 
-        # glue Person and SignedCoC table
-        query = 'SignedCodeOfConduct.owner = Person.id'
+        clauses = [SignedCodeOfConduct.owner == Person.id]
 
         # XXX cprov 2005-03-02:
         # I'm not sure if the it is correct way to query ALL
@@ -345,29 +357,25 @@ class SignedCodeOfConductSet:
         # the name shoudl work like a filter, if you don't enter anything
         # you get everything.
         if displayname:
-            query += ' AND Person.fti @@ ftq(%s)' % quote(displayname)
+            clauses.append(fti_search(Person, displayname))
 
         # Attempt to search for directive
         if searchfor == 'activeonly':
-            query += ' AND SignedCodeOfConduct.active = true'
-
+            clauses.append(SignedCodeOfConduct.active)
         elif searchfor == 'inactiveonly':
-            query += ' AND SignedCodeOfConduct.active = false'
+            clauses.append(Not(SignedCodeOfConduct.active))
 
-        return SignedCodeOfConduct.select(
-            query, clauseTables=clauseTables,
-            orderBy='SignedCodeOfConduct.active')
+        return IStore(SignedCodeOfConduct).find(
+            SignedCodeOfConduct, *clauses).order_by(SignedCodeOfConduct.active)
 
-    def searchByUser(self, user_id, active=True):
+    def searchByUser(self, user, active=True):
         """See ISignedCodeOfConductSet."""
-        # XXX kiko 2006-08-14:
-        # What is this user_id nonsense? Use objects!
-        return SignedCodeOfConduct.selectBy(ownerID=user_id,
-                                            active=active)
+        return IStore(SignedCodeOfConduct).find(
+            SignedCodeOfConduct, owner=user, active=active)
 
     def modifySignature(self, sign_id, recipient, admincomment, state):
         """See ISignedCodeOfConductSet."""
-        sign = SignedCodeOfConduct.get(sign_id)
+        sign = IStore(SignedCodeOfConduct).get(SignedCodeOfConduct, sign_id)
         sign.active = state
         sign.admincomment = admincomment
         sign.recipient = recipient.id

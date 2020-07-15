@@ -91,7 +91,7 @@ class TestDKIM(TestCaseWithFactory):
     def monkeypatch_dns(self):
         self._dns_responses = {}
 
-        def my_lookup(name):
+        def my_lookup(name, timeout=None):
             try:
                 return self._dns_responses[name]
             except KeyError:
@@ -170,7 +170,7 @@ Why isn't this fixed yet?""")
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
         self.assertDkimLogContains(
-            "DKIM error: KeyFormatError('incomplete public key:")
+            "ERROR unknown algorithm in k= tag")
 
     def test_dkim_garbage_pubkey(self):
         signed_message = self.fake_signing(self.makeMessageText())
@@ -180,7 +180,10 @@ Why isn't this fixed yet?""")
         self.assertWeaklyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
-        self.assertDkimLogContains("DKIM error: KeyFormatError(InvalidTagSpec")
+        # We seem to just get the public key as the error message, which
+        # isn't the most informative of errors, but this is buried inside
+        # dkimpy and there isn't much we can do about it.
+        self.assertDkimLogContains("ERROR abcdefg")
 
     def test_dkim_disabled(self):
         """With disabling flag set, mail isn't trusted."""

@@ -501,13 +501,14 @@ class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
         repo = self.factory.makeGitRepository(target=project)
 
         another_user = self.factory.makePerson()
-        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+        forked = getUtility(IGitRepositorySet).fork(
+            repo, another_user, another_user)
         self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
 
         # Run the job that checks if repository was confirmed
         [job] = GitRepositoryConfirmCreationJob.iterReady()
         self.assertEqual(forked, job.repository)
-        with dbuser("gitrepo-creator"):
+        with dbuser("branchscanner"):
             JobRunner([job]).runAll()
 
         self.assertEqual(
@@ -524,7 +525,8 @@ class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
         repo = self.factory.makeGitRepository(target=project)
 
         another_user = self.factory.makePerson()
-        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+        forked = getUtility(IGitRepositorySet).fork(
+            repo, another_user, another_user)
         self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
 
         # Run the job that checks if repository was confirmed
@@ -541,18 +543,19 @@ class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
         job.max_retries = 2
         job.attempt_count = 2
         self.assertEqual(forked, job.repository)
-        with dbuser("gitrepo-creator"):
+        with dbuser("branchscanner"):
             JobRunner([job]).runAll()
 
         self.assertEqual(
             0, len(list(GitRepositoryConfirmCreationJob.iterReady())))
-        # Asserts it called twice the git hosting service to get properties.
+        # Asserts it called twice the git hosting service to get properties,
+        # and it is still in "CREATING" status.
         self.assertEqual(
             [((forked.getInternalPath(), ), {})] * 2,
             hosting_fixture.getProperties.calls)
         store = IStore(forked)
-        resultset = store.find(GitRepository, GitRepository.id == forked.id)
-        self.assertEqual(0, resultset.count())
+        store.invalidate(forked)
+        self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
 
 
 # XXX cjwatson 2015-03-12: We should test that the jobs work via Celery too,

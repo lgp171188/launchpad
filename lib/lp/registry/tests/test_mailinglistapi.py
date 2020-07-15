@@ -3,6 +3,8 @@
 
 """Unit tests for the private MailingList API."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = []
 
@@ -494,7 +496,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
                 Message-ID: <\xa9-me>
                 Date: Fri, 01 Aug 2000 01:08:59 -0000\n
                 I put \xa9 in the body.
-                """))
+                """).encode('ISO-8859-1'))
         info = self.mailinglist_api.holdMessage(
             'team', xmlrpc_client.Binary(message.as_string()))
         transaction.commit()
@@ -507,13 +509,13 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         finally:
             found.posted_message.close()
         self.assertEqual([
-            'From: \\xa9 me <me@eg.dom>',
-            'To: team@lists.launchpad.test',
-            'Subject: \\xa9 gremlins',
-            'Message-ID: <\\xa9-me>',
-            'Date: Fri, 01 Aug 2000 01:08:59 -0000',
-            '',
-            'I put \xa9 in the body.'], text.splitlines())
+            b'From: \\xa9 me <me@eg.dom>',
+            b'To: team@lists.launchpad.test',
+            b'Subject: \\xa9 gremlins',
+            b'Message-ID: <\\xa9-me>',
+            b'Date: Fri, 01 Aug 2000 01:08:59 -0000',
+            b'',
+            b'I put \xa9 in the body.'], text.splitlines())
 
     def test_getMessageDispositions_accept(self):
         # List moderators can approve messages.

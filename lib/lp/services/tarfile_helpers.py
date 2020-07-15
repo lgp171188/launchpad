@@ -9,16 +9,16 @@ __all__ = [
     'LaunchpadWriteTarFile',
     ]
 
+import io
 import os
-from StringIO import StringIO
 import tarfile
 import tempfile
 import time
 
-# A note about tarballs, StringIO and unicode. SQLObject returns unicode
+# A note about tarballs, BytesIO and unicode. SQLObject returns unicode
 # values for columns which are declared as StringCol. We have to be careful
 # not to pass unicode instances to the tarfile module, because when the
-# tarfile's filehandle is a StringIO object, the StringIO object gets upset
+# tarfile's filehandle is a BytesIO object, the BytesIO object gets upset
 # later when we ask it for its value and it tries to join together its
 # buffers. This is why the tarball code is sprinkled with ".encode('ascii')".
 # If we get separate StringCol and UnicodeCol column types, we won't need this
@@ -107,7 +107,7 @@ class LaunchpadWriteTarFile:
         tarinfo = self._make_skeleton_tarinfo(path, now)
         tarinfo.mode = 0o644
         tarinfo.size = len(contents)
-        self.tarfile.addfile(tarinfo, StringIO(contents))
+        self.tarfile.addfile(tarinfo, io.BytesIO(contents))
 
     def add_files(self, files):
         """Add a number of files to the archive.

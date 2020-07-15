@@ -125,8 +125,8 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
                 """))
             os.fchmod(f.fileno(), 0o755)
         self.openArchive("20060302.0120")
-        self.tarfile.add_file("20060302.0120/list", "a list")
-        self.tarfile.add_file("20060302.0120/foo.tar.gz", "a tarball")
+        self.tarfile.add_file("20060302.0120/list", b"a list")
+        self.tarfile.add_file("20060302.0120/foo.tar.gz", b"a tarball")
         self.process()
         self.assertThat(
             os.path.join(self.getUpgraderPath(), "20060302.0120"),

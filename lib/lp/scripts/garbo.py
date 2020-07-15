@@ -34,6 +34,7 @@ import pytz
 import simplejson
 from storm.expr import (
     And,
+    Cast,
     In,
     Join,
     Max,
@@ -58,6 +59,7 @@ from lp.bugs.scripts.checkwatches.scheduler import (
     BugWatchScheduler,
     MAX_SAMPLE_SIZE,
     )
+from lp.code.enums import GitRepositoryStatus
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.codeimportevent import CodeImportEvent
 from lp.code.model.codeimportresult import CodeImportResult
@@ -65,6 +67,7 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
+from lp.code.model.gitrepository import GitRepository
 from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
@@ -1584,6 +1587,33 @@ class OCIFilePruner(BulkPruner):
         """
 
 
+class GitRepositoryPruner(TunableLoop):
+    """Remove GitRepositories that are "CREATING" for far too long."""
+
+    maximum_chunk_size = 500
+    repository_creation_timeout = timedelta(hours=1)
+
+    def __init__(self, log, abort_time=None):
+        super(GitRepositoryPruner, self).__init__(log, abort_time)
+        self.store = IMasterStore(GitRepository)
+
+    def findRepositories(self):
+        min_date = UTC_NOW - Cast(self.repository_creation_timeout, "interval")
+        repositories = self.store.find(
+            GitRepository,
+            GitRepository.status == GitRepositoryStatus.CREATING,
+            GitRepository.date_created < min_date)
+        return repositories.order_by(GitRepository.date_created)
+
+    def isDone(self):
+        return self.findRepositories().is_empty()
+
+    def __call__(self, chunk_size):
+        for repository in self.findRepositories()[:chunk_size]:
+            repository.destroySelf(break_references=True)
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -1835,6 +1865,7 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     tunable_loops = [
         BugHeatUpdater,
         DuplicateSessionPruner,
+        GitRepositoryPruner,
         RevisionCachePruner,
         UnusedSessionPruner,
         ]

@@ -67,6 +67,7 @@ from operator import attrgetter
 import re
 
 from lazr.restful.interfaces import IReference
+import six
 from sqlobject import (
     AND,
     CONTAINSSTRING,
@@ -179,7 +180,10 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
-from lp.services.database.stormexpr import RegexpMatch
+from lp.services.database.stormexpr import (
+    fti_search,
+    RegexpMatch,
+    )
 from lp.services.helpers import (
     ensure_unicode,
     shortlist,
@@ -1021,7 +1025,7 @@ class ActiveMailingListVocabulary(FilteredVocabularyBase):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         # token should be the team name as a string.
-        team_list = getUtility(IMailingListSet).get(token)
+        team_list = getUtility(IMailingListSet).get(six.ensure_text(token))
         if team_list is None:
             raise LookupError(token)
         return self.getTerm(team_list)
@@ -1039,13 +1043,12 @@ class ActiveMailingListVocabulary(FilteredVocabularyBase):
             return getUtility(IMailingListSet).active_lists
         # The mailing list name, such as it has one, is really the name of the
         # team to which it is linked.
-        return MailingList.select("""
-            MailingList.team = Person.id
-            AND Person.fti @@ ftq(%s)
-            AND Person.teamowner IS NOT NULL
-            AND MailingList.status = %s
-            """ % sqlvalues(text, MailingListStatus.ACTIVE),
-            clauseTables=['Person'])
+        return IStore(MailingList).find(
+            MailingList,
+            MailingList.team == Person.id,
+            fti_search(Person, text),
+            Person.teamowner != None,
+            MailingList.status == MailingListStatus.ACTIVE)
 
     def searchForTerms(self, query=None, vocab_filter=None):
         """See `IHugeVocabulary`."""
