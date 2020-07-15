@@ -475,6 +475,5 @@ class GitRepositoryConfirmCreationJob(GitJobDerived):
 
         # We have tried enough. We should abort this repository creation.
         log.error(
-            "Git repository %s availability could not be confirmed. Removing.",
-            self.repository)
-        self.repository.destroySelf(break_references=True)
+            "Git repository %s availability could not be confirmed. Garbo "
+            "should deal with its deletion soon.", self.repository)
