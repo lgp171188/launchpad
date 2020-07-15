@@ -191,8 +191,9 @@ class TestPersonSet(TestCaseWithFactory):
     def test_getPrecachedPersonsFromIDs_is_ubuntu_coc_signer(self):
         # getPrecachedPersonsFromIDs() sets is_ubuntu_coc_signer
         # correctly.
-        person_ids = [self.factory.makePerson().id for i in range(3)]
-        SignedCodeOfConduct(owner=person_ids[0], active=True)
+        persons = [self.factory.makePerson() for i in range(3)]
+        person_ids = [person.id for person in persons]
+        SignedCodeOfConduct(owner=persons[0], active=True)
         flush_database_caches()
 
         persons = list(

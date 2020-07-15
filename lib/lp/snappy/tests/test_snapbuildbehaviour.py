@@ -57,6 +57,7 @@ from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
     )
+from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
@@ -305,6 +306,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.now = time.time()
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
+        self.addCleanup(shut_down_default_process_pool)
 
     def makeJob(self, **kwargs):
         # We need a builder slave in these tests, in order that requesting a

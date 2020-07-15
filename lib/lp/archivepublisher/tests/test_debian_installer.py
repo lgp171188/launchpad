@@ -177,8 +177,8 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
                 """))
             os.fchmod(f.fileno(), 0o755)
         self.openArchive()
-        self.addFile("images/list", "a list")
-        self.addFile("images/SHA256SUMS", "a checksum")
+        self.addFile("images/list", b"a list")
+        self.addFile("images/SHA256SUMS", b"a checksum")
         self.process()
         self.assertThat(
             self.getInstallerPath("images"),

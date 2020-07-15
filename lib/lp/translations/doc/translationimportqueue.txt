@@ -969,9 +969,9 @@ later with poimport script.
 We get a sample tarball to be uploaded into the system.
 
     >>> test_tar_content = {
-    ...     'foo.pot': 'Foo template',
-    ...     'es.po': 'Spanish translation',
-    ...     'fr.po': 'French translation',
+    ...     'foo.pot': b'Foo template',
+    ...     'es.po': b'Spanish translation',
+    ...     'fr.po': b'French translation',
     ...     }
     >>> tarfile_content = LaunchpadWriteTarFile.files_to_string(
     ...     test_tar_content)

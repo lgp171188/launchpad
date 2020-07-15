@@ -284,7 +284,7 @@ to delete the archives of an INACTIVE list, this must be done manually.
 
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.mailinglist import IMailingListSet
-    >>> def print_list_state(team_name='aardvarks'):
+    >>> def print_list_state(team_name=u'aardvarks'):
     ...     login('foo.bar@canonical.com')
     ...     mailing_list = getUtility(IMailingListSet).get(team_name)
     ...     print mailing_list.status.name
@@ -358,7 +358,7 @@ be purged.
     >>> def show_states(*states):
     ...     url = 'http://launchpad.test/~aardvarks/+mailinglist'
     ...     for status in states:
-    ...         set_list_state('aardvarks', status)
+    ...         set_list_state(u'aardvarks', status)
     ...         print_list_state()
     ...         admin_browser.open(url)
     ...         print purge_text(admin_browser)
@@ -367,7 +367,7 @@ be purged.
 
 A purged list acts as if it doesn't even exist.
 
-    >>> set_list_state('aardvarks', MailingListStatus.PURGED)
+    >>> set_list_state(u'aardvarks', MailingListStatus.PURGED)
     >>> print_list_state()
     PURGED
     >>> admin_browser.open('http://launchpad.test/~aardvarks/+mailinglist')
@@ -379,4 +379,4 @@ A purged list acts as if it doesn't even exist.
 
 The team owner can see that an inactive list can be reactivated or purged.
 
-    >>> set_list_state('aardvarks', MailingListStatus.INACTIVE)
+    >>> set_list_state(u'aardvarks', MailingListStatus.INACTIVE)

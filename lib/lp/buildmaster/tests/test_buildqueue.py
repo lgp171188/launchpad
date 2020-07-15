@@ -6,14 +6,15 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import timedelta
 
-from storm.sqlobject import SQLObjectNotFound
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
     BuildQueueStatus,
     BuildStatus,
     )
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -115,7 +116,7 @@ class TestBuildCancellation(TestCaseWithFactory):
 
     def assertCancelled(self, build, bq):
         self.assertEqual(BuildStatus.CANCELLED, build.status)
-        self.assertRaises(SQLObjectNotFound, BuildQueue.get, bq.id)
+        self.assertRaises(NotFoundError, getUtility(IBuildQueueSet).get, bq.id)
 
     def test_binarypackagebuild_cancel(self):
         build = self.factory.makeBinaryPackageBuild()

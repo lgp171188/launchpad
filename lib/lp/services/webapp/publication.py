@@ -89,7 +89,7 @@ from lp.services.webapp.vhosts import allvhosts
 METHOD_WRAPPER_TYPE = type({}.__setitem__)
 
 OFFSITE_POST_WHITELIST = ('/+storeblob', '/+request-token', '/+access-token',
-    '/+hwdb/+submit', '/+openid')
+    '/+openid')
 
 
 def maybe_block_offsite_form_post(request):
@@ -128,12 +128,6 @@ def maybe_block_offsite_form_post(request):
         # and launchpadlib used to make POST requests to
         # +request-token and +access-token without providing a
         # Referer.
-        #
-        # XXX Abel Deuring 2010-04-09 bug=550973
-        # The HWDB client "checkbox" accesses /+hwdb/+submit without
-        # a referer. This will change in the version in Ubuntu 10.04,
-        # but Launchpad should support HWDB submissions from older
-        # Ubuntu versions during their support period.
         #
         # We'll have to keep an application's one-off exception
         # until the application has been changed to send a

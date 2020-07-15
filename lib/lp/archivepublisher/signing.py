@@ -453,7 +453,7 @@ class SigningUpload(CustomUpload):
             return
 
         key_set = getUtility(IArchiveSigningKeySet)
-        current_key = key_set.getSigningKey(
+        current_key = key_set.get(
             key_type, self.archive, None, exact_match=True)
         if current_key is not None:
             self.logger.info("Skipping injection for key type %s: archive "

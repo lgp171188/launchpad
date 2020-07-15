@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Custom language code."""
 
@@ -56,7 +56,7 @@ class ICustomLanguageCode(Interface):
 class IHasCustomLanguageCodes(Interface):
     """A context that can have custom language codes attached.
 
-    Implemented by `Product` and `SourcePackage`.
+    Implemented by `Product` and `DistributionSourcePackage`.
     """
     custom_language_codes = Set(
         title=_("Custom language codes"),

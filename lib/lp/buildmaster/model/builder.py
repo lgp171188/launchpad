@@ -286,7 +286,7 @@ class BuilderSet(object):
             Sum(BuildQueue.estimated_duration),
             Processor,
             Coalesce(BuildQueue.virtualized, True)),
-            Processor.id == BuildQueue.processorID,
+            Processor.id == BuildQueue.processor_id,
             BuildQueue.status == BuildQueueStatus.WAITING).group_by(
                 Processor, Coalesce(BuildQueue.virtualized, True))
 

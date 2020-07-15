@@ -3,6 +3,8 @@
 
 """Test mailing list stuff."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 
@@ -16,6 +18,7 @@ from subprocess import (
 import tempfile
 import unittest
 
+import six
 import transaction
 from zope.component import getUtility
 
@@ -81,12 +84,9 @@ class BaseMailingListImportTest(unittest.TestCase):
 
     def writeFile(self, *addresses):
         # Write the addresses to import to our open temporary file.
-        out_file = open(self.filename, 'w')
-        try:
+        with open(self.filename, 'w') as out_file:
             for address in addresses:
-                print >> out_file, address
-        finally:
-            out_file.close()
+                print(address, file=out_file)
 
     def assertPeople(self, *people):
         """Assert that `people` are members of the team."""
@@ -364,7 +364,7 @@ class TestMailingListImports(BaseMailingListImportTest):
     def test_import_existing_with_nonascii_name(self):
         # Make sure that a person with a non-ascii name, who's already a
         # member of the list, gets a proper log message.
-        self.anne.display_name = u'\u1ea2nn\u1ebf P\u1ec5rs\u1ed1n'
+        self.anne.display_name = '\u1ea2nn\u1ebf P\u1ec5rs\u1ed1n'
         importer = Importer('aardvarks', self.logger)
         self.anne.join(self.team)
         self.mailing_list.subscribe(self.anne)
@@ -373,9 +373,8 @@ class TestMailingListImports(BaseMailingListImportTest):
             'bperson@example.org',
             ))
         self.assertEqual(
-            self.logger.getLogBuffer(),
-            'ERROR \xe1\xba\xa2nn\xe1\xba\xbf '
-            'P\xe1\xbb\x85rs\xe1\xbb\x91n is already subscribed '
+            six.ensure_text(self.logger.getLogBuffer()),
+            'ERROR \u1ea2nn\u1ebf P\u1ec5rs\u1ed1n is already subscribed '
             'to list Aardvarks\n'
             'INFO anne.person@example.com (anne) joined and subscribed\n'
             'INFO bperson@example.org (bart) joined and subscribed\n')
