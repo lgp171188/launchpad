@@ -11,8 +11,10 @@ from datetime import (
     )
 import re
 
-from fixtures import FakeLogger
-from fixtures._fixtures.mockpatch import MockPatch
+from fixtures import (
+    FakeLogger,
+    MockPatch,
+    )
 from pytz import utc
 import requests
 import requests.exceptions
@@ -755,8 +757,9 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         # Pretend to be connected to a 192.168.1.0/24 network.
         networks = {'eth0': [mock.Mock(broadcast='192.168.1.255')]}
         self.useFixture(
-            MockPatch("lp.services.webhooks.model.psutil.net_if_addrs",
-                      return_value=networks))
+            MockPatch("psutil.net_if_addrs", return_value=networks))
+        WebhookDeliveryJob._get_broadcast_addresses.clean_memo()
+        self.addCleanup(WebhookDeliveryJob._get_broadcast_addresses.clean_memo)
 
         self.assertRetriesWithLimitedEffort(u"http://192.168.1.255/")
 
@@ -766,7 +769,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
 
     def test_not_resolvable_address_with_limited_effort(self):
         self.assertRetriesWithLimitedEffort(
-            u"http://could.not.resolve.name.foo/")
+            u"http://could.not.resolve.name.invalid/")
 
 
 class TestViaCronscript(TestCaseWithFactory):

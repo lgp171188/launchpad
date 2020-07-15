@@ -65,6 +65,7 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.memoizer import memoize
 from lp.services.scripts import log
 from lp.services.webapp.authorization import iter_authorization
 from lp.services.webhooks.interfaces import (
@@ -463,7 +464,9 @@ class WebhookDeliveryJob(WebhookJobDerived):
             (job, event_type, _redact_payload(event_type, payload)))
         return job
 
-    def _get_broadcast_addresses(self):
+    @classmethod
+    @memoize
+    def _get_broadcast_addresses(cls):
         addrs = []
         for net, addresses in psutil.net_if_addrs().items():
             for i in addresses:
