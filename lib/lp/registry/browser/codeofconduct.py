@@ -236,8 +236,8 @@ class SignedCodeOfConductAdminView(LaunchpadView):
 
         # use utility to query on SignedCoCs
         sCoC_util = getUtility(ISignedCodeOfConductSet)
-        self.results = sCoC_util.searchByDisplayname(name,
-                                                     searchfor=searchfor)
+        self.results = list(
+            sCoC_util.searchByDisplayname(name, searchfor=searchfor))
 
         return True
 

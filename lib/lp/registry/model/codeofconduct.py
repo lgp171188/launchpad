@@ -254,7 +254,7 @@ class SignedCodeOfConductSet:
 
     def __getitem__(self, id):
         """Get a Signed CoC Entry."""
-        return IStore(SignedCodeOfConduct).get(SignedCodeOfConduct, id)
+        return IStore(SignedCodeOfConduct).get(SignedCodeOfConduct, int(id))
 
     def __iter__(self):
         """Iterate through the Signed CoC."""
