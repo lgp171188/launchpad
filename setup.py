@@ -160,9 +160,7 @@ setup(
         'cssselect',
         'cssutils',
         'defusedxml',
-        'dkimpy',
-        # Required for dkimpy
-        'dnspython',
+        'dkimpy[ed25519]',
         'dulwich',
         'feedparser',
         'feedvalidator',
