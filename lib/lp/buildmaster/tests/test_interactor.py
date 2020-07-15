@@ -32,7 +32,6 @@ from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
-    SynchronousDeferredRunTest,
     )
 import treq
 from twisted.internet import (
@@ -726,7 +725,7 @@ class TestSlaveConnectionTimeouts(TestCase):
     # Testing that we can override the default 30 second connection
     # timeout.
 
-    run_test = SynchronousDeferredRunTest
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
     def setUp(self):
         super(TestSlaveConnectionTimeouts, self).setUp()
