@@ -501,7 +501,8 @@ class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
         repo = self.factory.makeGitRepository(target=project)
 
         another_user = self.factory.makePerson()
-        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+        forked = getUtility(IGitRepositorySet).fork(
+            repo, another_user, another_user)
         self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
 
         # Run the job that checks if repository was confirmed
@@ -524,7 +525,8 @@ class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
         repo = self.factory.makeGitRepository(target=project)
 
         another_user = self.factory.makePerson()
-        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+        forked = getUtility(IGitRepositorySet).fork(
+            repo, another_user, another_user)
         self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
 
         # Run the job that checks if repository was confirmed

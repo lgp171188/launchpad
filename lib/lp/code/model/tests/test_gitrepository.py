@@ -3567,7 +3567,8 @@ class TestGitRepositorySet(TestCaseWithFactory):
         repo = self.factory.makeGitRepository(target=project)
 
         another_user = self.factory.makePerson()
-        forked = getUtility(IGitRepositorySet).fork(repo, another_user)
+        forked = getUtility(IGitRepositorySet).fork(
+            repo, another_user, another_user)
 
         self.assertThat(forked, MatchesStructure(
             status=Equals(GitRepositoryStatus.CREATING),

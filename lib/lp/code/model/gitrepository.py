@@ -1743,10 +1743,10 @@ class GitRepositorySet:
             description=description, with_hosting=with_hosting,
             async_hosting=async_hosting, status=status)
 
-    def fork(self, origin, user):
+    def fork(self, origin, requester, new_owner):
         repository = self.new(
             repository_type=GitRepositoryType.HOSTED,
-            registrant=user, owner=user, target=origin.target,
+            registrant=requester, owner=new_owner, target=origin.target,
             name=origin.name,
             information_type=origin.information_type,
             date_created=UTC_NOW, description=origin.description,
