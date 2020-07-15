@@ -496,7 +496,8 @@ class GitRepositoryForkView(LaunchpadEditFormView):
             self.request.response.addNotification(
                 "You should select a valid user to fork the repository.")
             return
-        forked = getUtility(IGitRepositorySet).fork(self.context, new_owner)
+        forked = getUtility(IGitRepositorySet).fork(
+            self.context, self.user, new_owner)
         self.request.response.addNotification("Repository forked.")
         self.next_url = canonical_url(forked)
 
