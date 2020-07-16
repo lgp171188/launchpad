@@ -8,6 +8,8 @@ import pickle
 
 from paste.auth.cookie import AuthCookieHandler
 
+from lp.app import versioninfo
+
 
 class SessionHandler(object):
     """Middleware that provides a cookie-based session.
@@ -62,5 +64,7 @@ class SessionHandler(object):
             # of the request.
             if existed or session:
                 environ[self.session_var] = pickle.dumps(session)
+            response_headers.append(
+                ('X-Launchpad-Revision', versioninfo.revision))
             return start_response(status, response_headers, exc_info)
         return self.application(environ, response_hook)
