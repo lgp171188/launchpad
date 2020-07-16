@@ -116,9 +116,7 @@ from lp.code.interfaces.gitcollection import (
     IGitCollection,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
-from lp.code.interfaces.gitjob import (
-    IGitRefScanJobSource,
-    )
+from lp.code.interfaces.gitjob import IGitRefScanJobSource
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitnamespace import (
     get_git_namespace,

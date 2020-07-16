@@ -24,7 +24,6 @@ from testtools.matchers import (
     MatchesStructure,
     )
 import transaction
-from zope.component import getUtility
 from zope.interface import providedBy
 from zope.security.proxy import removeSecurityProxy
 
@@ -32,7 +31,6 @@ from lp.code.adapters.gitrepository import GitRepositoryDelta
 from lp.code.enums import (
     GitGranteeType,
     GitObjectType,
-    GitRepositoryStatus,
     )
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG,
@@ -42,7 +40,6 @@ from lp.code.interfaces.gitjob import (
     IGitRefScanJob,
     IReclaimGitRepositorySpaceJob,
     )
-from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.gitjob import (
     describe_repository_delta,
     GitJob,
@@ -51,11 +48,9 @@ from lp.code.model.gitjob import (
     GitRefScanJob,
     ReclaimGitRepositorySpaceJob,
     )
-from lp.code.model.gitrepository import GitRepository
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.utils import seconds_since_epoch
@@ -487,6 +482,7 @@ class TestDescribeRepositoryDelta(TestCaseWithFactory):
             [],
             ["Removed access for repository owner to refs/heads/*: push"],
             snapshot, repository)
+
 
 # XXX cjwatson 2015-03-12: We should test that the jobs work via Celery too,
 # but that isn't feasible until we have a proper turnip fixture.

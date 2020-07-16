@@ -1123,6 +1123,7 @@
     <allow interface="lp.code.interfaces.gitjob.IGitJob" />
     <allow interface="lp.code.interfaces.gitjob.IGitRepositoryModifiedMailJob" />
   </class>
+
   <lp:help-folder folder="help" name="+help-code" />
 
   <!-- Diffs -->
