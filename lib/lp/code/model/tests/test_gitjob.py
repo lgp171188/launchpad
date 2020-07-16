@@ -49,7 +49,6 @@ from lp.code.model.gitjob import (
     GitJobDerived,
     GitJobType,
     GitRefScanJob,
-    GitRepositoryConfirmCreationJob,
     ReclaimGitRepositorySpaceJob,
     )
 from lp.code.model.gitrepository import GitRepository
@@ -488,75 +487,6 @@ class TestDescribeRepositoryDelta(TestCaseWithFactory):
             [],
             ["Removed access for repository owner to refs/heads/*: push"],
             snapshot, repository)
-
-
-class TestGitRepositoryConfirmCreationJob(TestCaseWithFactory):
-    """Tests for `GitRepositoryConfirmCreationJob`."""
-
-    layer = ZopelessDatabaseLayer
-
-    def test_confirms_repository_creation(self):
-        hosting_fixture = self.useFixture(GitHostingFixture())
-        project = self.factory.makeProduct()
-        repo = self.factory.makeGitRepository(target=project)
-
-        another_user = self.factory.makePerson()
-        forked = getUtility(IGitRepositorySet).fork(
-            repo, another_user, another_user)
-        self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
-
-        # Run the job that checks if repository was confirmed
-        [job] = GitRepositoryConfirmCreationJob.iterReady()
-        self.assertEqual(forked, job.repository)
-        with dbuser("branchscanner"):
-            JobRunner([job]).runAll()
-
-        self.assertEqual(
-            [((forked.getInternalPath(), ), {})],
-            hosting_fixture.getProperties.calls)
-        self.assertEqual(GitRepositoryStatus.AVAILABLE, forked.status)
-
-    def test_aborts_repository_creation(self):
-        # Makes sure that after max_retries, the job gives up and deletes
-        # the repository being created.
-        hosting_fixture = self.useFixture(GitHostingFixture())
-        hosting_fixture.getProperties.result["is_available"] = False
-        project = self.factory.makeProduct()
-        repo = self.factory.makeGitRepository(target=project)
-
-        another_user = self.factory.makePerson()
-        forked = getUtility(IGitRepositorySet).fork(
-            repo, another_user, another_user)
-        self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
-
-        # Run the job that checks if repository was confirmed
-        [job] = GitRepositoryConfirmCreationJob.iterReady()
-
-        # Asserts that the first run raises an error that should be retried.
-        self.assertRaises(
-            GitRepositoryConfirmCreationJob.RepositoryNotReady, job.run)
-        self.assertIn(
-            GitRepositoryConfirmCreationJob.RepositoryNotReady,
-            GitRepositoryConfirmCreationJob.retry_error_types)
-
-        # Pretends that this is the last retry.
-        job.max_retries = 2
-        job.attempt_count = 2
-        self.assertEqual(forked, job.repository)
-        with dbuser("branchscanner"):
-            JobRunner([job]).runAll()
-
-        self.assertEqual(
-            0, len(list(GitRepositoryConfirmCreationJob.iterReady())))
-        # Asserts it called twice the git hosting service to get properties,
-        # and it is still in "CREATING" status.
-        self.assertEqual(
-            [((forked.getInternalPath(), ), {})] * 2,
-            hosting_fixture.getProperties.calls)
-        store = IStore(forked)
-        store.invalidate(forked)
-        self.assertEqual(GitRepositoryStatus.CREATING, forked.status)
-
 
 # XXX cjwatson 2015-03-12: We should test that the jobs work via Celery too,
 # but that isn't feasible until we have a proper turnip fixture.

@@ -9,8 +9,6 @@ __all__ = [
     'IGitJob',
     'IGitRefScanJob',
     'IGitRefScanJobSource',
-    'IGitRepositoryConfirmCreationJob',
-    'IGitRepositoryConfirmCreationJobSource',
     'IGitRepositoryModifiedMailJob',
     'IGitRepositoryModifiedMailJobSource',
     'IReclaimGitRepositorySpaceJob',
@@ -94,19 +92,4 @@ class IGitRepositoryModifiedMailJobSource(IJobSource):
         :param user: The `IPerson` who modified the repository.
         :param repository_delta: An `IGitRepositoryDelta` describing the
             changes.
-        """
-
-
-class IGitRepositoryConfirmCreationJob(IRunnableJob):
-    """"A Job to confirm the async creation of a GitRepository on code
-    hosting service."""
-
-
-class IGitRepositoryConfirmCreationJobSource(IJobSource):
-
-    def create(repository):
-        """Confirms or abort a repository creation by checking it on the
-        code hosting service.
-
-        :param repository: The `IGitRepository` in process of creation.
         """

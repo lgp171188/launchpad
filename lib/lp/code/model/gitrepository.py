@@ -118,7 +118,6 @@ from lp.code.interfaces.gitcollection import (
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitjob import (
     IGitRefScanJobSource,
-    IGitRepositoryConfirmCreationJobSource,
     )
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitnamespace import (
@@ -1752,8 +1751,6 @@ class GitRepositorySet:
             date_created=UTC_NOW, description=origin.description,
             with_hosting=True, async_hosting=True,
             status=GitRepositoryStatus.CREATING)
-        # Start pooling job to check when the repository will be ready.
-        getUtility(IGitRepositoryConfirmCreationJobSource).create(repository)
         return repository
 
     def getByPath(self, user, path):
