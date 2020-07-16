@@ -17,9 +17,8 @@ class RevisionHeaderHandler:
     def __init__(self, application):
         """Initialize a RevisionHeaderHandler instance.
 
-        :param application: This is the wrapped application which will have
-            access to the ``environ[session_var]`` dictionary managed by this
-            middleware.
+        :param application: This is the wrapped application that will
+        have the headers added to the generated responses.
         """
         self.application = application
 
