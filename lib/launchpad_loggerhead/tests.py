@@ -16,6 +16,7 @@ from zope.security.proxy import removeSecurityProxy
 from launchpad_loggerhead.app import RootApp
 from launchpad_loggerhead.session import SessionHandler
 from launchpad_loggerhead.testing import LoggerheadFixture
+from lp.app import versioninfo
 from lp.app.enums import InformationType
 from lp.services.config import config
 from lp.services.webapp.vhosts import allvhosts
@@ -195,3 +196,13 @@ class TestWSGI(TestCaseWithFactory):
             "page title", "title",
             text="%s : changes" % naked_branch.unique_name)
         self.assertThat(response.text, soupmatchers.HTMLContains(title_tag))
+
+    def test_revision_header_present(self):
+        db_branch, _ = self.create_branch_and_tree()
+        branch_url = "http://127.0.0.1:%d/%s" % (
+            config.codebrowse.port, db_branch.unique_name)
+        response = requests.get(branch_url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            versioninfo.revision,
+            response.headers['X-Launchpad-Revision'])
