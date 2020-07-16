@@ -35,11 +35,16 @@ from lp.oci.browser.ocirecipe import (
     OCIRecipeEditView,
     OCIRecipeView,
     )
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     IOCIRecipeSet,
     OCI_RECIPE_ALLOW_CREATE,
     )
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
@@ -829,6 +834,80 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         self.assertIn(
             "You need to select at least one architecture.",
             extract_text(find_main_content(browser.contents)))
+
+
+class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
+                                 BaseTestOCIRecipeView):
+    def setUp(self):
+        super(TestOCIRecipePushRulesView, self).setUp()
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, name="shiny", displayname="Shiny")
+        self.architectures = []
+        for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
+            das = self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=architecture,
+                processor=getUtility(IProcessorSet).getByName(processor))
+            das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            self.architectures.append(das)
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distroseries.distribution.name:
+                self.distroseries.name,
+        }))
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution,
+            ociprojectname="oci-project-name")
+        self.recipe = self.factory.makeOCIRecipe(
+            name="recipe-name", registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+        self.setConfig()
+
+    def test_view_oci_push_rules(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+
+        # Display the Registry URL and the Username
+        # for the recipe owner
+        with person_logged_in(self.person):
+            self.assertIn(image_name, main_text)
+            self.assertIn(registry_credentials.url, main_text)
+            self.assertIn(registry_credentials.username, main_text)
+
+    def test_view_oci_push_rules_non_owner(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        non_owner = self.factory.makePerson()
+        login_person(non_owner)
+        browser = self.getViewBrowser(self.recipe, user=non_owner)
+        main_text = extract_text(find_main_content(browser.contents))
+
+        # Display only the image name for users
+        # who are not the recipe owner
+        with person_logged_in(self.person):
+            self.assertIn(image_name, main_text)
+            self.assertNotIn(registry_credentials.url, main_text)
 
 
 class TestOCIProjectRecipesView(BaseTestOCIRecipeView):

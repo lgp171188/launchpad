@@ -190,6 +190,10 @@ class OCIRecipeView(LaunchpadView):
             getUtility(IOCIPushRuleSet).findByRecipe(self.context))
 
     @property
+    def is_recipe_owner(self):
+        return self.user == self.context.owner
+
+    @property
     def has_push_rules(self):
         return len(self.push_rules) > 0
 

@@ -123,8 +123,8 @@
            style="margin-bottom: 1em; ">
       <thead>
         <tr>
-          <th>Registry URL</th>
-          <th>Username</th>
+          <th tal:condition="view/is_recipe_owner">Registry URL</th>
+          <th tal:condition="view/is_recipe_owner">Username</th>
           <th>Image Name</th>
         </tr>
       </thead>
@@ -132,8 +132,10 @@
         <tal:recipe-push-rules repeat="item view/push_rules">
           <tr tal:define="rule item"
               tal:attributes="id string:rule-${rule/id}">
-            <td tal:content="rule/registry_credentials/url"/>
-            <td tal:content="rule/registry_credentials/username"/>
+            <td tal:condition="view/is_recipe_owner"
+              tal:content="rule/registry_credentials/url"/>
+            <td tal:condition="view/is_recipe_owner"
+              tal:content="rule/registry_credentials/username"/>
             <td tal:content="rule/image_name"/>
           </tr>
         </tal:recipe-push-rules>
