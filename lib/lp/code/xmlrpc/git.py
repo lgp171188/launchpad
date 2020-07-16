@@ -627,6 +627,15 @@ class GitAPI(LaunchpadXMLRPCView):
         if requester == LAUNCHPAD_ANONYMOUS:
             requester = None
 
+        if naked_repo.status != GitRepositoryStatus.CREATING:
+            raise faults.Unauthorized()
+
+        if requester == LAUNCHPAD_SERVICES and "macaroon" not in auth_params:
+            # For repo creation management operations, we trust
+            # LAUNCHPAD_SERVICES, since it should be just an internal call
+            # to confirm/abort repository creation.
+            return
+
         verified = self._verifyAuthParams(requester, repository, auth_params)
         if verified is not None and verified.user is NO_USER:
             # For internal-services authentication, we check if its using a
@@ -641,9 +650,6 @@ class GitAPI(LaunchpadXMLRPCView):
             # repository creation while it's being created.
             if requester != naked_repo.registrant:
                 raise faults.Unauthorized()
-
-        if naked_repo.status != GitRepositoryStatus.CREATING:
-            raise faults.Unauthorized()
 
     def _confirmRepoCreation(self, requester, translated_path, auth_params):
         naked_repo = removeSecurityProxy(

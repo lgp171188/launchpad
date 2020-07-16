@@ -401,9 +401,10 @@ class TestGitAPIMixin:
             expected_status = GitRepositoryStatus.AVAILABLE
             expected_hosting_calls = 1
             expected_hosting_call_args = [(repository.getInternalPath(),)]
-            expected_hosting_call_kwargs = [
-                {"clone_from": (cloned_from.getInternalPath()
-                                if cloned_from else None)}]
+            expected_hosting_call_kwargs = [{
+                "clone_from": (cloned_from.getInternalPath()
+                                if cloned_from else None),
+                "async_create": False}]
 
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)
         self.assertEqual(expected_translation, translation)
@@ -780,6 +781,12 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repo.status = GitRepositoryStatus.CREATING
         self.assertConfirmsRepoCreation(owner, repo)
 
+    def test_launchpad_service_confirm_git_repository_creation(self):
+        owner = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
+        repo.status = GitRepositoryStatus.CREATING
+        self.assertConfirmsRepoCreation(LAUNCHPAD_SERVICES, repo)
+
     def test_only_requester_can_confirm_git_repository_creation(self):
         requester = self.factory.makePerson()
         repo = removeSecurityProxy(self.factory.makeGitRepository())
@@ -960,6 +967,12 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repo = removeSecurityProxy(repo)
         repo.status = GitRepositoryStatus.CREATING
         self.assertAbortsRepoCreation(requester, repo)
+
+    def test_launchpad_service_abort_git_repository_creation(self):
+        owner = self.factory.makePerson()
+        repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
+        repo.status = GitRepositoryStatus.CREATING
+        self.assertAbortsRepoCreation(LAUNCHPAD_SERVICES, repo)
 
     def test_only_requester_can_abort_git_repository_creation(self):
         requester = self.factory.makePerson()
