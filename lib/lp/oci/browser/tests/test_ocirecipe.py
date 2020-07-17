@@ -45,12 +45,14 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    anonymous_logged_in,
     BrowserTestCase,
     login,
     login_person,
@@ -880,7 +882,7 @@ class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
         main_text = extract_text(find_main_content(browser.contents))
 
         # Display the Registry URL and the Username
-        # for the recipe owner
+        # for the credentials owner
         with person_logged_in(self.person):
             self.assertIn(image_name, main_text)
             self.assertIn(registry_credentials.url, main_text)
@@ -899,15 +901,38 @@ class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
             registry_credentials=registry_credentials,
             image_name=image_name)
         non_owner = self.factory.makePerson()
-        login_person(non_owner)
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName('admins')])
         browser = self.getViewBrowser(self.recipe, user=non_owner)
         main_text = extract_text(find_main_content(browser.contents))
 
         # Display only the image name for users
-        # who are not the recipe owner
-        with person_logged_in(self.person):
+        # who are not the registry credentials owner
+        with person_logged_in(non_owner):
             self.assertIn(image_name, main_text)
-            self.assertNotIn(registry_credentials.url, main_text)
+            self.assertNotIn(credentials.get("username"), main_text)
+            self.assertNotIn(url, main_text)
+
+        # Anonymous users can't see registry credentials
+        # even though they can see the push rule
+        with anonymous_logged_in():
+            browser = self.getViewBrowser(self.recipe)
+            main_text = extract_text(find_main_content(browser.contents))
+            self.assertIn(image_name, main_text)
+            self.assertNotIn(credentials.get("username"), main_text)
+            self.assertNotIn(url, main_text)
+
+        # Although not the owner of the registry credentials
+        # the admin user has launchpad.View permission on
+        # OCI registry credentials and should be able to see
+        # the registry URL and username of the owner.
+        # see ViewOCIRegistryCredentials
+        with person_logged_in(admin):
+            browser = self.getViewBrowser(self.recipe, user=admin)
+            main_text = extract_text(find_main_content(browser.contents))
+            self.assertIn(image_name, main_text)
+            self.assertIn(credentials.get("username"), main_text)
+            self.assertIn(url, main_text)
 
 
 class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
