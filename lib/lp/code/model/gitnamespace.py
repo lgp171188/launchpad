@@ -14,6 +14,7 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.locals import And
+import transaction
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -121,6 +122,14 @@ class _BaseGitNamespace:
 
             # Flush to make sure that repository.id is populated.
             IStore(repository).flush()
+            if async_hosting:
+                # If we are going to run async creation, we need to be sure
+                # the transaction is committed.
+                # Async creation will run a callback on Launchpad, and if
+                # the creation is quick enough, it might try to confirm on
+                # Launchpad (in another transaction) the creation of this
+                # repo before this transaction is actually committed.
+                transaction.commit()
             assert repository.id is not None
 
             clone_from_repository = repository.getClonedFrom()
