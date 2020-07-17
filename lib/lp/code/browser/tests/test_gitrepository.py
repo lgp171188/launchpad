@@ -499,9 +499,9 @@ class TestGitRepositoryView(BrowserTestCase):
 
         fork_link = Tag(
             "fork link", "a",
-            text="Fork it to your account",
+            text=re.compile(re.escape("Fork it to your account")),
             attrs={"class": "sprite add subscribe-self",
-                   "href": "+fork"})
+                   "href": canonical_url(repository, view_name="+fork")})
 
         # Do not show the link for the repository owner.
         browser = self.getViewBrowser(repository, '+index', user=repo_owner)
