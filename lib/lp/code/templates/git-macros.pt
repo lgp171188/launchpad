@@ -35,8 +35,10 @@
       </tal:ssh>
     </dd>
 
-    <dt tal:condition="view/allow_fork">
-      <a href="+fork" class="sprite add subscribe-self">Fork it to your account</a>
+    <dt tal:condition="python: view.allow_fork and view.user">
+      <a tal:attributes="href view/fork_url" class="sprite add subscribe-self">
+        Fork it to your account
+      </a>
     </dt>
   </dl>
 

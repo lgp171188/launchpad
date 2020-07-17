@@ -474,6 +474,10 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
             return False
         return True
 
+    @property
+    def fork_url(self):
+        return canonical_url(self.context, view_name='+fork')
+
 
 class GitRepositoryForkView(LaunchpadEditFormView):
 
