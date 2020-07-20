@@ -30,7 +30,7 @@ class LimitedList(list):
         """Ensure that the maximum length is not exceeded."""
         elements_to_drop = self.__len__() - self.max_length
         if elements_to_drop > 0:
-            self.__delslice__(0, elements_to_drop)
+            del self[0:elements_to_drop]
 
     def __add__(self, other):
         return LimitedList(
@@ -54,6 +54,12 @@ class LimitedList(list):
     def __imul__(self, other):
         result = super(LimitedList, self).__imul__(other)
         self._ensureLength()
+        return result
+
+    def __setitem__(self, key, value):
+        result = super(LimitedList, self).__setitem__(key, value)
+        if isinstance(key, slice):
+            self._ensureLength()
         return result
 
     def __setslice__(self, i, j, sequence):
