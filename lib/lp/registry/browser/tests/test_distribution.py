@@ -9,23 +9,30 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
-from lazr.restful.interfaces import IJSONRequestCache
+from lazr.restful.fields import Reference
+from lazr.restful.interfaces import (
+    IFieldMarshaller,
+    IJSONRequestCache,
+    )
 import soupmatchers
 from testtools.matchers import (
     MatchesAll,
     MatchesAny,
     Not,
     )
+from zope.component import getMultiAdapter
 from zope.schema.vocabulary import SimpleVocabulary
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
+from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import OCI_PROJECT_ALLOW_CREATE
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.services.webapp.publisher import RedirectionView
+from lp.services.webapp.servers import WebServiceTestRequest
 from lp.testing import (
     admin_logged_in,
     login_celebrity,
@@ -80,6 +87,29 @@ class TestDistributionNavigation(TestCaseWithFactory):
                 distroseries.distribution.name),
             "http://launchpad.test/%s/%s" % (
                 distroseries.distribution.name, distroseries.name))
+
+    def test_new_series_url_supports_object_lookup(self):
+        # New-style +series URLs are compatible with webservice object
+        # lookup.
+        field = Reference(schema=IDistroSeries)
+        request = WebServiceTestRequest()
+        request.setVirtualHostRoot(names=["devel"])
+        marshaller = getMultiAdapter((field, request), IFieldMarshaller)
+        distroseries = self.factory.makeDistroSeries()
+        distroseries_url = "/%s/+series/%s" % (
+            distroseries.distribution.name, distroseries.name)
+        self.assertEqual(
+            distroseries, marshaller.marshall_from_json_data(distroseries_url))
+        # Objects subordinate to the redirected series work too.
+        distroarchseries = self.factory.makeDistroArchSeries(
+            distroseries=distroseries)
+        distroarchseries_url = "/%s/+series/%s/%s" % (
+            distroarchseries.distroseries.distribution.name,
+            distroarchseries.distroseries.name,
+            distroarchseries.architecturetag)
+        self.assertEqual(
+            distroarchseries,
+            marshaller.marshall_from_json_data(distroarchseries_url))
 
 
 class TestDistributionPage(TestCaseWithFactory):
