@@ -395,7 +395,8 @@ class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
                             "image_name", rule_id),
                         "Image name must be set.")
                 else:
-                    rule.setNewImageName(image_name)
+                    if rule.image_name != image_name:
+                        rule.setNewImageName(image_name)
             elif action == "delete":
                 rule.destroySelf()
             else:

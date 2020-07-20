@@ -37,7 +37,10 @@ from lp.oci.browser.ocirecipe import (
     OCIRecipeEditView,
     OCIRecipeView,
     )
-from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocipushrule import (
+    IOCIPushRuleSet,
+    OCIPushRuleAlreadyExists,
+    )
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     IOCIRecipeSet,
@@ -895,12 +898,41 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         # set image name to valid string
         with person_logged_in(self.person):
             browser.getControl(
-                name="field.image_name.%d" % push_rule.id).value = "testimage1"
+                name="field.image_name.%d" % push_rule.id).value = "image1"
         browser.getControl("Save").click()
         # and assert model changed
         with person_logged_in(self.person):
             self.assertEqual(
-                push_rule.image_name, "testimage1")
+                push_rule.image_name, "image1")
+            # Create a second push rule and test we call setNewImageName only
+            # in cases where image name is different than the one on the model
+            # otherwise we get the exception on rows the user doesn't actually
+            # edit as the image name stays the same as it already is on the
+            # model and setNewImageName will obviously find that rule in the
+            # db with the same details
+            second_rule = getUtility(IOCIPushRuleSet).new(
+                recipe=self.recipe,
+                registry_credentials=registry_credentials,
+                image_name="second image")
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.image_name.%d" % push_rule.id).value = "image2"
+        browser.getControl("Save").click()
+        with person_logged_in(self.person):
+            self.assertEqual(
+                push_rule.image_name, "image2")
+
+        # Attempt to set the same name on the second rule
+        # will result in expected exception
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.image_name.%d" % second_rule.id).value = "image2"
+        self.assertRaises(OCIPushRuleAlreadyExists,
+                          browser.getControl("Save").click)
 
     def test_delete_oci_push_rules(self):
         url = unicode(self.factory.getUniqueURL())
