@@ -11,7 +11,7 @@
     <div metal:use-macro="context/@@launchpad_form/form">
     <metal:formbody fill-slot="widgets">
       <p condition="context/required:launchpad.Edit">
-        <a class="sprite edit" tal:attributes="href context/fmt:url/+edit-oci-registry-credentials">Edit OCI registry credentials</a>
+        <a class="sprite edit" tal:attributes="href context/owner/fmt:url/+edit-oci-registry-credentials">Edit OCI registry credentials</a>
       </p>
       <table class="form">
         <tr tal:repeat="rule context/push_rules">

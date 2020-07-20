@@ -141,6 +141,7 @@ from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
@@ -3676,12 +3677,14 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     @cachedproperty
     def oci_registry_credentials(self):
-        if zope_isinstance(self.context, Person):
-            return list(getUtility(
-                IOCIRegistryCredentialsSet).findByOwner(self.context))
-        elif zope_isinstance(self.context, OCIRecipe):
-            return list(getUtility(
-                IOCIRegistryCredentialsSet).findByOwner(self.context.owner))
+        if IPerson.providedBy(self.context):
+            owner = self.context
+        elif IOCIRecipe.providedBy(self.context):
+            owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
+
+        return list(getUtility(IOCIRegistryCredentialsSet).findByOwner(owner))
 
     schema = Interface
 
@@ -3894,10 +3897,12 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             credentials.destroySelf()
 
     def addCredentials(self, parsed_add_credentials):
-        if zope_isinstance(self.context, Person):
+        if IPerson.providedBy(self.context):
             owner = self.context
-        elif zope_isinstance(self.context, OCIRecipe):
+        elif IOCIRecipe.providedBy(self.context):
             owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
         url = parsed_add_credentials["url"]
         password = parsed_add_credentials["password"]
         confirm_password = parsed_add_credentials["confirm_password"]

@@ -68,13 +68,6 @@
 
         <browser:page
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
-            class="lp.registry.browser.person.PersonEditOCIRegistryCredentialsView"
-            permission="launchpad.Edit"
-            name="+edit-oci-registry-credentials"
-            template="../../registry/templates/person-edit-ociregistrycredentials.pt" />
-
-        <browser:page
-            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             class="lp.oci.browser.ocirecipe.OCIRecipeDeleteView"
             permission="launchpad.Edit"
             name="+delete"
