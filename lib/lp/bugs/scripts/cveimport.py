@@ -204,7 +204,8 @@ class CVEUpdater(LaunchpadCronScript):
         self.logger.info('Initializing...')
         if self.options.cvefile is not None:
             try:
-                cve_db = open(self.options.cvefile, 'r').read()
+                with open(self.options.cvefile) as f:
+                    cve_db = f.read()
             except IOError:
                 raise LaunchpadScriptFailure(
                     'Unable to open CVE database in %s'
