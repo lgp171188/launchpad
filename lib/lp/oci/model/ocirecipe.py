@@ -68,7 +68,10 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.model.ocipushrule import OCIPushRule
-from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.oci.model.ocirecipebuild import (
+    OCIFile,
+    OCIRecipeBuild,
+    )
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
@@ -180,6 +183,17 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         """See `IOCIProject.setOfficialRecipe` method."""
         return self._official
 
+    def _destroyRelatedBuilds(self):
+        """Remove builds associated with this OCIRecipe and its files."""
+        store = IStore(OCIRecipe)
+        recipe_build_filter = (OCIRecipeBuild.recipe == self)
+        builds = store.find(OCIRecipeBuild, recipe_build_filter)
+        build_ids = store.find(OCIRecipeBuild.id, recipe_build_filter)
+        ocifiles = store.find(
+            OCIFile, OCIFile.build_id.is_in(build_ids))
+        ocifiles.remove()
+        builds.remove()
+
     def destroySelf(self):
         """See `IOCIRecipe`."""
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
@@ -194,7 +208,9 @@ class OCIRecipe(Storm, WebhookTargetMixin):
             buildqueue_record.destroySelf()
         build_farm_job_ids = list(store.find(
             OCIRecipeBuild.build_farm_job_id, OCIRecipeBuild.recipe == self))
-        store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
+
+        self._destroyRelatedBuilds()
+
         getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
