@@ -237,7 +237,7 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
         manifest = '{0}/{1}/'.format(quote(container), quote(obj_name))
         manifest_headers = {'X-Object-Manifest': manifest}
         swift_connection.put_object(
-            container, obj_name, '', 0, headers=manifest_headers)
+            container, obj_name, b'', 0, headers=manifest_headers)
 
 
 def swift_location(lfc_id):
@@ -281,10 +281,10 @@ class SwiftStream:
             raise ValueError('I/O operation on closed file')
 
         if self._swift_connection is None:
-            return ''
+            return b''
 
         if size == 0:
-            return ''
+            return b''
 
         return_chunks = []
         return_size = 0
@@ -306,7 +306,7 @@ class SwiftStream:
             return_size += len(return_chunks[-1])
 
         self._offset += return_size
-        return ''.join(return_chunks)
+        return b''.join(return_chunks)
 
     def _next_chunk(self):
         try:
@@ -341,7 +341,7 @@ class HashStream:
     def read(self, size=-1):
         if self._remaining is not None:
             if self._remaining <= 0:
-                return ''
+                return b''
             size = min(size, self._remaining)
         chunk = self._stream.read(size)
         if self._remaining is not None:

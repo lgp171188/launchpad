@@ -241,7 +241,6 @@ class FileUploadClient:
             raise TypeError('No data')
         if size <= 0:
             raise UploadFailed('No data')
-        name = six.ensure_binary(name)
         self._connect()
         try:
             database_name = ConnectionString(dbconfig.main_master).dbname

@@ -7,12 +7,12 @@ __metaclass__ = type
 
 import calendar
 from contextlib import contextmanager
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
     )
 import hashlib
+import io
 import os
 import shutil
 from subprocess import (
@@ -95,13 +95,15 @@ class TestLibrarianGarbageCollectionBase:
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                content_text = '{0} content'.format(content.id)
-                open(path, 'w').write(content_text)
+                content_bytes = '{0} content'.format(content.id).encode(
+                    'UTF-8')
+                with open(path, 'wb') as f:
+                    f.write(content_bytes)
                 os.utime(path, (0, 0))  # Ancient past, never considered new.
-                content.md5 = hashlib.md5(content_text).hexdigest()
-                content.sha1 = hashlib.sha1(content_text).hexdigest()
-                content.sha256 = hashlib.sha256(content_text).hexdigest()
-                content.filesize = len(content_text)
+                content.md5 = hashlib.md5(content_bytes).hexdigest()
+                content.sha1 = hashlib.sha1(content_bytes).hexdigest()
+                content.sha256 = hashlib.sha256(content_bytes).hexdigest()
+                content.filesize = len(content_bytes)
         transaction.commit()
 
         self.con = connect(
@@ -127,13 +129,13 @@ class TestLibrarianGarbageCollectionBase:
 
         ztm.begin()
         # Add some duplicate files
-        content = 'This is some content'
+        content = b'This is some content'
         f1_id = self.client.addFile(
-                'foo.txt', len(content), StringIO(content), 'text/plain',
+                'foo.txt', len(content), io.BytesIO(content), 'text/plain',
                 )
         f1 = LibraryFileAlias.get(f1_id)
         f2_id = self.client.addFile(
-                'foo.txt', len(content), StringIO(content), 'text/plain',
+                'foo.txt', len(content), io.BytesIO(content), 'text/plain',
                 )
         f2 = LibraryFileAlias.get(f2_id)
 
@@ -516,9 +518,9 @@ class TestLibrarianGarbageCollectionBase:
         # There was a bug where delete_unwanted_files() would die
         # if the last file found on disk was unwanted.
         switch_dbuser('testadmin')
-        content = 'foo'
+        content = b'foo'
         self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain')
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain')
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
@@ -532,9 +534,9 @@ class TestLibrarianGarbageCollectionBase:
         # to cope.
         # First, let's make sure we have some trash.
         switch_dbuser('testadmin')
-        content = 'foo'
+        content = b'foo'
         self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain')
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain')
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
@@ -611,15 +613,15 @@ class TestDiskLibrarianGarbageCollection(
         # appended to their names. These are treated just like the
         # original file, ignoring the extension.
         switch_dbuser('testadmin')
-        content = 'foo'
+        content = b'foo'
         lfa = LibraryFileAlias.get(self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain'))
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
         id_aborted = lfa.contentID
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
         lfa = LibraryFileAlias.get(self.client.addFile(
-            'bar.txt', len(content), StringIO(content), 'text/plain'))
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
         transaction.commit()
         id_committed = lfa.contentID
 
@@ -746,13 +748,13 @@ class TestSwiftLibrarianGarbageCollection(
         # Large files are handled by Swift as multiple segments joined
         # by a manifest. GC treats the segments like the original file.
         switch_dbuser('testadmin')
-        content = 'uploading to swift bigly'
+        content = b'uploading to swift bigly'
         big1_lfa = LibraryFileAlias.get(self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain'))
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
         big1_id = big1_lfa.contentID
 
         big2_lfa = LibraryFileAlias.get(self.client.addFile(
-            'bar.txt', len(content), StringIO(content), 'text/plain'))
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
         big2_id = big2_lfa.contentID
         transaction.commit()
 
@@ -917,8 +919,9 @@ class TestBlobCollection(TestCase):
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                data = sha1
-                open(path, 'w').write(data)
+                data = sha1.encode('UTF-8')
+                with open(path, 'wb') as f:
+                    f.write(data)
                 cur.execute(
                     "UPDATE LibraryFileContent "
                     "SET md5 = %s, sha1 = %s, sha256 = %s, filesize = %s "

@@ -14,13 +14,13 @@ import hashlib
 import multiprocessing.pool
 import os
 import re
-import six
 import sys
 from time import time
 
 import iso8601
 import pytz
 import scandir
+import six
 from swiftclient import client as swiftclient
 from zope.interface import implementer
 
@@ -225,8 +225,6 @@ def merge_duplicates(con):
     dupe_size = 0
     for sha1, filesize in rows:
         cur = con.cursor()
-
-        sha1 = sha1.encode('US-ASCII')  # Can't pass Unicode to execute (yet)
 
         # Get a list of our dupes. Where multiple files exist, we return
         # the most recently added one first, because this is the version
@@ -757,7 +755,8 @@ def swift_files(max_lfc_id):
                     swift.quiet_swiftclient(
                         swift_connection.get_container,
                         container, full_listing=True)[1],
-                    key=lambda x: map(int, x['name'].split('/')))
+                    key=lambda x: [
+                        int(segment) for segment in x['name'].split('/')])
                 for name in names:
                     yield (container, name)
             except swiftclient.ClientException as x:
