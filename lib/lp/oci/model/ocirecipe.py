@@ -15,8 +15,10 @@ __all__ = [
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.expr import (
+    And,
     Desc,
     Not,
+    Select,
     )
 from storm.locals import (
     Bool,
@@ -68,10 +70,8 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.model.ocipushrule import OCIPushRule
-from lp.oci.model.ocirecipebuild import (
-    OCIFile,
-    OCIRecipeBuild,
-    )
+from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.oci.model.ocirecipejob import OCIRecipeJob
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
@@ -95,6 +95,7 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -186,12 +187,30 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def _destroyRelatedBuilds(self):
         """Remove builds associated with this OCIRecipe and its files."""
         store = IStore(OCIRecipe)
-        recipe_build_filter = (OCIRecipeBuild.recipe == self)
-        builds = store.find(OCIRecipeBuild, recipe_build_filter)
-        build_ids = store.find(OCIRecipeBuild.id, recipe_build_filter)
-        ocifiles = store.find(
-            OCIFile, OCIFile.build_id.is_in(build_ids))
-        ocifiles.remove()
+
+        # Doing manual queries here due to the lack of support for
+        # `DELETE FROM...USING` or `DELETE FROM ... WHERE id IN (SUBQUERY)`
+        # on Storm ORM.
+        store.execute("""
+            DELETE FROM OCIFile
+            USING OCIRecipeBuild
+            WHERE
+                OCIFile.build = OCIRecipeBuild.id AND
+                OCIRecipeBuild.recipe = ?
+            """, (self.id,))
+        store.execute("""
+            DELETE FROM OCIRecipeBuildJob
+            USING OCIRecipeBuild
+            WHERE
+                OCIRecipeBuildJob.build = OCIRecipeBuild.id AND
+                OCIRecipeBuild.recipe = ?
+            """, (self.id,))
+
+        affected_jobs = Select(
+            [OCIRecipeJob.job_id],
+            And(OCIRecipeJob.job == Job.id, OCIRecipeJob.recipe == self))
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        builds = store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self)
         builds.remove()
 
     def destroySelf(self):

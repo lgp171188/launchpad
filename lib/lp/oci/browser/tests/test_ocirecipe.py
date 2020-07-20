@@ -563,15 +563,13 @@ class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
         # An OCI recipe with builds can be deleted.
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person)
-        ocibuild = removeSecurityProxy(
-            self.factory.makeOCIRecipeBuild(recipe=recipe))
-        ocifile = removeSecurityProxy(
-            self.factory.makeOCIFile(build=ocibuild))
+        ocibuild = self.factory.makeOCIRecipeBuild(recipe=recipe)
+        job = self.factory.makeOCIRecipeBuildJob(build=ocibuild)
+        ocifile = self.factory.makeOCIFile(build=ocibuild)
 
-        unrelated_build = removeSecurityProxy(
-            self.factory.makeOCIRecipeBuild())
-        unrelated_file = removeSecurityProxy(
-            self.factory.makeOCIFile(build=unrelated_build))
+        unrelated_build = self.factory.makeOCIRecipeBuild()
+        unrelated_job = self.factory.makeOCIRecipeBuildJob()
+        unrelated_file = self.factory.makeOCIFile(build=unrelated_build)
 
         recipe_url = canonical_url(recipe)
         oci_project_url = canonical_url(recipe.oci_project)
@@ -582,15 +580,20 @@ class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
         self.assertRaises(NotFound, browser.open, recipe_url)
 
         # Checks that only the related artifacts were deleted too.
-        def obj_exists(obj):
+        def obj_exists(obj, search_key='id'):
+            obj = removeSecurityProxy(obj)
             store = IStore(obj)
             cls = obj.__class__
-            return not store.find(cls, cls.id == obj.id).is_empty()
+            cls_attribute = getattr(cls, search_key)
+            identifier = getattr(obj, search_key)
+            return not store.find(cls, cls_attribute == identifier).is_empty()
         self.assertFalse(obj_exists(ocibuild))
         self.assertFalse(obj_exists(ocifile))
+        self.assertFalse(obj_exists(job, 'job_id'))
 
         self.assertTrue(obj_exists(unrelated_build))
         self.assertTrue(obj_exists(unrelated_file))
+        self.assertTrue(obj_exists(unrelated_job, 'job_id'))
 
 
 class TestOCIRecipeView(BaseTestOCIRecipeView):
