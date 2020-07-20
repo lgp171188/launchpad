@@ -201,6 +201,7 @@ setup(
         'oops_twisted',
         'oops_wsgi',
         'paramiko',
+        'psutil',
         'pgbouncer',
         'psycopg2',
         'pyasn1',
