@@ -41,6 +41,7 @@ from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
 from six.moves import http_client
+from six.moves.urllib.parse import urlparse
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
     getUtility,
@@ -1126,6 +1127,10 @@ class RedirectionView(URLDereferencingMixin):
             raise AttributeError(
                 "RedirectionView.context is only supported for webservice "
                 "requests.")
+        if urlparse(self.target).query:
+            raise AttributeError(
+                "RedirectionView.context is not supported for URLs with "
+                "query strings.")
         return self.dereference_url_as_object(self.target)
 
 
