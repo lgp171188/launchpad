@@ -9,10 +9,10 @@ __all__ = [
     ]
 
 import os
-from StringIO import StringIO
 import traceback
 
 import psycopg2
+import six
 from zope.component import (
     getAdapter,
     getUtility,
@@ -346,7 +346,7 @@ class ExportResult:
     def addFailure(self):
         """Store an exception that broke the export."""
         # Get the trace back that produced this failure.
-        exception = StringIO()
+        exception = six.StringIO()
         traceback.print_exc(file=exception)
         exception.seek(0)
         # And store it.
