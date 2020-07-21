@@ -21,6 +21,10 @@ from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
 from sqlobject import SQLObjectNotFound
 from storm.locals import Store
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -116,10 +120,21 @@ class TestBranchMergeProposalInterface(TestCaseWithFactory):
         verifyObject(IBranchMergeProposal, bmp)
 
 
-class TestBranchMergeProposalCanonicalUrlMixin:
+class TestBranchMergeProposalCanonicalUrl(WithScenarios, TestCaseWithFactory):
     """Tests canonical_url for merge proposals."""
 
     layer = DatabaseFunctionalLayer
+
+    scenarios = [
+        ("bzr", {"git": False}),
+        ("git", {"git": True}),
+        ]
+
+    def _makeBranchMergeProposal(self):
+        if self.git:
+            return self.factory.makeBranchMergeProposalForGit()
+        else:
+            return self.factory.makeBranchMergeProposal()
 
     def test_BranchMergeProposal_canonical_url_base(self):
         # The URL for a merge proposal starts with the parent (source branch
@@ -137,20 +152,6 @@ class TestBranchMergeProposalCanonicalUrlMixin:
         parent_url = canonical_url(bmp.parent)
         rest = url[len(parent_url):]
         self.assertEqual('/+merge/%s' % bmp.id, rest)
-
-
-class TestBranchMergeProposalCanonicalUrlBzr(
-    TestBranchMergeProposalCanonicalUrlMixin, TestCaseWithFactory):
-
-    def _makeBranchMergeProposal(self):
-        return self.factory.makeBranchMergeProposal()
-
-
-class TestBranchMergeProposalCanonicalUrlGit(
-    TestBranchMergeProposalCanonicalUrlMixin, TestCaseWithFactory):
-
-    def _makeBranchMergeProposal(self):
-        return self.factory.makeBranchMergeProposalForGit()
 
 
 class TestBranchMergeProposalPrivacy(TestCaseWithFactory):
@@ -717,13 +718,44 @@ class TestMergeProposalGetPreviewDiff(TestCaseWithFactory):
             self.mp_two.getPreviewDiff, self.preview_diff.id)
 
 
-class TestMergeProposalNotificationMixin:
+class TestMergeProposalNotification(WithScenarios, TestCaseWithFactory):
     """Test that events are created when merge proposals are manipulated"""
 
     layer = DatabaseFunctionalLayer
 
+    scenarios = [
+        ("bzr", {"git": False}),
+        ("git", {"git": True}),
+        ]
+
     def setUp(self):
         TestCaseWithFactory.setUp(self, user='test@canonical.com')
+
+    def makeBranch(self, same_target_as=None, target=None, **kwargs):
+        kwargs = dict(kwargs)
+        if self.git:
+            if same_target_as is not None:
+                kwargs["target"] = same_target_as.target
+            elif target is not None:
+                kwargs["target"] = target
+            return self.factory.makeGitRefs(**kwargs)[0]
+        else:
+            if same_target_as is not None:
+                kwargs["product"] = same_target_as.product
+            elif target is not None:
+                kwargs["product"] = target
+            return self.factory.makeProductBranch(**kwargs)
+
+    def makeBranchMergeProposal(self, source=None, target=None,
+                                prerequisite=None, **kwargs):
+        if self.git:
+            return self.factory.makeBranchMergeProposalForGit(
+                source_ref=source, target_ref=target,
+                prerequisite_ref=prerequisite, **kwargs)
+        else:
+            return self.factory.makeBranchMergeProposal(
+                source_branch=source, target_branch=target,
+                prerequisite_branch=prerequisite, **kwargs)
 
     def test_notifyOnCreate_needs_review(self):
         # When a merge proposal is created needing review, the
@@ -989,46 +1021,36 @@ class TestMergeProposalNotificationMixin:
         self.assertIn(charlie, recipients)
 
 
-class TestMergeProposalNotificationBzr(
-    TestMergeProposalNotificationMixin, TestCaseWithFactory):
-
-    def makeBranch(self, same_target_as=None, target=None, **kwargs):
-        if same_target_as is not None:
-            kwargs["product"] = same_target_as.product
-        elif target is not None:
-            kwargs["product"] = target
-        return self.factory.makeProductBranch(**kwargs)
-
-    def makeBranchMergeProposal(self, source=None, target=None,
-                                prerequisite=None, **kwargs):
-        return self.factory.makeBranchMergeProposal(
-            source_branch=source, target_branch=target,
-            prerequisite_branch=prerequisite, **kwargs)
-
-
-class TestMergeProposalNotificationGit(
-    TestMergeProposalNotificationMixin, TestCaseWithFactory):
-
-    def makeBranch(self, same_target_as=None, **kwargs):
-        if same_target_as is not None:
-            kwargs["target"] = same_target_as.target
-        return self.factory.makeGitRefs(**kwargs)[0]
-
-    def makeBranchMergeProposal(self, source=None, target=None,
-                                prerequisite=None, **kwargs):
-        return self.factory.makeBranchMergeProposalForGit(
-            source_ref=source, target_ref=target,
-            prerequisite_ref=prerequisite, **kwargs)
-
-
-class TestMergeProposalWebhooksMixin:
+class TestMergeProposalWebhooks(WithScenarios, TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    scenarios = [
+        ("bzr", {"git": False}),
+        ("git", {"git": True}),
+        ]
+
     def setUp(self):
-        super(TestMergeProposalWebhooksMixin, self).setUp()
+        super(TestMergeProposalWebhooks, self).setUp()
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"}))
+
+    def makeBranch(self, same_target_as=None):
+        kwargs = {}
+        if self.git:
+            if same_target_as is not None:
+                kwargs["target"] = same_target_as.target
+            return self.factory.makeGitRefs(**kwargs)[0]
+        else:
+            if same_target_as is not None:
+                kwargs["product"] = same_target_as.product
+            return self.factory.makeProductBranch(**kwargs)
+
+    def getWebhookTarget(self, branch):
+        if self.git:
+            return branch.repository
+        else:
+            return branch
 
     @staticmethod
     def getURL(obj):
@@ -1163,32 +1185,6 @@ class TestMergeProposalWebhooksMixin:
         delivery = hook.deliveries.one()
         self.assertCorrectDelivery(expected_payload, hook, delivery)
         self.assertCorrectLogging(expected_redacted_payload, hook, logger)
-
-
-class TestMergeProposalWebhooksBzr(
-    TestMergeProposalWebhooksMixin, TestCaseWithFactory):
-
-    def makeBranch(self, same_target_as=None):
-        kwargs = {}
-        if same_target_as is not None:
-            kwargs["product"] = same_target_as.product
-        return self.factory.makeProductBranch(**kwargs)
-
-    def getWebhookTarget(self, branch):
-        return branch
-
-
-class TestMergeProposalWebhooksGit(
-    TestMergeProposalWebhooksMixin, TestCaseWithFactory):
-
-    def makeBranch(self, same_target_as=None):
-        kwargs = {}
-        if same_target_as is not None:
-            kwargs["target"] = same_target_as.target
-        return self.factory.makeGitRefs(**kwargs)[0]
-
-    def getWebhookTarget(self, branch):
-        return branch.repository
 
 
 class TestGetAddress(TestCaseWithFactory):
@@ -1490,14 +1486,27 @@ class TestBranchMergeProposalDeletion(TestCaseWithFactory):
             SQLObjectNotFound, BranchMergeProposalJob.get, job_id)
 
 
-class TestBranchMergeProposalBugsMixin:
+class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    scenarios = [
+        ("bzr", {"git": False}),
+        ("git", {"git": True}),
+        ]
+
     def setUp(self):
-        super(TestBranchMergeProposalBugsMixin, self).setUp()
+        super(TestBranchMergeProposalBugs, self).setUp()
         self.user = self.factory.makePerson()
         login_person(self.user)
+        if self.git:
+            self.hosting_fixture = self.useFixture(GitHostingFixture())
+
+    def _makeBranchMergeProposal(self):
+        if self.git:
+            return self.factory.makeBranchMergeProposalForGit()
+        else:
+            return self.factory.makeBranchMergeProposal()
 
     def test_bugs(self):
         # bugs includes all linked bugs.
@@ -1540,15 +1549,10 @@ class TestBranchMergeProposalBugsMixin:
         self.assertEqual(
             all_bugtasks, list(bmp.getRelatedBugTasks(person)))
 
-
-class TestBranchMergeProposalBugsBzr(
-    TestBranchMergeProposalBugsMixin, TestCaseWithFactory):
-
-    def _makeBranchMergeProposal(self):
-        return self.factory.makeBranchMergeProposal()
-
     def test_related_bugtasks_excludes_target_bugs(self):
         # related_bugtasks ignores bugs linked to the target branch.
+        if self.git:
+            self.skipTest("Only relevant for Bazaar.")
         bmp = self._makeBranchMergeProposal()
         bug = self.factory.makeBug()
         bmp.target_branch.linkBug(bug, bmp.registrant)
@@ -1556,26 +1560,19 @@ class TestBranchMergeProposalBugsBzr(
 
     def test_related_bugtasks_excludes_mutual_bugs(self):
         # related_bugtasks ignores bugs linked to both branches.
+        if self.git:
+            self.skipTest("Only relevant for Bazaar.")
         bmp = self._makeBranchMergeProposal()
         bug = self.factory.makeBug()
         bmp.source_branch.linkBug(bug, bmp.registrant)
         bmp.target_branch.linkBug(bug, bmp.registrant)
         self.assertEqual([], list(bmp.getRelatedBugTasks(self.user)))
 
-
-class TestBranchMergeProposalBugsGit(
-    TestBranchMergeProposalBugsMixin, TestCaseWithFactory):
-
-    def setUp(self):
-        super(TestBranchMergeProposalBugsGit, self).setUp()
-        self.hosting_fixture = self.useFixture(GitHostingFixture())
-
-    def _makeBranchMergeProposal(self):
-        return self.factory.makeBranchMergeProposalForGit()
-
     def test__fetchRelatedBugIDsFromSource(self):
         # _fetchRelatedBugIDsFromSource makes a reasonable backend call and
         # parses commit messages.
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
         bugs = [self.factory.makeBug() for _ in range(3)]
         bmp = self._makeBranchMergeProposal()
         self.hosting_fixture.getLog.result = [
@@ -1622,6 +1619,8 @@ class TestBranchMergeProposalBugsGit(
     def test_updateRelatedBugsFromSource_no_links(self):
         # updateRelatedBugsFromSource does nothing if there are no related
         # bugs in either the database or the source branch.
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
         bmp = self._makeBranchMergeProposal()
         self._setUpLog([])
         bmp.updateRelatedBugsFromSource()
@@ -1630,6 +1629,8 @@ class TestBranchMergeProposalBugsGit(
     def test_updateRelatedBugsFromSource_new_links(self):
         # If the source branch has related bugs not yet reflected in the
         # database, updateRelatedBugsFromSource creates the links.
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
         bugs = [self.factory.makeBug() for _ in range(3)]
         bmp = self._makeBranchMergeProposal()
         self._setUpLog([bugs[0]])
@@ -1642,6 +1643,8 @@ class TestBranchMergeProposalBugsGit(
     def test_updateRelatedBugsFromSource_same_links(self):
         # If the database and the source branch list the same related bugs,
         # updateRelatedBugsFromSource does nothing.
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
         bug = self.factory.makeBug()
         bmp = self._makeBranchMergeProposal()
         self._setUpLog([bug])
@@ -1655,6 +1658,8 @@ class TestBranchMergeProposalBugsGit(
         # If the database records a source-branch-originating related bug
         # that is no longer listed by the source branch,
         # updateRelatedBugsFromSource removes the link.
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
         bug = self.factory.makeBug()
         bmp = self._makeBranchMergeProposal()
         self._setUpLog([bug])
@@ -1668,6 +1673,8 @@ class TestBranchMergeProposalBugsGit(
         # If a bug was linked to the merge proposal manually,
         # updateRelatedBugsFromSource leaves the link alone regardless of
         # whether it is listed by the source branch.
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
         bug = self.factory.makeBug()
         bmp = self._makeBranchMergeProposal()
         bmp.linkBug(bug)
@@ -1690,6 +1697,8 @@ class TestBranchMergeProposalBugsGit(
         # If the number of bugs to be linked exceeds the configured limit,
         # updateRelatedBugsFromSource only links that many bugs and logs an
         # OOPS.
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
         self.pushConfig("codehosting", related_bugs_from_source_limit=3)
         bugs = [self.factory.makeBug() for _ in range(5)]
         bmp = self._makeBranchMergeProposal()
@@ -2794,3 +2803,6 @@ class TestWebservice(WebServiceTestCase):
         self.assertEqual('foo', inline_comment.get('text'))
         comment_date = review_comment.date_created.isoformat()
         self.assertEqual(comment_date, inline_comment.get('date'))
+
+
+load_tests = load_tests_apply_scenarios
