@@ -43,6 +43,13 @@
       tal:condition="link/enabled"
       tal:replace="structure link/render"
       />
+    <div tal:condition="view/propose_merge_notes">
+      <ul>
+        <li tal:repeat="message view/propose_merge_notes" class="registered">
+           * <p tal:replace="message" />
+        </li>
+      </ul>
+    </div>
   </div>
 
 </div>
