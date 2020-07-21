@@ -140,6 +140,10 @@ class IGitRefView(IHasMergeProposals, IHasRecipes, IPrivacy, IInformationType):
     target = Attribute(
         "The target of the repository containing this reference.")
 
+    stacked_on = Attribute(
+        "Attribute to make GitRef compatible with bzr Branch model. "
+        "This is always None, and cannot be changed.")
+
     namespace = Attribute(
         "The namespace of the repository containing this reference, as an "
         "`IGitNamespace`.")

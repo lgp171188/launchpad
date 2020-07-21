@@ -150,6 +150,11 @@ class GitRefMixin:
         return self.repository.target
 
     @property
+    def stacked_on(self):
+        """See `IGitRef`."""
+        return None
+
+    @property
     def namespace(self):
         """See `IGitRef`."""
         return self.repository.namespace

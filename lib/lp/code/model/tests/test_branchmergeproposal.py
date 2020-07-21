@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BranchMergeProposals."""
@@ -91,6 +91,7 @@ from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.services.xref.interfaces import IXRefSet
 from lp.testing import (
+    admin_logged_in,
     ExpectedException,
     launchpadlib_for,
     login,
@@ -1101,6 +1102,45 @@ class TestMergeProposalWebhooks(WithScenarios, TestCaseWithFactory):
                 logger.output, LogsScheduledWebhooks([
                     (hook, "merge-proposal:0.1",
                      MatchesDict(expected_redacted_payload))]))
+
+    def test_create_private_repo_triggers_webhooks(self):
+        # When a merge proposal is created, any relevant webhooks are
+        # triggered even if the repository is proprietary.
+        logger = self.useFixture(FakeLogger())
+        source = self.makeBranch()
+        target = self.makeBranch(same_target_as=source)
+
+        with admin_logged_in():
+            # Make source and target private.
+            self.factory.makeAccessPolicy(
+                source.target if self.git else source.product)
+            source.transitionToInformationType(
+                InformationType.PROPRIETARY, source.owner, False)
+            target.transitionToInformationType(
+                InformationType.PROPRIETARY, target.owner, False)
+
+            # Create the web hook and the proposal.
+            registrant = self.factory.makePerson()
+            hook = self.factory.makeWebhook(
+                target=self.getWebhookTarget(target),
+                event_types=["merge-proposal:0.1"])
+            proposal = source.addLandingTarget(
+                registrant, target, needs_review=True)
+            target_owner = target.owner
+
+        login_person(target_owner)
+        delivery = hook.deliveries.one()
+        expected_payload = {
+            "merge_proposal": Equals(self.getURL(proposal)),
+            "action": Equals("created"),
+            "new": MatchesDict(self.getExpectedPayload(proposal)),
+            }
+        expected_redacted_payload = dict(
+            expected_payload,
+            new=MatchesDict(
+                self.getExpectedPayload(proposal, redact=True)))
+        self.assertCorrectDelivery(expected_payload, hook, delivery)
+        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
 
     def test_create_triggers_webhooks(self):
         # When a merge proposal is created, any relevant webhooks are
