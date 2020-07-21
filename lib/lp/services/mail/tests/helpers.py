@@ -20,5 +20,6 @@ def read_test_message(filename):
 
     The test messages are located in lp/services/mail/tests/emails
     """
-    message_string = open(os.path.join(testmails_path, filename)).read()
+    with open(os.path.join(testmails_path, filename)) as f:
+        message_string = f.read()
     return signed_message_from_string(message_string)

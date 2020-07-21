@@ -81,7 +81,8 @@ def get_pid(service_name, use_config=None):
     """
     pidfile = pidfile_path(service_name, use_config)
     try:
-        pid = open(pidfile).read()
+        with open(pidfile) as f:
+            pid = f.read()
         return int(pid)
     except IOError:
         return None

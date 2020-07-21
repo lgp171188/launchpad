@@ -112,7 +112,8 @@ class TestCodeImportDispatcherUnit(TestCase):
         dispatcher.worker_script = script_path
         proc = dispatcher.dispatchJob(10)
         proc.wait()
-        arglist = self.filterOutLoggingOptions(eval(open(output_path).read()))
+        with open(output_path) as f:
+            arglist = self.filterOutLoggingOptions(eval(f.read()))
         self.assertEqual(['10'], arglist)
 
     def test_findAndDispatchJob_jobWaiting(self):

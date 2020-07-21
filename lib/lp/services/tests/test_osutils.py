@@ -74,32 +74,31 @@ class TestOpenForWriting(TestCase):
         # open_for_writing opens a file for, umm, writing.
         directory = self.makeTemporaryDirectory()
         filename = os.path.join(directory, 'foo')
-        fp = open_for_writing(filename, 'w')
-        fp.write("Hello world!\n")
-        fp.close()
-        self.assertEqual("Hello world!\n", open(filename).read())
+        with open_for_writing(filename, 'w') as fp:
+            fp.write("Hello world!\n")
+        with open(filename) as fp:
+            self.assertEqual("Hello world!\n", fp.read())
 
     def test_opens_for_writing_append(self):
         # open_for_writing can also open to append.
         directory = self.makeTemporaryDirectory()
         filename = os.path.join(directory, 'foo')
-        fp = open_for_writing(filename, 'w')
-        fp.write("Hello world!\n")
-        fp.close()
-        fp = open_for_writing(filename, 'a')
-        fp.write("Next line\n")
-        fp.close()
-        self.assertEqual("Hello world!\nNext line\n", open(filename).read())
+        with open_for_writing(filename, 'w') as fp:
+            fp.write("Hello world!\n")
+        with open_for_writing(filename, 'a') as fp:
+            fp.write("Next line\n")
+        with open(filename) as fp:
+            self.assertEqual("Hello world!\nNext line\n", fp.read())
 
     def test_even_if_directory_doesnt_exist(self):
         # open_for_writing will open a file for writing even if the directory
         # doesn't exist.
         directory = self.makeTemporaryDirectory()
         filename = os.path.join(directory, 'foo', 'bar', 'baz', 'filename')
-        fp = open_for_writing(filename, 'w')
-        fp.write("Hello world!\n")
-        fp.close()
-        self.assertEqual("Hello world!\n", open(filename).read())
+        with open_for_writing(filename, 'w') as fp:
+            fp.write("Hello world!\n")
+        with open(filename) as fp:
+            self.assertEqual("Hello world!\n", fp.read())
 
 
 class TestWriteFile(TestCase):
