@@ -159,7 +159,7 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         messages = []
         if IPerson.providedBy(self.context.namespace.target):
             messages.append(
-                "You will only be able to propose merge to another personal "
+                "You will only be able to propose a merge to another personal "
                 "repository with the same name.")
         return messages
 
