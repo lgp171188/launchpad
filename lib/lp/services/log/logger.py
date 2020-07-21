@@ -15,9 +15,10 @@ __all__ = [
     ]
 
 import logging
-from StringIO import StringIO
 import sys
 import traceback
+
+import six
 
 from lp.services.log import loglevels
 
@@ -198,7 +199,7 @@ class BufferLogger(FakeLogger):
     # service.
 
     def __init__(self):
-        super(BufferLogger, self).__init__(StringIO())
+        super(BufferLogger, self).__init__(six.StringIO())
 
     def getLogBuffer(self):
         """Return the existing log messages."""
@@ -206,7 +207,7 @@ class BufferLogger(FakeLogger):
 
     def clearLogBuffer(self):
         """Clear out the existing log messages."""
-        self.output_file = StringIO()
+        self.output_file = six.StringIO()
 
     def getLogBufferAndClear(self):
         """Return the existing log messages and clear the buffer."""

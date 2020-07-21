@@ -1,11 +1,11 @@
 # Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from cStringIO import StringIO
 import sys
 from time import sleep
 
 from lazr.jobrunner.bin.clear_queues import clear_queues
+import six
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
 
@@ -150,8 +150,8 @@ class TestRunMissingJobs(TestCaseWithFactory):
         try:
             real_stdout = sys.stdout
             real_stderr = sys.stderr
-            sys.stdout = fake_stdout = StringIO()
-            sys.stderr = fake_stderr = StringIO()
+            sys.stdout = fake_stdout = six.StringIO()
+            sys.stderr = fake_stderr = six.StringIO()
             clear_queues(
                 ['script_name', '-c', 'lp.services.job.celeryconfig',
                  result_queue_name])

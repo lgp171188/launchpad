@@ -57,7 +57,6 @@ __all__ = [
     ]
 
 from contextlib import contextmanager
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
@@ -369,7 +368,7 @@ class StormStatementRecorder:
         stop_sql_logging()
 
     def __str__(self):
-        out = StringIO()
+        out = six.StringIO()
         print_queries(self.query_data, file=out)
         return out.getvalue()
 
@@ -682,7 +681,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
     @contextmanager
     def expectedLog(self, regex):
         """Expect a log to be written that matches the regex."""
-        output = StringIO()
+        output = six.StringIO()
         handler = logging.StreamHandler(output)
         logger = logging.getLogger()
         logger.addHandler(handler)
@@ -1580,7 +1579,7 @@ def nonblocking_readline(instream, timeout):
     Files must provide a valid fileno() method. This is a test helper
     as it is inefficient and unlikely useful for production code.
     """
-    result = StringIO()
+    result = six.StringIO()
     start = now = time.time()
     deadline = start + timeout
     while (now < deadline and not result.getvalue().endswith('\n')):
