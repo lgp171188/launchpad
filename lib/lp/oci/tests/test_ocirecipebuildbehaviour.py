@@ -501,7 +501,7 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         }
         self.factory.makeOCIFile(
             build=self.build, layer_file_digest=u'digest_1',
-            content="retrieved from librarian")
+            content=b"retrieved from librarian")
 
     def assertResultCount(self, count, result):
         self.assertEqual(
@@ -544,7 +544,7 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         """We should be able to reuse a layer file from a separate build."""
         oci_file = self.factory.makeOCIFile(
             layer_file_digest=u'digest_2',
-            content="layer 2 retrieved from librarian")
+            content=b"layer 2 retrieved from librarian")
 
         now = datetime.now(pytz.UTC)
         mock_datetime = self.useFixture(MockPatch(

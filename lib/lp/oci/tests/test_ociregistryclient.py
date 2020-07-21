@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from functools import partial
+import io
 import json
 import os
 import tarfile
@@ -19,7 +20,6 @@ from requests.exceptions import (
     HTTPError,
     )
 import responses
-from six import StringIO
 from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
@@ -101,17 +101,17 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
     def _makeFiles(self):
         self.factory.makeOCIFile(
             build=self.build,
-            content=json.dumps(self.manifest),
+            content=json.dumps(self.manifest).encode('UTF-8'),
             filename='manifest.json',
         )
         self.factory.makeOCIFile(
             build=self.build,
-            content=json.dumps(self.digests),
+            content=json.dumps(self.digests).encode('UTF-8'),
             filename='digests.json',
         )
         self.factory.makeOCIFile(
             build=self.build,
-            content=json.dumps(self.config),
+            content=json.dumps(self.config).encode('UTF-8'),
             filename='config_file_1.json'
         )
 
@@ -125,7 +125,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             with open(file_path, 'w') as fd:
                 fd.write(digest)
 
-            fileout = StringIO()
+            fileout = io.BytesIO()
             tar = tarfile.open(mode="w:gz", fileobj=fileout)
             tar.add(file_path, 'layer.tar')
             tar.close()
