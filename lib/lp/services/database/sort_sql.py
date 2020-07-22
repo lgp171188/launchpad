@@ -7,6 +7,8 @@ This library provides functions for the script sort_sql.py, which resides in
 database/schema/.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import re
@@ -21,7 +23,7 @@ class Parser:
     >>> p.feed("INSERT INTO foo (id, x) VALUES (1, 23);\n")
     >>> p.feed("INSERT INTO foo (id, x) VALUES (2, 34);\n")
     >>> for line in p.lines:
-    ...     print repr(line)
+    ...     print(repr(line))
     (None, "UPDATE foo SET bar='baz';")
     (None, '')
     (1, 'INSERT INTO foo (id, x) VALUES (1, 23);')
@@ -177,7 +179,7 @@ def print_lines_sorted(file, lines):
 
         for line in block:
             sort_value, string = line
-            print >>file, string
+            print(string, file=file)
 
     for line in lines:
         sort_value, string = line
