@@ -43,6 +43,13 @@
       tal:condition="link/enabled"
       tal:replace="structure link/render"
       />
+    <div tal:condition="python: view.propose_merge_notes and context_menu['register_merge'].enabled">
+      <ul>
+        <li tal:repeat="message view/propose_merge_notes" class="registered">
+           <spam tal:replace="message" />
+        </li>
+      </ul>
+    </div>
   </div>
 
 </div>

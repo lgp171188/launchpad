@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `IGitNamespace` implementations."""
@@ -291,24 +291,34 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
             repository.namespace.areRepositoriesMergeable(
                 repository, repository))
 
-    def test_areRepositoriesMergeable_same_namespace(self):
+    def test_areRepositoriesMergeable_different_namespaces(self):
+        # A personal repository is not mergeable if the origin namespace is
+        # not the same as the namespacing checking the mergeability.
+        owner = self.factory.makePerson()
+        this = self.factory.makeGitRepository(owner=owner, target=owner)
+        other = self.factory.makeGitRepository(owner=owner, target=owner)
+        self.assertFalse(other.namespace.areRepositoriesMergeable(this, other))
+
+    def test_areRepositoriesMergeable_different_name(self):
         # A personal repository is not mergeable into another personal
-        # repository, even if they are in the same namespace.
+        # repository if they do not have the same name.
         owner = self.factory.makePerson()
         this = self.factory.makeGitRepository(owner=owner, target=owner)
         other = self.factory.makeGitRepository(owner=owner, target=owner)
         self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
 
-    def test_areRepositoriesMergeable_different_namespace(self):
-        # A personal repository is not mergeable into another personal
-        # repository with a different namespace.
+    def test_areRepositoriesMergeable_same_name(self):
+        # A personal repository is mergeable into another personal
+        # repository if they have the same name, even if they target different
+        # people.
         this_owner = self.factory.makePerson()
+        repo_name = "my-personal-repository"
         this = self.factory.makeGitRepository(
-            owner=this_owner, target=this_owner)
+            owner=this_owner, target=this_owner, name=repo_name)
         other_owner = self.factory.makePerson()
         other = self.factory.makeGitRepository(
-            owner=other_owner, target=other_owner)
-        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+            owner=other_owner, target=other_owner, name=repo_name)
+        self.assertTrue(this.namespace.areRepositoriesMergeable(this, other))
 
     def test_areRepositoriesMergeable_project(self):
         # Project repositories are not mergeable into personal repositories.

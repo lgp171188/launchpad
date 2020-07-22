@@ -330,7 +330,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
         if this.namespace != self:
             raise AssertionError(
                 "Namespace of %s is not %s." % (this.unique_name, self.name))
-        return this == other
+        return this.name == other.name
 
     @property
     def collection(self):
