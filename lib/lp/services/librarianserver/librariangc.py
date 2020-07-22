@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection routines"""
@@ -750,15 +750,18 @@ def swift_files(max_lfc_id):
         while container != final_container:
             container_num += 1
             container = swift.SWIFT_CONTAINER_PREFIX + str(container_num)
+            seen_names = set()
             try:
-                names = sorted(
+                objs = sorted(
                     swift.quiet_swiftclient(
                         swift_connection.get_container,
                         container, full_listing=True)[1],
                     key=lambda x: [
                         int(segment) for segment in x['name'].split('/')])
-                for name in names:
-                    yield (container, name)
+                for obj in objs:
+                    if obj['name'] not in seen_names:
+                        yield (container, obj)
+                    seen_names.add(obj['name'])
             except swiftclient.ClientException as x:
                 if x.http_status == 404:
                     continue
