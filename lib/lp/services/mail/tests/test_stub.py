@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -104,10 +104,10 @@ def test_simple_sendmail():
     shows the git revision and instance name.
 
     >>> message.get_params(header='X-Generated-By')
-    ... # doctest: +NORMALIZE_WHITESPACE
+    ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
     [('Launchpad (canonical.com)', ''),
      ('revision', '0000000000000000000000000000000000000000'),
-     ('instance', 'launchpad-lazr.conf')]
+     ('instance', 'testrunner_...')]
     """
 
 

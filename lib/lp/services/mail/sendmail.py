@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The One True Way to send mail from the Launchpad application.
@@ -435,7 +435,7 @@ def sendmail(message, to_addrs=None, bulk=True):
     del message['X-Generated-By']
     message['X-Generated-By'] = 'Launchpad (canonical.com)'
     message.set_param('Revision', str(versioninfo.revision), 'X-Generated-By')
-    message.set_param('Instance', config.name, 'X-Generated-By')
+    message.set_param('Instance', config.instance_name, 'X-Generated-By')
 
     # Add a shared secret header for pre-approval with Mailman. This approach
     # helps security, but still exposes us to a replay attack; we consider the
