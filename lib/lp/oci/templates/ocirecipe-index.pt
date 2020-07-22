@@ -130,13 +130,12 @@
       </thead>
       <tbody>
         <tal:recipe-push-rules repeat="item view/push_rules">
-          <tr tal:define="rule item"
+          <tr tal:define="rule item;
+                          show_credentials rule/registry_credentials/required:launchpad.View"
               tal:attributes="id string:rule-${rule/id}">
+            <td tal:content="python: rule.registry_credentials.url if show_credentials else ''"/>
+            <td tal:content="python: rule.registry_credentials.username if show_credentials else ''"/>
             <td tal:content="rule/image_name"/>
-            <td tal:condition="rule/registry_credentials/required:launchpad.View"
-              tal:content="rule/registry_credentials/url"/>
-            <td tal:condition="rule/registry_credentials/required:launchpad.View"
-              tal:content="rule/registry_credentials/username"/>
           </tr>
         </tal:recipe-push-rules>
       </tbody>
