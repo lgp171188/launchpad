@@ -42,6 +42,7 @@ from zope.interface import implementer
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     IOCIRegistryClient,
+    MultipleOCIRegistryError,
     ManifestUploadFailed,
     )
 from lp.services.timeout import urlfetch
@@ -227,6 +228,59 @@ class OCIRegistryClient:
         return "{}".format("edge")
 
     @classmethod
+    def _upload_to_push_rule(
+            cls, push_rule, build, manifest, digests, preloaded_data):
+        http_client = RegistryHTTPClient.getInstance(push_rule)
+
+        for section in manifest:
+            # Work out names and tags
+            tag = cls._calculateTag(build, push_rule)
+            file_data = preloaded_data[section["Config"]]
+            config = file_data["config_file"]
+            #  Upload the layers involved
+            for diff_id in config["rootfs"]["diff_ids"]:
+                cls._upload_layer(
+                    diff_id,
+                    push_rule,
+                    file_data[diff_id],
+                    http_client)
+            # The config file is required in different forms, so we can
+            # calculate the sha, work these out and upload
+            config_json = json.dumps(config).encode("UTF-8")
+            config_sha = hashlib.sha256(config_json).hexdigest()
+            cls._upload(
+                "sha256:{}".format(config_sha),
+                push_rule,
+                BytesIO(config_json),
+                http_client)
+
+            # Build the registry manifest from the image manifest
+            # and associated configs
+            registry_manifest = cls._build_registry_manifest(
+                digests, config, config_json, config_sha,
+                preloaded_data[section["Config"]])
+
+            # Upload the registry manifest
+            try:
+                manifest_response = http_client.requestPath(
+                    "/manifests/{}".format(tag),
+                    json=registry_manifest,
+                    headers={
+                        "Content-Type":
+                            "application/"
+                            "vnd.docker.distribution.manifest.v2+json"
+                    },
+                    method="PUT")
+            except HTTPError as http_error:
+                manifest_response = http_error.response
+            if manifest_response.status_code != 201:
+                raise cls._makeRegistryError(
+                    ManifestUploadFailed,
+                    "Failed to upload manifest for {} ({}) in {}".format(
+                        build.recipe.name, push_rule.registry_url, build.id),
+                    manifest_response)
+
+    @classmethod
     def upload(cls, build):
         """Upload the artifacts from an OCIRecipeBuild to a registry.
 
@@ -244,56 +298,17 @@ class OCIRegistryClient:
         # Preload the requested files
         preloaded_data = cls._preloadFiles(build, manifest, digests)
 
+        exceptions = []
         for push_rule in build.recipe.push_rules:
-            http_client = RegistryHTTPClient.getInstance(push_rule)
-
-            for section in manifest:
-                # Work out names and tags
-                tag = cls._calculateTag(build, push_rule)
-                file_data = preloaded_data[section["Config"]]
-                config = file_data["config_file"]
-                #  Upload the layers involved
-                for diff_id in config["rootfs"]["diff_ids"]:
-                    cls._upload_layer(
-                        diff_id,
-                        push_rule,
-                        file_data[diff_id],
-                        http_client)
-                # The config file is required in different forms, so we can
-                # calculate the sha, work these out and upload
-                config_json = json.dumps(config).encode("UTF-8")
-                config_sha = hashlib.sha256(config_json).hexdigest()
-                cls._upload(
-                    "sha256:{}".format(config_sha),
-                    push_rule,
-                    BytesIO(config_json),
-                    http_client)
-
-                # Build the registry manifest from the image manifest
-                # and associated configs
-                registry_manifest = cls._build_registry_manifest(
-                    digests, config, config_json, config_sha,
-                    preloaded_data[section["Config"]])
-
-                # Upload the registry manifest
-                try:
-                    manifest_response = http_client.requestPath(
-                        "/manifests/{}".format(tag),
-                        json=registry_manifest,
-                        headers={
-                            "Content-Type":
-                                "application/"
-                                "vnd.docker.distribution.manifest.v2+json"
-                            },
-                        method="PUT")
-                except HTTPError as http_error:
-                    manifest_response = http_error.response
-                if manifest_response.status_code != 201:
-                    raise cls._makeRegistryError(
-                        ManifestUploadFailed,
-                        "Failed to upload manifest for {} in {}".format(
-                            build.recipe.name, build.id),
-                        manifest_response)
+            try:
+                cls._upload_to_push_rule(
+                    push_rule, build, manifest, digests, preloaded_data)
+            except Exception as e:
+                exceptions.append(e)
+        if len(exceptions) == 1:
+            raise exceptions[0]
+        elif len(exceptions) > 1:
+            raise MultipleOCIRegistryError(exceptions)
 
 
 class OCIRegistryAuthenticationError(Exception):
