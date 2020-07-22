@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection tests"""
@@ -23,6 +23,7 @@ from subprocess import (
 import sys
 import tempfile
 
+from fixtures import MockPatchObject
 import pytz
 from sqlobject import SQLObjectNotFound
 from storm.store import Store
@@ -795,6 +796,64 @@ class TestSwiftLibrarianGarbageCollection(
             librariangc.delete_unwanted_files(self.con)
         self.assertEqual([False, False, False], segment_existence(big1_id))
         self.assertEqual([True, True, True], segment_existence(big2_id))
+
+    def test_delete_unwanted_files_handles_duplicates(self):
+        # GC tolerates swift_connection.get_container returning duplicate
+        # names (perhaps across multiple batches).  It's not clear whether
+        # this happens in practice, but some strange deletion failures
+        # suggest that it might happen.
+        switch_dbuser('testadmin')
+        content = b'uploading to swift'
+        f1_lfa = LibraryFileAlias.get(self.client.addFile(
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f1_id = f1_lfa.contentID
+
+        f2_lfa = LibraryFileAlias.get(self.client.addFile(
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f2_id = f2_lfa.contentID
+        transaction.commit()
+
+        for lfc_id in (f1_id, f2_id):
+            # Make the files old so they don't look in-progress.
+            os.utime(swift.filesystem_path(lfc_id), (0, 0))
+
+        switch_dbuser(config.librarian_gc.dbuser)
+
+        # Force swift_connection.get_container to return duplicate results.
+        orig_get_container = swiftclient.get_container
+
+        def duplicating_get_container(*args, **kwargs):
+            rv = orig_get_container(*args, **kwargs)
+            if not kwargs.get('full_listing', False):
+                rv = (rv[0], rv[1] * 2)
+            return rv
+
+        self.useFixture(MockPatchObject(
+            swiftclient, 'get_container', duplicating_get_container))
+
+        swift.to_swift(BufferLogger(), remove_func=os.unlink)
+
+        # Both files exist in Swift.
+        self.assertTrue(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+        # Both files survive the first purge.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        self.assertTrue(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+        # Remove the first file from the DB.
+        content = f1_lfa.content
+        Store.of(f1_lfa).remove(f1_lfa)
+        Store.of(content).remove(content)
+        transaction.commit()
+
+        # The first file is removed, but the second is intact.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        self.assertFalse(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
 
 
 class TestBlobCollection(TestCase):
