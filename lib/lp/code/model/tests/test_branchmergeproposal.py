@@ -57,6 +57,7 @@ from lp.code.event.branchmergeproposal import (
     BranchMergeProposalNeedsReviewEvent,
     ReviewerNominatedEvent,
     )
+from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
     BRANCH_MERGE_PROPOSAL_OBSOLETE_STATES as OBSOLETE_STATES,
@@ -110,6 +111,49 @@ from lp.testing.layers import (
     )
 
 
+class WithVCSScenarios(WithScenarios):
+
+    scenarios = [
+        ("bzr", {"git": False}),
+        ("git", {"git": True}),
+        ]
+
+    def makeBranch(self, same_target_as=None, product=None, stacked_on=None,
+                   information_type=None, owner=None):
+        # Create the product pillar and its access policy if information
+        # type is "PROPRIETARY".
+        if product is None and same_target_as is None:
+            product = self.factory.makeProduct()
+            if information_type == InformationType.PROPRIETARY:
+                self.factory.makeAccessPolicy(product)
+        elif product is None:
+            same_target_as = removeSecurityProxy(same_target_as)
+            product = (same_target_as.target if self.git else
+                       same_target_as.product)
+
+        kwargs = {
+            "information_type": information_type,
+            "owner": owner}
+        if self.git:
+            kwargs["target"] = product
+            return self.factory.makeGitRefs(**kwargs)[0]
+        else:
+            kwargs["product"] = product
+            kwargs["stacked_on"] = stacked_on
+            return self.factory.makeProductBranch(**kwargs)
+
+    def makeBranchMergeProposal(self, source=None, target=None,
+                                prerequisite=None, **kwargs):
+        if self.git:
+            return self.factory.makeBranchMergeProposalForGit(
+                target_ref=target, source_ref=source,
+                prerequisite_ref=prerequisite, **kwargs)
+        else:
+            return self.factory.makeBranchMergeProposal(
+                source_branch=source, target_branch=target,
+                prerequisite_branch=prerequisite, **kwargs)
+
+
 class TestBranchMergeProposalInterface(TestCaseWithFactory):
     """Ensure that BranchMergeProposal implements its interface."""
 
@@ -121,26 +165,16 @@ class TestBranchMergeProposalInterface(TestCaseWithFactory):
         verifyObject(IBranchMergeProposal, bmp)
 
 
-class TestBranchMergeProposalCanonicalUrl(WithScenarios, TestCaseWithFactory):
+class TestBranchMergeProposalCanonicalUrl(
+        WithVCSScenarios, TestCaseWithFactory):
     """Tests canonical_url for merge proposals."""
 
     layer = DatabaseFunctionalLayer
 
-    scenarios = [
-        ("bzr", {"git": False}),
-        ("git", {"git": True}),
-        ]
-
-    def _makeBranchMergeProposal(self):
-        if self.git:
-            return self.factory.makeBranchMergeProposalForGit()
-        else:
-            return self.factory.makeBranchMergeProposal()
-
     def test_BranchMergeProposal_canonical_url_base(self):
         # The URL for a merge proposal starts with the parent (source branch
         # or source Git repository).
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         url = canonical_url(bmp)
         parent_url = canonical_url(bmp.parent)
         self.assertTrue(url.startswith(parent_url))
@@ -148,7 +182,7 @@ class TestBranchMergeProposalCanonicalUrl(WithScenarios, TestCaseWithFactory):
     def test_BranchMergeProposal_canonical_url_rest(self):
         # The rest of the URL for a merge proposal is +merge followed by the
         # db id.
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         url = canonical_url(bmp)
         parent_url = canonical_url(bmp.parent)
         rest = url[len(parent_url):]
@@ -719,44 +753,13 @@ class TestMergeProposalGetPreviewDiff(TestCaseWithFactory):
             self.mp_two.getPreviewDiff, self.preview_diff.id)
 
 
-class TestMergeProposalNotification(WithScenarios, TestCaseWithFactory):
+class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
     """Test that events are created when merge proposals are manipulated"""
 
     layer = DatabaseFunctionalLayer
 
-    scenarios = [
-        ("bzr", {"git": False}),
-        ("git", {"git": True}),
-        ]
-
     def setUp(self):
         TestCaseWithFactory.setUp(self, user='test@canonical.com')
-
-    def makeBranch(self, same_target_as=None, target=None, **kwargs):
-        kwargs = dict(kwargs)
-        if self.git:
-            if same_target_as is not None:
-                kwargs["target"] = same_target_as.target
-            elif target is not None:
-                kwargs["target"] = target
-            return self.factory.makeGitRefs(**kwargs)[0]
-        else:
-            if same_target_as is not None:
-                kwargs["product"] = same_target_as.product
-            elif target is not None:
-                kwargs["product"] = target
-            return self.factory.makeProductBranch(**kwargs)
-
-    def makeBranchMergeProposal(self, source=None, target=None,
-                                prerequisite=None, **kwargs):
-        if self.git:
-            return self.factory.makeBranchMergeProposalForGit(
-                source_ref=source, target_ref=target,
-                prerequisite_ref=prerequisite, **kwargs)
-        else:
-            return self.factory.makeBranchMergeProposal(
-                source_branch=source, target_branch=target,
-                prerequisite_branch=prerequisite, **kwargs)
 
     def test_notifyOnCreate_needs_review(self):
         # When a merge proposal is created needing review, the
@@ -989,8 +992,8 @@ class TestMergeProposalNotification(WithScenarios, TestCaseWithFactory):
         # they do not get email about the proposal.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
-        source = self.makeBranch(owner=owner, target=product)
-        target = self.makeBranch(owner=owner, target=product)
+        source = self.makeBranch(owner=owner, product=product)
+        target = self.makeBranch(owner=owner, product=product)
         bmp = self.makeBranchMergeProposal(source=source, target=target)
         # Subscribe eric to the source branch only.
         eric = self.factory.makePerson()
@@ -1022,39 +1025,14 @@ class TestMergeProposalNotification(WithScenarios, TestCaseWithFactory):
         self.assertIn(charlie, recipients)
 
 
-class TestMergeProposalWebhooks(WithScenarios, TestCaseWithFactory):
+class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
-
-    scenarios = [
-        ("bzr", {"git": False}),
-        ("git", {"git": True}),
-        ]
 
     def setUp(self):
         super(TestMergeProposalWebhooks, self).setUp()
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"}))
-
-    def makeBranch(self, same_target_as=None, information_type=None):
-        # Create the product pillar and its access policy if information
-        # type is "PROPRIETARY".
-        if same_target_as is None:
-            product = self.factory.makeProduct()
-            if information_type == InformationType.PROPRIETARY:
-                self.factory.makeAccessPolicy(product)
-        else:
-            same_target_as = removeSecurityProxy(same_target_as)
-            product = (same_target_as.target if self.git else
-                       same_target_as.product)
-
-        kwargs = {"information_type": information_type}
-        if self.git:
-            kwargs["target"] = product
-            return self.factory.makeGitRefs(**kwargs)[0]
-        else:
-            kwargs["product"] = product
-            return self.factory.makeProductBranch(**kwargs)
 
     def getWebhookTarget(self, branch):
         if self.git:
@@ -1529,14 +1507,9 @@ class TestBranchMergeProposalDeletion(TestCaseWithFactory):
             SQLObjectNotFound, BranchMergeProposalJob.get, job_id)
 
 
-class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
+class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
-
-    scenarios = [
-        ("bzr", {"git": False}),
-        ("git", {"git": True}),
-        ]
 
     def setUp(self):
         super(TestBranchMergeProposalBugs, self).setUp()
@@ -1545,15 +1518,9 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         if self.git:
             self.hosting_fixture = self.useFixture(GitHostingFixture())
 
-    def _makeBranchMergeProposal(self):
-        if self.git:
-            return self.factory.makeBranchMergeProposalForGit()
-        else:
-            return self.factory.makeBranchMergeProposal()
-
     def test_bugs(self):
         # bugs includes all linked bugs.
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         self.assertEqual([], bmp.bugs)
         bugs = [self.factory.makeBug() for _ in range(2)]
         bmp.linkBug(bugs[0], bmp.registrant)
@@ -1568,7 +1535,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
     def test_related_bugtasks_includes_source_bugtasks(self):
         # related_bugtasks includes bugtasks linked to the source branch in
         # the Bazaar case, or directly to the MP in the Git case.
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         bug = self.factory.makeBug()
         bmp.linkBug(bug, bmp.registrant)
         self.assertEqual(
@@ -1576,7 +1543,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
 
     def test_related_bugtasks_excludes_private_bugs(self):
         # related_bugtasks ignores private bugs for non-authorised users.
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         bug = self.factory.makeBug()
         bmp.linkBug(bug, bmp.registrant)
         person = self.factory.makePerson()
@@ -1596,7 +1563,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         # related_bugtasks ignores bugs linked to the target branch.
         if self.git:
             self.skipTest("Only relevant for Bazaar.")
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         bug = self.factory.makeBug()
         bmp.target_branch.linkBug(bug, bmp.registrant)
         self.assertEqual([], list(bmp.getRelatedBugTasks(self.user)))
@@ -1605,7 +1572,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         # related_bugtasks ignores bugs linked to both branches.
         if self.git:
             self.skipTest("Only relevant for Bazaar.")
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         bug = self.factory.makeBug()
         bmp.source_branch.linkBug(bug, bmp.registrant)
         bmp.target_branch.linkBug(bug, bmp.registrant)
@@ -1617,7 +1584,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         if not self.git:
             self.skipTest("Only relevant for Git.")
         bugs = [self.factory.makeBug() for _ in range(3)]
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         self.hosting_fixture.getLog.result = [
             {
                 "sha1": bmp.source_git_commit_sha1,
@@ -1664,7 +1631,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         # bugs in either the database or the source branch.
         if not self.git:
             self.skipTest("Only relevant for Git.")
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         self._setUpLog([])
         bmp.updateRelatedBugsFromSource()
         self.assertEqual([], bmp.bugs)
@@ -1675,7 +1642,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         if not self.git:
             self.skipTest("Only relevant for Git.")
         bugs = [self.factory.makeBug() for _ in range(3)]
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         self._setUpLog([bugs[0]])
         bmp.updateRelatedBugsFromSource()
         self.assertEqual([bugs[0]], bmp.bugs)
@@ -1689,7 +1656,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         if not self.git:
             self.skipTest("Only relevant for Git.")
         bug = self.factory.makeBug()
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         self._setUpLog([bug])
         bmp.updateRelatedBugsFromSource()
         self.assertEqual([bug], bmp.bugs)
@@ -1704,7 +1671,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         if not self.git:
             self.skipTest("Only relevant for Git.")
         bug = self.factory.makeBug()
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         self._setUpLog([bug])
         bmp.updateRelatedBugsFromSource()
         self.assertEqual([bug], bmp.bugs)
@@ -1719,7 +1686,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         if not self.git:
             self.skipTest("Only relevant for Git.")
         bug = self.factory.makeBug()
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         bmp.linkBug(bug)
         self._setUpLog([])
         bmp.updateRelatedBugsFromSource()
@@ -1744,7 +1711,7 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
             self.skipTest("Only relevant for Git.")
         self.pushConfig("codehosting", related_bugs_from_source_limit=3)
         bugs = [self.factory.makeBug() for _ in range(5)]
-        bmp = self._makeBranchMergeProposal()
+        bmp = self.makeBranchMergeProposal()
         self._setUpLog([bugs[0]])
         bmp.updateRelatedBugsFromSource()
         self.assertEqual([bugs[0]], bmp.bugs)
@@ -1756,45 +1723,48 @@ class TestBranchMergeProposalBugs(WithScenarios, TestCaseWithFactory):
         self.assertEqual("TooManyRelatedBugs", self.oopses[0]["type"])
 
 
-class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
+class TestBranchMergeProposalNominateReviewer(
+    WithVCSScenarios, TestCaseWithFactory):
     """Test that the appropriate vote references get created."""
 
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         TestCaseWithFactory.setUp(self, user='test@canonical.com')
+        if self.git:
+            self.hosting_fixture = self.useFixture(GitHostingFixture())
 
     def test_notify_on_nominate(self):
         # Ensure that a notification is emitted on nomination.
-        merge_proposal = self.factory.makeBranchMergeProposal()
-        login_person(merge_proposal.source_branch.owner)
+        merge_proposal = self.makeBranchMergeProposal()
+        login_person(merge_proposal.merge_source.owner)
         reviewer = self.factory.makePerson()
         result, events = self.assertNotifies(
             ReviewerNominatedEvent, False,
             merge_proposal.nominateReviewer,
             reviewer=reviewer,
-            registrant=merge_proposal.source_branch.owner)
+            registrant=merge_proposal.merge_source.owner)
         self.assertEqual(result, events[0].object)
 
     def test_notify_on_nominate_suppressed_if_requested(self):
         # Ensure that a notification is suppressed if notify listeners is set
         # to False.
-        merge_proposal = self.factory.makeBranchMergeProposal()
-        login_person(merge_proposal.source_branch.owner)
+        merge_proposal = self.makeBranchMergeProposal()
+        login_person(merge_proposal.merge_source.owner)
         reviewer = self.factory.makePerson()
         self.assertNoNotification(
             merge_proposal.nominateReviewer,
             reviewer=reviewer,
-            registrant=merge_proposal.source_branch.owner,
+            registrant=merge_proposal.merge_source.owner,
             _notify_listeners=False)
 
     def test_one_initial_votes(self):
         """A new merge proposal has one vote of the default reviewer."""
-        merge_proposal = self.factory.makeBranchMergeProposal()
+        merge_proposal = self.makeBranchMergeProposal()
         self.assertEqual(1, len(list(merge_proposal.votes)))
         [vote] = list(merge_proposal.votes)
         self.assertEqual(
-            merge_proposal.target_branch.owner, vote.reviewer)
+            merge_proposal.merge_target.owner, vote.reviewer)
 
     def makeProposalWithReviewer(self, reviewer=None, review_type=None,
                                  registrant=None, **kwargs):
@@ -1807,8 +1777,9 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
         if registrant is None:
             registrant = self.factory.makePerson()
         merge_proposal = make_merge_proposal_without_reviewers(
-            factory=self.factory, registrant=registrant, **kwargs)
-        login_person(merge_proposal.source_branch.owner)
+            factory=self.factory, for_git=self.git, registrant=registrant,
+            **kwargs)
+        login_person(merge_proposal.merge_source.owner)
         merge_proposal.nominateReviewer(
             reviewer=reviewer, registrant=registrant, review_type=review_type)
         return merge_proposal, reviewer
@@ -1914,15 +1885,15 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
 
     def test_nominate_updates_reference(self):
         """The existing reference is updated on re-nomination."""
-        merge_proposal = self.factory.makeBranchMergeProposal()
-        login_person(merge_proposal.source_branch.owner)
+        merge_proposal = self.makeBranchMergeProposal()
+        login_person(merge_proposal.merge_source.owner)
         reviewer = self.factory.makePerson()
         reference = merge_proposal.nominateReviewer(
-            reviewer=reviewer, registrant=merge_proposal.source_branch.owner,
+            reviewer=reviewer, registrant=merge_proposal.merge_source.owner,
             review_type='General')
         self.assertEqual('general', reference.review_type)
         merge_proposal.nominateReviewer(
-            reviewer=reviewer, registrant=merge_proposal.source_branch.owner,
+            reviewer=reviewer, registrant=merge_proposal.merge_source.owner,
             review_type='Specific')
         # Note we're using the reference from the first call
         self.assertEqual('specific', reference.review_type)
@@ -1939,31 +1910,37 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
             CodeReviewNotificationLevel.FULL, sub.review_level)
         # The reviewer can see the branch.
         self.assertTrue(branch.visibleByUser(reviewer))
-        if branch.stacked_on is not None:
+        if IBranch.providedBy(branch) and branch.stacked_on is not None:
             self._check_mp_branch_visibility(branch.stacked_on, reviewer)
 
     def _test_nominate_grants_visibility(self, reviewer):
         """Nominated reviewers can see the source and target branches."""
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
-        # We make a source branch stacked on a private one.
-        base_branch = self.factory.makeBranch(
+        # For bzr, we make a source branch stacked on a private one.
+        # For git, we make the gitref itself private.
+        if self.git:
+            source_branch = self.makeBranch(
+                product=product, owner=owner,
+                information_type=InformationType.USERDATA)
+        else:
+            base_branch = self.makeBranch(
+                owner=owner, product=product,
+                information_type=InformationType.USERDATA)
+            source_branch = self.makeBranch(
+                stacked_on=base_branch, product=product, owner=owner)
+        target_branch = self.makeBranch(
             owner=owner, product=product,
             information_type=InformationType.USERDATA)
-        source_branch = self.factory.makeBranch(
-            stacked_on=base_branch, product=product, owner=owner)
-        target_branch = self.factory.makeBranch(owner=owner, product=product)
         login_person(owner)
-        merge_proposal = self.factory.makeBranchMergeProposal(
-            source_branch=source_branch,
-            target_branch=target_branch)
-        target_branch.setPrivate(True, owner)
+        merge_proposal = self.makeBranchMergeProposal(
+            source=source_branch, target=target_branch)
         # The reviewer can't see the source or target branches.
         self.assertFalse(source_branch.visibleByUser(reviewer))
         self.assertFalse(target_branch.visibleByUser(reviewer))
         merge_proposal.nominateReviewer(
             reviewer=reviewer,
-            registrant=merge_proposal.source_branch.owner)
+            registrant=merge_proposal.merge_source.owner)
         for branch in [source_branch, target_branch]:
             self._check_mp_branch_visibility(branch, reviewer)
 
@@ -1987,7 +1964,7 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
     def test_comment_with_vote_creates_reference(self):
         """A comment with a vote creates a vote reference."""
         reviewer = self.factory.makePerson()
-        merge_proposal = self.factory.makeBranchMergeProposal(
+        merge_proposal = self.makeBranchMergeProposal(
             reviewer=reviewer, registrant=reviewer)
         comment = merge_proposal.createComment(
             reviewer, 'Message subject', 'Message content',
@@ -1998,7 +1975,8 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
     def test_comment_without_a_vote_does_not_create_reference(self):
         """A comment with a vote creates a vote reference."""
         reviewer = self.factory.makePerson()
-        merge_proposal = make_merge_proposal_without_reviewers(self.factory)
+        merge_proposal = make_merge_proposal_without_reviewers(
+            self.factory, for_git=self.git)
         merge_proposal.createComment(
             reviewer, 'Message subject', 'Message content')
         self.assertEqual([], list(merge_proposal.votes))
@@ -2006,7 +1984,7 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
     def test_second_vote_by_person_just_alters_reference(self):
         """A second vote changes the comment reference only."""
         reviewer = self.factory.makePerson()
-        merge_proposal = self.factory.makeBranchMergeProposal(
+        merge_proposal = self.makeBranchMergeProposal(
             reviewer=reviewer, registrant=reviewer)
         merge_proposal.createComment(
             reviewer, 'Message subject', 'Message content',
@@ -2022,7 +2000,7 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
         reviewer = self.factory.makePerson()
         merge_proposal, ignore = self.makeProposalWithReviewer(
             reviewer=reviewer, review_type='general')
-        login(merge_proposal.source_branch.owner.preferredemail.email)
+        login(merge_proposal.merge_source.owner.preferredemail.email)
         comment = merge_proposal.createComment(
             reviewer, 'Message subject', 'Message content',
             vote=CodeReviewVote.APPROVE, review_type='general')
@@ -2042,7 +2020,7 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
         team = self.factory.makeTeam(owner=reviewer)
         merge_proposal, ignore = self.makeProposalWithReviewer(
             reviewer=team, review_type='general')
-        login(merge_proposal.source_branch.owner.preferredemail.email)
+        login(merge_proposal.merge_source.owner.preferredemail.email)
         [vote] = list(merge_proposal.votes)
         self.assertEqual(team, vote.reviewer)
         comment = merge_proposal.createComment(
@@ -2059,8 +2037,8 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
         # one.
         reviewer = self.factory.makePerson()
         team = self.factory.makeTeam(owner=reviewer)
-        merge_proposal = self.factory.makeBranchMergeProposal(reviewer=team)
-        login(merge_proposal.source_branch.owner.preferredemail.email)
+        merge_proposal = self.makeBranchMergeProposal(reviewer=team)
+        login(merge_proposal.merge_source.owner.preferredemail.email)
         [vote] = list(merge_proposal.votes)
         self.assertEqual(team, vote.reviewer)
         comment = merge_proposal.createComment(
@@ -2078,8 +2056,8 @@ class TestBranchMergeProposalNominateReviewer(TestCaseWithFactory):
         merge_proposal_1, reviewer_1 = self.makeProposalWithReviewer(
             set_state=BranchMergeProposalStatus.MERGED)
         merge_proposal_2, _ = self.makeProposalWithReviewer(
-            target_branch=merge_proposal_1.target_branch,
-            source_branch=merge_proposal_1.source_branch)
+            target=merge_proposal_1.merge_target,
+            source=merge_proposal_1.merge_source)
         merge_proposal_2.nominateReviewer(
             reviewer=reviewer_1, registrant=merge_proposal_2.registrant)
         votes_1 = list(merge_proposal_1.votes)
