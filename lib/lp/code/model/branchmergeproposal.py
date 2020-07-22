@@ -70,6 +70,7 @@ from lp.code.event.branchmergeproposal import (
     BranchMergeProposalNeedsReviewEvent,
     ReviewerNominatedEvent,
     )
+from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
@@ -881,7 +882,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             BranchSubscriptionDiffSize.NODIFF,
             CodeReviewNotificationLevel.FULL,
             user)
-        if branch.stacked_on is not None:
+        if IBranch.providedBy(branch) and branch.stacked_on is not None:
             checked_branches.append(branch)
             if branch.stacked_on not in checked_branches:
                 self._subscribeUserToStackedBranch(
