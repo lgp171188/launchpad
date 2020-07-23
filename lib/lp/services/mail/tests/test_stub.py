@@ -1,6 +1,8 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from doctest import DocTestSuite
@@ -64,7 +66,7 @@ def test_simple_sendmail():
 
     >>> sorted_test_emails = sorted(list(stub.test_emails))
     >>> for from_addr, to_addrs, raw_message in sorted_test_emails:
-    ...     print from_addr, to_addrs, 'nobody@example.com' in raw_message
+    ...     print(from_addr, to_addrs, 'nobody@example.com' in raw_message)
     bounces@canonical.com ['nobody2@example.com'] True
     bounces@canonical.com ['nobody2@example.com'] False
 
