@@ -12,8 +12,8 @@ __all__ = [
 
 __metaclass__ = type
 
-from cStringIO import StringIO
 import errno
+import io
 import os
 import re
 import shutil
@@ -184,8 +184,8 @@ class SubversionServer(Server):
         for filename, content in tree_contents:
             f = root.add_file(filename)
             try:
-                subvertpy.delta.send_stream(StringIO(content),
-                    f.apply_textdelta())
+                subvertpy.delta.send_stream(
+                    io.BytesIO(content), f.apply_textdelta())
             finally:
                 f.close()
         root.close()

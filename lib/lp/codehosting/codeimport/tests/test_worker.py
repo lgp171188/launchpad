@@ -848,7 +848,7 @@ class TestActualImportMixin:
         # Running the worker on a branch that hasn't been imported yet imports
         # the branch.
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         worker.run()
         branch = self.getStoredBazaarBranch(worker)
@@ -857,7 +857,7 @@ class TestActualImportMixin:
     def test_sync(self):
         # Do an import.
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         worker.run()
         branch = self.getStoredBazaarBranch(worker)
@@ -878,7 +878,7 @@ class TestActualImportMixin:
         # Like test_import, but using the code-import-worker.py script
         # to perform the import.
         arguments = self.makeWorkerArguments(
-            'trunk', [('README', 'Original contents')])
+            'trunk', [('README', b'Original contents')])
         source_details = CodeImportSourceDetails.fromArguments(arguments)
 
         clean_up_default_stores_for_import(source_details)
@@ -916,7 +916,7 @@ class TestActualImportMixin:
         # import that does not import revisions, the worker exits with a code
         # of CodeImportWorkerExitCode.SUCCESS_NOCHANGE.
         arguments = self.makeWorkerArguments(
-            'trunk', [('README', 'Original contents')])
+            'trunk', [('README', b'Original contents')])
         source_details = CodeImportSourceDetails.fromArguments(arguments)
 
         clean_up_default_stores_for_import(source_details)
@@ -1079,7 +1079,7 @@ class PullingImportWorkerTests:
     def test_unsupported_feature(self):
         # If there is no branch in the target URL, exit with FAILURE_INVALID
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('bzr\\doesnt\\support\\this', 'Original contents')]),
+            'trunk', [('bzr\\doesnt\\support\\this', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         self.assertEqual(
             CodeImportWorkerExitCode.FAILURE_UNSUPPORTED_FEATURE,
@@ -1089,7 +1089,7 @@ class PullingImportWorkerTests:
         # Only config.codeimport.revisions_import_limit will be imported
         # in a given run.
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         self.makeForeignCommit(worker.source_details)
         self.assertTrue(self.foreign_commit_count > 1)
@@ -1107,7 +1107,7 @@ class PullingImportWorkerTests:
     def test_stacked(self):
         stacked_on = self.make_branch('stacked-on')
         source_details = self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')],
+            'trunk', [('README', b'Original contents')],
             stacked_on_url=stacked_on.base)
         stacked_on.fetch(Branch.open(source_details.url))
         base_rev_count = self.foreign_commit_count
@@ -1196,7 +1196,7 @@ class TestGitImport(WorkerTest, TestActualImportMixin,
     def test_non_master(self):
         # non-master branches can be specified in the import URL.
         source_details = self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')])
+            'trunk', [('README', b'Original contents')])
         self.makeForeignCommit(source_details, ref="refs/heads/other",
             message="Message for other")
         self.makeForeignCommit(source_details, ref="refs/heads/master",
@@ -1238,7 +1238,7 @@ class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
         # cache in the worker's ImportDataStore.
         from bzrlib.plugins.svn.cache import get_cache
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         uuid = subvertpy.ra.RemoteAccess(worker.source_details.url).get_uuid()
         cache_dir = get_cache(uuid).create_cache_dir()
@@ -1258,7 +1258,7 @@ class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
         # into the appropriate cache directory.
         from bzrlib.plugins.svn.cache import get_cache
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         # Store a tarred-up cache in the store.
         content = self.factory.getUniqueString()
