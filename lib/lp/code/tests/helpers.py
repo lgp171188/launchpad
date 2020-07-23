@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions for code testing live here."""
@@ -49,8 +49,8 @@ from lp.code.model.seriessourcepackagebranch import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.sqlbase import cursor
-from lp.services.propertycache import get_property_cache
 from lp.services.memcache.testing import MemcacheFixture
+from lp.services.propertycache import get_property_cache
 from lp.testing import (
     run_with_login,
     time_counter,
@@ -271,9 +271,18 @@ def recipe_parser_newest_version(version):
         RecipeParser.NEWEST_VERSION = old_version
 
 
-def make_merge_proposal_without_reviewers(factory, **kwargs):
+def make_merge_proposal_without_reviewers(
+        factory, for_git=False, source=None, target=None, **kwargs):
     """Make a merge proposal and strip of any review votes."""
-    proposal = factory.makeBranchMergeProposal(**kwargs)
+    kwargs = dict(kwargs)
+    if for_git:
+        kwargs["source_ref"] = source
+        kwargs["target_ref"] = target
+        proposal = factory.makeBranchMergeProposalForGit(**kwargs)
+    else:
+        kwargs["source_branch"] = source
+        kwargs["target_branch"] = target
+        proposal = factory.makeBranchMergeProposal(**kwargs)
     for vote in proposal.votes:
         removeSecurityProxy(vote).destroySelf()
     del get_property_cache(proposal).votes
