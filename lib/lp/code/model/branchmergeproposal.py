@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for branch merge proposals."""
@@ -70,6 +70,7 @@ from lp.code.event.branchmergeproposal import (
     BranchMergeProposalNeedsReviewEvent,
     ReviewerNominatedEvent,
     )
+from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
@@ -881,7 +882,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             BranchSubscriptionDiffSize.NODIFF,
             CodeReviewNotificationLevel.FULL,
             user)
-        if branch.stacked_on is not None:
+        if IBranch.providedBy(branch) and branch.stacked_on is not None:
             checked_branches.append(branch)
             if branch.stacked_on not in checked_branches:
                 self._subscribeUserToStackedBranch(
@@ -903,14 +904,11 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         the reviewer if the branch is private and the reviewer is an open
         team.
         """
-        if self.source_branch is None:
-            # This only applies to Bazaar, which has stacked branches.
-            return
-        source = self.source_branch
+        source = self.merge_source
         if (not source.visibleByUser(reviewer) and
             self._acceptable_to_give_visibility(source, reviewer)):
             self._subscribeUserToStackedBranch(source, reviewer)
-        target = self.target_branch
+        target = self.merge_target
         if (not target.visibleByUser(reviewer) and
             self._acceptable_to_give_visibility(source, reviewer)):
             self._subscribeUserToStackedBranch(target, reviewer)

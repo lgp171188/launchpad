@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BranchMergeProposals."""
@@ -91,6 +91,7 @@ from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.services.xref.interfaces import IXRefSet
 from lp.testing import (
+    admin_logged_in,
     ExpectedException,
     launchpadlib_for,
     login,
@@ -1035,15 +1036,24 @@ class TestMergeProposalWebhooks(WithScenarios, TestCaseWithFactory):
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"}))
 
-    def makeBranch(self, same_target_as=None):
-        kwargs = {}
+    def makeBranch(self, same_target_as=None, information_type=None):
+        # Create the product pillar and its access policy if information
+        # type is "PROPRIETARY".
+        if same_target_as is None:
+            product = self.factory.makeProduct()
+            if information_type == InformationType.PROPRIETARY:
+                self.factory.makeAccessPolicy(product)
+        else:
+            same_target_as = removeSecurityProxy(same_target_as)
+            product = (same_target_as.target if self.git else
+                       same_target_as.product)
+
+        kwargs = {"information_type": information_type}
         if self.git:
-            if same_target_as is not None:
-                kwargs["target"] = same_target_as.target
+            kwargs["target"] = product
             return self.factory.makeGitRefs(**kwargs)[0]
         else:
-            if same_target_as is not None:
-                kwargs["product"] = same_target_as.product
+            kwargs["product"] = product
             return self.factory.makeProductBranch(**kwargs)
 
     def getWebhookTarget(self, branch):
@@ -1101,6 +1111,39 @@ class TestMergeProposalWebhooks(WithScenarios, TestCaseWithFactory):
                 logger.output, LogsScheduledWebhooks([
                     (hook, "merge-proposal:0.1",
                      MatchesDict(expected_redacted_payload))]))
+
+    def test_create_private_repo_triggers_webhooks(self):
+        # When a merge proposal is created, any relevant webhooks are
+        # triggered even if the repository is proprietary.
+        logger = self.useFixture(FakeLogger())
+        source = self.makeBranch(information_type=InformationType.PROPRIETARY)
+        target = self.makeBranch(
+            same_target_as=source,
+            information_type=InformationType.PROPRIETARY)
+
+        with admin_logged_in():
+            # Create the web hook and the proposal.
+            registrant = self.factory.makePerson()
+            hook = self.factory.makeWebhook(
+                target=self.getWebhookTarget(target),
+                event_types=["merge-proposal:0.1"])
+            proposal = source.addLandingTarget(
+                registrant, target, needs_review=True)
+            target_owner = target.owner
+
+        login_person(target_owner)
+        delivery = hook.deliveries.one()
+        expected_payload = {
+            "merge_proposal": Equals(self.getURL(proposal)),
+            "action": Equals("created"),
+            "new": MatchesDict(self.getExpectedPayload(proposal)),
+            }
+        expected_redacted_payload = dict(
+            expected_payload,
+            new=MatchesDict(
+                self.getExpectedPayload(proposal, redact=True)))
+        self.assertCorrectDelivery(expected_payload, hook, delivery)
+        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
 
     def test_create_triggers_webhooks(self):
         # When a merge proposal is created, any relevant webhooks are
