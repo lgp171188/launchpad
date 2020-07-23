@@ -1234,6 +1234,9 @@ class RunIsolatedTest(testtools.RunTest):
             result.stopTest(self.case)
 
     def _run_started(self, result):
+        # Circular import.
+        from lp.testing.layers import DatabaseLayer
+
         pread, pwrite = os.pipe()
         # We flush __stdout__ and __stderr__ at this point in order to avoid
         # bug 986429; they get copied in full when we fork, which means that
@@ -1274,6 +1277,8 @@ class RunIsolatedTest(testtools.RunTest):
             protocol.readFrom(fdread)
             fdread.close()
             os.waitpid(pid, 0)
+            if issubclass(self.case.layer, DatabaseLayer):
+                self.case.layer.force_dirty_database()
 
 
 class EventRecorder:
