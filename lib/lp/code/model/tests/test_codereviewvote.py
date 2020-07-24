@@ -61,7 +61,7 @@ class TestCodeReviewVote(TestCaseWithFactory):
         target_branch = self.factory.makeBranch(
             owner=owner, information_type=InformationType.USERDATA)
         merge_proposal = make_merge_proposal_without_reviewers(
-            self.factory, target_branch=target_branch, registrant=owner)
+            self.factory, target=target_branch, registrant=owner)
         reviewer = self.factory.makePerson()
         vote = merge_proposal.nominateReviewer(reviewer, owner)
         login(ANONYMOUS)
