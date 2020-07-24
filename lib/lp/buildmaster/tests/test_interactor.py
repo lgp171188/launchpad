@@ -493,7 +493,9 @@ class TestSlave(TestCase):
     def test_abort(self):
         slave = self.slave_helper.getClientSlave()
         # We need to be in a BUILDING state before we can abort.
-        yield self.slave_helper.triggerGoodBuild(slave)
+        build_id = 'some-id'
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
         response = yield slave.abort()
         self.assertEqual(BuilderStatus.ABORTING, response)
 
@@ -557,7 +559,8 @@ class TestSlave(TestCase):
         # build has been triggered, the status is BUILDING.
         slave = self.slave_helper.getClientSlave()
         build_id = 'status-build-id'
-        yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
         status = yield slave.status()
         self.assertEqual(BuilderStatus.BUILDING, status['builder_status'])
         self.assertEqual(build_id, status['build_id'])
