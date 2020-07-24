@@ -141,6 +141,9 @@ from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.hassnaps import HasSnapsViewMixin
 
 
+GIT_REPOSITORY_FORK_ENABLED = 'gitrepository.fork.enabled'
+
+
 @implementer(ICanonicalUrlData)
 class GitRepositoryURL:
     """Git repository URL creation rules."""
@@ -465,6 +468,8 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
 
     @property
     def allow_fork(self):
+        if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
+            return False
         # Users cannot fork repositories that targets a user.
         if IPerson.providedBy(self.context.target):
             return False
@@ -484,6 +489,12 @@ class GitRepositoryForkView(LaunchpadEditFormView):
     schema = Interface
 
     field_names = []
+
+    def initialize(self):
+        if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
+            self.request.response.redirect(canonical_url(self.context))
+            return
+        super(GitRepositoryForkView, self).initialize()
 
     def setUpFields(self):
         super(GitRepositoryForkView, self).setUpFields()

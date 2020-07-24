@@ -46,7 +46,10 @@ from lp.app.enums import InformationType
 from lp.app.errors import UnexpectedFormData
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
-from lp.code.browser.gitrepository import encode_form_field_id
+from lp.code.browser.gitrepository import (
+    encode_form_field_id,
+    GIT_REPOSITORY_FORK_ENABLED,
+    )
 from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
@@ -137,6 +140,10 @@ class TestGitRepositoryNavigation(TestCaseWithFactory):
 class TestGitRepositoryView(BrowserTestCase):
 
     layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestGitRepositoryView, self).setUp()
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: 'on'}))
 
     def test_clone_instructions(self):
         repository = self.factory.makeGitRepository()
@@ -444,7 +451,7 @@ class TestGitRepositoryView(BrowserTestCase):
             repository, "+repository-portlet-subscriber-content")
         with StormStatementRecorder() as recorder:
             view.render()
-        self.assertThat(recorder, HasQueryCount(Equals(6)))
+        self.assertThat(recorder, HasQueryCount(Equals(7)))
 
     def test_show_rescan_link(self):
         repository = self.factory.makeGitRepository()
@@ -511,6 +518,12 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(
             repository, '+index', user=another_person)
         self.assertThat(browser.contents, HTMLContains(fork_link))
+
+        # Even for another person, do not show it if the feature flag is off.
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: ''}))
+        browser = self.getViewBrowser(
+            repository, '+index', user=another_person)
+        self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
 
 
 class TestGitRepositoryViewPrivateArtifacts(BrowserTestCase):
@@ -2016,10 +2029,24 @@ class TestGitRepositoryForkView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
+    def setUp(self):
+        super(TestGitRepositoryForkView, self).setUp()
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: 'on'}))
+
     def getReposOwnedBy(self, user):
         rs = IStore(GitRepository).find(GitRepository)
         return rs.find(GitRepository.owner == user).order_by(
             Desc(GitRepository.date_created))
+
+    def test_fork_page_redirects_with_disabled_feature(self):
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: ''}))
+        with admin_logged_in():
+            repository = self.factory.makeGitRepository()
+            owner = repository.owner
+            repository_url = canonical_url(repository)
+        browser = self.getViewBrowser(
+            repository, "+fork", rootsite="code", user=owner)
+        self.assertEqual(browser.url, repository_url)
 
     def test_fork_page_shows_input(self):
         with admin_logged_in():
