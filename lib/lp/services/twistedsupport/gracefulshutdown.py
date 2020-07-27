@@ -169,6 +169,6 @@ def make_web_status_service(strport, tracking_factories):
     """
     server_available_resource = ServerAvailableResource(tracking_factories)
     web_root = resource.Resource()
-    web_root.putChild('', server_available_resource)
+    web_root.putChild(b'', server_available_resource)
     web_factory = server.Site(web_root)
     return strports.service(strport, web_factory)

@@ -1,12 +1,15 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.browser.tests.test_pillar_sharing import SharingBaseTestCase
+from lp.registry.interfaces.nameblacklist import INameBlacklistSet
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import login_person
 from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
@@ -152,8 +155,6 @@ class TestPollBreadcrumb(BaseBreadcrumbTestCase):
         crumbs = self.getBreadcrumbsForObject(self.poll)
         last_crumb = crumbs[-1]
         self.assertEqual(self.poll.title, last_crumb.text)
-
-from lp.registry.interfaces.nameblacklist import INameBlacklistSet
 
 
 class TestNameblacklistBreadcrumb(BaseBreadcrumbTestCase):

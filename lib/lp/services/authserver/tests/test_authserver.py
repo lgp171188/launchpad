@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the internal codehosting API."""
@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 from pymacaroons import Macaroon
+from six.moves import xmlrpc_client
 from storm.sqlobject import SQLObjectNotFound
 from testtools.matchers import (
     Equals,
@@ -17,6 +18,10 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.publisher.xmlrpc import TestRequest
 
+from lp.services.authserver.interfaces import (
+    IAuthServer,
+    IAuthServerApplication,
+    )
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.librarian.interfaces import (
@@ -32,14 +37,35 @@ from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     ZopelessDatabaseLayer,
     )
+from lp.testing.xmlrpc import XMLRPCTestTransport
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
+
+
+class TestAuthServerInterfaces(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_application_interface(self):
+        # The AuthServer interface is available on the authserver attribute
+        # of our private XML-RPC instance.
+        private_root = getUtility(IPrivateApplication)
+        self.assertTrue(
+            verifyObject(IAuthServerApplication, private_root.authserver))
+
+    def test_api_interface(self):
+        # The AuthServerAPIView provides the IAuthServer XML-RPC API.
+        private_root = getUtility(IPrivateApplication)
+        authserver_api = AuthServerAPIView(
+            private_root.authserver, TestRequest())
+        self.assertTrue(verifyObject(IAuthServer, authserver_api))
 
 
 class GetUserAndSSHKeysTests(TestCaseWithFactory):
@@ -81,6 +107,18 @@ class GetUserAndSSHKeysTests(TestCaseWithFactory):
                 dict(id=new_person.id, name=new_person.name,
                      keys=[(key.keytype.title, key.keytext)]),
                 self.authserver.getUserAndSSHKeys(new_person.name))
+
+    def test_via_xmlrpc(self):
+        new_person = self.factory.makePerson()
+        with person_logged_in(new_person):
+            key = self.factory.makeSSHKey(person=new_person)
+        authserver = xmlrpc_client.ServerProxy(
+            'http://xmlrpc-private.launchpad.test:8087/authserver',
+            transport=XMLRPCTestTransport())
+        self.assertEqual(
+            {'id': new_person.id, 'name': new_person.name,
+             'keys': [[key.keytype.title, key.keytext]]},
+            authserver.getUserAndSSHKeys(new_person.name))
 
 
 @implementer(IMacaroonIssuer)

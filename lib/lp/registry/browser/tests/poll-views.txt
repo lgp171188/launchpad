@@ -60,7 +60,7 @@ has not opened.
     >>> close_date = open_date + timedelta(weeks=1)
     >>> poll_subset = IPollSubset(team)
     >>> poll = poll_subset.new(
-    ...     'name', 'title', 'proposition', open_date, close_date,
+    ...     u'name', u'title', u'proposition', open_date, close_date,
     ...     PollSecrecy.OPEN, False)
 
     >>> ignored = login_person(user)

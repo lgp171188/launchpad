@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for GitRepositoryView."""
@@ -47,6 +47,7 @@ from lp.code.enums import (
     GitActivityType,
     GitGranteeType,
     GitPermissionType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.interfaces.revision import IRevisionSet
@@ -137,6 +138,19 @@ class TestGitRepositoryView(BrowserTestCase):
             git clone https://git.launchpad.test/.*
             git clone git\+ssh://{username}@git.launchpad.test/.*
             """.format(username=username), text)
+
+    def test_creating_warning_message_is_present(self):
+        repository = removeSecurityProxy(self.factory.makeGitRepository())
+        repository.status = GitRepositoryStatus.CREATING
+        text = self.getMainText(repository, "+index", user=repository.owner)
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            r"""This repository is being created\..*""", text)
+
+    def test_creating_warning_message_is_not_shown(self):
+        repository = removeSecurityProxy(self.factory.makeGitRepository())
+        repository.status = GitRepositoryStatus.AVAILABLE
+        text = self.getMainText(repository, "+index", user=repository.owner)
+        self.assertNotIn("This repository is being created""", text)
 
     def test_user_can_push(self):
         # A user can push if they have edit permissions.
@@ -1801,6 +1815,42 @@ class TestGitRepositoryDeletionView(BrowserTestCase):
             repository, "+index", rootsite="code", user=repository.owner)
         delete_link = browser.getLink("Delete repository")
         self.assertEqual(delete_url, delete_link.url)
+
+    def test_creating_warning_message_is_present(self):
+        # If the repository is not being created, we should show the
+        # warning message, and suppress the "delete" button.
+        repository = removeSecurityProxy(self.factory.makeGitRepository())
+        repository.status = GitRepositoryStatus.CREATING
+        browser = self.getViewBrowser(
+            repository, "+delete", rootsite="code", user=repository.owner)
+
+        # Warning message is present.
+        tag = find_tags_by_class(browser.contents, "warning message", True)
+        self.assertIsNotNone(tag)
+        self.assertIn(
+            "This repository is being created and cannot be deleted.",
+            ' '.join(tag.contents))
+        # Delete button is not present
+        tag = find_tag_by_id(
+            browser.contents, "field.actions.delete_repository")
+        self.assertIsNone(tag)
+
+    def test_creating_warning_message_is_not_shown(self):
+        # If the repository is not being created, we should not show the
+        # warning message, and the "delete" button should be present.
+        repository = removeSecurityProxy(self.factory.makeGitRepository())
+        repository.status = GitRepositoryStatus.AVAILABLE
+        browser = self.getViewBrowser(
+            repository, "+delete", rootsite="code", user=repository.owner)
+
+        # Warning message is not present
+        tag = find_tags_by_class(browser.contents, "warning message", True)
+        self.assertIsNone(tag)
+        # Delete button is present
+        tag = find_tag_by_id(
+            browser.contents, "field.actions.delete_repository")
+        self.assertIsNotNone(tag)
+        self.assertEqual(tag.attrs['type'], 'submit')
 
     def test_warning_message(self):
         # The deletion view informs the user what will happen if they delete

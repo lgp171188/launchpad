@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database garbage collection."""
@@ -1492,8 +1492,10 @@ class ProductVCSPopulator(TunableLoop):
         self.store = IMasterStore(Product)
 
     def findProducts(self):
-        return self.store.find(
-            Product, Product.id >= self.start_at).order_by(Product.id)
+        products = self.store.find(
+            Product,
+            Product.id >= self.start_at, Product.vcs == None)
+        return products.order_by(Product.id)
 
     def isDone(self):
         return self.findProducts().is_empty()
@@ -1501,8 +1503,7 @@ class ProductVCSPopulator(TunableLoop):
     def __call__(self, chunk_size):
         products = list(self.findProducts()[:chunk_size])
         for product in products:
-            if not product.vcs:
-                product.vcs = product.inferred_vcs
+            product.vcs = product.inferred_vcs
         self.start_at = products[-1].id + 1
         transaction.commit()
 

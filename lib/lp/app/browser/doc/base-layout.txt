@@ -150,7 +150,7 @@ Page Footers
     Data privacy https://www.ubuntu.com/legal/dataprivacy
     Contact Launchpad Support /feedback
     Blog http://blog.launchpad.net/
-    Careers http://www.canonical.com/about-canonical/careers
+    Careers https://canonical.com/careers
     System status https://twitter.com/launchpadstatus
     Get the code! https://dev.launchpad.net/
 

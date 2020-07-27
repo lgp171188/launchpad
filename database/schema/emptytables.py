@@ -5,6 +5,8 @@
 
 """List empty database tables."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import _pythonpath
@@ -31,7 +33,7 @@ def main(options):
                 "SELECT TRUE FROM public.%s LIMIT 1" % quote_identifier(table)
                 )
         if cur.fetchone() is None:
-            print table
+            print(table)
 
 
 if __name__ == '__main__':

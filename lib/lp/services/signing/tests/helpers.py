@@ -12,7 +12,6 @@ __all__ = [
 
 import fixtures
 from nacl.public import PrivateKey
-from six import text_type
 
 from lp.services.compat import mock
 from lp.services.signing.interfaces.signingserviceclient import (
@@ -49,23 +48,26 @@ class SigningServiceClientFixture(fixtures.Fixture):
     def _generate(self, key_type, description):
         key = bytes(PrivateKey.generate().public_key)
         data = {
-            "fingerprint": text_type(self.factory.getUniqueHexString(40)),
-            "public-key": key}
+            "fingerprint": self.factory.getUniqueHexString(40),
+            "public-key": key,
+            }
         self.generate_returns.append((key_type, data))
         return data
 
     def _sign(self, key_type, fingerprint, message_name, message, mode):
         key = bytes(PrivateKey.generate().public_key)
-        signed_msg = "signed with key_type={}".format(key_type.name)
+        signed_msg = (
+            "signed with key_type={}".format(key_type.name).encode("UTF-8"))
         data = {
             'public-key': key,
-            'signed-message': signed_msg}
+            'signed-message': signed_msg,
+            }
         self.sign_returns.append((key_type, data))
         return data
 
     def _inject(self, key_type, private_key, public_key, description,
                 created_at):
-        data = {'fingerprint': text_type(self.factory.getUniqueHexString(40))}
+        data = {'fingerprint': self.factory.getUniqueHexString(40)}
         self.inject_returns.append(data)
         return data
 

@@ -801,7 +801,8 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
 
     @cachedproperty
     def commercial_subscription(self):
-        return CommercialSubscription.selectOneBy(product=self)
+        return IStore(CommercialSubscription).find(
+            CommercialSubscription, product=self).one()
 
     @property
     def has_current_commercial_subscription(self):
@@ -984,9 +985,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
             lp_janitor = getUtility(ILaunchpadCelebrities).janitor
             now = datetime.datetime.now(pytz.UTC)
             date_expires = now + datetime.timedelta(days=30)
-            sales_system_id = 'complimentary-30-day-%s' % now
+            sales_system_id = u'complimentary-30-day-%s' % now
             whiteboard = (
-                "Complimentary 30 day subscription. -- Launchpad %s" %
+                u"Complimentary 30 day subscription. -- Launchpad %s" %
                 now.date().isoformat())
             subscription = CommercialSubscription(
                 product=self, date_starts=now, date_expires=date_expires,
@@ -1408,11 +1409,6 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `HasCustomLanguageCodesMixin`."""
         return CustomLanguageCode.product == self
 
-    def createCustomLanguageCode(self, language_code, language):
-        """See `IHasCustomLanguageCodes`."""
-        return CustomLanguageCode(
-            product=self, language_code=language_code, language=language)
-
     def userCanEdit(self, user):
         """See `IProduct`."""
         if user is None:
@@ -1602,8 +1598,8 @@ def get_precached_products(products, need_licences=False,
 
     for subscription in IStore(CommercialSubscription).find(
         CommercialSubscription,
-        CommercialSubscription.productID.is_in(product_ids)):
-        cache = caches[subscription.productID]
+        CommercialSubscription.product_id.is_in(product_ids)):
+        cache = caches[subscription.product_id]
         cache.commercial_subscription = subscription
     if need_licences:
         for license in IStore(ProductLicense).find(
@@ -1939,7 +1935,7 @@ class ProductSet:
             subscription_expr = Exists(Select(
                 1, tables=[CommercialSubscription],
                 where=And(*
-                    [CommercialSubscription.productID == Product.id]
+                    [CommercialSubscription.product == Product.id]
                     + subscription_conditions)))
             if has_subscription is False:
                 subscription_expr = Not(subscription_expr)

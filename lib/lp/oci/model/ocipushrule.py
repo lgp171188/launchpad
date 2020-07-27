@@ -91,6 +91,12 @@ class OCIPushRuleSet:
         """See `IOCIPushRuleSet`."""
         return IStore(OCIPushRule).get(OCIPushRule, id)
 
+    def findByRecipe(self, recipe):
+        store = IStore(OCIPushRule)
+        return store.find(
+            OCIPushRule,
+            OCIPushRule.recipe == recipe)
+
     def findByRegistryCredentials(self, credentials):
         store = IStore(OCIPushRule)
         return store.find(

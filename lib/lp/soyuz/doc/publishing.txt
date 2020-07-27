@@ -1377,7 +1377,8 @@ different, and check if the order is respected:
     >>> shuffled_sources_list = list(cprov_published_sources)
 
     >>> import random
-    >>> while shuffled_sources_list == original_sources_list:
+    >>> while (len(original_sources_list) > 1 and
+    ...        shuffled_sources_list == original_sources_list):
     ...     random.shuffle(shuffled_sources_list)
 
     >>> shuffled_decorated_list = ArchiveSourcePublications(

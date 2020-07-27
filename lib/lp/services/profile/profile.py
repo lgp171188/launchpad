@@ -18,11 +18,11 @@ import heapq
 import os
 import pstats
 import re
-import StringIO
 import sys
 import threading
 
 from breezy import lsprof
+import six
 import oops_datedir_repo.serializer_rfc822
 from zope.component import (
     adapter,
@@ -339,13 +339,14 @@ def end_request(event):
         if is_html and 'show' in actions:
             # Generate rfc822 OOPS result (might be nice to have an html
             # serializer..).
-            template_context['oops'] = ''.join(
-                oops_datedir_repo.serializer_rfc822.to_chunks(oops_report))
+            template_context['oops'] = b''.join(
+                oops_datedir_repo.serializer_rfc822.to_chunks(
+                    oops_report)).decode('UTF-8', 'replace')
             # Generate profile summaries.
             prof_stats.strip_dirs()
             for name in ('time', 'cumulative', 'calls'):
                 prof_stats.sort(name)
-                f = StringIO.StringIO()
+                f = six.StringIO()
                 prof_stats.pprint(file=f)
                 template_context[name] = f.getvalue()
         template_context['profile_count'] = prof_stats.count
@@ -457,9 +458,8 @@ def end_request(event):
                 rank=step['python_rank'],
                 cls=step['python_class']))
         # Identify the repeated Python calls that generated SQL.
-        triggers = triggers.items()
-        triggers.sort(key=lambda x: len(x[1]))
-        triggers.reverse()
+        triggers = sorted(
+            triggers.items(), key=lambda x: len(x[1]), reverse=True)
         top_triggers = []
         for (key, ixs) in triggers:
             if len(ixs) == 1:
@@ -491,11 +491,12 @@ def end_request(event):
         except Exception:
             error = ''.join(format_exception(*sys.exc_info(), as_html=True))
             added_html = (
-                '<div class="profiling_info">' + error + '</div>')
+                '<div class="profiling_info">' + error +
+                '</div>').encode(encoding)
         existing_html = request.response.consumeBody()
         e_start, e_close_body, e_end = existing_html.rpartition(
-            '</body>')
-        new_html = ''.join(
+            b'</body>')
+        new_html = b''.join(
             (e_start, added_html, e_close_body, e_end))
         request.response.setResult(new_html)
 

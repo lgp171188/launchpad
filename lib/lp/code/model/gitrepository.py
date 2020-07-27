@@ -95,6 +95,7 @@ from lp.code.enums import (
     GitListingSort,
     GitObjectType,
     GitPermissionType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.errors import (
@@ -293,6 +294,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     repository_type = EnumCol(
         dbName='repository_type', enum=GitRepositoryType, notNull=True)
 
+    status = EnumCol(
+        dbName='status', enum=GitRepositoryStatus, notNull=True,
+        default=GitRepositoryStatus.AVAILABLE)
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
 
@@ -326,7 +331,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     def __init__(self, repository_type, registrant, owner, target, name,
                  information_type, date_created, reviewer=None,
-                 description=None):
+                 description=None, status=None):
         super(GitRepository, self).__init__()
         self.repository_type = repository_type
         self.registrant = registrant
@@ -347,6 +352,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             self.sourcepackagename = target.sourcepackagename
         elif IOCIProject.providedBy(target):
             self.oci_project = target
+        # XXX pappacena 2020-06-08: We should simplify this once the value of
+        # GitRepository.status column is backfilled.
+        self.status = (status if status is not None
+                       else GitRepositoryStatus.AVAILABLE)
         self.owner_default = False
         self.target_default = False
 
@@ -359,6 +368,31 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             clone_from_path = None
         getUtility(IGitHostingClient).create(
             hosting_path, clone_from=clone_from_path)
+
+    def getClonedFrom(self):
+        """See `IGitRepository`"""
+        repository_set = getUtility(IGitRepositorySet)
+        registrant = self.registrant
+
+        # If repository has target_default, clone from default.
+        clone_from_repository = None
+        try:
+            default = repository_set.getDefaultRepository(
+                self.target)
+            if default is not None and default.visibleByUser(registrant):
+                clone_from_repository = default
+            else:
+                default = repository_set.getDefaultRepositoryForOwner(
+                    self.owner, self.target)
+                if (default is not None and
+                        default.visibleByUser(registrant)):
+                    clone_from_repository = default
+        except GitTargetError:
+            pass  # Ignore Personal repositories.
+        if clone_from_repository == self:
+            clone_from_repository = None
+
+        return clone_from_repository
 
     @property
     def valid_webhook_event_types(self):
@@ -1630,8 +1664,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         Store.of(self).remove(self)
         # And now create a job to remove the repository from storage when
         # it's done.
-        getUtility(IReclaimGitRepositorySpaceJobSource).create(
-            repository_name, repository_path)
+        if self.status == GitRepositoryStatus.AVAILABLE:
+            getUtility(IReclaimGitRepositorySpaceJobSource).create(
+                repository_name, repository_path)
 
 
 class DeletionOperation:

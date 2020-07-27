@@ -767,6 +767,12 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
             mp, description, title, edit_view='+edit-description')
 
     @property
+    def opengraph_description(self):
+        if self.context.commit_message:
+            return self.context.commit_message
+        return self.page_description
+
+    @property
     def edit_commit_message_link_class(self):
         if self.context.commit_message:
             return "hidden"

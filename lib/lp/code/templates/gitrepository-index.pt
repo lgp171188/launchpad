@@ -32,6 +32,13 @@
 </tal:registering>
 
 <div metal:fill-slot="main">
+    <div class="top-portlet" style="padding-top:0.5em;">
+      <p tal:condition="view/warning_message"
+         style="clear: right;" class="warning message"
+         tal:content="view/warning_message">
+        There is a warning here.
+      </p>
+    </div>
 
   <div id="repository-description" tal:condition="context/description"
        class="summary"

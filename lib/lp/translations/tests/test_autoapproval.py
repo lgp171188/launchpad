@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for translation import queue auto-approval.
@@ -91,25 +91,25 @@ class TestCustomLanguageCode(TestCaseWithFactory):
 
         # Map "es_ES" to "no language."
         self.product_codes['es_ES'] = CustomLanguageCode(
-            product=self.product, language_code='es_ES')
+            translation_target=self.product, language_code='es_ES')
 
         # Map "pt_PT" to "pt."
         self.product_codes['pt_PT'] = CustomLanguageCode(
-            product=self.product, language_code='pt_PT',
+            translation_target=self.product, language_code='pt_PT',
             language=Language.byCode('pt'))
 
         self.distro = Distribution.byName('ubuntu')
         self.sourcepackagename = SourcePackageName.byName('evolution')
         self.package_codes['Brazilian'] = CustomLanguageCode(
-            distribution=self.distro,
-            sourcepackagename=self.sourcepackagename,
+            translation_target=self.distro.getSourcePackage(
+                self.sourcepackagename),
             language_code='Brazilian',
             language=Language.byCode('pt_BR'))
 
     def test_ICustomLanguageCode(self):
         # Does CustomLanguageCode conform to ICustomLanguageCode?
         custom_language_code = CustomLanguageCode(
-            language_code='sux', product=self.product)
+            language_code='sux', translation_target=self.product)
         verifyObject(ICustomLanguageCode, custom_language_code)
 
     def test_NoCustomLanguageCode(self):
@@ -202,9 +202,9 @@ class TestGuessPOFileCustomLanguageCode(TestCaseWithFactory,
         else:
             language = Language.byCode(target_language_code)
         customcode = CustomLanguageCode(
-            product=self.product, language_code=language_code,
+            translation_target=self.product, language_code=language_code,
             language=language)
-        customcode.syncUpdate()
+        Store.of(customcode).flush()
 
     def test_MatchWithoutCustomLanguageCode(self):
         # Of course matching will work without custom language codes.

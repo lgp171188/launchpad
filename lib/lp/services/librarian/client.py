@@ -195,7 +195,7 @@ class FileUploadClient:
             # Read in and upload the file 64kb at a time, by using the two-arg
             # form of iter (see
             # /usr/share/doc/python/html/library/functions.html#iter).
-            for chunk in iter(lambda: file.read(1024 * 64), ''):
+            for chunk in iter(lambda: file.read(1024 * 64), b''):
                 self.state.f.write(chunk)
                 bytesWritten += len(chunk)
                 md5_digester.update(chunk)
@@ -261,7 +261,7 @@ class FileUploadClient:
             # Read in and upload the file 64kb at a time, by using the two-arg
             # form of iter (see
             # /usr/share/doc/python/html/library/functions.html#iter).
-            for chunk in iter(lambda: file.read(1024 * 64), ''):
+            for chunk in iter(lambda: file.read(1024 * 64), b''):
                 self.state.f.write(chunk)
                 bytesWritten += len(chunk)
 

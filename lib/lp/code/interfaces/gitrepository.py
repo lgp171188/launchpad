@@ -66,6 +66,7 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     GitListingSort,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
@@ -143,6 +144,11 @@ class IGitRepositoryView(IHasRecipes):
             "The way this repository is hosted: directly on Launchpad, or "
             "imported from somewhere else.")))
 
+    status = Choice(
+        title=_("Status of this repository"),
+        required=True, readonly=True,
+        vocabulary=GitRepositoryStatus)
+
     registrant = exported(PublicPersonChoice(
         title=_("Registrant"), required=True, readonly=True,
         vocabulary="ValidPersonOrTeam",
@@ -206,6 +212,9 @@ class IGitRepositoryView(IHasRecipes):
 
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
+
+    def getClonedFrom():
+        """Returns from which repository the given repo is a clone from."""
 
     @operation_parameters(
         reviewer=Reference(
