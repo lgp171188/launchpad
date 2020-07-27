@@ -126,6 +126,13 @@ class lp_develop(develop):
             with open(instance_name_path, "w") as instance_name_file:
                 print(os.environ["LPCONFIG"], file=instance_name_file)
 
+            # Write out the build-time Python major/minor version so that
+            # scripts run with /usr/bin/python2 know whether they need to
+            # re-exec.
+            python_version_path = os.path.join(env_top, "python_version")
+            with open(python_version_path, "w") as python_version_file:
+                print("%s.%s" % sys.version_info[:2], file=python_version_file)
+
 
 __version__ = '2.2.3'
 
@@ -144,28 +151,31 @@ setup(
     # used in zcml.
     install_requires=[
         'ampoule',
-        'auditorclient',
-        'auditorfixture',
-        'backports.lzma',
-        'BeautifulSoup',
+        'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
+        'breezy',
         'bzr',
         'celery',
+        'contextlib2; python_version < "3.3"',
         'cssselect',
         'cssutils',
         'defusedxml',
-        'dkimpy',
-        # Required for dkimpy
-        'dnspython',
+        'dkimpy[ed25519]',
         'dulwich',
         'feedparser',
         'feedvalidator',
         'fixtures',
+        # Required for gunicorn[gthread].  We depend on it explicitly
+        # because gunicorn declares its dependency in a way that produces
+        # (and thus may cache) different wheels depending on whether it was
+        # built on Python 2 or 3 while claiming that the wheels are
+        # universal.
+        # XXX cjwatson 2020-02-03: Remove this once we're on Python 3.
+        'futures; python_version < "3.2"',
         'geoip2',
-        'gunicorn[gthread]',
-        'html5browser',
-        'importlib-resources',
-        'ipaddress',
+        'gunicorn',
+        'importlib-resources; python_version < "3.7"',
+        'ipaddress; python_version < "3.3"',
         'ipython',
         'jsautobuild',
         'launchpad-buildd',
@@ -177,15 +187,12 @@ setup(
         'lazr.jobrunner',
         'lazr.lifecycle',
         'lazr.restful',
-        'lazr.smtptest',
         'lazr.sshserver',
         'lazr.uri',
         'lpjsmin',
         'Markdown',
-        'mechanize',
         'meliae',
-        # Pin version for now to avoid confusion with system site-packages.
-        'mock==1.0.1',
+        'mock',
         'oauth',
         'oops',
         'oops_amqp',
@@ -194,6 +201,7 @@ setup(
         'oops_twisted',
         'oops_wsgi',
         'paramiko',
+        'psutil',
         'pgbouncer',
         'psycopg2',
         'pyasn1',
@@ -223,6 +231,7 @@ setup(
         'Sphinx',
         'storm',
         'subvertpy',
+        'tenacity',
         'testscenarios',
         'testtools',
         'timeline',
@@ -233,18 +242,23 @@ setup(
         'txpkgupload',
         'virtualenv-tools3',
         'wadllib',
+        'WebOb',
+        'WebTest',
         'WSGIProxy2',
-        'z3c.pt',
         'z3c.ptcompat',
         'zc.zservertracelog',
         'zope.app.http',
         'zope.app.publication',
         'zope.app.publisher',
         'zope.app.server',
-        'zope.app.testing',
-        'zope.app.wsgi',
+        'zope.app.wsgi[testlayer]',
         'zope.authentication',
+        'zope.browser',
+        'zope.browsermenu',
+        'zope.browserpage',
+        'zope.browserresource',
         'zope.component[zcml]',
+        'zope.configuration',
         'zope.contenttype',
         'zope.datetime',
         'zope.error',
@@ -270,7 +284,7 @@ setup(
         'zope.session',
         'zope.tal',
         'zope.tales',
-        'zope.testbrowser[wsgi]',
+        'zope.testbrowser',
         'zope.testing',
         'zope.testrunner[subunit]',
         'zope.traversing',
@@ -278,6 +292,7 @@ setup(
         'zope.vocabularyregistry',
         # Loggerhead dependencies. These should be removed once
         # bug 383360 is fixed and we include it as a source dist.
+        'bleach',
         'Paste',
         'PasteDeploy',
         'SimpleTAL',
@@ -297,7 +312,6 @@ setup(
                 'lp.services.sitesearch.bingtestservice:main',
             'build-twisted-plugin-cache = '
                 'lp.services.twistedsupport.plugincache:main',
-            'combine-css = lp.scripts.utilities.js.combinecss:main',
             'generate-key-pair = '
                 'lp.services.crypto.scripts.generatekeypair:main',
             'harness = lp.scripts.harness:python',

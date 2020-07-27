@@ -53,7 +53,7 @@ Then create a result object.
     >>> from lp.code.enums import CodeImportResultStatus
     >>> new_result = factory.makeCodeImportResult(
     ...     sample_import, result_status=CodeImportResultStatus.SUCCESS,
-    ...     date_started=time_source.next(), log_excerpt=log_excerpt,
+    ...     date_started=next(time_source), log_excerpt=log_excerpt,
     ...     log_alias=log_alias, machine=odin)
     >>> verifyObject(ICodeImportResult, new_result)
     True
@@ -95,9 +95,9 @@ method works as expected.
 
     >>> oldest_result = new_result
     >>> middle_result = factory.makeCodeImportResult(
-    ...     sample_import, date_started = time_source.next())
+    ...     sample_import, date_started = next(time_source))
     >>> newest_result = factory.makeCodeImportResult(
-    ...     sample_import, date_started = time_source.next())
+    ...     sample_import, date_started = next(time_source))
 
 Results for other imports of course should not be present in the
 results, so we should create one of those just to be sure that it's

@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2018-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package jobs."""
@@ -19,6 +19,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import six
 from storm.locals import (
     Desc,
     Int,
@@ -59,6 +60,7 @@ from lp.snappy.interfaces.snap import (
     CannotParseSnapcraftYaml,
     MissingSnapcraftYaml,
     )
+from lp.snappy.interfaces.snapbase import NoSuchSnapBase
 from lp.snappy.interfaces.snapjob import (
     ISnapJob,
     ISnapRequestBuildsJob,
@@ -119,9 +121,7 @@ class SnapJob(StormBase):
 
 
 @delegate_to(ISnapJob)
-class SnapJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class SnapJobDerived(six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     def __init__(self, snap_job):
         self.context = snap_job
@@ -176,7 +176,11 @@ class SnapRequestBuildsJob(SnapJobDerived):
 
     class_job_type = SnapJobType.REQUEST_BUILDS
 
-    user_error_types = (CannotParseSnapcraftYaml, MissingSnapcraftYaml)
+    user_error_types = (
+        CannotParseSnapcraftYaml,
+        MissingSnapcraftYaml,
+        NoSuchSnapBase,
+        )
     retry_error_types = (CannotFetchSnapcraftYaml,)
 
     max_retries = 5

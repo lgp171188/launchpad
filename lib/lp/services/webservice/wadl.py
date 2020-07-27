@@ -5,10 +5,13 @@
 
 __metaclass__ = type
 
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 import subprocess
-import urlparse
 
-import importlib_resources
+from six.moves.urllib.parse import urljoin
 
 from lp.services.webapp.interaction import (
     ANONYMOUS,
@@ -24,7 +27,7 @@ from lp.services.webapp.vhosts import allvhosts
 def _generate_web_service_root(version, mimetype):
     """Generate the webservice description for the given version and mimetype.
     """
-    url = urlparse.urljoin(allvhosts.configs['api'].rooturl, version)
+    url = urljoin(allvhosts.configs['api'].rooturl, version)
     # Since we want HTTPS URLs we have to munge the request URL.
     url = url.replace('http://', 'https://')
     request = WebServiceTestRequest(version=version, environ={
@@ -57,7 +60,7 @@ def generate_html(wadl_filename, suppress_stderr=True):
     # stderr (like we want to do during test runs), we reassign the subprocess
     # stderr file handle and then discard the output.  Otherwise we let the
     # subprocess inherit stderr.
-    with importlib_resources.path(
+    with resources.path(
             'lp.services.webservice', 'wadl-to-refhtml.xsl') as stylesheet:
         if suppress_stderr:
             stderr = subprocess.PIPE

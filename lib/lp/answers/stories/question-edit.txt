@@ -39,7 +39,7 @@ And viewing that page should show the updated information.
 
     >>> soup = find_main_content(test_browser.contents)
     >>> print(soup.find('div', 'report').renderContents().strip())
-    <p>Hi! I&#x27;m trying to learn about SVG but I can&#x27;t get it to
+    <p>Hi! I'm trying to learn about SVG but I can't get it to
     work at all in firefox. Maybe there is a plugin? Help! Thanks.
     Mark</p>
     >>> print(soup.find('h1').renderContents())

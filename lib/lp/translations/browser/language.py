@@ -163,6 +163,7 @@ class LanguageAddView(LaunchpadFormView):
     schema = ILanguage
     field_names = ['code', 'englishname', 'nativename', 'pluralforms',
                    'pluralexpression', 'visible', 'direction']
+    invariant_context = None
     language = None
 
     page_title = "Register a language"

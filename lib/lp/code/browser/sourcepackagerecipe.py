@@ -17,7 +17,7 @@ __all__ = [
 
 import itertools
 
-from bzrlib.plugins.builder.recipe import (
+from breezy.plugins.builder.recipe import (
     ForbiddenInstructionError,
     RecipeParseError,
     )
@@ -33,8 +33,8 @@ from lazr.restful.interfaces import (
     )
 import simplejson
 from storm.locals import Store
-from z3c.ptcompat import ViewPageTemplateFile
 from zope import component
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
@@ -755,7 +755,7 @@ class SourcePackageRecipeAddView(RecipeRelatedBranchesMixin,
         yield "%s-daily" % branch_target_name
         counter = itertools.count(1)
         while True:
-            yield "%s-daily-%s" % (branch_target_name, counter.next())
+            yield "%s-daily-%s" % (branch_target_name, next(counter))
 
     def _find_unused_name(self, owner):
         # Grab the last path element of the branch target path.

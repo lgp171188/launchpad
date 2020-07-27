@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Error logging facilities."""
@@ -9,7 +9,6 @@ import contextlib
 from itertools import repeat
 import operator
 import re
-import urlparse
 
 from lazr.restful.utils import (
     get_current_browser_request,
@@ -20,6 +19,7 @@ import oops_amqp
 from oops_datedir_repo import DateDirRepo
 import oops_timeline
 import pytz
+from six.moves.urllib.parse import urlparse
 from zope.component.interfaces import ObjectEvent
 from zope.error.interfaces import IErrorReportingUtility
 from zope.event import notify
@@ -177,6 +177,7 @@ def attach_http_request(report, context):
 
     missing = object()
     principal = getattr(request, 'principal', missing)
+
     if safe_hasattr(principal, 'getLogin'):
         login = principal.getLogin()
     elif principal is missing or principal is None:
@@ -395,9 +396,8 @@ class ErrorReportingUtility:
                 # broken-url-generator in LP: ignore it.
                 if referer is None:
                     return True
-                referer_parts = urlparse.urlparse(referer)
-                root_parts = urlparse.urlparse(
-                    allvhosts.configs['mainsite'].rooturl)
+                referer_parts = urlparse(referer)
+                root_parts = urlparse(allvhosts.configs['mainsite'].rooturl)
                 if root_parts.netloc not in referer_parts.netloc:
                     return True
         return False
@@ -449,7 +449,7 @@ class ErrorReportingUtility:
         :param message: Unicode message.
         :returns: Key for this message.
         """
-        key = self._oops_message_key_iter.next()
+        key = next(self._oops_message_key_iter)
         self._oops_messages[key] = message
         return key
 

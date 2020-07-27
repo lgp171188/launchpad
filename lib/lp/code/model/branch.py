@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -14,9 +14,9 @@ import json
 import operator
 import os.path
 
-from bzrlib import urlutils
-from bzrlib.revision import NULL_REVISION
-from bzrlib.url_policy_open import open_only_scheme
+from breezy import urlutils
+from breezy.revision import NULL_REVISION
+from breezy.url_policy_open import open_only_scheme
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six
@@ -24,8 +24,6 @@ from six.moves.urllib_parse import urlsplit
 from sqlobject import (
     ForeignKey,
     IntCol,
-    SQLMultipleJoin,
-    SQLRelatedJoin,
     StringCol,
     )
 from storm.expr import (
@@ -38,7 +36,10 @@ from storm.expr import (
     Select,
     SQL,
     )
-from storm.locals import AutoReload
+from storm.locals import (
+    AutoReload,
+    ReferenceSet,
+    )
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
@@ -84,6 +85,7 @@ from lp.code.bzr import (
     )
 from lp.code.enums import (
     BranchLifecycleStatus,
+    BranchListingSort,
     BranchMergeProposalStatus,
     BranchType,
     )
@@ -110,7 +112,10 @@ from lp.code.interfaces.branch import (
     user_has_special_branch_access,
     WrongNumberOfReviewTypeArguments,
     )
-from lp.code.interfaces.branchcollection import IAllBranches
+from lp.code.interfaces.branchcollection import (
+    IAllBranches,
+    IBranchCollection,
+    )
 from lp.code.interfaces.branchhosting import IBranchHostingClient
 from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.interfaces.branchmergeproposal import (
@@ -292,7 +297,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # this branch.
         self.information_type = information_type
         self._reconcileAccess()
-        if information_type in PRIVATE_INFORMATION_TYPES and self.subscribers:
+        if (information_type in PRIVATE_INFORMATION_TYPES and
+                not self.subscribers.is_empty()):
             # Grant the subscriber access if they can't see the branch.
             service = getUtility(IService, 'sharing')
             blind_subscribers = service.getPeopleWithoutAccess(
@@ -431,18 +437,18 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         result = result.order_by(Desc(BranchRevision.sequence))
         return DecoratedResultSet(result, operator.itemgetter(0))
 
-    subscriptions = SQLMultipleJoin(
-        'BranchSubscription', joinColumn='branch', orderBy='id')
-    subscribers = SQLRelatedJoin(
-        'Person', joinColumn='branch', otherColumn='person',
-        intermediateTable='BranchSubscription', orderBy='name')
+    subscriptions = ReferenceSet(
+        'id', 'BranchSubscription.branch_id', order_by='BranchSubscription.id')
+    subscribers = ReferenceSet(
+        'id', 'BranchSubscription.branch_id',
+        'BranchSubscription.person_id', 'Person.id', order_by='Person.name')
 
-    bug_branches = SQLMultipleJoin(
-        'BugBranch', joinColumn='branch', orderBy='id')
+    bug_branches = ReferenceSet(
+        'id', 'BugBranch.branch_id', order_by='BugBranch.id')
 
-    linked_bugs = SQLRelatedJoin(
-        'Bug', joinColumn='branch', otherColumn='bug',
-        intermediateTable='BugBranch', orderBy='id')
+    linked_bugs = ReferenceSet(
+        'id', 'BugBranch.branch_id',
+        'BugBranch.bug_id', 'Bug.id', order_by='Bug.id')
 
     def getLinkedBugTasks(self, user, status_filter=None):
         """See `IBranch`."""
@@ -461,8 +467,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         return bug.unlinkBranch(self, user)
 
-    spec_links = SQLMultipleJoin(
-        'SpecificationBranch', joinColumn='branch', orderBy='id')
+    spec_links = ReferenceSet(
+        'id', 'SpecificationBranch.branch_id',
+        order_by='SpecificationBranch.id')
 
     def getSpecificationLinks(self, user):
         """See `IBranch`."""
@@ -470,10 +477,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             SpecificationBranch,
             Join(
                 Specification,
-                SpecificationBranch.specificationID == Specification.id)]
+                SpecificationBranch.specification_id == Specification.id)]
         return Store.of(self).using(*tables).find(
             SpecificationBranch,
-            SpecificationBranch.branchID == self.id,
+            SpecificationBranch.branch_id == self.id,
             *get_specification_privacy_filter(user))
 
     def linkSpecification(self, spec, registrant):
@@ -1063,9 +1070,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         if person is None:
             return None
-        subscription = BranchSubscription.selectOneBy(
-            person=person, branch=self)
-        return subscription
+        return Store.of(self).find(
+            BranchSubscription,
+            BranchSubscription.person == person,
+            BranchSubscription.branch == self).one()
 
     def getSubscriptionsByLevel(self, notification_levels):
         """See `IBranch`."""
@@ -1255,7 +1263,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         jobs = Store.of(self).find(
             BranchJob,
             BranchJob.branch == self,
-            Job.id == BranchJob.jobID,
+            Job.id == BranchJob.job_id,
             Job._status.is_in([JobStatus.WAITING, JobStatus.RUNNING]),
             BranchJob.job_type == BranchJobType.SCAN_BRANCH)
         pending_scan_job = not jobs.is_empty()
@@ -1424,7 +1432,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # Remove BranchJobs.
         store = Store.of(self)
         affected_jobs = Select(
-            [BranchJob.jobID],
+            [BranchJob.job_id],
             And(BranchJob.job == Job.id, BranchJob.branch == self))
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
 
@@ -1490,7 +1498,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         jobs = store.find(
             BranchJob,
             BranchJob.branch == self,
-            Job.id == BranchJob.jobID,
+            Job.id == BranchJob.job_id,
             Job._status != JobStatus.COMPLETED,
             Job._status != JobStatus.FAILED,
             BranchJob.job_type == BranchJobType.UPGRADE_BRANCH)
@@ -1712,13 +1720,21 @@ class BranchSet:
         """See `IBranchSet`."""
         return getUtility(IBranchLookup).getByPath(path)
 
-    def getBranches(self, limit=50, eager_load=True):
+    def getBranches(self, user, target=None,
+                    order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                    modified_since_date=None, limit=None, eager_load=True):
         """See `IBranchSet`."""
-        anon_branches = getUtility(IAllBranches).visibleByUser(None)
-        branches = anon_branches.scanned().getBranches(eager_load=eager_load)
-        branches.order_by(
-            Desc(Branch.date_last_modified), Desc(Branch.id))
-        branches.config(limit=limit)
+        if target is not None:
+            collection = IBranchCollection(target)
+        else:
+            collection = getUtility(IAllBranches)
+        collection = collection.visibleByUser(user)
+        if modified_since_date is not None:
+            collection = collection.modifiedSince(modified_since_date)
+        branches = collection.scanned().getBranches(
+            eager_load=eager_load, sort_by=order_by)
+        if limit is not None:
+            branches.config(limit=limit)
         return branches
 
     def getBranchVisibilityInfo(self, user, person, branch_names):

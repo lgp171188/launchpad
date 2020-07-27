@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -191,12 +191,6 @@ flag_info = sorted([
      '',
      '',
      ''),
-    ('auditor.enabled',
-     'boolean',
-     'If true, send audit data to an auditor instance.',
-     '',
-     '',
-     ''),
     ('app.root_blog.enabled',
      'boolean',
      'If true, load posts from the Launchpad blog to show on the root page.',
@@ -232,6 +226,12 @@ flag_info = sorted([
      'Name of the site search engine backend (only "bing" is available).',
      'bing',
      'Site search engine',
+     ''),
+    ('archivepublisher.signing_service.enabled',
+     'boolean',
+     'If true, sign packages using signing service instead of local files.',
+     '',
+     '',
      ''),
     ])
 

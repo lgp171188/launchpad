@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security policies for using content objects."""
@@ -112,6 +112,13 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDevice,
     IHWVendorID,
     )
+from lp.oci.interfaces.ocipushrule import IOCIPushRule
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeBuildRequest,
+    )
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.announcement import IAnnouncement
 from lp.registry.interfaces.distribution import IDistribution
@@ -246,6 +253,7 @@ from lp.soyuz.interfaces.publishing import (
     )
 from lp.soyuz.interfaces.queue import (
     IPackageUpload,
+    IPackageUploadLog,
     IPackageUploadQueue,
     )
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
@@ -1566,13 +1574,28 @@ class OnlyVcsImportsAndAdmins(AuthorizationBase):
         return user.in_admin or user.in_vcs_imports
 
 
-class EditCodeImport(OnlyVcsImportsAndAdmins):
+class EditCodeImport(AuthorizationBase):
     """Control who can edit the object view of a CodeImport.
 
     Currently, we restrict the visibility of the new code import
-    system to members of ~vcs-imports and Launchpad admins.
+    system to owners, members of ~vcs-imports and Launchpad admins.
     """
     permission = 'launchpad.Edit'
+    usedfor = ICodeImport
+
+    def checkAuthenticated(self, user):
+        return (user.inTeam(self.obj.owner) or
+                user.in_admin or
+                user.in_vcs_imports)
+
+
+class ModerateCodeImport(OnlyVcsImportsAndAdmins):
+    """Control who can moderate a CodeImport.
+
+    Currently, we restrict the visibility of code import moderation
+    system to members of ~vcs-imports and Launchpad admins.
+    """
+    permission = 'launchpad.Moderate'
     usedfor = ICodeImport
 
 
@@ -1916,6 +1939,15 @@ class ViewPackageUpload(AuthorizationBase):
     def checkUnauthenticated(self):
         return any(map(
             methodcaller("checkUnauthenticated"), self.iter_adapters()))
+
+
+class ViewPackageUploadLog(DelegatedAuthorization):
+    """Anyone who can view a package upload can view its logs."""
+    permission = 'launchpad.View'
+    usedfor = IPackageUploadLog
+
+    def __init__(self, obj):
+        super(ViewPackageUploadLog, self).__init__(obj, obj.package_upload)
 
 
 class EditPackageUpload(AdminByAdminsTeam):
@@ -3434,24 +3466,118 @@ class EditSnapBaseSet(EditByRegistryExpertsOrAdmins):
     usedfor = ISnapBaseSet
 
 
+class ViewOCIProject(AnonymousAuthorization):
+    """Anyone can view an `IOCIProject`."""
+    usedfor = IOCIProject
+
+
 class EditOCIProject(AuthorizationBase):
     permission = 'launchpad.Edit'
     usedfor = IOCIProject
 
     def checkAuthenticated(self, user):
         """Maintainers, drivers, and admins can drive projects."""
-        # XXX twom 2019-10-29 This ideally shouldn't be driver, but a
-        # new role name that cascades upwards from the OCIProject
-        # to the pillar
         return (user.in_admin or
-                user.isDriver(self.obj.pillar))
+                user.isDriver(self.obj.pillar) or
+                self.obj.pillar.canAdministerOCIProjects(user))
 
 
-class EditOCIProjectSeries(AuthorizationBase):
+class EditOCIProjectSeries(DelegatedAuthorization):
     permission = 'launchpad.Edit'
     usedfor = IOCIProjectSeries
 
+    def __init__(self, obj):
+        super(EditOCIProjectSeries, self).__init__(obj, obj.oci_project)
+
+
+class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
+    permission = 'launchpad.View'
+    usedfor = IOCIRecipeBuildRequest
+
+    def __init__(self, obj):
+        super(ViewOCIRecipeBuildRequest, self).__init__(
+            obj, obj.recipe, 'launchpad.View')
+
+
+class ViewOCIRecipe(AnonymousAuthorization):
+    """Anyone can view an `IOCIRecipe`."""
+    usedfor = IOCIRecipe
+
+
+class EditOCIRecipe(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIRecipe
+
     def checkAuthenticated(self, user):
-        """Maintainers, drivers, and admins can drive projects."""
-        return (user.in_admin or
-                user.isDriver(self.obj.ociproject.pillar))
+        return (
+            user.isOwner(self.obj) or
+            user.in_commercial_admin or user.in_admin)
+
+
+class AdminOCIRecipe(AuthorizationBase):
+    """Restrict changing build settings on OCI recipes.
+
+    The security of the non-virtualised build farm depends on these
+    settings, so they can only be changed by "PPA"/commercial admins, or by
+    "PPA" self admins on OCI recipes that they can already edit.
+    """
+    permission = 'launchpad.Admin'
+    usedfor = IOCIRecipe
+
+    def checkAuthenticated(self, user):
+        if user.in_ppa_admin or user.in_commercial_admin or user.in_admin:
+            return True
+        return (
+            user.in_ppa_self_admins
+            and EditSnap(self.obj).checkAuthenticated(user))
+
+
+class ViewOCIRecipeBuild(AnonymousAuthorization):
+    """Anyone can view an `IOCIRecipe`."""
+    usedfor = IOCIRecipeBuild
+
+
+class EditOCIRecipeBuild(AdminByBuilddAdmin):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIRecipeBuild
+
+    def checkAuthenticated(self, user):
+        """Check edit access for OCI recipe builds.
+
+        Allow admins, buildd admins, and the owner of the OCI recipe.
+        (Note that the requester of the build is required to be in the team
+        that owns the OCI recipe.)
+        """
+        auth_recipe = EditOCIRecipe(self.obj.recipe)
+        if auth_recipe.checkAuthenticated(user):
+            return True
+        return super(EditOCIRecipeBuild, self).checkAuthenticated(user)
+
+
+class AdminOCIRecipeBuild(AdminByBuilddAdmin):
+    usedfor = IOCIRecipeBuild
+
+
+class ViewOCIRegistryCredentials(AuthorizationBase):
+    permission = 'launchpad.View'
+    usedfor = IOCIRegistryCredentials
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj) or
+            user.in_admin)
+
+
+class ViewOCIPushRule(AnonymousAuthorization):
+    """Anyone can view an `IOCIPushRule`."""
+    usedfor = IOCIPushRule
+
+
+class OCIPushRuleEdit(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIPushRule
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj.recipe) or
+            user.in_commercial_admin or user.in_admin)

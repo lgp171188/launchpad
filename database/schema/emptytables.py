@@ -1,9 +1,11 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """List empty database tables."""
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
@@ -31,7 +33,7 @@ def main(options):
                 "SELECT TRUE FROM public.%s LIMIT 1" % quote_identifier(table)
                 )
         if cur.fetchone() is None:
-            print table
+            print(table)
 
 
 if __name__ == '__main__':

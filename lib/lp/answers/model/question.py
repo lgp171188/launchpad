@@ -31,10 +31,14 @@ from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
     )
 from storm.expr import LeftJoin
+from storm.locals import (
+    Int,
+    Reference,
+    )
+from storm.references import ReferenceSet
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
@@ -100,6 +104,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
     cursor,
@@ -185,8 +190,8 @@ class Question(SQLBase, BugLinkTargetMixin):
     answerer = ForeignKey(
         dbName='answerer', notNull=False, foreignKey='Person',
         storm_validator=validate_public_person, default=None)
-    answer = ForeignKey(dbName='answer', notNull=False,
-        foreignKey='QuestionMessage', default=None)
+    answer_id = Int(name='answer', allow_none=True, default=None)
+    answer = Reference(answer_id, 'QuestionMessage.id')
     datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
     datedue = UtcDateTimeCol(notNull=False, default=None)
     datelastquery = UtcDateTimeCol(notNull=True, default=DEFAULT)
@@ -206,15 +211,23 @@ class Question(SQLBase, BugLinkTargetMixin):
         dbName='faq', foreignKey='FAQ', notNull=False, default=None)
 
     # useful joins
-    subscriptions = SQLMultipleJoin('QuestionSubscription',
-        joinColumn='question', orderBy='id')
-    subscribers = SQLRelatedJoin('Person',
-        joinColumn='question', otherColumn='person',
-        intermediateTable='QuestionSubscription', orderBy='name')
-    messages = SQLMultipleJoin('QuestionMessage', joinColumn='question',
-        prejoins=['message'], orderBy=['QuestionMessage.id'])
+    subscriptions = ReferenceSet(
+        'id', 'QuestionSubscription.question_id',
+        order_by='QuestionSubscription.id')
+    subscribers = ReferenceSet(
+        'id', 'QuestionSubscription.question_id',
+        'QuestionSubscription.person_id', 'Person.id', order_by='Person.name')
+    # This should be `messages`, but we use it in a SnapShot during the
+    # notification cycle, which don't appear to support saving the state of
+    # ReferenceSets, so use a list() property instead.
+    _messages = ReferenceSet(
+        'id', 'QuestionMessage.question_id', order_by='QuestionMessage.id')
     reopenings = SQLMultipleJoin('QuestionReopening', orderBy='datecreated',
         joinColumn='question')
+
+    @property
+    def messages(self):
+        return list(self._messages)
 
     # attributes
     def target(self):
@@ -261,8 +274,11 @@ class Question(SQLBase, BugLinkTargetMixin):
 
     def isSubscribed(self, person):
         """See `IQuestion`."""
-        return bool(
-            QuestionSubscription.selectOneBy(question=self, person=person))
+        store = IStore(QuestionSubscription)
+        return not store.find(
+            QuestionSubscription,
+            QuestionSubscription.question == self,
+            QuestionSubscription.person == person).is_empty()
 
     # Workflow methods
 
@@ -536,9 +552,7 @@ class Question(SQLBase, BugLinkTargetMixin):
                         '%s does not have permission to unsubscribe %s.' % (
                             unsubscribed_by.displayname,
                             person.displayname))
-                store = Store.of(sub)
-                sub.destroySelf()
-                store.flush()
+                Store.of(sub).remove(sub)
                 return
 
     def getDirectSubscribers(self):
@@ -648,7 +662,7 @@ class Question(SQLBase, BugLinkTargetMixin):
             MessageChunk(message=msg, content=content, sequence=1)
 
         tktmsg = QuestionMessage(
-            question=self, message=msg, action=action, new_status=new_status)
+            self, msg, action, new_status, owner)
         notify(ObjectCreatedEvent(tktmsg, user=tktmsg.owner))
         # Make sure we update the relevant date of response or query.
         if update_question_dates:

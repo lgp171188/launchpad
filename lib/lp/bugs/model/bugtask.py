@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes that implement IBugTask and its related interfaces."""
@@ -32,6 +32,7 @@ import re
 
 from lazr.lifecycle.event import ObjectDeletedEvent
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
@@ -1138,7 +1139,7 @@ class BugTask(SQLBase):
             new_key['sourcepackagename'] != self.sourcepackagename):
             self._syncSourcePackages(new_key['sourcepackagename'], user)
 
-        for name, value in new_key.iteritems():
+        for name, value in six.iteritems(new_key):
             setattr(self, name, value)
         self.updateTargetNameCache()
         self.bug._reconcileAccess()
@@ -1392,7 +1393,7 @@ class BugTaskSet:
                 [(u'bug', unicode(bug_id)) for bug_id in bug_ids],
                 types=[u'specification']).keys())
         bug_ids_with_branches = set(IStore(BugBranch).find(
-                BugBranch.bugID, BugBranch.bugID.is_in(bug_ids)))
+                BugBranch.bug_id, BugBranch.bug_id.is_in(bug_ids)))
         # Badging looks up milestones too : eager load into the storm cache.
         milestoneset = getUtility(IMilestoneSet)
         # And trigger a load:

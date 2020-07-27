@@ -22,7 +22,7 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.datetime import (
     DateTimeError,
@@ -52,14 +52,14 @@ class DateTimeWidget(TextWidget):
     The datetime popup widget shows the time zone in which it will return
     the time:
 
-      >>> print widget()  #doctest: +ELLIPSIS
+      >>> print(widget())  #doctest: +ELLIPSIS
       <BLANKLINE>
       <...in time zone: UTC...
 
     The datetime popup widget links to the page which allows the user to
     change their system time zone.
 
-      >>> print widget()  #doctest: +ELLIPSIS
+      >>> print(widget())  #doctest: +ELLIPSIS
       <BLANKLINE>
       <...<a href="/people/+me/+editlocation">...
 
@@ -67,7 +67,7 @@ class DateTimeWidget(TextWidget):
     default, and the user is not invited to change the time zone:
 
       >>> widget.required_time_zone = pytz.timezone('America/Los_Angeles')
-      >>> print widget()  #doctest: +ELLIPSIS
+      >>> print(widget())  #doctest: +ELLIPSIS
       <BLANKLINE>
       <...in time zone: America/Los_Angeles...
       >>> 'change time zone' not in widget()
@@ -83,7 +83,7 @@ class DateTimeWidget(TextWidget):
       >>> widget.request.form[widget.name] = '2005-07-03'
       >>> widget.from_date = datetime(2006, 5, 23,
       ...                             tzinfo=pytz.timezone('UTC'))
-      >>> print widget.getInputValue()  #doctest: +ELLIPSIS
+      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
       Traceback (most recent call last):
       ...
       WidgetInputError: (...Please pick a date after 2006-05-22 17:00:00...)
@@ -92,14 +92,14 @@ class DateTimeWidget(TextWidget):
     expected.
 
       >>> widget.request.form[widget.name] = '2009-09-14'
-      >>> print widget.getInputValue()  #doctest: +ELLIPSIS
+      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
       2009-09-14 00:00:00-07:00
 
     If to_date is provided then getInputValue() will enforce this too.
 
       >>> widget.to_date = datetime(2008, 1, 26,
       ...                           tzinfo=pytz.timezone('UTC'))
-      >>> print widget.getInputValue()  #doctest: +ELLIPSIS
+      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
       Traceback (most recent call last):
       ...
       WidgetInputError: (...Please pick a date before 2008-01-25 16:00:00...)
@@ -168,12 +168,12 @@ class DateTimeWidget(TextWidget):
         The time zone is a time zone object, not the string representation
         of that.
 
-          >>> print type(widget.time_zone)
+          >>> print(type(widget.time_zone))
           <class 'pytz.UTC'>
 
         The widget required_time_zone is None by default.
 
-          >>> print widget.required_time_zone
+          >>> print(widget.required_time_zone)
           None
 
         The widget "system time zone" is generally UTC. It is the logged in
@@ -181,21 +181,21 @@ class DateTimeWidget(TextWidget):
         user. Although this isn't used directly, it influences the outcome
         of widget.time_zone.
 
-          >>> print widget.system_time_zone
+          >>> print(widget.system_time_zone)
           UTC
 
         When there is no required_time_zone, then we get the system time
         zone.
 
-          >>> print widget.required_time_zone
+          >>> print(widget.required_time_zone)
           None
-          >>> print widget.time_zone
+          >>> print(widget.time_zone)
           UTC
 
         When there is a required_time_zone, we get it:
 
           >>> widget.required_time_zone = pytz.timezone('Africa/Maseru')
-          >>> print widget.time_zone
+          >>> print(widget.time_zone)
           Africa/Maseru
 
         """
@@ -255,9 +255,9 @@ class DateTimeWidget(TextWidget):
 
         The default date range is unlimited:
 
-          >>> print widget.from_date
+          >>> print(widget.from_date)
           None
-          >>> print widget.to_date
+          >>> print(widget.to_date)
           None
 
         If there is no date range, we return None so it won't be included
@@ -265,7 +265,7 @@ class DateTimeWidget(TextWidget):
 
           >>> widget.from_date = None
           >>> widget.to_date = None
-          >>> print widget.daterange
+          >>> print(widget.daterange)
           None
 
         The daterange is correctly expressed as JavaScript in all the
@@ -368,18 +368,18 @@ class DateTimeWidget(TextWidget):
 
         The widget prints out times in UTC:
 
-          >>> print widget._parseInput('2006-01-01 12:00:00')
+          >>> print(widget._parseInput('2006-01-01 12:00:00'))
           2006-01-01 12:00:00+00:00
 
         But it will handle other time zones:
 
           >>> widget.required_time_zone = pytz.timezone('Australia/Perth')
-          >>> print widget._parseInput('2006-01-01 12:00:00')
+          >>> print(widget._parseInput('2006-01-01 12:00:00'))
           2006-01-01 12:00:00+08:00
 
         Invalid dates result in a ConversionError:
 
-          >>> print widget._parseInput('not a date')  #doctest: +ELLIPSIS
+          >>> print(widget._parseInput('not a date'))  #doctest: +ELLIPSIS
           Traceback (most recent call last):
             ...
           ConversionError: ('Invalid date value', ...)
@@ -527,20 +527,20 @@ class DateWidget(DateTimeWidget):
         The widget ignores time and time zone information, returning only
         the date:
 
-          >>> print widget._toFieldValue('2006-01-01 12:00:00')
+          >>> print(widget._toFieldValue('2006-01-01 12:00:00'))
           2006-01-01
 
         Even if you feed it information that gives a time zone, it will
         ignore that:
 
-          >>> print widget._toFieldValue('2006-01-01 2:00:00+06:00')
+          >>> print(widget._toFieldValue('2006-01-01 2:00:00+06:00'))
           2006-01-01
-          >>> print widget._toFieldValue('2006-01-01 23:00:00-06:00')
+          >>> print(widget._toFieldValue('2006-01-01 23:00:00-06:00'))
           2006-01-01
 
         Invalid dates result in a ConversionError:
 
-          >>> print widget._toFieldValue('not a date')  #doctest: +ELLIPSIS
+          >>> print(widget._toFieldValue('not a date'))  #doctest: +ELLIPSIS
           Traceback (most recent call last):
             ...
           ConversionError: ('Invalid date value', ...)

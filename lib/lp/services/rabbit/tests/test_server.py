@@ -5,11 +5,11 @@
 
 __metaclass__ = type
 
-from ConfigParser import SafeConfigParser
 from StringIO import StringIO
 
 from fixtures import EnvironmentVariableFixture
 
+from lp.services.compat import SafeConfigParser
 from lp.services.rabbit.server import RabbitServer
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer

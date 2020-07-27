@@ -7,10 +7,11 @@ Database outages happen by accident and during fastdowntime deployments."""
 
 __metaclass__ = type
 
-from cStringIO import StringIO
-import urllib2
+import io
 
 from fixtures import Fixture
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.request import urlopen
 
 from lp.services.librarian.client import LibrarianClient
 from lp.services.librarianserver.testing.server import LibrarianServerFixture
@@ -73,9 +74,9 @@ class TestLibrarianDBOutage(TestCase):
         self.url = self._makeLibraryFileUrl()
 
     def _makeLibraryFileUrl(self):
-        data = 'whatever'
+        data = b'whatever'
         return self.client.remoteAddFile(
-            'foo.txt', len(data), StringIO(data), 'text/plain')
+            'foo.txt', len(data), io.BytesIO(data), 'text/plain')
 
     def getErrorCode(self):
         # We need to talk to every Librarian thread to ensure all the
@@ -87,9 +88,9 @@ class TestLibrarianDBOutage(TestCase):
         codes = set()
         for count in range(num_librarian_threads):
             try:
-                urllib2.urlopen(self.url).read()
+                urlopen(self.url).read()
                 codes.add(200)
-            except urllib2.HTTPError as error:
+            except HTTPError as error:
                 codes.add(error.code)
         self.assertTrue(len(codes) == 1, 'Mixed responses: %s' % str(codes))
         return codes.pop()

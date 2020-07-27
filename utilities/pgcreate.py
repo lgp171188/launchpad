@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -7,6 +7,8 @@
 
 Like createdb, except will retry on failure.
 ."""
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
@@ -18,7 +20,7 @@ import psycopg2
 
 def main():
     if len(sys.argv) != 3:
-        print >> sys.stderr, 'Usage: %s [template] [dbname]' % sys.argv[0]
+        print('Usage: %s [template] [dbname]' % sys.argv[0], file=sys.stderr)
         return 1
 
     template, dbname = sys.argv[1:]

@@ -9,10 +9,10 @@ __all__ = [
     ]
 
 import os
-from StringIO import StringIO
 import traceback
 
 import psycopg2
+import six
 from zope.component import (
     getAdapter,
     getUtility,
@@ -291,7 +291,7 @@ class ExportResult:
             name=path, size=self.exported_file.size, file=self.exported_file,
             contentType=self.exported_file.content_type)
 
-        self.url = alias.http_url
+        self.url = alias.getURL()
         if logger is not None:
             logger.info("Stored file at %s" % self.url)
 
@@ -346,7 +346,7 @@ class ExportResult:
     def addFailure(self):
         """Store an exception that broke the export."""
         # Get the trace back that produced this failure.
-        exception = StringIO()
+        exception = six.StringIO()
         traceback.print_exc(file=exception)
         exception.seek(0)
         # And store it.

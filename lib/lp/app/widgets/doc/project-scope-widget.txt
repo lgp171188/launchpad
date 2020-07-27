@@ -14,7 +14,8 @@ selected.
 
     >>> empty_request = LaunchpadTestRequest()
     >>> scope_field = Choice(
-    ...     __name__='scope', vocabulary='ProjectGroup', required=False)
+    ...     __name__=six.ensure_str('scope'), vocabulary='ProjectGroup',
+    ...     required=False)
     >>> scope_field = scope_field.bind(object())
     >>> widget = ProjectScopeWidget(
     ...     scope_field, scope_field.vocabulary, empty_request)
@@ -57,7 +58,7 @@ there is no input.
 
 By default, the 'All projects' scope is selected:
 
-    >>> print widget()
+    >>> print(widget())
     <label>
       <input class="radioType" checked="checked"
              id="field.scope.option.all" name="field.scope"
@@ -124,7 +125,7 @@ raised:
 
 The same error text is returned by error():
 
-    >>> print widget.error()
+    >>> print(widget.error())
     There is no project named &#x27;invalid&#x27; registered in Launchpad
 
 If no project name is given at all, a widget error is also raised:
@@ -141,7 +142,7 @@ If no project name is given at all, a widget error is also raised:
     WidgetInputError: ('field.scope', u'',
     LaunchpadValidationError(u'Please enter a project name'))
 
-    >>> print widget.error()
+    >>> print(widget.error())
     Please enter a project name
 
     >>> del form['field.scope.target']
@@ -156,7 +157,7 @@ If no project name is given at all, a widget error is also raised:
     WidgetInputError: ('field.scope', u'',
     LaunchpadValidationError(u'Please enter a project name'))
 
-    >>> print widget.error()
+    >>> print(widget.error())
     Please enter a project name
 
 == setRenderedValue() ==
@@ -170,7 +171,7 @@ button, as well as displaying the product name in the project widget.
     ...     scope_field, scope_field.vocabulary, empty_request)
     >>> projectgroups = getUtility(IProjectGroupSet)
     >>> widget.setRenderedValue(projectgroups.getByName('mozilla'))
-    >>> print widget()
+    >>> print(widget())
     <label>
       <input class="radioType" id="field.scope.option.all"
              name="field.scope" type="radio" value="all" />
@@ -190,7 +191,7 @@ button, as well as displaying the product name in the project widget.
 Setting the scope to None, will default to the 'All projects' option.
 
     >>> widget.setRenderedValue(None)
-    >>> print widget()
+    >>> print(widget())
     <label>
       <input class="radioType" checked="checked"
              id="field.scope.option.all" name="field.scope"
@@ -209,7 +210,7 @@ of the scope option, or `None` if no scope was selected.
     >>> widget = ProjectScopeWidget(
     ...     scope_field, scope_field.vocabulary,
     ...     LaunchpadTestRequest(form=form))
-    >>> print widget.getScope()
+    >>> print(widget.getScope())
     project
 
     >>> form = {'field.scope': 'all',
@@ -217,12 +218,12 @@ of the scope option, or `None` if no scope was selected.
     >>> widget = ProjectScopeWidget(
     ...     scope_field, scope_field.vocabulary,
     ...     LaunchpadTestRequest(form=form))
-    >>> print widget.getScope()
+    >>> print(widget.getScope())
     all
 
     >>> form = {'field.scope.target': ''}
     >>> widget = ProjectScopeWidget(
     ...     scope_field, scope_field.vocabulary,
     ...     LaunchpadTestRequest(form=form))
-    >>> print widget.getScope()
+    >>> print(widget.getScope())
     None

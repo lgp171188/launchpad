@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -14,15 +14,20 @@ from datetime import (
     datetime,
     timedelta,
     )
+import re
+import socket
 
+import ipaddress
 import iso8601
 from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import psutil
 from pytz import utc
 import six
+from six.moves.urllib.parse import urlsplit
 from storm.expr import Desc
 from storm.properties import (
     Bool,
@@ -34,10 +39,7 @@ from storm.properties import (
 from storm.references import Reference
 from storm.store import Store
 import transaction
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from zope.component import getUtility
 from zope.interface import (
     implementer,
     provider,
@@ -45,7 +47,6 @@ from zope.interface import (
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app import versioninfo
-from lp.app.interfaces.security import IAuthorization
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.model.person import Person
 from lp.services.config import config
@@ -64,7 +65,9 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.memoizer import memoize
 from lp.services.scripts import log
+from lp.services.webapp.authorization import iter_authorization
 from lp.services.webhooks.interfaces import (
     IWebhook,
     IWebhookClient,
@@ -107,6 +110,12 @@ class Webhook(StormBase):
     snap_id = Int(name='snap')
     snap = Reference(snap_id, 'Snap.id')
 
+    livefs_id = Int(name='livefs')
+    livefs = Reference(livefs_id, 'LiveFS.id')
+
+    oci_recipe_id = Int(name='oci_recipe')
+    oci_recipe = Reference(oci_recipe_id, 'OCIRecipe.id')
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
     date_created = DateTime(tzinfo=utc, allow_none=False)
@@ -126,6 +135,10 @@ class Webhook(StormBase):
             return self.branch
         elif self.snap is not None:
             return self.snap
+        elif self.livefs is not None:
+            return self.livefs
+        elif self.oci_recipe is not None:
+            return self.oci_recipe
         else:
             raise AssertionError("No target.")
 
@@ -179,7 +192,10 @@ class WebhookSet:
             secret):
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
         from lp.snappy.interfaces.snap import ISnap
+        from lp.soyuz.interfaces.livefs import ILiveFS
+
         hook = Webhook()
         if IGitRepository.providedBy(target):
             hook.git_repository = target
@@ -187,6 +203,10 @@ class WebhookSet:
             hook.branch = target
         elif ISnap.providedBy(target):
             hook.snap = target
+        elif ILiveFS.providedBy(target):
+            hook.livefs = target
+        elif IOCIRecipe.providedBy(target):
+            hook.oci_recipe = target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         hook.registrant = registrant
@@ -210,13 +230,20 @@ class WebhookSet:
     def findByTarget(self, target):
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
         from lp.snappy.interfaces.snap import ISnap
+        from lp.soyuz.interfaces.livefs import ILiveFS
+
         if IGitRepository.providedBy(target):
             target_filter = Webhook.git_repository == target
         elif IBranch.providedBy(target):
             target_filter = Webhook.branch == target
         elif ISnap.providedBy(target):
             target_filter = Webhook.snap == target
+        elif ILiveFS.providedBy(target):
+            target_filter = Webhook.livefs == target
+        elif IOCIRecipe.providedBy(target):
+            target_filter = Webhook.oci_recipe == target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         return IStore(Webhook).find(Webhook, target_filter).order_by(
@@ -234,10 +261,9 @@ class WebhookSet:
         :return: True if the context is visible to the webhook owner,
             otherwise False.
         """
-        roles = IPersonRoles(user)
-        authz = getAdapter(
-            removeSecurityProxy(context), IAuthorization, "launchpad.View")
-        return authz.checkAuthenticated(roles)
+        return all(iter_authorization(
+            removeSecurityProxy(context), "launchpad.View",
+            IPersonRoles(user), {}))
 
     def trigger(self, target, event_type, payload, context=None):
         if context is None:
@@ -347,9 +373,8 @@ class WebhookJob(StormBase):
 
 
 @delegate_to(IWebhookJob)
-class WebhookJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class WebhookJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     def __init__(self, webhook_job):
         self.context = webhook_job
@@ -417,6 +442,14 @@ class WebhookDeliveryJob(WebhookJobDerived):
     # retry_automatically and raising a fatal exception instead.
     max_retries = 1000
 
+    # Reduce the max retries for URL with hosts matching one of the
+    # following pattern, or to invalid IP addresses (such as localhost or
+    # multicast).
+    limited_effort_host_patterns = [
+        re.compile(r".*\.lxd$"),
+    ]
+    limited_effort_retry_period = timedelta(minutes=5)
+
     config = config.IWebhookDeliveryJobSource
 
     @classmethod
@@ -430,6 +463,45 @@ class WebhookDeliveryJob(WebhookJobDerived):
             "Scheduled %r (%s): %s" %
             (job, event_type, _redact_payload(event_type, payload)))
         return job
+
+    @classmethod
+    @memoize
+    def _get_broadcast_addresses(cls):
+        addrs = []
+        for net, addresses in psutil.net_if_addrs().items():
+            for i in addresses:
+                try:
+                    addrs.append(
+                        ipaddress.ip_address(six.text_type(i.broadcast)))
+                except (ValueError, ipaddress.AddressValueError):
+                    pass
+        return addrs
+
+    def is_limited_effort_delivery(self):
+        """Checks if the webhook delivery URL should have limited effort on
+        delivery, reducing the number of retries.
+
+        We do limited effort to deliver in any of the following situations:
+            - URL's host resolves to a loopback or invalid IP address
+            - URL's host matches one of the self.limited_effort_host_patterns
+        """
+        url = self.webhook.delivery_url
+        netloc = six.text_type(urlsplit(url).netloc)
+        if any(i.match(netloc) for i in self.limited_effort_host_patterns):
+            return True
+        try:
+            ip = ipaddress.ip_address(netloc)
+        except (ValueError, ipaddress.AddressValueError):
+            try:
+                resolved_addr = six.text_type(socket.gethostbyname(netloc))
+                ip = ipaddress.ip_address(resolved_addr)
+            except socket.error:
+                # If we could not resolve, we limit the effort to delivery.
+                return True
+        return (
+            ip.is_loopback or ip.is_unspecified or ip.is_multicast
+            or ip in self._get_broadcast_addresses()
+            or (not ip.is_global and not ip.is_private))
 
     @property
     def pending(self):
@@ -499,7 +571,9 @@ class WebhookDeliveryJob(WebhookJobDerived):
     def retry_automatically(self):
         if 'result' not in self.json_data:
             return False
-        if self.json_data['result'].get('connection_error') is not None:
+        if self.is_limited_effort_delivery():
+            duration = self.limited_effort_retry_period
+        elif self.json_data['result'].get('connection_error') is not None:
             duration = timedelta(days=1)
         else:
             status_code = self.json_data['result']['response']['status_code']

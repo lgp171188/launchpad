@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -25,14 +25,14 @@ from itertools import (
     groupby,
     )
 from operator import attrgetter
-from urllib import quote_plus
 
-from bzrlib import urlutils
+from breezy import urlutils
 from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import six
+from six.moves.urllib.parse import quote_plus
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
@@ -92,8 +92,10 @@ from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import (
     BranchMergeProposalStatus,
     GitGranteeType,
+    GitListingSort,
     GitObjectType,
     GitPermissionType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.errors import (
@@ -143,6 +145,7 @@ from lp.code.model.gitrule import (
     GitRuleGrant,
     )
 from lp.code.model.gitsubscription import GitSubscription
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.enums import PersonVisibility
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
@@ -153,6 +156,7 @@ from lp.registry.interfaces.accesspolicy import (
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -290,6 +294,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     repository_type = EnumCol(
         dbName='repository_type', enum=GitRepositoryType, notNull=True)
 
+    status = EnumCol(
+        dbName='status', enum=GitRepositoryStatus, notNull=True,
+        default=GitRepositoryStatus.AVAILABLE)
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
 
@@ -308,6 +316,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     sourcepackagename_id = Int(name='sourcepackagename', allow_none=True)
     sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
 
+    oci_project_id = Int(name='oci_project', allow_none=True)
+    oci_project = Reference(oci_project_id, 'OCIProject.id')
+
     name = Unicode(name='name', allow_none=False)
 
     description = Unicode(name='description', allow_none=True)
@@ -320,7 +331,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     def __init__(self, repository_type, registrant, owner, target, name,
                  information_type, date_created, reviewer=None,
-                 description=None):
+                 description=None, status=None):
         super(GitRepository, self).__init__()
         self.repository_type = repository_type
         self.registrant = registrant
@@ -339,6 +350,12 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         elif IDistributionSourcePackage.providedBy(target):
             self.distribution = target.distribution
             self.sourcepackagename = target.sourcepackagename
+        elif IOCIProject.providedBy(target):
+            self.oci_project = target
+        # XXX pappacena 2020-06-08: We should simplify this once the value of
+        # GitRepository.status column is backfilled.
+        self.status = (status if status is not None
+                       else GitRepositoryStatus.AVAILABLE)
         self.owner_default = False
         self.target_default = False
 
@@ -351,6 +368,31 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             clone_from_path = None
         getUtility(IGitHostingClient).create(
             hosting_path, clone_from=clone_from_path)
+
+    def getClonedFrom(self):
+        """See `IGitRepository`"""
+        repository_set = getUtility(IGitRepositorySet)
+        registrant = self.registrant
+
+        # If repository has target_default, clone from default.
+        clone_from_repository = None
+        try:
+            default = repository_set.getDefaultRepository(
+                self.target)
+            if default is not None and default.visibleByUser(registrant):
+                clone_from_repository = default
+            else:
+                default = repository_set.getDefaultRepositoryForOwner(
+                    self.owner, self.target)
+                if (default is not None and
+                        default.visibleByUser(registrant)):
+                    clone_from_repository = default
+        except GitTargetError:
+            pass  # Ignore Personal repositories.
+        if clone_from_repository == self:
+            clone_from_repository = None
+
+        return clone_from_repository
 
     @property
     def valid_webhook_event_types(self):
@@ -367,10 +409,15 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         if self.project is not None:
             fmt = "~%(owner)s/%(project)s"
             names["project"] = self.project.name
-        elif self.distribution is not None:
+        elif (self.distribution is not None
+              and self.sourcepackagename is not None):
             fmt = "~%(owner)s/%(distribution)s/+source/%(source)s"
             names["distribution"] = self.distribution.name
             names["source"] = self.sourcepackagename.name
+        elif self.oci_project is not None:
+            fmt = "~%(owner)s/%(pillar)s/+oci/%(ociproject)s"
+            names["pillar"] = self.oci_project.pillar.name
+            names["ociproject"] = self.oci_project.ociprojectname.name
         else:
             fmt = "~%(owner)s"
         fmt += "/+git/%(repository)s"
@@ -384,8 +431,11 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """See `IGitRepository`."""
         if self.project is not None:
             return self.project
-        elif self.distribution is not None:
+        elif (self.distribution is not None
+              and self.sourcepackagename is not None):
             return self.distribution.getSourcePackage(self.sourcepackagename)
+        elif self.oci_project is not None:
+            return self.oci_project
         else:
             return self.owner
 
@@ -574,11 +624,13 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         paths = [path]
         if not path.startswith(u"refs/heads/"):
             paths.append(u"refs/heads/%s" % path)
-        for try_path in paths:
-            ref = Store.of(self).find(
-                GitRef,
-                GitRef.repository_id == self.id,
-                GitRef.path == try_path).one()
+        refs = Store.of(self).find(
+            GitRef,
+            GitRef.repository_id == self.id,
+            GitRef.path.is_in(paths))
+        refs_by_path = {r.path: r for r in refs}
+        for path in paths:
+            ref = refs_by_path.get(path)
             if ref is not None:
                 return ref
         return None
@@ -1369,6 +1421,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         if is_owner:
             grants = grants.union(
                 self.findRuleGrantsByGrantee(GitGranteeType.REPOSITORY_OWNER))
+
+        bulk.load_related(Person, grants, ["grantee_id"])
         for grant in grants:
             grants_for_user[grant.rule].append(grant)
 
@@ -1472,29 +1526,36 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """
         alteration_operations = []
         deletion_operations = []
+        seen_merge_proposal_ids = set()
         # Merge proposals require their source and target repositories to
         # exist.
         for merge_proposal in self.landing_targets:
-            deletion_operations.append(
-                DeletionCallable(
-                    merge_proposal,
-                    msg("This repository is the source repository of this "
-                        "merge proposal."),
-                    merge_proposal.deleteProposal))
+            if merge_proposal.id not in seen_merge_proposal_ids:
+                deletion_operations.append(
+                    DeletionCallable(
+                        merge_proposal,
+                        msg("This repository is the source repository of this "
+                            "merge proposal."),
+                        merge_proposal.deleteProposal))
+                seen_merge_proposal_ids.add(merge_proposal.id)
         # Cannot use self.landing_candidates, because it ignores merged
         # merge proposals.
         for merge_proposal in BranchMergeProposal.selectBy(
-            target_git_repository=self):
-            deletion_operations.append(
-                DeletionCallable(
-                    merge_proposal,
-                    msg("This repository is the target repository of this "
-                        "merge proposal."),
-                    merge_proposal.deleteProposal))
+                target_git_repository=self):
+            if merge_proposal.id not in seen_merge_proposal_ids:
+                deletion_operations.append(
+                    DeletionCallable(
+                        merge_proposal,
+                        msg("This repository is the target repository of this "
+                            "merge proposal."),
+                        merge_proposal.deleteProposal))
+                seen_merge_proposal_ids.add(merge_proposal.id)
         for merge_proposal in BranchMergeProposal.selectBy(
-            prerequisite_git_repository=self):
-            alteration_operations.append(
-                ClearPrerequisiteRepository(merge_proposal))
+                prerequisite_git_repository=self):
+            if merge_proposal.id not in seen_merge_proposal_ids:
+                alteration_operations.append(
+                    ClearPrerequisiteRepository(merge_proposal))
+                seen_merge_proposal_ids.add(merge_proposal.id)
         recipes = self.recipes if eager_load else self._getRecipes()
         deletion_operations.extend(
             DeletionCallable(
@@ -1505,6 +1566,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             alteration_operations.append(DeletionCallable(
                 None, msg("Some snap packages build from this repository."),
                 getUtility(ISnapSet).detachFromGitRepository, self))
+        if not getUtility(IOCIRecipeSet).findByGitRepository(self).is_empty():
+            alteration_operations.append(DeletionCallable(
+                None, msg("Some OCI recipes build from this repository."),
+                getUtility(IOCIRecipeSet).detachFromGitRepository, self))
 
         return (alteration_operations, deletion_operations)
 
@@ -1599,8 +1664,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         Store.of(self).remove(self)
         # And now create a job to remove the repository from storage when
         # it's done.
-        getUtility(IReclaimGitRepositorySpaceJobSource).create(
-            repository_name, repository_path)
+        if self.status == GitRepositoryStatus.AVAILABLE:
+            getUtility(IReclaimGitRepositorySpaceJobSource).create(
+                repository_name, repository_path)
 
 
 class DeletionOperation:
@@ -1681,10 +1747,18 @@ class GitRepositorySet:
             return repository
         return None
 
-    def getRepositories(self, user, target):
+    def getRepositories(self, user, target=None,
+                        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                        modified_since_date=None):
         """See `IGitRepositorySet`."""
-        collection = IGitCollection(target).visibleByUser(user)
-        return collection.getRepositories(eager_load=True, order_by_id=True)
+        if target is not None:
+            collection = IGitCollection(target)
+        else:
+            collection = getUtility(IAllGitRepositories)
+        collection = collection.visibleByUser(user)
+        if modified_since_date is not None:
+            collection = collection.modifiedSince(modified_since_date)
+        return collection.getRepositories(eager_load=True, sort_by=order_by)
 
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""
@@ -1716,6 +1790,8 @@ class GitRepositorySet:
             clauses.append(GitRepository.distribution == target.distribution)
             clauses.append(
                 GitRepository.sourcepackagename == target.sourcepackagename)
+        elif IOCIProject.providedBy(target):
+            clauses.append(GitRepository.oci_project == target)
         else:
             raise GitTargetError(
                 "Personal repositories cannot be defaults for any target.")
@@ -1733,13 +1809,19 @@ class GitRepositorySet:
             clauses.append(GitRepository.distribution == target.distribution)
             clauses.append(
                 GitRepository.sourcepackagename == target.sourcepackagename)
+        elif IOCIProject.providedBy(target):
+            clauses.append(GitRepository.oci_project == target)
         else:
             raise GitTargetError(
                 "Personal repositories cannot be defaults for any target.")
         return IStore(GitRepository).find(GitRepository, *clauses).one()
 
-    def setDefaultRepository(self, target, repository):
+    def setDefaultRepository(self, target, repository, force_oci=False):
         """See `IGitRepositorySet`."""
+        if IOCIProject.providedBy(target) and not force_oci:
+            raise GitTargetError(
+                "Cannot manually set a default Git repository"
+                " for an OCI Project")
         if IPerson.providedBy(target):
             raise GitTargetError(
                 "Cannot set a default Git repository for a person, only "

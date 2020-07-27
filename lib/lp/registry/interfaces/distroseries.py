@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistroSeries."""
@@ -14,17 +14,15 @@ __all__ = [
     'IDistroSeriesSet',
     ]
 
-import httplib
-
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -37,6 +35,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -618,27 +617,6 @@ class IDistroSeriesPublic(
             and the value is a `IDistributionSourcePackageRelease`.
         """
 
-    def getPublishedSources(sourcepackage_or_name, pocket=None, version=None,
-                            include_pending=False, archive=None):
-        """Return the SourcePackagePublishingHistory(s)
-
-        Deprecated.  Use IArchive.getPublishedSources instead.
-
-        Given a ISourcePackageName or name.
-
-        If pocket is not specified, we look in all pockets.
-
-        If version is not specified, return packages with any version.
-
-        If 'include_pending' is True, we return also the pending publication
-        records, those packages that will get published in the next publisher
-        run (it's only useful when we need to know if a given package is
-        known during a publisher run, mostly in pre-upload checks)
-
-        If 'archive' is not specified consider publication in the
-        main_archive, otherwise respect the given value.
-        """
-
     def getAllPublishedSources():
         """Return all currently published sources for the distroseries.
 
@@ -788,7 +766,7 @@ class IDistroSeriesPublic(
         :param changesfilename: Name for the upload's .changes file.  You may
             specify a changes file by passing both `changesfilename` and
             `changesfilecontent`, or by passing `changes_file_alias`.
-        :param changesfilecontent: Text for the changes file.  It will be
+        :param changesfilecontent: Bytes for the changes file.  It will be
             signed and stored in the Librarian.  Must be passed together with
             `changesfilename`; alternatively, you may provide a
             `changes_file_alias` to replace both of these.
@@ -996,10 +974,10 @@ class IDistroSeriesEditRestricted(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IDistroSeries(IDistroSeriesEditRestricted, IDistroSeriesPublic,
                     IStructuralSubscriptionTarget):
     """A series of an operating system distribution."""
-    export_as_webservice_entry()
 
 
 # We assign the schema for an `IHasBugs` method argument here
@@ -1069,7 +1047,7 @@ class IDistroSeriesSet(Interface):
         """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DerivationError(Exception):
     """Raised when there is a problem deriving a distroseries."""
     _message_prefix = "Error deriving distro series"

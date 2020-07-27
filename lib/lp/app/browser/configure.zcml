@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -576,6 +576,12 @@
       factory="lp.app.browser.tales.BuildImageDisplayAPI"
       name="image"
       />
+  <adapter
+      for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.BuildImageDisplayAPI"
+      name="image"
+      />
 
   <adapter
       for="lp.soyuz.interfaces.archive.IArchive"
@@ -658,28 +664,14 @@
       />
 
   <adapter
-      for="int"
+      for="zope.interface.common.numbers.IReal"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.NumberFormatterAPI"
       name="fmt"
       />
 
   <adapter
-      for="long"
-      provides="zope.traversing.interfaces.IPathAdapter"
-      factory="lp.app.browser.tales.NumberFormatterAPI"
-      name="fmt"
-      />
-
-  <adapter
-      for="float"
-      provides="zope.traversing.interfaces.IPathAdapter"
-      factory="lp.app.browser.tales.NumberFormatterAPI"
-      name="fmt"
-      />
-
-  <adapter
-      for="types.NoneType"
+      for="lp.app.browser.tales.NoneType"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.NoneFormatter"
       name="fmt"
@@ -861,6 +853,12 @@
       name="fmt"
       />
   <adapter
+      for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.OCIRecipeFormatterAPI"
+      name="fmt"
+      />
+  <adapter
       for="lp.snappy.interfaces.snap.ISnap"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.SnapFormatterAPI"
@@ -952,8 +950,17 @@
       />
 
   <!-- TALES fmt: namespace for strings -->
+  <!-- On Python 2, registering this adapter for both INativeString and
+       ITextString covers both str (bytes) and unicode.  On Python 3, this
+       covers only str; the redundancy is harmless. -->
   <adapter
-      for="basestring"
+      for="zope.interface.common.builtins.INativeString"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.stringformatter.FormattersAPI"
+      name="fmt"
+      />
+  <adapter
+      for="zope.interface.common.builtins.ITextString"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.stringformatter.FormattersAPI"
       name="fmt"

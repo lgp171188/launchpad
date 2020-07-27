@@ -76,8 +76,7 @@ The subteam-of portlet is not shown if the team is not a subteam.
     >>> browser.open('http://launchpad.test/~ubuntu-team')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'subteam-of'))
-    Subteam of
-    &#8220;Ubuntu Team&#8221; is a member of these teams: GuadaMen...
+    Subteam of “Ubuntu Team” is a member of these teams: GuadaMen...
 
     >>> browser.open('http://launchpad.test/~launchpad')
     >>> print find_tag_by_id(browser.contents, 'subteam-of')
@@ -98,15 +97,15 @@ members, the empty lists are hidden using the "hidden" css class:
 
     >>> browser.open('http://launchpad.test/~launchpad')
     >>> tag = find_tag_by_id(browser.contents, 'recently-approved')
-    >>> print tag['class']
+    >>> print ' '.join(tag['class'])
     hidden
 
     >>> tag = find_tag_by_id(browser.contents, 'recently-proposed')
-    >>> print tag['class']
+    >>> print ' '.join(tag['class'])
     hidden
 
     >>> tag = find_tag_by_id(browser.contents, 'recently-invited')
-    >>> print tag['class']
+    >>> print ' '.join(tag['class'])
     hidden
 
 In the above case there's no user logged in, so it doesn't actually show
@@ -159,7 +158,7 @@ address:
 As teams do not have OpenID Logins, there is no link in the Contact
 details section for help.
 
-    >>> sample_browser.getLink('(What\xe2\x80\x99s\xc2\xa0this?)')
+    >>> sample_browser.getLink('OpenID help')
     Traceback (most recent call last):
      ...
     LinkNotFoundError
@@ -171,7 +170,7 @@ will even show the path from the user to the team.
     >>> print extract_text(
     ...     find_tag_by_id(sample_browser.contents, 'your-involvement'))
     You are an indirect member of this team:
-    Sample Person &rarr; Warty Security Team &rarr; Ubuntu Gnome Team...
+    Sample Person → Warty Security Team → Ubuntu Gnome Team...
 
 It is also possible to view the set of mugshots of the people in the
 team.  Notice that the output of mugshots is batched.
@@ -228,5 +227,5 @@ will actually go to the team's administrators.
     Contact this team's admins
 
     >>> content.a
-    <a href="+contactuser"...
+    <a ...href="+contactuser"...
       title="Send an email to this team's admins through Launchpad">...

@@ -7,12 +7,10 @@ import logging
 import os
 import textwrap
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import (
-    BzrDir,
-    format_registry,
-    )
-from bzrlib.urlutils import join as urljoin
+from breezy.branch import Branch
+from breezy.bzr.bzrdir import BzrDir
+from breezy.controldir import format_registry
+from breezy.urlutils import join as urljoin
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
@@ -545,7 +543,7 @@ parser = OptionParser()
 (options, arguments) = parser.parse_args()
 (source_url, destination_url, branch_id, unique_name,
  branch_type_name, default_stacked_on_url) = arguments
-from bzrlib import branch
+from breezy import branch
 branch = branch.Branch.open(destination_url)
 protocol = PullerWorkerProtocol(sys.stdout)
 """
@@ -865,7 +863,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         # We have to use a custom worker script to lower the time we wait for
         # the lock for (the default is five minutes, too long for a test!)
         lower_timeout_script = """
-        from bzrlib import lockdir
+        from breezy import lockdir
         lockdir._DEFAULT_TIMEOUT_SECONDS = 2.0
         from lp.code.enums import BranchType
         from lp.codehosting.puller.worker import (

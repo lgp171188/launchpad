@@ -26,7 +26,7 @@ was supplied (through comments) are 'Incomplete (without response)'.
     ...     ['INCOMPLETE_WITHOUT_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
     >>> find_tag_by_id(user_browser.contents, 'bugs-table-listing').findChild('a')
-    <a href="http://bugs.launchpad.test/jokosher/+bug/11" class="bugtitle">...</a>
+    <a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
 
 Bugs that have been marked incomplete and for which new information was
 supplied are 'Incomplete (with response)'.
@@ -63,7 +63,7 @@ They try again to find that bug using the advanced search form.
     ...     ['INCOMPLETE_WITH_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
     >>> find_tag_by_id(user_browser.contents, 'bugs-table-listing').findChild('a')
-    <a href="http://bugs.launchpad.test/jokosher/+bug/11" class="bugtitle">...</a>
+    <a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
 
 The bug is there, since they supplied new information in a comment. No
 Privileges Person makes sure that it no longer is in the list of
@@ -74,7 +74,7 @@ incomplete bugs without response.
     >>> user_browser.getControl(name='field.status:list').value = (
     ...     ['INCOMPLETE_WITH_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
-    >>> ('<a href="http://bugs.launchpad.test/jokosher/+bug/11" class="bugtitle">' in
+    >>> ('<a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">' in
     ...     find_tag_by_id(user_browser.contents, 'bugs-table-listing'))
     False
 
@@ -266,8 +266,9 @@ response) bugs.
     >>> user_browser.getControl(name='field.status:list').value = (
     ...     ['INCOMPLETE_WITHOUT_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
-    >>> ('<a href="http://bugs.launchpad.test/jokosher/+bug/11" class="bugtitle">' in
-    ...     str(find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
+    >>> ('<a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">' in
+    ...     six.text_type(
+    ...         find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
     True
 
 A default search turns that bug up as well.
@@ -276,6 +277,7 @@ A default search turns that bug up as well.
     >>> user_browser.getControl('Search', index=0).click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/jokosher/+bugs?...&field.status%3Alist=INCOMPLETE_WITH_RESPONSE&field.status%3Alist=INCOMPLETE_WITHOUT_RESPONSE...
-    >>> ('<a href="http://bugs.launchpad.test/jokosher/+bug/11" class="bugtitle">' in
-    ...     str(find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
+    >>> ('<a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">' in
+    ...     six.text_type(
+    ...         find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
     True

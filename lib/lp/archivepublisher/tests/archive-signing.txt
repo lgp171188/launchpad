@@ -127,10 +127,10 @@ location defined by the system configuration.
     /var/tmp/ppa-signing-keys.test
 
 In order to manipulate 'signing_keys' securily the target archive
-object has to be adapted to `IArchiveSigningKey`.
+object has to be adapted to `IArchiveGPGSigningKey`.
 
-    >>> from lp.archivepublisher.interfaces.archivesigningkey import (
-    ...     IArchiveSigningKey)
+    >>> from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    ...     IArchiveGPGSigningKey)
 
 We will adapt Celso's PPA after modifing its distribution to allow
 proper publish configuration based on the sampledata.
@@ -142,15 +142,15 @@ proper publish configuration based on the sampledata.
     >>> cprov.archive.distribution = getUtility(
     ...     IDistributionSet).getByName('ubuntutest')
 
-    >>> archive_signing_key = IArchiveSigningKey(cprov.archive)
+    >>> archive_signing_key = IArchiveGPGSigningKey(cprov.archive)
 
-Once adapted `IArchiveSigningKey` is properly implemented.
+Once adapted `IArchiveGPGSigningKey` is properly implemented.
 
     >>> from zope.interface.verify import verifyObject
-    >>> verifyObject(IArchiveSigningKey, archive_signing_key)
+    >>> verifyObject(IArchiveGPGSigningKey, archive_signing_key)
     True
 
-`IArchiveSigningKey` object contain the corresponding IArchive
+`IArchiveGPGSigningKey` object contain the corresponding IArchive
 object.
 
     >>> print archive_signing_key.archive.displayname
@@ -185,7 +185,7 @@ in the expected path.
     ...     archive_signing_key.getPathForSecretKey(mock_key)).read()
     Secret True
 
-At this point we can use the `IArchiveSigningKey` to generate and
+At this point we can use the `IArchiveGPGSigningKey` to generate and
 assign a real signing_key, although this procedure depends heavily on
 machine entropy and ends up being very slow in our test machine.
 
@@ -193,7 +193,7 @@ machine entropy and ends up being very slow in our test machine.
 
 We will use a pre-existing key in our tree which is virtually
 identical to the one that would be generated. The key will be 'set' by
-using a method `IArchiveSigningKey` skips the key generation but uses
+using a method `IArchiveGPGSigningKey` skips the key generation but uses
 exactly the same procedure for setting the signing_key information.
 
     >>> import os
@@ -300,7 +300,7 @@ Default PPAs are always created first and thus get their keys generated
 before the named-ppa for the same owner. We submit the named-ppa to
 the key generation procedure, as it would be normally in production.
 
-    >>> named_ppa_signing_key = IArchiveSigningKey(named_ppa)
+    >>> named_ppa_signing_key = IArchiveGPGSigningKey(named_ppa)
     >>> named_ppa_signing_key.generateSigningKey()
 
 Instead of generating a new key, the signing key from the default ppa
@@ -348,7 +348,7 @@ in the default PPA context then propagated to the named-ppa. The key is
 named after the user, even if the default PPA name is something different.
 
     >>> cprov.display_name = "Not Celso Providelo"
-    >>> named_ppa_signing_key = IArchiveSigningKey(named_ppa)
+    >>> named_ppa_signing_key = IArchiveGPGSigningKey(named_ppa)
     >>> named_ppa_signing_key.generateSigningKey()
     Generating: Launchpad PPA for Not Celso Providelo
 
@@ -366,7 +366,7 @@ Restore the original functionality of GPGHandler.
 Signing PPA repository
 ----------------------
 
-`IArchiveSigningKey.signRepository` can be user to sign repositories
+`IArchiveGPGSigningKey.signRepository` can be user to sign repositories
 for archive which already contains a 'signing_key'.
 
 Celso's default PPA will uses the testing signing key.

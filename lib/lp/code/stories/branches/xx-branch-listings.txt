@@ -25,7 +25,7 @@ branches in the listings.
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
     >>> print(links.renderContents())
     <BLANKLINE>
-    ...1...&rarr;...6...of 10 results...
+    ...1...→...6...of 10 results...
 
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
     >>> for row in table.thead.findAll('tr'):
@@ -52,7 +52,7 @@ and are really just branch metadata without the revisions behind them.
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
     >>> print(links.renderContents())
     <BLANKLINE>
-    ...7...&rarr;...10...of 10 results...
+    ...7...→...10...of 10 results...
 
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
     >>> for row in table.tbody.findAll('tr'):
@@ -114,7 +114,7 @@ Now all types of branches should be shown.
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
     >>> print(links.renderContents())
     <BLANKLINE>
-    ...1...&rarr;...6...of 12 results...
+    ...1...→...6...of 12 results...
 
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
     >>> for row in table.tbody.findAll('tr'):
@@ -130,7 +130,7 @@ Now all types of branches should be shown.
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
     >>> print(links.renderContents())
     <BLANKLINE>
-    ...7...&rarr;...12...of 12 results...
+    ...7...→...12...of 12 results...
 
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
     >>> for row in table.tbody.findAll('tr'):
@@ -213,15 +213,17 @@ We display badges for associated bugs.
     >>> def branchSummary(browser):
     ...     table = find_tag_by_id(browser.contents, 'branchtable')
     ...     for row in table.tbody.findAll('tr'):
-    ...         if row.getText().startswith('A development focus branch'):
+    ...         if row.get_text(strip=True).startswith(
+    ...                 'A development focus branch'):
     ...             continue
     ...         cells = row.findAll('td')
     ...         first_cell = cells[0]
     ...         anchors = first_cell.findAll('a')
     ...         print(anchors[0].get('href'))
     ...         # Badges in the next cell
-    ...         for img in cells[1].findAll('img'):
-    ...             print(img['title'])
+    ...         if len(cells) > 1:
+    ...             for img in cells[1].findAll('img'):
+    ...                 print(img['title'])
 
     >>> browser.open(
     ...     'http://code.launchpad.test/firefox/+branches'
@@ -300,7 +302,7 @@ options that can be selected.
     >>> sort_by_control.value = ['by project name']
     Traceback (most recent call last):
       ...
-    ItemNotFoundError: insufficient items with name u'by project name'
+    ValueError: Option u'by project name' not found ...
     >>> for option in sort_by_control.options:
     ...     print(option)
     by most interesting

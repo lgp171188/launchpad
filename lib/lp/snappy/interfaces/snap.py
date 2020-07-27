@@ -38,8 +38,6 @@ __all__ = [
     'SnapPrivateFeatureDisabled',
     ]
 
-import httplib
-
 from lazr.enum import (
     EnumeratedType,
     Item,
@@ -49,13 +47,13 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -67,6 +65,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -125,7 +124,7 @@ SNAP_TESTING_FLAGS = {
     }
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class SnapBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
@@ -134,7 +133,7 @@ class SnapBuildAlreadyPending(Exception):
             "An identical build of this snap package is already pending.")
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class SnapBuildArchiveOwnerMismatch(Forbidden):
     """Builds against private archives require that owners match.
 
@@ -152,7 +151,7 @@ class SnapBuildArchiveOwnerMismatch(Forbidden):
             "if the snap package owner and the archive owner are equal.")
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class SnapBuildDisallowedArchitecture(Exception):
     """A build was requested for a disallowed architecture."""
 
@@ -162,7 +161,7 @@ class SnapBuildDisallowedArchitecture(Exception):
             (das.distroseries.getSuite(pocket), das.architecturetag))
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class SnapPrivateFeatureDisabled(Unauthorized):
     """Only certain users can create private snap objects."""
 
@@ -171,7 +170,7 @@ class SnapPrivateFeatureDisabled(Unauthorized):
             "You do not have permission to create private snaps")
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DuplicateSnapName(Exception):
     """Raised for snap packages with duplicate name/owner."""
 
@@ -180,7 +179,7 @@ class DuplicateSnapName(Exception):
             "There is already a snap package with the same name and owner.")
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class SnapNotOwner(Unauthorized):
     """The registrant/requester is not the owner or a member of its team."""
 
@@ -190,7 +189,7 @@ class NoSuchSnap(NameLookupFailed):
     _message_prefix = "No such snap package with this owner"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NoSourceForSnap(Exception):
     """Snap packages must have a source (Bazaar or Git branch)."""
 
@@ -200,12 +199,12 @@ class NoSourceForSnap(Exception):
             "branch.")
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class BadSnapSource(Exception):
     """The elements of the source for a snap package are inconsistent."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class SnapPrivacyMismatch(Exception):
     """Snap package privacy does not match its content."""
 
@@ -219,7 +218,7 @@ class BadSnapSearchContext(Exception):
     """The context is not valid for a snap package search."""
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CannotModifySnapProcessor(Exception):
     """Tried to enable or disable a restricted processor on an snap package."""
 
@@ -232,17 +231,17 @@ class CannotModifySnapProcessor(Exception):
             self._fmt % {'processor': processor.name})
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotAuthorizeStoreUploads(Exception):
     """Cannot authorize uploads of a snap package to the store."""
 
 
-@error_status(httplib.INTERNAL_SERVER_ERROR)
+@error_status(http_client.INTERNAL_SERVER_ERROR)
 class SnapAuthorizationBadMacaroon(Exception):
     """The macaroon generated to authorize store uploads is unusable."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotRequestAutoBuilds(Exception):
     """Snap package is not configured for automatic builds."""
 
@@ -294,13 +293,12 @@ class SnapBuildRequestStatus(EnumeratedType):
         """)
 
 
+# XXX cjwatson 2018-06-14 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ISnapBuildRequest(Interface):
     """A request to build a snap package."""
-
-    # XXX cjwatson 2018-06-14 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
@@ -840,21 +838,19 @@ class ISnapAdminAttributes(Interface):
             "Resources hosted on Launchpad itself are always allowed.")))
 
 
+# XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ISnap(
     ISnapView, ISnapEdit, ISnapEditableAttributes, ISnapAdminAttributes,
     IPrivacy):
     """A buildable snap package."""
 
-    # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
-
+@exported_as_webservice_collection(ISnap)
 class ISnapSet(Interface):
     """A utility to create and access snap packages."""
-
-    export_as_webservice_collection(ISnap)
 
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(

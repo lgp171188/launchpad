@@ -10,7 +10,7 @@ You can read more about MO file format on:
 http://www.gnu.org/software/gettext/manual/html_chapter/gettext_10.html#MO-Files
 
     >>> from zope.interface.verify import verifyObject
-    >>> from lp.services.helpers import string_to_tarfile
+    >>> from lp.services.helpers import bytes_to_tarfile
     >>> from lp.translations.interfaces.translationexporter import (
     ...     ITranslationFormatExporter)
     >>> from lp.translations.utilities.gettext_mo_exporter import (
@@ -85,7 +85,7 @@ When we export more than one file, we get a tarball.
     >>> file_content = exported_file.read()
     >>> is_valid_mofile(file_content)
     False
-    >>> tarfile = string_to_tarfile(file_content)
+    >>> tarfile = bytes_to_tarfile(file_content)
     >>> for member in tarfile.getmembers():
     ...     if member.isreg():
     ...         size = len(tarfile.extractfile(member).read())

@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for Webhook views."""
@@ -14,10 +14,20 @@ from testtools.matchers import (
     Not,
     )
 import transaction
+from zope.component import getUtility
 
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.services.features.testing import FeatureFixture
+from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.publisher import canonical_url
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.soyuz.interfaces.livefs import (
+    LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.testing import (
     login_person,
     record_two_runs,
@@ -25,10 +35,7 @@ from lp.testing import (
     )
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import extract_text
 from lp.testing.views import create_view
@@ -109,6 +116,48 @@ class SnapTestHelpers:
         return [obj]
 
 
+class LiveFSTestHelpers:
+    event_type = "livefs:build:0.1"
+    expected_event_types = [
+        ("livefs:build:0.1", "Live filesystem build"),
+    ]
+
+    def setUp(self):
+        super(LiveFSTestHelpers, self).setUp()
+
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true',
+                                        LIVEFS_FEATURE_FLAG: "on",
+                                        LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}))
+        owner = self.factory.makePerson()
+        return self.factory.makeLiveFS(registrant=owner, owner=owner)
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+
+class OCIRecipeTestHelpers:
+    event_type = "oci-recipe:build:0.1"
+    expected_event_types = [
+        ("oci-recipe:build:0.1", "OCI recipe build"),
+        ]
+
+    def setUp(self):
+        super(OCIRecipeTestHelpers, self).setUp()
+
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({
+            'webhooks.new.enabled': 'true',
+            OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
+            OCI_RECIPE_ALLOW_CREATE: 'on'
+            }))
+        owner = self.factory.makePerson()
+        return self.factory.makeOCIRecipe(registrant=owner, owner=owner)
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+
 class WebhookTargetViewTestHelpers:
 
     def setUp(self):
@@ -119,10 +168,23 @@ class WebhookTargetViewTestHelpers:
         login_person(self.owner)
 
     def makeView(self, name, **kwargs):
-        view = create_view(self.target, name, principal=self.owner, **kwargs)
+        # XXX cjwatson 2020-02-06: We need to give the view a
+        # LaunchpadPrincipal rather than just a person, since otherwise bits
+        # of the navigation menu machinery try to use the scope_url
+        # attribute on the principal and fail.  This should probably be done
+        # in create_view instead, but that approach needs care to avoid
+        # adding an extra query to tests that might be sensitive to that.
+        principal = getUtility(IPlacelessAuthUtility).getPrincipal(
+            self.owner.accountID)
+        view = create_view(
+            self.target, name, principal=principal, current_request=True,
+            **kwargs)
         # To test the breadcrumbs we need a correct traversal stack.
         view.request.traversed_objects = (
             self.getTraversalStack(self.target) + [view])
+        # The navigation menu machinery needs this to find the view from the
+        # request.
+        view.request._last_obj_traversed = view
         view.initialize()
         return view
 
@@ -144,6 +206,17 @@ class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
                     "href": canonical_url(hook, path_only_if_possible=True)})
             for hook in hooks]
         return link_matchers
+
+    def test_navigation_from_context(self):
+        # The context object's index page shows a "Manage webhooks" link.
+        self.assertThat(
+            self.makeView("+index")(),
+            soupmatchers.HTMLContains(
+                soupmatchers.Tag(
+                    "manage webhooks link", "a", text="Manage webhooks",
+                    attrs={"href": canonical_url(
+                        self.target, view_name="+webhooks"),
+                        })))
 
     def test_empty(self):
         # The table isn't shown if there are no webhooks yet.
@@ -195,14 +268,25 @@ class TestWebhooksViewGitRepository(
 
 class TestWebhooksViewBranch(
     TestWebhooksViewBase, BranchTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhooksViewSnap(
     TestWebhooksViewBase, SnapTestHelpers, TestCaseWithFactory):
 
-    layer = LaunchpadFunctionalLayer
+    pass
+
+
+class TestWebhooksViewLiveFS(
+    TestWebhooksViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhooksViewOCIRecipe(
+    TestWebhooksViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
 
 
 class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
@@ -300,7 +384,19 @@ class TestWebhookAddViewBranch(
 class TestWebhookAddViewSnap(
     TestWebhookAddViewBase, SnapTestHelpers, TestCaseWithFactory):
 
-    layer = LaunchpadFunctionalLayer
+    pass
+
+
+class TestWebhookAddViewLiveFS(
+    TestWebhookAddViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookAddViewOCIRecipe(
+    TestWebhookAddViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
 
 
 class WebhookViewTestHelpers:
@@ -405,6 +501,18 @@ class TestWebhookViewSnap(
     pass
 
 
+class TestWebhookViewLiveFS(
+    TestWebhookViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookViewOCIRecipe(
+    TestWebhookViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
 class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
 
     layer = DatabaseFunctionalLayer
@@ -453,5 +561,17 @@ class TestWebhookDeleteViewBranch(
 
 class TestWebhookDeleteViewSnap(
     TestWebhookDeleteViewBase, SnapTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookDeleteViewLiveFS(
+    TestWebhookDeleteViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookDeleteViewOCIRecipe(
+    TestWebhookDeleteViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
 
     pass

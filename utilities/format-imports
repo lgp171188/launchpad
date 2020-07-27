@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -124,6 +124,8 @@ is over the length limit.
         import object
 }}}
 """
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
@@ -304,7 +306,7 @@ def format_imports(imports):
     thirdparty_section = {}
     local_section = {}
     # Group modules into sections.
-    for module, statement in imports.iteritems():
+    for module, statement in imports.items():
         module_base = module_base_regex.findall(module)[0]
         comment = statement.comment
         if module_base == '_pythonpath':
@@ -345,7 +347,8 @@ def format_imports(imports):
 
 def reformat_importsection(filename):
     """Replace the given file with a reformatted version of it."""
-    pyfile = file(filename).read()
+    with open(filename) as f:
+        pyfile = f.read()
     import_start, import_end = find_imports_section(pyfile)
     if import_start is None:
         # Skip files with no import section.
@@ -380,7 +383,7 @@ def process_file(fpath):
     """Process the file with the given path."""
     changed = reformat_importsection(fpath)
     if changed:
-        print fpath
+        print(fpath)
 
 
 def process_tree(dpath):

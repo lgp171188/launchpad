@@ -28,11 +28,15 @@ The corresponding Account and Person records are also in the
 principal, to make it easier for the security machinery to get at
 it. It needs to get it quite often, so having the Person record
 directly on the Principal improves performance quite a lot, even
-compared to getting it from storm's cache.
+compared to getting it from storm's cache. We also store the person's name
+so that OOPS handlers can use it without needing to make another database
+query (which may be impossible due to a timeout).
 
     >>> principal.account == account
     True
     >>> principal.person == person
+    True
+    >>> principal.person_name == person.name
     True
 
 The principal's account and person are security proxied.

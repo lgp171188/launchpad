@@ -16,6 +16,7 @@ from lp.testing.pages import (
     )
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    setGlobs,
     setUp,
     tearDown,
     )
@@ -26,7 +27,7 @@ bing_flag = FeatureFixture({'sitesearch.engine.name': 'bing'})
 
 
 def setUp_bing(test):
-    setUpGlobs(test)
+    setUpGlobs(test, future=True)
     bing_flag.setUp()
 
 
@@ -38,11 +39,12 @@ def tearDown_bing(test):
 special = {
     'tales.txt': LayeredDocFileSuite(
         '../doc/tales.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'menus.txt': LayeredDocFileSuite(
-        '../doc/menus.txt', layer=None,
+        '../doc/menus.txt',
+        setUp=lambda test: setGlobs(test, future=True), layer=None,
         ),
     'stories/launchpad-search(Bing)': PageTestSuite(
         '../stories/launchpad-search/',
@@ -52,10 +54,11 @@ special = {
     # Run these doctests again with the default search engine.
     '../stories/launchpad-search': PageTestSuite(
         '../stories/launchpad-search/',
-        setUp=setUpGlobs, tearDown=tearDown,
+        setUp=lambda test: setUpGlobs(test, future=True), tearDown=tearDown,
         ),
     }
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setUp(test, future=True))

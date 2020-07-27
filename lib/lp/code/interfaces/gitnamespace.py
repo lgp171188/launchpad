@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for a Git repository namespace."""
@@ -22,6 +22,7 @@ from lp.code.errors import InvalidNamespace
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 
@@ -39,7 +40,7 @@ class IGitNamespace(Interface):
     def createRepository(repository_type, registrant, name,
                          information_type=None, date_created=None,
                          target_default=False, owner_default=False,
-                         with_hosting=False):
+                         with_hosting=False, status=None):
         """Create and return an `IGitRepository` in this namespace."""
 
     def isNameUsed(name):
@@ -198,7 +199,8 @@ class IGitNamespacePolicy(Interface):
 class IGitNamespaceSet(Interface):
     """Interface for getting Git repository namespaces."""
 
-    def get(person, project=None, distribution=None, sourcepackagename=None):
+    def get(person, project=None, distribution=None, sourcepackagename=None,
+            oci_project=None):
         """Return the appropriate `IGitNamespace` for the given objects."""
 
 
@@ -209,6 +211,8 @@ def get_git_namespace(target, owner):
         return getUtility(IGitNamespaceSet).get(
             owner, distribution=target.distribution,
             sourcepackagename=target.sourcepackagename)
+    elif IOCIProject.providedBy(target):
+        return getUtility(IGitNamespaceSet).get(owner, oci_project=target)
     elif target is None or IPerson.providedBy(target):
         return getUtility(IGitNamespaceSet).get(owner)
     else:

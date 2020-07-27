@@ -1,7 +1,9 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the database garbage collector."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = []
@@ -12,14 +14,13 @@ from datetime import (
     )
 import hashlib
 import logging
-from StringIO import StringIO
 import time
 
 from pytz import UTC
+import six
 from storm.exceptions import LostObjectError
 from storm.expr import (
     In,
-    Like,
     Min,
     Not,
     SQL,
@@ -45,6 +46,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.model.answercontact import AnswerContact
 from lp.app.enums import InformationType
+from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.model.bugnotification import (
     BugNotification,
     BugNotificationRecipient,
@@ -54,7 +56,10 @@ from lp.code.bzr import (
     BranchFormat,
     RepositoryFormat,
     )
-from lp.code.enums import CodeImportResultStatus
+from lp.code.enums import (
+    CodeImportResultStatus,
+    GitRepositoryStatus,
+    )
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.branchjob import (
@@ -68,6 +73,9 @@ from lp.code.model.gitjob import (
     GitJob,
     GitRefScanJob,
     )
+from lp.code.model.gitrepository import GitRepository
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -88,6 +96,7 @@ from lp.scripts.garbo import (
     load_garbo_job_state,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
+    ProductVCSPopulator,
     save_garbo_job_state,
     UnusedPOTMsgSetPruner,
     UnusedSessionPruner,
@@ -108,10 +117,9 @@ from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import TimeLimitedToken
+from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.messages.model.message import Message
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
-from lp.services.salesforce.interfaces import ISalesforceVoucherProxy
-from lp.services.salesforce.tests.proxy import TestSalesforceVoucherProxy
 from lp.services.scripts.tests import run_script
 from lp.services.session.model import (
     SessionData,
@@ -274,12 +282,12 @@ class TestSessionPruner(TestCase):
         yesterday = recent - timedelta(days=1)
         ancient = recent - timedelta(days=61)
 
-        self.make_session(u'recent_auth', recent, 'auth1')
-        self.make_session(u'recent_unauth', recent, False)
-        self.make_session(u'yesterday_auth', yesterday, 'auth2')
-        self.make_session(u'yesterday_unauth', yesterday, False)
-        self.make_session(u'ancient_auth', ancient, 'auth3')
-        self.make_session(u'ancient_unauth', ancient, False)
+        self.make_session('recent_auth', recent, b'auth1')
+        self.make_session('recent_unauth', recent, False)
+        self.make_session('yesterday_auth', yesterday, b'auth2')
+        self.make_session('yesterday_unauth', yesterday, False)
+        self.make_session('ancient_auth', ancient, b'auth3')
+        self.make_session('ancient_unauth', ancient, False)
 
         self.log = logging.getLogger('garbo')
 
@@ -293,16 +301,16 @@ class TestSessionPruner(TestCase):
             # Add login time information.
             session_pkg_data = SessionPkgData()
             session_pkg_data.client_id = client_id
-            session_pkg_data.product_id = u'launchpad.authenticateduser'
-            session_pkg_data.key = u'logintime'
-            session_pkg_data.pickle = 'value is ignored'
+            session_pkg_data.product_id = 'launchpad.authenticateduser'
+            session_pkg_data.key = 'logintime'
+            session_pkg_data.pickle = b'value is ignored'
             IMasterStore(SessionPkgData).add(session_pkg_data)
 
             # Add authenticated as information.
             session_pkg_data = SessionPkgData()
             session_pkg_data.client_id = client_id
-            session_pkg_data.product_id = u'launchpad.authenticateduser'
-            session_pkg_data.key = u'accountid'
+            session_pkg_data.product_id = 'launchpad.authenticateduser'
+            session_pkg_data.key = 'accountid'
             # Normally Account.id, but the session pruning works
             # at the SQL level and doesn't unpickle anything.
             session_pkg_data.pickle = authenticated
@@ -323,12 +331,12 @@ class TestSessionPruner(TestCase):
             pruner.cleanUp()
 
         expected_sessions = set([
-            u'recent_auth',
-            u'recent_unauth',
-            u'yesterday_auth',
-            u'yesterday_unauth',
-            # u'ancient_auth',
-            # u'ancient_unauth',
+            'recent_auth',
+            'recent_unauth',
+            'yesterday_auth',
+            'yesterday_unauth',
+            # 'ancient_auth',
+            # 'ancient_unauth',
             ])
 
         found_sessions = set(
@@ -346,12 +354,12 @@ class TestSessionPruner(TestCase):
             pruner.cleanUp()
 
         expected_sessions = set([
-            u'recent_auth',
-            u'recent_unauth',
-            u'yesterday_auth',
-            # u'yesterday_unauth',
-            u'ancient_auth',
-            # u'ancient_unauth',
+            'recent_auth',
+            'recent_unauth',
+            'yesterday_auth',
+            # 'yesterday_unauth',
+            'ancient_auth',
+            # 'ancient_unauth',
             ])
 
         found_sessions = set(
@@ -363,12 +371,12 @@ class TestSessionPruner(TestCase):
         # None of the sessions created in setUp() are duplicates, so
         # they will all survive the pruning.
         expected_sessions = set([
-            u'recent_auth',
-            u'recent_unauth',
-            u'yesterday_auth',
-            u'yesterday_unauth',
-            u'ancient_auth',
-            u'ancient_unauth',
+            'recent_auth',
+            'recent_unauth',
+            'yesterday_auth',
+            'yesterday_unauth',
+            'ancient_auth',
+            'ancient_unauth',
             ])
 
         now = datetime.now(UTC)
@@ -378,17 +386,17 @@ class TestSessionPruner(TestCase):
         # most recent 'old dupe 1'.
         for count in range(1, 10):
             self.make_session(
-                u'old dupe %d' % count,
+                'old dupe %d' % count,
                 now - timedelta(days=2, seconds=count),
-                'old dupe')
+                b'old dupe')
         for count in range(1, 7):
-            expected_sessions.add(u'old dupe %d' % count)
+            expected_sessions.add('old dupe %d' % count)
 
         # Make some other duplicate logins less than an hour old.
         # All of these will be kept.
         for count in range(1, 10):
-            self.make_session(u'new dupe %d' % count, now, 'new dupe')
-            expected_sessions.add(u'new dupe %d' % count)
+            self.make_session('new dupe %d' % count, now, b'new dupe')
+            expected_sessions.add('new dupe %d' % count)
 
         chunk_size = 2
         pruner = DuplicateSessionPruner(self.log)
@@ -423,7 +431,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runFrequently()
 
         # Capture garbo log output to tests can examine it.
-        self.log_buffer = StringIO()
+        self.log_buffer = six.StringIO()
         handler = logging.StreamHandler(self.log_buffer)
         self.log.addHandler(handler)
         self.addDetail(
@@ -483,8 +491,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(store.find(OpenIDConsumerNonce).count(), 0)
 
         for timestamp in timestamps:
-            store.add(OpenIDConsumerNonce(
-                    u'http://server/', timestamp, u'aa'))
+            store.add(OpenIDConsumerNonce('http://server/', timestamp, 'aa'))
         transaction.commit()
 
         # Make sure we have 4 nonces now.
@@ -511,17 +518,17 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             config.codeimport.consecutive_failure_limit - 1)
 
         switch_dbuser('testadmin')
-        code_import_id = self.factory.makeCodeImport().id
-        machine_id = self.factory.makeCodeImportMachine().id
-        requester_id = self.factory.makePerson().id
+        code_import = self.factory.makeCodeImport()
+        machine = self.factory.makeCodeImportMachine()
+        requester = self.factory.makePerson()
         transaction.commit()
 
         def new_code_import_result(timestamp):
             switch_dbuser('testadmin')
             CodeImportResult(
                 date_created=timestamp,
-                code_importID=code_import_id, machineID=machine_id,
-                requesting_userID=requester_id,
+                code_import=code_import, machine=machine,
+                requesting_user=requester,
                 status=CodeImportResultStatus.FAILURE,
                 date_job_started=timestamp)
             transaction.commit()
@@ -792,14 +799,18 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     def test_BugNotificationPruner(self):
         # Create some sample data
         switch_dbuser('testadmin')
+        bug = getUtility(IBugSet).get(1)
+        message = getUtility(IMessageSet).get(
+            'foo@example.com-332342--1231')[0]
+        person = self.factory.makePerson()
         notification = BugNotification(
-            messageID=1,
-            bugID=1,
+            message=message,
+            bug=bug,
             is_comment=True,
             date_emailed=None)
         BugNotificationRecipient(
             bug_notification=notification,
-            personID=1,
+            person=person,
             reason_header='Whatever',
             reason_body='Whatever')
         # We don't create an entry exactly 30 days old to avoid
@@ -808,12 +819,12 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             message = Message(rfc822msgid=str(delta))
             notification = BugNotification(
                 message=message,
-                bugID=1,
+                bug=bug,
                 is_comment=True,
                 date_emailed=UTC_NOW + SQL("interval '%d days'" % delta))
             BugNotificationRecipient(
                 bug_notification=notification,
-                personID=1,
+                person=person,
                 reason_header='Whatever',
                 reason_body='Whatever')
 
@@ -1059,6 +1070,96 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser('testadmin')
         self.assertEqual(1, store.find(SnapBuildJob).count())
 
+    def test_OCIFileJobPruner(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        ocifile = self.factory.makeOCIFile()
+        ocifile.date_last_used = THIRTY_DAYS_AGO
+        self.assertEqual(1, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(0, store.find(OCIFile).count())
+
+    def test_OCIFileJobPruner_doesnt_prune_recent(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        self.factory.makeOCIFile()
+        self.assertEqual(1, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(1, store.find(OCIFile).count())
+
+    def test_OCIFileJobPruner_mixed_dates(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        # Garbo removes files that haven't been used in 7 days
+        switch_dbuser('testadmin')
+        store = IMasterStore(OCIFile)
+        ocifile = self.factory.makeOCIFile()
+        ocifile.date_last_used = THIRTY_DAYS_AGO
+        self.factory.makeOCIFile()
+        self.assertEqual(2, store.find(OCIFile).count())
+
+        self.runDaily()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(1, store.find(OCIFile).count())
+
+    def test_GitRepositoryPruner_removes_stale_creations(self):
+        # Garbo removes GitRepository with status = CREATING for too long.
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        switch_dbuser('testadmin')
+        store = IMasterStore(GitRepository)
+        now = datetime.now(UTC)
+        recently = now - timedelta(minutes=2)
+        long_ago = now - timedelta(minutes=65)
+
+        # Creating a bunch of old stale repositories to be deleted,
+        # to make sure the chunk size is being respected.
+        for i in range(5):
+            repo = removeSecurityProxy(self.factory.makeGitRepository())
+            [ref1, ref2] = self.factory.makeGitRefs(
+                repository=repo, paths=["a", "b"])
+            self.factory.makeBranchMergeProposalForGit(
+                target_ref=ref1, source_ref=ref2)
+            self.factory.makeSourcePackageRecipe(branches=[ref1])
+            self.factory.makeSnap(git_ref=ref2)
+            self.factory.makeOCIRecipe(git_ref=ref1)
+            repo.date_created = long_ago
+            repo.status = GitRepositoryStatus.CREATING
+            long_ago += timedelta(seconds=1)
+
+        recent_creating, old_available, recent_available = [
+            removeSecurityProxy(self.factory.makeGitRepository())
+            for _ in range(3)]
+
+        recent_creating.date_created = recently
+        recent_creating.status = GitRepositoryStatus.CREATING
+
+        old_available.date_created = long_ago
+        old_available.status = GitRepositoryStatus.AVAILABLE
+
+        recent_available.date_created = recently
+        recent_available.status = GitRepositoryStatus.AVAILABLE
+
+        self.assertEqual(8, store.find(GitRepository).count())
+
+        self.runHourly(maximum_chunk_size=2)
+
+        switch_dbuser('testadmin')
+        remaining_repos = store.find(GitRepository)
+        self.assertEqual(3, remaining_repos.count())
+        self.assertEqual(
+            {old_available, recent_available, recent_creating},
+            set(remaining_repos))
+
     def test_WebhookJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
         switch_dbuser('testadmin')
@@ -1151,34 +1252,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             "SELECT COUNT(*) FROM BugSummaryJournal").get_one()[0]
         self.assertThat(num_rows, Equals(0))
 
-    def test_VoucherRedeemer(self):
-        switch_dbuser('testadmin')
-
-        voucher_proxy = TestSalesforceVoucherProxy()
-        self.registerUtility(voucher_proxy, ISalesforceVoucherProxy)
-
-        # Mark has some unredeemed vouchers so set one of them as pending.
-        mark = getUtility(IPersonSet).getByName('mark')
-        voucher = voucher_proxy.getUnredeemedVouchers(mark)[0]
-        product = self.factory.makeProduct(owner=mark)
-        redeemed_id = voucher.voucher_id
-        self.factory.makeCommercialSubscription(
-            product, False, 'pending-%s' % redeemed_id)
-        transaction.commit()
-
-        self.runFrequently()
-
-        # There should now be 0 pending vouchers in Launchpad.
-        num_rows = IMasterStore(CommercialSubscription).find(
-            CommercialSubscription,
-            Like(CommercialSubscription.sales_system_id, u'pending-%')
-            ).count()
-        self.assertThat(num_rows, Equals(0))
-        # Salesforce should also now have redeemed the voucher.
-        unredeemed_ids = [
-            v.voucher_id for v in voucher_proxy.getUnredeemedVouchers(mark)]
-        self.assertNotIn(redeemed_id, unredeemed_ids)
-
     def test_UnusedPOTMsgSetPruner_removes_obsolete_message_sets(self):
         # UnusedPOTMsgSetPruner removes any POTMsgSet that are
         # participating in a POTemplate only as obsolete messages.
@@ -1268,7 +1341,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         naked_bug = removeSecurityProxy(bug)
         naked_bug.heat_last_updated = old_update
         IMasterStore(FeatureFlag).add(FeatureFlag(
-            u'default', 0, u'bugs.heat_updates.cutoff',
+            'default', 0, 'bugs.heat_updates.cutoff',
             cutoff.isoformat().decode('ascii')))
         transaction.commit()
         self.assertEqual(old_update, naked_bug.heat_last_updated)
@@ -1323,6 +1396,24 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runDaily()
 
         self.assertEqual(VCSType.GIT, product.vcs)
+
+    def test_ProductVCSPopulator_findProducts_filters_correctly(self):
+        switch_dbuser('testadmin')
+
+        # Create 2 products: one with VCS set, and another one without.
+        product = self.factory.makeProduct()
+        self.assertIsNone(product.vcs)
+
+        product_with_vcs = self.factory.makeProduct(vcs=VCSType.GIT)
+        self.assertIsNotNone(product_with_vcs.vcs)
+
+        populator = ProductVCSPopulator(None)
+        # Consider only products created by this test.
+        populator.start_at = product.id
+
+        rs = populator.findProducts()
+        self.assertEqual(1, rs.count())
+        self.assertEqual(product, rs.one())
 
     def test_PopulateDistributionSourcePackageCache(self):
         switch_dbuser('testadmin')
@@ -1452,7 +1543,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertIsNotNone(
             store.execute(
                 'SELECT * FROM GarboJobState WHERE name=?',
-                params=[u'PopulateLatestPersonSourcePackageReleaseCache']
+                params=['PopulateLatestPersonSourcePackageReleaseCache']
             ).get_one())
 
         def _assert_releases_by_creator(creator, sprs):
@@ -1527,7 +1618,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # test LiveFS file as a base image for its DAS.
         now = datetime.now(UTC)
         switch_dbuser('testadmin')
-        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u'on'}))
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: 'on'}))
         store = IMasterStore(LiveFSFile)
         initial_count = store.find(LiveFSFile).count()
 
@@ -1596,7 +1687,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # An old LiveFS binary file is pruned even if some other base image
         # exists.
         switch_dbuser('testadmin')
-        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u'on'}))
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: 'on'}))
         store = IMasterStore(LiveFSFile)
         other_build = self.factory.makeLiveFSBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=10))

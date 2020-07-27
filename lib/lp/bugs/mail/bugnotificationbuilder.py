@@ -12,9 +12,11 @@ __all__ = [
     ]
 
 from email.mime.text import MIMEText
-from email.utils import formatdate
+from email.utils import (
+    formatdate,
+    mktime_tz,
+    )
 import re
-import rfc822
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -35,44 +37,18 @@ from lp.services.mail.sendmail import (
 
 def format_rfc2822_date(date):
     """Formats a date according to RFC2822's desires."""
-    return formatdate(rfc822.mktime_tz(date.utctimetuple() + (0, )))
+    return formatdate(mktime_tz(date.utctimetuple() + (0, )))
 
 
 def get_bugmail_from_address(person, bug):
     """Returns the right From: address to use for a bug notification."""
     if person == getUtility(ILaunchpadCelebrities).janitor:
-        return format_address(
-            'Launchpad Bug Tracker',
-            "%s@%s" % (bug.id, config.launchpad.bugs_domain))
+        displayname = 'Launchpad Bug Tracker'
+    else:
+        displayname = person.display_name
 
-    if person.hide_email_addresses:
-        return format_address(
-            person.displayname,
-            "%s@%s" % (bug.id, config.launchpad.bugs_domain))
-
-    if person.preferredemail is not None:
-        return format_address(person.displayname, person.preferredemail.email)
-
-    # XXX: Bjorn Tillenius 2006-04-05:
-    # The person doesn't have a preferred email set, but they
-    # added a comment (either via the email UI, or because they were
-    # imported as a deaf reporter). It shouldn't be possible to use the
-    # email UI if you don't have a preferred email set, but work around
-    # it for now by trying hard to find the right email address to use.
-    email_addresses = shortlist(
-        getUtility(IEmailAddressSet).getByPerson(person))
-    if not email_addresses:
-        # XXX: Bjorn Tillenius 2006-05-21 bug=33427:
-        # A user should always have at least one email address,
-        # but due to bug #33427, this isn't always the case.
-        return format_address(person.displayname,
-            "%s@%s" % (bug.id, config.launchpad.bugs_domain))
-
-    # At this point we have no validated emails to use: if any of the
-    # person's emails had been validated the preferredemail would be
-    # set. Since we have no idea of which email address is best to use,
-    # we choose the first one.
-    return format_address(person.displayname, email_addresses[0].email)
+    return format_address(displayname,
+                          "%s@%s" % (bug.id, config.launchpad.bugs_domain))
 
 
 def get_bugmail_replyto_address(bug):

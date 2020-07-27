@@ -27,7 +27,7 @@ one should be use for all anonymous browsing tests.
   # Shortcut to fetch the Authorization header from the testbrowser
 
     >>> def getAuthorizationHeader(browser):
-    ...   return dict(browser.mech_browser.addheaders).get('Authorization','')
+    ...   return browser._req_headers.get('Authorization', '')
 
     >>> anon_browser = test.globs['anon_browser']
     >>> print(getAuthorizationHeader(anon_browser))
@@ -69,11 +69,11 @@ Using Raw HTTP Requests
 -----------------------
 
 Altough testbrowser is very convenient, sometimes more control over the
-request is needed. For these cases, there is a HTTPCaller instance
-available under 'http' that can be used to send raw HTTP request.
+request is needed. For these cases, there is a function available under
+'http' that can be used to send raw HTTP request.
 
     >>> test.globs['http']
-    <...HTTPCaller...>
+    <function http ...>
 
 
 Helper Routines for Testing Page Content

@@ -3,6 +3,8 @@
 
 """build.py - Minifies and creates the JS build directory."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'CSSComboFile',
@@ -26,9 +28,9 @@ BUILD_DIR = os.path.normpath(os.path.join(
 DEFAULT_SRC_DIR = os.path.normpath(os.path.join(
     HERE, os.pardir, os.pardir, os.pardir, 'app', 'javascript'))
 
-ESCAPE_STAR_PROPERTY_RE = re.compile(r'\*([a-zA-Z0-9_-]+):')
-UNESCAPE_STAR_PROPERTY_RE = re.compile(r'([a-zA-Z0-9_-]+)_ie_star_hack:')
-URL_RE = re.compile("url\([ \"\']*([^ \"\']+)[ \"\']*\)")
+ESCAPE_STAR_PROPERTY_RE = re.compile(br'\*([a-zA-Z0-9_-]+):')
+UNESCAPE_STAR_PROPERTY_RE = re.compile(br'([a-zA-Z0-9_-]+)_ie_star_hack:')
+URL_RE = re.compile(br"url\([ \"\']*([^ \"\']+)[ \"\']*\)")
 
 
 def relative_path(from_file, to_file):
@@ -77,37 +79,33 @@ class ComboFile:
 
     def update(self):
         """Update the file from its source files."""
-        target_fh = open(self.target_file, 'w')
-        try:
+        with open(self.target_file, 'wb') as target_fh:
             for src_file in self.src_files:
                 self.log("Processing '%s'" % os.path.basename(src_file))
                 target_fh.write(self.get_file_header(src_file))
-                fh = open(src_file)
-                content = fh.read()
-                fh.close()
+                with open(src_file, 'rb') as fh:
+                    content = fh.read()
                 try:
                     target_fh.write(
                         self.filter_file_content(content, src_file))
                 except Exception:
                     os.remove(self.target_file)
                     raise
-        finally:
-            target_fh.close()
 
     def get_comment(self, msg):
-        """Return a string wrapped in a comment to be include in the output.
+        """Return a byte string wrapped in a comment to include in the output.
 
         Can be used to help annotate the output file.
         """
-        return ''
+        return b''
 
     def get_file_header(self, path):
-        """Return a string to include before outputting a file.
+        """Return a byte string to include before outputting a file.
 
         Can be used by subclasses to output a file reference in the combined
         file. Default implementation returns nothing.
         """
-        return ''
+        return b''
 
     def filter_file_content(self, file_content, path):
         """Hook to process the file content before being combined."""
@@ -122,13 +120,13 @@ class JSComboFile(ComboFile):
     """
 
     def get_comment(self, msg):
-        return "// %s\n" % msg
+        return b"// %s\n" % msg.encode("UTF-8")
 
     def get_file_header(self, path):
         return self.get_comment(relative_path(self.target_file, path))
 
     def filter_file_content(self, file_content, path):
-        return file_content + '\n'
+        return file_content + b'\n'
 
 
 class CSSComboFile(ComboFile):
@@ -138,15 +136,15 @@ class CSSComboFile(ComboFile):
     to the new location, and minify the result.
     """
 
-    def __init__(self, src_files, target_file, resource_prefix="",
+    def __init__(self, src_files, target_file, resource_prefix=b"",
                  minify=True, rewrite_urls=True):
         super(CSSComboFile, self).__init__(src_files, target_file)
-        self.resource_prefix = resource_prefix.rstrip("/")
+        self.resource_prefix = resource_prefix.rstrip(b"/")
         self.minify = minify
         self.rewrite_urls = rewrite_urls
 
     def get_comment(self, msg):
-        return "/* %s */\n" % msg
+        return b"/* %s */\n" % msg.encode("UTF-8")
 
     def get_file_header(self, path):
         return self.get_comment(relative_path(self.target_file, path))
@@ -159,23 +157,24 @@ class CSSComboFile(ComboFile):
             if relative_src_dir == ".":
                 relative_parts = []
             else:
-                relative_parts = relative_src_dir.split(os.path.sep)
+                relative_parts = relative_src_dir.encode("UTF-8").split(
+                    os.path.sep.encode("UTF-8"))
 
             def fix_relative_url(match):
                 url = match.group(1)
                 # Don't modify absolute URLs or 'data:' urls.
-                if (url.startswith("http") or
-                    url.startswith("/") or
-                    url.startswith("data:")):
+                if (url.startswith(b"http") or
+                        url.startswith(b"/") or
+                        url.startswith(b"data:")):
                     return match.group(0)
-                parts = relative_parts + url.split("/")
+                parts = relative_parts + url.split(b"/")
                 result = []
                 for part in parts:
-                    if part == ".." and result and result[-1] != "..":
+                    if part == b".." and result and result[-1] != b"..":
                         result.pop(-1)
                         continue
                     result.append(part)
-                return "url(%s)" % "/".join(
+                return b"url(%s)" % b"/".join(
                     filter(None, [self.resource_prefix] + result))
             file_content = URL_RE.sub(fix_relative_url, file_content)
 
@@ -186,16 +185,16 @@ class CSSComboFile(ComboFile):
                 cssutils.ser.prefs.useMinified()
 
                 stylesheet = ESCAPE_STAR_PROPERTY_RE.sub(
-                    r'\1_ie_star_hack:', file_content)
+                    br'\1_ie_star_hack:', file_content)
                 settings.set('DXImageTransform.Microsoft', True)
                 parser = cssutils.CSSParser(raiseExceptions=True)
                 css = parser.parseString(stylesheet)
                 stylesheet = UNESCAPE_STAR_PROPERTY_RE.sub(
-                    r'*\1:', css.cssText)
-                return stylesheet + "\n"
+                    br'*\1:', css.cssText)
+                return stylesheet + b"\n"
             finally:
                 cssutils.setSerializer(old_serializer)
-        return file_content + "\n"
+        return file_content + b"\n"
 
 
 class Builder:
@@ -344,13 +343,21 @@ class Builder:
                 (self.name, skin_name))
 
             css_files = extra_css_files + self.skins[skin_name]
-            combined_css = CSSComboFile(css_files, skin_build_file)
+            # Embedded URL rewrite should start with build/ for correct
+            # filesystem location, as node-sass cannot add it.
+            combined_css = CSSComboFile(
+                css_files, skin_build_file, resource_prefix="build/")
             if combined_css.needs_update():
                 self.log('Updating %s...' % skin_build_file)
                 combined_css.update()
 
     def do_build(self):
-        for entry in scandir.scandir(self.src_dir):
+        # We need this to be both repeatable and in the desired order
+        dir_list = sorted(
+            scandir.scandir(self.src_dir),
+            key=lambda x: x.name.lower(),
+            reverse=True)
+        for entry in dir_list:
             if not entry.is_dir():
                 continue
             self.build_assets(entry.name)

@@ -12,13 +12,15 @@ __all__ = [
     ]
 
 from contextlib import contextmanager
-import httplib
 import time
-from urllib import urlencode
-from urlparse import urlunsplit
 
 import pytz
 import requests
+from six.moves import http_client
+from six.moves.urllib.parse import (
+    urlencode,
+    urlunsplit,
+    )
 from zope.component import getUtility
 from zope.interface import Interface
 
@@ -256,7 +258,8 @@ class GitHub(ExternalBugTracker):
                 response = self._getPage(page, last_accessed=last_accessed)
             except BugTrackerConnectError as e:
                 if (e.error.response is not None and
-                        e.error.response.status_code == httplib.NOT_MODIFIED):
+                    e.error.response.status_code ==
+                        http_client.NOT_MODIFIED):
                     return
                 else:
                     raise

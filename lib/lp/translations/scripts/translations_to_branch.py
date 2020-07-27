@@ -17,8 +17,8 @@ import os.path
 # line below this comment.
 import lp.codehosting
 
-from bzrlib.errors import NotBranchError
-from bzrlib.revision import NULL_REVISION
+from breezy.errors import NotBranchError
+from breezy.revision import NULL_REVISION
 import pytz
 from storm.expr import (
     And,

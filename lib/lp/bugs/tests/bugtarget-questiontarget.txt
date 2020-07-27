@@ -103,7 +103,7 @@ bug.
     # Bugs save the Bug.description as the first message;
     # questions do not.
 
-    >>> question.messages.count() == bug.messages.count() - 1
+    >>> len(question.messages) == bug.messages.count() - 1
     True
 
     >>> question.messages[-1].text_contents == bug.messages[-1].text_contents
@@ -128,8 +128,11 @@ question and that the bugtasks are Invalid.
     >>> 'test@canonical.com' in recipients.getEmails()
     True
 
+    >>> from storm.locals import Desc
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> bug_notifications = BugNotification.select(orderBy='-id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> bug_notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(Desc(BugNotification.id))
     >>> for notification in bug_notifications:
     ...     print(notification.message.text_contents)
     ** Converted to question:

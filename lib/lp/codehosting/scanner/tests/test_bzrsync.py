@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -8,13 +8,13 @@ import os
 import random
 import time
 
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     Revision as BzrRevision,
     )
-from bzrlib.tests import TestCaseWithTransport
-from bzrlib.uncommit import uncommit
-from bzrlib.url_policy_open import BranchOpener
+from breezy.tests import TestCaseWithTransport
+from breezy.uncommit import uncommit
+from breezy.url_policy_open import BranchOpener
 from fixtures import (
     FakeLogger,
     TempDir,
@@ -191,7 +191,7 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
             self.bzr_tree.add_pending_merge(*extra_parents)
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             return self.bzr_tree.commit(
                 message, committer=committer, rev_id=rev_id,
                 timestamp=timestamp, timezone=timezone, allow_pointless=True,
@@ -240,7 +240,7 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
                 db_branch=db_branch)
             # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
             # required to generate the revision-id.
-            with override_environ(BZR_EMAIL='me@example.com'):
+            with override_environ(BRZ_EMAIL='me@example.com'):
                 trunk_tree.commit(u'base revision', rev_id=base_rev_id)
 
                 # Branch from the base revision.
@@ -572,7 +572,8 @@ class TestPlanDatabaseChanges(BzrSyncTestCase):
         # deletion anyway.
         rev1_id = self.bzr_tree.commit(
             'initial commit', committer='me@example.org')
-        merge_tree = self.bzr_tree.bzrdir.sprout('merge').open_workingtree()
+        merge_tree = self.bzr_tree.controldir.sprout(
+            'merge').open_workingtree()
         merge_id = merge_tree.commit(
             'mergeable commit', committer='me@example.org')
         self.bzr_tree.merge_from_branch(merge_tree.branch)

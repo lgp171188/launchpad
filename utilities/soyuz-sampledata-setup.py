@@ -1,6 +1,6 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 #
 # This code is based on William Grant's make-ubuntu-sane.py script, but
@@ -16,6 +16,8 @@ Ubuntu-related data.
 This script creates a user "ppa-user" (email ppa-user@example.com,
 password test) who is able to create PPAs.
 """
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
@@ -320,13 +322,11 @@ def sign_code_of_conduct(person, log):
 
     log.info("Signing Ubuntu code of conduct.")
     signedcocset = getUtility(ISignedCodeOfConductSet)
-    person_id = person.id
-    if signedcocset.searchByUser(person_id).count() == 0:
+    if signedcocset.searchByUser(person).count() == 0:
         fake_gpg_key = LaunchpadObjectFactory().makeGPGKey(person)
         Store.of(person).add(SignedCodeOfConduct(
             owner=person, signing_key_fingerprint=fake_gpg_key.fingerprint,
-            signing_key_owner=fake_gpg_key.owner,
-            signedcode="Normally a signed CoC would go here.", active=True))
+            signedcode=u"Normally a signed CoC would go here.", active=True))
 
 
 def create_ppa_user(username, options, approver, log):
@@ -342,7 +342,7 @@ def create_ppa_user(username, options, approver, log):
         pipe = subprocess.Popen(command_line, stderr=subprocess.PIPE)
         stdout, stderr = pipe.communicate()
         if stderr != '':
-            print stderr
+            print(stderr)
         if pipe.returncode != 0:
             sys.exit(2)
 
@@ -396,7 +396,7 @@ class SoyuzSampledataSetup(LaunchpadScript):
         transaction.commit()
         self.logger.info("Done.")
 
-        print dedent("""
+        print(dedent("""
             Now start your local Launchpad with "make run_codehosting" and log
             into https://launchpad.test/ as "%(email)s" with "test" as the
             password.
@@ -404,7 +404,7 @@ class SoyuzSampledataSetup(LaunchpadScript):
             % {
                 'email': self.options.email,
                 'user_name': user_name,
-                })
+                }))
 
 
 if __name__ == "__main__":

@@ -61,9 +61,11 @@ from lp.bugs.model.bug import (
 from lp.bugs.model.bugsubscription import BugSubscription
 from lp.hardwaredb.interfaces.hwdb import (
     HWBus,
+    HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG,
     HWSubmissionFormat,
     HWSubmissionKeyNotUnique,
     HWSubmissionProcessingStatus,
+    HWSubmissionsDisabledError,
     IHWDevice,
     IHWDeviceClass,
     IHWDeviceClassSet,
@@ -113,6 +115,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -161,6 +164,9 @@ class HWSubmissionSet:
                          raw_submission, filename, filesize,
                          system_fingerprint):
         """See `IHWSubmissionSet`."""
+        if getFeatureFlag(HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG):
+            raise HWSubmissionsDisabledError()
+
         assert valid_name(submission_key), "Invalid key %s" % submission_key
 
         submission_exists = HWSubmission.selectOneBy(

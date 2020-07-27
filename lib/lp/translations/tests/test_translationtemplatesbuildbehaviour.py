@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for TranslationTemplatesBuildBehaviour."""
@@ -138,7 +138,7 @@ class TestTranslationTemplatesBuildBehaviour(
         buildqueue = FakeBuildQueue(behaviour)
         path = behaviour.templates_tarball_path
         # Poke the file we're expecting into the mock slave.
-        behaviour._slave.valid_file_hashes.append(path)
+        behaviour._slave.valid_files[path] = ''
 
         def got_tarball(filename):
             tarball = open(filename, 'r')
@@ -245,11 +245,12 @@ class TestTranslationTemplatesBuildBehaviour(
         queue_item.markAsBuilding(self.factory.makeBuilder())
         slave = behaviour._slave
 
-        def fake_getFile(sum, file):
+        def fake_getFile(sum, path):
             dummy_tar = os.path.join(
                 os.path.dirname(__file__), 'dummy_templates.tar.gz')
-            tar_file = open(dummy_tar)
-            copy_and_close(tar_file, file)
+            tar_file = open(dummy_tar, 'rb')
+            with open(path, 'wb') as f:
+                copy_and_close(tar_file, f)
             return defer.succeed(None)
 
         slave.getFile = fake_getFile
@@ -297,8 +298,8 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball(self):
         # Files from the tarball end up in the import queue.
         behaviour = self.makeBehaviour()
-        behaviour._uploadTarball(
-            self.branch, file(self.dummy_tar).read(), None)
+        with open(self.dummy_tar) as f:
+            behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         expected_templates = [
@@ -313,8 +314,8 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball_approved(self):
         # Uploaded template files are automatically approved.
         behaviour = self.makeBehaviour()
-        behaviour._uploadTarball(
-            self.branch, file(self.dummy_tar).read(), None)
+        with open(self.dummy_tar) as f:
+            behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         statuses = [entry.status for entry in entries]
@@ -324,8 +325,8 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball_importer(self):
         # Files from the tarball are owned by the branch owner.
         behaviour = self.makeBehaviour()
-        behaviour._uploadTarball(
-            self.branch, file(self.dummy_tar).read(), None)
+        with open(self.dummy_tar) as f:
+            behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         self.assertEqual(self.branch.owner, entries[0].importer)

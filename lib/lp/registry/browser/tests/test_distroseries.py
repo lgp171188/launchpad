@@ -9,12 +9,14 @@ from datetime import timedelta
 import difflib
 import re
 from textwrap import TextWrapper
-from urllib import urlencode
-from urlparse import urlparse
 
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from lxml import html
+from six.moves.urllib.parse import (
+    urlencode,
+    urlparse,
+    )
 import soupmatchers
 from storm.zope.interfaces import IResultSet
 from testtools.content import (
@@ -1392,7 +1394,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         parent_dsp = dsd.parent_series.distribution.getSourcePackage(
             dsd.source_package_name)
         expected_url = urlappend(canonical_url(parent_dsp), '+changelog')
-        self.assertEqual(expected_url, link.attrs[0][1])
+        self.assertEqual(expected_url, link['href'])
 
     def test_getUpgrades_shows_updates_in_parent(self):
         # The view's getUpgrades methods lists packages that can be

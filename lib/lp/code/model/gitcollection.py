@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of `IGitCollection`."""
@@ -17,6 +17,7 @@ from lazr.uri import (
     )
 from storm.expr import (
     And,
+    Asc,
     Count,
     Desc,
     In,
@@ -32,6 +33,7 @@ from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
+from lp.code.enums import GitListingSort
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.code.interfaces.gitcollection import (
     IGitCollection,
@@ -53,6 +55,7 @@ from lp.code.model.gitrule import GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
 from lp.registry.model.distribution import Distribution
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -199,6 +202,7 @@ class GenericGitCollection:
         load_related(Distribution, repositories, ['distribution_id'])
         load_related(SourcePackageName, repositories, ['sourcepackagename_id'])
         load_related(Product, repositories, ['project_id'])
+        load_related(OCIProject, repositories, ['oci_project_id'])
         caches = {
             repository.id: get_property_cache(repository)
             for repository in repositories}
@@ -206,22 +210,46 @@ class GenericGitCollection:
         for cache in caches.values():
             cache.code_import = None
         for code_import in IStore(CodeImport).find(
-                CodeImport, CodeImport.git_repositoryID.is_in(repository_ids)):
-            caches[code_import.git_repositoryID].code_import = code_import
+                CodeImport,
+                CodeImport.git_repository_id.is_in(repository_ids)):
+            caches[code_import.git_repository_id].code_import = code_import
+
+    @staticmethod
+    def _convertListingSortToOrderBy(sort_by):
+        """Compute a value to pass to `order_by` on a repository collection.
+
+        :param sort_by: an item from the `GitListingSort` enumeration.
+        """
+        LISTING_SORT_TO_COLUMN = {
+            GitListingSort.NAME: (Asc, GitRepository.name),
+            GitListingSort.MOST_RECENTLY_CHANGED_FIRST: (
+                Desc, GitRepository.date_last_modified),
+            GitListingSort.LEAST_RECENTLY_CHANGED_FIRST: (
+                Asc, GitRepository.date_last_modified),
+            GitListingSort.NEWEST_FIRST: (Desc, GitRepository.date_created),
+            GitListingSort.OLDEST_FIRST: (Asc, GitRepository.date_created),
+            }
+
+        # Stabilise the sort using descending ID as a last resort.
+        order_by = [(Desc, GitRepository.id)]
+
+        if sort_by not in (None, GitListingSort.DEFAULT):
+            direction, column = LISTING_SORT_TO_COLUMN[sort_by]
+            order_by = (
+                [(direction, column)] +
+                [sort for sort in order_by if sort[1] is not column])
+        return [direction(column) for direction, column in order_by]
 
     def getRepositories(self, find_expr=GitRepository, eager_load=False,
-                        order_by_date=False, order_by_id=False):
+                        sort_by=None):
         """See `IGitCollection`."""
         all_tables = set(
             self._tables.values() + self._asymmetric_tables.values())
         tables = [GitRepository] + list(all_tables)
         expressions = self._getRepositoryExpressions()
-        resultset = self.store.using(*tables).find(find_expr, *expressions)
-        assert not order_by_date or not order_by_id
-        if order_by_date:
-            resultset.order_by(Desc(GitRepository.date_last_modified))
-        elif order_by_id:
-            resultset.order_by(GitRepository.id)
+        resultset = (
+            self.store.using(*tables).find(find_expr, *expressions).order_by(
+                *self._convertListingSortToOrderBy(sort_by)))
 
         def do_eager_load(rows):
             repository_ids = set(repository.id for repository in rows)
@@ -458,11 +486,16 @@ class GenericGitCollection:
             [GitRepository.distribution == distribution,
              GitRepository.sourcepackagename == sourcepackagename])
 
+    def inOCIProject(self, oci_project):
+        """See `IGitCollection`."""
+        return self._filterBy([GitRepository.oci_project == oci_project])
+
     def isPersonal(self):
         """See `IGitCollection`."""
         return self._filterBy(
             [GitRepository.project == None,
-             GitRepository.distribution == None])
+             GitRepository.distribution == None,
+             GitRepository.oci_project == None])
 
     def isPrivate(self):
         """See `IGitCollection`."""
@@ -475,6 +508,11 @@ class GenericGitCollection:
             [Person.membership_policy.is_in(EXCLUSIVE_TEAM_POLICY)],
             table=Person,
             join=Join(Person, GitRepository.owner_id == Person.id))
+
+    def modifiedSince(self, date):
+        """See `IGitCollection`."""
+        return self._filterBy(
+            [GitRepository.date_last_modified > date], symmetric=False)
 
     def ownedBy(self, person):
         """See `IGitCollection`."""

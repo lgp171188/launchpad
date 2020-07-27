@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test RecipeBuildBehaviour."""
@@ -11,16 +11,16 @@ import os.path
 import shutil
 import tempfile
 
+from testscenarios import load_tests_apply_scenarios
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import defer
-from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interactor import BuilderInteractor
@@ -347,7 +347,7 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         yield self.useFixture(InProcessKeyServerFixture()).start()
         archive = self.factory.makeArchive()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
-        yield IArchiveSigningKey(archive).setSigningKey(
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
             key_path, async_keyserver=True)
         job = self.makeJob(archive=archive, with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
@@ -372,14 +372,10 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
             build_request)
 
 
-class TestBuildNotifications(TrialTestCase):
+class TestBuildNotifications(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
-
-    def setUp(self):
-        super(TestBuildNotifications, self).setUp()
-        from lp.testing.factory import LaunchpadObjectFactory
-        self.factory = LaunchpadObjectFactory()
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def prepareBehaviour(self, fake_successful_upload=False):
         self.queue_record = (
@@ -460,5 +456,8 @@ class TestVerifySuccessfulBuildForSPRBuild(
 
 
 class TestHandleStatusForSPRBuild(
-    MakeSPRecipeBuildMixin, TestHandleStatusMixin, TrialTestCase):
+    MakeSPRecipeBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with SPRecipe builds."""
+
+
+load_tests = load_tests_apply_scenarios

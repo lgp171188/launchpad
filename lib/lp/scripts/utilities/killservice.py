@@ -3,7 +3,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# This module uses relative imports.
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import logging
@@ -15,8 +16,6 @@ from signal import (
     )
 import time
 
-from lp.services.config import config
-from lp.services.mailman.runmailman import stop_mailman
 from lp.services.osutils import process_exists
 from lp.services.pidfile import (
     get_pid,
@@ -43,12 +42,6 @@ def main():
 
     pids = []  # List of pids we tried to kill.
     services = args[:]
-
-    # Mailman is special, but only stop it if it was launched.
-    if 'mailman' in services:
-        if config.mailman.launch:
-            stop_mailman()
-        services.remove('mailman')
 
     for service in services:
         log.debug("PID file is %s", pidfile_path(service))

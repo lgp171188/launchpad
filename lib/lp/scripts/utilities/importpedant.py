@@ -1,14 +1,18 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import __builtin__
+from __future__ import absolute_import, print_function, unicode_literals
+
 import atexit
 import itertools
 from operator import attrgetter
 import types
 
+import six
+from six.moves import builtins
 
-original_import = __builtin__.__import__
+
+original_import = builtins.__import__
 naughty_imports = set()
 
 # Silence bogus warnings from Hardy's python-pkg-resources package.
@@ -25,8 +29,8 @@ def text_lines_to_set(text):
 # __all__. The following dict maps from such modules to a list of attributes
 # that are allowed to be imported, whether or not they are in __all__.
 valid_imports_not_in_all = {
-    'bzrlib.lsprof': set(['BzrProfiler']),
-    'cookielib': set(['domain_match']),
+    # Exported in Python 3, but missing and so not exported in Python 2.
+    'contextlib': set(['ExitStack']),
     # Exported in Python 3, but missing and so not exported in Python 2.
     'json.decoder': set(['JSONDecodeError']),
     'openid.fetchers': set(['Urllib2Fetcher']),
@@ -35,16 +39,22 @@ valid_imports_not_in_all = {
     'pipes': set(['quote']),
     # Exported in Python 3, but missing and so not exported in Python 2.
     'shlex': set(['quote']),
+    'six.moves.http_cookiejar': set(['domain_match']),
     'storm.database': set(['STATE_DISCONNECTED']),
     'textwrap': set(['dedent']),
     'testtools.testresult.real': set(['_details_to_str']),
     'twisted.internet.threads': set(['deferToThreadPool']),
+    # Even docs tell us to use this class. See docs on WebClientContextFactory.
+    'twisted.web.client': set(['BrowserLikePolicyForHTTPS']),
     'zope.component': set(
         ['adapter',
          'ComponentLookupError',
          'provideAdapter',
          'provideHandler',
          ]),
+    # XXX cjwatson 2020-04-12: Fixed in zope.interface 5.1.0; remove this
+    # when we upgrade to that version.
+    'zope.interface': set(['invariant']),
     }
 
 
@@ -174,17 +184,14 @@ class NotFoundPolicyViolation(PedantDisagreesError):
 # The names of the arguments form part of the interface of __import__(...),
 # and must not be changed, as code may choose to invoke __import__ using
 # keyword arguments - e.g. the encodings module in Python 2.6.
-def import_pedant(name, globals={}, locals={}, fromlist=[], level=-1):
+def import_pedant(name, globals={}, locals={}, fromlist=[],
+                  level=(0 if six.PY3 else -1)):
     global naughty_imports
 
     module = original_import(name, globals, locals, fromlist, level)
     # Python's re module imports some odd stuff every time certain regexes
     # are used.  Let's optimize this.
     if name == 'sre':
-        return module
-
-    # Mailman 2.1 code base is originally circa 1998, so yeah, no __all__'s.
-    if name.startswith('Mailman'):
         return module
 
     # Some uses of __import__ pass None for globals, so handle that.
@@ -254,8 +261,8 @@ def import_pedant(name, globals={}, locals={}, fromlist=[], level=-1):
 
 def report_naughty_imports():
     if naughty_imports:
-        print
-        print '** %d import policy violations **' % len(naughty_imports)
+        print()
+        print('** %d import policy violations **' % len(naughty_imports))
 
         database_violations = []
         fromstar_violations = []
@@ -269,38 +276,38 @@ def report_naughty_imports():
             sorting_map[error.__class__].append(error)
 
         if database_violations:
-            print
-            print "There were %s database import violations." % (
-                len(database_violations))
+            print()
+            print("There were %s database import violations." % (
+                len(database_violations)))
             sorted_violations = sorted(
                 database_violations,
                 key=attrsgetter('name', 'import_into'))
 
             for name, sequence in itertools.groupby(
                 sorted_violations, attrgetter('name')):
-                print "You should not import %s into:" % name
+                print("You should not import %s into:" % name)
                 for import_into, unused_duplicates_seq in itertools.groupby(
                     sequence, attrgetter('import_into')):
                     # Show first occurrence only, to avoid duplicates.
-                    print "   ", import_into
+                    print("   ", import_into)
 
         if fromstar_violations:
-            print
-            print "There were %s imports 'from *' without an __all__." % (
-                len(fromstar_violations))
+            print()
+            print("There were %s imports 'from *' without an __all__." % (
+                len(fromstar_violations)))
             sorted_violations = sorted(
                 fromstar_violations,
                 key=attrsgetter('import_into', 'name'))
 
             for import_into, sequence in itertools.groupby(
                 sorted_violations, attrgetter('import_into')):
-                print "You should not import * into %s from" % import_into
+                print("You should not import * into %s from" % import_into)
                 for error in sequence:
-                    print "   ", error.name
+                    print("   ", error.name)
 
         if notinall_violations:
-            print
-            print (
+            print()
+            print(
                 "There were %s imports of names not appearing in the __all__."
                 % len(notinall_violations))
             sorted_violations = sorted(
@@ -309,13 +316,13 @@ def report_naughty_imports():
 
             for (name, attrname), sequence in itertools.groupby(
                 sorted_violations, attrsgetter('name', 'attrname')):
-                print "You should not import %s from %s:" % (attrname, name)
+                print("You should not import %s from %s:" % (attrname, name))
                 import_intos = sorted(
                     set([error.import_into for error in sequence]))
                 for import_into in import_intos:
-                    print "   ", import_into
+                    print("   ", import_into)
 
 
 def install_import_pedant():
-    __builtin__.__import__ = import_pedant
+    builtins.__import__ = import_pedant
     atexit.register(report_naughty_imports)

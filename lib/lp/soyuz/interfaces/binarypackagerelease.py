@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Binary package release interfaces."""
@@ -11,8 +11,8 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import (
     Reference,
@@ -61,6 +61,11 @@ class IBinaryPackageRelease(Interface):
     pre_depends = TextLine(required=False)
     enhances = TextLine(required=False)
     breaks = TextLine(required=False)
+    built_using_references = List(
+        title=_("Sequence of Built-Using references."),
+        # Really IBinarySourceReference.
+        value_type=Reference(schema=Interface),
+        required=True)
     essential = Bool(required=False)
     installedsize = Int(required=False)
     architecturespecific = Bool(required=True)
@@ -99,9 +104,9 @@ class IBinaryPackageRelease(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IBinaryPackageReleaseDownloadCount(Interface):
     """Daily download count of a binary package release in an archive."""
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), required=True, readonly=True)
     archive = exported(Reference(

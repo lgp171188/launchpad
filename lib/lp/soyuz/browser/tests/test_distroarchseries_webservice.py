@@ -11,7 +11,11 @@ from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
-from testtools.matchers import MatchesStructure
+from testtools.matchers import (
+    EndsWith,
+    Equals,
+    MatchesStructure,
+    )
 from zope.security.management import endInteraction
 
 from lp.buildmaster.enums import BuildBaseImageType
@@ -87,7 +91,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         webservice = launchpadlib_for("testing", user, version='devel')
         ws_das = ws_object(webservice, das)
         self.assertRaises(
-            Unauthorized, ws_das.setChroot, data='xyz', sha1sum='0')
+            Unauthorized, ws_das.setChroot, data=b'xyz', sha1sum='0')
         self.assertRaises(Unauthorized, ws_das.removeChroot)
 
     def test_setChroot_wrong_sha1sum(self):
@@ -97,7 +101,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
         e = self.assertRaises(
-            BadRequest, ws_das.setChroot, data='zyx', sha1sum='x')
+            BadRequest, ws_das.setChroot, data=b'zyx', sha1sum='x')
         self.assertEqual("Chroot upload checksums do not match", e.content)
 
     def test_setChroot_missing_trailing_cr(self):
@@ -113,7 +117,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         ws_das = ws_object(webservice, das)
         sha1 = '95e0c0e09be59e04eb0e312e5daa11a2a830e526'
         ws_das.setChroot(
-            data='foo\r', sha1sum='95e0c0e09be59e04eb0e312e5daa11a2a830e526')
+            data=b'foo\r', sha1sum='95e0c0e09be59e04eb0e312e5daa11a2a830e526')
         self.assertEqual(sha1, das.getChroot().content.sha1)
 
     def test_setChroot_removeChroot(self):
@@ -125,11 +129,11 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
         sha1 = hashlib.sha1('abcxyz').hexdigest()
-        ws_das.setChroot(data='abcxyz', sha1sum=sha1)
+        ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
         self.assertTrue(ws_das.chroot_url.endswith(expected_file))
         ws_das.removeChroot()
         self.assertIsNone(ws_das.chroot_url)
-        ws_das.setChroot(data='abcxyz', sha1sum=sha1)
+        ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
         self.assertTrue(ws_das.chroot_url.endswith(expected_file))
 
     def test_setChroot_removeChroot_pocket(self):
@@ -138,9 +142,9 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
         sha1_1 = hashlib.sha1('abcxyz').hexdigest()
-        ws_das.setChroot(data='abcxyz', sha1sum=sha1_1)
+        ws_das.setChroot(data=b'abcxyz', sha1sum=sha1_1)
         sha1_2 = hashlib.sha1('123456').hexdigest()
-        ws_das.setChroot(data='123456', sha1sum=sha1_2, pocket='Updates')
+        ws_das.setChroot(data=b'123456', sha1sum=sha1_2, pocket='Updates')
         release_chroot = das.getChroot(pocket=PackagePublishingPocket.RELEASE)
         self.assertEqual(sha1_1, release_chroot.content.sha1)
         updates_chroot = das.getChroot(pocket=PackagePublishingPocket.UPDATES)
@@ -161,7 +165,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             release_chroot_url, ws_das.getChrootURL(pocket='Updates'))
         self.assertEqual(
             release_chroot_url, ws_das.getChrootURL(pocket='Proposed'))
-        ws_das.setChroot(data='123456', sha1sum=sha1_2, pocket='Updates')
+        ws_das.setChroot(data=b'123456', sha1sum=sha1_2, pocket='Updates')
         updates_chroot = das.getChroot(pocket=PackagePublishingPocket.UPDATES)
         self.assertEqual(sha1_2, updates_chroot.content.sha1)
         with person_logged_in(user):
@@ -179,9 +183,9 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
         sha1_1 = hashlib.sha1('abcxyz').hexdigest()
-        ws_das.setChroot(data='abcxyz', sha1sum=sha1_1)
+        ws_das.setChroot(data=b'abcxyz', sha1sum=sha1_1)
         sha1_2 = hashlib.sha1('123456').hexdigest()
-        ws_das.setChroot(data='123456', sha1sum=sha1_2, image_type='LXD image')
+        ws_das.setChroot(data=b'123456', sha1sum=sha1_2, image_type='LXD image')
         chroot_image = das.getChroot(image_type=BuildBaseImageType.CHROOT)
         self.assertEqual(sha1_1, chroot_image.content.sha1)
         lxd_image = das.getChroot(image_type=BuildBaseImageType.LXD)
@@ -334,15 +338,14 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         webservice = launchpadlib_for("testing", user, version="devel")
         ws_das = ws_object(webservice, das)
         ws_das.setSourceFilter(packageset=packageset_url, sense="Include")
-        with person_logged_in(user):
-            dasf = das.getSourceFilter()
-        self.assertThat(dasf, MatchesStructure.byEquality(
-            packageset=packageset, sense=DistroArchSeriesFilterSense.INCLUDE))
+        ws_dasf = ws_das.getSourceFilter()
+        self.assertThat(ws_dasf, MatchesStructure(
+            packageset_link=EndsWith(packageset_url),
+            sense=Equals("Include")))
         ws_das.setSourceFilter(packageset=packageset_url, sense="Exclude")
-        with person_logged_in(user):
-            dasf = das.getSourceFilter()
-        self.assertThat(dasf, MatchesStructure.byEquality(
-            packageset=packageset, sense=DistroArchSeriesFilterSense.EXCLUDE))
+        ws_dasf = ws_das.getSourceFilter()
+        self.assertThat(ws_dasf, MatchesStructure(
+            packageset_link=EndsWith(packageset_url),
+            sense=Equals("Exclude")))
         ws_das.removeSourceFilter()
-        with person_logged_in(user):
-            self.assertIsNone(das.getSourceFilter())
+        self.assertIsNone(ws_das.getSourceFilter())

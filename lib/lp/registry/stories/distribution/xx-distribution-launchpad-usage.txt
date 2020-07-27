@@ -46,7 +46,8 @@ The distribution's registrant can access the page and change the usage.
     LAUNCHPAD
     >>> print registrant.getControl(name='field.answers_usage').value[0]
     LAUNCHPAD
-    >>> print registrant.getControl(name='field.require_virtualized').value
+    >>> print bool(
+    ...     registrant.getControl(name='field.require_virtualized').value)
     False
     >>> print registrant.getControl(name='field.processors').value
     ['386', 'amd64', 'hppa']

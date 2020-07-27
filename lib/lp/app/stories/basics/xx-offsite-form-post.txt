@@ -4,17 +4,36 @@ Referrer Checking on Form Posts
 To help mitigate cross site request forgery attacks, we check that the
 referrer for a form post exists and is a URI from one of the Launchpad sites.
 
-First a helper to set up a browser object that doesn't handle the
-"Referer" header automatically.  We need to poke into the internal
-mechanize browser object here because Zope's test browser does not
-expose the required functionality:
+First a helper to set up a browser object that doesn't handle the "Referer"
+header automatically.  We need to poke into the internals of
+zope.testbrowser.browser.Browser here because it doesn't expose the required
+functionality:
+
+  >>> from contextlib import contextmanager
+  >>> from lp.testing.pages import Browser
+
+  >>> class BrowserWithReferrer(Browser):
+  ...     def __init__(self, referrer):
+  ...         self._referrer = referrer
+  ...         super(BrowserWithReferrer, self).__init__()
+  ...
+  ...     @contextmanager
+  ...     def _preparedRequest(self, url):
+  ...         with super(BrowserWithReferrer, self)._preparedRequest(
+  ...                 url) as reqargs:
+  ...             reqargs["headers"] = [
+  ...                 (key, value) for key, value in reqargs["headers"]
+  ...                 if key.lower() != "referer"]
+  ...             if self._referrer is not None:
+  ...                 reqargs["headers"].append(("Referer", self._referrer))
+  ...             yield reqargs
 
   >>> def setupBrowserWithReferrer(referrer):
-  ...      browser = setupBrowser("Basic no-priv@canonical.com:test")
-  ...      browser.mech_browser.set_handle_referer(False)
-  ...      if referrer is not None:
-  ...          browser.addHeader("Referer", referrer)
-  ...      return browser
+  ...     browser = BrowserWithReferrer(referrer)
+  ...     browser.handleErrors = False
+  ...     browser.addHeader(
+  ...         "Authorization", "Basic no-priv@canonical.com:test")
+  ...     return browser
 
 
 If we try to create a new team with with the referrer set to
@@ -65,9 +84,9 @@ present a hopefully helpful error message.
   Traceback (most recent call last):
     ...
   HTTPError...
-  >>> print browser.headers['status']
+  >>> print(browser.headers['status'])
   403 Forbidden
-  >>> print extract_text(find_main_content(browser.contents))
+  >>> print(extract_text(find_main_content(browser.contents)))
   No REFERER Header
   ...
   >>> browser.getLink('the FAQ').url
@@ -80,11 +99,6 @@ REFERER header.
 To support apport, we allow it for +storeblob.
 
   >>> browser.post('http://launchpad.test/+storeblob', 'x=1')
-
-Similary, we exempt the URL /+hwdb/+submit in order to allow checkbox
-to submit HWDB reports.
-
-  >>> browser.post('http://launchpad.test/+hwdb/+submit', 'x=1')
 
 To support old versions of launchpadlib, we also let POST requests
 without a REFERER header go through to +request-token and
@@ -116,7 +130,7 @@ managed by launchpad:
   >>> browser.getControl('Name', index=0).value = 'team4'
   >>> browser.getControl('Display Name').value = 'Team 4'
   >>> browser.getControl('Create').click()
-  >>> print browser.url
+  >>> print(browser.url)
   http://launchpad.test/~team4
 
   # Now restore our site's hostname.

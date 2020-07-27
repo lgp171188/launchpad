@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Soyuz buildd slave manager logic."""
@@ -11,11 +11,17 @@ __all__ = [
     'SlaveScanner',
     ]
 
+from collections import defaultdict
 import datetime
 import functools
 import logging
 
-from storm.expr import LeftJoin
+import six
+from storm.expr import (
+    Column,
+    LeftJoin,
+    Table,
+    )
 import transaction
 from twisted.application import service
 from twisted.internet import (
@@ -44,9 +50,16 @@ from lp.buildmaster.interfaces.builder import (
     CannotResumeHost,
     IBuilderSet,
     )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.services.database.bulk import dbify_value
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormexpr import (
+    BulkUpdate,
+    Values,
+    )
 from lp.services.propertycache import get_property_cache
 
 
@@ -62,11 +75,145 @@ JOB_RESET_THRESHOLD = 3
 BUILDER_FAILURE_THRESHOLD = 5
 
 
-class BuilderFactory:
+def build_candidate_sort_key(candidate):
+    # Sort key for build candidates.  This must match the ordering used in
+    # BuildQueueSet.findBuildCandidates.
+    return -candidate.lastscore, candidate.id
+
+
+class PrefetchedBuildCandidates:
+    """A set of build candidates updated using efficient bulk queries.
+
+    `pop` doesn't touch the DB directly.  It works from cached data updated
+    by `prefetchForBuilder`.
+    """
+
+    def __init__(self, all_vitals):
+        self.builder_groups = defaultdict(list)
+        for vitals in all_vitals:
+            for builder_group_key in self._getBuilderGroupKeys(vitals):
+                self.builder_groups[builder_group_key].append(vitals)
+        self.candidates = defaultdict(list)
+        self.sort_keys = {}
+
+    @staticmethod
+    def _getBuilderGroupKeys(vitals):
+        return [
+            (processor_name, vitals.virtualized)
+            for processor_name in vitals.processor_names + [None]]
+
+    @staticmethod
+    def _getSortKey(candidate):
+        # Sort key for build candidates.  This must match the ordering used in
+        # BuildQueueSet.findBuildCandidates.
+        return -candidate.lastscore, candidate.id
+
+    def _addCandidates(self, builder_group_key, candidates):
+        for candidate in candidates:
+            self.candidates[builder_group_key].append(candidate.id)
+            self.sort_keys[candidate.id] = self._getSortKey(candidate)
+
+    def prefetchForBuilder(self, vitals):
+        """Ensure that the prefetched cache is populated for this builder."""
+        missing_builder_group_keys = (
+            set(self._getBuilderGroupKeys(vitals)) - set(self.candidates))
+        if not missing_builder_group_keys:
+            return
+        processor_set = getUtility(IProcessorSet)
+        processors_by_name = {
+            processor_name: (
+                processor_set.getByName(processor_name)
+                if processor_name is not None else None)
+            for processor_name, _ in missing_builder_group_keys}
+        bq_set = getUtility(IBuildQueueSet)
+        for builder_group_key in missing_builder_group_keys:
+            processor_name, virtualized = builder_group_key
+            self._addCandidates(
+                builder_group_key,
+                bq_set.findBuildCandidates(
+                    processors_by_name[processor_name], virtualized,
+                    len(self.builder_groups[builder_group_key])))
+
+    def pop(self, vitals):
+        """Return a suitable build candidate for this builder.
+
+        The candidate is removed from the cache, but the caller must ensure
+        that it is marked as building, otherwise it will come back the next
+        time the cache is updated (typically on the next scan cycle).
+        """
+        builder_group_keys = self._getBuilderGroupKeys(vitals)
+        # Take the first entry from the pre-sorted list of candidates for
+        # each builder group, and then re-sort the combined list in exactly
+        # the same way.
+        grouped_candidates = sorted(
+            [(builder_group_key, self.candidates[builder_group_key][0])
+             for builder_group_key in builder_group_keys
+             if self.candidates[builder_group_key]],
+            key=lambda key_candidate: self.sort_keys[key_candidate[1]])
+        if grouped_candidates:
+            builder_group_key, candidate_id = grouped_candidates[0]
+            self.candidates[builder_group_key].pop(0)
+            del self.sort_keys[candidate_id]
+            return getUtility(IBuildQueueSet).get(candidate_id)
+        else:
+            return None
+
+
+class BaseBuilderFactory:
+
+    date_updated = None
+
+    def update(self):
+        """Update the factory's view of the world."""
+        raise NotImplementedError
+
+    def prescanUpdate(self):
+        """Update the factory's view of the world before each scan."""
+        raise NotImplementedError
+
+    def __getitem__(self, name):
+        """Get the named `Builder` Storm object."""
+        return getUtility(IBuilderSet).getByName(name)
+
+    def getVitals(self, name):
+        """Get the named `BuilderVitals` object."""
+        raise NotImplementedError
+
+    def iterVitals(self):
+        """Iterate over all `BuilderVitals` objects."""
+        raise NotImplementedError
+
+    def findBuildCandidate(self, vitals):
+        """Find the next build candidate for this `BuilderVitals`, or None."""
+        raise NotImplementedError
+
+    def acquireBuildCandidate(self, vitals, builder):
+        """Acquire and return a build candidate in an atomic fashion.
+
+        If we succeed, mark it as building immediately so that it is not
+        dispatched to another builder by the build manager.
+
+        We can consider this to be atomic, because although the build
+        manager is a Twisted app and gives the appearance of doing lots of
+        things at once, it's still single-threaded so no more than one
+        builder scan can be in this code at the same time (as long as we
+        don't yield).
+
+        If there's ever more than one build manager running at once, then
+        this code will need some sort of mutex.
+        """
+        candidate = self.findBuildCandidate(vitals)
+        if candidate is not None:
+            candidate.markAsBuilding(builder)
+            transaction.commit()
+        return candidate
+
+
+class BuilderFactory(BaseBuilderFactory):
     """A dumb builder factory that just talks to the DB."""
 
     def update(self):
-        """Update the factory's view of the world.
+        """See `BaseBuilderFactory`.
 
         For the basic BuilderFactory this is a no-op, but others might do
         something.
@@ -74,7 +221,7 @@ class BuilderFactory:
         return
 
     def prescanUpdate(self):
-        """Update the factory's view of the world before each scan.
+        """See `BaseBuilderFactory`.
 
         For the basic BuilderFactory this means ending the transaction
         to ensure that data retrieved is up to date.
@@ -85,61 +232,66 @@ class BuilderFactory:
     def date_updated(self):
         return datetime.datetime.utcnow()
 
-    def __getitem__(self, name):
-        """Get the named `Builder` Storm object."""
-        return getUtility(IBuilderSet).getByName(name)
-
     def getVitals(self, name):
-        """Get the named `BuilderVitals` object."""
+        """See `BaseBuilderFactory`."""
         return extract_vitals_from_db(self[name])
 
     def iterVitals(self):
-        """Iterate over all `BuilderVitals` objects."""
+        """See `BaseBuilderFactory`."""
         return (
             extract_vitals_from_db(b)
             for b in getUtility(IBuilderSet).__iter__())
 
+    def findBuildCandidate(self, vitals):
+        """See `BaseBuilderFactory`."""
+        candidates = PrefetchedBuildCandidates([vitals])
+        candidates.prefetchForBuilder(vitals)
+        return candidates.pop(vitals)
 
-class PrefetchedBuilderFactory:
+
+class PrefetchedBuilderFactory(BaseBuilderFactory):
     """A smart builder factory that does efficient bulk queries.
 
     `getVitals` and `iterVitals` don't touch the DB directly. They work
     from cached data updated by `update`.
     """
 
-    date_updated = None
-
     def update(self):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         transaction.abort()
-        builders_and_bqs = IStore(Builder).using(
-            Builder, LeftJoin(BuildQueue, BuildQueue.builderID == Builder.id)
-            ).find((Builder, BuildQueue))
+        builders_and_current_bqs = list(IStore(Builder).using(
+            Builder, LeftJoin(BuildQueue, BuildQueue.builder == Builder.id)
+            ).find((Builder, BuildQueue)))
+        getUtility(IBuilderSet).preloadProcessors(
+            [b for b, _ in builders_and_current_bqs])
         self.vitals_map = dict(
             (b.name, extract_vitals_from_db(b, bq))
-            for b, bq in builders_and_bqs)
+            for b, bq in builders_and_current_bqs)
+        self.candidates = PrefetchedBuildCandidates(
+            list(self.vitals_map.values()))
         transaction.abort()
         self.date_updated = datetime.datetime.utcnow()
 
     def prescanUpdate(self):
-        """See `BuilderFactory`.
+        """See `BaseBuilderFactory`.
 
         This is a no-op, as the data was already brought sufficiently up
         to date by update().
         """
         return
 
-    def __getitem__(self, name):
-        """See `BuilderFactory`."""
-        return getUtility(IBuilderSet).getByName(name)
-
     def getVitals(self, name):
-        """See `BuilderFactory`."""
+        """See `BaseBuilderFactory`."""
         return self.vitals_map[name]
 
     def iterVitals(self):
-        """See `BuilderFactory`."""
-        return (b for n, b in sorted(self.vitals_map.iteritems()))
+        """See `BaseBuilderFactory`."""
+        return (b for n, b in sorted(six.iteritems(self.vitals_map)))
+
+    def findBuildCandidate(self, vitals):
+        """See `BaseBuilderFactory`."""
+        self.candidates.prefetchForBuilder(vitals)
+        return self.candidates.pop(vitals)
 
 
 def judge_failure(builder_count, job_count, exc, retry=True):
@@ -277,12 +429,13 @@ class SlaveScanner:
     # greater than abort_timeout in launchpad-buildd's slave BuildManager.
     CANCEL_TIMEOUT = 180
 
-    def __init__(self, builder_name, builder_factory, logger, clock=None,
-                 interactor_factory=BuilderInteractor,
+    def __init__(self, builder_name, builder_factory, manager, logger,
+                 clock=None, interactor_factory=BuilderInteractor,
                  slave_factory=BuilderInteractor.makeSlaveFromVitals,
                  behaviour_factory=BuilderInteractor.getBuildBehaviour):
         self.builder_name = builder_name
         self.builder_factory = builder_factory
+        self.manager = manager
         self.logger = logger
         self.interactor_factory = interactor_factory
         self.slave_factory = slave_factory
@@ -483,7 +636,7 @@ class SlaveScanner:
             assert slave_status is not None
             yield interactor.updateBuild(
                 vitals, slave, slave_status, self.builder_factory,
-                self.behaviour_factory)
+                self.behaviour_factory, self.manager)
         else:
             if not vitals.builderok:
                 return
@@ -506,7 +659,8 @@ class SlaveScanner:
                 # attempt to just retry the scan; we need to reset
                 # the job so the dispatch will be reattempted.
                 builder = self.builder_factory[self.builder_name]
-                d = interactor.findAndStartJob(vitals, builder, slave)
+                d = interactor.findAndStartJob(
+                    vitals, builder, slave, self.builder_factory)
                 d.addErrback(functools.partial(self._scanFailed, False))
                 yield d
                 if builder.currentjob is not None:
@@ -528,66 +682,26 @@ class SlaveScanner:
                     transaction.commit()
 
 
-class NewBuildersScanner:
-    """If new builders appear, create a scanner for them."""
+class BuilddManager(service.Service):
+    """Main Buildd Manager service class."""
 
     # How often to check for new builders, in seconds.
-    SCAN_INTERVAL = 15
+    SCAN_BUILDERS_INTERVAL = 15
 
-    def __init__(self, manager, clock=None):
-        self.manager = manager
+    # How often to flush logtail updates, in seconds.
+    FLUSH_LOGTAILS_INTERVAL = 15
+
+    def __init__(self, clock=None, builder_factory=None):
         # Use the clock if provided, it's so that tests can
         # advance it.  Use the reactor by default.
         if clock is None:
             clock = reactor
         self._clock = clock
-        self.current_builders = []
-
-    def stop(self):
-        """Terminate the LoopingCall."""
-        self.loop.stop()
-
-    def scheduleScan(self):
-        """Schedule a callback SCAN_INTERVAL seconds later."""
-        self.loop = LoopingCall(self.scan)
-        self.loop.clock = self._clock
-        self.stopping_deferred = self.loop.start(self.SCAN_INTERVAL)
-        return self.stopping_deferred
-
-    def scan(self):
-        """If a new builder appears, create a SlaveScanner for it."""
-        self.manager.logger.debug("Refreshing builders from the database.")
-        try:
-            self.manager.builder_factory.update()
-            new_builders = self.checkForNewBuilders()
-            self.manager.addScanForBuilders(new_builders)
-        except Exception:
-            self.manager.logger.error(
-                "Failure while updating builders:\n",
-                exc_info=True)
-            transaction.abort()
-        self.manager.logger.debug("Builder refresh complete.")
-
-    def checkForNewBuilders(self):
-        """See if any new builders were added."""
-        new_builders = set(
-            vitals.name for vitals in
-            self.manager.builder_factory.iterVitals())
-        old_builders = set(self.current_builders)
-        extra_builders = new_builders.difference(old_builders)
-        self.current_builders.extend(extra_builders)
-        return list(extra_builders)
-
-
-class BuilddManager(service.Service):
-    """Main Buildd Manager service class."""
-
-    def __init__(self, clock=None, builder_factory=None):
         self.builder_slaves = []
         self.builder_factory = builder_factory or PrefetchedBuilderFactory()
         self.logger = self._setupLogger()
-        self.new_builders_scanner = NewBuildersScanner(
-            manager=self, clock=clock)
+        self.current_builders = []
+        self.pending_logtails = {}
 
     def _setupLogger(self):
         """Set up a 'slave-scanner' logger that redirects to twisted.
@@ -607,20 +721,86 @@ class BuilddManager(service.Service):
         logger.setLevel(level)
         return logger
 
+    def checkForNewBuilders(self):
+        """Add and return any new builders."""
+        new_builders = set(
+            vitals.name for vitals in self.builder_factory.iterVitals())
+        old_builders = set(self.current_builders)
+        extra_builders = new_builders.difference(old_builders)
+        self.current_builders.extend(extra_builders)
+        return list(extra_builders)
+
+    def scanBuilders(self):
+        """Update builders from the database and start new polling loops."""
+        self.logger.debug("Refreshing builders from the database.")
+        try:
+            self.builder_factory.update()
+            new_builders = self.checkForNewBuilders()
+            self.addScanForBuilders(new_builders)
+        except Exception:
+            self.logger.error(
+                "Failure while updating builders:\n",
+                exc_info=True)
+            transaction.abort()
+        self.logger.debug("Builder refresh complete.")
+
+    def addLogTail(self, build_queue_id, logtail):
+        self.pending_logtails[build_queue_id] = logtail
+
+    def flushLogTails(self):
+        """Flush any pending log tail updates to the database."""
+        self.logger.debug("Flushing log tail updates.")
+        try:
+            pending_logtails = self.pending_logtails
+            self.pending_logtails = {}
+            if pending_logtails:
+                new_logtails = Table("new_logtails")
+                new_logtails_expr = Values(
+                    new_logtails.name,
+                    [("buildqueue", "integer"), ("logtail", "text")],
+                    [[dbify_value(BuildQueue.id, buildqueue_id),
+                      dbify_value(BuildQueue.logtail, logtail)]
+                     for buildqueue_id, logtail in pending_logtails.items()])
+                store = IStore(BuildQueue)
+                store.execute(BulkUpdate(
+                    {BuildQueue.logtail: Column("logtail", new_logtails)},
+                    table=BuildQueue, values=new_logtails_expr,
+                    where=(
+                        BuildQueue.id == Column("buildqueue", new_logtails))))
+                transaction.commit()
+        except Exception:
+            self.logger.exception(
+                "Failure while flushing log tail updates:\n")
+            transaction.abort()
+        self.logger.debug("Flushing log tail updates complete.")
+
+    def _startLoop(self, interval, callback):
+        """Schedule `callback` to run every `interval` seconds."""
+        loop = LoopingCall(callback)
+        loop.clock = self._clock
+        stopping_deferred = loop.start(interval)
+        return loop, stopping_deferred
+
     def startService(self):
         """Service entry point, called when the application starts."""
-        # Ask the NewBuildersScanner to add and start SlaveScanners for
-        # each current builder, and any added in the future.
-        self.new_builders_scanner.scheduleScan()
+        # Add and start SlaveScanners for each current builder, and any
+        # added in the future.
+        self.scan_builders_loop, self.scan_builders_deferred = (
+            self._startLoop(self.SCAN_BUILDERS_INTERVAL, self.scanBuilders))
+        # Schedule bulk flushes for build queue logtail updates.
+        self.flush_logtails_loop, self.flush_logtails_deferred = (
+            self._startLoop(self.FLUSH_LOGTAILS_INTERVAL, self.flushLogTails))
 
     def stopService(self):
         """Callback for when we need to shut down."""
         # XXX: lacks unit tests
         # All the SlaveScanner objects need to be halted gracefully.
         deferreds = [slave.stopping_deferred for slave in self.builder_slaves]
-        deferreds.append(self.new_builders_scanner.stopping_deferred)
+        deferreds.append(self.scan_builders_deferred)
+        deferreds.append(self.flush_logtails_deferred)
 
-        self.new_builders_scanner.stop()
+        self.flush_logtails_loop.stop()
+        self.scan_builders_loop.stop()
         for slave in self.builder_slaves:
             slave.stopCycle()
 
@@ -634,7 +814,7 @@ class BuilddManager(service.Service):
         """Set up scanner objects for the builders specified."""
         for builder in builders:
             slave_scanner = SlaveScanner(
-                builder, self.builder_factory, self.logger)
+                builder, self.builder_factory, self, self.logger)
             self.builder_slaves.append(slave_scanner)
             slave_scanner.startCycle()
 

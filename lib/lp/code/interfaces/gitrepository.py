@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository interfaces."""
@@ -22,14 +22,14 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -65,6 +65,8 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
+    GitListingSort,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
@@ -73,10 +75,12 @@ from lp.code.interfaces.hasrecipes import IHasRecipes
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IPersonRoles
@@ -128,7 +132,7 @@ def git_repository_name_validator(name):
 class IGitRepositoryView(IHasRecipes):
     """IGitRepository attributes that require launchpad.View permission."""
 
-    id = Int(title=_("ID"), readonly=True, required=True)
+    id = exported(Int(title=_("ID"), readonly=True, required=True))
 
     date_created = exported(Datetime(
         title=_("Date created"), required=True, readonly=True))
@@ -139,6 +143,11 @@ class IGitRepositoryView(IHasRecipes):
         description=_(
             "The way this repository is hosted: directly on Launchpad, or "
             "imported from somewhere else.")))
+
+    status = Choice(
+        title=_("Status of this repository"),
+        required=True, readonly=True,
+        vocabulary=GitRepositoryStatus)
 
     registrant = exported(PublicPersonChoice(
         title=_("Registrant"), required=True, readonly=True,
@@ -203,6 +212,9 @@ class IGitRepositoryView(IHasRecipes):
 
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
+
+    def getClonedFrom():
+        """Returns from which repository the given repo is a clone from."""
 
     @operation_parameters(
         reviewer=Reference(
@@ -406,9 +418,10 @@ class IGitRepositoryView(IHasRecipes):
         itself.  For default repositories, the context object is the
         appropriate default object.
 
-        Where a repository is the default for a product or a distribution
-        source package, the repository is available through a number of
-        different URLs.  These URLs are the aliases for the repository.
+        Where a repository is the default for a product, distribution
+        source package or OCI project, the repository is available
+        through a number of different URLs.
+        These URLs are the aliases for the repository.
 
         For example, a repository which is the default for the 'fooix'
         project and which is also its owner's default repository for that
@@ -812,7 +825,9 @@ class IGitRepositoryEdit(IWebhookTarget):
             # _schema_circular_imports.py.
             value_type=InlineObject(schema=Interface),
             description=_(dedent("""\
-                The new list of rules for this repository.  For example::
+                The new list of rules for this repository.
+
+                For example::
 
                     [
                         {
@@ -907,26 +922,23 @@ class IGitRepositoryEdit(IWebhookTarget):
         """
 
 
+# XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 class IGitRepository(IGitRepositoryView, IGitRepositoryModerateAttributes,
                      IGitRepositoryModerate, IGitRepositoryEditableAttributes,
                      IGitRepositoryEdit):
     """A Git repository."""
-
-    # Mark repositories as exported entries for the Launchpad API.
-    # XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 
     private = exported(Bool(
         title=_("Private"), required=False, readonly=True,
         description=_("This repository is visible only to its subscribers.")))
 
 
+@exported_as_webservice_collection(IGitRepository)
 class IGitRepositorySet(Interface):
     """Interface representing the set of Git repositories."""
-
-    export_as_webservice_collection(IGitRepository)
 
     @call_with(
         repository_type=GitRepositoryType.HOSTED,
@@ -945,8 +957,9 @@ class IGitRepositorySet(Interface):
             repository.
         :param registrant: The `IPerson` who registered the new repository.
         :param owner: The `IPerson` who owns the new repository.
-        :param target: The `IProduct`, `IDistributionSourcePackage`, or
-            `IPerson` that the new repository is associated with.
+        :param target: The `IProduct`, `IDistributionSourcePackage`,
+            `IOCIProjectName`, or `IPerson` that the new repository is
+            associated with.
         :param name: The repository name.
         :param information_type: Set the repository's information type to
             one different from the target's default.  The type must conform
@@ -983,16 +996,32 @@ class IGitRepositorySet(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         target=Reference(
-            title=_("Target"), required=True, schema=IHasGitRepositories))
+            title=_("Target"), required=False, schema=IHasGitRepositories),
+        order_by=Choice(
+            title=_("Sort order"), vocabulary=GitListingSort,
+            default=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+            required=False),
+        modified_since_date=Datetime(
+            title=_("Modified since date"),
+            description=_(
+                "Return only repositories whose `date_last_modified` is "
+                "greater than or equal to this date.")))
     @operation_returns_collection_of(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
-    def getRepositories(user, target):
+    def getRepositories(user, target=None,
+                        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                        modified_since_date=None):
         """Get all repositories for a target.
 
         :param user: An `IPerson`.  Only repositories visible by this user
             will be returned.
-        :param target: An `IHasGitRepositories`.
+        :param target: An `IHasGitRepositories`, or None to get repositories
+            for all targets.
+        :param order_by: An item from the `GitListingSort` enumeration, or
+            None to return an unordered result set.
+        :param modified_since_date: If not None, return only repositories
+            whose `date_last_modified` is greater than this date.
 
         :return: A collection of `IGitRepository` objects.
         """
@@ -1069,7 +1098,7 @@ class IGitRepositorySet(Interface):
             title=_("Git repository"), required=False, schema=IGitRepository))
     @export_write_operation()
     @operation_for_version("devel")
-    def setDefaultRepository(target, repository):
+    def setDefaultRepository(target, repository, force_oci=False):
         """Set the default repository for a target.
 
         :param target: An `IHasGitRepositories`.
@@ -1161,11 +1190,14 @@ class GitIdentityMixin:
             elif IDistributionSourcePackage.providedBy(self.target):
                 factory = getUtility(IPersonDistributionSourcePackageFactory)
                 default = factory.create(self.owner, self.target)
+            elif IOCIProject.providedBy(self.target):
+                factory = getUtility(IPersonOCIProjectFactory)
+                default = factory.create(self.owner, self.target)
             else:
                 # Also enforced by database constraint.
                 raise AssertionError(
-                    "Only projects or packages can have owner-target default "
-                    "repositories.")
+                    "Only projects, packages, or OCI projects can have "
+                    "owner-target default repositories.")
             defaults.append(ICanHasDefaultGitRepository(default))
         return sorted(defaults)
 

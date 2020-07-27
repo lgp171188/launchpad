@@ -15,6 +15,7 @@ import shutil
 
 from pytz import utc
 import scandir
+import six
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -42,10 +43,7 @@ from lp.services.scripts.base import (
     LaunchpadScriptFailure,
     )
 from lp.services.utils import file_exists
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.scripts.custom_uploads_copier import CustomUploadsCopier
 
@@ -224,9 +222,7 @@ class PublishFTPMaster(LaunchpadCronScript):
             return []
 
         # May need indexes for this series.
-        suites = [
-            distroseries.getSuite(pocket)
-            for pocket in pocketsuffix.iterkeys()]
+        suites = [distroseries.getSuite(pocket) for pocket in pocketsuffix]
         return [
             suite for suite in suites
                 if not file_exists(self.locateIndexesMarker(distro, suite))]
@@ -238,7 +234,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         longer needs archive indexes to be set up.
         """
         marker_name = self.locateIndexesMarker(distribution, suite)
-        with file(marker_name, "w") as marker:
+        with open(marker_name, "w") as marker:
             marker.write(
                 "Indexes for %s were created on %s.\n"
                 % (suite, datetime.now(utc)))
@@ -266,10 +262,10 @@ class PublishFTPMaster(LaunchpadCronScript):
         self.logger.debug("Querying which suites are pending publication...")
 
         archive = distribution.main_archive
-        pending = PackagePublishingStatus.PENDING
-        pending_sources = list(archive.getPublishedSources(status=pending))
+        pending_sources = list(archive.getPublishedSources(
+            only_unpublished=True))
         pending_binaries = list(archive.getAllPublishedBinaries(
-            status=pending))
+            only_unpublished=True))
         load_related(
             DistroArchSeries, pending_binaries, ['distroarchseriesID'])
         return set(
@@ -289,7 +285,8 @@ class PublishFTPMaster(LaunchpadCronScript):
 
         :param archive_purpose: The (purpose of the) archive to copy.
         """
-        for purpose, archive_config in self.configs[distribution].iteritems():
+        for purpose, archive_config in (
+                six.iteritems(self.configs[distribution])):
             dists = get_dists(archive_config)
             backup_dists = get_backup_dists(archive_config)
             execute_subprocess(
@@ -319,14 +316,15 @@ class PublishFTPMaster(LaunchpadCronScript):
         run died while in this state, restore the directory to its
         permanent location.
         """
-        for distro_configs in self.configs.itervalues():
-            for archive_config in distro_configs.itervalues():
+        for distro_configs in six.itervalues(self.configs):
+            for archive_config in six.itervalues(distro_configs):
                 self.recoverArchiveWorkingDir(archive_config)
 
     def setUpDirs(self):
         """Create archive roots and such if they did not yet exist."""
-        for distro_configs in self.configs.itervalues():
-            for archive_purpose, archive_config in distro_configs.iteritems():
+        for distro_configs in six.itervalues(self.configs):
+            for archive_purpose, archive_config in (
+                    six.iteritems(distro_configs)):
                 archiveroot = archive_config.archiveroot
                 if not file_exists(archiveroot):
                     self.logger.debug(
@@ -407,7 +405,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         backup dists directory around.
         """
         self.logger.debug("Moving the new dists into place...")
-        for archive_config in self.configs[distribution].itervalues():
+        for archive_config in six.itervalues(self.configs[distribution]):
             # Use the dists "working location" as a temporary place to
             # move the current dists out of the way for the switch.  If
             # we die in this state, the next run will know to move the
@@ -422,7 +420,7 @@ class PublishFTPMaster(LaunchpadCronScript):
 
     def clearEmptyDirs(self, distribution):
         """Clear out any redundant empty directories."""
-        for archive_config in self.configs[distribution].itervalues():
+        for archive_config in six.itervalues(self.configs[distribution]):
             execute_subprocess(
                 ["find", archive_config.archiveroot, "-type", "d", "-empty",
                  "-delete"],
@@ -432,7 +430,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         """Run the finalize.d parts to finalize publication."""
         archive_roots = ' '.join([
             archive_config.archiveroot
-            for archive_config in self.configs[distribution].itervalues()])
+            for archive_config in six.itervalues(self.configs[distribution])])
 
         env = {
             'SECURITY_UPLOAD_ONLY': 'yes' if security_only else 'no',

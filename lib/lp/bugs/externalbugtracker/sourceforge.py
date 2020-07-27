@@ -7,7 +7,8 @@ __metaclass__ = type
 __all__ = ['SourceForge']
 
 import re
-import urllib
+
+from six.moves.urllib.parse import splitvalue
 
 from lp.bugs.externalbugtracker import (
     BugNotFound,
@@ -94,7 +95,7 @@ class SourceForge(ExternalBugTracker):
             query_dict = {}
             bugtracker_link = soup.find('a', text='Bugs')
             if bugtracker_link:
-                href = bugtracker_link.findParent()['href']
+                href = bugtracker_link['href']
 
                 # We need to replace encoded ampersands in the URL since
                 # SourceForge occasionally encodes them.
@@ -103,7 +104,7 @@ class SourceForge(ExternalBugTracker):
 
                 query_bits = query.split('&')
                 for bit in query_bits:
-                    key, value = urllib.splitvalue(bit)
+                    key, value = splitvalue(bit)
                     query_dict[key] = value
 
                 try:

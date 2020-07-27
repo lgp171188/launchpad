@@ -24,7 +24,7 @@ def test_suite():
     import lp.app.validators.validation
     test = DocTestSuite(
         lp.app.validators.validation,
-        setUp=setUp,
+        setUp=lambda test: setUp(test, future=True),
         tearDown=tearDown,
         optionflags=ELLIPSIS | NORMALIZE_WHITESPACE
         )

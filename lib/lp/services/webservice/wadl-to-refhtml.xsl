@@ -299,6 +299,15 @@
                 <xsl:text>/</xsl:text>
                 <var>&lt;architecture_tag&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'distro_arch_series_filter'">
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;distroseries.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;architecture_tag&gt;</var>
+                <xsl:text>/+source-filter</xsl:text>
+            </xsl:when>
             <xsl:when test="@id = 'distro_series'">
                 <xsl:text>/</xsl:text>
                 <var>&lt;distribution.name&gt;</var>
@@ -445,6 +454,54 @@
                             or @id = 'project_group'">
                 <xsl:text>/</xsl:text>
                 <var>&lt;name&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'oci_project'">
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'oci_project_series'">
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+                <xsl:text>/+series/</xsl:text>
+                <var>&lt;oci_project_series.name&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'oci_recipe'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+                <xsl:text>/+recipe/</xsl:text>
+                <var>&lt;oci_recipe.name&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'oci_recipe_build'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+                <xsl:text>/+recipe/</xsl:text>
+                <var>&lt;oci_recipe.name&gt;</var>
+                <xsl:text>/+build/</xsl:text>
+                <var>&lt;oci_recipe_build.id&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'oci_recipe_build_request'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+                <xsl:text>/+recipe/</xsl:text>
+                <var>&lt;oci_recipe.name&gt;</var>
+                <xsl:text>/+build-request/</xsl:text>
+                <var>&lt;build_request.id&gt;</var>
             </xsl:when>
             <xsl:when test="@id = 'team' or @id = 'person'">
                 <xsl:text>/~</xsl:text>
@@ -712,6 +769,15 @@
         <xsl:choose>
             <xsl:when test="@id = 'hwdb'">
                 <xsl:text>/+hwdb</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'snap_bases'">
+                <xsl:text>/+snap-bases</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'snappy_serieses'">
+                <xsl:text>/+snappy-series</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'snaps'">
+                <xsl:text>/+snaps</xsl:text>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:text>/</xsl:text><xsl:value-of select="@id" />

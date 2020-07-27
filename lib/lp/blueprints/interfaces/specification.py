@@ -14,18 +14,16 @@ __all__ = [
     'ISpecificationView',
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_operation_as,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -37,6 +35,7 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -94,7 +93,7 @@ from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import structured
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class GoalProposeError(Exception):
     """Invalid series goal for this specification."""
 
@@ -685,12 +684,11 @@ class ISpecificationDriverRestricted(Interface):
         """
 
 
+@exported_as_webservice_entry(as_of="beta")
 class ISpecification(ISpecificationPublic, ISpecificationView,
                      ISpecificationEditRestricted,
                      ISpecificationDriverRestricted, IBugLinkTarget):
     """A Specification."""
-
-    export_as_webservice_entry(as_of="beta")
 
     @mutator_for(ISpecificationView['workitems_text'])
     @operation_parameters(new_work_items=WorkItemsText())
@@ -725,9 +723,9 @@ class ISpecification(ISpecificationPublic, ISpecificationView,
         """
 
 
+@exported_as_webservice_collection(ISpecification)
 class ISpecificationSet(IHasSpecifications):
     """A container for specifications."""
-    export_as_webservice_collection(ISpecification)
 
     @collection_default_content()
     def empty_list():

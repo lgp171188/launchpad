@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -23,9 +23,10 @@ import _pythonpath
 from collections import namedtuple
 import sys
 
-from bzrlib import errors
-from bzrlib.bzrdir import BzrDir
-from bzrlib.config import TransportConfig
+from breezy import errors
+from breezy.branch import UnstackableBranchFormat
+from breezy.bzr.bzrdir import BzrDir
+from breezy.config import TransportConfig
 
 from lp.code.interfaces.codehosting import branch_id_alias
 from lp.codehosting.bzrutils import get_branch_stacked_on_url
@@ -109,7 +110,7 @@ class UpdateStackedBranches(LaunchpadScript):
             self.logger.warn(
                 "Branch for %r at %r is not stacked at all. Giving up."
                 % (branch_id, bzr_branch_url))
-        except errors.UnstackableBranchFormat:
+        except UnstackableBranchFormat:
             self.logger.error(
                 "Branch for %r at %r is unstackable. Giving up."
                 % (branch_id, bzr_branch_url))

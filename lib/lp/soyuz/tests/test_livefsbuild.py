@@ -11,12 +11,16 @@ from datetime import (
     datetime,
     timedelta,
     )
-from urllib2 import (
-    HTTPError,
-    urlopen,
-    )
 
+from fixtures import FakeLogger
 import pytz
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
+from six.moves.urllib.request import urlopen
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -34,9 +38,12 @@ from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.interfaces import OAuthPermission
+from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.livefs import (
     LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
     LiveFSFeatureDisabled,
     )
 from lp.soyuz.interfaces.livefsbuild import (
@@ -51,6 +58,7 @@ from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
@@ -164,6 +172,62 @@ class TestLiveFSBuild(TestCaseWithFactory):
         self.build.cancel()
         self.assertEqual(BuildStatus.CANCELLED, self.build.status)
         self.assertIsNone(self.build.buildqueue_record)
+
+    def test_updateStatus_triggers_webhooks(self):
+        # Updating the status of a SnapBuild triggers webhooks on the
+        # corresponding Snap.
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.livefs, event_types=["livefs:build:0.1"])
+        with FeatureFixture({LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        expected_payload = {
+            "livefs_build": Equals(
+                canonical_url(self.build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "livefs": Equals(
+                 canonical_url(self.build.livefs, force_local_path=True)),
+            "status": Equals("Successfully built"),
+            }
+        self.assertThat(
+            logger.output, LogsScheduledWebhooks([
+                (hook, "livefs:build:0.1", MatchesDict(expected_payload))]))
+
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery, MatchesStructure(
+                event_type=Equals("livefs:build:0.1"),
+                payload=MatchesDict(expected_payload)))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
+
+    def test_updateStatus_no_change_does_not_trigger_webhooks(self):
+        # An updateStatus call that doesn't change the build's status
+        # attribute does not trigger webhooks.
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.livefs, event_types=["livefs:build:0.1"])
+        with FeatureFixture({LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "livefs:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+
+        self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "livefs:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
     def test_cancel_in_progress(self):
         # The cancel() method for a building build leaves it in the
@@ -453,9 +517,9 @@ class TestLiveFSBuildWebservice(TestCaseWithFactory):
         self.assertEqual(5000, build["score"])
 
     def assertCanOpenRedirectedUrl(self, browser, url):
-        redirection = self.assertRaises(HTTPError, browser.open, url)
-        self.assertEqual(303, redirection.code)
-        urlopen(redirection.hdrs["Location"]).close()
+        browser.open(url)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        urlopen(browser.headers["Location"]).close()
 
     def test_logs(self):
         # API clients can fetch the build and upload logs.
@@ -466,6 +530,7 @@ class TestLiveFSBuildWebservice(TestCaseWithFactory):
         logout()
         build = self.webservice.get(build_url).jsonBody()
         browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
         self.assertIsNotNone(build["build_log_url"])
         self.assertCanOpenRedirectedUrl(browser, build["build_log_url"])
         self.assertIsNotNone(build["upload_log_url"])
@@ -486,5 +551,6 @@ class TestLiveFSBuildWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertContentEqual(file_urls, response.jsonBody())
         browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
         for file_url in file_urls:
             self.assertCanOpenRedirectedUrl(browser, file_url)

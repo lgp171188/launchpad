@@ -20,9 +20,8 @@ __all__ = [
     'UploadNotScannedYetResponse',
     ]
 
-import httplib
-
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 from zope.interface import Interface
 
 
@@ -37,7 +36,7 @@ class SnapStoreError(Exception):
         self.can_retry = can_retry
 
 
-@error_status(httplib.INTERNAL_SERVER_ERROR)
+@error_status(http_client.INTERNAL_SERVER_ERROR)
 class BadRequestPackageUploadResponse(SnapStoreError):
     pass
 

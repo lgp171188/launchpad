@@ -8,11 +8,12 @@ from datetime import (
     timedelta,
     )
 import re
-import urllib
 
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import UTC
 import simplejson
+import six
+from six.moves.urllib.parse import urlencode
 import soupmatchers
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -1999,7 +2000,7 @@ class TestBugTaskSearchListingView(BrowserTestCase):
                 query_vars['start'] = int(memo) - size
         if not forwards:
             query_vars['direction'] = 'backwards'
-        query_string = urllib.urlencode(query_vars)
+        query_string = urlencode(query_vars)
         request = LaunchpadTestRequest(
             QUERY_STRING=query_string, orderby=orderby, HTTP_COOKIE=cookie)
         if bugtask is None:
@@ -2414,7 +2415,7 @@ class TestBugTaskExpirableListingView(BrowserTestCase):
         title = bug.title
         content = self.getMainContent(
             bug.default_bugtask.target, "+expirable-bugs")
-        self.assertIn(title, str(content))
+        self.assertIn(title, six.text_type(content))
 
 
 class TestBugListingBatchNavigator(TestCaseWithFactory):

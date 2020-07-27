@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mock Build objects for tests soyuz buildd-system."""
@@ -23,11 +23,11 @@ __all__ = [
 
 import os
 import sys
-import types
-import xmlrpclib
 
 import fixtures
 from lpbuildd.tests.harness import BuilddSlaveTestSetup
+import six
+from six.moves import xmlrpc_client
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
 from twisted.internet import defer
@@ -56,14 +56,16 @@ class MockBuilder:
     """Emulates a IBuilder class."""
 
     def __init__(self, name='mock-builder', builderok=True, manual=False,
-                 virtualized=True, vm_host=None, url='http://fake:0000',
-                 version=None, clean_status=BuilderCleanStatus.DIRTY,
+                 processors=None, virtualized=True, vm_host=None,
+                 url='http://fake:0000', version=None,
+                 clean_status=BuilderCleanStatus.DIRTY,
                  vm_reset_protocol=BuilderResetProtocol.PROTO_1_1):
         self.currentjob = None
         self.builderok = builderok
         self.manual = manual
         self.url = url
         self.name = name
+        self.processors = processors or []
         self.virtualized = virtualized
         self.vm_host = vm_host
         self.vm_reset_protocol = vm_reset_protocol
@@ -159,7 +161,7 @@ class BuildingSlave(OkSlave):
 
     def status(self):
         self.call_log.append('status')
-        buildlog = xmlrpclib.Binary(
+        buildlog = xmlrpc_client.Binary(
             "This is a build log: %d" % self.status_count)
         self.status_count += 1
         return defer.succeed({
@@ -171,7 +173,7 @@ class BuildingSlave(OkSlave):
     def getFile(self, sum, file_to_write):
         self.call_log.append('getFile')
         if sum == "buildlog":
-            if isinstance(file_to_write, types.StringTypes):
+            if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
             file_to_write.write("This is a build log")
             file_to_write.close()
@@ -194,7 +196,8 @@ class WaitingSlave(OkSlave):
 
         # By default, the slave only has a buildlog, but callsites
         # can update this list as needed.
-        self.valid_file_hashes = ['buildlog']
+        self.valid_files = {'buildlog': ''}
+        self._got_file_record = []
 
     def status(self):
         self.call_log.append('status')
@@ -208,12 +211,17 @@ class WaitingSlave(OkSlave):
 
     def getFile(self, hash, file_to_write):
         self.call_log.append('getFile')
-        if hash in self.valid_file_hashes:
-            content = "This is a %s" % hash
-            if isinstance(file_to_write, types.StringTypes):
+        if hash in self.valid_files:
+            if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
+            if not self.valid_files[hash]:
+                content = b"This is a %s" % hash
+            else:
+                with open(self.valid_files[hash], 'rb') as source:
+                    content = source.read()
             file_to_write.write(content)
             file_to_write.close()
+            self._got_file_record.append(hash)
         return defer.succeed(None)
 
 
@@ -231,7 +239,7 @@ class AbortingSlave(OkSlave):
 class LostBuildingBrokenSlave:
     """A mock slave building bogus Build/BuildQueue IDs that can't be aborted.
 
-    When 'aborted' it raises an xmlrpclib.Fault(8002, 'Could not abort')
+    When 'aborted' it raises an xmlrpc_client.Fault(8002, 'Could not abort')
     """
 
     def __init__(self):
@@ -246,7 +254,7 @@ class LostBuildingBrokenSlave:
 
     def abort(self):
         self.call_log.append('abort')
-        return defer.fail(xmlrpclib.Fault(8002, "Could not abort"))
+        return defer.fail(xmlrpc_client.Fault(8002, "Could not abort"))
 
     def resume(self):
         self.call_log.append('resume')
@@ -261,7 +269,7 @@ class BrokenSlave:
 
     def status(self):
         self.call_log.append('status')
-        return defer.fail(xmlrpclib.Fault(8001, "Broken slave"))
+        return defer.fail(xmlrpc_client.Fault(8001, "Broken slave"))
 
 
 class TrivialBehaviour:
@@ -307,14 +315,15 @@ class SlaveTestHelpers(fixtures.Fixture):
                 lambda: open(tachandler.logfile, 'r').readlines()))
         return tachandler
 
-    def getClientSlave(self, reactor=None, proxy=None, pool=None):
+    def getClientSlave(self, reactor=None, proxy=None,
+                       pool=None, process_pool=None):
         """Return a `BuilderSlave` for use in testing.
 
         Points to a fixed URL that is also used by `BuilddSlaveTestSetup`.
         """
         return BuilderSlave.makeBuilderSlave(
             self.base_url, 'vmhost', config.builddmaster.socket_timeout,
-            reactor=reactor, proxy=proxy, pool=pool)
+            reactor=reactor, proxy=proxy, pool=pool, process_pool=process_pool)
 
     def makeCacheFile(self, tachandler, filename, contents=b'something'):
         """Make a cache file available on the remote slave.

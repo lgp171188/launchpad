@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -30,11 +30,13 @@ class ProcessMail(LaunchpadScript):
         # NB: This somewhat duplicates handleMail, but there it's mixed in
         # with handling a mailbox, which we're avoiding here.
         if len(self.args) >= 1:
-            from_file = file(self.args[0], 'rb')
+            from_file = open(self.args[0], 'rb')
         else:
             from_file = sys.stdin
         self.logger.debug("reading message from %r" % (from_file,))
         raw_mail = from_file.read()
+        if from_file != sys.stdin:
+            from_file.close()
         self.logger.debug("got %d bytes" % len(raw_mail))
         file_alias = save_mail_to_librarian(raw_mail)
         self.logger.debug("saved to librarian as %r" % (file_alias,))

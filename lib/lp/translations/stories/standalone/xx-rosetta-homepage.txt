@@ -47,7 +47,7 @@ translated projects.
     ...     print(extract_text(project))
     Evolution
     >>> print(extract_text(middle_column.findAll('div')[0]))
-    &raquo; List all translatable projects...
+    » List all translatable projects...
 
 The translation front page list of the user's translatable languages.
 in the right column.

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the CodeImportWorkerMonitor and related classes."""
@@ -13,12 +13,12 @@ import shutil
 import StringIO
 import subprocess
 import tempfile
-import urllib
 
 from bzrlib.branch import Branch
 from bzrlib.tests import TestCaseInTempDir
 from dulwich.repo import Repo as GitRepo
 import oops_twisted
+from six.moves.urllib.request import urlopen
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
@@ -72,6 +72,7 @@ from lp.services.config.fixture import (
     ConfigFixture,
     ConfigUseFixture,
     )
+from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger
 from lp.services.twistedsupport import suppress_stderr
 from lp.services.twistedsupport.tests.test_processmonitor import (
@@ -368,7 +369,7 @@ class TestWorkerMonitorUnit(TestCase):
         def check_file_uploaded(result):
             transaction.abort()
             url = worker_monitor.codeimport_endpoint.calls[0][3]
-            text = urllib.urlopen(url).read()
+            text = urlopen(url).read()
             self.assertEqual(log_text, text)
 
         return worker_monitor.finishJob(
@@ -669,9 +670,9 @@ class TestWorkerMonitorRunNoProcess(TestCase):
 
 def nuke_codeimport_sample_data():
     """Delete all the sample data that might interfere with tests."""
-    for job in CodeImportJob.select():
+    for job in IStore(CodeImportJob).find(CodeImportJob):
         job.destroySelf()
-    for code_import in CodeImport.select():
+    for code_import in IStore(CodeImport).find(CodeImport):
         code_import.destroySelf()
 
 
@@ -735,7 +736,7 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
         self.foreign_commit_count = 2
 
         return self.factory.makeCodeImport(
-            cvs_root=cvs_server.getRoot(), cvs_module='trunk')
+            cvs_root=cvs_server.getRoot(), cvs_module=u'trunk')
 
     def makeSVNCodeImport(self):
         """Make a `CodeImport` that points to a real Subversion repository."""
@@ -796,7 +797,7 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
             code_import.updateFromData(
                 {'review_status': CodeImportReviewStatus.REVIEWED},
                 self.factory.makePerson())
-        job = getUtility(ICodeImportJobSet).getJobForMachine('machine', 10)
+        job = getUtility(ICodeImportJobSet).getJobForMachine(u'machine', 10)
         self.assertEqual(code_import, job.code_import)
         source_details = CodeImportSourceDetails.fromArguments(
             removeSecurityProxy(job.makeWorkerArguments()))

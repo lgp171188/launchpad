@@ -294,10 +294,8 @@ Launchpad schema. This is a general outline of inheritance:
         |    + bazaar-staging/launchpad-lazr.conf
         |    |
         |    + staging/launchpad-lazr.conf
-        |    |    |
-        |    |    + authserver-lazr.conf
-        |    |
-        |    + staging-mailman/launchpad-lazr.conf
+        |         |
+        |         + authserver-lazr.conf
         |
         + lpnet-lazr.conf
         |    |
@@ -310,8 +308,6 @@ Launchpad schema. This is a general outline of inheritance:
         |    + librarian-restricted/launchpad-lazr.conf
         |    |
         |    + production/launchpad-lazr.conf
-        |    |
-        |    + production-mailman/launchpad-lazr.conf
         |    |
         |    + production-xmlrpc-private/launchpad-lazr.conf
         |

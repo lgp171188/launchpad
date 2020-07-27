@@ -40,7 +40,7 @@ that represents, when the translation was updated, and by whom.
 
     >>> table = content.findAll('table')[0]
     >>> for row in table.findAll('tr'):
-    ...     print(extract_text(row).encode('us-ascii', 'backslashreplace'))
+    ...     print(extract_text(row, formatter='html'))
     Language        Status  Untranslated Need review Changed Last    Edited By
     Afrikaans               22           ...         ...     &mdash; &mdash;
     Japanese                21           ...         ...     ...     Carlos...
@@ -59,13 +59,13 @@ English translations, but they are not displayed to the user.
     ...     '+source/mozilla/+pots/pkgconf-mozilla')
     >>> table = find_tag_by_id(anon_browser.contents, 'language-chart')
     >>> for row in table.findAll('tr')[0:6]:
-    ...     print(extract_text(row).encode('us-ascii', 'backslashreplace'))
+    ...     print(extract_text(row, formatter='html'))
     Language    Status  Untranslated Need review Changed Last  Edited By
     Afrikaans             9            ...         ...   ...   &mdash;
     Czech                 ...          ...         ...   ...   Miroslav Kure
     Danish                ...          ...         ...   ...   Morten Brix...
     Dutch                 ...          ...         ...   ...   Luk Claes
-    Finnish               ...          ...         ...   ...   P\xf6ll\xe4
+    Finnish               ...          ...         ...   ...   P&ouml;ll&auml;
 
 
 Sharing information

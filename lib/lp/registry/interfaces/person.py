@@ -38,8 +38,6 @@ __all__ = [
     'validate_membership_policy',
     ]
 
-import httplib
-
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -51,12 +49,12 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -70,14 +68,16 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+import six
+from six.moves import http_client
 from zope.component import getUtility
 from zope.formlib.form import NoInputData
 from zope.interface import (
     Attribute,
     Interface,
+    invariant,
     )
 from zope.interface.exceptions import Invalid
-from zope.interface.interface import invariant
 from zope.schema import (
     Bool,
     Choice,
@@ -181,7 +181,7 @@ def validate_person_common(obj, attr, value, validate_func,
     """Validate the person using the supplied function."""
     if value is None:
         return None
-    assert isinstance(value, (int, long)), (
+    assert isinstance(value, six.integer_types), (
         "Expected int for Person foreign key reference, got %r" % type(value))
 
     # Importing here to avoid a cyclic import.
@@ -1213,25 +1213,6 @@ class IPersonViewRestricted(IHasBranches, IHasSpecifications,
     def isAnyPillarOwner():
         """Is this person the owner of any pillar?"""
 
-    def getAllCommercialSubscriptionVouchers(voucher_proxy=None):
-        """Return all commercial subscription vouchers.
-
-        All of a `Person`s vouchers are returned, regardless of redemption
-        status.  Even vouchers marked inactive are returned.
-        The result is a dictionary, indexed by the three
-        voucher statuses.
-        :return: dict
-        """
-
-    def getRedeemableCommercialSubscriptionVouchers(voucher_proxy=None):
-        """Return the set of redeemable vouchers.
-
-        The `Person`s vouchers are returned if they are unredeemed and active.
-
-        The result is a list of vouchers.
-        :return: list
-        """
-
     def hasCurrentCommercialSubscription():
         """Return if the user has a current commercial subscription."""
 
@@ -1914,12 +1895,12 @@ class IPersonSettings(IPersonSettingsViewRestricted, IPersonSettingsModerate):
     """A person's settings."""
 
 
+@exported_as_webservice_entry(plural_name='people')
 class IPerson(IPersonPublic, IPersonLimitedView, IPersonViewRestricted,
               IPersonEditRestricted, IPersonModerate,
               IPersonModerateRestricted, IPersonSpecialRestricted,
               IPersonSettings, IHasStanding, ISetLocation, IHeadingContext):
     """A Person."""
-    export_as_webservice_entry(plural_name='people')
 
 
 # Set the schemas to the newly defined interface for classes that deferred
@@ -2046,6 +2027,7 @@ class ITeamPublic(Interface):
         """
 
 
+@exported_as_webservice_entry('team')
 class ITeam(IPerson, ITeamPublic):
     """A group of people and other teams.
 
@@ -2064,7 +2046,6 @@ class ITeam(IPerson, ITeamPublic):
     - ITeam extends IPerson.
     - The teamowner should never be None.
     """
-    export_as_webservice_entry('team')
 
     # Logo, Mugshot and display_name are here so that they can have a
     # description on a Team which is different to the description they have on
@@ -2091,9 +2072,9 @@ class ITeam(IPerson, ITeamPublic):
             "Launchpad."))
 
 
+@exported_as_webservice_collection(IPerson)
 class IPersonSet(Interface):
     """The set of Persons."""
-    export_as_webservice_collection(IPerson)
 
     title = Attribute('Title')
 
@@ -2609,12 +2590,16 @@ class IAdminPeopleMergeSchema(Interface):
     dupe_person = Choice(
         title=_('Duplicated Person'), required=True,
         vocabulary='AdminMergeablePerson',
-        description=_("The duplicated person found in Launchpad."))
+        description=_(
+            "The duplicated person found in Launchpad. "
+            "This account will be removed."))
 
     target_person = Choice(
         title=_('Target Person'), required=True,
         vocabulary='AdminMergeablePerson',
-        description=_("The person to be merged on."))
+        description=_(
+            "The person to be merged into. "
+            "This account will remain."))
 
 
 class IAdminTeamMergeSchema(Interface):
@@ -2622,11 +2607,15 @@ class IAdminTeamMergeSchema(Interface):
 
     dupe_person = Choice(
         title=_('Duplicated Team'), required=True, vocabulary='ValidTeam',
-        description=_("The duplicated team found in Launchpad."))
+        description=_(
+            "The duplicated team found in Launchpad."
+            "This team will be removed."))
 
     target_person = Choice(
         title=_('Target Team'), required=True, vocabulary='ValidTeam',
-        description=_("The team to be merged on."))
+        description=_(
+            "The team to be merged into. "
+            "This team will remain."))
 
 
 class IObjectReassignment(Interface):
@@ -2689,12 +2678,12 @@ class ICanonicalSSOAPI(Interface):
         """Get the details of an LP person based on an OpenID identifier."""
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class ImmutableVisibilityError(Exception):
     """A change in team membership visibility is not allowed."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NoAccountError(Exception):
     """The person has no account."""
 

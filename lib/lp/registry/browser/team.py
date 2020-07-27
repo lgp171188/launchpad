@@ -37,14 +37,14 @@ from datetime import (
     timedelta,
     )
 import math
-from urllib import unquote
 
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import smartquote
 import pytz
 import simplejson
-from z3c.ptcompat import ViewPageTemplateFile
+from six.moves.urllib.parse import unquote
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.form import (
     Fields,
@@ -999,6 +999,7 @@ class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):
     """View for adding a new team."""
 
     schema = ITeam
+    invariant_context = None
     page_title = 'Register a new team in Launchpad'
     label = page_title
 

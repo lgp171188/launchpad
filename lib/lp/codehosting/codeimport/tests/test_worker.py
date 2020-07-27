@@ -54,6 +54,7 @@ from CVS import (
 from dulwich.repo import Repo as GitRepo
 from fixtures import FakeLogger
 import scandir
+import six
 import subvertpy
 import subvertpy.client
 import subvertpy.ra
@@ -438,7 +439,7 @@ class TestImportDataStore(WorkerTest):
         remote_name = '%08x.tar.gz' % (source_details.target_id,)
         local_name = '%s.tar.gz' % (self.factory.getUniqueString(),)
         transport = self.get_transport()
-        transport.put_bytes(remote_name, '')
+        transport.put_bytes(remote_name, b'')
         store = ImportDataStore(transport, source_details)
         ret = store.fetch(local_name)
         self.assertTrue(ret)
@@ -496,7 +497,7 @@ class TestImportDataStore(WorkerTest):
         local_name = '%s.tar.gz' % (self.factory.getUniqueString(),)
         subdir_name = self.factory.getUniqueString()
         source_details = self.factory.makeCodeImportSourceDetails()
-        get_transport('.').put_bytes(local_name, '')
+        get_transport('.').put_bytes(local_name, b'')
         transport = self.get_transport()
         store = ImportDataStore(transport.clone(subdir_name), source_details)
         store.put(local_name)
@@ -962,8 +963,9 @@ class TestCVSImport(WorkerTest, CSCVSActualImportMixin):
         # If you write to a file in the same second as the previous commit,
         # CVS will not think that it has changed.
         time.sleep(1)
-        repo = Repository(source_details.cvs_root, BufferLogger())
-        repo.get(source_details.cvs_module, 'working_dir')
+        repo = Repository(
+            six.ensure_str(source_details.cvs_root), BufferLogger())
+        repo.get(six.ensure_str(source_details.cvs_module), 'working_dir')
         wt = CVSTree('working_dir')
         self.build_tree_contents([('working_dir/README', 'New content')])
         wt.commit(log='Log message')
@@ -1243,7 +1245,7 @@ class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
         cache_dir_contents = os.listdir(cache_dir)
         self.assertNotEqual([], cache_dir_contents)
         opener = BranchOpener(worker._opener_policy, worker.probers)
-        remote_branch = opener.open(worker.source_details.url)
+        remote_branch = opener.open(six.ensure_str(worker.source_details.url))
         worker.pushBazaarBranch(
             self.make_branch('.'), remote_branch=remote_branch)
         worker.import_data_store.fetch('svn-cache.tar.gz')

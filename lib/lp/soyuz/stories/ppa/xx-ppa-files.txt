@@ -124,7 +124,7 @@ Links to files accessible via +files/ proxy in the Build page.
 
 Create a function to check the expected links.
 
-    >>> from mechanize import LinkNotFoundError
+    >>> from zope.testbrowser.browser import LinkNotFoundError
     >>> def check_urls(browser, links, base_url):
     ...     for link, libraryfile, source_name, source_version in links:
     ...         try:

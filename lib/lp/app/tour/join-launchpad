@@ -83,7 +83,7 @@ Launchpad is free to use for <a href="https://help.launchpad.net/Legal/ProjectLi
                            Your project can use any or all of Launchpad's applications:</p><br />
                    			<ul>
 				                  <li><strong><a href="bugs">Bug tracking</a>:</strong> across project and tool boundaries</li>
-				                  <li><strong><a href="branch-hosting-tracking">Code hosting and review</a>:</strong> open up to drive-by contributions with Bazaar branch hosting/mirroring and imports from git, Subversion and CVS.</li>
+				                  <li><strong><a href="branch-hosting-tracking">Code hosting and review</a>:</strong> open up to drive-by contributions with Git or Bazaar hosting and imports from Git, Subversion and CVS.</li>
 				                  <li><strong><a href="translation">Web-based translation</a>:</strong> make your software available to a global audience with help from Launchpad's 35,000 translators.</li>
 				                  <li><strong><a href="ppa">Ubuntu package building and hosting</a>:</strong> use your Personal Package Archives to distribute software, with updates, to Ubuntu users.</li>
 				                  <li><strong><a href="community">Mailing lists and teams</a>:</strong> hassle-free mailing list hosting and easy role delegation through teams.</li>
@@ -109,7 +109,7 @@ Launchpad is free to use for <a href="https://help.launchpad.net/Legal/ProjectLi
                 <a href="index" title="Return to the start of the Launchpad tour" accesskey="g" tabindex="5">Start</a>
             </li>
              <li class="copyright">
-                &copy; 2004-2019 Canonical Ltd. <a href="https://help.launchpad.net/Legal" accesskey="h" tabindex="6">Terms of Use</a> &#58; <a href="https://help.launchpad.net/Feedback" accesskey="i" tabindex="7">Feedback</a> &#58; <a href="https://answers.launchpad.net/launchpad-project/+faqs" accesskey="j" tabindex="8">FAQ</a>
+                &copy; 2004-2020 Canonical Ltd. <a href="https://help.launchpad.net/Legal" accesskey="h" tabindex="6">Terms of Use</a> &#58; <a href="https://help.launchpad.net/Feedback" accesskey="i" tabindex="7">Feedback</a> &#58; <a href="https://answers.launchpad.net/launchpad-project/+faqs" accesskey="j" tabindex="8">FAQ</a>
             </li>
         </ul>
     </div>

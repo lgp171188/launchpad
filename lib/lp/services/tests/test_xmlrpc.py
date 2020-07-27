@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-import httplib
+from six.moves import http_client
 
 from lp.services.xmlrpc import Transport
 from lp.testing import TestCase
@@ -13,13 +13,13 @@ from lp.testing.layers import BaseLayer
 
 
 class TestTransport(TestCase):
-    """Test code that allows xmlrpclib.ServerProxy to have a socket timeout"""
+    """Test code that allows ServerProxy to have a socket timeout."""
 
     layer = BaseLayer
 
     def test_default_initialization(self):
         transport = Transport()
-        conn = httplib.HTTPConnection('localhost')
+        conn = http_client.HTTPConnection('localhost')
         self.assertEqual(conn.timeout, transport.timeout)
 
     def test_custom_initialization(self):

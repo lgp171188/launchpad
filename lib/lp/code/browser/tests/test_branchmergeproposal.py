@@ -193,7 +193,7 @@ class TestBranchMergeProposalMergedViewMixin:
             self.arbitrary_revisions[2])
         browser.getControl('Mark as Merged').click()
         self.assertEqual(
-            ["The proposal&#x27;s merged revision has been updated."],
+            ["The proposal's merged revision has been updated."],
             get_feedback_messages(browser.contents))
         self.assertIn(
             'Status:\nMerged\nMerged at revision:\n%s' % (
@@ -322,13 +322,13 @@ class TestBranchMergeProposalVoteView(TestCaseWithFactory):
             owner=reviewer,
             subject=self.factory.getUniqueString('subject'),
             vote=vote,
-            _date_created=self.date_generator.next())
+            _date_created=next(self.date_generator))
 
     def _nominateReviewer(self, reviewer, registrant):
         """Nominate a reviewer for the merge proposal."""
         self.bmp.nominateReviewer(
             reviewer=reviewer, registrant=registrant,
-            _date_created=self.date_generator.next())
+            _date_created=next(self.date_generator))
 
     def testNoVotes(self):
         # No votes should return empty lists
@@ -861,6 +861,26 @@ class TestRegisterBranchMergeProposalViewGit(
             }
         values.update(extras)
         return values
+
+    def test_default_branch(self):
+        with admin_logged_in():
+            target_branch = self._makeTargetBranch(target_default=True)
+        removeSecurityProxy(
+            target_branch.repository)._default_branch = target_branch.path
+        view = self._createView()
+        self.assertEqual(
+            target_branch.repository.default_branch.split('/')[-1],
+            view.widgets['target_git_path']._getCurrentValue())
+
+    def test_default_branch_no_default_set(self):
+        with admin_logged_in():
+            self._makeTargetBranch(target_default=True)
+        view = self._createView()
+        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
+
+    def test_default_branch_no_target(self):
+        view = self._createView()
+        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
 
     def test_register_ajax_request_with_confirmation(self):
         # Ajax submits return json data containing info about what the visible
@@ -2182,6 +2202,20 @@ class TestBranchMergeProposal(BrowserTestCase):
         removeSecurityProxy(source_job).job._status = JobStatus.COMPLETED
         view = create_initialized_view(bmp, '+index')
         self.assertFalse(view.show_rescan_link)
+
+    def test_opengraph_description_is_commit(self):
+        bmp = self.factory.makeBranchMergeProposalForGit()
+        target_job = getUtility(IGitRefScanJobSource).create(
+            bmp.target_git_repository)
+        removeSecurityProxy(target_job).job._status = JobStatus.COMPLETED
+        source_job = getUtility(IGitRefScanJobSource).create(
+            bmp.source_git_repository)
+        removeSecurityProxy(source_job).job._status = JobStatus.COMPLETED
+        view = create_initialized_view(bmp, '+index')
+        self.assertEqual(
+            view.opengraph_description, view.context.commit_message)
+        self.assertEqual(
+            view.page_description, bmp.description)
 
 
 class TestBranchMergeProposalRescanView(BrowserTestCase):

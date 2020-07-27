@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Base and idle BuildFarmJobBehaviour classes."""
@@ -9,7 +9,7 @@ __all__ = [
     'BuildFarmJobBehaviourBase',
     ]
 
-import datetime
+from datetime import datetime
 import gzip
 import logging
 import os
@@ -159,7 +159,7 @@ class BuildFarmJobBehaviourBase:
     def getUploadDirLeaf(self, build_cookie, now=None):
         """See `IPackageBuild`."""
         if now is None:
-            now = datetime.datetime.now()
+            now = datetime.now()
         timestamp = now.strftime("%Y%m%d-%H%M%S")
         return '%s-%s' % (timestamp, build_cookie)
 
@@ -175,9 +175,9 @@ class BuildFarmJobBehaviourBase:
         :return: A Deferred that calls back with a librarian file alias.
         """
         out_file_fd, out_file_name = tempfile.mkstemp(suffix=".buildlog")
-        out_file = os.fdopen(out_file_fd, "r+")
+        os.close(out_file_fd)
 
-        def got_file(ignored, filename, out_file, out_file_name):
+        def got_file(ignored, filename, out_file_name):
             try:
                 # If the requested file is the 'buildlog' compress it
                 # using gzip before storing in Librarian.
@@ -189,8 +189,8 @@ class BuildFarmJobBehaviourBase:
                     copy_and_close(out_file, gz_file)
                     os.remove(out_file_name.replace('.gz', ''))
 
-                # Reopen the file, seek to its end position, count and seek
-                # to beginning, ready for adding to the Librarian.
+                # Open the file, seek to its end position, count and seek to
+                # beginning, ready for adding to the Librarian.
                 out_file = open(out_file_name)
                 out_file.seek(0, 2)
                 bytes_written = out_file.tell()
@@ -201,14 +201,13 @@ class BuildFarmJobBehaviourBase:
                     contentType=filenameToContentType(filename),
                     restricted=private)
             finally:
-                # Remove the temporary file.  getFile() closes the file
-                # object.
+                # Remove the temporary file.
                 os.remove(out_file_name)
 
             return library_file.id
 
-        d = self._slave.getFile(file_sha1, out_file)
-        d.addCallback(got_file, filename, out_file, out_file_name)
+        d = self._slave.getFile(file_sha1, out_file_name)
+        d.addCallback(got_file, filename, out_file_name)
         return d
 
     def getLogFileName(self):
@@ -301,6 +300,22 @@ class BuildFarmJobBehaviourBase:
         transaction.commit()
 
     @defer.inlineCallbacks
+    def _downloadFiles(self, filemap, upload_path, logger):
+        filenames_to_download = []
+        for filename, sha1 in filemap.items():
+            logger.info("Grabbing file: %s (%s)" % (
+                filename, self._slave.getURL(sha1)))
+            out_file_name = os.path.join(upload_path, filename)
+            # If the evaluated output file name is not within our
+            # upload path, then we don't try to copy this or any
+            # subsequent files.
+            if not os.path.realpath(out_file_name).startswith(upload_path):
+                raise BuildDaemonError(
+                    "Build returned a file named %r." % filename)
+            filenames_to_download.append((sha1, out_file_name))
+        yield self._slave.getFiles(filenames_to_download, logger=logger)
+
+    @defer.inlineCallbacks
     def handleSuccess(self, slave_status, logger):
         """Handle a package that built successfully.
 
@@ -337,19 +352,7 @@ class BuildFarmJobBehaviourBase:
             grab_dir, str(build.archive.id), build.distribution.name)
         os.makedirs(upload_path)
 
-        filenames_to_download = []
-        for filename, sha1 in filemap.items():
-            logger.info("Grabbing file: %s (%s)" % (
-                filename, self._slave.getURL(sha1)))
-            out_file_name = os.path.join(upload_path, filename)
-            # If the evaluated output file name is not within our
-            # upload path, then we don't try to copy this or any
-            # subsequent files.
-            if not os.path.realpath(out_file_name).startswith(upload_path):
-                raise BuildDaemonError(
-                    "Build returned a file named %r." % filename)
-            filenames_to_download.append((sha1, out_file_name))
-        yield self._slave.getFiles(filenames_to_download, logger=logger)
+        yield self._downloadFiles(filemap, upload_path, logger)
 
         transaction.commit()
 

@@ -5,7 +5,7 @@ import datetime
 import re
 
 import pytz
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.datetime import (
     DateTimeError,
     parse,
@@ -82,18 +82,18 @@ class LocalDateTimeWidget(TextWidget):
 
         By default, the date is interpreted as UTC:
 
-          >>> print widget._toFieldValue('2006-01-01 12:00:00')
+          >>> print(widget._toFieldValue('2006-01-01 12:00:00'))
           2006-01-01 12:00:00+00:00
 
         But it will handle other time zones:
 
           >>> widget.timeZoneName = 'Australia/Perth'
-          >>> print widget._toFieldValue('2006-01-01 12:00:00')
+          >>> print(widget._toFieldValue('2006-01-01 12:00:00'))
           2006-01-01 12:00:00+08:00
 
         Invalid dates result in a ConversionError:
 
-          >>> print widget._toFieldValue('not a date')  #doctest: +ELLIPSIS
+          >>> print(widget._toFieldValue('not a date'))  #doctest: +ELLIPSIS
           Traceback (most recent call last):
             ...
           ConversionError: ('Invalid date value', ...)
@@ -248,7 +248,7 @@ class DelimitedListWidget(TextAreaWidget):
 
         By default, lists are split by whitespace:
 
-          >>> print widget._toFieldValue(u'fred\\nbob harry')
+          >>> print(widget._toFieldValue(u'fred\\nbob harry'))
           [u'fred', u'bob', u'harry']
         """
         value = super(

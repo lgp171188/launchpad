@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function
@@ -40,6 +40,7 @@ __all__ = [
     'run_script',
     'run_with_login',
     'run_with_storm_debug',
+    'RunIsolatedTest',
     'StormStatementRecorder',
     'test_tales',
     'TestCase',
@@ -53,11 +54,9 @@ __all__ = [
     'with_person_logged_in',
     'ws_object',
     'YUIUnitTestCase',
-    'ZopeTestInSubProcess',
     ]
 
 from contextlib import contextmanager
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
@@ -81,12 +80,13 @@ import tempfile
 import time
 import unittest
 
-from bzrlib import trace
-from bzrlib.bzrdir import (
-    BzrDir,
+from breezy import trace
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
-from bzrlib.transport import get_transport
+from breezy.transport import get_transport
+from bzrlib import trace as bzr_trace
 import fixtures
 from lazr.restful.testing.tales import test_tales
 from lazr.restful.testing.webservice import FakeRequest
@@ -95,6 +95,7 @@ import oops_datedir_repo.serializer_rfc822
 import pytz
 import scandir
 import simplejson
+import six
 from storm.store import Store
 import subunit
 import testtools
@@ -123,7 +124,6 @@ from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
     )
-from zope.testrunner.runner import TestResult as ZopeTestResult
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
@@ -367,7 +367,7 @@ class StormStatementRecorder:
         stop_sql_logging()
 
     def __str__(self):
-        out = StringIO()
+        out = six.StringIO()
         print_queries(self.query_data, file=out)
         return out.getvalue()
 
@@ -680,7 +680,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
     @contextmanager
     def expectedLog(self, regex):
         """Expect a log to be written that matches the regex."""
-        output = StringIO()
+        output = six.StringIO()
         handler = logging.StreamHandler(output)
         logger = logging.getLogger()
         logger.addHandler(handler)
@@ -696,7 +696,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         The config values will be restored during test tearDown.
         """
         name = self.factory.getUniqueString()
-        body = '\n'.join("%s: %s" % (k, v) for k, v in kwargs.iteritems())
+        body = '\n'.join("%s: %s" % (k, v) for k, v in six.iteritems(kwargs))
         config.push(name, "\n[%s]\n%s\n" % (section, body))
         self.addCleanup(config.pop, name)
 
@@ -827,6 +827,12 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
                 "\n\n".join(str(n) for n in notifications)))
         return notifications
 
+    def getWebserviceJSON(self, webservice, url):
+        """Get the JSON representation of a webservice object given its URL."""
+        response = webservice.get(url)
+        self.assertEqual(200, response.status)
+        return response.jsonBody()
+
 
 class TestCaseWithFactory(TestCase):
 
@@ -840,11 +846,12 @@ class TestCaseWithFactory(TestCase):
         self._use_bzr_branch_called = False
         # XXX: JonathanLange 2010-12-24 bug=694140: Because of Launchpad's
         # messing with global log state (see
-        # lp.services.scripts.logger), trace._bzr_logger does not
-        # necessarily equal logging.getLogger('bzr'), so we have to explicitly
-        # make it so in order to avoid "No handlers for "bzr" logger'
+        # lp.services.scripts.logger), trace._brz_logger does not
+        # necessarily equal logging.getLogger('brz'), so we have to explicitly
+        # make it so in order to avoid "No handlers for "brz" logger'
         # messages.
-        trace._bzr_logger = logging.getLogger('bzr')
+        trace._brz_logger = logging.getLogger('brz')
+        bzr_trace._bzr_logger = logging.getLogger('bzr')
 
     def getUserBrowser(self, url=None, user=None):
         """Return a Browser logged in as a fresh user, maybe opened at `url`.
@@ -867,8 +874,7 @@ class TestCaseWithFactory(TestCase):
             browser = setupBrowser()
         else:
             browser = self.getUserBrowser(user=user)
-        browser.mech_browser.set_handle_redirect(False)
-        browser.mech_browser.set_handle_equiv(False)
+        browser.followRedirects = False
         if url is not None:
             browser.open(url)
         return browser
@@ -882,8 +888,7 @@ class TestCaseWithFactory(TestCase):
         """
         if format is not None and isinstance(format, basestring):
             format = format_registry.get(format)()
-        return BzrDir.create_branch_convenience(
-            branch_url, format=format)
+        return ControlDir.create_branch_convenience(branch_url, format=format)
 
     def create_branch_and_tree(self, tree_location=None, product=None,
                                db_branch=None, format=None,
@@ -943,6 +948,7 @@ class TestCaseWithFactory(TestCase):
         self.useTempDir()
         # Avoid leaking local user configuration into tests.
         self.useContext(override_environ(
+            BRZ_HOME=os.getcwd(), BRZ_EMAIL=None,
             BZR_HOME=os.getcwd(), BZR_EMAIL=None, EMAIL=None,
             ))
 
@@ -1090,7 +1096,7 @@ class AbstractYUITestCase(TestCase):
         super(AbstractYUITestCase, self).setUp()
         # html5browser imports from the gir/pygtk stack which causes
         # twisted tests to break because of gtk's initialize.
-        import html5browser
+        from lp.testing import html5browser
         client = html5browser.Browser()
         page = client.load_page(self.html_uri,
                                 timeout=self.suite_timeout,
@@ -1189,30 +1195,48 @@ def _harvest_yui_test_files(file_path):
                 yield os.path.join(dirpath, filename)
 
 
-class ZopeTestInSubProcess:
+class _StartedTestResult(testtools.TestResultDecorator):
+    """A TestResult for a test that has already been started.
+
+    The startTest and stopTest methods do nothing.  This is used by
+    RunIsolatedTest, which calls them in the parent process instead.
+    """
+
+    def startTest(self, test):
+        pass
+
+    def stopTest(self, test):
+        pass
+
+
+class RunIsolatedTest(testtools.RunTest):
     """Run tests in a sub-process, respecting Zope idiosyncrasies.
 
-    Use this as a mixin with an interesting `TestCase` to isolate
-    tests with side-effects. Each and every test *method* in the test
-    case is run in a new, forked, sub-process. This will slow down
-    your tests, so use it sparingly. However, when you need to, for
-    example, start the Twisted reactor (which cannot currently be
-    safely stopped and restarted in process) it is invaluable.
+    Set this as `run_tests_with` on an interesting `TestCase` to isolate
+    tests with side-effects.  Each and every test *method* in the test case
+    is run in a new, forked, sub-process.  This will slow down your tests,
+    so use it sparingly.  However, when you need to, for example, start the
+    Twisted reactor (which cannot currently be safely stopped and restarted
+    in process) it is invaluable.
 
-    This is basically a reimplementation of subunit's
-    `IsolatedTestCase` or `IsolatedTestSuite`, but adjusted to work
-    with Zope. In particular, Zope's TestResult object is responsible
-    for calling testSetUp() and testTearDown() on the selected layer.
+    This is basically a reimplementation of subunit's `IsolatedTestCase` or
+    `IsolatedTestSuite`, but adjusted to work with Zope, ensuring that layer
+    methods (testSetUp and testTearDown) are called in the parent process.
     """
 
     def run(self, result):
-        # The result must be an instance of Zope's TestResult because
-        # we construct a super() of it later on. Other result classes
-        # could be supported with a more general approach, but it's
-        # unlikely that any one approach is going to work for every
-        # class. It's better to fail early and draw attention here.
-        assert isinstance(result, ZopeTestResult), (
-            "result must be a Zope result object, not %r." % (result, ))
+        result.startTest(self.case)
+        try:
+            return self._run_started(
+                _StartedTestResult(
+                    testtools.ExtendedToOriginalDecorator(result)))
+        finally:
+            result.stopTest(self.case)
+
+    def _run_started(self, result):
+        # Circular import.
+        from lp.testing.layers import DatabaseLayer
+
         pread, pwrite = os.pipe()
         # We flush __stdout__ and __stderr__ at this point in order to avoid
         # bug 986429; they get copied in full when we fork, which means that
@@ -1230,13 +1254,10 @@ class ZopeTestInSubProcess:
             # Child.
             os.close(pread)
             fdwrite = os.fdopen(pwrite, 'wb', 1)
-            # Send results to both the Zope result object (so that
-            # layer setup and teardown are done properly, etc.) and to
-            # the subunit stream client so that the parent process can
-            # obtain the result.
-            result = testtools.MultiTestResult(
-                result, subunit.TestProtocolClient(fdwrite))
-            super(ZopeTestInSubProcess, self).run(result)
+            # Send results to the subunit stream client so that the parent
+            # process can obtain the result.
+            super(RunIsolatedTest, self).run(
+                subunit.TestProtocolClient(fdwrite))
             fdwrite.flush()
             # See note above about flushing.
             sys.__stdout__.flush()
@@ -1249,20 +1270,15 @@ class ZopeTestInSubProcess:
             # Parent.
             os.close(pwrite)
             fdread = os.fdopen(pread, 'rb')
-            # Skip all the Zope-specific result stuff by using a
-            # super() of the result. This is because the Zope result
-            # object calls testSetUp() and testTearDown() on the
-            # layer, and handles post-mortem debugging. These things
-            # do not make sense in the parent process. More
-            # immediately, it also means that the results are not
-            # reported twice; they are reported on stdout by the child
-            # process, so they need to be suppressed here.
-            result = super(ZopeTestResult, result)
-            # Accept the result from the child process.
-            protocol = subunit.TestProtocolServer(result)
+            # Accept the result from the child process, but don't write a
+            # duplicate copy to stdout.
+            protocol = subunit.TestProtocolServer(
+                result, stream=subunit.DiscardStream())
             protocol.readFrom(fdread)
             fdread.close()
             os.waitpid(pid, 0)
+            if issubclass(self.case.layer, DatabaseLayer):
+                self.case.layer.force_dirty_database()
 
 
 class EventRecorder:
@@ -1313,11 +1329,11 @@ def time_counter(origin=None, delta=timedelta(seconds=5)):
     by the delta.
 
     >>> now = time_counter(datetime(2007, 12, 1), timedelta(days=1))
-    >>> now.next()
+    >>> next(now)
     datetime.datetime(2007, 12, 1, 0, 0)
-    >>> now.next()
+    >>> next(now)
     datetime.datetime(2007, 12, 2, 0, 0)
-    >>> now.next()
+    >>> next(now)
     datetime.datetime(2007, 12, 3, 0, 0)
     """
     if origin is None:
@@ -1400,7 +1416,7 @@ def map_branch_contents(branch):
             for entry in entries:
                 file_path, file_name, file_type = entry[:3]
                 if file_type == 'file':
-                    stored_file = tree.get_file_by_path(file_path)
+                    stored_file = tree.get_file(file_path)
                     contents[file_path] = stored_file.read()
     finally:
         tree.unlock()
@@ -1520,13 +1536,13 @@ def monkey_patch(context, **kwargs):
     """
     old_values = {}
     not_set = object()
-    for name, value in kwargs.iteritems():
+    for name, value in six.iteritems(kwargs):
         old_values[name] = getattr(context, name, not_set)
         setattr(context, name, value)
     try:
         yield
     finally:
-        for name, value in old_values.iteritems():
+        for name, value in six.iteritems(old_values):
             if value is not_set:
                 delattr(context, name)
             else:
@@ -1572,7 +1588,7 @@ def nonblocking_readline(instream, timeout):
     Files must provide a valid fileno() method. This is a test helper
     as it is inefficient and unlikely useful for production code.
     """
-    result = StringIO()
+    result = six.StringIO()
     start = now = time.time()
     deadline = start + timeout
     while (now < deadline and not result.getvalue().endswith('\n')):

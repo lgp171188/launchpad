@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python2
 #
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -11,6 +11,7 @@ import re
 from StringIO import StringIO
 import tarfile
 
+import six
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
@@ -61,7 +62,7 @@ def upload_tarball(translation_files):
     """
     buf = StringIO()
     tarball = tarfile.open('', 'w:gz', buf)
-    for name, contents in translation_files.iteritems():
+    for name, contents in six.iteritems(translation_files):
         pseudofile = StringIO(contents)
         tarinfo = tarfile.TarInfo()
         tarinfo.name = name
@@ -93,7 +94,7 @@ def filter_paths(files_dict):
         applied to each file's path, and non-Ubuntu files left out.
     """
     filtered_dict = {}
-    for original_path, content in files_dict.iteritems():
+    for original_path, content in six.iteritems(files_dict):
         new_path = _filter_ubuntu_translation_file(original_path)
         if new_path:
             filtered_dict[new_path] = content

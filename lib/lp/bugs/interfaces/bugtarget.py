@@ -23,10 +23,10 @@ __all__ = [
 from lazr.enum import DBEnumeratedType
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_removed_in_version,
@@ -223,10 +223,9 @@ BUG_POLICY_DEFAULT_TYPES = {
     }
 
 
+@exported_as_webservice_entry()
 class IHasBugs(Interface):
     """An entity which has a collection of bug tasks."""
-
-    export_as_webservice_entry()
 
     # searchTasks devel API declaration.
     @call_with(search_params=None, user=REQUEST_USER)
@@ -298,14 +297,13 @@ class IHasExpirableBugs(Interface):
     """Marker interface for entities supporting querying expirable bugs"""
 
 
+@exported_as_webservice_entry()
 class IBugTarget(IHasBugs):
     """An entity on which a bug can be reported.
 
     Examples include an IDistribution, an IDistroSeries and an
     IProduct.
     """
-
-    export_as_webservice_entry()
 
     # XXX Brad Bollenbach 2006-08-02 bug=54974: This attribute name smells.
     bugtargetdisplayname = Attribute("A display name for this bug target")

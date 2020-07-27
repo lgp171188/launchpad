@@ -60,7 +60,6 @@ So now we can go to frog's builder page and see what the page shows us.
 The status shown to an anonymous user hides the private source it is
 building.
 
-    >>> anon_browser.mech_browser.set_handle_equiv(False)
     >>> anon_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(anon_browser.contents)))
     The frog builder...
@@ -70,7 +69,6 @@ building.
 
 Launchpad Administrators are allowed to see the build:
 
-    >>> admin_browser.mech_browser.set_handle_equiv(False)
     >>> admin_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(admin_browser.contents)))
     The frog builder...
@@ -82,7 +80,6 @@ Launchpad Administrators are allowed to see the build:
 Buildd Administrators are not allowed to see the build in the portlet:
 
     >>> name12_browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> name12_browser.mech_browser.set_handle_equiv(False)
     >>> name12_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(name12_browser.contents)))
     The frog builder...
@@ -94,7 +91,6 @@ cprov is also allowed to see his own build:
 
     >>> cprov_browser = setupBrowser(
     ...     auth="Basic celso.providelo@canonical.com:test")
-    >>> cprov_browser.mech_browser.set_handle_equiv(False)
     >>> cprov_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(cprov_browser.contents)))
     The frog builder...
@@ -304,7 +300,6 @@ Now the anonymous user can see the build:
 
 Any other logged-in user will also see the build:
 
-    >>> browser.mech_browser.set_handle_equiv(False)
     >>> browser.open("http://launchpad.test/+builds")
     >>> print(extract_text(find_main_content(browser.contents)))
     The Launchpad build farm

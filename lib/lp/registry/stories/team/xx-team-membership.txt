@@ -36,12 +36,12 @@ which would enable the input when the radio button was clicked to indicate
 that a specific expiration date was desired. There is also no TestBrowser
 way to "enable" the input. So, we have to reach into the guts of the
 TestBrowser to manually re-enable the input. That's what the
-control.mech_control.disabled=False stuff is.
+`del expiry._control.attrs['disabled']` stuff is.
 
     >>> browser.getControl(name='admin').value = ['no']
     >>> browser.getControl(name='expires').value = ['date']
     >>> expiry = browser.getControl(name='membership.expirationdate')
-    >>> expiry.mech_control.disabled = False # control may have been disabled
+    >>> del expiry._control.attrs['disabled']
     >>> expiry.value = 'ssdf'
     >>> browser.getControl('Change').click()
 
@@ -80,7 +80,7 @@ next year -- successfully.
     >>> browser.getControl(name='admin').value = ['no']
     >>> browser.getControl(name='expires').value = ['date']
     >>> expiry = browser.getControl(name='membership.expirationdate')
-    >>> expiry.mech_control.disabled = False # control may have been disabled
+    >>> del expiry._control.attrs['disabled']
     >>> expiry.value = expire_date.strftime('%Y-%m-%d')
     >>> browser.getControl(name='comment').value = 'Arfie'
     >>> browser.getControl('Change').click()
@@ -223,7 +223,7 @@ Sample Person has both direct and indirect memberships:
     None
 
     >>> print extract_text(
-    ...     find_tag_by_id(content, 'participation'))
+    ...     find_tag_by_id(content, 'participation'), formatter='html')
     Team                  Joined      Role    Via                 Mailing List
     HWDB Team             2009-07-09  Member  &mdash;              &mdash;
     Landscape Developers  2006-07-11  Owner   &mdash;              &mdash;
@@ -254,6 +254,7 @@ list column.
 
     >>> admin_browser.open('http://launchpad.test/~admins/+participation')
     >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'participation'))
+    ...     find_tag_by_id(admin_browser.contents, 'participation'),
+    ...     formatter='html')
     Team                  Joined      Role    Via
     Mailing List Experts  2007-10-04  Owner   &mdash;

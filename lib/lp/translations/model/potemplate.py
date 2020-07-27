@@ -19,6 +19,7 @@ import operator
 import os
 
 from psycopg2.extensions import TransactionRollbackError
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -931,8 +932,8 @@ class POTemplate(SQLBase, RosettaStats):
             errors, warnings = translation_importer.importFile(
                 entry_to_import, logger)
         except (MixedNewlineMarkersError, TranslationFormatSyntaxError,
-                TranslationFormatInvalidInputError, UnicodeDecodeError) as (
-                exception):
+                TranslationFormatInvalidInputError,
+                UnicodeDecodeError) as exception:
             if logger:
                 logger.info(
                     'We got an error importing %s', self.title, exc_info=1)
@@ -943,7 +944,7 @@ class POTemplate(SQLBase, RosettaStats):
                 template_mail = 'poimport-syntax-error.txt'
             entry_to_import.setStatus(RosettaImportStatus.FAILED,
                                       rosetta_experts)
-            error_text = str(exception)
+            error_text = six.text_type(exception)
             entry_to_import.setErrorOutput(error_text)
         else:
             error_text = None
@@ -1560,7 +1561,7 @@ class POTemplateSharingSubset(object):
                 equivalents[key] = []
             equivalents[key].append(template)
 
-        for equivalence_list in equivalents.itervalues():
+        for equivalence_list in six.itervalues(equivalents):
             # Sort potemplates from "most representative" to "least
             # representative."
             equivalence_list.sort(key=POTemplate.sharingKey, reverse=True)

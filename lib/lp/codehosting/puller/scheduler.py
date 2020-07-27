@@ -320,7 +320,7 @@ class PullerMaster:
             self.default_stacked_on_url]
         self.logger.debug("executing %s", command)
         env = os.environ.copy()
-        env['BZR_EMAIL'] = get_lock_id_for_branch_id(self.branch_id)
+        env['BRZ_EMAIL'] = get_lock_id_for_branch_id(self.branch_id)
         reactor.spawnProcess(protocol, interpreter, command, env=env)
         return deferred
 

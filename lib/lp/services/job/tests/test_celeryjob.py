@@ -1,16 +1,17 @@
-# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from cStringIO import StringIO
 import sys
 from time import sleep
 
 from lazr.jobrunner.bin.clear_queues import clear_queues
+import six
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
 
 from lp.code.model.branchjob import BranchScanJob
 from lp.scripts.helpers import TransactionFreeOperation
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.tests import (
     celery_worker,
@@ -76,10 +77,12 @@ class TestRunMissingJobs(TestCaseWithFactory):
     def test_find_missing_ready(self):
         """A job which is ready but not queued is "missing"."""
         job = self.createMissingJob()
+        flush_database_updates()
         self.addTextDetail(
             'job_info', 'job.id: %d, job.job_id: %d' % (job.id, job.job_id))
         find_missing_ready_obj = self.getFMR(BranchScanJob, 0)
         self.assertEqual([job], find_missing_ready_obj.find_missing_ready())
+        job.extractJobState()
         job.runViaCelery()
         find_missing_ready_obj = self.getFMR(BranchScanJob, 1)
         missing_ready = find_missing_ready_obj.find_missing_ready()
@@ -147,8 +150,8 @@ class TestRunMissingJobs(TestCaseWithFactory):
         try:
             real_stdout = sys.stdout
             real_stderr = sys.stderr
-            sys.stdout = fake_stdout = StringIO()
-            sys.stderr = fake_stderr = StringIO()
+            sys.stdout = fake_stdout = six.StringIO()
+            sys.stderr = fake_stderr = six.StringIO()
             clear_queues(
                 ['script_name', '-c', 'lp.services.job.celeryconfig',
                  result_queue_name])

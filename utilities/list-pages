@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -42,12 +42,15 @@ because our cheat objects don't match the app-encoded business logic.
 # - bang the adapter nut against the hardest rock we can find until it cracks
 # - print the nourishing nutty goodness to stdout
 
+from __future__ import absolute_import, print_function
+
 import _pythonpath
 
 from inspect import getmro
 import os
 
-from zope.app.testing.functional import FunctionalTestSetup
+import six
+from zope.app.wsgi.testlayer import BrowserLayer
 from zope.browserpage.simpleviewclass import simple
 from zope.component import adapter, getGlobalSiteManager
 from zope.interface import directlyProvides, implementer
@@ -57,6 +60,7 @@ from lp.services.config import config
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webapp.publisher import canonical_url
+import zcml
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -69,7 +73,7 @@ def load_zcml(zopeless=False):
     if zopeless:
         execute_zcml_for_scripts()
     else:
-        FunctionalTestSetup(os.path.join(ROOT, 'zcml', 'webapp.zcml')).setUp()
+        BrowserLayer(zcml, zcml_file='webapp.zcml').setUp()
 
 
 def is_page_adapter(a):
@@ -117,7 +121,8 @@ def has_page_title(a):
 
 
 def has_html_element(template):
-    return '</html>' in open(template).read()
+    with open(template) as f:
+        return '</html>' in f.read()
 
 
 def iter_page_adapters():
@@ -188,7 +193,7 @@ class Whatever(object):
 
     def __call__(self, *args, **kwargs):
         args = map(repr, args)
-        args.extend('%s=%r' % (k, v) for k, v in kwargs.iteritems())
+        args.extend('%s=%r' % (k, v) for k, v in six.iteritems(kwargs))
         # If we're being called with no args, assume this is part of crazy
         # TALES stuff:
         #   webapp/metazcml.py(365)path()
@@ -243,7 +248,7 @@ def main():
     gsm = getGlobalSiteManager()
     gsm.registerAdapter(DefaultCanonicalUrlData)
     for a in iter_page_adapters():
-        print format_page_adapter(a)
+        print(format_page_adapter(a))
 
 
 if __name__ == '__main__':

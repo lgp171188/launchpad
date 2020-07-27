@@ -13,7 +13,7 @@ __all__ = ['SourcePackageRecipeData']
 
 import re
 
-from bzrlib.plugins.builder.recipe import (
+from breezy.plugins.builder.recipe import (
     BaseRecipeBranch,
     MergeInstruction,
     NestInstruction,

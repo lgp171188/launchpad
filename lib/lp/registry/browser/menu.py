@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Shared menus."""
@@ -63,7 +63,7 @@ class TopLevelMenuMixin:
         text = 'Request a merge'
         return Link('/people/+requestmerge', text, icon='edit')
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission('launchpad.Moderate')
     def admin_merge_people(self):
         text = 'Merge people'
         return Link('/people/+adminpeoplemerge', text, icon='edit')

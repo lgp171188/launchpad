@@ -27,9 +27,11 @@ import operator
 import os
 import re
 import time
-import urllib
 
-from six.moves.urllib.parse import parse_qs
+from six.moves.urllib.parse import (
+    parse_qs,
+    urlencode,
+    )
 from zope import i18n
 from zope.component import (
     getGlobalSiteManager,
@@ -269,9 +271,9 @@ class Hierarchy(LaunchpadView):
         """The objects for which we want breadcrumbs."""
         # Start the chain with the deepest object that has a breadcrumb.
         try:
-            objects = [(
+            objects = [next((
                 obj for obj in reversed(self.request.traversed_objects)
-                if IBreadcrumb(obj, None)).next()]
+                if IBreadcrumb(obj, None)))]
         except StopIteration:
             return []
         # Now iterate. If an object has a breadcrumb, it can override
@@ -542,7 +544,8 @@ class MaintenanceMessage:
 
     def __call__(self):
         if os.path.exists('+maintenancetime.txt'):
-            message = file('+maintenancetime.txt').read()
+            with open('+maintenancetime.txt') as f:
+                message = f.read()
             try:
                 maintenancetime = parseDatetimetz(message)
             except DateTimeError:
@@ -633,8 +636,7 @@ class LoginStatus:
         if query_string:
             query_dict = parse_qs(query_string, keep_blank_values=True)
             query_dict.pop('loggingout', None)
-            query_string = urllib.urlencode(
-                sorted(query_dict.items()), doseq=True)
+            query_string = urlencode(sorted(query_dict.items()), doseq=True)
             # If we still have a query_string after things we don't want
             # have been removed, add it onto the url.
             if query_string:

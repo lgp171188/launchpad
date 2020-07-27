@@ -3,6 +3,8 @@
 
 """Helpers for command line tools."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = ["LPOptionParser", "TransactionFreeOperation", ]
 
@@ -78,7 +80,7 @@ class TransactionFreeOperation:
 
     @staticmethod
     def any_active_transactions():
-        return transaction.manager._txn
+        return transaction.manager.manager._txn
 
     @classmethod
     def __enter__(cls):

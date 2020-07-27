@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for publisher class."""
@@ -32,11 +32,6 @@ import time
 
 from debian.deb822 import Release
 from fixtures import MonkeyPatch
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
-import mock
 import pytz
 import scandir
 from testscenarios import (
@@ -67,8 +62,8 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.diskpool import DiskPool
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.archivepublisher.publishing import (
     BY_HASH_STAY_OF_EXECUTION,
@@ -89,6 +84,10 @@ from lp.registry.interfaces.pocket import (
     pocketsuffix,
     )
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.compat import (
+    lzma,
+    mock,
+    )
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import flush_database_caches
@@ -449,7 +448,7 @@ class TestPublisherSeries(TestNativePublishingBase):
             bin_i386.name, bin_i386.version, build_i386.arch_tag)
         pu_i386 = self.addPackageUpload(
             build_i386.archive, build_i386.distro_arch_series.distroseries,
-            build_i386.pocket, changes_file_content='anything',
+            build_i386.pocket, changes_file_content=b'anything',
             changes_file_name=changes_file_name,
             upload_status=PackageUploadStatus.ACCEPTED)
         pu_i386.addBuild(build_i386)
@@ -3211,7 +3210,7 @@ class TestPublisherRepositorySignatures(
 
         # Set a signing key for Celso's PPA.
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-        yield IArchiveSigningKey(cprov.archive).setSigningKey(
+        yield IArchiveGPGSigningKey(cprov.archive).setSigningKey(
             key_path, async_keyserver=True)
         self.assertTrue(cprov.archive.signing_key is not None)
 

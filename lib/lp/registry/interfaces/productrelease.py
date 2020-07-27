@@ -23,11 +23,11 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_factory_operation,
     export_operation_as,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_parameters,
     REQUEST_USER,
     )
@@ -216,10 +216,10 @@ class IProductReleaseFilePublic(Interface):
                  required=True, readonly=True))
 
 
+@exported_as_webservice_entry("project_release_file", publish_web_link=False)
 class IProductReleaseFile(IProductReleaseFileEditRestricted,
                           IProductReleaseFilePublic):
     """A file associated with a ProductRelease."""
-    export_as_webservice_entry("project_release_file", publish_web_link=False)
 
 
 class IProductReleaseEditRestricted(Interface):
@@ -246,11 +246,11 @@ class IProductReleaseEditRestricted(Interface):
         The signature file will also be added if available.
 
         :param filename: Name of the file being uploaded.
-        :param file_content: StringIO or file object.
+        :param file_content: `io.BytesIO` or binary file object.
         :param content_type: A MIME content type string.
         :param uploader: The person who uploaded the file.
         :param signature_filename: Name of the uploaded gpg signature file.
-        :param signature_content: StringIO or file object.
+        :param signature_content: `io.BytesIO` or binary file object.
         :param file_type: An `UpstreamFileType` enum value.
         :param description: Info about the file.
         :returns: `IProductReleaseFile` object.
@@ -376,14 +376,13 @@ class IProductReleaseView(Interface):
         """Does the release have a file that matches the name?"""
 
 
+@exported_as_webservice_entry('project_release')
 class IProductRelease(IProductReleaseEditRestricted, IProductReleaseView,
                       IProductReleasePublic):
     """A specific release (i.e. version) of a product.
 
     For example: Mozilla 1.7.2 or Apache 2.0.48.
     """
-
-    export_as_webservice_entry('project_release')
 
 
 # Set the schema for IProductReleaseFile now that IProductRelease is defined.

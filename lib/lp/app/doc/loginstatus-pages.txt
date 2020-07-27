@@ -27,8 +27,8 @@ Generic request without query args.
     False
     >>> status.login_shown
     True
-    >>> status.login_url
-    'http://localhost/foo/bar/+login'
+    >>> print(status.login_url)
+    http://localhost/foo/bar/+login
 
 Virtual hosted request with a trailing slash.
 
@@ -37,8 +37,8 @@ Virtual hosted request with a trailing slash.
     ...     '/++vh++https:staging.example.com:433/++/foo/bar/', '')
     >>> context = object()
     >>> status = LoginStatus(context, request)
-    >>> status.login_url
-    'https://staging.example.com/foo/bar/+login'
+    >>> print(status.login_url)
+    https://staging.example.com/foo/bar/+login
 
 Virtual hosted request with no trailing slash.
 
@@ -47,8 +47,8 @@ Virtual hosted request with no trailing slash.
     ...     '/++vh++https:staging.example.com:433/++/foo/bar', '')
     >>> context = object()
     >>> status = LoginStatus(context, request)
-    >>> status.login_url
-    'https://staging.example.com/foo/bar/+login'
+    >>> print(status.login_url)
+    https://staging.example.com/foo/bar/+login
 
 Generic request with trailing slash and query parameters.
 
@@ -56,8 +56,8 @@ Generic request with trailing slash and query parameters.
     ...     'http://localhost', '/foo/bar/', 'x=1&y=2')
     >>> context = object()
     >>> status = LoginStatus(context, request)
-    >>> status.login_url
-    'http://localhost/foo/bar/+login?x=1&y=2'
+    >>> print(status.login_url)
+    http://localhost/foo/bar/+login?x=1&y=2
 
 The login page.
 
@@ -80,8 +80,8 @@ The logout page.
     False
     >>> status.login_shown
     True
-    >>> status.login_url
-    'http://localhost/+login'
+    >>> print(status.login_url)
+    http://localhost/+login
 
 The +openid-callback page.
 
@@ -93,8 +93,8 @@ The +openid-callback page.
     False
     >>> status.login_shown
     True
-    >>> status.login_url
-    'http://localhost/+login'
+    >>> print(status.login_url)
+    http://localhost/+login
 
 Logging in.
 

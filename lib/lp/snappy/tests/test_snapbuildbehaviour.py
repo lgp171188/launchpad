@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build behaviour."""
@@ -19,12 +19,12 @@ import fixtures
 from pymacaroons import Macaroon
 import pytz
 from six.moves.urllib_parse import urlsplit
+from testscenarios import load_tests_apply_scenarios
 from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
     Equals,
-    HasLength,
     Is,
     IsInstance,
     MatchesDict,
@@ -38,13 +38,9 @@ from testtools.twistedsupport import (
 import transaction
 from twisted.internet import (
     defer,
-    endpoints,
     reactor,
     )
-from twisted.python.compat import nativeString
-from twisted.trial.unittest import TestCase as TrialTestCase
 from twisted.web import (
-    resource,
     server,
     xmlrpc,
     )
@@ -54,13 +50,14 @@ from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
     )
+from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
@@ -70,6 +67,11 @@ from lp.buildmaster.tests.mock_slaves import (
     MockBuilder,
     OkSlave,
     SlaveTestHelpers,
+    )
+from lp.buildmaster.tests.snapbuildproxy import (
+    InProcessProxyAuthAPIFixture,
+    ProxyURLMatcher,
+    RevocationEndpointMatcher,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -113,69 +115,6 @@ from lp.testing.gpgkeys import (
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.xmlrpc.interfaces import IPrivateApplication
-
-
-class ProxyAuthAPITokensResource(resource.Resource):
-    """A test tokens resource for the proxy authentication API."""
-
-    isLeaf = True
-
-    def __init__(self):
-        resource.Resource.__init__(self)
-        self.requests = []
-
-    def render_POST(self, request):
-        content = request.content.read()
-        self.requests.append({
-            "method": request.method,
-            "uri": request.uri,
-            "headers": dict(request.requestHeaders.getAllRawHeaders()),
-            "content": content,
-            })
-        username = json.loads(content)["username"]
-        return json.dumps({
-            "username": username,
-            "secret": uuid.uuid4().hex,
-            "timestamp": datetime.utcnow().isoformat(),
-            })
-
-
-class InProcessProxyAuthAPIFixture(fixtures.Fixture):
-    """A fixture that pretends to be the proxy authentication API.
-
-    Users of this fixture must call the `start` method, which returns a
-    `Deferred`, and arrange for that to get back to the reactor.  This is
-    necessary because the basic fixture API does not allow `setUp` to return
-    anything.  For example:
-
-        class TestSomething(TestCase):
-
-            run_tests_with = AsynchronousDeferredRunTest.make_factory(
-                timeout=10)
-
-            @defer.inlineCallbacks
-            def setUp(self):
-                super(TestSomething, self).setUp()
-                yield self.useFixture(InProcessProxyAuthAPIFixture()).start()
-    """
-
-    @defer.inlineCallbacks
-    def start(self):
-        root = resource.Resource()
-        self.tokens = ProxyAuthAPITokensResource()
-        root.putChild("tokens", self.tokens)
-        endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
-        site = server.Site(self.tokens)
-        self.addCleanup(site.stopFactory)
-        port = yield endpoint.listen(site)
-        self.addCleanup(port.stopListening)
-        config.push("in-process-proxy-auth-api-fixture", dedent("""
-            [snappy]
-            builder_proxy_auth_api_admin_secret: admin-secret
-            builder_proxy_auth_api_endpoint: http://%s:%s/tokens
-            """) %
-            (port.getHost().host, port.getHost().port))
-        self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
 
 
 class InProcessAuthServer(xmlrpc.XMLRPC):
@@ -241,6 +180,11 @@ class TestSnapBuildBehaviourBase(TestCaseWithFactory):
         distroarchseries = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
+
+        # Taken from test_archivedependencies.py
+        for component_name in ("main", "universe"):
+            self.factory.makeComponentSelection(distroseries, component_name)
+
         build = self.factory.makeSnapBuild(
             archive=archive, distroarchseries=distroarchseries, pocket=pocket,
             name="test-snap", **kwargs)
@@ -362,6 +306,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.now = time.time()
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
+        self.addCleanup(shut_down_default_process_pool)
 
     def makeJob(self, **kwargs):
         # We need a builder slave in these tests, in order that requesting a
@@ -373,21 +318,6 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
         return job
-
-    def getProxyURLMatcher(self, job):
-        return AfterPreprocessing(urlsplit, MatchesStructure(
-            scheme=Equals("http"),
-            username=Equals("{}-{}".format(
-                job.build.build_cookie, int(self.now))),
-            password=HasLength(32),
-            hostname=Equals(config.snappy.builder_proxy_host),
-            port=Equals(config.snappy.builder_proxy_port),
-            path=Equals("")))
-
-    def getRevocationEndpointMatcher(self, job):
-        return Equals("{}/{}-{}".format(
-            config.snappy.builder_proxy_auth_api_endpoint,
-            job.build.build_cookie, int(self.now)))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
@@ -446,6 +376,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -458,8 +390,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "fast_cleanup": Is(True),
             "name": Equals("test-snap"),
             "private": Is(False),
-            "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -484,6 +416,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -497,8 +431,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "git_path": Equals(ref.name),
             "name": Equals("test-snap"),
             "private": Is(False),
-            "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -513,6 +447,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -525,8 +461,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "git_repository": Equals(ref.repository.git_https_url),
             "name": Equals("test-snap"),
             "private": Is(False),
-            "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -545,6 +481,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         args = yield job.extraBuildArgs()
         split_browse_root = urlsplit(config.codehosting.git_browse_root)
         self.assertThat(args, MatchesDict({
@@ -570,8 +508,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "git_path": Equals(ref.name),
             "name": Equals("test-snap"),
             "private": Is(True),
-            "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -587,6 +525,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -600,8 +540,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "git_path": Equals("master"),
             "name": Equals("test-snap"),
             "private": Is(False),
-            "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -616,6 +556,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -628,8 +570,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "git_repository": Equals(url),
             "name": Equals("test-snap"),
             "private": Is(False),
-            "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -649,7 +591,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         yield self.useFixture(InProcessKeyServerFixture()).start()
         archive = self.factory.makeArchive()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
-        yield IArchiveSigningKey(archive).setSigningKey(
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
             key_path, async_keyserver=True)
         job = self.makeJob(archive=archive)
         self.factory.makeBinaryPackagePublishingHistory(
@@ -790,7 +732,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         job = self.makeJob()
         build_request = yield job.composeBuildRequest(None)
         self.assertThat(
-            build_request[4]["proxy_url"], self.getProxyURLMatcher(job))
+            build_request[4]["proxy_url"], ProxyURLMatcher(job, self.now))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_deleted(self):
@@ -903,6 +845,8 @@ class TestVerifySuccessfulBuildForSnapBuild(
 
 
 class TestHandleStatusForSnapBuild(
-    MakeSnapBuildMixin, TestHandleStatusMixin, TrialTestCase,
-    fixtures.TestWithFixtures):
+    MakeSnapBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with Snap builds."""
+
+
+load_tests = load_tests_apply_scenarios

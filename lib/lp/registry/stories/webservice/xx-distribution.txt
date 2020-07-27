@@ -44,6 +44,7 @@ And for every distribution we publish most of its attributes.
     mirror_admin_link: u'http://.../~ubuntu-mirror-admins'
     mugshot_link: u'http://.../ubuntu/mugshot'
     name: u'ubuntu'
+    oci_project_admin_link: None
     official_answers: True
     official_blueprints: True
     official_bug_tags: []
@@ -159,6 +160,7 @@ packages matching (substring) the given text.
     enabled: True
     ftp_base_url: None
     http_base_url: u'http://releases.ubuntu.com/'
+    https_base_url: None
     name: u'canonical-releases'
     official_candidate: True
     owner_link: u'http://.../~mark'

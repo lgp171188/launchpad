@@ -6,7 +6,7 @@
 
 import time
 
-from bzrlib import urlutils
+from breezy import urlutils
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test native publication workflow for Soyuz. """
@@ -62,6 +62,9 @@ from lp.soyuz.model.publishing import (
     SourcePackagePublishingHistory,
     )
 from lp.testing import (
+    login_admin,
+    person_logged_in,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -72,6 +75,7 @@ from lp.testing.dbuser import (
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
     )
@@ -302,7 +306,8 @@ class SoyuzTestPublisher:
                        shlibdep=None, depends=None, recommends=None,
                        suggests=None, conflicts=None, replaces=None,
                        provides=None, pre_depends=None, enhances=None,
-                       breaks=None, filecontent=b'bbbiiinnnaaarrryyy',
+                       breaks=None, built_using=None,
+                       filecontent=b'bbbiiinnnaaarrryyy',
                        changes_file_content=b"Fake: fake changes file",
                        status=PackagePublishingStatus.PENDING,
                        pocket=PackagePublishingPocket.RELEASE,
@@ -349,7 +354,8 @@ class SoyuzTestPublisher:
                     build, binaryname + '-dbgsym', filecontent, summary,
                     description, shlibdep, depends, recommends, suggests,
                     conflicts, replaces, provides, pre_depends, enhances,
-                    breaks, BinaryPackageFormat.DDEB, version=version)
+                    breaks, built_using, BinaryPackageFormat.DDEB,
+                    version=version)
                 pub_binaries += self.publishBinaryInArchive(
                     binarypackagerelease_ddeb, archive, status,
                     pocket, scheduleddeletiondate, dateremoved,
@@ -360,7 +366,7 @@ class SoyuzTestPublisher:
             binarypackagerelease = self.uploadBinaryForBuild(
                 build, binaryname, filecontent, summary, description,
                 shlibdep, depends, recommends, suggests, conflicts, replaces,
-                provides, pre_depends, enhances, breaks, format,
+                provides, pre_depends, enhances, breaks, built_using, format,
                 binarypackagerelease_ddeb, version=version,
                 user_defined_fields=user_defined_fields)
             pub_binaries += self.publishBinaryInArchive(
@@ -383,8 +389,9 @@ class SoyuzTestPublisher:
         summary="summary", description="description", shlibdep=None,
         depends=None, recommends=None, suggests=None, conflicts=None,
         replaces=None, provides=None, pre_depends=None, enhances=None,
-        breaks=None, format=BinaryPackageFormat.DEB, debug_package=None,
-        user_defined_fields=None, homepage=None, version=None):
+        breaks=None, built_using=None, format=BinaryPackageFormat.DEB,
+        debug_package=None, user_defined_fields=None, homepage=None,
+        version=None):
         """Return the corresponding `BinaryPackageRelease`."""
         sourcepackagerelease = build.source_package_release
         distroarchseries = build.distro_arch_series
@@ -414,6 +421,7 @@ class SoyuzTestPublisher:
             pre_depends=pre_depends,
             enhances=enhances,
             breaks=breaks,
+            built_using=built_using,
             essential=False,
             installedsize=100,
             architecturespecific=architecturespecific,
@@ -516,7 +524,7 @@ class SoyuzTestPublisher:
             if new_version is None:
                 new_version = version
             changesfile_content = ''
-            with open(changesfile_path, 'r') as handle:
+            with open(changesfile_path, 'rb') as handle:
                 changesfile_content = handle.read()
 
             source = self.getPubSource(
@@ -997,13 +1005,15 @@ class TestPublishingSetLite(TestCaseWithFactory):
             debug_non_match_bpph.status, PackagePublishingStatus.PENDING)
 
     def test_changeOverride_also_overrides_debug_package(self):
+        user = self.factory.makePerson()
         bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(
             pocket=PackagePublishingPocket.RELEASE, with_debug=True)
         new_section = self.factory.makeSection()
-        new_bpph = bpph.changeOverride(new_section=new_section)
+        new_bpph = bpph.changeOverride(new_section=new_section, creator=user)
         publishing_set = getUtility(IPublishingSet)
         [new_debug_bpph] = publishing_set.findCorrespondingDDEBPublications(
             [new_bpph])
+        self.assertEqual(new_debug_bpph.creator, user)
         self.assertEqual(new_debug_bpph.section, new_section)
 
     def test_requestDeletion_forbids_debug_package(self):
@@ -1524,6 +1534,21 @@ class TestChangeOverride(TestNativePublishingBase):
             binary=True, new_component="universe", new_section="misc",
             new_priority="extra", new_phased_update_percentage=90)
 
+    def test_change_binary_logged_in_user(self):
+        person = self.factory.makePerson()
+        new_pub = self.assertCanOverride(
+            binary=True, new_component="universe", new_section="misc",
+            new_priority="extra", new_phased_update_percentage=90,
+            creator=person)
+        self.assertEqual(person, new_pub.creator)
+
+    def test_change_source_logged_in_user(self):
+        person = self.factory.makePerson()
+        new_pub = self.assertCanOverride(
+            binary=False, new_component="universe", new_section="misc",
+            creator=person)
+        self.assertEqual(person, new_pub.creator)
+
     def test_set_and_clear_phased_update_percentage(self):
         # new_phased_update_percentage=<integer> sets a phased update
         # percentage; new_phased_update_percentage=100 clears it.
@@ -1572,3 +1597,47 @@ class TestChangeOverride(TestNativePublishingBase):
         # archive.
         self.assertCannotOverride(new_component="partner")
         self.assertCannotOverride(binary=True, new_component="partner")
+
+
+class TestPublishingHistoryView(TestCaseWithFactory):
+    layer = LaunchpadFunctionalLayer
+
+    def test_constant_query_counts_on_publishing_history_change_override(self):
+        admin = self.factory.makeAdministrator()
+        normal_user = self.factory.makePerson()
+
+        with person_logged_in(admin):
+            test_publisher = SoyuzTestPublisher()
+            test_publisher.prepareBreezyAutotest()
+
+            source_pub = test_publisher.getPubSource(
+                "test-history", status=PackagePublishingStatus.PUBLISHED)
+        url = ("http://launchpad.test/ubuntutest/+source/test-history"
+               "/+publishinghistory")
+
+        def insert_more_publish_history():
+            person1 = self.factory.makePerson()
+            new_component = (
+                'universe' if source_pub.component.name == 'main'
+                else 'main')
+            source_pub.changeOverride(
+                new_component=new_component, creator=person1)
+
+            person2 = self.factory.makePerson()
+            new_section = ('web' if source_pub.section.name == 'base'
+                           else 'base')
+            source_pub.changeOverride(
+                new_section=new_section, creator=person2)
+
+        def show_page():
+            self.getUserBrowser(url, normal_user)
+
+        # Make sure to have all the history fitting in one page.
+        self.pushConfig("launchpad", default_batch_size=50)
+
+        recorder1, recorder2 = record_two_runs(
+            show_page, insert_more_publish_history,
+            1, 10, login_method=login_admin)
+
+        self.assertThat(recorder1, HasQueryCount(Equals(26)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))

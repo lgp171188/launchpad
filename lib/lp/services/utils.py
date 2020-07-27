@@ -33,7 +33,6 @@ __all__ = [
     ]
 
 import bz2
-import cPickle as pickle
 from datetime import datetime
 from itertools import (
     islice,
@@ -42,7 +41,6 @@ from itertools import (
 import os
 import re
 import string
-from StringIO import StringIO
 import sys
 from textwrap import dedent
 from types import FunctionType
@@ -53,6 +51,8 @@ from fixtures import (
     )
 from lazr.enum import BaseItem
 import pytz
+import six
+from six.moves import cPickle as pickle
 from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
 
@@ -265,8 +265,8 @@ class CapturedOutput(Fixture):
 
     def __init__(self):
         super(CapturedOutput, self).__init__()
-        self.stdout = StringIO()
-        self.stderr = StringIO()
+        self.stdout = six.StringIO()
+        self.stderr = six.StringIO()
 
     def _setUp(self):
         self.useFixture(MonkeyPatch('sys.stdout', self.stdout))
@@ -388,7 +388,7 @@ def obfuscate_structure(o):
     elif isinstance(o, (dict)):
         return dict(
             (obfuscate_structure(key), obfuscate_structure(value))
-            for key, value in o.iteritems())
+            for key, value in six.iteritems(o))
     else:
         return o
 

@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Gina db handlers.
@@ -24,6 +24,7 @@ from cStringIO import StringIO
 import os
 import re
 
+import six
 from sqlobject import (
     SQLObjectMoreThanOneResultError,
     SQLObjectNotFound,
@@ -52,10 +53,15 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
 from lp.soyuz.enums import (
     BinaryPackageFormat,
+    BinarySourceReferenceType,
     PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
+from lp.soyuz.interfaces.binarysourcereference import (
+    IBinarySourceReferenceSet,
+    UnparsableBuiltUsing,
+    )
 from lp.soyuz.interfaces.publishing import (
     active_publishing_status,
     IPublishingSet,
@@ -499,7 +505,7 @@ class SourcePackageHandler:
         dsc_contents = parse_tagfile(dsc_path)
         dsc_contents = dict([
             (name.lower(), value) for
-            (name, value) in dsc_contents.iteritems()])
+            (name, value) in six.iteritems(dsc_contents)])
 
         # Since the dsc doesn't know, we add in the directory, package
         # component and section
@@ -560,9 +566,11 @@ class SourcePackageHandler:
                 SourcePackagePublishingHistory.distroseries =
                     DistroSeries.id AND
                 SourcePackagePublishingHistory.archive = %s AND
+                SourcePackagePublishingHistory.sourcepackagename = %s AND
                 DistroSeries.distribution = %s
                 """ % sqlvalues(sourcepackagename, version,
                                 distroseries.main_archive,
+                                sourcepackagename,
                                 distroseries.distribution)
         ret = SourcePackageRelease.select(query,
             clauseTables=['SourcePackagePublishingHistory', 'DistroSeries'],
@@ -740,7 +748,8 @@ class BinaryPackageHandler:
         architecture = binarypackagedata.architecture
 
         clauseTables = ["BinaryPackageRelease", "DistroSeries",
-                        "BinaryPackageBuild", "DistroArchSeries"]
+                        "DistroArchSeries", "BinaryPackageBuild",
+                        "BinaryPackagePublishingHistory"]
         distroseries = distroarchseries.distroseries
 
         # When looking for binaries, we need to remember that they are
@@ -748,13 +757,18 @@ class BinaryPackageHandler:
         # distribution and the architecture tag of the distroarchseries
         # they were built for
         query = (
+            "BinaryPackagePublishingHistory.archive = %s AND "
+            "BinaryPackagePublishingHistory.binarypackagename = %s AND "
+            "BinaryPackageRelease.id ="
+            " BinaryPackagePublishingHistory.binarypackagerelease AND "
             "BinaryPackageRelease.binarypackagename=%s AND "
             "BinaryPackageRelease.version=%s AND "
             "BinaryPackageRelease.build = BinaryPackageBuild.id AND "
             "BinaryPackageBuild.distro_arch_series = DistroArchSeries.id AND "
             "DistroArchSeries.distroseries = DistroSeries.id AND "
-            "DistroSeries.distribution = %d" %
-            (binaryname.id, quote(version), distroseries.distribution.id))
+            "DistroSeries.distribution = %s" %
+            sqlvalues(distroseries.main_archive, binaryname, binaryname,
+                      version, distroseries.distribution))
 
         if architecture != "all":
             query += ("AND DistroArchSeries.architecturetag = %s" %
@@ -762,7 +776,7 @@ class BinaryPackageHandler:
 
         try:
             bpr = BinaryPackageRelease.selectOne(
-                query, clauseTables=clauseTables)
+                query, clauseTables=clauseTables, distinct=True)
         except SQLObjectMoreThanOneResultError:
             # XXX kiko 2005-10-27: Untested
             raise MultiplePackageReleaseError("Found more than one "
@@ -812,6 +826,16 @@ class BinaryPackageHandler:
             installedsize=bin.installed_size,
             architecturespecific=architecturespecific,
             **kwargs)
+        try:
+            getUtility(IBinarySourceReferenceSet).createFromRelationship(
+                binpkg, bin.built_using, BinarySourceReferenceType.BUILT_USING)
+        except UnparsableBuiltUsing:
+            # XXX cjwatson 2020-02-03: It might be nice if we created
+            # BinarySourceReference rows at least for those relations that
+            # can be parsed and resolved to SourcePackageReleases.  It's not
+            # worth spending much time on given that we don't use binary
+            # imports much, though.
+            pass
         log.info('Binary Package Release %s (%s) created' %
                  (bin_name.name, bin.version))
 
@@ -845,9 +869,10 @@ class BinaryPackageHandler:
         query = ("BinaryPackageBuild.source_package_release = %d AND "
                  "BinaryPackageBuild.distro_arch_series = "
                  "    DistroArchSeries.id AND "
+                 "BinaryPackageBuild.archive = %d AND "
                  "DistroArchSeries.distroseries = DistroSeries.id AND "
                  "DistroSeries.distribution = %d"
-                 % (srcpkg.id, distribution.id))
+                 % (srcpkg.id, distribution.main_archive.id, distribution.id))
 
         if archtag != "all":
             query += ("AND DistroArchSeries.architecturetag = %s"

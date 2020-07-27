@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for IDiff, etc."""
@@ -10,20 +10,23 @@ __all__ = [
     'PreviewDiff',
     ]
 
-from contextlib import nested
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 from cStringIO import StringIO
 from operator import attrgetter
 import sys
 from uuid import uuid1
 
-from bzrlib import trace
-from bzrlib.diff import show_diff_trees
-from bzrlib.merge import Merge3Merger
-from bzrlib.patches import (
+from breezy import trace
+from breezy.diff import show_diff_trees
+from breezy.merge import Merge3Merger
+from breezy.patches import (
     parse_patches,
     Patch,
     )
-from bzrlib.plugins.difftacular.generate_diff import diff_ignore_branches
+from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
 import simplejson
 from sqlobject import (
@@ -300,9 +303,9 @@ class Diff(SQLBase):
         :return: a `Diff`.
         """
         diff_content = StringIO()
-        read_locks = [read_locked(branch) for branch in [source_branch] +
-                ignore_branches]
-        with nested(*read_locks):
+        with ExitStack() as stack:
+            for branch in [source_branch] + ignore_branches:
+                stack.enter_context(read_locked(branch))
             diff_ignore_branches(
                 source_branch, ignore_branches, old_revision.revision_id,
                 new_revision.revision_id, diff_content)
@@ -431,12 +434,14 @@ class PreviewDiff(Storm):
         else:
             source_repository = bmp.source_git_repository
             target_repository = bmp.target_git_repository
-            if source_repository == target_repository:
-                path = source_repository.getInternalPath()
-            else:
-                path = "%s:%s" % (
-                    target_repository.getInternalPath(),
-                    source_repository.getInternalPath())
+            prerequisite_repository = bmp.prerequisite_git_repository
+            path = target_repository.getInternalPath()
+            if source_repository != target_repository:
+                path += ":%s" % source_repository.getInternalPath()
+            if (prerequisite_repository is not None and
+                    prerequisite_repository != source_repository and
+                    prerequisite_repository != target_repository):
+                path += ":%s" % prerequisite_repository.getInternalPath()
             response = getUtility(IGitHostingClient).getMergeDiff(
                 path, bmp.target_git_commit_sha1, bmp.source_git_commit_sha1,
                 prerequisite=bmp.prerequisite_git_commit_sha1)

@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for package queue."""
@@ -10,6 +10,7 @@ __all__ = [
     'QueueItemsView',
     ]
 
+from collections import defaultdict
 from operator import attrgetter
 
 from lazr.delegates import delegate_to
@@ -207,7 +208,7 @@ class QueueItemsView(LaunchpadView):
         jobs = load_related(Job, package_copy_jobs, ['job_id'])
         person_ids.extend(map(attrgetter('requester_id'), jobs))
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            person_ids, need_validity=True, need_icon=True))
+            person_ids, need_validity=True))
 
     def decoratedQueueBatch(self):
         """Return the current batch, converted to decorated objects.
@@ -222,10 +223,12 @@ class QueueItemsView(LaunchpadView):
             return None
 
         upload_ids = [upload.id for upload in uploads]
-        puses = load_referencing(
-            PackageUploadSource, uploads, ['packageuploadID'])
-        pubs = load_referencing(
-            PackageUploadBuild, uploads, ['packageuploadID'])
+
+        # Both "u.sources" and "u.builds" below are preloaded by
+        # self.context.getPackageUploads (which uses PackageUploadSet.getAll)
+        # when building self.batchnav.
+        puses = sum([removeSecurityProxy(u.sources) for u in uploads], [])
+        pubs = sum([removeSecurityProxy(u.builds) for u in uploads], [])
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
@@ -491,8 +494,6 @@ class CompletePackageUpload:
     # (i.e. no proxying of __set__).
     pocket = None
     date_created = None
-    sources = None
-    builds = None
     customfiles = None
     contains_source = None
     contains_build = None
@@ -503,9 +504,7 @@ class CompletePackageUpload:
         self.pocket = packageupload.pocket
         self.date_created = packageupload.date_created
         self.context = packageupload
-        self.sources = list(packageupload.sources)
         self.contains_source = len(self.sources) > 0
-        self.builds = list(packageupload.builds)
         self.contains_build = len(self.builds) > 0
         self.customfiles = list(packageupload.customfiles)
 

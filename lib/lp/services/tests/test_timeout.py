@@ -1,4 +1,4 @@
-# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """timeout.py tests.
@@ -6,14 +6,9 @@
 
 __metaclass__ = type
 
-from SimpleXMLRPCServer import (
-    SimpleXMLRPCRequestHandler,
-    SimpleXMLRPCServer,
-    )
 import socket
 from textwrap import dedent
 import threading
-import xmlrpclib
 
 from fixtures import (
     MonkeyPatch,
@@ -23,6 +18,10 @@ from requests import Response
 from requests.exceptions import (
     ConnectionError,
     InvalidSchema,
+    )
+from six.moves import (
+    xmlrpc_client,
+    xmlrpc_server,
     )
 from testtools.matchers import (
     ContainsDict,
@@ -56,7 +55,7 @@ def no_default_timeout():
     pass
 
 
-class EchoOrWaitXMLRPCReqHandler(SimpleXMLRPCRequestHandler):
+class EchoOrWaitXMLRPCReqHandler(xmlrpc_server.SimpleXMLRPCRequestHandler):
     """The request handler will respond to 'echo' requests normally but will
     hang indefinitely for all other requests.  This allows us to show a
     successful request followed by one that times out.
@@ -70,7 +69,7 @@ class EchoOrWaitXMLRPCReqHandler(SimpleXMLRPCRequestHandler):
             self.connection.recv(1024)
 
 
-class MySimpleXMLRPCServer(SimpleXMLRPCServer):
+class MySimpleXMLRPCServer(xmlrpc_server.SimpleXMLRPCServer):
     """Create a simple XMLRPC server to listen for requests."""
     allow_reuse_address = True
 
@@ -408,10 +407,10 @@ class TestTimeout(TestCase):
 
     def test_urlfetch_does_not_support_ftp_urls_by_default(self):
         """urlfetch() does not support ftp urls by default."""
-        url = 'ftp://localhost/'
+        url = u'ftp://localhost/'
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for '%s'" % url, str(e))
+            "No connection adapters were found for {!r}".format(url), str(e))
 
     def test_urlfetch_supports_ftp_urls_if_allow_ftp(self):
         """urlfetch() supports ftp urls via a proxy if explicitly asked."""
@@ -444,10 +443,10 @@ class TestTimeout(TestCase):
         """urlfetch() does not support file urls by default."""
         test_path = self.useFixture(TempDir()).join('file')
         write_file(test_path, b'')
-        url = 'file://' + test_path
+        url = u'file://' + test_path
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for '%s'" % url, str(e))
+            "No connection adapters were found for {!r}".format(url), str(e))
 
     def test_urlfetch_supports_file_urls_if_allow_file(self):
         """urlfetch() supports file urls if explicitly asked to do so."""
@@ -500,8 +499,8 @@ class TestTimeout(TestCase):
             logRequests=False)
         server_thread = threading.Thread(target=server.serve_2_requests)
         server_thread.start()
-        proxy = xmlrpclib.ServerProxy(http_server_url,
-                                      transport=TransportWithTimeout())
+        proxy = xmlrpc_client.ServerProxy(
+            http_server_url, transport=TransportWithTimeout())
         self.assertEqual('Successful test message.',
                          proxy.echo('Successful test message.'))
         self.assertRaises(TimeoutError,

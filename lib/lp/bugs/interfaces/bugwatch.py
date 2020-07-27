@@ -21,8 +21,8 @@ from lazr.enum import (
     DBItem,
     )
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -148,9 +148,9 @@ BUG_WATCH_ACTIVITY_SUCCESS_STATUSES = [
     ]
 
 
+@exported_as_webservice_entry()
 class IBugWatch(IHasBug):
     """A bug on a remote system."""
-    export_as_webservice_entry()
 
     id = Int(title=_('ID'), required=True, readonly=True)
 

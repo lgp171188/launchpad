@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 # Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -337,9 +337,9 @@ class KillConnectionsPreflight(DatabasePreflight):
 
         System users are defined by SYSTEM_USERS.
         """
-        # We keep trying to terminate connections every 0.5 seconds for
+        # We keep trying to terminate connections every 0.1 seconds for
         # up to 10 seconds.
-        num_tries = 20
+        num_tries = 100
         seconds_to_pause = 0.1
         if self.replication_paused:
             nodes = set([self.lpmain_master_node])

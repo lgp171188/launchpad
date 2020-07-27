@@ -18,7 +18,8 @@ from lp.testing.systemdocs import (
 def test_suite():
     suite = unittest.TestSuite()
     test = LayeredDocFileSuite(
-        'validation.txt', setUp=setUp, tearDown=tearDown,
+        'validation.txt',
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadFunctionalLayer)
     suite.addTest(test)
     return suite

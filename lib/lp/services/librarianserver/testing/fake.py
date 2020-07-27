@@ -16,10 +16,11 @@ __all__ = [
     ]
 
 import hashlib
-from StringIO import StringIO
-from urlparse import urljoin
+import io
 
 from fixtures import Fixture
+import six
+from six.moves.urllib.parse import urljoin
 import transaction
 from transaction.interfaces import ISynchronizer
 import zope.component
@@ -53,7 +54,7 @@ class InstrumentedLibraryFileAlias(LibraryFileAlias):
 
     def open(self, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
         self.checkCommitted()
-        self._datafile = StringIO(self.content_string)
+        self._datafile = io.BytesIO(self.content_bytes)
 
     def read(self, chunksize=None, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
         return self._datafile.read(chunksize)
@@ -126,7 +127,7 @@ class FakeLibrarian(Fixture):
         """See `IFileDownloadClient`."""
         alias = self[aliasID]
         alias.checkCommitted()
-        return StringIO(alias.content_string)
+        return io.BytesIO(alias.content_bytes)
 
     def pretendCommit(self):
         """Pretend that there's been a commit.
@@ -138,14 +139,14 @@ class FakeLibrarian(Fixture):
         database transaction.
         """
         # Note that all files have been committed to storage.
-        for alias in self.aliases.itervalues():
+        for alias in six.itervalues(self.aliases):
             alias.file_committed = True
 
     def _makeAlias(self, file_id, name, content, content_type):
         """Create a `LibraryFileAlias`."""
         alias = InstrumentedLibraryFileAlias(
             contentID=file_id, filename=name, mimetype=content_type)
-        alias.content_string = content
+        alias.content_bytes = content
         return alias
 
     def _makeLibraryFileContent(self, content):
@@ -175,7 +176,7 @@ class FakeLibrarian(Fixture):
 
     def findBySHA256(self, sha256):
         "See `ILibraryFileAliasSet`."""
-        for alias in self.aliases.itervalues():
+        for alias in six.itervalues(self.aliases):
             if alias.content.sha256 == sha256:
                 return alias
 

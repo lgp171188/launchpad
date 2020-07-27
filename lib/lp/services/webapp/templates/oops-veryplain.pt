@@ -35,6 +35,11 @@
         Apologies for the inconvenience.
       </p>
       <p>
+        If you report this as a bug, please include the error ID below,
+        preferably by copying and pasting it rather than by taking a
+        screenshot.
+      </p>
+      <p>
         (Error <abbr>ID</abbr>:
         <tal:oops replace="structure view/oops_id_text" />)
       </p>

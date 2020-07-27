@@ -8,9 +8,11 @@ __metaclass__ = type
 from zope.component import queryMultiAdapter
 
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackage,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProject
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.services.webapp import stepto
 
@@ -19,9 +21,14 @@ class TargetDefaultVCSNavigationMixin:
 
     @stepto("+code")
     def traverse_code_view(self):
-        if self.context.pillar.vcs in (VCSType.BZR, None):
+        if IOCIProject.providedBy(self.context):
+            # OCI projects only support Git.
+            vcs = VCSType.GIT
+        else:
+            vcs = self.context.pillar.vcs
+        if vcs in (VCSType.BZR, None):
             view_name = '+branches'
-        elif self.context.pillar.vcs == VCSType.GIT:
+        elif vcs == VCSType.GIT:
             view_name = '+git'
         else:
             raise AssertionError("Unknown VCS")
@@ -37,11 +44,18 @@ class PersonTargetDefaultVCSNavigationMixin:
             target = self.context.product
         elif IPersonDistributionSourcePackage.providedBy(self.context):
             target = self.context.distro_source_package
+        elif IPersonOCIProject.providedBy(self.context):
+            target = self.context.oci_project
         else:
             raise AssertionError("Unknown target: %r" % self.context)
-        if target.pillar.vcs in (VCSType.BZR, None):
+        if IOCIProject.providedBy(target):
+            # OCI projects only support Git.
+            vcs = VCSType.GIT
+        else:
+            vcs = target.pillar.vcs
+        if vcs in (VCSType.BZR, None):
             view_name = '+branches'
-        elif target.pillar.vcs == VCSType.GIT:
+        elif vcs == VCSType.GIT:
             view_name = '+git'
         else:
             raise AssertionError("Unknown VCS")

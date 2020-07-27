@@ -9,11 +9,9 @@ __all__ = [
 
 import re
 import sys
-import thread
 import threading
 import time
 import traceback
-import urllib
 
 from lazr.restful.utils import safe_hasattr
 from lazr.uri import (
@@ -21,6 +19,7 @@ from lazr.uri import (
     URI,
     )
 from psycopg2.extensions import TransactionRollbackError
+from six.moves.urllib.parse import quote
 from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
     DisconnectionError,
@@ -90,7 +89,7 @@ from lp.services.webapp.vhosts import allvhosts
 METHOD_WRAPPER_TYPE = type({}.__setitem__)
 
 OFFSITE_POST_WHITELIST = ('/+storeblob', '/+request-token', '/+access-token',
-    '/+hwdb/+submit', '/+openid')
+    '/+openid')
 
 
 def maybe_block_offsite_form_post(request):
@@ -129,12 +128,6 @@ def maybe_block_offsite_form_post(request):
         # and launchpadlib used to make POST requests to
         # +request-token and +access-token without providing a
         # Referer.
-        #
-        # XXX Abel Deuring 2010-04-09 bug=550973
-        # The HWDB client "checkbox" accesses /+hwdb/+submit without
-        # a referer. This will change in the version in Ubuntu 10.04,
-        # but Launchpad should support HWDB submissions from older
-        # Ubuntu versions during their support period.
         #
         # We'll have to keep an application's one-off exception
         # until the application has been changed to send a
@@ -219,7 +212,12 @@ class LaunchpadBrowserPublication(
         # It is possible that request.principal is None if the principal has
         # not been set yet.
         if request.principal is not None:
-            txn.setUser(request.principal.id)
+            # Zope sets the transaction's user attribute to a
+            # space-separated pair of path and user ID, where the path is a
+            # record of traversed objects.  This is mostly a ZODB thing that
+            # we don't care about, so just use something minimal that fits
+            # the syntax.
+            txn.user = u"/ %s" % (request.principal.id,)
 
         return txn
 
@@ -245,7 +243,7 @@ class LaunchpadBrowserPublication(
         notify(StartRequestEvent(request))
         request._traversal_start = time.time()
         request._traversal_thread_start = _get_thread_time()
-        threadid = thread.get_ident()
+        threadid = threading.current_thread().ident
         threadrequestfile = open_for_writing(
             'logs/thread-%s.request' % threadid, 'w')
         try:
@@ -345,7 +343,7 @@ class LaunchpadBrowserPublication(
 
         non_restricted_url = self.getNonRestrictedURL(request)
         if non_restricted_url is not None:
-            location += '?production=%s' % urllib.quote(non_restricted_url)
+            location += '?production=%s' % quote(non_restricted_url)
 
         request.response.setResult('')
         request.response.redirect(location, temporary_if_possible=True)
@@ -431,7 +429,7 @@ class LaunchpadBrowserPublication(
         # The view may be security proxied
         view = removeSecurityProxy(ob)
         # It's possible that the view is a bound method.
-        view = getattr(view, 'im_self', view)
+        view = getattr(view, '__self__', view)
         context = removeSecurityProxy(getattr(view, 'context', None))
         pageid = self.constructPageID(view, context)
         request.setInWSGIEnvironment('launchpad.pageid', pageid)

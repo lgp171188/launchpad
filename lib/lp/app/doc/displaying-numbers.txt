@@ -45,13 +45,13 @@ to how the Python "%f" string formatter works:
 For instance:
 
     >>> foo = 12345.67890
-    >>> test_tales('foo/fmt:float/7.2', foo=foo)
-    '12345.68'
+    >>> print(test_tales('foo/fmt:float/7.2', foo=foo))
+    12345.68
 
 Is the same as:
 
-    >>> "%7.2f" % foo
-    '12345.68'
+    >>> print("%7.2f" % foo)
+    12345.68
 
 Here's a set of exhaustive examples:
 

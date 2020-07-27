@@ -20,9 +20,9 @@ __all__ = [
 import operator
 import os
 import time
-from urlparse import urljoin
 
-from z3c.ptcompat import ViewPageTemplateFile
+from six.moves.urllib.parse import urljoin
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.datetime import rfc1123_date
 from zope.interface import implementer
@@ -302,9 +302,7 @@ class FeedTypedData:
         if self.content_type in ('text', 'html'):
             altered_content = html_escape(altered_content)
         elif self.content_type == 'xhtml':
-            soup = BeautifulSoup(
-                altered_content,
-                convertEntities=BeautifulSoup.HTML_ENTITIES)
+            soup = BeautifulSoup(altered_content)
             altered_content = unicode(soup)
         return altered_content
 

@@ -5,8 +5,9 @@
 
 __metaclass__ = type
 
-from StringIO import StringIO
+import io
 
+import six
 import transaction
 from transaction.interfaces import ISynchronizer
 from zope.component import getUtility
@@ -44,10 +45,10 @@ class LibraryAccessScenarioMixin:
         :return: Tuple of filename, file contents, alias id.
         """
         name = self.factory.getUniqueString() + '.txt'
-        text = self.factory.getUniqueString()
+        content = self.factory.getUniqueBytes()
         alias = getUtility(ILibraryFileAliasSet).create(
-            name, len(text), StringIO(text), 'text/plain')
-        return name, text, alias
+            name, len(content), io.BytesIO(content), 'text/plain')
+        return name, content, alias
 
     def test_baseline(self):
         self.assertTrue(
@@ -58,48 +59,48 @@ class LibraryAccessScenarioMixin:
                 ILibraryFileAliasSet, getUtility(ILibraryFileAliasSet)))
 
     def test_insert_retrieve(self):
-        name, text, alias = self._storeFile()
-        self.assertIsInstance(alias.id, (int, long))
+        name, content, alias = self._storeFile()
+        self.assertIsInstance(alias.id, six.integer_types)
 
         transaction.commit()
 
         library_file = getUtility(ILibrarianClient).getFileByAlias(alias.id)
-        self.assertEqual(text, library_file.read())
+        self.assertEqual(content, library_file.read())
 
     def test_alias_set(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
         retrieved_alias = getUtility(ILibraryFileAliasSet)[alias.id]
         self.assertEqual(alias, retrieved_alias)
 
     def test_read(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
         transaction.commit()
         alias.open()
-        self.assertEqual(text, alias.read())
+        self.assertEqual(content, alias.read())
 
     def test_uncommitted_file(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
         retrieved_alias = getUtility(ILibraryFileAliasSet)[alias.id]
         self.assertRaises(LookupError, retrieved_alias.open)
 
     def test_incorrect_upload_size(self):
         name = self.factory.getUniqueString()
-        text = self.factory.getUniqueString()
-        wrong_length = len(text) + 1
+        content = self.factory.getUniqueBytes()
+        wrong_length = len(content) + 1
         self.assertRaises(
             AssertionError,
             getUtility(ILibrarianClient).addFile,
-            name, wrong_length, StringIO(text), 'text/plain')
+            name, wrong_length, io.BytesIO(content), 'text/plain')
 
     def test_create_returns_alias(self):
         alias = getUtility(ILibraryFileAliasSet).create(
-            'foo.txt', 3, StringIO('foo'), 'text/plain')
+            'foo.txt', 3, io.BytesIO(b'foo'), 'text/plain')
         self.assertIsInstance(alias, LibraryFileAlias)
 
     def test_addFile_returns_alias_id(self):
         alias_id = getUtility(ILibrarianClient).addFile(
-            'bar.txt', 3, StringIO('bar'), 'text/plain')
-        self.assertIsInstance(alias_id, (int, long))
+            'bar.txt', 3, io.BytesIO(b'bar'), 'text/plain')
+        self.assertIsInstance(alias_id, six.integer_types)
         self.assertIsInstance(
             getUtility(ILibraryFileAliasSet)[alias_id],
             LibraryFileAlias)
@@ -108,29 +109,29 @@ class LibraryAccessScenarioMixin:
         # addFile takes an argument debugID that doesn't do anything
         # observable.  We get a LibraryFileAlias regardless.
         alias = getUtility(ILibraryFileAliasSet).create(
-            'txt.txt', 3, StringIO('txt'), 'text/plain', debugID='txt')
+            'txt.txt', 3, io.BytesIO(b'txt'), 'text/plain', debugID='txt')
         self.assertNotEqual(None, alias)
 
     def test_getURLForAlias(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
         librarian = getUtility(ILibrarianClient)
         self.assertIn(
             librarian.getURLForAlias(alias.id),
             (alias.http_url, alias.https_url))
 
     def test_getURLForAliasObject(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
         librarian = getUtility(ILibrarianClient)
         self.assertEqual(
             librarian.getURLForAlias(alias.id),
             librarian.getURLForAliasObject(alias))
 
     def test_getURL(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
         self.assertIn(alias.getURL(), (alias.http_url, alias.https_url))
 
     def test_deleted_alias_has_no_url(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
 
         self.assertNotEqual(None, alias.getURL())
         removeSecurityProxy(alias).content = None
@@ -151,13 +152,13 @@ class TestFakeLibrarian(LibraryAccessScenarioMixin, TestCaseWithFactory):
         self.assertIsInstance(self.fake_librarian, FakeLibrarian)
 
     def test_pretend_commit(self):
-        name, text, alias = self._storeFile()
+        name, content, alias = self._storeFile()
 
         self.fake_librarian.pretendCommit()
 
         retrieved_alias = getUtility(ILibraryFileAliasSet)[alias.id]
         retrieved_alias.open()
-        self.assertEqual(text, retrieved_alias.read())
+        self.assertEqual(content, retrieved_alias.read())
 
 
 class TestRealLibrarian(LibraryAccessScenarioMixin, TestCaseWithFactory):

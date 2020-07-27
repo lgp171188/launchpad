@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of `IBranchCollection`."""
@@ -16,6 +16,7 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
+import six
 from storm.expr import (
     And,
     Asc,
@@ -271,8 +272,8 @@ class GenericBranchCollection:
             cache._associatedSuiteSourcePackages.append(
                 link.suite_sourcepackage)
         for code_import in IStore(CodeImport).find(
-            CodeImport, CodeImport.branchID.is_in(branch_ids)):
-            cache = caches[code_import.branchID]
+                CodeImport, CodeImport.branch_id.is_in(branch_ids)):
+            cache = caches[code_import.branch_id]
             cache.code_import = code_import
 
     @staticmethod
@@ -301,8 +302,11 @@ class GenericBranchCollection:
             BranchListingSort.OLDEST_FIRST: (Asc, Branch.date_created),
             }
 
-        order_by = map(
-            LISTING_SORT_TO_COLUMN.get, DEFAULT_BRANCH_LISTING_SORT)
+        order_by = [
+            LISTING_SORT_TO_COLUMN.get(sort)
+            for sort in DEFAULT_BRANCH_LISTING_SORT]
+        # Stabilise the sort using descending ID as a last resort.
+        order_by.append((Desc, Branch.id))
 
         if sort_by is not None and sort_by != BranchListingSort.DEFAULT:
             direction, column = LISTING_SORT_TO_COLUMN[sort_by]
@@ -331,7 +335,7 @@ class GenericBranchCollection:
             # need for validity etc in the /branches API call.
             load_related(Person, rows,
                 ['ownerID', 'registrantID', 'reviewerID'])
-            load_referencing(BugBranch, rows, ['branchID'])
+            load_referencing(BugBranch, rows, ['branch_id'])
 
         def cache_permission(branch):
             if self._user:
@@ -546,11 +550,11 @@ class GenericBranchCollection:
             store = IStore(BugBranch)
             rs = store.using(
                 BugBranch,
-                Join(BugTask, BugTask.bugID == BugBranch.bugID),
+                Join(BugTask, BugTask.bugID == BugBranch.bug_id),
             ).find(
                 (BugTask, BugBranch),
-                BugBranch.bugID.is_in(bug_ids),
-                BugBranch.branchID.is_in(source_branch_ids)
+                BugBranch.bug_id.is_in(bug_ids),
+                BugBranch.branch_id.is_in(source_branch_ids)
             )
 
             # Build up a collection of bugtasks for each branch
@@ -559,7 +563,7 @@ class GenericBranchCollection:
                 bugtasks_for_branch[bugbranch.branch].append(bugtask)
 
             # Now filter those down to one bugtask per branch
-            for branch, tasks in bugtasks_for_branch.iteritems():
+            for branch, tasks in six.iteritems(bugtasks_for_branch):
                 linked_bugtasks[branch.id].extend(
                     filter_bugtasks_by_context(branch.target.context, tasks))
 
@@ -728,7 +732,7 @@ class GenericBranchCollection:
         """See `IBranchCollection`."""
         bug_ids = [bug.id for bug in bugs]
         return self._filterBy(
-            [In(BugBranch.bugID, bug_ids)],
+            [In(BugBranch.bug_id, bug_ids)],
             table=BugBranch,
             join=Join(BugBranch, BugBranch.branch == Branch.id),
             symmetric=False)

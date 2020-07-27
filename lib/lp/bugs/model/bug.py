@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad bug-related database table classes."""
@@ -19,9 +19,9 @@ __all__ = [
     ]
 
 
-from cStringIO import StringIO
 from email.utils import make_msgid
 from functools import wraps
+from io import BytesIO
 from itertools import chain
 import operator
 import re
@@ -29,6 +29,10 @@ import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+from six.moves.collections_abc import (
+    Iterable,
+    Set,
+    )
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -59,6 +63,7 @@ from storm.locals import (
     DateTime,
     Int,
     Reference,
+    ReferenceSet,
     )
 from storm.store import (
     EmptyResultSet,
@@ -360,8 +365,8 @@ class Bug(SQLBase, InformationTypeMixin):
     watches = SQLMultipleJoin(
         'BugWatch', joinColumn='bug', orderBy=['bugtracker', 'remotebug'])
     duplicates = SQLMultipleJoin('Bug', joinColumn='duplicateof', orderBy='id')
-    linked_bugbranches = SQLMultipleJoin(
-        'BugBranch', joinColumn='bug', orderBy='id')
+    linked_bugbranches = ReferenceSet(
+        'id', BugBranch.bug_id, order_by=BugBranch.id)
     date_last_message = UtcDateTimeCol(default=None)
     number_of_duplicates = IntCol(notNull=True, default=0)
     message_count = IntCol(notNull=True, default=0)
@@ -1215,10 +1220,11 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def expireNotifications(self):
         """See `IBug`."""
-        for notification in BugNotification.selectBy(
-                bug=self, date_emailed=None):
-            notification.date_emailed = UTC_NOW
-            notification.syncUpdate()
+        store = IStore(BugNotification)
+        notifications = store.find(
+            BugNotification, bug=self, date_emailed=None)
+        notifications.set(date_emailed=UTC_NOW)
+        store.flush()
 
     def newMessage(self, owner=None, subject=None,
                    content=None, parent=None, bugwatch=None,
@@ -1299,7 +1305,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # wrongly encoded.
         if from_api:
             data = get_raw_form_value_from_current_request(data, 'data')
-        if isinstance(data, str):
+        if isinstance(data, bytes):
             filecontent = data
         else:
             filecontent = data.read()
@@ -1313,7 +1319,7 @@ class Bug(SQLBase, InformationTypeMixin):
 
         filealias = getUtility(ILibraryFileAliasSet).create(
             name=filename, size=len(filecontent),
-            file=StringIO(filecontent), contentType=content_type,
+            file=BytesIO(filecontent), contentType=content_type,
             restricted=self.private)
 
         return self.linkAttachment(
@@ -1368,7 +1374,8 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def unlinkBranch(self, branch, user):
         """See `IBug`."""
-        bug_branch = BugBranch.selectOneBy(bug=self, branch=branch)
+        bug_branch = Store.of(self).find(
+            BugBranch, BugBranch.bug == self, BugBranch.branch == branch).one()
         if bug_branch is not None:
             self.addChange(BranchUnlinkedFromBug(UTC_NOW, user, branch, self))
             notify(ObjectUnlinkedEvent(branch, self, user=user))
@@ -1385,7 +1392,7 @@ class Bug(SQLBase, InformationTypeMixin):
             branch_ids = [branch.id for branch in linked_branches]
             results = Store.of(self).find(
                 BugBranch,
-                BugBranch.bug == self, In(BugBranch.branchID, branch_ids))
+                BugBranch.bug == self, In(BugBranch.branch_id, branch_ids))
             return results.order_by(BugBranch.id)
 
     def linkMergeProposal(self, merge_proposal, user, check_permissions=True):
@@ -2256,8 +2263,61 @@ def load_people(*where):
         need_preferred_email=True)
 
 
-class BugSubscriberSet(frozenset):
-    """A set of bug subscribers
+class FrozenSetBasedSet(Set):
+    """A subclassable immutable set.
+
+    On Python 3, we can't simply subclass `frozenset`: set operations such
+    as union will create a new set, but it will be a plain `frozenset` and
+    will lack the appropriate custom properties.  However, the `Set` ABC
+    (which is in fact an immutable set; `MutableSet` is a separate ABC)
+    knows to create new sets using the same class.  Take advantage of this
+    with a trivial implementation of `Set` that backs straight onto a
+    `frozenset`.
+
+    The ABC doesn't implement the non-operator versions of set methods such
+    as `union`, so do that here, at least for those methods we actually use.
+    """
+
+    def __init__(self, iterable=None):
+        self._frozenset = (
+            frozenset() if iterable is None else frozenset(iterable))
+
+    def __iter__(self):
+        return iter(self._frozenset)
+
+    def __contains__(self, value):
+        return value in self._frozenset
+
+    def __len__(self):
+        return len(self._frozenset)
+
+    def issubset(self, other):
+        return self <= self._from_iterable(other)
+
+    def issuperset(self, other):
+        return self >= self._from_iterable(other)
+
+    def union(self, *others):
+        for other in others:
+            if not isinstance(other, Iterable):
+                raise NotImplementedError
+        return self._from_iterable(value for value in chain(self, *others))
+
+    def intersection(self, *others):
+        for other in others:
+            if not isinstance(other, Iterable):
+                raise NotImplementedError
+        return self._from_iterable(
+            value for value in chain(*others) if value in self)
+
+    def difference(self, *others):
+        other = self._from_iterable([]).union(*others)
+        return self._from_iterable(
+            value for value in self if value not in other)
+
+
+class BugSubscriberSet(FrozenSetBasedSet):
+    """An immutable set of bug subscribers.
 
     Every member should provide `IPerson`.
     """
@@ -2271,8 +2331,8 @@ class BugSubscriberSet(frozenset):
         return tuple(sorted(self, key=person_sort_key))
 
 
-class BugSubscriptionSet(frozenset):
-    """A set of bug subscriptions."""
+class BugSubscriptionSet(FrozenSetBasedSet):
+    """An immutable set of bug subscriptions."""
 
     @cachedproperty
     def sorted(self):
@@ -2296,7 +2356,7 @@ class BugSubscriptionSet(frozenset):
             return BugSubscriberSet(load_people(condition))
 
 
-class StructuralSubscriptionSet(frozenset):
+class StructuralSubscriptionSet(FrozenSetBasedSet):
     """A set of structural subscriptions."""
 
     @cachedproperty
@@ -2793,8 +2853,7 @@ class FileBugData:
 
     def __init__(self, initial_summary=None, initial_tags=None,
                  private=None, subscribers=None, extra_description=None,
-                 comments=None, attachments=None,
-                 hwdb_submission_keys=None):
+                 comments=None, attachments=None):
         if initial_tags is None:
             initial_tags = []
         if subscribers is None:
@@ -2803,8 +2862,6 @@ class FileBugData:
             comments = []
         if attachments is None:
             attachments = []
-        if hwdb_submission_keys is None:
-            hwdb_submission_keys = []
 
         self.initial_summary = initial_summary
         self.private = private
@@ -2813,7 +2870,6 @@ class FileBugData:
         self.subscribers = subscribers
         self.comments = comments
         self.attachments = attachments
-        self.hwdb_submission_keys = hwdb_submission_keys
 
     def asDict(self):
         """Return the FileBugData instance as a dict."""

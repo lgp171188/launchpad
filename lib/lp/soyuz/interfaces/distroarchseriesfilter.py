@@ -12,6 +12,10 @@ __all__ = [
     'NoSuchDistroArchSeriesFilter',
     ]
 
+from lazr.restful.declarations import (
+    exported,
+    exported_as_webservice_entry,
+    )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (
@@ -39,37 +43,37 @@ class IDistroArchSeriesFilterView(Interface):
 
     id = Int(title=_("ID"), readonly=True, required=True)
 
-    distroarchseries = Reference(
+    distroarchseries = exported(Reference(
         title=_("Distro arch series"), required=True, readonly=True,
         schema=IDistroArchSeries,
-        description=_("The distro arch series that this filter is for."))
+        description=_("The distro arch series that this filter is for.")))
 
-    packageset = Reference(
+    packageset = exported(Reference(
         title=_("Package set"), required=True, readonly=True,
         schema=IPackageset,
         description=_(
             "The package set to be included in or excluded from this distro "
-            "arch series."))
+            "arch series.")))
 
-    sense = Choice(
+    sense = exported(Choice(
         title=_("Sense"),
         vocabulary=DistroArchSeriesFilterSense, required=True, readonly=True,
         description=_(
             "Whether the filter represents packages to include or exclude "
-            "from the distro arch series."))
+            "from the distro arch series.")))
 
-    creator = PublicPersonChoice(
+    creator = exported(PublicPersonChoice(
         title=_("Creator"), required=True, readonly=True,
         vocabulary="ValidPerson",
-        description=_("The user who created this filter."))
+        description=_("The user who created this filter.")))
 
-    date_created = Datetime(
+    date_created = exported(Datetime(
         title=_("Date created"), required=True, readonly=True,
-        description=_("The time when this filter was created."))
+        description=_("The time when this filter was created.")))
 
-    date_last_modified = Datetime(
+    date_last_modified = exported(Datetime(
         title=_("Date last modified"), required=True, readonly=True,
-        description=_("The time when this filter was last modified."))
+        description=_("The time when this filter was last modified.")))
 
     def isSourceIncluded(sourcepackagename):
         """Is this source package name included by this filter?
@@ -92,6 +96,10 @@ class IDistroArchSeriesFilterEdit(Interface):
         """Delete this filter."""
 
 
+# XXX cjwatson 2019-10-04 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IDistroArchSeriesFilter(
         IDistroArchSeriesFilterView, IDistroArchSeriesFilterEdit):
     """A filter for packages to be included in or excluded from a DAS.

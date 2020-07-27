@@ -16,10 +16,10 @@ from datetime import (
     timedelta,
     )
 from itertools import islice
-import urllib
 
 import pytz
-from z3c.ptcompat import ViewPageTemplateFile
+from six.moves.urllib.parse import urlencode
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextWidget
@@ -114,7 +114,7 @@ class TranslateLinksAggregator(WorkListLinksAggregator):
 
 def compose_pofile_filter_url(pofile, person):
     """Compose URL for `Person`'s contributions to `POFile`."""
-    person_name = urllib.urlencode({'person': person.name})
+    person_name = urlencode({'person': person.name})
     return canonical_url(pofile) + "/+filter?%s" % person_name
 
 

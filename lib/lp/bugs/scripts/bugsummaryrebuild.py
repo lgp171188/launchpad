@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+import six
 from storm.expr import (
     Alias,
     And,
@@ -116,7 +117,7 @@ def get_bugsummary_constraint(target, cls=RawBugSummary):
     # Map to ID columns to work around Storm bug #682989.
     return [
         getattr(cls, k) == v
-        for (k, v) in _get_bugsummary_constraint_bits(target).iteritems()]
+        for (k, v) in six.iteritems(_get_bugsummary_constraint_bits(target))]
 
 
 def get_bugtaskflat_constraint(target):
@@ -161,8 +162,8 @@ def calculate_bugsummary_changes(old, new):
     from the old one.
     """
     keys = set()
-    keys.update(old.iterkeys())
-    keys.update(new.iterkeys())
+    keys.update(six.iterkeys(old))
+    keys.update(six.iterkeys(new))
     added = {}
     updated = {}
     removed = []
@@ -198,7 +199,7 @@ def apply_bugsummary_changes(target, added, updated, removed):
         RawBugSummary.access_policy_id)
 
     # Postgres doesn't do bulk updates, so do a delete+add.
-    for key, count in updated.iteritems():
+    for key, count in six.iteritems(updated):
         removed.append(key)
         added[key] = count
 
@@ -219,7 +220,8 @@ def apply_bugsummary_changes(target, added, updated, removed):
     if added:
         create(
             target_cols + key_cols + (RawBugSummary.count,),
-            [target_key + key + (count,) for key, count in added.iteritems()])
+            [target_key + key + (count,)
+             for key, count in six.iteritems(added)])
 
 
 def rebuild_bugsummary_for_target(target, log):

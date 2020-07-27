@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -69,6 +69,20 @@
             permission="launchpad.Edit"
             set_attributes="changelog"/>
     </class>
+
+    <!-- BinarySourceReference -->
+
+    <class
+        class="lp.soyuz.model.binarysourcereference.BinarySourceReference">
+        <allow
+            interface="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReference"/>
+    </class>
+    <securedutility
+        class="lp.soyuz.model.binarysourcereference.BinarySourceReferenceSet"
+        provides="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReferenceSet">
+        <allow
+            interface="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReferenceSet"/>
+    </securedutility>
 
         <!-- SourcePackagePublishingHistory -->
 
@@ -151,6 +165,7 @@
                 displayarchs
                 displayversion
                 isPPA
+                logs
                 package_copy_job
                 package_copy_job_id
                 package_name
@@ -181,6 +196,12 @@
                 overrideSource
                 overrideBinaries"
             set_attributes="status distroseries pocket changesfile archive"/>
+    </class>
+    <class
+        class="lp.soyuz.model.queue.PackageUploadLog">
+        <require
+            permission="launchpad.View"
+            interface="lp.soyuz.interfaces.queue.IPackageUploadLog"/>
     </class>
     <class
         class="lp.soyuz.model.queue.PackageUploadSource">
@@ -1022,6 +1043,14 @@
             permission="launchpad.Admin"
             interface=".interfaces.livefsbuild.ILiveFSBuildAdmin"/>
     </class>
+    <subscriber
+        for="lp.soyuz.interfaces.livefsbuild.ILiveFSBuild
+             lazr.lifecycle.interfaces.IObjectCreatedEvent"
+        handler="lp.soyuz.subscribers.livefsbuild.livefs_build_created" />
+    <subscriber
+        for="lp.soyuz.interfaces.livefsbuild.ILiveFSBuild
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.soyuz.subscribers.livefsbuild.livefs_build_status_changed" />
 
     <!-- LiveFSBuildSet -->
     <securedutility

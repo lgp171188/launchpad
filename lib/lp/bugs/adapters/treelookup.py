@@ -110,7 +110,7 @@ class LookupBranch:
         else:
             return format % self.result.describe(level)
 
-    _describe_key_chars = set(string.letters + string.digits + '-_+=*')
+    _describe_key_chars = set(string.ascii_letters + string.digits + '-_+=*')
 
     def _describe_key(self, key):
         """Return a pretty representation of a simple key.

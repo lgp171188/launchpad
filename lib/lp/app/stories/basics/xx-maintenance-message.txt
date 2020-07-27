@@ -31,7 +31,7 @@ this timebombing.
     >>> os.system(
     ... 'date --iso-8601=minutes -u -d +10mins30secs > +maintenancetime.txt')
     0
-    >>> print front_page_content()
+    >>> print(front_page_content())
     HTTP/1.1 200 Ok
     ...
       Launchpad will be going offline for maintenance
@@ -73,14 +73,16 @@ When the time is in the past, the time is still given as "very very soon".
 
 If the time doesn't make sense, or is empty, then no message is displayed.
 
-    >>> file('+maintenancetime.txt', 'w').write('xxxx')
+    >>> with open('+maintenancetime.txt', 'w') as f:
+    ...     f.write('xxxx')
     >>> content = front_page_content()
     >>> okay200 in content
     True
     >>> maintenance_text not in content
     True
 
-    >>> file('+maintenancetime.txt', 'w').write('')
+    >>> with open('+maintenancetime.txt', 'w') as f:
+    ...     f.write('')
     >>> content = front_page_content()
     >>> okay200 in content
     True

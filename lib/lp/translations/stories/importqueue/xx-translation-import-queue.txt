@@ -112,8 +112,8 @@ Now, we attach a new file to an already existing translation resource.
   >>> upload = browser.getControl('File')
   >>> upload
   <Control name='file' type='file'>
-  >>> from StringIO import StringIO
-  >>> upload.add_file(StringIO('# foo\n'),
+  >>> from io import BytesIO
+  >>> upload.add_file(BytesIO(b'# foo\n'),
   ...   'text/x-gettext-translation-template', 'evolution.pot')
   >>> browser.getControl('Upload').click()
   >>> print(browser.url)
@@ -128,7 +128,7 @@ the last entry.
   >>> anon_browser.open('http://translations.launchpad.test/+imports')
   >>> nav_index = first_tag_by_class(anon_browser.contents,
   ...     'batch-navigation-index')
-  >>> print(extract_text(nav_index))
+  >>> print(extract_text(nav_index, formatter='html'))
   1 &rarr; 5 of 5 results
   >>> rows = find_tags_by_class(anon_browser.contents, 'import_entry_row')
   >>> print(extract_text(rows[4]))
@@ -208,8 +208,8 @@ There is an option to remove entries from the queue.
 
 No Privileges Person tries to remove entries but to no effect.
 
-  >>> import urllib
-  >>> post_data = urllib.urlencode(
+  >>> from six.moves.urllib.parse import urlencode
+  >>> post_data = urlencode(
   ...     {
   ...         'field.filter_target': 'all',
   ...         'field.filter_status': 'all',
@@ -346,7 +346,7 @@ Let's check tar.bz2 uploads. They work ;-)
   >>> test_file_name = os.path.join(
   ...     os.path.dirname(lp.translations.__file__),
   ...     'stories/importqueue/xx-translation-import-queue.tar.bz2')
-  >>> tarball = open(test_file_name)
+  >>> tarball = open(test_file_name, 'rb')
 
   >>> evo_owner_browser.getControl('File').add_file(
   ...     tarball, 'application/x-bzip', test_file_name)
@@ -367,7 +367,7 @@ decent error message:
   >>> browser.getControl('Upload').click()
   >>> for tag in find_tags_by_class(browser.contents, 'message'):
   ...     print(tag)
-  <div...Your upload was ignored because you didn&#x27;t select a file....
+  <div...Your upload was ignored because you didn't select a file....
   ...Please select a file and try again.</div>...
 
 Let's try now a tarball upload. Should work:
@@ -379,7 +379,7 @@ Let's try now a tarball upload. Should work:
   >>> test_file_name = os.path.join(
   ...     os.path.dirname(lp.translations.__file__),
   ...     'stories/importqueue/xx-translation-import-queue.tar')
-  >>> tarball = open(test_file_name)
+  >>> tarball = open(test_file_name, 'rb')
 
   >>> evo_owner_browser.getControl('File').add_file(
   ...     tarball, 'application/x-gzip', test_file_name)
@@ -400,7 +400,7 @@ We can handle an empty file disguised as a bzipped tarfile:
   >>> test_file_name = os.path.join(
   ...     os.path.dirname(lp.translations.__file__),
   ...     'stories/importqueue/empty.tar.bz2')
-  >>> tarball = open(test_file_name)
+  >>> tarball = open(test_file_name, 'rb')
 
   >>> evo_owner_browser.getControl('File').add_file(
   ...     tarball, 'application/x-gzip', test_file_name)
@@ -420,7 +420,7 @@ And also a truncated tarball inside a bzip2 wrapper:
   >>> test_file_name = os.path.join(
   ...     os.path.dirname(lp.translations.__file__),
   ...     'stories/importqueue/truncated.tar.bz2')
-  >>> tarball = open(test_file_name)
+  >>> tarball = open(test_file_name, 'rb')
 
   >>> evo_owner_browser.getControl('File').add_file(
   ...     tarball, 'application/x-gzip', test_file_name)
@@ -438,7 +438,7 @@ says that.
   ...     'http://translations.launchpad.test/evolution/trunk/'
   ...     '+translations-upload')
   >>> evo_owner_browser.getControl('File').add_file(
-  ...     StringIO('foo'), 'application/x-gzip', test_file_name)
+  ...     BytesIO(b'foo'), 'application/x-gzip', test_file_name)
   >>> evo_owner_browser.getControl('Upload').click()
   >>> evo_owner_browser.url
   'http://translations.launchpad.test/evolution/trunk/+translations-upload'
@@ -456,7 +456,7 @@ the erroneous parenthesis included.
 Here we'll simulate such a request and show that the resulting unrecognized
 filter_extension values do not generate an error.  See bug 388997.
 
-  >>> post_data = urllib.urlencode(
+  >>> post_data = urlencode(
   ...     {
   ...         'field.filter_target': 'all',
   ...         'field.filter_status': 'all',

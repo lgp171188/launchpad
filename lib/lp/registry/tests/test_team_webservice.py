@@ -3,12 +3,11 @@
 
 __metaclass__ = type
 
-import httplib
-
 from lazr.restfulclient.errors import (
     HTTPError,
     Unauthorized,
     )
+from six.moves import http_client
 import transaction
 
 from lp.app.enums import InformationType
@@ -49,7 +48,7 @@ class TestTeamJoining(TestCaseWithFactory):
             HTTPError,
             person.join,
             team='test-team')
-        self.assertEqual(httplib.BAD_REQUEST, api_error.response.status)
+        self.assertEqual(http_client.BAD_REQUEST, api_error.response.status)
 
     def test_open_accepts_membership(self):
         # Calling person.join with a team that has an open membership

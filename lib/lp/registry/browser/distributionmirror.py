@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -207,10 +207,11 @@ class DistributionMirrorDeleteView(LaunchpadFormView):
 class DistributionMirrorAddView(LaunchpadFormView):
     schema = IDistributionMirror
     field_names = [
-        "display_name", "description", "whiteboard", "http_base_url",
-        "ftp_base_url", "rsync_base_url", "speed", "country", "content",
-        "official_candidate",
+        "display_name", "description", "whiteboard", "https_base_url",
+        "http_base_url", "ftp_base_url", "rsync_base_url", "speed", "country",
+        "content", "official_candidate",
         ]
+    invariant_context = None
 
     @property
     def label(self):
@@ -234,6 +235,7 @@ class DistributionMirrorAddView(LaunchpadFormView):
             content=data['content'], display_name=data['display_name'],
             description=data['description'],
             whiteboard=data['whiteboard'],
+            https_base_url=data['https_base_url'],
             http_base_url=data['http_base_url'],
             ftp_base_url=data['ftp_base_url'],
             rsync_base_url=data['rsync_base_url'],
@@ -278,8 +280,8 @@ class DistributionMirrorEditView(LaunchpadEditFormView):
     schema = IDistributionMirror
     field_names = [
         "name", "display_name", "description", "whiteboard",
-        "http_base_url", "ftp_base_url", "rsync_base_url", "speed",
-        "country", "content", "official_candidate",
+        "https_base_url", "http_base_url", "ftp_base_url", "rsync_base_url",
+        "speed", "country", "content", "official_candidate",
         ]
 
     @property

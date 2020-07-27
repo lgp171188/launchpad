@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -91,6 +91,7 @@ from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.soyuz.adapters.buildarch import determine_architectures_to_build
 from lp.soyuz.enums import (
     ArchivePurpose,
+    BinarySourceReferenceType,
     PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.archive import (
@@ -103,6 +104,10 @@ from lp.soyuz.interfaces.binarypackagebuild import (
     IBinaryPackageBuild,
     IBinaryPackageBuildSet,
     UnparsableDependencies,
+    )
+from lp.soyuz.interfaces.binarysourcereference import (
+    IBinarySourceReferenceSet,
+    UnparsableBuiltUsing,
     )
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.interfaces.packageset import IPackagesetSet
@@ -278,6 +283,11 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     def api_source_package_name(self):
         """See `IBuild`."""
         return self.source_package_release.name
+
+    @property
+    def source_package_version(self):
+        """See `IBuild`."""
+        return self.source_package_release.version
 
     @property
     def upload_changesfile(self):
@@ -657,10 +667,11 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         binpackageformat, component, section, priority, installedsize,
         architecturespecific, shlibdeps=None, depends=None, recommends=None,
         suggests=None, conflicts=None, replaces=None, provides=None,
-        pre_depends=None, enhances=None, breaks=None, essential=False,
-        debug_package=None, user_defined_fields=None, homepage=None):
+        pre_depends=None, enhances=None, breaks=None, built_using=None,
+        essential=False, debug_package=None, user_defined_fields=None,
+        homepage=None):
         """See IBuild."""
-        return BinaryPackageRelease(
+        bpr = BinaryPackageRelease(
             build=self, binarypackagename=binarypackagename, version=version,
             summary=summary, description=description,
             binpackageformat=binpackageformat,
@@ -672,6 +683,16 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             architecturespecific=architecturespecific,
             debug_package=debug_package,
             user_defined_fields=user_defined_fields, homepage=homepage)
+        if built_using:
+            try:
+                getUtility(IBinarySourceReferenceSet).createFromRelationship(
+                    bpr, built_using, BinarySourceReferenceType.BUILT_USING)
+            except UnparsableBuiltUsing:
+                # XXX cjwatson 2020-04-29: We intend for this to fail the
+                # upload eventually, but still have some details to sort
+                # out, so ignore it for now.
+                pass
+        return bpr
 
     def estimateDuration(self):
         """See `IPackageBuild`."""
@@ -1210,7 +1231,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             BinaryPackageBuild, build_farm_job_id=bfj_id).one()
 
     @staticmethod
-    def addCandidateSelectionCriteria(processor, virtualized):
+    def addCandidateSelectionCriteria():
         """See `ISpecificBuildFarmJobSource`."""
         private_statuses = (
             PackagePublishingStatus.PUBLISHED,

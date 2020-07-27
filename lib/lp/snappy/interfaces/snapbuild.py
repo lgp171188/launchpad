@@ -16,18 +16,16 @@ __all__ = [
     'SnapBuildStoreUploadStatus',
     ]
 
-import httplib
-
 from lazr.enum import (
     EnumeratedType,
     Item,
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     )
@@ -35,6 +33,7 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
+from six.moves import http_client
 from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
@@ -65,7 +64,7 @@ from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotScheduleStoreUpload(Exception):
     """This build cannot be uploaded to the store."""
 
@@ -169,8 +168,8 @@ class ISnapBuildView(IPackageBuild):
         title=_("Source snap channels to use for this build."),
         description=_(
             "A dictionary mapping snap names to channels to use for this "
-            "build.  Currently only 'core', 'core18', and 'snapcraft' keys "
-            "are supported."),
+            "build.  Currently only 'core', 'core18', 'core20' "
+            "and 'snapcraft' keys are supported."),
         key_type=TextLine()))
 
     virtualized = Bool(
@@ -330,13 +329,12 @@ class ISnapBuildAdmin(Interface):
         """Change the build's score."""
 
 
+# XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ISnapBuild(ISnapBuildView, ISnapBuildEdit, ISnapBuildAdmin):
     """Build information for snap package builds."""
-
-    # XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
 
 class ISnapBuildSet(ISpecificBuildFarmJobSource):

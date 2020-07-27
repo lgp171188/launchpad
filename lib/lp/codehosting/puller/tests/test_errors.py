@@ -5,24 +5,24 @@
 
 __metaclass__ = type
 
-import httplib
 import os
 import socket
 import tempfile
-import urllib2
 
-from bzrlib.errors import (
+from breezy.errors import (
     BzrError,
     NotBranchError,
     ParamikoNotPresent,
     UnknownFormatError,
     UnsupportedFormatError,
     )
-from bzrlib.url_policy_open import (
+from breezy.url_policy_open import (
     BranchLoopError,
     BranchReferenceForbidden,
     )
 from lazr.uri import InvalidURIError
+from six.moves import http_client
+from six.moves.urllib.error import HTTPError
 
 from lp.code.enums import BranchType
 from lp.codehosting.puller.worker import (
@@ -141,8 +141,8 @@ class TestErrorCatching(TestCase):
         # If the source branch requires HTTP authentication, say so in the
         # error message.
         msg = self.getMirrorFailureForException(
-            urllib2.HTTPError(
-                'http://something', httplib.UNAUTHORIZED,
+            HTTPError(
+                'http://something', http_client.UNAUTHORIZED,
                 'Authorization Required', 'some headers',
                 os.fdopen(tempfile.mkstemp()[0])))
         self.assertEqual("Authentication required.", msg)

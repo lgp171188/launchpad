@@ -1306,11 +1306,13 @@ class TestBranchDiffView(BrowserTestCase):
         hosting_fixture = self.useFixture(BranchHostingFixture())
         person = self.factory.makePerson()
         branch = self.factory.makeBranch(owner=person)
-        e = self.assertRaises(
-            HTTPError, self.getUserBrowser,
-            canonical_url(branch) + "/+diff/2/1")
-        self.assertEqual(401, e.code)
-        self.assertEqual("Proxying of branch diffs is disabled.\n", e.read())
+        branch_url = canonical_url(branch)
+        browser = self.getUserBrowser()
+        browser.raiseHttpErrors = False
+        browser.open(branch_url + "/+diff/2/1")
+        self.assertEqual(401, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(
+            "Proxying of branch diffs is disabled.\n", browser.contents)
         self.assertEqual([], hosting_fixture.getDiff.calls)
 
     def test_render(self):

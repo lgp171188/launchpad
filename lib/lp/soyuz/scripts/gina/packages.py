@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Package information classes.
@@ -21,10 +21,10 @@ __all__ = [
     'SourcePackageData',
     ]
 
+from email.utils import parseaddr
 import glob
 import os
 import re
-import rfc822
 import shutil
 import tempfile
 
@@ -123,12 +123,14 @@ def read_dsc(package, version, component, distro_name, archive_root):
                                       distro_name, archive_root)
 
     try:
-        dsc = open(dsc_path).read().strip()
+        with open(dsc_path) as f:
+            dsc = f.read().strip()
 
         fullpath = os.path.join(source_dir, "debian", "changelog")
         changelog = None
         if os.path.exists(fullpath):
-            changelog = open(fullpath).read().strip()
+            with open(fullpath) as f:
+                changelog = f.read().strip()
         else:
             log.warn("No changelog file found for %s in %s" %
                      (package, source_dir))
@@ -139,7 +141,8 @@ def read_dsc(package, version, component, distro_name, archive_root):
         for fullpath in glob.glob(globpath):
             if not os.path.exists(fullpath):
                 continue
-            copyright = open(fullpath).read().strip()
+            with open(fullpath) as f:
+                copyright = f.read().strip()
 
         if copyright is None:
             log.warn(
@@ -154,10 +157,10 @@ def read_dsc(package, version, component, distro_name, archive_root):
 def parse_person(val):
     """Parse a full email address into human-readable name and address."""
     # Some addresses have commas in them, as in: "Adam C. Powell, IV
-    # <hazelsct@debian.example.com>". rfc822.parseaddr seems not to
+    # <hazelsct@debian.example.com>". email.utils.parseaddr seems not to
     # handle this properly, so we munge them here.
     val = val.replace(',', '')
-    return rfc822.parseaddr(val)
+    return parseaddr(val)
 
 
 def parse_section(v):
@@ -466,6 +469,7 @@ class BinaryPackageData(AbstractPackageData):
     pre_depends = ""
     enhances = ""
     breaks = ""
+    built_using = ""
     essential = False
 
     # Overwritten in do_package, optionally
@@ -493,6 +497,14 @@ class BinaryPackageData(AbstractPackageData):
                 except ValueError:
                     raise MissingRequiredArguments("Installed-Size is "
                         "not a valid integer: %r" % v)
+            elif k == "Built-Using":
+                self.built_using = v
+                # Preserve the original form of Built-Using to avoid
+                # possible unfortunate apt behaviour.  This is most easily
+                # done by adding it to _user_defined as well.
+                if self._user_defined is None:
+                    self._user_defined = []
+                self._user_defined.append([k, v])
             else:
                 self.set_field(k, v)
 
@@ -550,5 +562,6 @@ class BinaryPackageData(AbstractPackageData):
         call("dpkg -e %s" % fullpath)
         shlibfile = os.path.join("DEBIAN", "shlibs")
         if os.path.exists(shlibfile):
-            self.shlibs = open(shlibfile).read().strip()
+            with open(shlibfile) as f:
+                self.shlibs = f.read().strip()
             log.debug("Grabbing shared library info from %s" % shlibfile)

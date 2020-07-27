@@ -35,6 +35,7 @@ from lazr.restful.interfaces import (
     IWebServiceClientRequest,
     )
 import simplejson
+import six
 from zope.component import (
     adapter,
     getMultiAdapter,
@@ -145,7 +146,7 @@ def latest_proposals_for_each_branch(proposals):
             targets[target] = (proposal, date_created)
 
     return sorted(
-        [proposal for proposal, date_created in targets.itervalues()],
+        [proposal for proposal, date_created in six.itervalues(targets)],
         key=operator.attrgetter('date_created'), reverse=True)
 
 
@@ -764,6 +765,12 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
         title = "Description of the change"
         return TextAreaEditorWidget(
             mp, description, title, edit_view='+edit-description')
+
+    @property
+    def opengraph_description(self):
+        if self.context.commit_message:
+            return self.context.commit_message
+        return self.page_description
 
     @property
     def edit_commit_message_link_class(self):

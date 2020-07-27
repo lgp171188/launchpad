@@ -11,8 +11,6 @@ database/replication/preamble.sk
 database/schema/diagrams/*.ps
 database/schema/diagrams/*.dot
 thread*.request
-lib/Mailman
-lib/mailman
 TAGS
 cover.txt
 lint.txt
@@ -30,6 +28,7 @@ xxx-report.*
 lib/canonical/launchpad/apidoc/wadl-development-*.xml
 lib/canonical/launchpad/apidoc/wadl-test-playground.xml
 lib/canonical/launchpad/icing/build/*
+lib/canonical/launchpad/icing/base.css
 lib/canonical/launchpad/icing/combo.css
 bin
 .installed.cfg
@@ -75,3 +74,4 @@ callgrind.out.*
 !logs/README.txt
 /logs
 yarn/node_modules
+/wheelhouse

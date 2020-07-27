@@ -13,23 +13,23 @@ __all__ = [
     'IPocketChroot',
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
+    operation_returns_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -55,12 +55,12 @@ from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidChrootUploaded(Exception):
     """Raised when the sha1sum of an uploaded chroot does not match."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ChrootNotPublic(Exception):
     """Raised when trying to set a chroot from a private livefs build."""
 
@@ -69,7 +69,7 @@ class ChrootNotPublic(Exception):
             "Cannot set chroot from a private build.")
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class FilterSeriesMismatch(Exception):
     """DAS and packageset distroseries do not match when setting a filter."""
 
@@ -233,6 +233,10 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         this distro arch series.
         """
 
+    # Really IDistroArchSeriesFilter, patched in _schema_circular_imports.py.
+    @operation_returns_entry(Interface)
+    @export_read_operation()
+    @operation_for_version("devel")
     def getSourceFilter():
         """Get the filter for packages to build for this architecture, if any.
 
@@ -337,9 +341,9 @@ class IDistroArchSeriesModerate(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IDistroArchSeries(IDistroArchSeriesPublic, IDistroArchSeriesModerate):
     """An architecture for a distroseries."""
-    export_as_webservice_entry()
 
 
 class IPocketChroot(Interface):

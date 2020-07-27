@@ -12,14 +12,15 @@ the directory to expose.
     >>> import os
     >>> import tempfile
     >>> resource_dir = tempfile.mkdtemp(prefix='resources')
-    >>> file(os.path.join(resource_dir, 'test.txt'), 'w').write('Text file')
-    >>> file(os.path.join(resource_dir, 'image1.gif'), 'w').write(
-    ...     'GIF file')
-    >>> file(os.path.join(resource_dir, 'image2.png'), 'w').write(
-    ...     'PNG file')
+    >>> with open(os.path.join(resource_dir, 'test.txt'), 'w') as f:
+    ...     f.write('Text file')
+    >>> with open(os.path.join(resource_dir, 'image1.gif'), 'w') as f:
+    ...     f.write('GIF file')
+    >>> with open(os.path.join(resource_dir, 'image2.png'), 'w') as f:
+    ...     f.write('PNG file')
     >>> os.mkdir(os.path.join(resource_dir, 'a_dir'))
-    >>> file(os.path.join(resource_dir, 'other.txt'), 'w').write(
-    ...     'Other file')
+    >>> with open(os.path.join(resource_dir, 'other.txt'), 'w') as f:
+    ...     f.write('Other file')
 
     >>> from lp.app.browser.folder import ExportedFolder
     >>> class MyFolder(ExportedFolder):
@@ -39,13 +40,13 @@ all the traversal logic.
 The view will serve the file that it traverses to.
 
     >>> view = view.publishTraverse(view.request, 'test.txt')
-    >>> print view()
+    >>> print(view())
     Text file
 
 It also sets the appropriate headers for cache control on the response.
 
     >>> for name in sorted(view.request.response.headers):
-    ...     print "%s: %s" % (name, view.request.response.getHeader(name))
+    ...     print("%s: %s" % (name, view.request.response.getHeader(name)))
     Cache-Control: public...
     Content-Type: text/plain
     Expires: ...
@@ -57,7 +58,7 @@ identifier.
     >>> view = MyFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'rev6510')
     >>> view = view.publishTraverse(view.request, 'image1.gif')
-    >>> print view()
+    >>> print(view())
     GIF file
 
 Requesting a directory raises a NotFound.
@@ -116,26 +117,26 @@ image_extensions property.
     ('.png', '.gif')
 
     >>> view = view.publishTraverse(view.request, 'image2')
-    >>> print view()
+    >>> print(view())
     PNG file
-    >>> print view.request.response.getHeader('Content-Type')
+    >>> print(view.request.response.getHeader('Content-Type'))
     image/png
 
 If a file without extension exists, that one will be served.
 
-    >>> file(os.path.join(resource_dir, 'image3'), 'w').write(
-    ...     'Image without extension')
-    >>> file(os.path.join(resource_dir, 'image3.gif'), 'w').write(
-    ...     'Image with extension')
+    >>> with open(os.path.join(resource_dir, 'image3'), 'w') as f:
+    ...     f.write('Image without extension')
+    >>> with open(os.path.join(resource_dir, 'image3.gif'), 'w') as f:
+    ...     f.write('Image with extension')
 
     >>> view = MyImageFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'image3')
-    >>> print view()
+    >>> print(view())
     Image without extension
 
     >>> view = MyImageFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'image3.gif')
-    >>> print view()
+    >>> print(view())
     Image with extension
 
 
@@ -146,12 +147,13 @@ export_subdirectories is set to True, it will allow traversing to
 subdirectories.
 
     >>> os.mkdir(os.path.join(resource_dir, 'public'))
-    >>> file(os.path.join(
-    ...     resource_dir, 'public', 'test1.txt'), 'w').write('Public File')
+    >>> with open(os.path.join(
+    ...         resource_dir, 'public', 'test1.txt'), 'w') as f:
+    ...     f.write('Public File')
     >>> os.mkdir(os.path.join(resource_dir, 'public', 'subdir1'))
-    >>> file(os.path.join(
-    ...     resource_dir, 'public', 'subdir1', 'test1.txt'), 'w').write(
-    ...         'Sub file 1')
+    >>> with open(os.path.join(
+    ...         resource_dir, 'public', 'subdir1', 'test1.txt'), 'w') as f:
+    ...     f.write('Sub file 1')
 
     >>> class MyTree(ExportedFolder):
     ...     folder = resource_dir
@@ -163,14 +165,14 @@ Traversing to a file in a subdirectory will now work.
     >>> view = view.publishTraverse(view.request, 'public')
     >>> view = view.publishTraverse(view.request, 'subdir1')
     >>> view = view.publishTraverse(view.request, 'test1.txt')
-    >>> print view()
+    >>> print(view())
     Sub file 1
 
 But traversing to the subdirectory itself will raise a NotFound.
 
     >>> view = MyTree(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'public')
-    >>> print view()
+    >>> print(view())
     Traceback (most recent call last):
       ...
     NotFound:...

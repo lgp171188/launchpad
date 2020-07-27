@@ -13,9 +13,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -213,9 +213,9 @@ class IQuestionTargetView(Interface):
         """
 
 
+@exported_as_webservice_entry(as_of='devel')
 class IQuestionTarget(IQuestionTargetPublic, IQuestionTargetView):
     """An object that can have a new question asked about it."""
-    export_as_webservice_entry(as_of='devel')
 
 
 # These schemas are only used by browser/questiontarget.py and should really

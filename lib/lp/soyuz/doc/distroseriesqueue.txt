@@ -504,7 +504,7 @@ breezy-autotest context. It also becomes part of the lookup results.
     >>> candidate_queue = breezy_autotest.createQueueEntry(
     ...     PackagePublishingPocket.RELEASE,
     ...     breezy_autotest.main_archive,
-    ...     'pmount_0.1-1_source.changes', 'some content')
+    ...     'pmount_0.1-1_source.changes', b'some content')
     >>> matching_pmount = pmount.getVersion('0.1-1')
     >>> unused = candidate_queue.addSource(
     ...     matching_pmount.sourcepackagerelease)
@@ -696,7 +696,7 @@ Filtering by custom_type.  We need to add some custom uploads to show this.
     >>> def add_static_xlat_upload():
     ...     upload = warty.createQueueEntry(
     ...         pocket=PackagePublishingPocket.RELEASE,
-    ...         changesfilename="test", changesfilecontent="test",
+    ...         changesfilename="test", changesfilecontent=b"test",
     ...         archive=warty.main_archive)
     ...     arbitrary_file = factory.makeLibraryFileAlias()
     ...     upload.addCustom(arbitrary_file, static_xlat)

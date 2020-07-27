@@ -7,12 +7,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from urllib import urlencode
-
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
+from six.moves.urllib.parse import urlencode
 from testtools.matchers import MatchesStructure
 from zope.security.interfaces import Unauthorized
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import InformationType
 from lp.code.enums import (

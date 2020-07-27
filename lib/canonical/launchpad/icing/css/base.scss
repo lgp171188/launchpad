@@ -1,0 +1,550 @@
+// This file the result of auto-converting base.css to scss.
+
+body {
+    /* line-height is the same as the sprite height. */
+    font-family: Ubuntu, 'Bitstream Vera Sans', 'DejaVu Sans', Tahoma, sans-serif;
+    font-size: 12px;
+    line-height: 18px;
+    color: #333;
+
+    &.private, &.public {
+      /* It must be obvious to the user that the context is private */
+      background-image: none;
+    }
+
+    &.private .private-disallow {
+      /* We want to disable/hide some actions on private artifacts */
+      display: none;
+    }
+  }
+
+  .private-only {
+    /* We want to only show some items on private artifacts */
+    display: none;
+  }
+
+  body.private .private-only {
+    /* We want to only show some items on private artifacts */
+    display: block;
+  }
+
+  hr {
+    display: none;
+  }
+
+  dt {
+    margin-bottom: .3em;
+    margin-top: 0.5em;
+    font-weight: bold;
+
+    dfn {
+      font-weight: bold;
+    }
+  }
+
+  dd {
+    margin-bottom: .8em;
+  }
+
+  dl.faq dd {
+    margin: 1em 0 2em 4em;
+  }
+
+  .contributors dt strong {
+    padding-left: 1em;
+  }
+
+  ol {
+    margin-left: 1.8em;
+
+    li {
+      list-style: decimal outside;
+    }
+  }
+
+  li {
+    padding-bottom: .3em;
+  }
+
+  ul.news, li.news {
+    list-style-type: none;
+    margin-bottom: 1em;
+  }
+
+  ul.architecture, li.architecture {
+    list-style-image: url(/@@/architecture);
+  }
+
+  ul.build-success, li.build-success {
+    list-style-image: url(/@@/build-success);
+  }
+
+  ul.bug.remote, li.bug.remote {
+    list-style-image: url(/@@/bug-remote);
+  }
+
+  ul.language, li.language {
+    list-style-image: url(/@@/language);
+
+    /* Disable .language sprite. */
+    background: inherit;
+  }
+
+  ul.mail, li.mail {
+    list-style-image: url(/@@/mail);
+  }
+
+  ul.meeting, li.meeting {
+    list-style-image: url(/@@/meeting);
+  }
+
+  ul.rss, li.rss {
+    list-style-image: url(/@@/rss);
+  }
+
+  ul.translation, li.translation {
+    list-style-image: url(/@@/translation);
+  }
+
+  ul.webref, li.webref {
+    list-style-image: url(/@@/link);
+  }
+
+  ul {
+    &.iconed {
+      list-style-type: none;
+      padding-left: 0 !important;
+      margin: 0 !important;
+    }
+
+    &.buttons {
+      /* without !important, gets overridden by the '#maincontent ol' rule */
+      margin: 0.5em 0 0.5em 0 !important;
+      padding: 0 !important;
+
+      li {
+        display: inline;
+        margin: 0 0 0 0;
+      }
+    }
+  }
+
+  .bulleted {
+    margin-bottom: 0.5em;
+
+    li {
+      margin: 0 0 0 2em;
+      list-style-type: disc;
+    }
+  }
+
+  .horizontal {
+    margin: 1em 0 0 0;
+
+    li {
+      display: inline;
+      padding: 0 1.5em 0 0;
+    }
+  }
+
+  .subordinate {
+    margin-left: 2em;
+  }
+
+  ol.subordinate {
+    margin-left: 4em;
+  }
+
+  .two-column-list dl {
+    width: 48%;
+    float: left;
+    display: inline;
+    margin: 0 0.25em 0 0;
+
+    &:first-child {
+      dt, + dl dt {
+        margin-top: 0;
+      }
+    }
+  }
+
+  .three-column-list dl {
+    width: 31%;
+    float: left;
+    display: inline;
+    margin: 0 0.25em 0 0;
+  }
+
+  .two-column-list li {
+    width: 48%;
+    float: left;
+    display: inline;
+    margin: 0 0.25em 0 0;
+  }
+
+  .three-column-list li {
+    width: 31%;
+    float: left;
+    display: inline;
+    margin: 0 0.25em 0 0;
+  }
+
+  .two-column-list:after, .three-column-list:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+  }
+
+  .two-column-list {
+    dl.unseen, li.unseen {
+      /* Keep the abilty to hide list entries. */
+      display: none;
+    }
+  }
+
+  .three-column-list {
+    dl.unseen, li.unseen {
+      /* Keep the abilty to hide list entries. */
+      display: none;
+    }
+  }
+
+  caption {
+    caption-side: bottom;
+    text-align: left;
+  }
+
+  th {
+    text-align: right;
+    vertical-align: baseline;
+  }
+
+  td {
+    vertical-align: baseline;
+  }
+
+  .head th, thead th, tr.thead th {
+    text-align: left;
+    vertical-align: bottom;
+  }
+
+  th.icon, td.icon {
+    vertical-align: top;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  th.icon.left, td.icon.left {
+    padding-right: 0;
+  }
+
+  th.icon.right, td.icon.right {
+    padding-left: 0;
+  }
+
+  th.nowrap, td.nowrap {
+    white-space: nowrap;
+  }
+
+  tfoot th, table.contributions th {
+    text-align: left;
+  }
+
+  tr {
+    &.white {
+      background-color: #fff;
+    }
+
+    &.shaded {
+      background-color: #f6f6f6;
+    }
+  }
+
+  table {
+    .amount, .action-icons {
+      text-align: right;
+    }
+
+    &.contributions {
+      th {
+        font-weight: normal;
+      }
+
+      td {
+        vertical-align: middle;
+        width: 16px;
+        text-align: left;
+      }
+    }
+
+    &.latest {
+      th, td {
+        padding-bottom: 2em;
+      }
+    }
+
+    &.duplicate.listing * {
+      color: #999;
+    }
+  }
+
+  .table-actions {
+    &:nth-child(2) {
+      /* text-align works because the <li> is also display:inline. */
+      text-align: right;
+    }
+
+    margin: 1em 0 0 0;
+
+    li {
+      display: inline;
+      padding: 0 1.5em 0 0;
+    }
+  }
+
+  table {
+    &.compressed {
+      width: auto;
+
+      td {
+        padding: 0.25em 0.5em;
+      }
+    }
+
+    &.cozy-listing {
+      width: 20em;
+      background-color: #fff;
+      border: 1px solid #d2d2d2;
+      border-bottom: 1px solid #d2d2d2;
+
+      td {
+        border: 1px #d2d2d2;
+        border-style: dotted none none none;
+      }
+    }
+
+    &.sortable {
+      a.sortheader {
+        color: #666;
+        font-weight: bold;
+        text-decoration: none;
+        display: block;
+      }
+
+      img.sortarrow {
+        padding-left: 2px;
+      }
+
+      th {
+        cursor: pointer;
+      }
+    }
+  }
+
+  th {
+    &.ascending {
+      background-image: url(/@@/arrowDown);
+      background-position: center right;
+      background-repeat: no-repeat;
+    }
+
+    &.descending {
+      background-image: url(/@@/arrowUp);
+      background-position: center right;
+      background-repeat: no-repeat;
+    }
+  }
+
+  .sortkey, .revsortkey {
+    /* Used to indicate a value to be used to sort cells in a row */
+    display: none;
+  }
+
+  table {
+    &.listing {
+      margin: 0;
+      width: 100%;
+      border-bottom: 1px solid #d2d2d2;
+
+      tbody, td.end-of-section {
+        border-bottom: 1px solid #d2d2d2;
+      }
+
+      th {
+        font-weight: bold;
+      }
+
+      .head, thead {
+        border: 1px solid #d2d2d2;
+        background-color: #fff;
+
+        th {
+          border: 1px solid #d2d2d2;
+          background-color: #fff;
+        }
+      }
+
+      tfoot tr {
+        border: 1px solid #d2d2d2;
+        background-color: #fff;
+      }
+
+      tr {
+        &.thead th {
+          border: 1px solid #d2d2d2;
+          background-color: #fff;
+        }
+
+        &.category {
+          border-bottom: 1px solid #999;
+
+          th, td {
+            padding-top: 1em;
+          }
+        }
+      }
+
+      thead td {
+        border: none;
+      }
+
+      table {
+        tbody {
+          border: none;
+        }
+
+        thead {
+          border: none;
+
+          th {
+            border: none;
+          }
+        }
+      }
+
+      tfoot tr {
+        border: none;
+      }
+
+      table {
+        tfoot td, td {
+          border: none;
+        }
+      }
+
+      tfoot td {
+        border: 1px solid #d2d2d2;
+      }
+
+      th, td {
+        padding: 0.25em;
+      }
+
+      table {
+        th, td {
+          /* We don't want extra padding on nested tables, like batch navigation. */
+          padding: 0;
+        }
+      }
+
+      thead th, tr.thead th {
+        white-space: nowrap;
+      }
+
+      td {
+        border: 1px #d2d2d2;
+        border-style: dotted none none none;
+      }
+
+      tr.category:first-child td {
+        border-top-style: none;
+        padding-top: 0;
+      }
+
+      .section-break td {
+        border-width: 1px 0 0 0;
+        border-style: solid;
+        border-color: #d2d2d2;
+        height: 1em;
+      }
+
+      .note td {
+        border-style: none;
+      }
+
+      img {
+        vertical-align: middle;
+      }
+
+      tr.secondary {
+        th, td {
+          border-top: none;
+        }
+      }
+
+      table.simple {
+        margin-left: 2em;
+
+        td {
+          padding: 0.25em;
+        }
+      }
+
+      .section-heading {
+        border: none;
+        padding-top: 1.5em;
+      }
+    }
+
+    &.summary {
+      th, td {
+        /* Summary tables havesubdued headers and a little row spacing. */
+        padding: 0 0.5em 0.5em 0;
+      }
+    }
+
+    &.listing table.summary {
+      th, td {
+        /* Summary tables havesubdued headers and a little row spacing. */
+        padding: 0 0.5em 0.5em 0;
+      }
+    }
+
+    &.summary {
+      th {
+        font-weight: normal;
+      }
+
+      caption {
+        font-style: italic;
+        margin-left: 1em;
+      }
+
+      ul {
+        list-style-position: inside;
+        margin: 0;
+        padding: 0;
+
+        li {
+          list-style-position: inside;
+          margin: 0;
+          padding: 0;
+        }
+      }
+    }
+  }
+
+  .results {
+    background-color: #f4f4f4;
+    padding: 2px 10px 5px 10px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+  }
+
+@import 'typography',
+        'colours',
+        'forms',
+        'layout',
+        'modifiers'

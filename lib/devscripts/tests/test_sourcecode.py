@@ -3,17 +3,24 @@
 
 """Module docstring goes here."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import os
 import shutil
-from StringIO import StringIO
 import tempfile
 import unittest
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.tests import TestCase
-from bzrlib.transport import get_transport
+try:
+    from breezy.bzr.bzrdir import BzrDir
+    from breezy.tests import TestCase
+    from breezy.transport import get_transport
+except ImportError:
+    from bzrlib.bzrdir import BzrDir
+    from bzrlib.tests import TestCase
+    from bzrlib.transport import get_transport
+import six
 
 from devscripts import get_launchpad_root
 from devscripts.sourcecode import (
@@ -28,7 +35,7 @@ class TestParseConfigFile(unittest.TestCase):
     """Tests for the config file parser."""
 
     def makeFile(self, contents):
-        return StringIO(contents)
+        return six.StringIO(contents)
 
     def test_empty(self):
         # Parsing an empty config file returns an empty sequence.

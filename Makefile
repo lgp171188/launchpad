@@ -1,6 +1,13 @@
 # This file modified from Zope3/Makefile
 # Licensed under the ZPL, (c) Zope Corporation and contributors.
 
+# Macro to lazily evaluate a shell command and cache the output.  This
+# allows us to set variables to the output of shell commands without having
+# to invoke those commands on every make invocation.
+# Use like this: FOO = $(call lazy_eval,FOO,command and arguments)
+# Borrowed from dpkg.
+lazy_eval ?= $(or $(value CACHE_$(1)),$(eval CACHE_$(1) := $(shell $(2)))$(value CACHE_$(1)))
+
 PYTHON:=python2.7
 
 WD:=$(shell pwd)
@@ -9,20 +16,20 @@ PYTHONPATH:=$(WD)/lib:${PYTHONPATH}
 VERBOSITY=-vv
 
 # virtualenv and pip fail if setlocale fails, so force a valid locale.
-VIRTUALENV := LC_ALL=C.UTF-8 virtualenv
-PIP := PYTHONPATH= LC_ALL=C.UTF-8 env/bin/pip
+PIP_ENV := LC_ALL=C.UTF-8
 # Run with "make PIP_NO_INDEX=" if you want pip to find software
 # dependencies *other* than those in our download-cache.  Once you have the
 # desired software, commit it to lp:lp-source-dependencies if it is going to
 # be reviewed/merged/deployed.
-# Although --ignore-installed is slower, we need it to avoid confusion with
-# system-installed Python packages.  If we ever manage to remove the need
-# for virtualenv --system-site-packages, then we can remove this too.
-PIP_NO_INDEX := --no-index
-PIP_INSTALL_ARGS := \
-	$(PIP_NO_INDEX) \
-	--ignore-installed \
-	--find-links=file://$(WD)/download-cache/dist/ \
+PIP_NO_INDEX := 1
+PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
+PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheelhouse/ file://$(WD)/download-cache/dist/"
+
+VIRTUALENV := $(PIP_ENV) virtualenv
+PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
+
+SITE_PACKAGES := \
+	$$(env/bin/python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
 
 TESTFLAGS=-p $(VERBOSITY)
 TESTOPTS=
@@ -37,11 +44,16 @@ ICING=lib/canonical/launchpad/icing
 LP_BUILT_JS_ROOT=${ICING}/build
 
 JS_BUILD_DIR := build/js
-YARN_VERSION := 1.2.1
+YARN_VERSION := 1.22.4
 YARN_BUILD := $(JS_BUILD_DIR)/yarn
 YARN := utilities/yarn
 YUI_SYMLINK := $(JS_BUILD_DIR)/yui
 LP_JS_BUILD := $(JS_BUILD_DIR)/lp
+NODE_ARCH = $(call lazy_eval,NODE_ARCH,nodejs -p process.arch)
+NODE_ABI = $(call lazy_eval,NODE_ABI,nodejs -p process.versions.modules)
+NODE_SASS_VERSION = 4.14.1
+NODE_SASS_BINDING = linux-$(NODE_ARCH)-$(NODE_ABI)
+NODE_SASS_BINARY = $(WD)/download-cache/yarn/node-sass-$(NODE_SASS_VERSION)-$(NODE_SASS_BINDING)_binding.node
 
 MINS_TO_SHUTDOWN=15
 
@@ -63,7 +75,6 @@ PIP_BIN = \
     $(PY) \
     bin/bingtestservice \
     bin/build-twisted-plugin-cache \
-    bin/combine-css \
     bin/harness \
     bin/iharness \
     bin/ipy \
@@ -102,11 +113,11 @@ $(API_INDEX): $(VERSION_INFO) $(PY)
 	    --force "$(APIDOC_TMPDIR)"
 	mv $(APIDOC_TMPDIR) $(APIDOC_DIR)
 
-apidoc:
 ifdef LP_MAKE_NO_WADL
+apidoc:
 	@echo "Skipping WADL generation."
 else
-	$(MAKE) compile $(API_INDEX)
+apidoc: compile $(API_INDEX)
 endif
 
 # Used to generate HTML developer documentation for Launchpad.
@@ -124,12 +135,6 @@ check: clean build $(JS_BUILD_DIR)/.development
 	# database.
 	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS)
 	bzr status --no-pending
-
-check_mailman: build $(JS_BUILD_DIR)/.development
-	# Run all tests, including the Mailman integration
-	# tests. test_on_merge.py takes care of setting up the database.
-	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS) \
-		lp.services.mailman.tests
 
 lint: ${PY} $(JS_BUILD_DIR)/.development
 	@bash ./utilities/lint
@@ -177,7 +182,18 @@ css_combine: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-image
 	${SHHH} bin/sprite-util create-css
 	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
-	${SHHH} bin/combine-css
+	# Compile the base.css file separately for tests
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING)/ $(WD)/$(ICING)/css/base.scss
+	# Compile the combo.css for the main site
+	# XXX 2020-06-12 twom This should have `--output-style compressed`. Removed for debugging purposes
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/combo.scss
+
+css_watch: jsbuild_widget_css
+	${SHHH} bin/sprite-util create-image
+	${SHHH} bin/sprite-util create-css
+	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/ --watch --recursive
+
 
 jsbuild_widget_css: bin/jsbuild
 	${SHHH} bin/jsbuild \
@@ -192,19 +208,19 @@ $(JS_BUILD_DIR):
 
 $(YARN_BUILD): | $(JS_BUILD_DIR)
 	mkdir -p $@/tmp
-	tar -C $@/tmp -xf download-cache/dist/yarn-$(YARN_VERSION).tar.gz
+	tar -C $@/tmp -xf download-cache/dist/yarn-v$(YARN_VERSION).tar.gz
 	mv $@/tmp/yarn-v$(YARN_VERSION)/* $@
 	$(RM) -r $@/tmp
 
 $(JS_BUILD_DIR)/.production: yarn/package.json | $(YARN_BUILD)
-	$(YARN) install --offline --frozen-lockfile --production
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) install --offline --frozen-lockfile --production
 	# We don't use YUI's Flash components and they have a bad security
 	# record. Kill them.
 	find yarn/node_modules/yui -name '*.swf' -delete
 	touch $@
 
 $(JS_BUILD_DIR)/.development: $(JS_BUILD_DIR)/.production
-	$(YARN) install --offline --frozen-lockfile
+	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) install --offline --frozen-lockfile
 	touch $@
 
 $(YUI_SYMLINK): $(JS_BUILD_DIR)/.production
@@ -226,12 +242,22 @@ jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
 
 # This target is used by LOSAs to prepare a build to be pushed out to
 # destination machines.  We only want wheels: they are the expensive bits,
-# and the other bits might run into problems like bug 575037.  This
-# target runs pip, and then removes everything created except for the
-# wheels.
-build_wheels: $(PIP_BIN) clean_pip
+# and the other bits might run into problems like bug 575037.  This target
+# runs pip, builds a wheelhouse with predictable paths that can be used even
+# if the build is pushed to a different path on the destination machines,
+# and then removes everything created except for the wheels.
+#
+# It doesn't seem to be straightforward to build a wheelhouse of all our
+# dependencies without also building a useless wheel of Launchpad itself;
+# fortunately that doesn't take too long, and we just remove it afterwards.
+build_wheels: $(PIP_BIN)
+	$(RM) -r wheelhouse
+	$(SHHH) $(PIP) wheel \
+		-c setup-requirements.txt -c constraints.txt -w wheelhouse .
+	$(RM) wheelhouse/lp-[0-9]*.whl
+	$(MAKE) clean_pip
 
-# Compatibility.
+# Compatibility
 build_eggs: build_wheels
 
 # setuptools won't touch files that would have the same contents, but for
@@ -244,32 +270,31 @@ build_eggs: build_wheels
 $(PY): download-cache constraints.txt setup.py
 	rm -rf env
 	mkdir -p env
-	(echo '[easy_install]'; \
-	 echo "allow_hosts = ''"; \
-	 echo 'find_links = file://$(WD)/download-cache/dist/') \
-		>env/.pydistutils.cfg
 	$(VIRTUALENV) \
-		--python=$(PYTHON) --system-site-packages --never-download \
+		--python=$(PYTHON) --never-download \
 		--extra-search-dir=$(WD)/download-cache/dist/ \
+		--extra-search-dir=$(WD)/wheelhouse/ \
 		env
 	ln -sfn env/bin bin
-	$(SHHH) $(PIP) install $(PIP_INSTALL_ARGS) \
-		-r pip-requirements.txt
+	$(SHHH) $(PIP) install -r setup-requirements.txt
 	$(SHHH) LPCONFIG=$(LPCONFIG) $(PIP) \
-		--cache-dir=$(WD)/download-cache/ \
-		install $(PIP_INSTALL_ARGS) \
-		-c pip-requirements.txt -c constraints.txt -e . \
+		install \
+		-c setup-requirements.txt -c constraints.txt -e . \
 		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
 
 $(subst $(PY),,$(PIP_BIN)): $(PY)
 
-compile: $(PY) $(VERSION_INFO)
+# Explicitly update version-info.py rather than declaring $(VERSION_INFO) as
+# a prerequisite, to make sure it's up to date when doing deployments.
+compile: $(PY)
 	${SHHH} utilities/relocate-virtualenv env
 	${SHHH} $(MAKE) -C sourcecode build PYTHON=${PYTHON} \
 	    LPCONFIG=${LPCONFIG}
+	$(PYTHON) utilities/link-system-packages.py \
+		"$(SITE_PACKAGES)" system-packages.txt
 	${SHHH} bin/build-twisted-plugin-cache
-	${SHHH} LPCONFIG=${LPCONFIG} ${PY} -t buildmailman.py
+	scripts/update-version-info.sh
 
 test_build: build
 	bin/test $(TESTFLAGS) $(TESTOPTS)
@@ -302,14 +327,14 @@ start-gdb: build inplace stop support_files run.gdb
 
 run_all: build inplace stop
 	bin/run \
-	 -r librarian,sftp,forker,mailman,codebrowse,bing-webservice,\
+	 -r librarian,sftp,forker,codebrowse,bing-webservice,\
 	memcached,rabbitmq -i $(LPCONFIG)
 
 run_codebrowse: compile
-	BZR_PLUGIN_PATH=bzrplugins $(PY) scripts/start-loggerhead.py
+	BRZ_PLUGIN_PATH=brzplugins $(PY) scripts/start-loggerhead.py
 
 start_codebrowse: compile
-	BZR_PLUGIN_PATH=$(shell pwd)/bzrplugins $(PY) scripts/start-loggerhead.py --daemon
+	BRZ_PLUGIN_PATH=$(shell pwd)/brzplugins $(PY) scripts/start-loggerhead.py --daemon
 
 stop_codebrowse:
 	$(PY) scripts/stop-loggerhead.py
@@ -348,7 +373,7 @@ stop: build initscript-stop
 # servers, where we know we don't need the extra steps in a full
 # "make stop" because of how the code is deployed/built.
 initscript-stop:
-	bin/killservice librarian launchpad mailman
+	bin/killservice librarian launchpad
 
 shutdown: scheduleoutage stop
 	$(RM) +maintenancetime.txt
@@ -386,16 +411,7 @@ clean_buildout: clean_pip
 clean_logs:
 	$(RM) logs/thread*.request
 
-clean_mailman:
-	$(RM) -r /var/tmp/mailman /var/tmp/mailman-xmlrpc.test
-ifdef LP_MAKE_KEEP_MAILMAN
-	@echo "Keeping previously built mailman."
-else
-	$(RM) lib/Mailman
-	$(RM) -r lib/mailman
-endif
-
-lxc-clean: clean_js clean_mailman clean_pip clean_logs
+lxc-clean: clean_js clean_pip clean_logs
 	# XXX: BradCrittenden 2012-05-25 bug=1004514:
 	# It is important for parallel tests inside LXC that the
 	# $(CODEHOSTING_ROOT) directory not be completely removed.
@@ -406,10 +422,7 @@ lxc-clean: clean_js clean_mailman clean_pip clean_logs
 	if test -f sourcecode/pygettextpo/Makefile; then \
 		$(MAKE) -C sourcecode/pygettextpo clean; \
 	fi
-	if test -f sourcecode/mailman/Makefile; then \
-		$(MAKE) -C sourcecode/mailman clean; \
-	fi
-	$(RM) -r env
+	$(RM) -r env wheelhouse
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
 	$(RM) -r $(CODEHOSTING_ROOT)/*
 	$(RM) -r $(APIDOC_DIR)
@@ -424,8 +437,6 @@ lxc-clean: clean_js clean_mailman clean_pip clean_logs
 			  /var/tmp/fatsam.test \
 			  /var/tmp/lperr \
 			  /var/tmp/lperr.test \
-			  /var/tmp/mailman \
-			  /var/tmp/mailman-xmlrpc.test \
 			  /var/tmp/ppa \
 			  /var/tmp/ppa.test \
 			  /var/tmp/testkeyserver
@@ -457,8 +468,8 @@ install: reload-apache
 
 copy-certificates:
 	mkdir -p /etc/apache2/ssl
-	cp configs/development/launchpad.crt /etc/apache2/ssl/
-	cp configs/development/launchpad.key /etc/apache2/ssl/
+	cp configs/$(LPCONFIG)/launchpad.crt /etc/apache2/ssl/
+	cp configs/$(LPCONFIG)/launchpad.key /etc/apache2/ssl/
 
 copy-apache-config: codehosting-dir
 	# We insert the absolute path to the branch-rewrite script
@@ -472,7 +483,7 @@ copy-apache-config: codehosting-dir
 	fi; \
 	sed -e 's,%BRANCH_REWRITE%,$(shell pwd)/scripts/branch-rewrite.py,' \
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
-		configs/development/local-launchpad-apache > \
+		configs/$(LPCONFIG)/local-launchpad-apache > \
 		/etc/apache2/sites-available/$$base
 	if [ ! -d /srv/launchpad.test ]; then \
 		mkdir /srv/launchpad.test; \
@@ -489,13 +500,13 @@ reload-apache: enable-apache-launchpad
 TAGS: compile
 	# emacs tags
 	ctags -R -e --languages=-JavaScript --python-kinds=-i -f $@.new \
-		$(CURDIR)/lib $(CURDIR)/env/lib/$(PYTHON)/site-packages
+		$(CURDIR)/lib "$(SITE_PACKAGES)"
 	mv $@.new $@
 
 tags: compile
 	# vi tags
 	ctags -R --languages=-JavaScript --python-kinds=-i -f $@.new \
-		$(CURDIR)/lib $(CURDIR)/env/lib/$(PYTHON)/site-packages
+		$(CURDIR)/lib "$(SITE_PACKAGES)"
 	mv $@.new $@
 
 PYDOCTOR = pydoctor
@@ -507,7 +518,7 @@ pydoctor:
 		--docformat restructuredtext --verbose-about epytext-summary \
 		$(PYDOCTOR_OPTIONS)
 
-.PHONY: apidoc build_eggs build_wheels check check_config check_mailman	\
+.PHONY: apidoc build_eggs build_wheels check check_config		\
 	clean clean_buildout clean_js clean_logs clean_pip compile	\
 	css_combine debug default doc ftest_build ftest_inplace		\
 	hosted_branches jsbuild jsbuild_widget_css launchpad.pot	\

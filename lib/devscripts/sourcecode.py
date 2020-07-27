@@ -3,6 +3,8 @@
 
 """Tools for maintaining the Launchpad source code."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'interpret_config',
@@ -17,21 +19,38 @@ import os
 import shutil
 import sys
 
-from bzrlib import ui
-from bzrlib.branch import Branch
-from bzrlib.errors import (
-    BzrError,
-    IncompatibleRepositories,
-    NotBranchError,
-    )
-from bzrlib.plugin import load_plugins
-from bzrlib.revisionspec import RevisionSpec
-from bzrlib.trace import (
-    enable_default_logging,
-    report_exception,
-    )
-from bzrlib.upgrade import upgrade
-from bzrlib.workingtree import WorkingTree
+try:
+    from breezy import ui
+    from breezy.branch import Branch
+    from breezy.errors import (
+        BzrError,
+        IncompatibleRepositories,
+        NotBranchError,
+        )
+    from breezy.plugin import load_plugins
+    from breezy.revisionspec import RevisionSpec
+    from breezy.trace import (
+        enable_default_logging,
+        report_exception,
+        )
+    from breezy.upgrade import upgrade
+    from breezy.workingtree import WorkingTree
+except ImportError:
+    from bzrlib import ui
+    from bzrlib.branch import Branch
+    from bzrlib.errors import (
+        BzrError,
+        IncompatibleRepositories,
+        NotBranchError,
+        )
+    from bzrlib.plugin import load_plugins
+    from bzrlib.revisionspec import RevisionSpec
+    from bzrlib.trace import (
+        enable_default_logging,
+        report_exception,
+        )
+    from bzrlib.upgrade import upgrade
+    from bzrlib.workingtree import WorkingTree
 
 from devscripts import get_launchpad_root
 
@@ -75,7 +94,7 @@ def interpret_config_entry(entry, use_http=False):
 
 def load_cache(cache_filename):
     try:
-        cache_file = open(cache_filename, 'rb')
+        cache_file = open(cache_filename, 'r')
     except IOError as e:
         if e.errno == errno.ENOENT:
             return {}
@@ -171,10 +190,19 @@ def _format_revision_name(revision, tip=False):
         return 'tip'
 
 
+def get_controldir(branch):
+    try:
+        # Breezy
+        return branch.controldir
+    except AttributeError:
+        # Bazaar
+        return branch.bzrdir
+
+
 def get_branches(sourcecode_directory, new_branches,
                  possible_transports=None, tip=False, quiet=False):
     """Get the new branches into sourcecode."""
-    for project, (branch_url, revision, optional) in new_branches.iteritems():
+    for project, (branch_url, revision, optional) in new_branches.items():
         destination = os.path.join(sourcecode_directory, project)
         try:
             remote_branch = Branch.open(
@@ -186,17 +214,17 @@ def get_branches(sourcecode_directory, new_branches,
             else:
                 raise
         possible_transports.append(
-            remote_branch.bzrdir.root_transport)
+            get_controldir(remote_branch).root_transport)
         if not quiet:
-            print 'Getting %s from %s at %s' % (
-                    project, branch_url, _format_revision_name(revision, tip))
+            print('Getting %s from %s at %s' % (
+                    project, branch_url, _format_revision_name(revision, tip)))
         # If the 'optional' flag is set, then it's a branch that shares
         # history with Launchpad, so we should share repositories. Otherwise,
         # we should avoid sharing repositories to avoid format
         # incompatibilities.
         force_new_repo = not optional
         revision_id = get_revision_id(revision, remote_branch, tip)
-        remote_branch.bzrdir.sprout(
+        get_controldir(remote_branch).sprout(
             destination, revision_id=revision_id, create_tree_if_local=True,
             source_branch=remote_branch, force_new_repo=force_new_repo,
             possible_transports=possible_transports)
@@ -205,21 +233,24 @@ def get_branches(sourcecode_directory, new_branches,
 def find_stale(updated, cache, sourcecode_directory, quiet):
     """Find branches whose revision info doesn't match the cache."""
     new_updated = dict(updated)
-    for project, (branch_url, revision, optional) in updated.iteritems():
+    for project, (branch_url, revision, optional) in updated.items():
         cache_revision_info = cache.get(project)
         if cache_revision_info is None:
             continue
-        if cache_revision_info[0] != int(revision):
+        cache_revno = cache_revision_info[0]
+        cache_revision_id = cache_revision_info[1].encode('ASCII')
+        if cache_revno != int(revision):
             continue
         destination = os.path.join(sourcecode_directory, project)
         try:
             branch = Branch.open(destination)
         except BzrError:
             continue
-        if list(branch.last_revision_info()) != cache_revision_info:
+        last_revno, last_revision_id = branch.last_revision_info()
+        if last_revno != cache_revno or last_revision_id != cache_revision_id:
             continue
         if not quiet:
-            print '%s is already up to date.' % project
+            print('%s is already up to date.' % project)
         del new_updated[project]
     return new_updated
 
@@ -227,16 +258,23 @@ def find_stale(updated, cache, sourcecode_directory, quiet):
 def update_cache(cache, cache_filename, changed, sourcecode_directory, quiet):
     """Update the cache with the changed branches."""
     old_cache = dict(cache)
-    for project, (branch_url, revision, optional) in changed.iteritems():
+    for project, (branch_url, revision, optional) in changed.items():
         destination = os.path.join(sourcecode_directory, project)
         branch = Branch.open(destination)
-        cache[project] = list(branch.last_revision_info())
+        last_revno, last_revision_id = branch.last_revision_info()
+        if not isinstance(last_revision_id, str):  # Python 3
+            last_revision_id = last_revision_id.decode('ASCII')
+        cache[project] = [last_revno, last_revision_id]
     if cache == old_cache:
         return
-    with open(cache_filename, 'wb') as cache_file:
-        json.dump(cache, cache_file, indent=4, sort_keys=True)
+    with open(cache_filename, 'w') as cache_file:
+        # XXX cjwatson 2020-01-21: Stop explicitly specifying separators
+        # once we require Python >= 3.4 (where this is the default).
+        json.dump(
+            cache, cache_file, indent=4, separators=(',', ': '),
+            sort_keys=True)
     if not quiet:
-        print 'Cache updated.  Please commit "%s".' % cache_filename
+        print('Cache updated.  Please commit "%s".' % cache_filename)
 
 
 def update_branches(sourcecode_directory, update_branches,
@@ -246,13 +284,12 @@ def update_branches(sourcecode_directory, update_branches,
         possible_transports = []
     # XXX: JonathanLange 2009-11-09: Rather than updating one branch after
     # another, we could instead try to get them in parallel.
-    for project, (branch_url, revision, optional) in (
-        update_branches.iteritems()):
+    for project, (branch_url, revision, optional) in update_branches.items():
         # Update project from branch_url.
         destination = os.path.join(sourcecode_directory, project)
         if not quiet:
-            print 'Updating %s to %s' % (
-                    project, _format_revision_name(revision, tip))
+            print('Updating %s to %s' % (
+                    project, _format_revision_name(revision, tip)))
         local_tree = WorkingTree.open(destination)
         try:
             remote_branch = Branch.open(
@@ -264,14 +301,14 @@ def update_branches(sourcecode_directory, update_branches,
             else:
                 raise
         possible_transports.append(
-            remote_branch.bzrdir.root_transport)
+            get_controldir(remote_branch).root_transport)
         revision_id = get_revision_id(revision, remote_branch, tip)
         try:
             result = local_tree.pull(
                 remote_branch, stop_revision=revision_id, overwrite=True,
                 possible_transports=possible_transports)
         except IncompatibleRepositories:
-            # XXX JRV 20100407: Ideally remote_branch.bzrdir._format
+            # XXX JRV 20100407: Ideally get_controldir(remote_branch)._format
             # should be passed into upgrade() to ensure the format is the same
             # locally and remotely. Unfortunately smart server branches
             # have their _format set to RemoteFormat rather than an actual
@@ -284,15 +321,15 @@ def update_branches(sourcecode_directory, update_branches,
                 possible_transports=possible_transports)
         if result.old_revid == result.new_revid:
             if not quiet:
-                print '  (No change)'
+                print('  (No change)')
         else:
             if result.old_revno < result.new_revno:
                 change = 'Updated'
             else:
                 change = 'Reverted'
             if not quiet:
-                print '  (%s from %s to %s)' % (
-                    change, result.old_revno, result.new_revno)
+                print('  (%s from %s to %s)' % (
+                    change, result.old_revno, result.new_revno))
 
 
 def remove_branches(sourcecode_directory, removed_branches, quiet=False):
@@ -300,7 +337,7 @@ def remove_branches(sourcecode_directory, removed_branches, quiet=False):
     for project in removed_branches:
         destination = os.path.join(sourcecode_directory, project)
         if not quiet:
-            print 'Removing %s' % project
+            print('Removing %s' % project)
         try:
             shutil.rmtree(destination)
         except OSError:
@@ -319,9 +356,9 @@ def update_sourcecode(sourcecode_directory, config_filename, cache_filename,
     new, updated, removed = plan_update(branches, config)
     possible_transports = []
     if dry_run:
-        print 'Branches to fetch:', new.keys()
-        print 'Branches to update:', updated.keys()
-        print 'Branches to remove:', list(removed)
+        print('Branches to fetch:', new.keys())
+        print('Branches to update:', updated.keys())
+        print('Branches to remove:', list(removed))
     else:
         get_branches(
             sourcecode_directory, new, possible_transports, tip, quiet)
@@ -379,8 +416,8 @@ def main(args):
     if len(args) > 3:
         parser.error("Too many arguments.")
     if not options.quiet:
-        print 'Sourcecode: %s' % (sourcecode_directory,)
-        print 'Config: %s' % (config_filename,)
+        print('Sourcecode: %s' % (sourcecode_directory,))
+        print('Config: %s' % (config_filename,))
     enable_default_logging()
     # Tell bzr to use the terminal (if any) to show progress bars
     ui.ui_factory = ui.make_ui_for_terminal(

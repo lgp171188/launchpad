@@ -6,7 +6,7 @@
 __metaclass__ = type
 
 import datetime
-from StringIO import StringIO
+import io
 import time
 
 from zope.component import getUtility
@@ -489,13 +489,13 @@ class TestBaseImageUpload(TestCase):
     def test_validation_corrupt_image(self):
         # ValueErrors raised by PIL become LaunchpadValidationErrors.
         field = self.ExampleImageUpload(default_image_resource='dummy')
-        image = StringIO(
-            '/* XPM */\n'
-            'static char *pixmap[] = {\n'
-            '"32 32 253 2",\n'
-            '  "00 c #01CAA3",\n'
-            '  ".. s None c None",\n'
-            '};')
+        image = io.BytesIO(
+            b'/* XPM */\n'
+            b'static char *pixmap[] = {\n'
+            b'"32 32 253 2",\n'
+            b'  "00 c #01CAA3",\n'
+            b'  ".. s None c None",\n'
+            b'};')
         image.filename = 'foo.xpm'
         self.assertRaises(
             LaunchpadValidationError, field.validate, image)
@@ -503,7 +503,7 @@ class TestBaseImageUpload(TestCase):
     def test_validation_non_image(self):
         # IOError raised by PIL become LaunchpadValidationErrors.
         field = self.ExampleImageUpload(default_image_resource='dummy')
-        image = StringIO('foo bar bz')
+        image = io.BytesIO(b'foo bar bz')
         image.filename = 'foo.jpg'
         self.assertRaises(
             LaunchpadValidationError, field.validate, image)

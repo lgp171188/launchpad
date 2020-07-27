@@ -157,25 +157,25 @@ class TacTestSetupTestCase(testtools.TestCase):
 
         # Put something in the log file.
         with open(fixture.logfile, "wb") as logfile:
-            logfile.write("Hello\n")
+            logfile.write(b"Hello\n")
 
         # Truncating the log does not remove the log file.
         fixture.truncateLog()
         self.assertTrue(exists(fixture.logfile))
         with open(fixture.logfile, "rb") as logfile:
-            self.assertEqual("", logfile.read())
+            self.assertEqual(b"", logfile.read())
 
         # Put something in the log again, along with LOG_MAGIC.
         with open(fixture.logfile, "wb") as logfile:
-            logfile.write("One\n")
-            logfile.write("Two\n")
-            logfile.write("Three, %s\n" % LOG_MAGIC)
-            logfile.write("Four\n")
+            logfile.write(b"One\n")
+            logfile.write(b"Two\n")
+            logfile.write(b"Three, %s\n" % LOG_MAGIC.encode("UTF-8"))
+            logfile.write(b"Four\n")
 
         # Truncating the log leaves everything up to and including the line
         # containing LOG_MAGIC.
         fixture.truncateLog()
         with open(fixture.logfile, "rb") as logfile:
             self.assertEqual(
-                "One\nTwo\nThree, %s\n" % LOG_MAGIC,
+                b"One\nTwo\nThree, %s\n" % LOG_MAGIC.encode("UTF-8"),
                 logfile.read())

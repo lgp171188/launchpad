@@ -5,6 +5,8 @@
 settings work. Note we need to use a non-default isolation level to
 confirm that the changes are actually being made by the API calls."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = []
 
@@ -13,9 +15,11 @@ import warnings
 import transaction
 
 from lp.services.config import dbconfig
-from lp.services.database.sqlbase import cursor
+from lp.services.database.sqlbase import (
+    cursor,
+    disconnect_stores,
+    )
 from lp.services.scripts import execute_zcml_for_scripts
-from lp.testing.layers import disconnect_stores
 
 execute_zcml_for_scripts()
 
@@ -24,7 +28,7 @@ def check():
     cur = cursor()
     cur.execute("UPDATE Person SET homepage_content='foo' WHERE name='mark'")
     cur.execute("SHOW transaction_isolation")
-    print cur.fetchone()[0]
+    print(cur.fetchone()[0])
 
     transaction.abort()
     transaction.begin()
@@ -32,7 +36,7 @@ def check():
     cur = cursor()
     cur.execute("UPDATE Person SET homepage_content='bar' WHERE name='mark'")
     cur.execute("SHOW transaction_isolation")
-    print cur.fetchone()[0]
+    print(cur.fetchone()[0])
 
 dbconfig.override(dbuser='launchpad_main', isolation_level='read_committed')
 disconnect_stores()

@@ -29,7 +29,7 @@ the `IBranchFileSystem` interface and passing what that returns to a
 `ITransportDispatch` object.
 
 We hook the `LaunchpadServer` into Bazaar by implementing a
-`AsyncVirtualTransport`, a `bzrlib.transport.Transport` that wraps all of its
+`AsyncVirtualTransport`, a `breezy.transport.Transport` that wraps all of its
 operations so that they are translated by an object that implements
 `translateVirtualPath`.  See transport.py for more information.
 
@@ -56,24 +56,22 @@ __all__ = [
 
 import os.path
 import sys
-import xmlrpclib
 
-from bzrlib import urlutils
-from bzrlib.bzrdir import (
-    BzrDir,
-    BzrDirFormat,
-    )
-from bzrlib.config import TransportConfig
-from bzrlib.errors import (
+from breezy import urlutils
+from breezy.bzr.bzrdir import BzrDir
+from breezy.bzr.smart.request import jail_info
+from breezy.config import TransportConfig
+from breezy.controldir import ControlDirFormat
+from breezy.errors import (
     NoSuchFile,
     PermissionDenied,
     TransportNotPossible,
     )
-from bzrlib.smart.request import jail_info
-from bzrlib.transport import get_transport
-from bzrlib.transport.memory import MemoryServer
+from breezy.transport import get_transport
+from breezy.transport.memory import MemoryServer
 from lazr.uri import URI
 import six
+from six.moves import xmlrpc_client
 from twisted.internet import (
     defer,
     error,
@@ -173,7 +171,7 @@ def is_lock_directory(absolute_path):
 
 def get_ro_server():
     """Get a Launchpad internal server for scanning branches."""
-    proxy = xmlrpclib.ServerProxy(config.codehosting.codehosting_endpoint)
+    proxy = xmlrpc_client.ServerProxy(config.codehosting.codehosting_endpoint)
     codehosting_endpoint = DeferredBlockingProxy(proxy)
     branch_transport = get_readonly_transport(
         get_transport(config.codehosting.internal_branch_by_id_root))
@@ -196,7 +194,8 @@ def get_rw_server(direct_database=False):
     if direct_database:
         return DirectDatabaseLaunchpadServer('lp-internal:///', transport)
     else:
-        proxy = xmlrpclib.ServerProxy(config.codehosting.codehosting_endpoint)
+        proxy = xmlrpc_client.ServerProxy(
+            config.codehosting.codehosting_endpoint)
         codehosting_endpoint = DeferredBlockingProxy(proxy)
         return LaunchpadInternalServer(
             'lp-internal:///', codehosting_endpoint, transport)
@@ -224,7 +223,7 @@ class ITransportDispatch(Interface):
 
         :return: A transport and a path on that transport that point to a
             place that matches the one described in transport_tuple.
-        :rtype: (`bzrlib.transport.Transport`, str)
+        :rtype: (`breezy.transport.Transport`, str)
         """
 
 
@@ -333,7 +332,7 @@ class TransportDispatch:
         transport = get_transport(memory_server.get_url())
         if default_stack_on == '':
             return transport
-        format = BzrDirFormat.get_default_format()
+        format = ControlDirFormat.get_default_format()
         bzrdir = format.initialize_on_transport(transport)
         bzrdir.get_config().set_default_stack_on(
             urlutils.unescape(default_stack_on))
@@ -751,7 +750,7 @@ def get_lp_server(user_id, codehosting_endpoint_url=None, branch_url=None,
             raise AssertionError(
                 "can't supply both branch_url and branch_transport!")
 
-    codehosting_client = xmlrpclib.ServerProxy(codehosting_endpoint_url)
+    codehosting_client = xmlrpc_client.ServerProxy(codehosting_endpoint_url)
     lp_server = LaunchpadServer(
         DeferredBlockingProxy(codehosting_client), user_id, branch_transport,
         seen_new_branch_hook)

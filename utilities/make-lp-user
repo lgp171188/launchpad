@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -28,6 +28,8 @@ The login details will be printed to stdout.
 Please note that this script is for testing purposes only. Do NOT use it in
 production environments.
 """
+
+from __future__ import absolute_import, print_function
 
 import _pythonpath
 
@@ -65,8 +67,8 @@ def make_person(username, email):
     The email address for the user will be <username>@example.com.
     """
     person = factory.makePerson(name=username, email=email)
-    print "username: %s" % (username,)
-    print "email:    %s" % (email,)
+    print("username: %s" % (username,))
+    print("email:    %s" % (email,))
     return person
 
 
@@ -83,15 +85,15 @@ def add_person_to_teams(person, team_names):
     for team_name in team_names:
         team = person_set.getByName(team_name)
         if team is None:
-            print "ERROR: %s not found." % (team_name,)
+            print("ERROR: %s not found." % (team_name,))
             continue
         if not team.is_team:
-            print "ERROR: %s is not a team." % (team_name,)
+            print("ERROR: %s is not a team." % (team_name,))
             continue
         team.addMember(
             person, person, status=TeamMembershipStatus.APPROVED)
         teams_joined.append(team_name)
-    print "teams:    %s" % ' '.join(teams_joined)
+    print("teams:    %s" % ' '.join(teams_joined))
 
 
 def add_ssh_public_keys(person):
@@ -112,10 +114,10 @@ def add_ssh_public_keys(person):
         except (OSError, IOError):
             continue
         key_set.new(person, public_key)
-        print 'Registered SSH key: %s' % (filename,)
+        print('Registered SSH key: %s' % (filename,))
         break
     else:
-        print 'No SSH key files found in %s' % ssh_dir
+        print('No SSH key files found in %s' % ssh_dir)
 
 
 def parse_fingerprints(gpg_output):
@@ -144,7 +146,7 @@ def run_native_gpg(arguments):
         command_line, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = pipe.communicate()
     if stderr != '':
-        print stderr
+        print(stderr)
     if pipe.returncode != 0:
         raise Exception('GPG error during "%s"' % ' '.join(command_line))
 
@@ -179,7 +181,7 @@ def attach_gpg_keys(email, person):
 
     fingerprints = parse_fingerprints(output)
     if len(fingerprints) == 0:
-        print "No GPG key fingerprints found!"
+        print("No GPG key fingerprints found!")
     for fingerprint in fingerprints:
         add_gpg_key(person, fingerprint)
 
@@ -197,7 +199,7 @@ def parse_args(arguments):
 
     options, args = parser.parse_args(arguments)
     if len(args) == 0:
-        print __doc__
+        print(__doc__)
         sys.exit(2)
 
     options.username = args[0]

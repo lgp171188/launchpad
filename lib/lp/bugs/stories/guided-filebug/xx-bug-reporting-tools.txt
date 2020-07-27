@@ -16,7 +16,7 @@ comment.
     >>> from lp.services.config import config
     >>> testfiles = os.path.join(config.root, 'lib/lp/bugs/tests/testfiles')
     >>> extra_filebug_data = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data.msg'))
+    ...     os.path.join(testfiles, 'extra_filebug_data.msg'), 'rb')
 
     NOTE: The form names are used instead of their labels here, because
           external tools depend on them.
@@ -30,12 +30,13 @@ to give the data to the +filebug page.
 
     >>> for message in find_tags_by_class(anon_browser.contents, 'message'):
     ...     print(message.renderContents())
-    Your ticket is &quot;...&quot;
+    Your ticket is "..."
 
 To avoid having the tool from parsing the HTML page, the token is
 returned as a X-Launchpad-Blob-Token header in the response as well:
 
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
 
 This token we can now pass to the +filebug page by appending it to the
 URL as an extra path component, like '+filebug/12345abcde'.
@@ -157,12 +158,13 @@ If the uploaded message contains a Subject field in the initial headers,
 that will be used to automatically fill in a suggested title.
 
     >>> extra_filebug_data_with_subject = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data_subject.msg'))
+    ...     os.path.join(testfiles, 'extra_filebug_data_subject.msg'), 'rb')
     >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
     >>> process_blob(blob_token)
 
     >>> user_browser.open(
@@ -186,12 +188,13 @@ If the uploaded message contains a Tags field, the tags widget will be
 initialized with that value.
 
     >>> extra_filebug_data_with_subject = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data_tags.msg'))
+    ...     os.path.join(testfiles, 'extra_filebug_data_tags.msg'), 'rb')
     >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
+    >>> blob_token = six.ensure_text(
+    ...     anon_browser.headers['X-Launchpad-Blob-Token'])
     >>> process_blob(blob_token)
 
     >>> user_browser.open(
@@ -235,51 +238,3 @@ that will get their tags set as well.
     >>> tags = find_tag_by_id(user_browser.contents, 'bug-tags')
     >>> print(extract_text(tags))
     Tags: bar foo...
-
-
-References to HWDB submissions
-------------------------------
-
-The uploaded message may contain a header "HWDB-Submission", its value
-should be a sequence of HWDB submission keys, separated by ', *'.
-If the message contains this header, the referenced HWDB submissions are
-linked to the new bug.
-
-Our test data contains such a header, mentioning two HWDB submision key.
-The database knows only the first key.
-
-    >>> extra_filebug_data_with_hwdb_submission = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data_hwdb_submission.msg'))
-    >>> print(extra_filebug_data_with_hwdb_submission.read().split('\n')[2])
-    HWDB-Submission: sample-submission, non-existing-submission-key
-
-Once we submit the bug report...
-
-    >>> extra_filebug_data_with_hwdb_submission.seek(0)
-    >>> anon_browser.open('http://launchpad.test/+storeblob')
-    >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
-    ...     extra_filebug_data_with_hwdb_submission, 'not/important',
-    ...     'not.important')
-    >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
-    >>> blob_token = anon_browser.headers['X-Launchpad-Blob-Token']
-    >>> process_blob(blob_token)
-
-    >>> filebug_url = (
-    ...    'http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug/'
-    ...     '%s' % blob_token)
-    >>> user_browser.open(filebug_url)
-    >>> user_browser.getControl('Summary', index=0).value = 'Another summary'
-    >>> user_browser.getControl('Continue').click()
-    >>> user_browser.getControl('Further information').value = (
-    ...     'A bug description.')
-    >>> user_browser.getControl('Submit Bug Report').click()
-
-...the existing HWDB submission is linked to the new bug.
-
-    >>> bug_id = user_browser.url.split('/')[-1]
-    >>> bug_url = '/bugs/%s' % bug_id
-    >>> linked_submissions = webservice.named_get(
-    ...     bug_url, 'getHWSubmissions').jsonBody()
-    >>> for submission in linked_submissions['entries']:
-    ...     print(submission['submission_key'])
-    sample-submission

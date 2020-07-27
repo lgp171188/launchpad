@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for product views."""
@@ -8,10 +8,12 @@ __metaclass__ = type
 __all__ = ['make_product_form']
 
 import re
-from urlparse import urlsplit
 
 from lazr.restful.interfaces import IJSONRequestCache
-from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import (
+    urlencode,
+    urlsplit,
+    )
 from soupmatchers import (
     HTMLContains,
     Tag,
@@ -50,7 +52,10 @@ from lp.registry.interfaces.product import (
 from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.webapp.publisher import canonical_url
+from lp.services.webapp.publisher import (
+    canonical_url,
+    RedirectionView,
+    )
 from lp.services.webapp.vhosts import allvhosts
 from lp.testing import (
     BrowserTestCase,
@@ -64,17 +69,44 @@ from lp.testing.fixture import DemoMode
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
+    ZopelessDatabaseLayer,
     )
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
     find_tag_by_id,
     )
+from lp.testing.publication import test_traverse
 from lp.testing.service_usage_helpers import set_service_usage
 from lp.testing.views import (
     create_initialized_view,
     create_view,
     )
+
+
+class TestProductNavigation(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def assertRedirects(self, url, expected_url):
+        _, view, _ = test_traverse(url)
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(expected_url, removeSecurityProxy(view).target)
+
+    def test_classic_series_url(self):
+        productseries = self.factory.makeProductSeries()
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/%s" % (
+                productseries.product.name, productseries.name))
+        self.assertEqual(productseries, obj)
+
+    def test_new_series_url_redirects(self):
+        productseries = self.factory.makeProductSeries()
+        self.assertRedirects(
+            "http://launchpad.test/%s/+series/%s" % (
+                productseries.product.name, productseries.name),
+            "http://launchpad.test/%s/%s" % (
+                productseries.product.name, productseries.name))
 
 
 class TestProductConfiguration(BrowserTestCase):
@@ -303,6 +335,29 @@ class TestProductView(BrowserTestCase):
     def setUp(self):
         super(TestProductView, self).setUp()
         self.product = self.factory.makeProduct(name='fnord')
+        self.tag_meta_noindex = Tag(
+            'meta_noindex', 'meta', attrs={
+                'name': 'robots', 'content': 'noindex,nofollow'})
+
+    def test_robots_noindex_for_probationary_product_owners(self):
+        # The index page for a project with a probationary owner should have
+        # noindex meta tag for robots.
+        product = removeSecurityProxy(self.factory.makeProduct())
+        owner = product.owner
+        with person_logged_in(owner):
+            browser = self.getViewBrowser(product, '+index', user=owner)
+        self.assertThat(
+            browser.contents, HTMLContains(self.tag_meta_noindex))
+
+    def test_robots_without_noindex_for_valid_products(self):
+        # The index page for a project with a non-probationary owner shouldn't
+        # have noindex meta tag for robots.
+        owner = self.factory.makePerson(karma=15)
+        product = removeSecurityProxy(self.factory.makeProduct(owner=owner))
+        with person_logged_in(owner):
+            browser = self.getViewBrowser(product, '+index', user=owner)
+        self.assertThat(
+            browser.contents, Not(HTMLContains(self.tag_meta_noindex)))
 
     def test_code_link_bzr(self):
         branch = self.factory.makeBranch(target=self.product)

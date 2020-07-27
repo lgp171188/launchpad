@@ -29,7 +29,7 @@ from lp.answers.errors import (
     NotQuestionOwnerError,
     QuestionTargetError,
     )
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,

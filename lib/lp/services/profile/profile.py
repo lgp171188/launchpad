@@ -18,13 +18,12 @@ import heapq
 import os
 import pstats
 import re
-import StringIO
 import sys
 import threading
 
-from bzrlib import lsprof
+from breezy import lsprof
+import six
 import oops_datedir_repo.serializer_rfc822
-from z3c.pt.pagetemplate import PageTemplateFile
 from zope.component import (
     adapter,
     getUtility,
@@ -32,6 +31,7 @@ from zope.component import (
 from zope.contenttype.parse import parse
 from zope.error.interfaces import IErrorReportingUtility
 from zope.exceptions.exceptionformatter import format_exception
+from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 from zope.publisher.interfaces import (
     IEndRequestEvent,
     IStartRequestEvent,
@@ -100,7 +100,7 @@ class Profiler:
         This unhooks from threading and cleans up the profiler, returning
         the gathered Stats object.
 
-        :return: A bzrlib.lsprof.Stats object.
+        :return: A breezy.lsprof.Stats object.
         """
         try:
             self.disable()
@@ -339,13 +339,14 @@ def end_request(event):
         if is_html and 'show' in actions:
             # Generate rfc822 OOPS result (might be nice to have an html
             # serializer..).
-            template_context['oops'] = ''.join(
-                oops_datedir_repo.serializer_rfc822.to_chunks(oops_report))
+            template_context['oops'] = b''.join(
+                oops_datedir_repo.serializer_rfc822.to_chunks(
+                    oops_report)).decode('UTF-8', 'replace')
             # Generate profile summaries.
             prof_stats.strip_dirs()
             for name in ('time', 'cumulative', 'calls'):
                 prof_stats.sort(name)
-                f = StringIO.StringIO()
+                f = six.StringIO()
                 prof_stats.pprint(file=f)
                 template_context[name] = f.getvalue()
         template_context['profile_count'] = prof_stats.count
@@ -354,15 +355,14 @@ def end_request(event):
         del prof_stats
     # Dump memory profiling info.
     if 'memory_profile_start' in actions:
-        log = file(config.profiling.memory_profile_log, 'a')
-        vss_start, rss_start = actions.pop('memory_profile_start')
-        vss_end, rss_end = memory(), resident()
-        if oopsid is None:
-            oopsid = '-'
-        log.write('%s %s %s %f %d %d %d %d\n' % (
-            timestamp, pageid, oopsid, da.get_request_duration(),
-            vss_start, rss_start, vss_end, rss_end))
-        log.close()
+        with open(config.profiling.memory_profile_log, 'a') as log:
+            vss_start, rss_start = actions.pop('memory_profile_start')
+            vss_end, rss_end = memory(), resident()
+            if oopsid is None:
+                oopsid = '-'
+            log.write('%s %s %s %f %d %d %d %d\n' % (
+                timestamp, pageid, oopsid, da.get_request_duration(),
+                vss_start, rss_start, vss_end, rss_end))
     trace = None
     if 'sql' in actions:
         trace = da.stop_sql_logging() or ()
@@ -458,9 +458,8 @@ def end_request(event):
                 rank=step['python_rank'],
                 cls=step['python_class']))
         # Identify the repeated Python calls that generated SQL.
-        triggers = triggers.items()
-        triggers.sort(key=lambda x: len(x[1]))
-        triggers.reverse()
+        triggers = sorted(
+            triggers.items(), key=lambda x: len(x[1]), reverse=True)
         top_triggers = []
         for (key, ixs) in triggers:
             if len(ixs) == 1:
@@ -492,11 +491,12 @@ def end_request(event):
         except Exception:
             error = ''.join(format_exception(*sys.exc_info(), as_html=True))
             added_html = (
-                '<div class="profiling_info">' + error + '</div>')
+                '<div class="profiling_info">' + error +
+                '</div>').encode(encoding)
         existing_html = request.response.consumeBody()
         e_start, e_close_body, e_end = existing_html.rpartition(
-            '</body>')
-        new_html = ''.join(
+            b'</body>')
+        new_html = b''.join(
             (e_start, added_html, e_close_body, e_end))
         request.response.setResult(new_html)
 

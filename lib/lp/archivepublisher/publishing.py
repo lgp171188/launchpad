@@ -35,11 +35,8 @@ from debian.deb822 import (
     _multivalued,
     Release,
     )
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 import scandir
+import six
 from storm.expr import Desc
 from zope.component import getUtility
 from zope.interface import (
@@ -63,7 +60,7 @@ from lp.archivepublisher.indices import (
     build_source_stanza_fields,
     build_translations_stanza_fields,
     )
-from lp.archivepublisher.interfaces.archivesigningkey import ISignableArchive
+from lp.archivepublisher.interfaces.archivegpgsigningkey import ISignableArchive
 from lp.archivepublisher.model.ftparchive import FTPArchiveHandler
 from lp.archivepublisher.utils import (
     get_ppa_reference,
@@ -75,6 +72,7 @@ from lp.registry.interfaces.pocket import (
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
+from lp.services.compat import lzma
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.features import getFeatureFlag
@@ -539,16 +537,21 @@ class Publisher(object):
 
     def getPendingSourcePublications(self, is_careful):
         """Return the specific group of source records to be published."""
-        # Careful publishing should include all PUBLISHED rows, normal run
-        # only includes PENDING ones.
-        statuses = [PackagePublishingStatus.PENDING]
-        if is_careful:
-            statuses.append(PackagePublishingStatus.PUBLISHED)
+        # Careful publishing should include all rows in active statuses
+        # regardless of whether they have previously been published; a
+        # normal run only includes rows in active statuses that have never
+        # been published.
+        clauses = [
+            SourcePackagePublishingHistory.archive == self.archive,
+            SourcePackagePublishingHistory.status.is_in(
+                active_publishing_status),
+            ]
+        if not is_careful:
+            clauses.append(
+                SourcePackagePublishingHistory.datepublished == None)
 
         publications = IStore(SourcePackagePublishingHistory).find(
-            SourcePackagePublishingHistory,
-            SourcePackagePublishingHistory.archive == self.archive,
-            SourcePackagePublishingHistory.status.is_in(statuses))
+            SourcePackagePublishingHistory, *clauses)
         return publications.order_by(
             SourcePackagePublishingHistory.distroseriesID,
             SourcePackagePublishingHistory.pocket,
@@ -590,19 +593,21 @@ class Publisher(object):
 
     def getPendingBinaryPublications(self, is_careful):
         """Return the specific group of binary records to be published."""
-        statuses = [PackagePublishingStatus.PENDING]
-        if is_careful:
-            statuses.append(PackagePublishingStatus.PUBLISHED)
-
-        publications = IStore(BinaryPackagePublishingHistory).find(
-            BinaryPackagePublishingHistory,
+        clauses = [
             BinaryPackagePublishingHistory.archive == self.archive,
             BinaryPackagePublishingHistory.distroarchseriesID ==
                 DistroArchSeries.id,
-            DistroArchSeries.distroseriesID == DistroSeries.id,
-            BinaryPackagePublishingHistory.status.is_in(statuses))
+            BinaryPackagePublishingHistory.status.is_in(
+                active_publishing_status),
+            ]
+        if not is_careful:
+            clauses.append(
+                BinaryPackagePublishingHistory.datepublished == None)
+
+        publications = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory, *clauses)
         return publications.order_by(
-            DistroSeries.id,
+            DistroArchSeries.distroseriesID,
             BinaryPackagePublishingHistory.pocket,
             DistroArchSeries.architecturetag,
             Desc(BinaryPackagePublishingHistory.id))
@@ -987,7 +992,7 @@ class Publisher(object):
                             translation_stanza.makeOutput().encode('utf-8')
                             + '\n\n')
 
-            for index in indices.itervalues():
+            for index in six.itervalues(indices):
                 index.close()
 
         if separate_long_descriptions:
@@ -1422,7 +1427,7 @@ class Publisher(object):
             {"md5sum": {"md5sum": ..., "size": ..., "name": ...}}), or None
             if the file could not be found.
         """
-        open_func = open
+        open_func = partial(open, mode='rb')
         full_name = os.path.join(
             self._config.distsroot, suite, subpath or '.',
             real_file_name or file_name)
@@ -1448,7 +1453,7 @@ class Publisher(object):
             for archive_hash in archive_hashes}
         size = 0
         with open_func(full_name) as in_file:
-            for chunk in iter(lambda: in_file.read(256 * 1024), ""):
+            for chunk in iter(lambda: in_file.read(256 * 1024), b""):
                 for hashobj in hashes.values():
                     hashobj.update(chunk)
                 size += len(chunk)
@@ -1564,7 +1569,7 @@ class DirectoryHash:
             (checksum_file, archive_hash.hash_factory())
             for (_, checksum_file, archive_hash) in self.checksum_hash]
         with open(path, 'rb') as in_file:
-            for chunk in iter(lambda: in_file.read(256 * 1024), ""):
+            for chunk in iter(lambda: in_file.read(256 * 1024), b""):
                 for (checksum_file, hashobj) in hashes:
                     hashobj.update(chunk)
 

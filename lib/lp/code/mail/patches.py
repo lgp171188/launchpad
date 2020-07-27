@@ -1,4 +1,4 @@
-# This file was partially cloned from bzr-2.6.0-lp-3 (bzrlib.patches) and
+# This file was partially cloned from breezy 3.0.0 (breezy.patches) and
 # customised for LP.
 #
 # Copyright (C) 2005-2010 Aaron Bentley, Canonical Ltd
@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from bzrlib.patches import (
+from breezy.patches import (
     binary_files_re,
     hunk_from_header,
     parse_patch,
@@ -50,10 +50,10 @@ def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
     beginning = True
     in_git_patch = False
 
-    dirty_headers = ('=== ', 'diff ', 'index ')
+    dirty_headers = (b'=== ', b'diff ', b'index ')
     for line in iter_lines:
         # preserve bzr modified/added headers and blank lines
-        if line.startswith(dirty_headers) or not line.strip('\n'):
+        if line.startswith(dirty_headers) or not line.strip(b'\n'):
             if len(saved_lines) > 0:
                 if keep_dirty and len(dirty_head) > 0:
                     yield {'saved_lines': saved_lines,
@@ -63,7 +63,7 @@ def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
                     yield saved_lines
                 in_git_patch = False
                 saved_lines = []
-            if line.startswith('diff --git'):
+            if line.startswith(b'diff --git'):
                 in_git_patch = True
             dirty_head.append(line)
             continue
@@ -73,14 +73,14 @@ def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
             # in the patch before the next "diff" header line can do so.
             dirty_head.append(line)
             continue
-        if line.startswith('*** '):
+        if line.startswith(b'*** '):
             continue
-        if line.startswith('#'):
+        if line.startswith(b'#'):
             continue
         elif orig_range > 0:
-            if line.startswith('-') or line.startswith(' '):
+            if line.startswith(b'-') or line.startswith(b' '):
                 orig_range -= 1
-        elif line.startswith('--- ') or regex.match(line):
+        elif line.startswith(b'--- ') or regex.match(line):
             if allow_dirty and beginning:
                 # Patches can have "junk" at the beginning
                 # Stripping junk from the end of patches is handled when we
@@ -95,7 +95,7 @@ def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
                     yield saved_lines
                 in_git_patch = False
             saved_lines = []
-        elif line.startswith('@@'):
+        elif line.startswith(b'@@'):
             hunk = hunk_from_header(line)
             orig_range = hunk.orig_range
         saved_lines.append(line)
@@ -116,12 +116,11 @@ def parse_patches(iter_lines, allow_dirty=False, keep_dirty=False):
     :kwarg keep_dirty: If True, returns a dict of patches with dirty headers.
         Default False.
     '''
-    patches = []
     for patch_lines in iter_file_patch(iter_lines, allow_dirty, keep_dirty):
         if 'dirty_head' in patch_lines:
-            patches.append({'patch': parse_patch(
-                patch_lines['saved_lines'], allow_dirty),
-                'dirty_head': patch_lines['dirty_head']})
+            yield {
+                'patch': parse_patch(patch_lines['saved_lines'], allow_dirty),
+                'dirty_head': patch_lines['dirty_head'],
+                }
         else:
-            patches.append(parse_patch(patch_lines, allow_dirty))
-    return patches
+            yield parse_patch(patch_lines, allow_dirty)

@@ -91,7 +91,7 @@ markup. Search engine robots and browsers will use the lang and dir
 attributes for indexing and rendering respectively. Users will find
 the language in the question details portlet.
 
-    >>> from BeautifulSoup import BeautifulSoup
+    >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> soup = BeautifulSoup(browser.contents)
     >>> print(soup.find('div', id='question')['lang'])
     pt-BR

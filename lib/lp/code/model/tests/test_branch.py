@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Branches."""
@@ -13,10 +13,10 @@ from datetime import (
     )
 import json
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.revision import NULL_REVISION
-from bzrlib.url_policy_open import BadUrl
+from breezy.branch import Branch
+from breezy.bzr.bzrdir import BzrDir
+from breezy.revision import NULL_REVISION
+from breezy.url_policy_open import BadUrl
 from pytz import UTC
 from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
@@ -1590,10 +1590,10 @@ class TestBranchDeletionConsequences(TestCase):
         """break_links allows deleting a branch with a bug."""
         bug1 = self.factory.makeBug()
         bug1.linkBranch(self.branch, self.branch.owner)
-        bug_branch1 = bug1.linked_bugbranches[0]
+        bug_branch1 = bug1.linked_bugbranches.first()
         bug_branch1_id = removeSecurityProxy(bug_branch1).id
         self.branch.destroySelf(break_references=True)
-        self.assertRaises(SQLObjectNotFound, BugBranch.get, bug_branch1_id)
+        self.assertIsNone(IStore(BugBranch).get(BugBranch, bug_branch1_id))
 
     def test_branchWithSpecRequirements(self):
         """Deletion requirements for a branch with a spec are right."""
@@ -1613,10 +1613,10 @@ class TestBranchDeletionConsequences(TestCase):
         spec2.linkBranch(self.branch, self.branch.owner)
         spec2_branch_id = self.branch.spec_links[1].id
         self.branch.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, SpecificationBranch.get, spec1_branch_id)
-        self.assertRaises(
-            SQLObjectNotFound, SpecificationBranch.get, spec2_branch_id)
+        self.assertIsNone(IStore(SpecificationBranch).get(
+            SpecificationBranch, spec1_branch_id))
+        self.assertIsNone(IStore(SpecificationBranch).get(
+            SpecificationBranch, spec2_branch_id))
 
     def test_branchWithSeriesRequirements(self):
         """Deletion requirements for a series' branch are right."""
@@ -1750,8 +1750,8 @@ class TestBranchDeletionConsequences(TestCase):
         spec_link = spec.linkBranch(self.branch, self.branch.owner)
         spec_link_id = spec_link.id
         DeletionCallable(spec, 'blah', spec_link.destroySelf)()
-        self.assertRaises(SQLObjectNotFound, SpecificationBranch.get,
-                          spec_link_id)
+        self.assertIsNone(IStore(SpecificationBranch).get(
+            SpecificationBranch, spec_link_id))
 
     def test_DeleteCodeImport(self):
         """DeleteCodeImport.__call__ must delete the CodeImport."""
@@ -2257,7 +2257,7 @@ class TestRevisionHistory(TestCaseWithFactory):
     def test_tip_revision_when_no_revisions(self):
         # When a branch has no revisions but does have Bazaar data, its tip
         # revision is None and its last_scanned_id is
-        # bzrlib.revision.NULL_REVISION.
+        # breezy.revision.NULL_REVISION.
         branch = self.factory.makeBranch()
         branch.updateScannedDetails(None, 0)
         self.assertEqual(NULL_REVISION, branch.last_scanned_id)
@@ -2761,7 +2761,7 @@ class TestBranchBugLinks(TestCaseWithFactory):
 
         self.assertEqual(branch.linked_bugs.count(), 1)
 
-        linked_bug = branch.linked_bugs[0]
+        linked_bug = branch.linked_bugs.first()
 
         self.assertEqual(linked_bug.id, bug.id)
 
@@ -3276,7 +3276,7 @@ class TestGetBzrBranch(TestCaseWithFactory):
         db_branch, tree = self.create_branch_and_tree()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             revid = tree.commit('')
         bzr_branch = db_branch.getBzrBranch()
         self.assertEqual(revid, bzr_branch.last_revision())

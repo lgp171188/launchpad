@@ -1,4 +1,4 @@
-#! /usr/bin/python -S
+#! /usr/bin/python2 -S
 #
 # Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -9,9 +9,9 @@
 from cStringIO import StringIO
 import datetime
 import sys
-import urllib
 
 import pytz
+from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import getUtility
 
@@ -36,7 +36,7 @@ def store_file(client):
 
 def read_file(url):
     try:
-        data = urllib.urlopen(url).read()
+        data = urlopen(url).read()
     except MemoryError:
         # Re-raise catastrophic errors.
         raise

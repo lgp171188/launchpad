@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -11,14 +11,18 @@ __all__ = [
 from collections import namedtuple
 import logging
 import os.path
+import sys
 import tempfile
-from urlparse import urlparse
+import traceback
 
+from ampoule.pool import ProcessPool
+from six.moves.urllib.parse import urlparse
 import transaction
 from twisted.internet import (
     defer,
     reactor as default_reactor,
     )
+from twisted.internet.interfaces import IReactorCore
 from twisted.internet.protocol import Protocol
 from twisted.web import xmlrpc
 from twisted.web.client import (
@@ -31,6 +35,10 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
+from lp.buildmaster.downloader import (
+    DownloadCommand,
+    DownloadProcess,
+    )
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
     BuilderResetProtocol,
@@ -45,6 +53,11 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
+from lp.services.job.runner import (
+    QuietAMPConnector,
+    VirtualEnvProcessStarter,
+    )
 from lp.services.twistedsupport import cancel_on_timeout
 from lp.services.twistedsupport.processmonitor import ProcessWithTimeout
 from lp.services.webapp import urlappend
@@ -126,6 +139,8 @@ class LimitedHTTPConnectionPool(HTTPConnectionPool):
 
 
 _default_pool = None
+_default_process_pool = None
+_default_process_pool_shutdown = None
 
 
 def default_pool(reactor=None):
@@ -145,6 +160,52 @@ def default_pool(reactor=None):
     return _default_pool
 
 
+def make_download_process_pool(**kwargs):
+    """Make a pool of processes for downloading files."""
+    env = {"PATH": os.environ["PATH"]}
+    if "LPCONFIG" in os.environ:
+        env["LPCONFIG"] = os.environ["LPCONFIG"]
+    starter = VirtualEnvProcessStarter(env=env)
+    starter.connectorFactory = QuietAMPConnector
+    kwargs = dict(kwargs)
+    kwargs.setdefault("max", config.builddmaster.download_connections)
+    # ampoule defaults to stopping child processes after they've been idle
+    # for 20 seconds, which is a bit eager since that's close to our scan
+    # interval.  Bump this to five minutes so that we have less unnecessary
+    # process stop/start activity.  This isn't essential tuning so isn't
+    # currently configurable, but if we find we need to tweak it further
+    # then we should add a configuration setting for it.
+    kwargs.setdefault("maxIdle", 300)
+    return ProcessPool(DownloadProcess, starter=starter, **kwargs)
+
+
+def default_process_pool(reactor=None):
+    global _default_process_pool, _default_process_pool_shutdown
+    if reactor is None:
+        reactor = default_reactor
+    if _default_process_pool is None:
+        _default_process_pool = make_download_process_pool()
+        _default_process_pool.start()
+        if IReactorCore.providedBy(reactor):
+            shutdown_id = reactor.addSystemEventTrigger(
+                "during", "shutdown", _default_process_pool.stop)
+            _default_process_pool_shutdown = (reactor, shutdown_id)
+    return _default_process_pool
+
+
+@defer.inlineCallbacks
+def shut_down_default_process_pool():
+    """Shut down the default process pool.  Used in test cleanup."""
+    global _default_process_pool, _default_process_pool_shutdown
+    if _default_process_pool is not None:
+        yield _default_process_pool.stop()
+        _default_process_pool = None
+    if _default_process_pool_shutdown is not None:
+        reactor, shutdown_id = _default_process_pool_shutdown
+        reactor.removeSystemEventTrigger(shutdown_id)
+        _default_process_pool_shutdown = None
+
+
 class BuilderSlave(object):
     """Add in a few useful methods for the XMLRPC slave.
 
@@ -157,7 +218,8 @@ class BuilderSlave(object):
     # many false positives in your test run and will most likely break
     # production.
 
-    def __init__(self, proxy, builder_url, vm_host, timeout, reactor, pool):
+    def __init__(self, proxy, builder_url, vm_host, timeout, reactor,
+                 pool=None, process_pool=None):
         """Initialize a BuilderSlave.
 
         :param proxy: An XML-RPC proxy, implementing 'callRemote'. It must
@@ -173,13 +235,24 @@ class BuilderSlave(object):
         if reactor is None:
             reactor = default_reactor
         self.reactor = reactor
+        download_in_subprocess_flag = getFeatureFlag(
+            'buildmaster.download_in_subprocess')
+        self._download_in_subprocess = (
+            bool(download_in_subprocess_flag)
+            if download_in_subprocess_flag is not None else True)
         if pool is None:
             pool = default_pool(reactor=reactor)
         self.pool = pool
+        if self._download_in_subprocess:
+            if process_pool is None:
+                process_pool = default_process_pool(reactor=reactor)
+            self.process_pool = process_pool
+        else:
+            self.process_pool = None
 
     @classmethod
     def makeBuilderSlave(cls, builder_url, vm_host, timeout, reactor=None,
-                         proxy=None, pool=None):
+                         proxy=None, pool=None, process_pool=None):
         """Create and return a `BuilderSlave`.
 
         :param builder_url: The URL of the slave buildd machine,
@@ -189,6 +262,7 @@ class BuilderSlave(object):
         :param reactor: Used by tests to override the Twisted reactor.
         :param proxy: Used By tests to override the xmlrpc.Proxy.
         :param pool: Used by tests to override the HTTPConnectionPool.
+        :param process_pool: Used by tests to override the ProcessPool.
         """
         rpc_url = urlappend(builder_url.encode('utf-8'), 'rpc')
         if proxy is None:
@@ -197,7 +271,9 @@ class BuilderSlave(object):
             server_proxy.queryFactory = QuietQueryFactory
         else:
             server_proxy = proxy
-        return cls(server_proxy, builder_url, vm_host, timeout, reactor, pool)
+        return cls(
+            server_proxy, builder_url, vm_host, timeout, reactor,
+            pool=pool, process_pool=process_pool)
 
     def _with_timeout(self, d, timeout=None):
         return cancel_on_timeout(d, timeout or self.timeout, self.reactor)
@@ -236,44 +312,56 @@ class BuilderSlave(object):
         """Get the URL for a file on the builder with a given SHA-1."""
         return urlappend(self._file_cache_url, sha1).encode('utf8')
 
-    def getFile(self, sha_sum, file_to_write, logger=None):
+    @defer.inlineCallbacks
+    def getFile(self, sha_sum, path_to_write, logger=None):
         """Fetch a file from the builder.
 
         :param sha_sum: The sha of the file (which is also its name on the
             builder)
-        :param file_to_write: A file name or file-like object to write
-            the file to
+        :param path_to_write: A file name to write the file to
         :param logger: An optional logger.
         :return: A Deferred that calls back when the download is done, or
             errback with the error string.
         """
         file_url = self.getURL(sha_sum)
-        d = Agent(self.reactor, pool=self.pool).request("GET", file_url)
-
-        def got_response(response):
-            finished = defer.Deferred()
-            response.deliverBody(FileWritingProtocol(finished, file_to_write))
-            return finished
-
-        def log_success(result):
-            logger.info("Grabbed %s" % file_url)
-            return result
-
-        def log_failure(failure):
-            logger.info("Failed to grab %s: %s\n%s" % (
-                file_url, failure.getErrorMessage(), failure.getTraceback()))
-            return failure
-
-        d.addCallback(got_response)
-        if logger is not None:
-            d.addCallbacks(log_success, log_failure)
-        return d
+        try:
+            # Select download behaviour according to the
+            # buildmaster.download_in_subprocess feature rule: if enabled,
+            # defer the download to a subprocess; if disabled, download the
+            # file asynchronously in Twisted.  We've found that in practice
+            # the asynchronous approach only works well up to a bit over a
+            # hundred builders, and beyond that it struggles to keep up with
+            # incoming packets in time to avoid TCP timeouts (perhaps
+            # because of too much synchronous work being done on the reactor
+            # thread).  The exact reason for this is as yet unproven, so we
+            # use a feature rule to allow us to try out different
+            # approaches.
+            if self._download_in_subprocess:
+                yield self.process_pool.doWork(
+                    DownloadCommand,
+                    file_url=file_url, path_to_write=path_to_write,
+                    timeout=self.timeout)
+            else:
+                response = yield Agent(self.reactor, pool=self.pool).request(
+                    "GET", file_url)
+                finished = defer.Deferred()
+                response.deliverBody(
+                    FileWritingProtocol(finished, path_to_write))
+                yield finished
+            if logger is not None:
+                logger.info("Grabbed %s" % file_url)
+        except Exception as e:
+            if logger is not None:
+                logger.info("Failed to grab %s: %s\n%s" % (
+                    file_url, e,
+                    " ".join(traceback.format_exception(*sys.exc_info()))))
+            raise
 
     def getFiles(self, files, logger=None):
         """Fetch many files from the builder.
 
         :param files: A sequence of pairs of the builder file name to
-            retrieve and the file name or file object to write the file to.
+            retrieve and the file name to write the file to.
         :param logger: An optional logger.
 
         :return: A DeferredList that calls back when the download is done.
@@ -337,8 +425,9 @@ class BuilderSlave(object):
 
 BuilderVitals = namedtuple(
     'BuilderVitals',
-    ('name', 'url', 'virtualized', 'vm_host', 'vm_reset_protocol',
-     'builderok', 'manual', 'build_queue', 'version', 'clean_status'))
+    ('name', 'url', 'processor_names', 'virtualized', 'vm_host',
+     'vm_reset_protocol', 'builderok', 'manual', 'build_queue', 'version',
+     'clean_status'))
 
 _BQ_UNSPECIFIED = object()
 
@@ -347,9 +436,11 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
     if build_queue == _BQ_UNSPECIFIED:
         build_queue = builder.currentjob
     return BuilderVitals(
-        builder.name, builder.url, builder.virtualized, builder.vm_host,
-        builder.vm_reset_protocol, builder.builderok, builder.manual,
-        build_queue, builder.version, builder.clean_status)
+        builder.name, builder.url,
+        [processor.name for processor in builder.processors],
+        builder.virtualized, builder.vm_host, builder.vm_reset_protocol,
+        builder.builderok, builder.manual, build_queue, builder.version,
+        builder.clean_status)
 
 
 class BuilderInteractor(object):
@@ -500,17 +591,14 @@ class BuilderInteractor(object):
 
     @classmethod
     @defer.inlineCallbacks
-    def findAndStartJob(cls, vitals, builder, slave):
+    def findAndStartJob(cls, vitals, builder, slave, builder_factory):
         """Find a job to run and send it to the buildd slave.
 
         :return: A Deferred whose value is the `IBuildQueue` instance
             found or None if no job was found.
         """
         logger = cls._getSlaveScannerLogger()
-        # XXX This method should be removed in favour of two separately
-        # called methods that find and dispatch the job.  It will
-        # require a lot of test fixing.
-        candidate = builder.acquireBuildCandidate()
+        candidate = builder_factory.acquireBuildCandidate(vitals, builder)
         if candidate is None:
             logger.debug("No build candidates available for builder.")
             defer.returnValue(None)
@@ -539,10 +627,37 @@ class BuilderInteractor(object):
             "Malformed status string: '%s'" % status_string)
         return status_string[len(lead_string):]
 
+    @staticmethod
+    def extractLogTail(slave_status):
+        """Extract the log tail from a builder status response.
+
+        :param slave_status: build status dict from BuilderSlave.status.
+        :return: a text string representing the tail of the build log, or
+            None if the log tail is unavailable and should be left
+            unchanged.
+        """
+        builder_status = slave_status["builder_status"]
+        if builder_status == "BuilderStatus.ABORTING":
+            logtail = u"Waiting for slave process to be terminated"
+        elif slave_status.get("logtail") is not None:
+            # slave_status["logtail"] is normally an xmlrpc_client.Binary
+            # instance, and the contents might include invalid UTF-8 due to
+            # being a fixed number of bytes from the tail of the log.  Turn
+            # it into Unicode as best we can.
+            logtail = bytes(
+                slave_status.get("logtail")).decode("UTF-8", errors="replace")
+            # PostgreSQL text columns can't contain \0 characters, and since
+            # we only use this for web UI display purposes there's no point
+            # in going through contortions to store them.
+            logtail = logtail.replace(u"\0", u"")
+        else:
+            logtail = None
+        return logtail
+
     @classmethod
     @defer.inlineCallbacks
     def updateBuild(cls, vitals, slave, slave_status, builder_factory,
-                    behaviour_factory):
+                    behaviour_factory, manager):
         """Verify the current build job status.
 
         Perform the required actions for each state.
@@ -556,7 +671,9 @@ class BuilderInteractor(object):
         builder_status = slave_status['builder_status']
         if builder_status in (
                 'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
-            vitals.build_queue.collectStatus(slave_status)
+            logtail = cls.extractLogTail(slave_status)
+            if logtail is not None:
+                manager.addLogTail(vitals.build_queue.id, logtail)
             vitals.build_queue.specific_build.updateStatus(
                 vitals.build_queue.specific_build.status,
                 slave_status=slave_status)

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enumerations used in the lp/code modules."""
@@ -23,8 +23,10 @@ __all__ = [
     'CodeReviewVote',
     'GitActivityType',
     'GitGranteeType',
+    'GitListingSort',
     'GitObjectType',
     'GitPermissionType',
+    'GitRepositoryStatus',
     'GitRepositoryType',
     'NON_CVS_RCS_TYPES',
     'RevisionControlSystems',
@@ -144,6 +146,25 @@ class GitRepositoryType(DBEnumeratedType):
 
         Registered in Launchpad with an external location,
         but is not to be mirrored, nor available through Launchpad.
+        """)
+
+
+class GitRepositoryStatus(DBEnumeratedType):
+    """Git Repository Status
+
+    The current situation of this Git Repository.
+    """
+
+    CREATING = DBItem(1, """
+        Creating
+
+        This repository is being created on git hosting system.
+        """)
+
+    AVAILABLE = DBItem(2, """
+        Available
+
+        This repository is available to be used.
         """)
 
 
@@ -317,6 +338,48 @@ class BranchListingSort(EnumeratedType):
         oldest first
 
         Sort branches from oldest to newest.
+        """)
+
+
+class GitListingSort(EnumeratedType):
+    """Choices for how to sort Git repository listings."""
+
+    DEFAULT = Item("""
+        by most interesting
+
+        Sort repositories by the default ordering for the view.
+        """)
+
+    NAME = Item("""
+        by repository name
+
+        Sort repositories by the name of the repository.
+        """)
+
+    MOST_RECENTLY_CHANGED_FIRST = Item("""
+        most recently changed first
+
+        Sort repositories from the most recently to the least recently
+        changed.
+        """)
+
+    LEAST_RECENTLY_CHANGED_FIRST = Item("""
+        most neglected first
+
+        Sort repositories from the least recently to the most recently
+        changed.
+        """)
+
+    NEWEST_FIRST = Item("""
+        newest first
+
+        Sort repositories from newest to oldest.
+        """)
+
+    OLDEST_FIRST = Item("""
+        oldest first
+
+        Sort repositories from oldest to newest.
         """)
 
 

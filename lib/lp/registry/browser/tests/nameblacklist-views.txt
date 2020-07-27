@@ -25,7 +25,8 @@ person names can be seen on the /+nameblacklist page.
     >>> ignored = login_person(registry_expert)
     >>> view = create_initialized_view(name_blacklist_set, '+index',
     ...                                principal=registry_expert)
-    >>> print extract_text(find_tag_by_id(view.render(), 'blacklist'))
+    >>> print extract_text(
+    ...     find_tag_by_id(view.render(), 'blacklist'), formatter='html')
     Regular Expression                   Admin    Comment
     ^admin Edit blacklist expression     &mdash;
     blacklist Edit blacklist expression  &mdash;  For testing purposes

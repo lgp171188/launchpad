@@ -7,18 +7,16 @@ __metaclass__ = type
 import logging
 from os.path import dirname
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import (
-    BzrDir,
-    format_registry,
-    )
-from bzrlib.plugins.loom.branch import loomify
-from bzrlib.repofmt.groupcompress_repo import (
+from breezy.branch import Branch
+from breezy.bzr.bzrdir import BzrDir
+from breezy.bzr.groupcompress_repo import (
     RepositoryFormat2a,
     RepositoryFormat2aSubtree,
     )
-from bzrlib.revision import NULL_REVISION
-from bzrlib.transport import get_transport
+from breezy.controldir import format_registry
+from breezy.plugins.loom.branch import loomify
+from breezy.revision import NULL_REVISION
+from breezy.transport import get_transport
 from fixtures import TempDir
 
 from lp.code.bzr import (
@@ -51,7 +49,7 @@ class TestUpgrader(TestCaseWithFactory):
             'foo', rev_id='prepare-commit', committer='jrandom@example.com')
         if loomify_branch:
             loomify(tree.branch)
-            bzr_branch = tree.bzrdir.open_branch()
+            bzr_branch = tree.controldir.open_branch()
         else:
             bzr_branch = tree.branch
         return self.getUpgrader(bzr_branch, branch)
@@ -76,8 +74,8 @@ class TestUpgrader(TestCaseWithFactory):
         :param tree: A Bazaar WorkingTree to add a tree to.
         """
         sub_branch = BzrDir.create_branch_convenience(
-            tree.bzrdir.root_transport.clone('sub').base)
-        tree.add_reference(sub_branch.bzrdir.open_workingtree())
+            tree.controldir.root_transport.clone('sub').base)
+        tree.add_reference(sub_branch.controldir.open_workingtree())
         tree.commit('added tree reference', committer='jrandom@example.com')
 
     def check_branch(self, upgraded, branch_format=BranchFormat.BZR_BRANCH_7,
@@ -128,7 +126,7 @@ class TestUpgrader(TestCaseWithFactory):
     def test_subtree_format_repo_format(self):
         """Even subtree formats use 2a if they don't have tree references."""
         self.useBzrBranches(direct_database=True)
-        format = format_registry.make_bzrdir('pack-0.92-subtree')
+        format = format_registry.make_controldir('pack-0.92-subtree')
         branch, tree = self.create_branch_and_tree(format=format)
         upgrader = self.getUpgrader(tree.branch, branch)
         with read_locked(upgrader.bzr_branch):
@@ -139,7 +137,7 @@ class TestUpgrader(TestCaseWithFactory):
     def test_tree_reference_repo_format(self):
         """Repos with tree references get 2aSubtree."""
         self.useBzrBranches(direct_database=True)
-        format = format_registry.make_bzrdir('pack-0.92-subtree')
+        format = format_registry.make_controldir('pack-0.92-subtree')
         branch, tree = self.create_branch_and_tree(format=format)
         upgrader = self.getUpgrader(tree.branch, branch)
         self.addTreeReference(tree)
@@ -186,7 +184,7 @@ class TestUpgrader(TestCaseWithFactory):
     def test_has_tree_references(self):
         """Detects whether repo contains actual tree references."""
         self.useBzrBranches(direct_database=True)
-        format = format_registry.make_bzrdir('pack-0.92-subtree')
+        format = format_registry.make_controldir('pack-0.92-subtree')
         branch, tree = self.create_branch_and_tree(format=format)
         upgrader = self.getUpgrader(tree.branch, branch)
         with read_locked(tree.branch.repository):
@@ -198,11 +196,11 @@ class TestUpgrader(TestCaseWithFactory):
     def test_use_subtree_format_for_tree_references(self):
         """Subtree references cause RepositoryFormat2aSubtree to be used."""
         self.useBzrBranches(direct_database=True)
-        format = format_registry.make_bzrdir('pack-0.92-subtree')
+        format = format_registry.make_controldir('pack-0.92-subtree')
         branch, tree = self.create_branch_and_tree(format=format)
         sub_branch = BzrDir.create_branch_convenience(
-            tree.bzrdir.root_transport.clone('sub').base, format=format)
-        tree.add_reference(sub_branch.bzrdir.open_workingtree())
+            tree.controldir.root_transport.clone('sub').base, format=format)
+        tree.add_reference(sub_branch.controldir.open_workingtree())
         tree.commit('added tree reference', committer='jrandom@example.org')
         upgrader = self.getUpgrader(tree.branch, branch)
         with read_locked(tree.branch):

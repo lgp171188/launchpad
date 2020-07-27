@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -23,10 +23,10 @@ from lazr.enum import (
     DBItem,
     )
 from lazr.restful.declarations import (
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     mutator_for,
     operation_parameters,
     )
@@ -39,9 +39,9 @@ from zope.component import getUtility
 from zope.interface import (
     Attribute,
     Interface,
+    invariant,
     )
 from zope.interface.exceptions import Invalid
-from zope.interface.interface import invariant
 from zope.schema import (
     Bool,
     Choice,
@@ -302,6 +302,12 @@ class DistroMirrorHTTPURIField(DistroMirrorURIField):
         return getUtility(IDistributionMirrorSet).getByHttpUrl(url)
 
 
+class DistroMirrorHTTPSURIField(DistroMirrorURIField):
+
+    def getMirrorByURI(self, url):
+        return getUtility(IDistributionMirrorSet).getByHttpsUrl(url)
+
+
 class DistroMirrorFTPURIField(DistroMirrorURIField):
 
     def getMirrorByURI(self, url):
@@ -314,9 +320,9 @@ class DistroMirrorRsyncURIField(DistroMirrorURIField):
         return getUtility(IDistributionMirrorSet).getByRsyncUrl(url)
 
 
+@exported_as_webservice_entry()
 class IDistributionMirror(Interface):
     """A mirror of a given distribution."""
-    export_as_webservice_entry()
 
     id = Int(title=_('The unique id'), required=True, readonly=True)
     owner = exported(PublicPersonChoice(
@@ -349,6 +355,14 @@ class IDistributionMirror(Interface):
         allowed_schemes=['http'], allow_userinfo=False,
         allow_query=False, allow_fragment=False, trailing_slash=True,
         description=_('e.g.: http://archive.ubuntu.com/ubuntu/')))
+    https_base_url = exported(DistroMirrorHTTPSURIField(
+        title=_('HTTPS URL'), required=False, readonly=False,
+        allowed_schemes=['https'], allow_userinfo=False,
+        allow_query=False, allow_fragment=False, trailing_slash=True,
+        # XXX: pappacena 2020-02-21: Add description field with a more
+        # suitable example once we have https for archive.ubuntu.com, like:
+        # description=_('e.g.: http://archive.ubuntu.com/ubuntu/')
+        ))
     ftp_base_url = exported(DistroMirrorFTPURIField(
         title=_('FTP URL'), required=False, readonly=False,
         allowed_schemes=['ftp'], allow_userinfo=False,
@@ -435,8 +449,9 @@ class IDistributionMirror(Interface):
 
     @invariant
     def mirrorMustHaveHTTPOrFTPURL(mirror):
-        if not (mirror.http_base_url or mirror.ftp_base_url):
-            raise Invalid('A mirror must have at least an HTTP or FTP URL.')
+        if not (mirror.http_base_url or mirror.https_base_url or
+                mirror.ftp_base_url):
+            raise Invalid('A mirror must have at least an HTTP(S) or FTP URL.')
 
     def getSummarizedMirroredSourceSeries():
         """Return a summarized list of this distribution_mirror's
@@ -613,6 +628,9 @@ class IDistributionMirrorSet(Interface):
 
     def getByHttpUrl(url):
         """Return the mirror with the given HTTP URL or None."""
+
+    def getByHttpsUrl(url):
+        """Return the mirror with the given HTTPS URL or None."""
 
     def getByFtpUrl(url):
         """Return the mirror with the given FTP URL or None."""

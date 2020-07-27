@@ -1,10 +1,12 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Kill <IDLE> in transaction connections that have hung around for too long.
 """
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 __all__ = []
@@ -64,13 +66,13 @@ def main():
 
     if len(rows) == 0:
         if not options.quiet:
-            print 'No IDLE transactions to kill'
+            print('No IDLE transactions to kill')
             return 0
 
     for usename, pid, backend_start, query_start in rows:
-        print 'Killing %s(%d), %s, %s' % (
+        print('Killing %s(%d), %s, %s' % (
             usename, pid, backend_start, query_start,
-            )
+            ))
         if not options.dryrun:
             os.kill(pid, signal.SIGTERM)
     return 0

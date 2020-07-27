@@ -10,9 +10,9 @@ __all__ = [
     ]
 
 import operator
-from xmlrpclib import Fault
+from six.moves.xmlrpc_client import Fault
 
-from bzrlib.urlutils import (
+from breezy.urlutils import (
     escape,
     unescape,
     )
@@ -131,7 +131,7 @@ class ObjectSet:
         del self._objects[db_object.id]
 
     def __iter__(self):
-        return self._objects.itervalues()
+        return six.itervalues(self._objects)
 
     def _find(self, **kwargs):
         [(key, value)] = kwargs.items()

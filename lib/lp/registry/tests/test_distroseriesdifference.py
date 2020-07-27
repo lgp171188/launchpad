@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Model tests for the DistroSeriesDifference class."""
@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from storm.exceptions import IntegrityError
 from storm.store import Store
+from testtools.matchers import MatchesStructure
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -740,6 +741,38 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         self.assertEqual('1.0', ds_diff.base_version)
         self.assertEqual(
             ds_diff.derived_series, ds_diff.base_source_pub.distroseries)
+
+    def test_base_source_pub_exact_match(self):
+        # The base source publication is located in a way that doesn't get
+        # confused by substring matches of package names.
+        derived_changelog = self.factory.makeChangelog(
+            versions=['1.0', '1.2'])
+        parent_changelog = self.factory.makeChangelog(
+            versions=['1.0', '1.3'])
+        transaction.commit()  # Yay, librarian.
+
+        dsp = self.factory.makeDistroSeriesParent()
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=dsp.parent_series,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename='a-foo', version='1.0')
+        ds_diff = self.factory.makeDistroSeriesDifference(
+            derived_series=dsp.derived_series, source_package_name_str='foo',
+            versions={
+                'derived': '1.2',
+                'parent': '1.3',
+                'base': '1.0',
+                },
+            changelogs={
+                'derived': derived_changelog,
+                'parent': parent_changelog,
+                },
+            parent_series=dsp.parent_series)
+
+        base_pub = ds_diff.base_source_pub
+        self.assertThat(base_pub, MatchesStructure.byEquality(
+            source_package_name='foo', source_package_version='1.0',
+            distroseries=ds_diff.parent_series))
 
     def _setupDSDsWithChangelog(self, derived_versions, parent_versions,
                                 status=None):

@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """XMLRPC APIs for mailing lists."""
@@ -9,8 +9,8 @@ __all__ = [
     ]
 
 import re
-import xmlrpclib
 
+from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -29,9 +29,7 @@ from lp.registry.interfaces.person import (
     )
 from lp.services.config import config
 from lp.services.encoding import escape_nonascii_uniquely
-from lp.services.identity.interfaces.account import (
-    INACTIVE_ACCOUNT_STATUSES,
-    )
+from lp.services.identity.interfaces.account import INACTIVE_ACCOUNT_STATUSES
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
@@ -40,15 +38,9 @@ from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.xmlrpc import faults
 
-# Not all developers will have built the Mailman instance (via
-# 'make mailman_instance').  In that case, this import will fail, but in that
-# case just use the constant value directly.
-try:
-    from Mailman.MemberAdaptor import ENABLED, BYUSER
-    ENABLED, BYUSER
-except ImportError:
-    ENABLED = 0
-    BYUSER = 2
+# These constants must match those defined in Mailman.MemberAdaptor.
+ENABLED = 0
+BYUSER = 2
 
 
 @implementer(IMailingListAPIView)
@@ -249,7 +241,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         # non-ascii characters in the message can be safely passed across
         # XMLRPC. For most tests though it's much more convenient to just
         # pass 8-bit strings.
-        if isinstance(bytes, xmlrpclib.Binary):
+        if isinstance(bytes, xmlrpc_client.Binary):
             bytes = bytes.data
         # Although it is illegal for an email header to have unencoded
         # non-ascii characters, it is better to let the list owner
@@ -285,3 +277,11 @@ class MailingListAPIView(LaunchpadXMLRPCView):
                 response[message_id] = (team_name, disposition)
             message_set.acknowledgeMessagesWithStatus(status)
         return response
+
+    def updateTeamAddresses(self, old_hostname):
+        """See `IMailingListAPIView`."""
+        # For safety, we only permit this on non-production sites.
+        if not config.launchpad.is_demo:
+            return faults.PermissionDenied()
+        getUtility(IMailingListSet).updateTeamAddresses(old_hostname)
+        return True

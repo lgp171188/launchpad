@@ -14,8 +14,6 @@ __all__ = [
     'BugNominationStatus',
     'NominationSeriesObsoleteError']
 
-import httplib
-
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -23,16 +21,17 @@ from lazr.enum import (
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -55,17 +54,17 @@ from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import PublicPersonChoice
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NominationError(Exception):
     """The bug cannot be nominated for this release."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NominationSeriesObsoleteError(Exception):
     """A bug cannot be nominated for an obsolete series."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class BugNominationStatusError(Exception):
     """A error occurred while trying to set a bug nomination status."""
 
@@ -98,12 +97,12 @@ class BugNominationStatus(DBEnumeratedType):
         """)
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IBugNomination(IHasBug, IHasOwner):
     """A nomination for a bug to be fixed in a specific series.
 
     A nomination can apply to an IDistroSeries or an IProductSeries.
     """
-    export_as_webservice_entry(publish_web_link=False)
 
     # We want to customize the titles and descriptions of some of the
     # attributes of our parent interfaces, so we redefine those specific

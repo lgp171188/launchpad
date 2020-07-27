@@ -11,7 +11,7 @@ is no human readable labels associated with them.
     >>> test_file_name = os.path.join(
     ...     os.path.dirname(lp.translations.__file__),
     ...     'stories/importqueue/xx-translation-import-queue-filtering.tar.gz')
-    >>> tarball = open(test_file_name)
+    >>> tarball = open(test_file_name, 'rb')
 
 Our star for this session is Carlos, who has full access rights to the
 import queue.
@@ -277,13 +277,13 @@ It's also possible to filter by target. In this case, Evolution.
 Carlos uploads files for Evolution in Ubuntu Hoary.
 
     >>> import transaction
-    >>> from StringIO import StringIO
+    >>> from io import BytesIO
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/+upload')
     >>> file_ctrl = admin_browser.getControl('File:')
     >>> file_ctrl.add_file(
-    ...     StringIO('foo'), 'application/x-po', 'foo.pot')
+    ...     BytesIO(b'foo'), 'application/x-po', 'foo.pot')
     >>> admin_browser.getControl('Upload').click()
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(extract_text(tag.renderContents()))

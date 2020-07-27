@@ -746,12 +746,6 @@ languages, they will not be able to add or change translations.
 Let's see if No Privileges Person can see the translated strings in
 Southern Sotho. We expect them to see a readonly form:
 
-    >>> delpoints = []
-    >>> for pos, (key, _) in enumerate(browser.mech_browser.addheaders):
-    ...     if key == 'Authorization':
-    ...         delpoints.append(pos)
-    >>> for pos in reversed(delpoints):
-    ...         del browser.mech_browser.addheaders[pos]
     >>> browser.addHeader(
     ...     'Authorization', 'Basic no-priv@canonical.com:test')
     >>> browser.open(
@@ -810,7 +804,7 @@ added (with some extra html code, but the same content we wanted to add)
 
     >>> tag = find_tag_by_id(browser.contents, 'msgset_148_cy_translation_0')
     >>> print(tag.renderContents())
-    foo<img alt="" src="/@@/translation-newline" /><br />
+    foo<img alt="" src="/@@/translation-newline"/><br/>
     %i%i%i
 
 
@@ -1108,12 +1102,12 @@ an error message back.
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
     ...     print(tag.renderContents())
-    Ignored your upload because you didn&#x27;t select a file to upload.
+    Ignored your upload because you didn't select a file to upload.
 
 Uploading files with an unkown file format notifies the user that it
 cannot be handled.
 
-    >>> from StringIO import StringIO
+    >>> from io import BytesIO
     >>> af_file = b'''
     ... # Afrikaans translation for Silky
     ... # Copyright (C) 2004 Free Software Foundation, Inc.
@@ -1141,7 +1135,7 @@ cannot be handled.
     ... msgstr "Hierdie program loop as prosesnommer %1."'''
 
     >>> upload = admin_browser.getControl(name='file')
-    >>> upload.add_file(StringIO(af_file), 'application/msword', 'af.doc')
+    >>> upload.add_file(BytesIO(af_file), 'application/msword', 'af.doc')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
@@ -1154,7 +1148,7 @@ cannot be handled.
 With all the correct information, a file can be uploaded.
 
     >>> upload = admin_browser.getControl(name='file')
-    >>> upload.add_file(StringIO(af_file), 'application/x-po', 'af.po')
+    >>> upload.add_file(BytesIO(af_file), 'application/x-po', 'af.po')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload

@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Distribution."""
@@ -18,7 +18,6 @@ from testtools.matchers import (
     MatchesAny,
     Not,
     )
-import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -50,17 +49,18 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.tests.test_distroseries import CurrentSourceReleasesMixin
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
     )
 from lp.testing import (
+    api_url,
     celebrity_logged_in,
     login_person,
     person_logged_in,
     TestCase,
     TestCaseWithFactory,
-    WebServiceTestCase,
     )
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
@@ -68,6 +68,7 @@ from lp.testing.layers import (
     ZopelessDatabaseLayer,
     )
 from lp.testing.matchers import Provides
+from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 from lp.translations.enums import TranslationPermission
 
@@ -303,6 +304,46 @@ class TestDistribution(TestCaseWithFactory):
         self.assertEqual(
             InformationType.PUBLIC,
             distro.getDefaultSpecificationInformationType())
+
+    def test_getOCIProject(self):
+        distro = self.factory.makeDistribution()
+        first_project = self.factory.makeOCIProject(pillar=distro)
+        # make another project to ensure we don't default
+        self.factory.makeOCIProject(pillar=distro)
+        result = distro.getOCIProject(first_project.name)
+        self.assertEqual(first_project, result)
+
+    def test_searchOCIProjects_empty(self):
+        distro = self.factory.makeDistribution()
+        for _ in range(5):
+            self.factory.makeOCIProject(pillar=distro)
+
+        result = distro.searchOCIProjects()
+        self.assertEqual(5, result.count())
+
+    def test_searchOCIProjects_by_name(self):
+        name = self.factory.getUniqueUnicode()
+        distro = self.factory.makeDistribution()
+        first_name = self.factory.makeOCIProjectName(name=name)
+        first_project = self.factory.makeOCIProject(
+            pillar=distro, ociprojectname=first_name)
+        self.factory.makeOCIProject(pillar=distro)
+
+        result = distro.searchOCIProjects(text=name)
+        self.assertEqual(1, result.count())
+        self.assertEqual(first_project, result[0])
+
+    def test_searchOCIProjects_by_partial_name(self):
+        name = u'testpartialname'
+        distro = self.factory.makeDistribution()
+        first_name = self.factory.makeOCIProjectName(name=name)
+        first_project = self.factory.makeOCIProject(
+            pillar=distro, ociprojectname=first_name)
+        self.factory.makeOCIProject(pillar=distro)
+
+        result = distro.searchOCIProjects(text=u'partial')
+        self.assertEqual(1, result.count())
+        self.assertEqual(first_project, result[0])
 
 
 class TestDistributionCurrentSourceReleases(
@@ -647,37 +688,131 @@ class TestDistributionTranslations(TestCaseWithFactory):
             distro.translationpermission = TranslationPermission.CLOSED
 
 
-class TestWebService(WebServiceTestCase):
+class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def test_check_oci_project_admin_person(self):
+        person1 = self.factory.makePerson()
+        person2 = self.factory.makePerson()
+        distro = self.factory.makeDistribution(oci_project_admin=person1)
+
+        self.assertTrue(distro.canAdministerOCIProjects(person1))
+        self.assertFalse(distro.canAdministerOCIProjects(person2))
+        self.assertFalse(distro.canAdministerOCIProjects(None))
+
+    def test_check_oci_project_admin_team(self):
+        person1 = self.factory.makePerson()
+        person2 = self.factory.makePerson()
+        person3 = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=person1)
+        distro = self.factory.makeDistribution(oci_project_admin=team)
+
+        admin = self.factory.makeAdministrator()
+        with person_logged_in(admin):
+            person2.join(team)
+
+        self.assertTrue(distro.canAdministerOCIProjects(team))
+        self.assertTrue(distro.canAdministerOCIProjects(person1))
+        self.assertTrue(distro.canAdministerOCIProjects(person2))
+        self.assertFalse(distro.canAdministerOCIProjects(person3))
+        self.assertFalse(distro.canAdministerOCIProjects(None))
+
+    def test_check_oci_project_admin_without_any_admin(self):
+        person1 = self.factory.makePerson()
+        distro = self.factory.makeDistribution(oci_project_admin=None)
+
+        self.assertFalse(distro.canAdministerOCIProjects(person1))
+        self.assertFalse(distro.canAdministerOCIProjects(None))
+
+    def test_check_oci_project_admin_user_and_distro_owner(self):
+        admin = self.factory.makeAdministrator()
+        owner = self.factory.makePerson()
+        someone = self.factory.makePerson()
+        distro = self.factory.makeDistribution(owner=owner)
+
+        self.assertFalse(distro.canAdministerOCIProjects(someone))
+        self.assertTrue(distro.canAdministerOCIProjects(owner))
+        self.assertTrue(distro.canAdministerOCIProjects(admin))
+
+
+class TestDistributionWebservice(TestCaseWithFactory):
+    """Test the IDistribution API.
+
+    Some tests already exist in xx-distribution.txt.
+    """
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestDistributionWebservice, self).setUp()
+        self.person = self.factory.makePerson(
+            displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+    def test_searchOCIProjects(self):
+        name = self.factory.getUniqueUnicode(u"partial-")
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            first_name = self.factory.makeOCIProjectName(name=name)
+            first_project = self.factory.makeOCIProject(
+                pillar=distro, ociprojectname=first_name)
+            self.factory.makeOCIProject(pillar=distro)
+            distro_url = api_url(distro)
+
+        response = self.webservice.named_get(
+            distro_url, "searchOCIProjects", text="partial")
+        self.assertEqual(200, response.status, response.body)
+
+        search_body = response.jsonBody()
+        self.assertEqual(1, search_body["total_size"])
+        self.assertEqual(name, search_body["entries"][0]["name"])
+        with person_logged_in(self.person):
+            self.assertEqual(
+                self.webservice.getAbsoluteUrl(api_url(first_project)),
+                search_body["entries"][0]["self_link"])
 
     def test_oops_references_matching_distro(self):
         # The distro layer provides the context restriction, so we need to
         # check we can access context filtered references - e.g. on question.
         oopsid = "OOPS-abcdef1234"
-        distro = self.factory.makeDistribution()
-        self.factory.makeQuestion(
-            title="Crash with %s" % oopsid, target=distro)
-        transaction.commit()
-        ws_distro = self.wsObject(distro, distro.owner)
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution()
+            self.factory.makeQuestion(
+                title="Crash with %s" % oopsid, target=distro)
+            distro_url = api_url(distro)
+
         now = datetime.datetime.now(tz=pytz.utc)
         day = datetime.timedelta(days=1)
-        self.assertEqual(
-            [oopsid],
-            ws_distro.findReferencedOOPS(start_date=now - day, end_date=now))
-        self.assertEqual(
-            [],
-            ws_distro.findReferencedOOPS(
-                start_date=now + day, end_date=now + day))
+
+        yesterday_response = self.webservice.named_get(
+            distro_url,
+            "findReferencedOOPS",
+            start_date=(now - day).isoformat(),
+            end_date=now.isoformat())
+        self.assertEqual([oopsid], yesterday_response.jsonBody())
+
+        future_response = self.webservice.named_get(
+            distro_url,
+            "findReferencedOOPS",
+            start_date=(now + day).isoformat(),
+            end_date=(now + day).isoformat())
+        self.assertEqual([], future_response.jsonBody())
 
     def test_oops_references_different_distro(self):
         # The distro layer provides the context restriction, so we need to
         # check the filter is tight enough - other contexts should not work.
         oopsid = "OOPS-abcdef1234"
-        self.factory.makeQuestion(title="Crash with %s" % oopsid)
-        distro = self.factory.makeDistribution()
-        transaction.commit()
-        ws_distro = self.wsObject(distro, distro.owner)
+        with person_logged_in(self.person):
+            self.factory.makeQuestion(title="Crash with %s" % oopsid)
+            distro = self.factory.makeDistribution()
+            distro_url = api_url(distro)
         now = datetime.datetime.now(tz=pytz.utc)
         day = datetime.timedelta(days=1)
-        self.assertEqual(
-            [],
-            ws_distro.findReferencedOOPS(start_date=now - day, end_date=now))
+
+        empty_response = self.webservice.named_get(
+            distro_url,
+            "findReferencedOOPS",
+            start_date=(now - day).isoformat(),
+            end_date=now.isoformat())
+        self.assertEqual([], empty_response.jsonBody())

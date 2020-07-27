@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from storm.store import Store
@@ -13,14 +13,23 @@ from zope.security.checker import getChecker
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.registry.enums import BranchSharingPolicy
 from lp.services.database.interfaces import IStore
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import (
     WebhookJob,
     WebhookSet,
+    )
+from lp.soyuz.interfaces.livefs import (
+    LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.testing import (
     admin_logged_in,
@@ -197,7 +206,6 @@ class TestWebhookSetBase:
 
     def test__checkVisibility_public_artifact(self):
         target = self.makeTarget()
-        login_person(target.owner)
         self.assertTrue(WebhookSet._checkVisibility(target, target.owner))
 
     def test_trigger(self):
@@ -243,7 +251,12 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
         owner = self.factory.makePerson()
         target = self.makeTarget(
             owner=owner, information_type=InformationType.PROPRIETARY)
-        login_person(owner)
+        self.assertTrue(WebhookSet._checkVisibility(target, owner))
+
+    def test__checkVisibility_private_artifact_team_owned(self):
+        owner = self.factory.makeTeam()
+        target = self.makeTarget(
+            owner=owner, information_type=InformationType.PROPRIETARY)
         self.assertTrue(WebhookSet._checkVisibility(target, owner))
 
     def test__checkVisibility_lost_access_to_private_artifact(self):
@@ -260,9 +273,9 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
             policy=policy, grantee=grantee_team)
         grantee_member = self.factory.makePerson(member_of=[grantee_team])
         target = self.makeTarget(owner=grantee_member, project=project)
-        login_person(grantee_member)
         self.assertTrue(WebhookSet._checkVisibility(target, grantee_member))
-        grantee_member.leave(grantee_team)
+        with person_logged_in(grantee_member):
+            grantee_member.leave(grantee_team)
         self.assertFalse(WebhookSet._checkVisibility(target, grantee_member))
 
     def test__checkVisibility_with_different_context(self):
@@ -277,7 +290,6 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
             owner=owner, project=project, source=source, reviewer=reviewer)
         mp2 = self.makeMergeProposal(
             project=project, source=source, reviewer=reviewer)
-        login_person(owner)
         self.assertTrue(
             WebhookSet._checkVisibility(mp1, mp1.merge_target.owner))
         self.assertFalse(
@@ -334,7 +346,6 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
         event_type = 'merge-proposal:0.1'
         hook = self.factory.makeWebhook(
             target=target, event_types=[event_type])
-        login_person(source.owner)
         getUtility(IWebhookSet).trigger(
             target, event_type, {'some': 'payload'}, context=mp)
         with admin_logged_in():
@@ -395,3 +406,31 @@ class TestWebhookSetSnap(TestWebhookSetBase, TestCaseWithFactory):
         if owner is None:
             owner = self.factory.makePerson()
         return self.factory.makeSnap(registrant=owner, owner=owner, **kwargs)
+
+
+class TestWebhookSetLiveFS(TestWebhookSetBase, TestCaseWithFactory):
+
+    event_type = 'livefs:build:0.1'
+
+    def makeTarget(self, owner=None, **kwargs):
+        if owner is None:
+            owner = self.factory.makePerson()
+
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on",
+                             LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
+            return self.factory.makeLiveFS(registrant=owner,
+                                           owner=owner, **kwargs)
+
+
+class TestWebhookSetOCIRecipe(TestWebhookSetBase, TestCaseWithFactory):
+
+    event_type = 'oci-recipe:build:0.1'
+
+    def makeTarget(self, owner=None, **kwargs):
+        if owner is None:
+            owner = self.factory.makePerson()
+
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             OCI_RECIPE_ALLOW_CREATE: 'on'}):
+            return self.factory.makeOCIRecipe(
+                registrant=owner, owner=owner, **kwargs)

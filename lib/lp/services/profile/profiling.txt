@@ -39,15 +39,14 @@ The pagetests profiler is created by the layer during its setUp.
     >>> len(PageTestLayer.profiler.getstats())
     0
 
-The layer also replaces the standard HTTPCaller.__call__ by a wrapper
-that takes care of profiling (among other things).
+The layer also adds WSGI middleware that takes care of profiling (among
+other things).
 
-    >>> from zope.app.testing.functional import HTTPCaller
+    >>> from lp.testing.pages import http
 
     # We need to close the default interaction.
     >>> logout()
 
-    >>> http = HTTPCaller()
     >>> response = http('GET / HTTP/1.0')
     >>> profile_count = len(PageTestLayer.profiler.getstats())
     >>> profile_count > 0
@@ -55,7 +54,7 @@ that takes care of profiling (among other things).
 
 Requests made with a testbrowser will also be profiled.
 
-    >>> from zope.app.testing.testbrowser import Browser
+    >>> from zope.testbrowser.wsgi import Browser
     >>> browser = Browser()
     >>> browser.open('http://launchpad.test/')
     >>> len(PageTestLayer.profiler.getstats()) > profile_count
@@ -73,7 +72,7 @@ When the environment isn't set, no profile is created.
     >>> del os.environ['PROFILE_PAGETESTS_REQUESTS']
 
     >>> PageTestLayer.setUp()
-    >>> print PageTestLayer.profiler
+    >>> print(PageTestLayer.profiler)
     None
 
 And no stats file is written when the layer is torn down.
@@ -124,7 +123,7 @@ The feature has two modes.
     smoke test.  The unit tests verify further functionality.
 
     >>> response = http('GET /++profile++ HTTP/1.0')
-    >>> '<h1>Profiling Information</h1>' in response.getBody()
+    >>> b'<h1>Profiling Information</h1>' in response.getBody()
     True
 
 -   It can be configured to profile all requests, indiscriminately.  To turn
@@ -196,15 +195,15 @@ log file.
     ...     profile_request: False
     ...     memory_profile_log: %s""" % memory_profile_log))
     >>> response = http('GET / HTTP/1.0')
-    >>> memory_profile_fh = file(memory_profile_log)
-    >>> (timestamp, page_id, oops_id, duration,
-    ...  start_vss, start_rss, end_vss, end_rss) = (
-    ...     memory_profile_fh.readline().split())
-    >>> print timestamp
+    >>> with open(memory_profile_log) as memory_profile_fh:
+    ...     (timestamp, page_id, oops_id, duration,
+    ...      start_vss, start_rss, end_vss, end_rss) = (
+    ...         memory_profile_fh.readline().split())
+    >>> print(timestamp)
     20...
-    >>> print oops_id
+    >>> print(oops_id)
     -
-    >>> print page_id
+    >>> print(page_id)
     RootObject:index.html
 
 ..  ReST comment: this is clean up for the work done above.

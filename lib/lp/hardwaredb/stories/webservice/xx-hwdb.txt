@@ -565,7 +565,7 @@ We can limit the result set to submissions where the device is accessed
 by a specific driver. Device 2 is a USB controller, so will get the sample
 submission when we set the parameter driver to the usb driver...
 
-    >>> from urllib import urlencode
+    >>> from six.moves.urllib.parse import urlencode
     >>> parameters = {
     ...     'ws.op': 'getSubmissions',
     ...     'driver': usb_driver['self_link'],

@@ -12,16 +12,16 @@ __all__ = [
     ]
 
 from email.utils import parseaddr
-from httplib import BadStatusLine
 import re
 import string
 import xml.parsers.expat
-import xmlrpclib
 
 from defusedxml import minidom
 import pytz
 import requests
 import six
+from six.moves import xmlrpc_client
+from six.moves.http_client import BadStatusLine
 from zope.component import getUtility
 from zope.interface import (
     alsoProvides,
@@ -92,15 +92,15 @@ class Bugzilla(ExternalBugTracker):
             # We try calling Bugzilla.version() on the remote
             # server because it's the most lightweight method there is.
             remote_version = proxy.Bugzilla.version()
-        except xmlrpclib.Fault as fault:
+        except xmlrpc_client.Fault as fault:
             # 'Client' is a hangover. Either Bugzilla or the Perl
             # XML-RPC lib in use returned it as faultCode. It's wrong,
             # but it's known wrongness, so we recognize it here.
-            if fault.faultCode in (xmlrpclib.METHOD_NOT_FOUND, 'Client'):
+            if fault.faultCode in (xmlrpc_client.METHOD_NOT_FOUND, 'Client'):
                 return False
             else:
                 raise
-        except xmlrpclib.ProtocolError as error:
+        except xmlrpc_client.ProtocolError as error:
             # We catch 404s, which occur when xmlrpc.cgi doesn't exist
             # on the remote server, and 500s, which sometimes occur when
             # an invalid request is made to the remote server. We allow
@@ -109,7 +109,7 @@ class Bugzilla(ExternalBugTracker):
                 return False
             else:
                 raise
-        except (xmlrpclib.ResponseError, xml.parsers.expat.ExpatError):
+        except (xmlrpc_client.ResponseError, xml.parsers.expat.ExpatError):
             # The server returned an unparsable response.
             return False
         else:
@@ -134,15 +134,15 @@ class Bugzilla(ExternalBugTracker):
             # We try calling Launchpad.plugin_version() on the remote
             # server because it's the most lightweight method there is.
             proxy.Launchpad.plugin_version()
-        except xmlrpclib.Fault as fault:
+        except xmlrpc_client.Fault as fault:
             # 'Client' is a hangover. Either Bugzilla or the Perl
             # XML-RPC lib in use returned it as faultCode. It's wrong,
             # but it's known wrongness, so we recognize it here.
-            if fault.faultCode in (xmlrpclib.METHOD_NOT_FOUND, 'Client'):
+            if fault.faultCode in (xmlrpc_client.METHOD_NOT_FOUND, 'Client'):
                 return False
             else:
                 raise
-        except xmlrpclib.ProtocolError as error:
+        except xmlrpc_client.ProtocolError as error:
             # We catch 404s, which occur when xmlrpc.cgi doesn't exist
             # on the remote server, and 500s, which sometimes occur when
             # the Launchpad Plugin isn't installed. Everything else we
@@ -152,7 +152,7 @@ class Bugzilla(ExternalBugTracker):
                 return False
             else:
                 raise
-        except (xmlrpclib.ResponseError, xml.parsers.expat.ExpatError):
+        except (xmlrpc_client.ResponseError, xml.parsers.expat.ExpatError):
             # The server returned an unparsable response.
             return False
         else:
@@ -171,7 +171,7 @@ class Bugzilla(ExternalBugTracker):
                 return BugzillaLPPlugin(self.baseurl)
             elif self._remoteSystemHasBugzillaAPI():
                 return BugzillaAPI(self.baseurl)
-        except (xmlrpclib.ProtocolError, requests.RequestException,
+        except (xmlrpc_client.ProtocolError, requests.RequestException,
                 BadStatusLine):
             pass
         return self
@@ -540,14 +540,14 @@ class Bugzilla(ExternalBugTracker):
 def needs_authentication(func):
     """Decorator for automatically authenticating if needed.
 
-    If an `xmlrpclib.Fault` with error code 410 is raised by the
+    If an `xmlrpc_client.Fault` with error code 410 is raised by the
     function, we'll try to authenticate and call the function again.
     """
 
     def decorator(self, *args, **kwargs):
         try:
             return func(self, *args, **kwargs)
-        except xmlrpclib.Fault as fault:
+        except xmlrpc_client.Fault as fault:
             # Catch authentication errors only.
             if fault.faultCode != 410:
                 raise
@@ -589,8 +589,8 @@ class BugzillaAPI(Bugzilla):
 
     @property
     def xmlrpc_proxy(self):
-        """Return an `xmlrpclib.ServerProxy` to self.xmlrpc_endpoint."""
-        return xmlrpclib.ServerProxy(
+        """Return an `xmlrpc_client.ServerProxy` to self.xmlrpc_endpoint."""
+        return xmlrpc_client.ServerProxy(
             self.xmlrpc_endpoint, transport=self.xmlrpc_transport)
 
     @property
@@ -624,7 +624,7 @@ class BugzillaAPI(Bugzilla):
         """
         try:
             self.xmlrpc_proxy.User.login(self.credentials)
-        except xmlrpclib.Fault as fault:
+        except xmlrpc_client.Fault as fault:
             raise BugTrackerAuthenticationError(
                 self.baseurl,
                 "Fault %s: %s" % (fault.faultCode, fault.faultString))
@@ -974,7 +974,7 @@ class BugzillaLPPlugin(BugzillaAPI):
         Bugzilla_logincookie, which we can then use to re-authenticate
         ourselves for each subsequent method call.
         """
-        internal_xmlrpc_server = xmlrpclib.ServerProxy(
+        internal_xmlrpc_server = xmlrpc_client.ServerProxy(
             config.checkwatches.xmlrpc_url,
             transport=self.internal_xmlrpc_transport)
 
@@ -983,12 +983,12 @@ class BugzillaLPPlugin(BugzillaAPI):
         try:
             self.xmlrpc_proxy.Launchpad.login(
                 {'token': token_text})
-        except xmlrpclib.Fault as fault:
+        except xmlrpc_client.Fault as fault:
             message = 'XML-RPC Fault: %s "%s"' % (
                 fault.faultCode, fault.faultString)
             raise BugTrackerAuthenticationError(
                 self.baseurl, message)
-        except xmlrpclib.ProtocolError as error:
+        except xmlrpc_client.ProtocolError as error:
             message = 'Protocol error: %s "%s"' % (
                 error.errcode, error.errmsg)
             raise BugTrackerAuthenticationError(

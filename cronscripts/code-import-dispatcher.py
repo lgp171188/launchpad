@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -7,7 +7,7 @@
 
 import _pythonpath
 
-from xmlrpclib import ServerProxy
+from six.moves.xmlrpc_client import ServerProxy
 
 from lp.codehosting.codeimport.dispatcher import CodeImportDispatcher
 from lp.services.config import config

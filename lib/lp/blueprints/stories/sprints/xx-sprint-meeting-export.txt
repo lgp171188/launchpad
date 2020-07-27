@@ -31,7 +31,7 @@ element name:
 The attendees element contains a list of person elements.
 
     >>> import operator
-    >>> from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+    >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> soup = BeautifulSoup(browser.contents, 'xml')
     >>> people = soup.find('attendees').findAll('person')
     >>> for person in sorted(people, key=operator.itemgetter("displayname")):

@@ -13,10 +13,10 @@ __all__ = [
 
 from datetime import datetime
 import hashlib
-from urlparse import urlparse
 
 from lazr.delegates import delegate_to
 import pytz
+from six.moves.urllib.parse import urlparse
 from sqlobject import (
     BoolCol,
     ForeignKey,

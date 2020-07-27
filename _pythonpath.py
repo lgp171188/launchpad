@@ -20,7 +20,20 @@ else:
 top = os.path.dirname(os.path.abspath(os.path.realpath(filename)))
 
 env = os.path.join(top, 'env')
-stdlib_dir = os.path.join(env, 'lib', 'python%s' % sys.version[:3])
+python_version_path = os.path.join(env, 'python_version')
+
+# If the current Python major/minor version doesn't match the virtualenv,
+# then re-exec.  This makes it practical to experiment with switching
+# between Python 2 and 3 without having to update the #! lines of all our
+# scripts to match.
+python_version = '%s.%s' % sys.version_info[:2]
+with open(python_version_path) as python_version_file:
+    env_python_version = python_version_file.readline().strip()
+if python_version != env_python_version:
+    env_python = os.path.join(env, 'bin', 'python')
+    os.execl(env_python, env_python, *sys.argv)
+
+stdlib_dir = os.path.join(env, 'lib', 'python%s' % python_version)
 
 if ('site' in sys.modules and
     not sys.modules['site'].__file__.startswith(
@@ -52,7 +65,7 @@ if not sys.executable.startswith(top + os.sep) or 'site' not in sys.modules:
     os.environ['PATH'] = (
         os.path.join(env, 'bin') + os.pathsep + os.environ.get('PATH', ''))
     site_packages = os.path.join(
-        env, 'lib', 'python%s' % sys.version[:3], 'site-packages')
+        env, 'lib', 'python%s' % python_version, 'site-packages')
     import site
     site.addsitedir(site_packages)
     if orig_disable_sitecustomize is not None:

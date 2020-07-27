@@ -53,14 +53,14 @@ Read only requests such as GET and HEAD will use the MAIN SLAVE
 Store by default.
 
     >>> browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(browser)
+    >>> print(whichdb(browser))
     SLAVE
 
 POST requests might make updates, so they use the MAIN MASTER
 Store by default.
 
     >>> browser.getControl('Do Post').click()
-    >>> print whichdb(browser)
+    >>> print(whichdb(browser))
     MASTER
 
 This is an unauthenticated browser.  These typically have no session, unless
@@ -68,7 +68,7 @@ special dispensation has been made. Without a session, subsequent requests
 will then immediately return to using the SLAVE.
 
     >>> browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(browser)
+    >>> print(whichdb(browser))
     SLAVE
 
 However, if the request has a session (that is, is authenticated; or is
@@ -80,20 +80,20 @@ slave databases may lag some time behind the master database.
 
     >>> browser.addHeader('Authorization', 'Basic mark@example.com:test')
     >>> browser.getControl('Do Post').click() # POST request
-    >>> print whichdb(browser)
+    >>> print(whichdb(browser))
     MASTER
     >>> browser.open('http://launchpad.test/+whichdb') # GET request
-    >>> print whichdb(browser)
+    >>> print(whichdb(browser))
     MASTER
 
 GET and HEAD requests from other clients are unaffected though
 and use the MAIN SLAVE Store by default.
 
     >>> anon_browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(anon_browser)
+    >>> print(whichdb(anon_browser))
     SLAVE
     >>> admin_browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(admin_browser)
+    >>> print(whichdb(admin_browser))
     SLAVE
 
 If no more POST requests are made for 5 minutes, GET and HEAD
@@ -111,13 +111,13 @@ To test this, first we need to wind forward the database policy's clock.
 
 
     >>> browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(browser)
+    >>> print(whichdb(browser))
     MASTER
 
     >>> dbpolicy._now = _future_now # Install the time machine.
 
     >>> browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(browser)
+    >>> print(whichdb(browser))
     SLAVE
 
     >>> dbpolicy._now = _original_now # Reset the time machine.
@@ -128,12 +128,12 @@ replication oddities from becoming too bad, as well as lightening the load
 on the slaves allowing them to catch up.
 
     >>> anon_browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(anon_browser)
+    >>> print(whichdb(anon_browser))
     SLAVE
 
     >>> dbpolicy._test_lag = timedelta(minutes=10)
     >>> anon_browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(anon_browser)
+    >>> print(whichdb(anon_browser))
     MASTER
     >>> dbpolicy._test_lag = None
 
@@ -149,7 +149,7 @@ returning a 404 error to the user.
 
     # Confirm requests are going to the SLAVE
     >>> anon_browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(anon_browser)
+    >>> print(whichdb(anon_browser))
     SLAVE
 
     # The slave database contains no data, but we don't get
@@ -166,7 +166,7 @@ returning a 404 error to the user.
 
     # This session is still using the SLAVE though by default.
     >>> anon_browser.open('http://launchpad.test/+whichdb')
-    >>> print whichdb(anon_browser)
+    >>> print(whichdb(anon_browser))
     SLAVE
 
 Reset our config to avoid affecting other tests.

@@ -3,6 +3,8 @@
 
 """Browser view for IHasTranslationImports."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -13,7 +15,7 @@ import datetime
 
 import pytz
 import simplejson
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib import form
 from zope.formlib.widget import CustomWidgetFactory

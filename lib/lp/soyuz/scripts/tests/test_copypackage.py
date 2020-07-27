@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -11,6 +11,7 @@ from testtools.content import text_content
 from testtools.matchers import (
     Equals,
     LessThan,
+    MatchesListwise,
     MatchesStructure,
     )
 import transaction
@@ -1015,6 +1016,36 @@ class CopyCheckerTestCase(TestCaseWithFactory):
             copied_source, copied_source.distroseries, copied_source.pocket,
             None, False)
 
+    def test_copy_to_another_archive_tracks_source_archive(self):
+        """Checks that creating a copy of a package publishing keeps track
+        of origin archive.
+        """
+        # Create a source with binaries in ubuntutest/breezy-autotest.
+        source = self.test_publisher.getPubSource(architecturehintlist='i386')
+        binary = self.test_publisher.getPubBinaries(pub_source=source)[0]
+
+        hoary = self.test_publisher.ubuntutest.getSeries('hoary-test')
+        self.test_publisher.addFakeChroots(hoary)
+
+        target_archive = self.factory.makeArchive(
+            distribution=self.test_publisher.ubuntutest,
+            purpose=ArchivePurpose.PPA)
+
+        copied_source = source.copyTo(hoary, source.pocket, target_archive)
+        self.assertThat(
+            copied_source, MatchesStructure.byEquality(
+                    archive=target_archive,
+                    copied_from_archive=source.archive))
+
+        copied_binaries = binary.copyTo(hoary, source.pocket, target_archive)
+
+        self.assertThat(
+            copied_binaries, MatchesListwise([
+                MatchesStructure.byEquality(
+                    archive=target_archive,
+                    copied_from_archive=binary.archive),
+            ]))
+
 
 class BaseDoCopyTests:
 
@@ -1684,7 +1715,8 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         changes_file_name = '%s_%s_%s.changes' % (
             lazy_bin.name, lazy_bin.version, build_i386.arch_tag)
         self.test_publisher.addPackageUpload(
-            archive, nobby, build_i386.pocket, changes_file_content='anything',
+            archive, nobby, build_i386.pocket,
+            changes_file_content=b'anything',
             changes_file_name=changes_file_name)
 
         # Make the new library files available.
@@ -1991,8 +2023,8 @@ class TestCopyClosesBugs(TestCaseWithFactory):
 
     def createSource(self, version, archive, pocket, bug_id):
         changes_template = (
-            "Format: 1.7\n"
-            "Launchpad-bugs-fixed: %s\n")
+            b"Format: 1.7\n"
+            b"Launchpad-bugs-fixed: %s\n")
         changes_file_content = changes_template % bug_id
         source = self.test_publisher.getPubSource(
             sourcename='buggy-source', version=version,

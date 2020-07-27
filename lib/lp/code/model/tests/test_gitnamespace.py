@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `IGitNamespace` implementations."""
@@ -31,6 +31,7 @@ from lp.code.interfaces.gitnamespace import (
     )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.gitnamespace import (
+    OCIProjectGitNamespace,
     PackageGitNamespace,
     PersonalGitNamespace,
     ProjectGitNamespace,
@@ -290,24 +291,34 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
             repository.namespace.areRepositoriesMergeable(
                 repository, repository))
 
-    def test_areRepositoriesMergeable_same_namespace(self):
+    def test_areRepositoriesMergeable_different_namespaces(self):
+        # A personal repository is not mergeable if the origin namespace is
+        # not the same as the namespacing checking the mergeability.
+        owner = self.factory.makePerson()
+        this = self.factory.makeGitRepository(owner=owner, target=owner)
+        other = self.factory.makeGitRepository(owner=owner, target=owner)
+        self.assertFalse(other.namespace.areRepositoriesMergeable(this, other))
+
+    def test_areRepositoriesMergeable_different_name(self):
         # A personal repository is not mergeable into another personal
-        # repository, even if they are in the same namespace.
+        # repository if they do not have the same name.
         owner = self.factory.makePerson()
         this = self.factory.makeGitRepository(owner=owner, target=owner)
         other = self.factory.makeGitRepository(owner=owner, target=owner)
         self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
 
-    def test_areRepositoriesMergeable_different_namespace(self):
-        # A personal repository is not mergeable into another personal
-        # repository with a different namespace.
+    def test_areRepositoriesMergeable_same_name(self):
+        # A personal repository is mergeable into another personal
+        # repository if they have the same name, even if they target different
+        # people.
         this_owner = self.factory.makePerson()
+        repo_name = "my-personal-repository"
         this = self.factory.makeGitRepository(
-            owner=this_owner, target=this_owner)
+            owner=this_owner, target=this_owner, name=repo_name)
         other_owner = self.factory.makePerson()
         other = self.factory.makeGitRepository(
-            owner=other_owner, target=other_owner)
-        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+            owner=other_owner, target=other_owner, name=repo_name)
+        self.assertTrue(this.namespace.areRepositoriesMergeable(this, other))
 
     def test_areRepositoriesMergeable_project(self):
         # Project repositories are not mergeable into personal repositories.
@@ -325,6 +336,15 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
         other = self.factory.makeGitRepository(owner=owner, target=dsp)
         self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
 
+    def test_areRepositoriesMergeable_oci_project(self):
+        # OCI Project repositories are not mergeable into personal
+        # repositories.
+        owner = self.factory.makePerson()
+        this = self.factory.makeGitRepository(owner=owner, target=owner)
+        oci_project = self.factory.makeOCIProject()
+        other = self.factory.makeGitRepository(owner=owner, target=oci_project)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
     def test_collection(self):
         # A personal namespace's collection is of personal repositories with
         # the same owner.
@@ -338,6 +358,8 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
             owner=owner, target=self.factory.makeProduct())
         self.factory.makeGitRepository(
             owner=owner, target=self.factory.makeDistributionSourcePackage())
+        self.factory.makeGitRepository(
+            owner=owner, target=self.factory.makeOCIProject())
         self.assertContentEqual(
             repositories,
             repositories[0].namespace.collection.getRepositories())
@@ -420,6 +442,15 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         other = self.factory.makeGitRepository(owner=owner, target=dsp)
         self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
 
+    def test_areRepositoriesMergeable_oci_project(self):
+        # OCI Project repositories are not mergeable into project repositories.
+        owner = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        this = self.factory.makeGitRepository(owner=owner, target=project)
+        oci_project = self.factory.makeOCIProject()
+        other = self.factory.makeGitRepository(owner=owner, target=oci_project)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
     def test_collection(self):
         # A project namespace's collection is of repositories for the same
         # project.
@@ -431,6 +462,114 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
             owner=repositories[0].owner, target=repositories[0].owner)
         self.factory.makeGitRepository(
             target=self.factory.makeDistributionSourcePackage())
+        self.factory.makeGitRepository(target=self.factory.makeOCIProject())
+        self.assertContentEqual(
+            repositories,
+            repositories[0].namespace.collection.getRepositories())
+
+
+class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
+    """Tests for `OCIProjectGitNamespace`."""
+
+    layer = DatabaseFunctionalLayer
+
+    def getNamespace(self, person=None):
+        if person is None:
+            person = self.factory.makePerson()
+        return get_git_namespace(self.factory.makeOCIProject(), person)
+
+    def test_name(self):
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        namespace = OCIProjectGitNamespace(person, oci_project)
+        self.assertEqual(
+            "~%s/%s/+oci/%s" % (
+                person.name, oci_project.distribution.name,
+                oci_project.ociprojectname.name),
+            namespace.name)
+
+    def test_owner(self):
+        # The person passed to an oci project namespace is the owner.
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        namespace = OCIProjectGitNamespace(person, oci_project)
+        self.assertEqual(person, removeSecurityProxy(namespace).owner)
+
+    def test_target(self):
+        # The target for an oci project namespace is the oci project.
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        namespace = OCIProjectGitNamespace(person, oci_project)
+        self.assertEqual(oci_project, namespace.target)
+
+    def test_supports_merge_proposals(self):
+        # OCI Project namespaces support merge proposals.
+        self.assertTrue(self.getNamespace().supports_merge_proposals)
+
+    def test_areRepositoriesMergeable_same_repository(self):
+        # An OCI Project repository is mergeable into itself.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertTrue(
+            repository.namespace.areRepositoriesMergeable(
+                repository, repository))
+
+    def test_areRepositoriesMergeable_same_namespace(self):
+        # Repositories of the same OCI Project are mergeable.
+        oci_project = self.factory.makeOCIProject()
+        this = self.factory.makeGitRepository(target=oci_project)
+        other = self.factory.makeGitRepository(target=oci_project)
+        self.assertTrue(this.namespace.areRepositoriesMergeable(this, other))
+
+    def test_areRepositoriesMergeable_different_namespace(self):
+        # Repositories of a different OCI Project are not mergeable.
+        this_oci_project = self.factory.makeOCIProject()
+        this = self.factory.makeGitRepository(target=this_oci_project)
+        other_oci_project = self.factory.makeOCIProject()
+        other = self.factory.makeGitRepository(target=other_oci_project)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
+    def test_areRepositoriesMergeable_personal(self):
+        # Personal repositories are not mergeable into OCI Project
+        # repositories.
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        this = self.factory.makeGitRepository(owner=owner, target=oci_project)
+        other = self.factory.makeGitRepository(owner=owner, target=owner)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
+    def test_areRepositoriesMergeable_project(self):
+        # Project repositories are not mergeable into OCI Project repositories.
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        this = self.factory.makeGitRepository(owner=owner, target=oci_project)
+        project = self.factory.makeProduct()
+        other = self.factory.makeGitRepository(owner=owner, target=project)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
+    def test_areRepositoriesMergeable_package(self):
+        # Package repositories are not mergeable into OCI Project repositories.
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        this = self.factory.makeGitRepository(owner=owner, target=oci_project)
+        package = self.factory.makeDistributionSourcePackage()
+        other = self.factory.makeGitRepository(owner=owner, target=package)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
+    def test_collection(self):
+        # An OCI Project namespace's collection is of
+        # repositories for the same oci project.
+        oci_project = self.factory.makeOCIProject()
+        repositories = [
+            self.factory.makeGitRepository(target=oci_project)
+            for _ in range(3)]
+        self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject())
+        self.factory.makeGitRepository(target=self.factory.makeProduct())
+        self.factory.makeGitRepository(
+            target=self.factory.makeDistributionSourcePackage())
+        self.factory.makeGitRepository(
+            owner=repositories[0].owner, target=repositories[0].owner)
         self.assertContentEqual(
             repositories,
             repositories[0].namespace.collection.getRepositories())
@@ -688,6 +827,15 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
         other = self.factory.makeGitRepository(owner=owner, target=project)
         self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
 
+    def test_areRepositoriesMergeable_oci_project(self):
+        # OCI Project repositories are not mergeable into package repositories.
+        owner = self.factory.makePerson()
+        dsp = self.factory.makeDistributionSourcePackage()
+        this = self.factory.makeGitRepository(owner=owner, target=dsp)
+        oci_project = self.factory.makeOCIProject()
+        other = self.factory.makeGitRepository(owner=owner, target=oci_project)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
     def test_collection(self):
         # A package namespace's collection is of repositories for the same
         # package.
@@ -699,6 +847,7 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
         self.factory.makeGitRepository(target=self.factory.makeProduct())
         self.factory.makeGitRepository(
             owner=repositories[0].owner, target=repositories[0].owner)
+        self.factory.makeGitRepository(target=self.factory.makeOCIProject())
         self.assertContentEqual(
             repositories,
             repositories[0].namespace.collection.getRepositories())
@@ -825,6 +974,12 @@ class TestNamespaceSet(TestCaseWithFactory):
         namespace = get_git_namespace(dsp, person)
         self.assertIsInstance(namespace, PackageGitNamespace)
 
+    def test_get_oci_project(self):
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        namespace = get_git_namespace(oci_project, person)
+        self.assertIsInstance(namespace, OCIProjectGitNamespace)
+
 
 class TestPersonalGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
     """Tests for PersonalGitNamespace.getAllowedInformationTypes."""
@@ -864,6 +1019,20 @@ class TestPackageGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         person = self.factory.makePerson()
         namespace = PackageGitNamespace(person, dsp)
+        self.assertContentEqual(
+            PUBLIC_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+
+
+class TestOCIProjectGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
+    """Tests for OCIProjectGitNamespace.getAllowedInformationTypes."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_anyone(self):
+        # OCI project repositories are always public (for now).
+        oci_project = self.factory.makeOCIProject()
+        person = self.factory.makePerson()
+        namespace = OCIProjectGitNamespace(person, oci_project)
         self.assertContentEqual(
             PUBLIC_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
 
@@ -949,6 +1118,14 @@ class TestPackageGitNamespaceValidateNewRepository(
     def _getNamespace(self, owner):
         dsp = self.factory.makeDistributionSourcePackage()
         return PackageGitNamespace(owner, dsp)
+
+
+class TestOCIProjectGitNamespaceValidateNewRepository(
+    TestCaseWithFactory, BaseValidateNewRepositoryMixin):
+
+    def _getNamespace(self, owner):
+        oci_project = self.factory.makeOCIProject()
+        return OCIProjectGitNamespace(owner, oci_project)
 
 
 class TestProjectGitNamespaceValidateNewRepository(

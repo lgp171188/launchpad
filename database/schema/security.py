@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -8,13 +8,15 @@ __metaclass__ = type
 import _pythonpath
 
 from collections import defaultdict
-from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 import os
 import re
 import sys
 
+import six
+
 from fti import quote_identifier
+from lp.services.compat import SafeConfigParser
 from lp.services.database.sqlbase import connect
 from lp.services.scripts import (
     db_options,
@@ -49,7 +51,10 @@ POSTGRES_ACL_MAP = {
     'T': 'TEMPORARY',
     }
 
-QUOTED_STRING_RE = '(?:([a-z_]+)|"([^"]*(?:""[^"]*)*)")?'
+# PostgreSQL's putid emits an unquoted string if every character in the role
+# name isalnum or is _. Otherwise the name is enclosed in double quotes, and
+# any embedded double quotes are doubled.
+QUOTED_STRING_RE = '(?:([A-Za-z0-9_]+)|"([^"]*(?:""[^"]*)*)")?'
 ACLITEM_RE = re.compile('^%(qs)s=([\w*]*)/%(qs)s$' % {'qs': QUOTED_STRING_RE})
 
 
@@ -299,8 +304,8 @@ class PermissionGatherer:
             to grant or revoke for.  Each is a string.
         """
         result = []
-        for permission, parties in self.permissions.iteritems():
-            for principal, entities in parties.iteritems():
+        for permission, parties in six.iteritems(self.permissions):
+            for principal, entities in six.iteritems(parties):
                 result.append(
                     (permission, ", ".join(entities), principal))
         return result
@@ -312,8 +317,8 @@ class PermissionGatherer:
     def countEntities(self):
         """Count the number of different entities."""
         entities = set()
-        for entities_and_entities in self.permissions.itervalues():
-            for extra_entities in entities_and_entities.itervalues():
+        for entities_and_entities in six.itervalues(self.permissions):
+            for extra_entities in six.itervalues(entities_and_entities):
                 entities.update(extra_entities)
         return len(entities)
 
@@ -321,7 +326,7 @@ class PermissionGatherer:
         """Count the number of different principals."""
         return len(set(sum([
             principals.keys()
-            for principals in self.permissions.itervalues()], [])))
+            for principals in six.itervalues(self.permissions)], [])))
 
     def grant(self, cur):
         """Grant all gathered permissions.
@@ -477,7 +482,7 @@ def reset_permissions(con, config, options):
 
     log.debug('Updating group memberships')
     existing_memberships = list_role_members(cur, memberships.keys())
-    for group, users in memberships.iteritems():
+    for group, users in six.iteritems(memberships):
         cur_users = managed_roles.intersection(existing_memberships[group])
         to_grant = users - cur_users
         if to_grant:
@@ -514,7 +519,7 @@ def reset_permissions(con, config, options):
     # Set permissions as per config file
     desired_permissions = defaultdict(lambda: defaultdict(set))
 
-    valid_objs = set(schema.iterkeys())
+    valid_objs = set(schema)
 
     # Any object with permissions granted is accessible to the 'read'
     # role. Some (eg. the lp_* replicated tables and internal or trigger
@@ -615,7 +620,7 @@ def reset_permissions(con, config, options):
             new = desired_permissions[obj][role]
             old_privs = obj.acl.get(role, {})
             old = set(old_privs)
-            if any(old_privs.itervalues()):
+            if any(six.itervalues(old_privs)):
                 log.warning("%s has grant option on %s", role, obj.fullname)
             if new == old:
                 continue

@@ -8,13 +8,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
 from storm.locals import Store
 from testtools.matchers import StartsWith
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -270,22 +270,19 @@ class TestSourcePackageRecipeBuild(BrowserTestCase):
 
     def test_builder_index_public(self):
         build = self.makeBuildingRecipe()
-        url = canonical_url(build.builder)
-        logout()
-        browser = self.getNonRedirectingBrowser(url=url, user=ANONYMOUS)
+        browser = self.getViewBrowser(build.builder, no_login=True)
         self.assertIn('i am failing', browser.contents)
 
     def test_builder_index_private(self):
         archive = self.factory.makeArchive(private=True)
         with admin_logged_in():
             build = self.makeBuildingRecipe(archive=archive)
-        url = canonical_url(removeSecurityProxy(build).builder)
-        logout()
+        builder = removeSecurityProxy(build).builder
 
         # An unrelated user can't see the logtail of a private build.
-        browser = self.getNonRedirectingBrowser(url=url)
+        browser = self.getViewBrowser(builder)
         self.assertNotIn('i am failing', browser.contents)
 
         # But someone who can see the archive can.
-        browser = self.getNonRedirectingBrowser(url=url, user=archive.owner)
+        browser = self.getViewBrowser(builder, user=archive.owner)
         self.assertIn('i am failing', browser.contents)

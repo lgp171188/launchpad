@@ -8,6 +8,7 @@ __all__ = ['BugTaskTargetNameCacheUpdater']
 
 from collections import defaultdict
 
+import six
 from zope.interface import implementer
 
 from lp.bugs.model.bugtask import (
@@ -65,7 +66,7 @@ class BugTaskTargetNameCachesTunableLoop(object):
         candidates = defaultdict(set)
         for candidate in candidate_set:
             candidates[candidate[:-1]].add(candidate[-1])
-        return list(candidates.iteritems())
+        return list(six.iteritems(candidates))
 
     def isDone(self):
         """See `ITunableLoop`."""

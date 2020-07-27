@@ -1,11 +1,9 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for structural subscription traversal."""
 
-from urlparse import urlparse
-
-import transaction
+from six.moves.urllib.parse import urlparse
 from zope.publisher.interfaces import NotFound
 
 from lp.registry.browser.distribution import DistributionNavigation
@@ -17,19 +15,18 @@ from lp.registry.browser.milestone import MilestoneNavigation
 from lp.registry.browser.product import ProductNavigation
 from lp.registry.browser.productseries import ProductSeriesNavigation
 from lp.registry.browser.project import ProjectNavigation
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
+    api_url,
     FakeLaunchpadRequest,
     login,
     logout,
     person_logged_in,
     TestCaseWithFactory,
-    ws_object,
     )
-from lp.testing.layers import (
-    AppServerLayer,
-    DatabaseFunctionalLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 
 
@@ -217,7 +214,7 @@ class TestSourcePackageStructuralSubscribersPortletView(
 
 class TestStructuralSubscriptionAPI(TestCaseWithFactory):
 
-    layer = AppServerLayer
+    layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestStructuralSubscriptionAPI, self).setUp()
@@ -228,40 +225,59 @@ class TestStructuralSubscriptionAPI(TestCaseWithFactory):
             self.subscription = self.structure.addBugSubscription(
                 self.owner, self.owner)
             self.initial_filter = self.subscription.bug_filters[0]
-        transaction.commit()
-        self.service = self.factory.makeLaunchpadService(self.owner)
-        self.ws_subscription = ws_object(self.service, self.subscription)
-        self.ws_subscription_filter = ws_object(
-            self.service, self.initial_filter)
+            self.subscription_url = api_url(self.subscription)
+            self.initial_filter_url = api_url(self.initial_filter)
+        self.webservice = webservice_for_person(
+            self.owner, permission=OAuthPermission.WRITE_PUBLIC)
 
     def test_newBugFilter(self):
         # New bug subscription filters can be created with newBugFilter().
-        ws_subscription_filter = self.ws_subscription.newBugFilter()
+        ws_subscription = self.getWebserviceJSON(
+            self.webservice, self.subscription_url)
+        response = self.webservice.named_post(
+            self.subscription_url, "newBugFilter")
+        self.assertEqual(201, response.status)
+        ws_subscription_filter = self.getWebserviceJSON(
+            self.webservice, response.getHeader("Location"))
         self.assertEqual(
             "bug_subscription_filter",
-            urlparse(ws_subscription_filter.resource_type_link).fragment)
+            urlparse(ws_subscription_filter["resource_type_link"]).fragment)
         self.assertEqual(
-            ws_subscription_filter.structural_subscription.self_link,
-            self.ws_subscription.self_link)
+            ws_subscription["self_link"],
+            ws_subscription_filter["structural_subscription_link"])
 
     def test_bug_filters(self):
         # The bug_filters property is a collection of IBugSubscriptionFilter
         # instances previously created by newBugFilter().
-        bug_filter_links = lambda: set(
-            bug_filter.self_link for bug_filter in (
-                self.ws_subscription.bug_filters))
-        initial_filter_link = self.ws_subscription_filter.self_link
+        ws_subscription = self.getWebserviceJSON(
+            self.webservice, self.subscription_url)
+        ws_initial_filter = self.getWebserviceJSON(
+            self.webservice, self.initial_filter_url)
+
+        def bug_filter_links():
+            ws_bug_filters = self.getWebserviceJSON(
+                self.webservice,
+                ws_subscription["bug_filters_collection_link"])
+            return {entry["self_link"] for entry in ws_bug_filters["entries"]}
+
+        initial_filter_link = ws_initial_filter["self_link"]
         self.assertContentEqual(
             [initial_filter_link], bug_filter_links())
         # A new filter appears in the bug_filters collection.
-        ws_subscription_filter1 = self.ws_subscription.newBugFilter()
+        response = self.webservice.named_post(
+            self.subscription_url, "newBugFilter")
+        self.assertEqual(201, response.status)
+        ws_subscription_filter1_link = response.getHeader("Location")
         self.assertContentEqual(
-            [ws_subscription_filter1.self_link, initial_filter_link],
+            [ws_subscription_filter1_link, initial_filter_link],
             bug_filter_links())
         # A second new filter also appears in the bug_filters collection.
-        ws_subscription_filter2 = self.ws_subscription.newBugFilter()
+        response = self.webservice.named_post(
+            self.subscription_url, "newBugFilter")
+        self.assertEqual(201, response.status)
+        ws_subscription_filter2_link = response.getHeader("Location")
         self.assertContentEqual(
-            [ws_subscription_filter1.self_link,
-             ws_subscription_filter2.self_link,
+            [ws_subscription_filter1_link,
+             ws_subscription_filter2_link,
              initial_filter_link],
             bug_filter_links())

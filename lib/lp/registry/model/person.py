@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for a Person."""
@@ -76,6 +76,7 @@ from storm.info import ClassAlias
 from storm.locals import (
     Int,
     Reference,
+    ReferenceSet,
     )
 from storm.store import (
     EmptyResultSet,
@@ -297,11 +298,6 @@ from lp.services.openid.model.openididentifier import OpenIdIdentifier
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
-    )
-from lp.services.salesforce.interfaces import (
-    ISalesforceVoucherProxy,
-    REDEEMABLE_VOUCHER_STATUSES,
-    VOUCHER_STATUSES,
     )
 from lp.services.searchbuilder import any
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
@@ -616,7 +612,7 @@ class Person(
     hide_email_addresses = BoolCol(notNull=True, default=False)
     verbose_bugnotifications = BoolCol(notNull=True, default=True)
 
-    signedcocs = SQLMultipleJoin('SignedCodeOfConduct', joinColumn='owner')
+    signedcocs = ReferenceSet('<primary key>', 'SignedCodeOfConduct.owner_id')
     _ircnicknames = SQLMultipleJoin('IrcID', joinColumn='person')
     jabberids = SQLMultipleJoin('JabberID', joinColumn='person')
 
@@ -1140,46 +1136,6 @@ class Person(
         )
         return rs.one()
 
-    def getAllCommercialSubscriptionVouchers(self, voucher_proxy=None):
-        """See `IPerson`."""
-        if voucher_proxy is None:
-            voucher_proxy = getUtility(ISalesforceVoucherProxy)
-        commercial_vouchers = voucher_proxy.getAllVouchers(self)
-        vouchers = {}
-        for status in VOUCHER_STATUSES:
-            vouchers[status] = []
-        for voucher in commercial_vouchers:
-            assert voucher.status in VOUCHER_STATUSES, (
-                "Voucher %s has unrecognized status %s" %
-                (voucher.voucher_id, voucher.status))
-            vouchers[voucher.status].append(voucher)
-        return vouchers
-
-    def getRedeemableCommercialSubscriptionVouchers(self, voucher_proxy=None):
-        """See `IPerson`."""
-        # Circular imports.
-        from lp.registry.model.commercialsubscription import (
-            CommercialSubscription,
-            )
-        if voucher_proxy is None:
-            voucher_proxy = getUtility(ISalesforceVoucherProxy)
-        vouchers = voucher_proxy.getUnredeemedVouchers(self)
-        # Exclude pending vouchers being sent to Salesforce and vouchers which
-        # have already been redeemed.
-        voucher_ids = [unicode(voucher.voucher_id) for voucher in vouchers]
-        voucher_expr = (
-            "trim(leading 'pending-' "
-            "from CommercialSubscription.sales_system_id)")
-        already_redeemed = list(Store.of(self).using(CommercialSubscription)
-            .find(SQL(voucher_expr), SQL(voucher_expr).is_in(voucher_ids)))
-        redeemable_vouchers = [voucher for voucher in vouchers
-                               if voucher.voucher_id not in already_redeemed]
-        for voucher in redeemable_vouchers:
-            assert voucher.status in REDEEMABLE_VOUCHER_STATUSES, (
-                "Voucher %s has invalid status %s" %
-                (voucher.voucher_id, voucher.status))
-        return redeemable_vouchers
-
     def hasCurrentCommercialSubscription(self):
         """See `IPerson`."""
         # Circular imports.
@@ -1198,7 +1154,7 @@ class Person(
                 Product, TeamParticipation.teamID == Product._ownerID),
             Join(
                 CommercialSubscription,
-                CommercialSubscription.productID == Product.id)
+                CommercialSubscription.product_id == Product.id)
             ).find(
                 Person,
                 CommercialSubscription.date_expires > datetime.now(
@@ -2996,7 +2952,8 @@ class Person(
         """See `IPerson`."""
         # Also assigned to by self._members.
         store = Store.of(self)
-        query = And(SignedCodeOfConduct.ownerID == self.id,
+        query = And(
+            SignedCodeOfConduct.owner_id == self.id,
             Person._is_ubuntu_coc_signer_condition())
         return not store.find(SignedCodeOfConduct, query).is_empty()
 
@@ -3012,13 +2969,13 @@ class Person(
     def activesignatures(self):
         """See `IPerson`."""
         sCoC_util = getUtility(ISignedCodeOfConductSet)
-        return sCoC_util.searchByUser(self.id)
+        return sCoC_util.searchByUser(self)
 
     @property
     def inactivesignatures(self):
         """See `IPerson`."""
         sCoC_util = getUtility(ISignedCodeOfConductSet)
-        return sCoC_util.searchByUser(self.id, active=False)
+        return sCoC_util.searchByUser(self, active=False)
 
     @cachedproperty
     def archive(self):
@@ -3989,7 +3946,7 @@ class PersonSet:
                         tables=[SignedCodeOfConduct],
                         where=And(
                             Person._is_ubuntu_coc_signer_condition(),
-                            SignedCodeOfConduct.ownerID == Person.id))),
+                            SignedCodeOfConduct.owner_id == Person.id))),
                     name='is_ubuntu_coc_signer'))
         if need_location or need_api:
             # New people have no location rows

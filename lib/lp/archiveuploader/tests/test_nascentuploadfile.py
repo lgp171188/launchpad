@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test NascentUploadFile functionality."""
@@ -20,16 +20,14 @@ from debian.deb822 import (
     Deb822,
     Dsc,
     )
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 from testtools.matchers import (
     Contains,
     Equals,
     MatchesAny,
     MatchesListwise,
     MatchesRegex,
+    MatchesSetwise,
+    MatchesStructure,
     )
 
 from lp.archiveuploader.changesfile import ChangesFile
@@ -43,9 +41,14 @@ from lp.archiveuploader.nascentuploadfile import (
 from lp.archiveuploader.tests import AbsolutelyAnythingGoesUploadPolicy
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.compat import (
+    lzma,
+    mock,
+    )
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
 from lp.soyuz.enums import (
+    BinarySourceReferenceType,
     PackagePublishingStatus,
     PackageUploadCustomFormat,
     )
@@ -517,6 +520,23 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         uploadfile.extractAndParseControl()
         self.assertEqual([], list(uploadfile.verifyFormat()))
 
+    @mock.patch("lp.archiveuploader.nascentuploadfile.apt_inst")
+    def test_extractAndParseControl_UploadError_message(self, m_apt_inst):
+        # extractAndParseControl should yield a reasonable error message if
+        # apt_inst.DebFile raises an exception
+        m_apt_inst.DebFile.side_effect = KeyError("banana not found")
+        uploadfile = self.createDebBinaryUploadFile(
+            "empty_0.1_all.deb", "main/admin", "extra", "empty", "0.1", None,
+            members=[])
+        errors = list(uploadfile.extractAndParseControl())
+        self.assertEqual(1, len(errors))
+        error = errors[0]
+        self.assertIsInstance(error, UploadError)
+        self.assertEqual(
+            "empty_0.1_all.deb: extracting control file raised "
+            "<type 'exceptions.KeyError'>: u'banana not found'."
+            " giving up.", str(error))
+
     def test_verifyDebTimestamp_SystemError(self):
         # verifyDebTimestamp produces a reasonable error if we provoke a
         # SystemError from apt_inst.DebFile.
@@ -575,6 +595,31 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             [
                 [u"RandomData", u"Foo\nbar\nbla\n"],
             ], bpr.user_defined_fields)
+
+    def test_built_using(self):
+        # storeInDatabase parses Built-Using into BinarySourceReference
+        # rows, and also adds the unparsed contents to user_defined_fields.
+        uploadfile = self.createDebBinaryUploadFile(
+            "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
+            None)
+        control = self.getBaseControl()
+        control["Built-Using"] = b"bar (= 0.1)"
+        uploadfile.parseControl(control)
+        build = self.factory.makeBinaryPackageBuild()
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=build.archive, distroseries=build.distro_series,
+            pocket=build.pocket, sourcepackagename="bar", version="0.1")
+        bpr = uploadfile.storeInDatabase(build)
+        self.assertThat(
+            bpr.built_using_references,
+            MatchesSetwise(
+                MatchesStructure.byEquality(
+                    binary_package_release=bpr,
+                    source_package_release=spph.sourcepackagerelease,
+                    reference_type=BinarySourceReferenceType.BUILT_USING,
+                    )))
+        self.assertEqual(
+            [[u"Built-Using", u"bar (= 0.1)"]], bpr.user_defined_fields)
 
     def test_homepage(self):
         # storeInDatabase stores homepage field.

@@ -28,7 +28,7 @@ bing_flag = FeatureFixture({'sitesearch.engine.name': 'bing'})
 
 
 def setUp_bing(test):
-    setUp(test)
+    setUp(test, future=True)
     bing_flag.setUp()
 
 
@@ -38,8 +38,8 @@ def tearDown_bing(test):
 
 
 # The default layer of view tests is the DatabaseFunctionalLayer. Tests
-# that require something special like the librarian or mailman must run
-# on a layer that sets those services up.
+# that require something special like the librarian must run on a layer
+# that sets those services up.
 special = {
     'launchpad-search-pages.txt(Bing)': LayeredDocFileSuite(
         '../doc/launchpad-search-pages.txt',
@@ -50,11 +50,12 @@ special = {
     # Run these doctests again with the default search engine.
     'launchpad-search-pages.txt': LayeredDocFileSuite(
         '../doc/launchpad-search-pages.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=PageTestLayer,
         stdout_logging_level=logging.WARNING),
     }
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setUp(test, future=True))

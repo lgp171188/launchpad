@@ -12,8 +12,9 @@ as HTML instead of Atom.
 Define a helper function for parsing the entries:
 
     >>> def parse_entries(contents):
-    ...     entries = [tag for tag in BeautifulSoup(browser.contents,
-    ...                   parseOnlyThese=SoupStrainer('tr'))]
+    ...     entries = [
+    ...         tag for tag in BeautifulSoup(
+    ...             browser.contents, parse_only=SoupStrainer('tr'))]
     ...     return entries
 
 And two for printing the results:

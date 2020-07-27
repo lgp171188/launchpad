@@ -294,7 +294,7 @@ create, and then delete, the needed two people.
 
 First, we will test a merge where there is no decoration.
 
-    >>> winner, loser = endless_supply_of_players.next()
+    >>> winner, loser = next(endless_supply_of_players)
     >>> print decorator_refs(store, winner, loser)
     <BLANKLINE>
 
@@ -316,7 +316,7 @@ There should still be no columns that reference the winner or loser.
 OK, now, this time, we will add some decorator information to the winner
 but not the loser.
 
-    >>> winner, loser = endless_supply_of_players.next()
+    >>> winner, loser = next(endless_supply_of_players)
     >>> winner.setLocation(None, None, 'America/Santiago', winner)
     >>> print decorator_refs(store, winner, loser)
     winner, winner,
@@ -333,7 +333,7 @@ the winner:
 This time, we will have a decorator for the person that is being merged
 INTO another person, but nothing on the target person.
 
-    >>> winner, loser = endless_supply_of_players.next()
+    >>> winner, loser = next(endless_supply_of_players)
     >>> loser.setLocation(None, None, 'America/Santiago', loser)
     >>> print decorator_refs(store, winner, loser)
     loser, loser,
@@ -352,7 +352,7 @@ to_person and the from_person. We expect that the from_person record
 will remain as noise but non-unique columns will have been updated to
 point to the winner, and the to_person will be unaffected.
 
-    >>> winner, loser = endless_supply_of_players.next()
+    >>> winner, loser = next(endless_supply_of_players)
     >>> winner.setLocation(None, None, 'America/Santiago', winner)
     >>> loser.setLocation(None, None, 'America/New_York', loser)
     >>> print decorator_refs(store, winner, loser)
@@ -384,7 +384,7 @@ hand, are carried over just like when merging people.
     >>> today = datetime.now(pytz.timezone('UTC'))
     >>> tomorrow = today + timedelta(days=1)
     >>> poll = IPollSubset(test_team).new(
-    ...     'test-poll', 'Title', 'Proposition', today, tomorrow,
+    ...     u'test-poll', u'Title', u'Proposition', today, tomorrow,
     ...     PollSecrecy.OPEN, allowspoilt=True)
 
     # test_team has a superteam, one active member and a poll.
@@ -399,7 +399,7 @@ hand, are carried over just like when merging people.
     [u'name12']
 
     >>> list(IPollSubset(test_team).getAll())
-    [<Poll at ...]
+    [<lp.registry.model.poll.Poll object at ...]
 
     # Landscape-developers has no super teams, two members and no polls.
 

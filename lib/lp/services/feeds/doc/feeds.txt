@@ -71,7 +71,9 @@ found.
     >>> verifyObject(IThing, thing)
     Traceback (most recent call last):
       ...
-    DoesNotImplement: ...
+    MultipleInvalid: ...
+    Does not declaratively implement the interface
+    The lp.services.feeds.tests.helper.IThing.value attribute was not provided
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.atom')
     Traceback (most recent call last):
       ...
@@ -157,7 +159,7 @@ we are testing xhtml encoding here in case we need it in the future.
     >>> xhtml = FeedTypedData("<b> and &nbsp; and &amp;</b><hr/>",
     ...               content_type="xhtml")
     >>> xhtml.content
-    u'<b> and \xa0 and &amp;</b><hr />'
+    u'<b> and \xa0 and &amp;</b><hr/>'
 
 
 == validate_feed() helper function ==

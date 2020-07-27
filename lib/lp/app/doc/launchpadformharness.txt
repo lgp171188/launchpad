@@ -57,7 +57,7 @@ though:
 We can then get a list of the whole-form errors:
 
   >>> for message in harness.getFormErrors():
-  ...     print message
+  ...     print(message)
   number must not be equal to string length
 
 
@@ -67,9 +67,9 @@ We can also check for per-widget errors:
   ...                           'field.number': 'not a number' })
   >>> harness.hasErrors()
   True
-  >>> print harness.getFieldError('string')
+  >>> print(harness.getFieldError('string'))
   <BLANKLINE>
-  >>> print harness.getFieldError('number')
+  >>> print(harness.getFieldError('number'))
   Invalid integer data
 
 
@@ -80,7 +80,7 @@ by setFieldError():
   ...                           'field.number': '7' })
   >>> harness.hasErrors()
   True
-  >>> print harness.getFieldError('number')
+  >>> print(harness.getFieldError('number'))
   number can not be 7
 
 

@@ -37,7 +37,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicySource,
     )
 from lp.registry.interfaces.person import PersonVisibility
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
@@ -142,12 +142,10 @@ class TestAlsoAffectsLinks(BrowserTestCase):
         browser = self.getUserBrowser(url, user=owner)
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-product')
-        self.assertIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertIn('private-disallow', also_affects['class'])
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-package')
-        self.assertIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertIn('private-disallow', also_affects['class'])
 
     def test_also_affects_links_distro_bug(self):
         # We expect that only the Also Affects Project link is disallowed.
@@ -165,12 +163,10 @@ class TestAlsoAffectsLinks(BrowserTestCase):
         browser = self.getUserBrowser(url, user=owner)
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-product')
-        self.assertIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertIn('private-disallow', also_affects['class'])
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-package')
-        self.assertNotIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertNotIn('private-disallow', also_affects['class'])
 
 
 class TestEmailObfuscated(BrowserTestCase):
@@ -190,7 +186,7 @@ class TestEmailObfuscated(BrowserTestCase):
     def test_user_sees_email_address(self):
         """A logged-in user can see the email address on the page."""
         browser = self.getBrowserForBugWithEmail(no_login=False)
-        self.assertEqual(7, browser.contents.count(self.email_address))
+        self.assertEqual(8, browser.contents.count(self.email_address))
 
     def test_anonymous_sees_not_email_address(self):
         """The anonymous user cannot see the email address on the page."""
@@ -625,18 +621,37 @@ class TestBugCanonicalUrl(BrowserTestCase):
     """
     layer = DatabaseFunctionalLayer
 
-    def test_bug_canonical_url(self):
+    def _create_bug_with_url(self):
         bug = self.factory.makeBug()
-        browser = self.getViewBrowser(bug, rootsite="bugs")
         # Hardcode this to be sure we've really got what we expected, with no
         # confusion about lp's own url generation machinery.
         expected_url = 'http://bugs.launchpad.test/bugs/%d' % bug.id
+
+        return bug, expected_url
+
+    def test_bug_canonical_url(self):
+        bug, expected_url = self._create_bug_with_url()
+        browser = self.getViewBrowser(bug, rootsite="bugs")
+
         self.assertThat(
             browser.contents,
             HTMLContains(Tag(
                 'link rel=canonical',
                 'link',
                 dict(rel='canonical', href=expected_url))))
+
+    def test_bug_opengraph_canonical_url(self):
+        # As test_bug_canonical_url, but ensure it's used correctly in
+        # OpenGraph metadata too
+        bug, expected_url = self._create_bug_with_url()
+        browser = self.getViewBrowser(bug, rootsite="bugs")
+
+        self.assertThat(
+            browser.contents,
+            HTMLContains(Tag(
+                'meta property=og:url',
+                'meta',
+                {'property': 'og:url', 'content': expected_url})))
 
 
 class TestBugMessageAddFormView(TestCaseWithFactory):

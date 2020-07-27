@@ -383,7 +383,7 @@ branch widget is shown.
     >>> nopriv_browser.getLink('Propose for merging').click()
     >>> for widget in get_target_branch_widgets(nopriv_browser):
     ...     print(widget)
-    <input type="text" ...
+    <input ... type="text" ...
 
 Test validation of errors...
 
@@ -638,8 +638,8 @@ one without a reviewer.
     ...     '~fred/fooix/feature')
     >>> fooix = getUtility(IProductSet).getByName('fooix')
     >>> bmp = make_merge_proposal_without_reviewers(
-    ...     factory, registrant=eric, source_branch=source_branch,
-    ...     target_branch=fooix.development_focus.branch,
+    ...     factory, registrant=eric, source=source_branch,
+    ...     target=fooix.development_focus.branch,
     ...     set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
     >>> bmp_url = canonical_url(bmp)
     >>> branch_url = canonical_url(bmp.source_branch)

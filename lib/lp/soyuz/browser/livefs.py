@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """LiveFS views."""
@@ -55,18 +55,20 @@ from lp.services.webapp.breadcrumb import (
     Breadcrumb,
     NameBreadcrumb,
     )
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.build import get_build_by_id_str
 from lp.soyuz.interfaces.livefs import (
     ILiveFS,
     ILiveFSSet,
     LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
     LiveFSFeatureDisabled,
     NoSuchLiveFS,
     )
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuildSet
 
 
-class LiveFSNavigation(Navigation):
+class LiveFSNavigation(WebhookTargetNavigationMixin, Navigation):
     usedfor = ILiveFS
 
     @stepthrough('+build')
@@ -94,7 +96,7 @@ class LiveFSNavigationMenu(NavigationMenu):
 
     facet = 'overview'
 
-    links = ('admin', 'delete', 'edit')
+    links = ('admin', 'edit', 'webhooks', 'delete')
 
     @enabled_with_permission('launchpad.Admin')
     def admin(self):
@@ -103,6 +105,12 @@ class LiveFSNavigationMenu(NavigationMenu):
     @enabled_with_permission('launchpad.Edit')
     def edit(self):
         return Link('+edit', 'Edit live filesystem', icon='edit')
+
+    @enabled_with_permission('launchpad.Edit')
+    def webhooks(self):
+        return Link(
+            '+webhooks', 'Manage webhooks', icon='edit',
+            enabled=bool(getFeatureFlag(LIVEFS_WEBHOOKS_FEATURE_FLAG)))
 
     @enabled_with_permission('launchpad.Edit')
     def delete(self):

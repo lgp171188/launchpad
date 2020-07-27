@@ -1,4 +1,8 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
@@ -16,7 +20,7 @@ from functools import partial
 import hashlib
 import json
 
-from bzrlib import urlutils
+from breezy import urlutils
 from fixtures import MockPatch
 from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon
@@ -30,6 +34,7 @@ from testtools.matchers import (
     EndsWith,
     Equals,
     Is,
+    IsInstance,
     LessThan,
     MatchesDict,
     MatchesListwise,
@@ -40,7 +45,10 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
-from zope.security.interfaces import Unauthorized
+from zope.security.interfaces import (
+    ForbiddenAttribute,
+    Unauthorized,
+    )
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
@@ -57,7 +65,9 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     GitGranteeType,
+    GitListingSort,
     GitObjectType,
+    GitRepositoryStatus,
     GitRepositoryType,
     TargetRevisionControlSystems,
     )
@@ -132,6 +142,7 @@ from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.authserver.xmlrpc import AuthServerAPIView
@@ -164,6 +175,7 @@ from lp.testing import (
     logout,
     person_logged_in,
     record_two_runs,
+    StormStatementRecorder,
     TestCaseWithFactory,
     verifyObject,
     )
@@ -201,6 +213,23 @@ class TestGitRepository(TestCaseWithFactory):
             self.factory.makeGitRepository(),
             DoesNotSnapshot(large_properties, IGitRepositoryView))
 
+    def test_git_repository_default_status(self):
+        repository = self.factory.makeGitRepository()
+        store = Store.of(repository)
+
+        self.assertEqual(GitRepositoryStatus.AVAILABLE, repository.status)
+
+        removeSecurityProxy(repository).status = GitRepositoryStatus.CREATING
+        store.flush()
+        self.assertEqual(GitRepositoryStatus.CREATING, repository.status)
+
+    def test_git_repository_status_is_read_only(self):
+        repository = self.factory.makeGitRepository()
+        with person_logged_in(repository.owner):
+            self.assertRaises(
+                ForbiddenAttribute,
+                setattr, repository, 'status', GitRepositoryStatus.CREATING)
+
     def test_unique_name_project(self):
         project = self.factory.makeProduct()
         repository = self.factory.makeGitRepository(target=project)
@@ -216,6 +245,15 @@ class TestGitRepository(TestCaseWithFactory):
             "~%s/%s/+source/%s/+git/%s" % (
                 repository.owner.name, dsp.distribution.name,
                 dsp.sourcepackagename.name, repository.name),
+            repository.unique_name)
+
+    def test_unique_name_oci_project(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertEqual(
+            "~%s/%s/+oci/%s/+git/%s" % (
+                repository.owner.name, oci_project.distribution.name,
+                oci_project.ociprojectname.name, repository.name),
             repository.unique_name)
 
     def test_unique_name_personal(self):
@@ -234,6 +272,11 @@ class TestGitRepository(TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         repository = self.factory.makeGitRepository(target=dsp)
         self.assertEqual(dsp, repository.target)
+
+    def test_target_ociproject(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertEqual(oci_project, repository.target)
 
     def test_target_personal(self):
         owner = self.factory.makePerson()
@@ -493,6 +536,38 @@ class TestGitRepository(TestCaseWithFactory):
             include_transitive=False)
         self.assertEqual([exact_grant], list(results))
 
+    def test_getRefsPermission_query_count(self):
+        repository = self.factory.makeGitRepository()
+        owner = repository.owner
+        grantees = [self.factory.makePerson() for _ in range(2)]
+
+        ref_paths = ['refs/heads/master']
+
+        def add_fake_refs_to_request():
+            ref_paths.append(
+                self.factory.getUniqueUnicode("refs/heads/branch"))
+
+            with admin_logged_in():
+                teams = [self.factory.makeTeam() for _ in range(2)]
+                teams[0].addMember(grantees[0], teams[0].teamowner)
+                teams[1].addMember(grantees[1], teams[1].teamowner)
+            master_rule = self.factory.makeGitRule(
+                repository=repository, ref_pattern=ref_paths[-1])
+            self.factory.makeGitRuleGrant(
+                rule=master_rule, grantee=teams[0], can_create=True)
+            self.factory.makeGitRuleGrant(
+                rule=master_rule, grantee=teams[1], can_push=True)
+
+        def check_permissions():
+            repository.checkRefPermissions(grantees[0], ref_paths)
+
+        recorder1, recorder2 = record_two_runs(
+            check_permissions, add_fake_refs_to_request, 1, 10,
+            login_method=lambda: login_person(owner))
+
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+        self.assertEqual(7, recorder1.count)
+
 
 class TestGitIdentityMixin(TestCaseWithFactory):
     """Test the defaults and identities provided by GitIdentityMixin."""
@@ -549,6 +624,18 @@ class TestGitIdentityMixin(TestCaseWithFactory):
             "%s/+source/%s" % (
                 dsp.distribution.name, dsp.sourcepackagename.name))
 
+    def test_git_identity_default_for_oci_project(self):
+        # If a repository is the default for an OCI project, then its Git
+        # identity uses the path to that OCI project.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepository(
+                oci_project, repository, force_oci=True)
+        self.assertGitIdentity(
+            repository,
+            "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name))
+
     def test_git_identity_owner_default_for_project(self):
         # If a repository is a person's default for a project, then its Git
         # identity is a combination of the person and project names.
@@ -573,6 +660,21 @@ class TestGitIdentityMixin(TestCaseWithFactory):
             "~%s/%s/+source/%s" % (
                 repository.owner.name, dsp.distribution.name,
                 dsp.sourcepackagename.name))
+
+    def test_git_identity_owner_default_for_oci_project(self):
+        # If a repository is a person's default for an OCI project, then its
+        # Git identity is a combination of the person name and the OCI
+        # project path.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with person_logged_in(repository.owner) as user:
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, oci_project, repository, user)
+        self.assertGitIdentity(
+            repository,
+            "~%s/%s/+oci/%s" % (
+                repository.owner.name, oci_project.pillar.name,
+                oci_project.name))
 
     def test_identities_no_defaults(self):
         # If there are no defaults, the only repository identity is the
@@ -629,6 +731,34 @@ class TestGitIdentityMixin(TestCaseWithFactory):
             [("mint/+source/choc", dsp),
              ("~eric/mint/+source/choc", eric_dsp),
              ("~eric/mint/+source/choc/+git/choc-repo", repository)],
+            repository.getRepositoryIdentities())
+
+    def test_default_for_oci_project(self):
+        # If a repository is the default for an OCI project, then that is
+        # the preferred identity.  Target defaults are preferred over
+        # owner-target defaults.
+        mint = self.factory.makeDistribution(name="mint")
+        eric = self.factory.makePerson(name="eric")
+        mint_choc = self.factory.makeOCIProject(
+            pillar=mint, ociprojectname="choc")
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=mint_choc, name="choc-repo")
+        oci_project = repository.target
+        with admin_logged_in():
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, oci_project, repository, repository.owner)
+            self.repository_set.setDefaultRepository(
+                oci_project, repository, force_oci=True)
+        eric_oci_project = getUtility(IPersonOCIProjectFactory).create(
+            eric, oci_project)
+        self.assertEqual(
+            [ICanHasDefaultGitRepository(target)
+             for target in (oci_project, eric_oci_project)],
+            repository.getRepositoryDefaults())
+        self.assertEqual(
+            [("mint/+oci/choc", oci_project),
+             ("~eric/mint/+oci/choc", eric_oci_project),
+             ("~eric/mint/+oci/choc/+git/choc-repo", repository)],
             repository.getRepositoryIdentities())
 
 
@@ -800,6 +930,17 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
             previewdiff_id=preview_diff.id,
             inline_comments={"1": "Must disappear."},
         )
+        self.repository.destroySelf(break_references=True)
+
+    def test_destroySelf_with_merge_proposal_within_self(self):
+        # Deletion works if the repository has a merge proposal from one
+        # branch to another within itself.
+        [source_ref] = self.factory.makeGitRefs(repository=self.repository)
+        [prerequisite_ref] = self.factory.makeGitRefs(
+            repository=self.repository)
+        self.factory.makeBranchMergeProposalForGit(
+            registrant=self.user, target_ref=self.ref,
+            prerequisite_ref=prerequisite_ref, source_ref=source_ref)
         self.repository.destroySelf(break_references=True)
 
     def test_related_webhooks_deleted(self):
@@ -1279,6 +1420,16 @@ class TestGitRepositoryNamespace(TestCaseWithFactory):
             sourcepackagename=dsp.sourcepackagename)
         self.assertEqual(namespace, repository.namespace)
 
+    def test_namespace_oci_project(self):
+        # The namespace attribute of an OCI project repository points to the
+        # namespace that corresponds to
+        # ~owner/distribution/+oci/ociprojectname.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        namespace = getUtility(IGitNamespaceSet).get(
+            person=repository.owner, oci_project=oci_project)
+        self.assertEqual(namespace, repository.namespace)
+
 
 class TestGitRepositoryPendingUpdates(TestCaseWithFactory):
     """Are there changes to this repository not reflected in the database?"""
@@ -1339,6 +1490,15 @@ class TestGitRepositoryPrivacy(TestCaseWithFactory):
         # no AccessPolicyArtifact is created for a package repository.
         repository = self.factory.makeGitRepository(
             target=self.factory.makeDistributionSourcePackage(),
+            information_type=InformationType.USERDATA)
+        removeSecurityProxy(repository)._reconcileAccess()
+        self.assertEqual([], get_policies_for_artifact(repository))
+
+    def test__reconcileAccess_for_oci_project_repository(self):
+        # Git repository privacy isn't yet supported for OCI projects, so no
+        # AccessPolicyArtifact is created for an OCI project repository.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject(),
             information_type=InformationType.USERDATA)
         removeSecurityProxy(repository)._reconcileAccess()
         self.assertEqual([], get_policies_for_artifact(repository))
@@ -2130,6 +2290,15 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
             repository.setTarget(target=dsp, user=owner)
         self.assertEqual(dsp, repository.target)
 
+    def test_personal_to_oci_project(self):
+        # A personal repository can be moved to an OCI project.
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=owner, target=owner)
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(owner):
+            repository.setTarget(target=oci_project, user=owner)
+        self.assertEqual(oci_project, repository.target)
+
     def test_project_to_other_project(self):
         # Move a repository from one project to another.
         repository = self.factory.makeGitRepository()
@@ -2145,6 +2314,14 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
         with person_logged_in(repository.owner):
             repository.setTarget(target=dsp, user=repository.owner)
         self.assertEqual(dsp, repository.target)
+
+    def test_project_to_oci_project(self):
+        # Move a repository from a project to an OCI project.
+        repository = self.factory.makeGitRepository()
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
 
     def test_project_to_personal(self):
         # Move a repository from a project to a personal namespace.
@@ -2172,11 +2349,56 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
             repository.setTarget(target=project, user=repository.owner)
         self.assertEqual(project, repository.target)
 
+    def test_package_to_oci_project(self):
+        # Move a repository from a package to an OCI project.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeDistributionSourcePackage())
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
+
     def test_package_to_personal(self):
         # Move a repository from a package to a personal namespace.
         owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(
             owner=owner, target=self.factory.makeDistributionSourcePackage())
+        with person_logged_in(owner):
+            repository.setTarget(target=owner, user=owner)
+        self.assertEqual(owner, repository.target)
+
+    def test_oci_project_to_other_package(self):
+        # Move a repository from one OCI project to another.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject())
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
+
+    def test_oci_project_to_project(self):
+        # Move a repository from an OCI project to a project.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject())
+        project = self.factory.makeProduct()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=project, user=repository.owner)
+        self.assertEqual(project, repository.target)
+
+    def test_oci_project_to_oci_project(self):
+        # Move a repository from an OCI project to an OCI project.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject())
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
+
+    def test_oci_project_to_personal(self):
+        # Move a repository from an OCI project to a personal namespace.
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=owner, target=self.factory.makeOCIProject())
         with person_logged_in(owner):
             repository.setTarget(target=owner, user=owner)
         self.assertEqual(owner, repository.target)
@@ -3113,6 +3335,38 @@ class TestGitRepositorySet(TestCaseWithFactory):
             public_repositories + [private_repository],
             self.repository_set.getRepositories(other_person, project))
 
+    def test_getRepositories_order_by(self):
+        # We can get a collection of all repositories with a given sort order.
+        repositories = [self.factory.makeGitRepository() for _ in range(5)]
+        modified_dates = [
+            datetime(2010, 1, 1, tzinfo=pytz.UTC),
+            datetime(2015, 1, 1, tzinfo=pytz.UTC),
+            datetime(2014, 1, 1, tzinfo=pytz.UTC),
+            datetime(2020, 1, 1, tzinfo=pytz.UTC),
+            datetime(2019, 1, 1, tzinfo=pytz.UTC),
+            ]
+        for repository, modified_date in zip(repositories, modified_dates):
+            removeSecurityProxy(repository).date_last_modified = modified_date
+        removeSecurityProxy(repositories[0]).transitionToInformationType(
+            InformationType.PRIVATESECURITY, repositories[0].registrant)
+        self.assertEqual(
+            [repositories[3], repositories[4], repositories[1],
+             repositories[2], repositories[0]],
+            list(self.repository_set.getRepositories(
+                repositories[0].owner,
+                order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST)))
+        self.assertEqual(
+            [repositories[3], repositories[4], repositories[1]],
+            list(self.repository_set.getRepositories(
+                repositories[0].owner,
+                order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                modified_since_date=datetime(2014, 12, 1, tzinfo=pytz.UTC))))
+        self.assertEqual(
+            [repositories[3], repositories[4], repositories[1],
+             repositories[2]],
+            list(self.repository_set.getRepositories(
+                None, order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST)))
+
     def test_getRepositoryVisibilityInfo_empty_repository_names(self):
         # If repository_names is empty, getRepositoryVisibilityInfo returns
         # an empty visible_repositories list.
@@ -3205,6 +3459,29 @@ class TestGitRepositorySet(TestCaseWithFactory):
                 GitTargetError,
                 self.repository_set.setDefaultRepositoryForOwner,
                 person, person, repository, user)
+
+    def test_setDefaultRepository_refuses_oci_project(self):
+        # setDefaultRepository refuses if the target is an OCI project.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with admin_logged_in():
+            self.assertRaises(
+                GitTargetError, self.repository_set.setDefaultRepository,
+                oci_project, repository)
+
+    def test_setDefaultRepository_accepts_oci_project_override(self):
+        # setDefaultRepository refuses if the target is an OCI project.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepository(
+                oci_project, repository, force_oci=True)
+        identity_path = "%s/+oci/%s" % (
+                oci_project.distribution.name, oci_project.name)
+        self.assertEqual(
+            identity_path, repository.shortened_path, "shortened path")
+        self.assertEqual(
+            "lp:%s" % identity_path, repository.git_identity, "git identity")
 
     def test_setDefaultRepositoryForOwner_noop(self):
         # If a repository is already the target owner default, setting
@@ -3352,6 +3629,26 @@ class TestGitRepositorySetDefaultsPackage(
         return target.distribution.owner
 
 
+class TestGitRepositorySetDefaultsOCIProject(
+    TestGitRepositorySetDefaultsMixin, TestCaseWithFactory):
+
+    def setUp(self):
+        super(TestGitRepositorySetDefaultsOCIProject, self).setUp()
+        self.set_method = (lambda target, repository, user:
+            self.repository_set.setDefaultRepository(
+                target, repository, force_oci=True))
+
+    def makeTarget(self, template=None):
+        kwargs = {}
+        if template is not None:
+            kwargs["pillar"] = template.pillar
+        return self.factory.makeOCIProject(**kwargs)
+
+    @staticmethod
+    def getPersonForLogin(target):
+        return target.pillar.owner
+
+
 class TestGitRepositorySetDefaultsOwnerMixin(
     TestGitRepositorySetDefaultsMixin):
 
@@ -3409,6 +3706,12 @@ class TestGitRepositorySetDefaultsOwnerPackage(
     pass
 
 
+class TestGitRepositorySetDefaultsOwnerOCIProject(
+    TestGitRepositorySetDefaultsOwnerMixin,
+    TestGitRepositorySetDefaultsOCIProject):
+    pass
+
+
 class TestGitRepositoryWebservice(TestCaseWithFactory):
     """Tests for the webservice."""
 
@@ -3449,6 +3752,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(201, response.status)
         repository = webservice.get(response.getHeader("Location")).jsonBody()
         self.assertThat(repository, ContainsDict({
+            "id": IsInstance(int),
             "repository_type": Equals("Hosted"),
             "registrant_link": EndsWith(owner_url),
             "owner_link": EndsWith(owner_url),
@@ -3467,6 +3771,21 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     def test_new_person(self):
         self.assertNewWorks(self.factory.makePerson())
+
+    def test_new_repo_not_owner(self):
+        non_ascii_name = u'André Luís Lopes'
+        other_user = self.factory.makePerson(displayname=non_ascii_name)
+        owner_url = api_url(other_user)
+        webservice_user = self.factory.makePerson()
+        name = "repository"
+        webservice = webservice_for_person(
+            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            "/+git", "new", owner=owner_url, target=owner_url, name=name)
+        self.assertEqual(400, response.status)
+        self.assertIn(u'cannot create Git repositories owned by'
+                      u' André Luís Lopes', response.body.decode('utf-8'))
 
     def assertGetRepositoriesWorks(self, target_db):
         if IPerson.providedBy(target_db):
@@ -3494,7 +3813,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             response = webservice.named_get(
                 "/+git", "getRepositories", user=owner_url, target=target_url)
             self.assertEqual(200, response.status)
-            self.assertEqual(
+            self.assertContentEqual(
                 [webservice.getAbsoluteUrl(url) for url in repos_url],
                 [entry["self_link"]
                  for entry in response.jsonBody()["entries"]])
@@ -3664,6 +3983,17 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             repository_url, "getRefByPath", path="c")
         self.assertEqual(200, response.status)
         self.assertIsNone(response.jsonBody())
+
+    def test_getRefByPath_query_count(self):
+        repository_db = self.factory.makeGitRepository()
+        ref_dbs = self.factory.makeGitRefs(
+            repository=repository_db, paths=[
+                "refs/heads/devel", "refs/heads/master"])
+
+        with StormStatementRecorder() as recorder:
+            ref = repository_db.getRefByPath("master")
+            self.assertEqual(ref_dbs[1], ref)
+            self.assertEqual(1, recorder.count)
 
     def test_subscribe(self):
         # A user can subscribe to a repository.

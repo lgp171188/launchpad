@@ -15,7 +15,7 @@ __all__ = [
 import math
 
 from lazr.restful.interface import copy_field
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.boolwidgets import CheckBoxWidget
 from zope.formlib.interfaces import IInputWidget
@@ -179,7 +179,7 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
             projectgroup_bugtracker_caption = "Somewhere else"
         else:
             projectgroup_bugtracker_caption = structured(
-                'In the %s bug tracker (<a href="%s">%s</a>)</label>',
+                'In the %s bug tracker (<a href="%s">%s</a>)',
                 projectgroup.displayname,
                 canonical_url(projectgroup.bugtracker),
                 projectgroup.bugtracker.title).escapedtext

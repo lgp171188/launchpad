@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webhook interfaces."""
@@ -22,17 +22,15 @@ __all__ = [
     'ValidWebhookEventTypeVocabulary',
     ]
 
-import httplib
-
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -42,6 +40,8 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+import six
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -75,12 +75,14 @@ from lp.services.webservice.apihelpers import (
 WEBHOOK_EVENT_TYPES = {
     "bzr:push:0.1": "Bazaar push",
     "git:push:0.1": "Git push",
+    "livefs:build:0.1": "Live filesystem build",
     "merge-proposal:0.1": "Merge proposal",
+    "oci-recipe:build:0.1": "OCI recipe build",
     "snap:build:0.1": "Snap build",
     }
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class WebhookFeatureDisabled(Exception):
     """Only certain users can create new webhooks."""
 
@@ -104,7 +106,7 @@ class AnyWebhookEventTypeVocabulary(SimpleVocabulary):
     def __init__(self, context):
         terms = [
             self.createTerm(key, key, value)
-            for key, value in WEBHOOK_EVENT_TYPES.iteritems()]
+            for key, value in six.iteritems(WEBHOOK_EVENT_TYPES)]
         super(AnyWebhookEventTypeVocabulary, self).__init__(terms)
 
 
@@ -123,9 +125,8 @@ class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
         super(ValidWebhookEventTypeVocabulary, self).__init__(terms)
 
 
+@exported_as_webservice_entry(as_of='beta')
 class IWebhook(Interface):
-
-    export_as_webservice_entry(as_of='beta')
 
     id = Int(title=_("ID"), readonly=True, required=True)
 
@@ -205,9 +206,8 @@ class IWebhookSet(Interface):
         """Trigger subscribed webhooks to deliver a payload."""
 
 
+@exported_as_webservice_entry(as_of='beta')
 class IWebhookTarget(Interface):
-
-    export_as_webservice_entry(as_of='beta')
 
     webhooks = exported(doNotSnapshot(CollectionField(
         title=_("Webhooks for this target."),
@@ -259,10 +259,9 @@ class IWebhookJobSource(IJobSource):
         """Delete all `IWebhookJob`s for the given `IWebhook`."""
 
 
+@exported_as_webservice_entry('webhook_delivery', as_of='beta')
 class IWebhookDeliveryJob(IRunnableJob):
     """A Job that delivers an event to a webhook consumer."""
-
-    export_as_webservice_entry('webhook_delivery', as_of='beta')
 
     webhook = exported(Reference(
         title=_("Webhook"),

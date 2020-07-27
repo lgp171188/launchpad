@@ -62,7 +62,7 @@ class FileUploadProtocol(basic.LineReceiver):
     were just established to start a new upload.
     """
 
-    delimiter = '\r\n'  # same as HTTP
+    delimiter = b'\r\n'  # same as HTTP
     state = 'command'
 
     def lineReceived(self, line):
@@ -76,7 +76,7 @@ class FileUploadProtocol(basic.LineReceiver):
     def sendError(self, msg, code='400'):
         """Sends a correctly formatted error to the client, and closes the
         connection."""
-        self.sendLine(code + ' ' + msg)
+        self.sendLine((code + ' ' + msg).encode('UTF-8'))
         self.transport.loseConnection()
 
     def unknownError(self, failure=None):
@@ -92,7 +92,7 @@ class FileUploadProtocol(basic.LineReceiver):
         failure.trap(WrongDatabaseError)
         exc = failure.value
         raise ProtocolViolation(
-            "Wrong database %r, should be %r"
+            "Wrong database '%s', should be '%s'"
             % (exc.clientDatabaseName, exc.serverDatabaseName))
 
     def protocolErrors(self, failure):
@@ -105,6 +105,7 @@ class FileUploadProtocol(basic.LineReceiver):
     def line_command(self, line):
         try:
             command, args = line.split(None, 1)
+            command = command.decode('UTF-8')
         except ValueError:
             raise ProtocolViolation('Bad command: ' + line)
 
@@ -113,7 +114,7 @@ class FileUploadProtocol(basic.LineReceiver):
 
     def line_header(self, line):
         # Blank line signals the end of the headers
-        if line == '':
+        if line == b'':
             # If File-Content-ID was specified, File-Alias-ID must be too, and
             # vice-versa.
             contentID = self.newFile.contentID
@@ -134,13 +135,13 @@ class FileUploadProtocol(basic.LineReceiver):
 
             # Make sure rawDataReceived is *always* called, so that zero-byte
             # uploads don't hang.  It's harmless the rest of the time.
-            self.rawDataReceived('')
+            self.rawDataReceived(b'')
 
             return
 
         # Simple RFC 822-ish header parsing
         try:
-            name, value = line.split(':', 2)
+            name, value = line.decode('UTF-8').split(':', 2)
         except ValueError:
             raise ProtocolViolation('Invalid header: ' + line)
 
@@ -216,9 +217,10 @@ class FileUploadProtocol(basic.LineReceiver):
                 fileID, aliasID = ids
                 if self.newFile.contentID is None:
                     # Respond with deprecated server-generated IDs.
-                    self.sendLine('200 %s/%s' % (fileID, aliasID))
+                    self.sendLine(
+                        ('200 %s/%s' % (fileID, aliasID)).encode('UTF-8'))
                 else:
-                    self.sendLine('200')
+                    self.sendLine(b'200')
             deferred.addBoth(self.logDebugging)
             deferred.addCallback(_sendID)
             deferred.addErrback(self.translateErrors)

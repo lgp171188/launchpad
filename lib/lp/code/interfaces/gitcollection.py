@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A collection of Git repositories.
@@ -54,8 +54,7 @@ class IGitCollection(Interface):
             collection.
         """
 
-    def getRepositories(eager_load=False, order_by_date=False,
-                        order_by_id=False):
+    def getRepositories(eager_load=False, sort_by=None):
         """Return a result set of all repositories in this collection.
 
         The returned result set will also join across the specified tables
@@ -65,9 +64,8 @@ class IGitCollection(Interface):
 
         :param eager_load: If True trigger eager loading of all the related
             objects in the collection.
-        :param order_by_date: If True, order results by descending
-            modification date.
-        :param order_by_id: If True, order results by ascending ID.
+        :param sort_by: An item from the `GitListingSort` enumeration, or
+            None to return an unordered result set.
         """
 
     def getRepositoryIds():
@@ -138,6 +136,9 @@ class IGitCollection(Interface):
     def inDistributionSourcePackage(distro_source_package):
         """Restrict to repositories in a package for a distribution."""
 
+    def inOCIProject(oci_project):
+        """Restrict to repositories in an OCI Project."""
+
     def isPersonal():
         """Restrict the collection to personal repositories."""
 
@@ -147,6 +148,9 @@ class IGitCollection(Interface):
     def isExclusive():
         """Restrict the collection to repositories owned by exclusive
         people."""
+
+    def modifiedSince(date):
+        """Restrict the collection to repositories modified since `date`."""
 
     def ownedBy(person):
         """Restrict the collection to repositories owned by 'person'."""

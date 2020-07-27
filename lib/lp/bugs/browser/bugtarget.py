@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTarget-related browser views."""
@@ -19,19 +19,22 @@ __all__ = [
     "product_to_productbugconfiguration",
     ]
 
-from cStringIO import StringIO
 from datetime import datetime
 from functools import partial
-import httplib
+from io import BytesIO
 from operator import itemgetter
-import urllib
 
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
-from sqlobject import SQLObjectNotFound
-from z3c.ptcompat import ViewPageTemplateFile
+import six
+from six.moves import http_client
+from six.moves.urllib.parse import (
+    quote,
+    urlencode,
+    )
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.form import Fields
 from zope.formlib.interfaces import InputErrors
@@ -118,7 +121,6 @@ from lp.bugs.model.structuralsubscription import (
     get_structural_subscriptions_for_target,
     )
 from lp.bugs.utilities.filebugdataparser import FileBugData
-from lp.hardwaredb.interfaces.hwdb import IHWSubmissionSet
 from lp.registry.browser.product import ProductConfigureBase
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
@@ -528,6 +530,8 @@ class FileBugViewBase(LaunchpadFormView):
         # enters a package name but then selects "I don't know".
         if self.request.form.get("packagename_option") == "none":
             packagename = None
+            if IDistributionSourcePackage.providedBy(context):
+                context = context.distribution
 
         linkified_ack = structured(FormattersAPI(
             self.getAcknowledgementMessage(self.context)).text_to_html(
@@ -612,7 +616,7 @@ class FileBugViewBase(LaunchpadFormView):
                     file_description = filename
 
                 bug.addAttachment(
-                    owner=self.user, data=StringIO(data['filecontent']),
+                    owner=self.user, data=BytesIO(data['filecontent']),
                     filename=filename, description=file_description,
                     comment=attachment_comment, is_patch=data['patch'])
 
@@ -646,13 +650,6 @@ class FileBugViewBase(LaunchpadFormView):
                     notifications.append(
                         '%s has been subscribed to this bug.' %
                         person.displayname)
-
-        submission_set = getUtility(IHWSubmissionSet)
-        for submission_key in extra_data.hwdb_submission_keys:
-            submission = submission_set.getBySubmissionKey(
-                submission_key, self.user)
-            if submission is not None:
-                bug.linkHWSubmission(submission)
 
         # Give the user some feedback on the bug just opened.
         for notification in notifications:
@@ -835,7 +832,7 @@ class FileBugViewBase(LaunchpadFormView):
         try:
             return getUtility(IProcessApportBlobJobSource).getByBlobUUID(
                 self.extra_data_token)
-        except SQLObjectNotFound:
+        except NotFoundError:
             return None
 
     @property
@@ -900,7 +897,7 @@ class FileBugAdvancedView(LaunchpadView):
         filebug_url = canonical_url(
             self.context, rootsite='bugs', view_name='+filebug')
         self.request.response.redirect(
-            filebug_url, status=httplib.MOVED_PERMANENTLY)
+            filebug_url, status=http_client.MOVED_PERMANENTLY)
 
 
 class IDistroBugAddForm(IBugAddForm):
@@ -1098,7 +1095,7 @@ class ProjectGroupFileBugGuidedView(LaunchpadFormView):
         base = canonical_url(
             data['product'], view_name='+filebug', rootsite='bugs')
         title = data['title'].encode('utf8')
-        query = urllib.urlencode([
+        query = urlencode([
             ('field.title', title),
             ('field.tags', ' '.join(data['tags'])),
             ])
@@ -1215,7 +1212,7 @@ class BugTargetBugTagsView(LaunchpadView):
     def _getSearchURL(self, tag):
         """Return the search URL for the tag."""
         # Use path_only here to reduce the size of the rendered page.
-        return "+bugs?field.tag=%s" % urllib.quote(tag)
+        return "+bugs?field.tag=%s" % quote(tag)
 
     @property
     def tags_cloud_data(self):
@@ -1230,7 +1227,7 @@ class BugTargetBugTagsView(LaunchpadView):
                 count=count,
                 url=self._getSearchURL(tag),
                 )
-            for (tag, count) in tags.iteritems()],
+            for (tag, count) in six.iteritems(tags)],
             key=itemgetter('count'), reverse=True)
 
     @property

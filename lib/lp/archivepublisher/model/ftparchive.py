@@ -4,10 +4,10 @@
 from collections import defaultdict
 import os
 import re
-from StringIO import StringIO
 import time
 
 import scandir
+import six
 from storm.expr import (
     Desc,
     Join,
@@ -201,7 +201,7 @@ class FTPArchiveHandler:
         stderr_handler.finalize()
         failures = sorted([
             (tag, receiver.returncode)
-            for tag, receiver in returncodes.iteritems()
+            for tag, receiver in six.iteritems(returncodes)
                 if receiver.returncode != 0])
         if len(failures) > 0:
             by_arch = ["%s (returned %d)" % failure for failure in failures]
@@ -694,8 +694,8 @@ class FTPArchiveHandler:
 
         self.log.debug("Writing file lists for %s" % suite)
         series, pocket = self.distro.getDistroSeriesAndPocket(suite)
-        for component, architectures in filelist.iteritems():
-            for architecture, file_names in architectures.iteritems():
+        for component, architectures in six.iteritems(filelist):
+            for architecture, file_names in six.iteritems(architectures):
                 # XXX wgrant 2010-10-06: There must be a better place to do
                 # this.
                 if architecture == "source":
@@ -753,7 +753,7 @@ class FTPArchiveHandler:
         explicitly marked as dirty. dirty_pockets must be a nested
         dictionary of booleans, keyed by distroseries.name then pocket.
         """
-        apt_config = StringIO()
+        apt_config = six.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
                                           self._config.overrideroot,
                                           self._config.cacheroot,
@@ -874,7 +874,7 @@ class FTPArchiveHandler:
         except OSError:
             pass
 
-        apt_config = StringIO()
+        apt_config = six.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
                                           self._config.overrideroot,
                                           self._config.cacheroot,

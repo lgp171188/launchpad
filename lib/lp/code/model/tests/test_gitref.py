@@ -14,7 +14,7 @@ from datetime import (
 import hashlib
 import json
 
-from bzrlib import urlutils
+from breezy import urlutils
 import pytz
 import responses
 from storm.store import Store

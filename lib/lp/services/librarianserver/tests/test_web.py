@@ -6,15 +6,15 @@ __metaclass__ = type
 from datetime import datetime
 from gzip import GzipFile
 import hashlib
-import httplib
 from io import BytesIO
 import os
 import unittest
-from urlparse import urlparse
 
 from lazr.uri import URI
 import pytz
 import requests
+from six.moves import http_client
+from six.moves.urllib.parse import urlparse
 from storm.expr import SQL
 from testtools.matchers import EndsWith
 import transaction
@@ -360,7 +360,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         response.raise_for_status()
         # Use the network level protocol because DNS resolution won't work
         # here (no wildcard support)
-        connection = httplib.HTTPConnection(
+        connection = http_client.HTTPConnection(
             config.librarian.download_host,
             config.librarian.download_port)
         # A valid subdomain based URL must work.

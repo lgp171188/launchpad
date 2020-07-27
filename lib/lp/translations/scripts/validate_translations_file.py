@@ -8,18 +8,12 @@ __all__ = [
     'ValidateTranslationsFile',
     ]
 
-from cStringIO import StringIO
 import logging
 from optparse import OptionParser
 import os.path
 
 from lp.services import scripts
 from lp.translations.utilities.gettext_po_parser import POParser
-from lp.translations.utilities.mozilla_dtd_parser import DtdFile
-from lp.translations.utilities.mozilla_xpi_importer import (
-    MozillaZipImportParser,
-    )
-from lp.translations.utilities.xpi_manifest import XpiManifest
 
 
 class UnknownFileType(Exception):
@@ -31,24 +25,9 @@ def validate_unknown_file_type(filename, content):
     raise UnknownFileType("Unrecognized file type for '%s'." % filename)
 
 
-def validate_dtd(filename, content):
-    """Validate XPI DTD file."""
-    DtdFile(filename, filename, content)
-
-
 def validate_po(filename, content):
     """Validate a gettext PO or POT file."""
     POParser().parse(content)
-
-
-def validate_xpi(filename, content):
-    """Validate an XPI archive."""
-    MozillaZipImportParser(filename, StringIO(content))
-
-
-def validate_xpi_manifest(filename, content):
-    """Validate XPI manifest."""
-    XpiManifest(content)
 
 
 class ValidateTranslationsFile:
@@ -57,11 +36,8 @@ class ValidateTranslationsFile:
     name = 'validate-translations-file'
 
     validators = {
-        'dtd': validate_dtd,
-        'manifest': validate_xpi_manifest,
         'po': validate_po,
         'pot': validate_po,
-        'xpi': validate_xpi,
         }
 
     def __init__(self, test_args=None):
@@ -128,5 +104,6 @@ class ValidateTranslationsFile:
         :param filename: Name of a file to read.
         :return: Whether the file was parsed successfully.
         """
-        content = file(filename).read()
+        with open(filename) as f:
+            content = f.read()
         return self._validateContent(filename, content)

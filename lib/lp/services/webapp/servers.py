@@ -6,7 +6,6 @@
 __metaclass__ = type
 
 import threading
-import xmlrpclib
 
 from lazr.restful.interfaces import (
     ICollectionResource,
@@ -20,6 +19,7 @@ from lazr.restful.publisher import (
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import six
+from six.moves import xmlrpc_client
 from six.moves.urllib.parse import parse_qs
 import transaction
 from transaction.interfaces import ISynchronizer
@@ -64,6 +64,7 @@ from lp.app import versioninfo
 from lp.app.errors import UnexpectedFormData
 import lp.layers
 from lp.services.config import config
+from lp.services.encoding import wsgi_native_string
 from lp.services.features import get_relevant_feature_controller
 from lp.services.features.flags import NullFeatureController
 from lp.services.feeds.interfaces.application import IFeedsApplication
@@ -112,7 +113,7 @@ from lp.testopenid.interfaces.server import ITestOpenIDApplication
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
-class StepsToGo:
+class StepsToGo(six.Iterator):
     """
 
     >>> class FakeRequest:
@@ -194,7 +195,7 @@ class StepsToGo:
         except IndexError:
             return None
 
-    def next(self):
+    def __next__(self):
         value = self.consume()
         if value is None:
             raise StopIteration
@@ -528,25 +529,10 @@ def get_query_string_params(request):
     parsed_qs = parse_qs(query_string, keep_blank_values=True)
     # Use BrowserRequest._decode() for decoding the received parameters.
     decoded_qs = {}
-    for key, values in parsed_qs.iteritems():
+    for key, values in six.iteritems(parsed_qs):
         decoded_qs[key] = [
             request._decode(value) for value in values]
     return decoded_qs
-
-
-def wsgi_native_string(s):
-    """Make a native string suitable for use in WSGI.
-
-    PEP 3333 requires environment variables to be native strings that
-    contain only code points representable in ISO-8859-1.  To support
-    porting to Python 3 via an intermediate stage of Unicode literals in
-    Python 2, we enforce this here.
-    """
-    result = six.ensure_str(s, encoding='ISO-8859-1')
-    if six.PY3 and isinstance(s, six.text_type):
-        # Ensure we're limited to ISO-8859-1.
-        result.encode('ISO-8859-1')
-    return result
 
 
 class LaunchpadBrowserRequestMixin:
@@ -1457,15 +1443,15 @@ class PublicXMLRPCResponse(XMLRPCResponse):
     """Response type for doing public XML-RPC in Launchpad."""
 
     def handleException(self, exc_info):
-        # If we don't have a proper xmlrpclib.Fault, and we have
+        # If we don't have a proper xmlrpc_client.Fault, and we have
         # logged an OOPS, create a Fault that reports the OOPS ID to
         # the user.
         exc_value = exc_info[1]
-        if not isinstance(exc_value, xmlrpclib.Fault):
+        if not isinstance(exc_value, xmlrpc_client.Fault):
             request = get_current_browser_request()
             if request is not None and request.oopsid is not None:
-                exc_info = (xmlrpclib.Fault,
-                            xmlrpclib.Fault(-1, request.oopsid),
+                exc_info = (xmlrpc_client.Fault,
+                            xmlrpc_client.Fault(-1, request.oopsid),
                             None)
         XMLRPCResponse.handleException(self, exc_info)
 

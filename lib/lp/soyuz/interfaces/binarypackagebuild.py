@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """BinaryPackageBuild interfaces."""
@@ -14,23 +14,22 @@ __all__ = [
     'UnparsableDependencies',
     ]
 
-import httplib
-
 from lazr.enum import (
     EnumeratedType,
     Item,
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
     )
 from lazr.restful.fields import Reference
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -51,7 +50,7 @@ from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotBeRescored(Exception):
     """Raised when rescoring a build that cannot be rescored."""
     _message_prefix = "Cannot rescore build"
@@ -102,6 +101,9 @@ class IBinaryPackageBuildView(IPackageBuild):
         TextLine(
             title=_("Source package name"), required=False, readonly=True),
         exported_as="source_package_name")
+    source_package_version = exported(
+        TextLine(
+            title=_("Source package version"), required=False, readonly=True))
 
     distro_series = Attribute("Direct parent needed by CanonicalURL")
     arch_tag = exported(
@@ -177,8 +179,8 @@ class IBinaryPackageBuildView(IPackageBuild):
         component, section, priority, installedsize, architecturespecific,
         shlibdeps=None, depends=None, recommends=None, suggests=None,
         conflicts=None, replaces=None, provides=None, pre_depends=None,
-        enhances=None, breaks=None, essential=False, debug_package=None,
-        user_defined_fields=None, homepage=None):
+        enhances=None, breaks=None, built_using=None, essential=False,
+        debug_package=None, user_defined_fields=None, homepage=None):
         """Create and return a `BinaryPackageRelease`.
 
         The binarypackagerelease will be attached to this specific build.
@@ -305,11 +307,11 @@ class IBinaryPackageBuildAdmin(Interface):
         """Change the build's score."""
 
 
+@exported_as_webservice_entry(singular_name='build', plural_name='builds')
 class IBinaryPackageBuild(
     IBinaryPackageBuildView, IBinaryPackageBuildEdit,
     IBinaryPackageBuildRestricted, IBinaryPackageBuildAdmin):
     """A Build interface"""
-    export_as_webservice_entry(singular_name='build', plural_name='builds')
 
 
 class BuildSetStatus(EnumeratedType):

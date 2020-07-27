@@ -1,6 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-"""Tests for construction bug notification emails for sending."""
+"""Tests for constructing bug notification emails for sending."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -11,11 +13,10 @@ from datetime import (
 import logging
 import re
 from smtplib import SMTPException
-import StringIO
 import unittest
 
 import pytz
-from storm.store import Store
+import six
 from testtools.matchers import (
     MatchesRegex,
     Not,
@@ -75,10 +76,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
@@ -404,7 +402,7 @@ class TestGetEmailNotifications(TestCase):
         # in place.
 
         # Set up logging so we can later assert that no exceptions are logged.
-        log_output = StringIO.StringIO()
+        log_output = six.StringIO()
         logger = logging.getLogger()
         log_handler = logging.StreamHandler(log_output)
         logger.addHandler(logging.StreamHandler(log_output))
@@ -427,7 +425,7 @@ class TestGetEmailNotifications(TestCase):
         # Now we create the generator, start it, and then close it, triggering
         # a GeneratorExit exception inside the generator.
         email_notifications = get_email_notifications(notifications)
-        email_notifications.next()
+        next(email_notifications)
         email_notifications.close()
 
         # Verify that no "Error while building email notifications." is logged.
@@ -706,7 +704,7 @@ class EmailNotificationsBugMixin:
     def test_change_seen(self):
         # A smoketest.
         self.change(self.old, self.new)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.unexpected_text))
 
     def test_undone_change_sends_no_emails(self):
@@ -718,7 +716,7 @@ class EmailNotificationsBugMixin:
         self.change(self.old, self.new)
         self.change(self.new, self.old)
         self.change_other()
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Not(Contains(self.unexpected_text)))
 
     def test_multiple_undone_changes_sends_no_emails(self):
@@ -761,7 +759,7 @@ class EmailNotificationsBugTaskMixin(EmailNotificationsBugMixin):
             self.bug.addTask(self.product_owner, product2)
         self.change(self.old, self.new, index=0)
         self.change(self.new, self.old, index=1)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.unexpected_text))
 
 
@@ -775,7 +773,7 @@ class EmailNotificationsAddedRemovedMixin:
 
     def test_added_seen(self):
         self.add(self.old)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.added_message))
 
     def test_added_removed_sends_no_emails(self):
@@ -791,7 +789,7 @@ class EmailNotificationsAddedRemovedMixin:
     def test_added_another_removed_sends_emails(self):
         self.add(self.old)
         self.remove(self.new)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.added_message))
         self.assertThat(body, Contains(self.removed_message))
 
@@ -958,7 +956,7 @@ class TestEmailNotificationsAttachments(
             # another five minutes.  Therefore, we send out separate
             # change notifications.
             return self.bug.addAttachment(
-                self.person, 'content', 'a comment', 'stuff.txt')
+                self.person, b'content', 'a comment', 'stuff.txt')
 
     old = cachedproperty('old')(_attachment)
     new = cachedproperty('new')(_attachment)
@@ -1008,14 +1006,9 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
     def addNotificationRecipient(self, notification, person):
         # Manually insert BugNotificationRecipient for
         # construct_email_notifications to work.
-        # Not sure why using SQLObject constructor doesn't work (it
-        # tries to insert a row with only the ID which fails).
-        Store.of(notification).execute("""
-            INSERT INTO BugNotificationRecipient
-              (bug_notification, person, reason_header, reason_body)
-              VALUES (%s, %s, %s, %s)""" % sqlvalues(
-                          notification, person,
-                          u'reason header', u'reason body'))
+        BugNotificationRecipient(
+            bug_notification=notification, person=person,
+            reason_header='reason header', reason_body='reason body')
 
     def addNotification(self, person):
         # Add a notification along with recipient data.
@@ -1176,8 +1169,8 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
 def fetch_notifications(subscriber, bug):
     return IStore(BugNotification).find(
         BugNotification,
-        BugNotification.id == BugNotificationRecipient.bug_notificationID,
-        BugNotificationRecipient.personID == subscriber.id,
+        BugNotification.id == BugNotificationRecipient.bug_notification_id,
+        BugNotificationRecipient.person == subscriber,
         BugNotification.bug == bug)
 
 

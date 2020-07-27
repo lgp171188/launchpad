@@ -12,18 +12,16 @@ __all__ = [
     'NoSuchPackageSet',
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -31,6 +29,7 @@ from lazr.restful.declarations import (
     )
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -54,14 +53,14 @@ class NoSuchPackageSet(NameLookupFailed):
     _message_prefix = "No such package set (in the specified distro series)"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DuplicatePackagesetName(Exception):
     """Raised for packagesets with the same name and distroseries."""
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetViewOnly(IHasOwner):
     """A read-only interface for package sets."""
-    export_as_webservice_entry(publish_web_link=False)
 
     id = exported(Int(title=_('ID'), required=True, readonly=True))
 
@@ -252,9 +251,9 @@ class IPackagesetViewOnly(IHasOwner):
         """
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetEdit(Interface):
     """A writeable interface for package sets."""
-    export_as_webservice_entry(publish_web_link=False)
 
     def add(data):
         """Add source package names or other package sets to this one.
@@ -362,18 +361,18 @@ class IPackagesetEdit(Interface):
         """Delete the package set."""
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetRestricted(Interface):
     """A writeable interface for restricted attributes of package sets."""
-    export_as_webservice_entry(publish_web_link=False)
 
     relative_build_score = exported(Int(
         title=_("Build score"), required=True, readonly=False,
         description=_("Build score bonus for packages in this package set.")))
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IPackageset(IPackagesetViewOnly, IPackagesetEdit, IPackagesetRestricted):
     """An interface for package sets."""
-    export_as_webservice_entry(publish_web_link=False)
 
 
 class IPackagesetSetEdit(Interface):
@@ -414,9 +413,9 @@ class IPackagesetSetEdit(Interface):
         """
 
 
+@exported_as_webservice_collection(IPackageset)
 class IPackagesetSet(IPackagesetSetEdit):
     """An interface for multiple package sets."""
-    export_as_webservice_collection(IPackageset)
 
     @operation_parameters(
         name=copy_field(IPackageset['name']),

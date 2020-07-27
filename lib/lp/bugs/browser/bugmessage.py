@@ -8,7 +8,7 @@ __all__ = [
     'BugMessageAddFormView',
     ]
 
-from StringIO import StringIO
+from io import BytesIO
 
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
@@ -125,7 +125,7 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
             else:
                 is_patch = data['patch']
             attachment = bug.addAttachment(
-                owner=self.user, data=StringIO(data['filecontent']),
+                owner=self.user, data=BytesIO(data['filecontent']),
                 filename=filename, description=file_description,
                 comment=message, is_patch=is_patch)
 

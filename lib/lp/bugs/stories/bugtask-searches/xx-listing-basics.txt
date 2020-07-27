@@ -226,15 +226,15 @@ relevant listings:
     ...     'http://bugs.launchpad.test/debian/sarge/+source/mozilla-firefox')
     >>> milestone = find_tags_by_class(browser.contents, 'sprite milestone')
     >>> print(milestone[0])
-    <a href="http://launchpad.test/debian/+milestone/3.1" alt="milestone 3.1"
-    title="Linked to milestone 3.1" class="sprite milestone"></a>
+    <a alt="milestone 3.1" class="sprite milestone"
+    href="http://launchpad.test/debian/+milestone/3.1" title="Linked to milestone 3.1"></a>
 
 
 Patches also appear as badges in bug listings.
 
+    >>> from io import BytesIO
     >>> from lp.testing import login, logout
     >>> from zope.component import getUtility
-    >>> from StringIO import StringIO
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -249,7 +249,7 @@ Patches also appear as badges in bug listings.
     >>> bug_one = bugset.get(1)
     >>> bug_one.addAttachment(
     ...     owner=foobar,
-    ...     data=StringIO("file data"),
+    ...     data=BytesIO(b"file data"),
     ...     filename="foo.bar",
     ...     description="this fixes the bug",
     ...     comment=message,

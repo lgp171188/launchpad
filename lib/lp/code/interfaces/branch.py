@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Branch interfaces."""
@@ -22,21 +22,20 @@ __all__ = [
     'WrongNumberOfReviewTypeArguments',
     ]
 
-import httplib
 import re
 
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -51,6 +50,7 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -76,6 +76,7 @@ from lp.code.bzr import (
     )
 from lp.code.enums import (
     BranchLifecycleStatus,
+    BranchListingSort,
     BranchMergeProposalStatus,
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
@@ -114,7 +115,7 @@ DEFAULT_BRANCH_STATUS_IN_LISTING = (
     BranchLifecycleStatus.MATURE)
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class WrongNumberOfReviewTypeArguments(ValueError):
     """Raised in the webservice API if `reviewers` and `review_types`
     do not have equal length.
@@ -512,7 +513,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
 
         They are ordered with the most recent revision first, and the list
         only contains those in the "leftmost tree", or in other words
-        the revisions that match the revision history from bzrlib for this
+        the revisions that match the revision history from breezy for this
         branch.
 
         The revisions are listed as tuples of (`BranchRevision`, `Revision`).
@@ -719,7 +720,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         """Construct a URL for this branch in codebrowse.
 
         :param extras: Zero or more path segments that will be joined onto the
-            end of the URL (with `bzrlib.urlutils.join`).
+            end of the URL (with `breezy.urlutils.join`).
         """
 
     browse_source_url = Attribute(
@@ -993,7 +994,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         :return: tuple of three items.
             1. Ancestry set of bzr revision-ids.
             2. History list of bzr revision-ids. Similar to the result of
-               bzrlib.Branch.revision_history().
+               breezy.Branch.revision_history().
             3. Dictionnary mapping bzr bzr revision-ids to the database ids of
                the corresponding BranchRevision rows for this branch.
         """
@@ -1012,7 +1013,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         You can only call this if a server returned by `get_ro_server` or
         `get_rw_server` is running.
 
-        :raise bzrlib.url_policy_open.BadUrl: If the branch is stacked
+        :raise breezy.url_policy_open.BadUrl: If the branch is stacked
             on or a reference to an unacceptable URL.
         """
 
@@ -1247,13 +1248,11 @@ class IBranchEdit(IWebhookTarget):
         """
 
 
+@exported_as_webservice_entry(plural_name='branches')
 class IBranch(IBranchPublic, IBranchView, IBranchEdit,
               IBranchEditableAttributes, IBranchModerate,
               IBranchModerateAttributes, IBranchAnyone):
     """A Bazaar branch."""
-
-    # Mark branches as exported entries for the Launchpad API.
-    export_as_webservice_entry(plural_name='branches')
 
     # This is redefined from IPrivacy.private and is read only. This attribute
     # is true if this branch is explicitly private or any of its stacked on
@@ -1275,10 +1274,9 @@ class IBranch(IBranchPublic, IBranchView, IBranchEdit,
         """Set the branch privacy for this branch."""
 
 
+@exported_as_webservice_collection(IBranch)
 class IBranchSet(Interface):
     """Interface representing the set of branches."""
-
-    export_as_webservice_collection(IBranch)
 
     def getRecentlyChangedBranches(
         branch_count=None,
@@ -1427,10 +1425,32 @@ class IBranchSet(Interface):
         Return None if no match was found.
         """
 
-    @collection_default_content()
-    def getBranches(limit=50, eager_load=True):
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(
+        order_by=Choice(
+            title=_("Sort order"), vocabulary=BranchListingSort,
+            default=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
+            required=False),
+        modified_since_date=Datetime(
+            title=_("Modified since date"),
+            description=_(
+                "Return only branches whose `date_last_modified` is "
+                "greater than or equal to this date.")))
+    @operation_returns_collection_of(IBranch)
+    @export_read_operation()
+    @operation_for_version("devel")
+    @collection_default_content(user=None, limit=50)
+    def getBranches(user,
+                    order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                    modified_since_date=None, limit=None, eager_load=True):
         """Return a collection of branches.
 
+        :param user: An `IPerson`.  Only branches visible by this user will
+            be returned.
+        :param order_by: An item from the `BranchListingSort` enumeration,
+            or None to return an unordered result set.
+        :param modified_since_date: If not None, return only branches whose
+            `date_last_modified` is greater than this date.
         :param eager_load: If True (the default because this is used in the
             web service and it needs the related objects to create links)
             eager load related objects (products, code imports etc).

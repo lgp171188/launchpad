@@ -24,8 +24,9 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.utilities.celebrities import ILaunchpadCelebrities
+from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authentication import LaunchpadPrincipal
 from lp.soyuz.browser.archive import ArchiveNavigationMenu
@@ -162,6 +163,42 @@ class TestPPAPackages(TestCaseWithFactory):
         self.assertNotifications(
             ppa, 'Publishing has been disabled for this archive.')
 
+    def test_page_show_singular_pending_builds(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeBinaryPackageBuild(
+            archive=ppa, status=BuildStatus.NEEDSBUILD)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages', user=owner)
+        html = browser.contents
+        pending_build_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'pending build', 'p',
+                text=re.compile(r'(?s).*(pending\s*build\.)')),
+        )
+        self.assertThat(
+            html, pending_build_exists,
+            'Pending builds message was not found')
+
+    def test_page_show_plural_pending_builds(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeBinaryPackageBuild(
+            archive=ppa, status=BuildStatus.NEEDSBUILD)
+        self.factory.makeBinaryPackageBuild(
+            archive=ppa, status=BuildStatus.NEEDSBUILD)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages', user=owner)
+        html = browser.contents
+        pending_build_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'pending build', 'p',
+                text=re.compile(r'(?s).*(pending\s*builds\.)')),
+        )
+        self.assertThat(
+            html, pending_build_exists,
+            'Pending builds message was not found')
+
     def test_ppa_packages_menu_is_enabled(self):
         joe = self.factory.makePerson()
         ppa = self.factory.makeArchive()
@@ -173,6 +210,42 @@ class TestPPAPackages(TestCaseWithFactory):
     def test_specified_name_filter_works(self):
         view = self.getPackagesView('field.name_filter=blah')
         self.assertEqual('blah', view.specified_name_filter)
+
+    def test_page_with_filter_parameter_shows_message(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeSourcePackagePublishingHistory(archive=ppa)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages?field.name_filter=unknown_name',
+            user=owner)
+        html = browser.contents
+        empty_package_msg_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'no matching packages message', 'div',
+                text=re.compile(
+                    r"\s*No matching package for 'unknown_name'\s*"),
+                attrs={'id': 'empty-result'}),
+        )
+        self.assertThat(
+            html, empty_package_msg_exists,
+            'Message "No matching package for (...)" should appear')
+
+    def test_page_without_filter_parameter_doesnt_show_message(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=ppa, status=PackagePublishingStatus.DELETED)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages', user=owner)
+        html = browser.contents
+        empty_package_msg_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'no matching packages message', 'div',
+                attrs={'id': 'empty-result'}),
+        )
+        self.assertThat(
+            html, Not(empty_package_msg_exists),
+            'Message "No matching package for (...)" should *NOT* appear')
 
     def test_specified_name_filter_returns_none_on_omission(self):
         view = self.getPackagesView()

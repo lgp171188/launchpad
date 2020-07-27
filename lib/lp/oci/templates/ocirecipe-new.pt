@@ -1,0 +1,44 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad">
+<body>
+
+<div metal:fill-slot="main">
+  <!-- XXX cjwatson 2020-02-18: Add an introductory paragraph explaining
+       what OCI recipes are. -->
+
+  <div metal:use-macro="context/@@launchpad_form/form">
+    <metal:formbody fill-slot="widgets">
+      <table class="form">
+        <tal:widget define="widget nocall:view/widgets/name">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/owner">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/description">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/git_ref">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/build_file">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/build_daily">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/processors">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+      </table>
+    </metal:formbody>
+  </div>
+</div>
+
+</body>
+</html>

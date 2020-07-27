@@ -1,4 +1,4 @@
-# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The processing of Signing tarballs.
@@ -18,6 +18,8 @@ __all__ = [
     "UefiUpload",
     ]
 
+from datetime import datetime
+from functools import partial
 import os
 import shutil
 import stat
@@ -26,12 +28,24 @@ import tarfile
 import tempfile
 import textwrap
 
+from pytz import utc
 import scandir
+from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
+from lp.registry.interfaces.distroseries import IDistroSeriesSet
+from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from lp.soyuz.interfaces.queue import CustomUploadError
+
+
+PUBLISHER_USES_SIGNING_SERVICE = (
+    'archivepublisher.signing_service.enabled')
+PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS = (
+    'archivepublisher.signing_service.injection.enabled')
 
 
 class SigningUploadPackError(CustomUploadError):
@@ -39,6 +53,18 @@ class SigningUploadPackError(CustomUploadError):
         message = "Problem building tarball '%s': %s" % (
             tarfile_path, exc)
         CustomUploadError.__init__(self, message)
+
+
+class NoSigningKeyError(Exception):
+    pass
+
+
+class SigningServiceError(Exception):
+    pass
+
+
+class SigningKeyConflict(Exception):
+    pass
 
 
 class SigningUpload(CustomUpload):
@@ -65,6 +91,16 @@ class SigningUpload(CustomUpload):
     Signing keys may be installed in the "signingroot" directory specified in
     publisher configuration.  In this directory, the private key is
     "uefi.key" and the certificate is "uefi.crt".
+
+    This class is already prepared to use signing service. There are
+    basically two places interacting with it:
+        - findSigningHandlers(), that provides a handler to call signing
+        service to sign each file (together with a fallback handler,
+        that signs the file locally).
+
+        - copyPublishedPublicKeys(), that accepts both ways of saving public
+        keys: by copying from local file system (old way) or saving the
+        public key stored at signing service (new way).
     """
     custom_type = "signing"
 
@@ -105,6 +141,13 @@ class SigningUpload(CustomUpload):
 
     def setTargetDirectory(self, archive, tarfile_path, suite):
         self.archive = archive
+
+        if suite:
+            self.distro_series, _ = getUtility(IDistroSeriesSet).fromSuite(
+                self.archive.distribution, suite)
+        else:
+            self.distro_series = None
+
         pubconf = getPubConfig(archive)
         if pubconf.signingroot is None:
             if self.logger is not None:
@@ -122,7 +165,7 @@ class SigningUpload(CustomUpload):
             self.fit_cert = None
             self.autokey = False
         else:
-            signing_for = suite.split('-')[0]
+            signing_for = self.distro_series.name if self.distro_series else ''
             self.uefi_key = self.getSeriesPath(
                 pubconf, "uefi.key", archive, signing_for)
             self.uefi_cert = self.getSeriesPath(
@@ -165,25 +208,36 @@ class SigningUpload(CustomUpload):
         self.archiveroot = pubconf.archiveroot
         self.temproot = pubconf.temproot
 
-        self.public_keys = set()
+        self.public_keys = {}
 
-    def publishPublicKey(self, key):
-        """Record this key as having been used in this upload."""
-        self.public_keys.add(key)
+    def publishPublicKey(self, key, content=None):
+        """Record this key as having been used in this upload.
+
+        :param key: Key file name
+        :param content: Key file content (if None, try to read it from local
+            filesystem)
+        """
+        if content is not None:
+            self.public_keys[key] = content
+        elif key not in self.public_keys:
+            # Ensure we only emit files which are world-readable.
+            if stat.S_IMODE(os.stat(key).st_mode) & stat.S_IROTH:
+                with open(key, "rb") as f:
+                    self.public_keys[key] = f.read()
+            else:
+                if self.logger is not None:
+                    self.logger.warning(
+                        "%s: public key not world readable" % key)
 
     def copyPublishedPublicKeys(self):
         """Copy out published keys into the custom upload."""
         keydir = os.path.join(self.tmpdir, self.version, "control")
         if not os.path.exists(keydir):
             os.makedirs(keydir)
-        for key in self.public_keys:
-            # Ensure we only emit files which are world readable.
-            if stat.S_IMODE(os.stat(key).st_mode) & stat.S_IROTH:
-                shutil.copy(key, os.path.join(keydir, os.path.basename(key)))
-            else:
-                if self.logger is not None:
-                    self.logger.warning(
-                        "%s: public key not world readable" % key)
+        for filename, content in self.public_keys.items():
+            file_path = os.path.join(keydir, os.path.basename(filename))
+            with open(file_path, 'wb') as fd:
+                fd.write(content)
 
     def setSigningOptions(self):
         """Find and extract raw-signing options from the tarball."""
@@ -214,27 +268,149 @@ class SigningUpload(CustomUpload):
             # tend to make the publisher rather upset.
             if self.logger is not None:
                 self.logger.warning("%s Failed (cmd='%s')" %
-                    (description, " ".join(cmdl)))
+                                    (description, " ".join(cmdl)))
         return status
 
     def findSigningHandlers(self):
         """Find all the signable files in an extracted tarball."""
+        use_signing_service = bool(
+            getFeatureFlag(PUBLISHER_USES_SIGNING_SERVICE))
+
+        fallback_handlers = {
+            SigningKeyType.UEFI: self.signUefi,
+            SigningKeyType.KMOD: self.signKmod,
+            SigningKeyType.OPAL: self.signOpal,
+            SigningKeyType.SIPL: self.signSipl,
+            SigningKeyType.FIT: self.signFit,
+            }
+
         for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
             for filename in filenames:
+                file_path = os.path.join(dirpath, filename)
                 if filename.endswith(".efi"):
-                    yield (os.path.join(dirpath, filename), self.signUefi)
+                    key_type = SigningKeyType.UEFI
                 elif filename.endswith(".ko"):
-                    yield (os.path.join(dirpath, filename), self.signKmod)
+                    key_type = SigningKeyType.KMOD
                 elif filename.endswith(".opal"):
-                    yield (os.path.join(dirpath, filename), self.signOpal)
+                    key_type = SigningKeyType.OPAL
                 elif filename.endswith(".sipl"):
-                    yield (os.path.join(dirpath, filename), self.signSipl)
+                    key_type = SigningKeyType.SIPL
                 elif filename.endswith(".fit"):
-                    yield (os.path.join(dirpath, filename), self.signFit)
+                    key_type = SigningKeyType.FIT
+                else:
+                    continue
+
+                if use_signing_service:
+                    key = getUtility(IArchiveSigningKeySet).getSigningKey(
+                        key_type, self.archive, self.distro_series)
+                    handler = partial(
+                        self.signUsingSigningService, key_type, key)
+                    fallback_handler = partial(
+                        self.signUsingLocalKey, key_type,
+                        fallback_handlers.get(key_type))
+                    yield file_path, handler, fallback_handler
+                else:
+                    yield file_path, fallback_handlers.get(key_type), None
+
+    def signUsingLocalKey(self, key_type, handler, filename):
+        """Sign the given filename using using handler if the local
+        key files exists. If the local key files does not exist, raises
+        IOError.
+
+        Note that this method should only be used as a fallback to signing
+        service, since it will not try to generate local keys.
+
+        :param key_type: One of the SigningKeyType items.
+        :param handler: One of the local signing handlers (self.signUefi,
+                        self.signKmod, etc).
+        :param filename: The filename to be signed.
+        """
+
+        if not self.keyFilesExist(key_type):
+            raise IOError(
+                "Could not fallback to local signing keys: the key files "
+                "were not found.")
+        return handler(filename)
+
+    def keyFilesExist(self, key_type):
+        """Checks if all needed key files exists in the local filesystem
+        for the given key type.
+        """
+        fallback_keys = {
+            SigningKeyType.UEFI: [self.uefi_cert, self.uefi_key],
+            SigningKeyType.KMOD: [self.kmod_pem, self.kmod_x509],
+            SigningKeyType.OPAL: [self.opal_pem, self.opal_x509],
+            SigningKeyType.SIPL: [self.sipl_pem, self.sipl_x509],
+            SigningKeyType.FIT: [self.fit_cert, self.fit_key],
+            }
+        # If we are missing local key files, do not proceed.
+        key_files = [i for i in fallback_keys[key_type] if i]
+        return all(os.path.exists(key_file) for key_file in key_files)
+
+    def signUsingSigningService(self, key_type, signing_key, filename):
+        """Sign the given filename using a certain key hosted on signing
+        service, writes the signed content back to the filesystem and
+        publishes the public key to self.public_keys.
+
+        If the given key is None and self.autokey is set to True, this method
+        generates a key on signing service and associates it with the current
+        archive.
+
+        :param key_type: One of the SigningKeyType enum items
+        :param signing_key: The SigningKey to be used (or None,
+                            to autogenerate a key if possible).
+        :param filename: The filename to be signed.
+        :return: Boolean. True if signed, or raises SigningServiceError
+                 on failure.
+        """
+        if signing_key is None:
+            if not self.autokey:
+                raise NoSigningKeyError("No signing key for %s" % filename)
+            description = (
+                u"%s key for %s" % (key_type.name, self.archive.reference))
+            try:
+                signing_key = getUtility(IArchiveSigningKeySet).generate(
+                    key_type, description, self.archive).signing_key
+            except Exception as e:
+                if self.logger:
+                    self.logger.exception(
+                        "Error generating signing key for %s: %s %s" %
+                        (self.archive.reference, e.__class__.__name__, e))
+                raise SigningServiceError(
+                    "Could not generate key %s: %s" % (key_type, e))
+
+        with open(filename, "rb") as fd:
+            content = fd.read()
+
+        try:
+            signed_content = signing_key.sign(
+                content, message_name=os.path.basename(filename))
+        except Exception as e:
+            if self.logger:
+                self.logger.exception(
+                    "Error signing %s on signing service: %s %s" %
+                    (filename, e.__class__.__name__, e))
+            raise SigningServiceError(
+                "Could not sign message with key %s: %s" % (signing_key, e))
+
+        if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
+            file_suffix = ".signed"
+            public_key_suffix = ".crt"
+        else:
+            file_suffix = ".sig"
+            public_key_suffix = ".x509"
+
+        signed_filename = filename + file_suffix
+        public_key_filename = key_type.name.lower() + public_key_suffix
+
+        with open(signed_filename, 'wb') as fd:
+            fd.write(signed_content)
+
+        self.publishPublicKey(public_key_filename, signing_key.public_key)
+        return True
 
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
-
         if self.autokey:
             for keyfile in keynames:
                 if keyfile and not os.path.exists(keyfile):
@@ -252,6 +428,56 @@ class SigningUpload(CustomUpload):
         if not valid:
             return [None for k in keynames]
         return keynames
+
+    def injectIntoSigningService(
+            self, key_type, private_key_file, public_key_file):
+        """Injects the given key pair into signing service for current
+        archive.
+
+        Note that this injection should only be used for freshly
+        autogenerated keys, always injecting the key for the archive in
+        general (not setting earliest_distro_series).
+        """
+        if key_type not in SigningKeyType:
+            raise ValueError("%s is not a valid key type to inject" % key_type)
+
+        feature_flag = (
+            getFeatureFlag(PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS) or '')
+        key_types_to_inject = [i.strip() for i in feature_flag.split()]
+
+        if key_type.name not in key_types_to_inject:
+            if self.logger:
+                self.logger.info(
+                    "Skipping injection for key type %s: not in %s",
+                    key_type, key_types_to_inject)
+            return
+
+        key_set = getUtility(IArchiveSigningKeySet)
+        current_key = key_set.get(
+            key_type, self.archive, None, exact_match=True)
+        if current_key is not None:
+            self.logger.info("Skipping injection for key type %s: archive "
+                             "already has a key on lp-signing.", key_type)
+            raise SigningKeyConflict(
+                "Archive %s already has a signing key type %s on lp-signing."
+                % (self.archive.reference, key_type))
+
+        if self.logger:
+            self.logger.info(
+                "Injecting key_type %s for archive %s into signing service",
+                key_type, self.archive.name)
+
+        with open(private_key_file, 'rb') as fd:
+            private_key = fd.read()
+        with open(public_key_file, 'rb') as fd:
+            public_key = fd.read()
+
+        now = datetime.now().replace(tzinfo=utc)
+        description = (
+                u"%s key for %s" % (key_type.name, self.archive.reference))
+        key_set.inject(
+            key_type, private_key, public_key,
+            description, now, self.archive, earliest_distro_series=None)
 
     def generateKeyCommonName(self, owner, archive, suffix=''):
         # PPA <owner> <archive> <suffix>
@@ -286,6 +512,15 @@ class SigningUpload(CustomUpload):
         if os.path.exists(cert_filename):
             os.chmod(cert_filename, 0o644)
 
+            signing_key_type = getattr(SigningKeyType, key_type.upper())
+            try:
+                self.injectIntoSigningService(
+                    signing_key_type, key_filename, cert_filename)
+            except SigningKeyConflict:
+                os.unlink(key_filename)
+                os.unlink(cert_filename)
+                raise
+
     def generateUefiKeys(self):
         """Generate new UEFI Keys for this archive."""
         self.generateKeyCrtPair("UEFI", self.uefi_key, self.uefi_cert)
@@ -299,7 +534,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["sbsign", "--key", key, "--cert", cert, image]
-        return self.callLog("UEFI signing", cmdl)
+        return self.callLog("UEFI signing", cmdl) == 0
 
     openssl_config_base = textwrap.dedent("""\
         [ req ]
@@ -373,6 +608,15 @@ class SigningUpload(CustomUpload):
         if os.path.exists(x509_filename):
             os.chmod(x509_filename, 0o644)
 
+            signing_key_type = getattr(SigningKeyType, key_type.upper())
+            try:
+                self.injectIntoSigningService(
+                    signing_key_type, pem_filename, x509_filename)
+            except SigningKeyConflict:
+                os.unlink(pem_filename)
+                os.unlink(x509_filename)
+                raise
+
     def generateKmodKeys(self):
         """Generate new Kernel Signing Keys for this archive."""
         config = self.generateOpensslConfig("Kmod", self.openssl_config_kmod)
@@ -387,7 +631,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
-        return self.callLog("Kmod signing", cmdl)
+        return self.callLog("Kmod signing", cmdl) == 0
 
     def generateOpalKeys(self):
         """Generate new Opal Signing Keys for this archive."""
@@ -403,7 +647,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
-        return self.callLog("Opal signing", cmdl)
+        return self.callLog("Opal signing", cmdl) == 0
 
     def generateSiplKeys(self):
         """Generate new Sipl Signing Keys for this archive."""
@@ -419,7 +663,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
-        return self.callLog("SIPL signing", cmdl)
+        return self.callLog("SIPL signing", cmdl) == 0
 
     def generateFitKeys(self):
         """Generate new FIT Keys for this archive."""
@@ -439,7 +683,7 @@ class SigningUpload(CustomUpload):
         shutil.copy(image, image_signed)
         cmdl = ["mkimage", "-F", "-k", os.path.dirname(key), "-r",
             image_signed]
-        return self.callLog("FIT signing", cmdl)
+        return self.callLog("FIT signing", cmdl) == 0
 
     def convertToTarball(self):
         """Convert unpacked output to signing tarball."""
@@ -467,10 +711,18 @@ class SigningUpload(CustomUpload):
         """
         super(SigningUpload, self).extract()
         self.setSigningOptions()
-        filehandlers = list(self.findSigningHandlers())
-        for (filename, handler) in filehandlers:
-            if (handler(filename) == 0 and
-                'signed-only' in self.signing_options):
+        for filename, handler, fallback_handler in self.findSigningHandlers():
+            try:
+                was_signed = handler(filename)
+            except (NoSigningKeyError, SigningServiceError) as e:
+                if fallback_handler is not None and self.logger:
+                    self.logger.warning(
+                        "Signing service will try to fallback to local key. "
+                        "Reason: %s (%s)" % (e.__class__.__name__, e))
+                was_signed = False
+            if not was_signed and fallback_handler is not None:
+                was_signed = fallback_handler(filename)
+            if was_signed and 'signed-only' in self.signing_options:
                 os.unlink(filename)
 
         # Copy out the public keys where they were used.
@@ -514,5 +766,4 @@ class UefiUpload(SigningUpload):
     packages are converted to the new form and location.
     """
     custom_type = "uefi"
-
     dists_directory = "uefi"

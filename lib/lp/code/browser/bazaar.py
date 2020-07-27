@@ -12,7 +12,7 @@ __all__ = [
 
 from datetime import datetime
 
-import bzrlib
+import breezy
 from zope.component import getUtility
 
 from lp.code.enums import CodeImportReviewStatus
@@ -51,8 +51,8 @@ class BazaarApplicationView(LaunchpadView):
             review_status=CodeImportReviewStatus.REVIEWED).count()
 
     @property
-    def bzr_version(self):
-        return bzrlib.__version__
+    def brz_version(self):
+        return breezy.__version__
 
     def _precacheViewPermissions(self, branches):
         """Precache the launchpad.View permissions on the branches."""

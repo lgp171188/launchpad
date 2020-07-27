@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IProduct."""
@@ -33,13 +33,13 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -798,21 +798,12 @@ class IProductView(
                                 filter_statuses.
         """
 
-    def redeemSubscriptionVoucher(voucher, registrant, purchaser,
-                                  subscription_months, whiteboard=None,
-                                  current_datetime=None):
-        """Redeem a voucher and extend the subscription expiration date.
+    def canAdministerOCIProjects(person):
+        """Checks if the given person can manage OCI projects for this
+        Product."""
 
-        The voucher must have already been verified to be redeemable.
-        :param voucher: The voucher id as tracked in the external system.
-        :param registrant: Who is redeeming the voucher.
-        :param purchaser: Who purchased the voucher.  May not be known.
-        :param subscription_months: integer indicating the number of months
-            the voucher is for.
-        :param whiteboard: Notes for this activity.
-        :param current_datetime: Current time.  Will be datetime.now() if not
-            specified.
-        :return: None
+    def getOCIProject(name):
+        """Return a `OCIProject` with the given name for this product, or None.
         """
 
     def getPackage(distroseries):
@@ -908,6 +899,7 @@ class IProductEditRestricted(IOfficialBugTagTargetRestricted):
         """
 
 
+@exported_as_webservice_entry('project')
 class IProduct(
     IBugTarget, IHasBugSupervisor, IHasDrivers, IProductEditRestricted,
     IProductModerateRestricted, IProductDriverRestricted, IProductView,
@@ -922,8 +914,6 @@ class IProduct(
     Mozilla App Suite as Products, among others.
     """
 
-    export_as_webservice_entry('project')
-
     drivers = Attribute(
         "Presents the drivers of this project as a list. A list is "
         "required because there might be a project driver and also a "
@@ -935,8 +925,8 @@ patch_collection_property(IProjectGroup, 'products', IProduct)
 patch_reference_property(IProductRelease, 'product', IProduct)
 
 
+@exported_as_webservice_collection(IProduct)
 class IProductSet(Interface):
-    export_as_webservice_collection(IProduct)
 
     title = Attribute("The set of Products registered in the Launchpad")
 

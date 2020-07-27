@@ -14,6 +14,7 @@ __all__ = [
     'ILiveFSSet',
     'ILiveFSView',
     'LIVEFS_FEATURE_FLAG',
+    'LIVEFS_WEBHOOKS_FEATURE_FLAG',
     'LiveFSBuildAlreadyPending',
     'LiveFSBuildArchiveOwnerMismatch',
     'LiveFSFeatureDisabled',
@@ -21,19 +22,17 @@ __all__ = [
     'NoSuchLiveFS',
     ]
 
-import httplib
-
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
@@ -43,6 +42,7 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -69,14 +69,16 @@ from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     )
+from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 LIVEFS_FEATURE_FLAG = u"soyuz.livefs.allow_new"
+LIVEFS_WEBHOOKS_FEATURE_FLAG = u"soyuz.livefs.webhooks.enabled"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class LiveFSBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
@@ -86,7 +88,7 @@ class LiveFSBuildAlreadyPending(Exception):
             "pending.")
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class LiveFSBuildArchiveOwnerMismatch(Forbidden):
     """Builds into private archives require that owners match.
 
@@ -105,7 +107,7 @@ class LiveFSBuildArchiveOwnerMismatch(Forbidden):
             "equal.")
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class LiveFSFeatureDisabled(Unauthorized):
     """Only certain users can create new LiveFS-related objects."""
 
@@ -115,7 +117,7 @@ class LiveFSFeatureDisabled(Unauthorized):
             "new live filesystem builds.")
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DuplicateLiveFSName(Exception):
     """Raised for live filesystems with duplicate name/owner/distroseries."""
 
@@ -125,7 +127,7 @@ class DuplicateLiveFSName(Exception):
             "and distroseries.")
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class LiveFSNotOwner(Unauthorized):
     """The registrant/requester is not the owner or a member of its team."""
 
@@ -135,7 +137,7 @@ class NoSuchLiveFS(NameLookupFailed):
     _message_prefix = "No such live filesystem with this owner/distroseries"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotDeleteLiveFS(Exception):
     """This live filesystem cannot be deleted."""
 
@@ -213,7 +215,7 @@ class ILiveFSView(IPrivacy):
         value_type=Reference(schema=Interface), readonly=True)))
 
 
-class ILiveFSEdit(Interface):
+class ILiveFSEdit(IWebhookTarget):
     """`ILiveFS` methods that require launchpad.Edit permission."""
 
     @export_destructor_operation()
@@ -282,22 +284,20 @@ class ILiveFSAdminAttributes(Interface):
             "Only build this live filesystem image on virtual builders.")))
 
 
+# XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(
+    singular_name="livefs", plural_name="livefses", as_of="beta")
 class ILiveFS(
     ILiveFSView, ILiveFSEdit, ILiveFSEditableAttributes,
     ILiveFSModerateAttributes, ILiveFSAdminAttributes):
     """A buildable live filesystem image."""
 
-    # XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(
-        singular_name="livefs", plural_name="livefses", as_of="beta")
 
-
+@exported_as_webservice_collection(ILiveFS)
 class ILiveFSSet(Interface):
     """A utility to create and access live filesystems."""
-
-    export_as_webservice_collection(ILiveFS)
 
     @call_with(registrant=REQUEST_USER)
     @export_factory_operation(

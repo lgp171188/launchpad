@@ -33,7 +33,7 @@ are not a member of, their message gets held for moderator approval.
     >>> from email.utils import formatdate
     >>> from lp.registry.interfaces.mailinglist import IMailingListSet
     >>> def post_message(from_address, to_team_name):
-    ...     message = getUtility(IMessageSet).fromEmail("""\
+    ...     message = getUtility(IMessageSet).fromEmail(("""\
     ... From: %s
     ... To: %s@lists.launchpad.test
     ... Subject: Something to think about
@@ -41,7 +41,8 @@ are not a member of, their message gets held for moderator approval.
     ... Date: %s
     ...
     ... Point of order!
-    ... """ % (from_address, to_team_name, message_ids.next(), formatdate()))
+    ... """ % (from_address, to_team_name, next(message_ids),
+    ...        formatdate())).encode('UTF-8'))
     ...     mailing_list = getUtility(IMailingListSet).get(to_team_name)
     ...     held_message = mailing_list.holdMessage(message)
     ...     return held_message
@@ -75,7 +76,7 @@ are not a member of, their message gets held for moderator approval.
 After one approval, Robert's standing does not change.
 
     >>> foobar = person_set.getByName('name16')
-    >>> message = lifeless_post('test-one')
+    >>> message = lifeless_post(u'test-one')
     >>> message.approve(foobar)
     >>> script.main()
     >>> lifeless.personal_standing
@@ -84,13 +85,13 @@ After one approval, Robert's standing does not change.
 Even after three approvals, if the message was posted to the same list,
 Robert's personal standing does not change.
 
-    >>> message = lifeless_post('test-one')
+    >>> message = lifeless_post(u'test-one')
     >>> message.approve(foobar)
     >>> script.main()
     >>> lifeless.personal_standing
     <DBItem PersonalStanding.UNKNOWN...>
 
-    >>> message = lifeless_post('test-one')
+    >>> message = lifeless_post(u'test-one')
     >>> message.approve(foobar)
     >>> script.main()
     >>> lifeless.personal_standing
@@ -103,7 +104,7 @@ his personal standing can be updated.
     >>> team_three, list_three = mailinglists_helper.new_team(
     ...     'test-three', True)
 
-    >>> message = lifeless_post('test-two')
+    >>> message = lifeless_post(u'test-two')
     >>> message.approve(foobar)
     >>> script.main()
     >>> lifeless.personal_standing
@@ -111,13 +112,13 @@ his personal standing can be updated.
 
 Rejected and discarded messages don't count.
 
-    >>> message = lifeless_post('test-three')
+    >>> message = lifeless_post(u'test-three')
     >>> message.reject(foobar)
     >>> script.main()
     >>> lifeless.personal_standing
     <DBItem PersonalStanding.UNKNOWN...>
 
-    >>> message = lifeless_post('test-three')
+    >>> message = lifeless_post(u'test-three')
     >>> message.discard(foobar)
     >>> script.main()
     >>> lifeless.personal_standing
@@ -125,10 +126,10 @@ Rejected and discarded messages don't count.
 
 Neither do approved messages from someone else.
 
-    >>> message = post_message('carlos@canonical.com', 'test-two')
+    >>> message = post_message('carlos@canonical.com', u'test-two')
     >>> message.approve(foobar)
 
-    >>> message = post_message('carlos@canonical.com', 'test-three')
+    >>> message = post_message('carlos@canonical.com', u'test-three')
     >>> message.approve(foobar)
 
     >>> script.main()
@@ -142,7 +143,7 @@ Neither do approved messages from someone else.
 Robert's next message goes to a third mailing list, and this gets
 approved.  As a result, his personal standing gets updated.
 
-    >>> message = lifeless_post('test-three')
+    >>> message = lifeless_post(u'test-three')
     >>> message.approve(foobar)
     >>> script.main()
     >>> lifeless.personal_standing
@@ -154,20 +155,20 @@ approved.  As a result, his personal standing gets updated.
 Along comes Mark who also sends three messages to three different lists.  His
 personal standing gets updated to Good also.
 
-    >>> message = post_message('mark@example.com', 'test-one')
+    >>> message = post_message('mark@example.com', u'test-one')
     >>> message.approve(foobar)
     >>> script.main()
     >>> mark = person_set.getByName('mark')
     >>> mark.personal_standing
     <DBItem PersonalStanding.UNKNOWN...>
 
-    >>> message = post_message('mark@example.com', 'test-two')
+    >>> message = post_message('mark@example.com', u'test-two')
     >>> message.approve(foobar)
     >>> script.main()
     >>> mark.personal_standing
     <DBItem PersonalStanding.UNKNOWN...>
 
-    >>> message = post_message('mark@example.com', 'test-three')
+    >>> message = post_message('mark@example.com', u'test-three')
     >>> message.approve(foobar)
     >>> script.main()
     >>> mark.personal_standing
@@ -254,7 +255,7 @@ standing untouched.
 Carlos sends one more message, which also gets approved.  Now the
 update-standing script bumps his standing to Good too.
 
-    >>> message = post_message('carlos@canonical.com', 'test-one')
+    >>> message = post_message('carlos@canonical.com', u'test-one')
     >>> message.approve(foobar)
     >>> LaunchpadZopelessLayer.txn.commit()
     >>> mailinglists_helper.mailman.act()

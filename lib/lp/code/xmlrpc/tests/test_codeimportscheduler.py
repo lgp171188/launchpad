@@ -1,12 +1,11 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for the methods of `ICodeImportScheduler`."""
 
 __metaclass__ = type
 
-import xmlrpclib
-
+from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -16,6 +15,7 @@ from lp.code.model.codeimportjob import CodeImportJob
 from lp.code.tests.codeimporthelpers import make_running_import
 from lp.code.xmlrpc.codeimportscheduler import CodeImportSchedulerAPI
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.webapp import canonical_url
 from lp.testing import (
     run_with_login,
@@ -33,7 +33,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         TestCaseWithFactory.setUp(self)
         self.api = CodeImportSchedulerAPI(None, None)
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
 
     def makeCodeImportJob(self, running):
@@ -77,7 +77,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         # is no code import job with the given ID.
         fault = self.api.getImportDataForJobID(-1)
         self.assertTrue(
-            isinstance(fault, xmlrpclib.Fault),
+            isinstance(fault, xmlrpc_client.Fault),
             "getImportDataForJobID(-1) returned %r, not a Fault."
             % (fault,))
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)
@@ -85,7 +85,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
     def test_updateHeartbeat(self):
         # updateHeartbeat calls the updateHeartbeat job workflow method.
         code_import_job = self.makeCodeImportJob(running=True)
-        log_tail = self.factory.getUniqueString()
+        log_tail = self.factory.getUniqueUnicode()
         self.api.updateHeartbeat(code_import_job.id, log_tail)
         self.assertSqlAttributeEqualsDate(
             code_import_job, 'heartbeat', UTC_NOW)
@@ -96,7 +96,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         # code import job with the given ID.
         fault = self.api.updateHeartbeat(-1, '')
         self.assertTrue(
-            isinstance(fault, xmlrpclib.Fault),
+            isinstance(fault, xmlrpc_client.Fault),
             "updateHeartbeat(-1, '') returned %r, not a Fault."
             % (fault,))
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)
@@ -123,7 +123,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
             code_import_job.id, CodeImportResultStatus.SUCCESS.name,
             log_file_alias.http_url)
         self.assertEqual(
-            log_file_alias, code_import.results[-1].log_file)
+            log_file_alias, code_import.results.last().log_file)
 
     def test_finishJobID_not_found(self):
         # getImportDataForJobID returns a NoSuchCodeImportJob fault when there
@@ -131,7 +131,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         fault = self.api.finishJobID(
             -1, CodeImportResultStatus.SUCCESS.name, '')
         self.assertTrue(
-            isinstance(fault, xmlrpclib.Fault),
+            isinstance(fault, xmlrpc_client.Fault),
             "finishJobID(-1, 'SUCCESS', 0) returned %r, not a Fault."
             % (fault,))
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)

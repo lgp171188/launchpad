@@ -70,7 +70,7 @@ class MilestoneTagTest(TestCaseWithFactory):
             MilestoneTag.created_by_id,
             MilestoneTag.date_created,
             )
-        created_by_id, date_created = values.next()
+        created_by_id, date_created = next(values)
         self.assertEqual(self.person.id, created_by_id)
         self.assertIsInstance(date_created, datetime.datetime)
 

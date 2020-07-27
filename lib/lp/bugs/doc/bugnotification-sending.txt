@@ -619,7 +619,9 @@ more carefully at the notifications just to see that the status has
 been set properly.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> for notification in BugNotification.select(orderBy='id')[-8:]:
+    >>> from lp.services.database.interfaces import IStore
+    >>> for notification in list(IStore(BugNotification).find(
+    ...         BugNotification).order_by(BugNotification.id))[-8:]:
     ...     if notification.is_comment:
     ...         identifier = 'comment'
     ...     else:
@@ -947,7 +949,7 @@ We can see that Concise Person doesn't receive verbose notifications:
 
     >>> print_notification(collated_messages['concise@example.com'][0])
     To: concise@example.com
-    From: Verbose Person <verbose@example.com>
+    From: Verbose Person <...@bugs.launchpad.net>
     Subject: [Bug ...] subject
     X-Launchpad-Message-Rationale: Subscriber
     X-Launchpad-Message-For: concise-person
@@ -975,7 +977,7 @@ that gets verbose email.
 
     >>> print_notification(collated_messages['verboseteam@example.com'][0])
     To: verboseteam@example.com
-    From: Verbose Person <verbose@example.com>
+    From: Verbose Person <...@bugs.launchpad.net>
     Subject: [Bug ...] subject
     X-Launchpad-Message-Rationale: Subscriber @verboseteam
     X-Launchpad-Message-For: verboseteam
@@ -995,7 +997,7 @@ Whereas Verbose Person does get the description and task status:
 
     >>> print_notification(collated_messages['verbose@example.com'][0])
     To: verbose@example.com
-    From: Verbose Person <verbose@example.com>
+    From: Verbose Person <...@bugs.launchpad.net>
     Subject: [Bug ...] subject
     X-Launchpad-Message-Rationale: Subscriber
     X-Launchpad-Message-For: verbose-person
@@ -1026,7 +1028,7 @@ And Concise Team Person does too, even though their team doesn't want them:
 
     >>> print_notification(collated_messages['conciseteam@example.com'][0])
     To: conciseteam@example.com
-    From: Verbose Person <verbose@example.com>
+    From: Verbose Person <...@bugs.launchpad.net>
     Subject: [Bug ...] subject
     X-Launchpad-Message-Rationale: Subscriber @conciseteam
     X-Launchpad-Message-For: conciseteam

@@ -7,9 +7,11 @@ __metaclass__ = type
 
 __all__ = [
     'HWBus',
+    'HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG',
     'HWSubmissionFormat',
     'HWSubmissionKeyNotUnique',
     'HWSubmissionProcessingStatus',
+    'HWSubmissionsDisabledError',
     'IHWDBApplication',
     'IHWDevice',
     'IHWDeviceClass',
@@ -40,8 +42,6 @@ __all__ = [
     'ParameterError',
     ]
 
-import httplib
-
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -49,11 +49,11 @@ from lazr.enum import (
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
@@ -64,6 +64,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -95,6 +96,23 @@ from lp.services.webservice.apihelpers import (
     patch_reference_property,
     )
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+
+
+HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG = 'hardwaredb.submissions.disabled'
+
+
+@error_status(http_client.GONE)
+class HWSubmissionsDisabledError(Exception):
+    """An exception saying that hardware database submissions are disabled."""
+
+    def __init__(self, message=None):
+        if message is None:
+            message = (
+                "Launchpad's hardware database is obsolete and is no longer "
+                "accepting submissions.  Please use "
+                "https://answers.launchpad.net/launchpad/+addquestion to tell "
+                "us about your requirements if you still need it.")
+        super(HWSubmissionsDisabledError, self).__init__(message)
 
 
 def validate_new_submission_key(submission_key):
@@ -153,12 +171,12 @@ class HWSubmissionFormat(DBEnumeratedType):
     VERSION_1 = DBItem(1, "Version 1")
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWSubmission(Interface, IPrivacy):
     """Raw submission data for the hardware database.
 
     See doc/hwdb.txt for details about the attributes.
     """
-    export_as_webservice_entry(publish_web_link=False)
 
     date_created = exported(
         Datetime(
@@ -444,9 +462,9 @@ class IHWSystemFingerprintSet(Interface):
         Return the new entry."""
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWDriver(Interface):
     """Information about a device driver."""
-    export_as_webservice_entry(publish_web_link=False)
 
     id = exported(
         Int(title=u'Driver ID', required=True, readonly=True))
@@ -571,10 +589,10 @@ class IHWDriverSet(Interface):
         """Return all known distinct package names appearing in HWDriver."""
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWDriverName(Interface):
     """A driver name as appearing in `IHWDriver`.
     """
-    export_as_webservice_entry(publish_web_link=False)
 
     name = exported(
         TextLine(
@@ -583,10 +601,10 @@ class IHWDriverName(Interface):
                           "IHWDriver.")))
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWDriverPackageName(Interface):
     """A driver name as appearing in `IHWDriver`.
     """
-    export_as_webservice_entry(publish_web_link=False)
 
     package_name = exported(
         TextLine(
@@ -670,10 +688,10 @@ class IHWVendorNameSet(Interface):
         """
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWVendorID(Interface):
     """A list of vendor IDs for different busses associated with vendor names.
     """
-    export_as_webservice_entry(publish_web_link=False)
     id = exported(
         Int(title=u'The Database ID', required=True, readonly=True))
 
@@ -726,9 +744,9 @@ class IHWVendorIDSet(Interface):
         """
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWDeviceClass(Interface):
     """The capabilities of a device."""
-    export_as_webservice_entry(publish_web_link=False)
 
     id = Int(title=u'Device class ID', required=True, readonly=True)
     device = Reference(schema=Interface)
@@ -786,9 +804,9 @@ IDs for other buses may be arbitrary strings.
 """
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWDevice(Interface):
     """Core information to identify a device."""
-    export_as_webservice_entry(publish_web_link=False)
 
     id = exported(
         Int(title=u'Device ID', required=True, readonly=True))
@@ -1050,9 +1068,9 @@ class IHWDeviceDriverLinkSet(Interface):
         """
 
 
+@exported_as_webservice_entry(publish_web_link=False)
 class IHWSubmissionDevice(Interface):
     """Link a submission to a IHWDeviceDriver row."""
-    export_as_webservice_entry(publish_web_link=False)
 
     id = exported(
         Int(title=u'HWSubmissionDevice ID', required=True, readonly=True))
@@ -1180,10 +1198,9 @@ class IHWSubmissionBugSet(Interface):
         """
 
 
+@exported_as_webservice_entry('hwdb', publish_web_link=False)
 class IHWDBApplication(ILaunchpadApplication):
     """Hardware database application application root."""
-
-    export_as_webservice_entry('hwdb', publish_web_link=False)
 
     @operation_parameters(
         bus=Choice(
@@ -1690,11 +1707,11 @@ class IHWDBApplication(ILaunchpadApplication):
         """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class IllegalQuery(Exception):
     """Exception raised when trying to run an illegal submissions query."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ParameterError(Exception):
     """Exception raised when a method parameter does not match a constrint."""

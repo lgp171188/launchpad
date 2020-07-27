@@ -5,9 +5,8 @@
 
 __metaclass__ = type
 
-from cookielib import domain_match
-
 from lazr.uri import URI
+from six.moves.http_cookiejar import domain_match
 from zope.session.http import CookieClientIdManager
 
 from lp.services.config import config
@@ -51,6 +50,8 @@ class LaunchpadCookieClientIdManager(CookieClientIdManager):
         # It should be larger than our session expiry time.
         self.cookieLifetime = 1 * YEARS
         self._secret = None
+        # Forbid browsers from exposing it to JS.
+        self.httpOnly = True
 
     def getClientId(self, request):
         sid = self.getRequestId(request)
@@ -103,9 +104,6 @@ class LaunchpadCookieClientIdManager(CookieClientIdManager):
 
         cookie = request.response.getCookie(self.namespace)
         uri = URI(request.getURL())
-
-        # Forbid browsers from exposing it to JS.
-        cookie['HttpOnly'] = True
 
         # Set secure flag on cookie.
         if uri.scheme != 'http':

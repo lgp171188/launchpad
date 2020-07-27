@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of `IGitNamespace`."""
@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = [
     'GitNamespaceSet',
+    'OCIProjectGitNamespace',
     'PackageGitNamespace',
     'PersonalGitNamespace',
     'ProjectGitNamespace',
@@ -39,7 +40,6 @@ from lp.code.errors import (
     GitRepositoryCreatorNotMemberOfOwnerTeam,
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
-    GitTargetError,
     )
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitnamespace import (
@@ -75,7 +75,7 @@ class _BaseGitNamespace:
                          reviewer=None, information_type=None,
                          date_created=DEFAULT, description=None,
                          target_default=False, owner_default=False,
-                         with_hosting=False):
+                         with_hosting=False, status=None):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
 
@@ -90,7 +90,7 @@ class _BaseGitNamespace:
         repository = GitRepository(
             repository_type, registrant, self.owner, self.target, name,
             information_type, date_created, reviewer=reviewer,
-            description=description)
+            description=description, status=status)
         repository._reconcileAccess()
 
         # The owner of the repository should also be automatically subscribed
@@ -121,24 +121,7 @@ class _BaseGitNamespace:
             IStore(repository).flush()
             assert repository.id is not None
 
-            # If repository has target_default, clone from default.
-            clone_from_repository = None
-            try:
-                default = repository_set.getDefaultRepository(
-                    repository.target)
-                if default is not None and default.visibleByUser(registrant):
-                    clone_from_repository = default
-                else:
-                    default = repository_set.getDefaultRepositoryForOwner(
-                        repository.owner, repository.target)
-                    if (default is not None and
-                            default.visibleByUser(registrant)):
-                        clone_from_repository = default
-            except GitTargetError:
-                pass  # Ignore Personal repositories.
-            if clone_from_repository == repository:
-                clone_from_repository = None
-
+            clone_from_repository = repository.getClonedFrom()
             repository._createOnHostingService(
                 clone_from_repository=clone_from_repository)
 
@@ -165,12 +148,9 @@ class _BaseGitNamespace:
         if not registrant.inTeam(owner):
             if owner.is_team:
                 raise GitRepositoryCreatorNotMemberOfOwnerTeam(
-                    "%s is not a member of %s"
-                    % (registrant.displayname, owner.displayname))
+                    registrant, owner)
             else:
-                raise GitRepositoryCreatorNotOwner(
-                    "%s cannot create Git repositories owned by %s"
-                    % (registrant.displayname, owner.displayname))
+                raise GitRepositoryCreatorNotOwner(registrant, owner)
 
         if not self.getAllowedInformationTypes(registrant):
             raise GitRepositoryCreationForbidden(
@@ -302,7 +282,8 @@ class PersonalGitNamespace(_BaseGitNamespace):
             GitRepository.owner == self.owner,
             GitRepository.project == None,
             GitRepository.distribution == None,
-            GitRepository.sourcepackagename == None)
+            GitRepository.sourcepackagename == None,
+            GitRepository.oci_project == None)
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
@@ -319,6 +300,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
         repository.project = None
         repository.distribution = None
         repository.sourcepackagename = None
+        repository.oci_project = None
         repository.target_default = False
         repository.owner_default = False
 
@@ -348,7 +330,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
         if this.namespace != self:
             raise AssertionError(
                 "Namespace of %s is not %s." % (this.unique_name, self.name))
-        return this == other
+        return this.name == other.name
 
     @property
     def collection(self):
@@ -399,6 +381,7 @@ class ProjectGitNamespace(_BaseGitNamespace):
         repository.project = self.project
         repository.distribution = None
         repository.sourcepackagename = None
+        repository.oci_project = None
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -494,6 +477,7 @@ class PackageGitNamespace(_BaseGitNamespace):
         repository.project = None
         repository.distribution = dsp.distribution
         repository.sourcepackagename = dsp.sourcepackagename
+        repository.oci_project = None
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -541,24 +525,106 @@ class PackageGitNamespace(_BaseGitNamespace):
             self_dsp.sourcepackagename == other_dsp.sourcepackagename)
 
 
+@implementer(IGitNamespace, IGitNamespacePolicy)
+class OCIProjectGitNamespace(_BaseGitNamespace):
+    """A namespace for OCI Project repositories.
+
+    This namespace is for all the repositories owned by a particular person
+    in a particular OCI Project in a particular pillar.
+    """
+
+    has_defaults = True
+    allow_push_to_set_default = False
+    supports_merge_proposals = True
+    supports_code_imports = True
+    allow_recipe_name_from_target = True
+
+    def __init__(self, person, oci_project):
+        self.owner = person
+        self.oci_project = oci_project
+
+    def _getRepositoriesClause(self):
+        return And(
+            GitRepository.owner == self.owner,
+            GitRepository.oci_project == self.oci_project)
+
+    # Marker for references to Git URL layouts: ##GITNAMESPACE##
+    @property
+    def name(self):
+        """See `IGitNamespace`."""
+        ocip = self.oci_project
+        return '~%s/%s/+oci/%s' % (
+            self.owner.name, ocip.pillar.name, ocip.name)
+
+    @property
+    def target(self):
+        """See `IGitNamespace`."""
+        return IHasGitRepositories(self.oci_project)
+
+    def _retargetRepository(self, repository):
+        repository.project = None
+        repository.distribution = None
+        repository.sourcepackagename = None
+        repository.oci_project = self.oci_project
+
+    def getAllowedInformationTypes(self, who=None):
+        """See `IGitNamespace`."""
+        return PUBLIC_INFORMATION_TYPES
+
+    def getDefaultInformationType(self, who=None):
+        """See `IGitNamespace`."""
+        return InformationType.PUBLIC
+
+    def areRepositoriesMergeable(self, this, other):
+        """See `IGitNamespacePolicy`."""
+        # Repositories are mergeable into an OCI Project repository if the
+        # OCI Project is the same.
+        # XXX cjwatson 2015-04-18: Allow merging from a project repository
+        # if any (active?) series links this OCI Project to that project.
+        if this.namespace != self:
+            raise AssertionError(
+                "Namespace of %s is not %s." % (this.unique_name, self.name))
+        other_namespace = other.namespace
+        if zope_isinstance(other_namespace, OCIProjectGitNamespace):
+            return self.target == other_namespace.target
+        else:
+            return False
+
+    @property
+    def collection(self):
+        """See `IGitNamespacePolicy`."""
+        return getUtility(IAllGitRepositories).inOCIProject(
+            self.oci_project)
+
+    def assignKarma(self, person, action_name, date_created=None):
+        """See `IGitNamespacePolicy`."""
+        # Does nothing. Currently no karma for OCI Project Namespaces.
+        return None
+
+
 @implementer(IGitNamespaceSet)
 class GitNamespaceSet:
     """Only implementation of `IGitNamespaceSet`."""
 
     def get(self, person, project=None, distribution=None,
-            sourcepackagename=None):
+            sourcepackagename=None, oci_project=None):
         """See `IGitNamespaceSet`."""
+        # XXX cjwatson 2019-11-25: This will eventually need project-based
+        # OCIProject support.
         if project is not None:
-            assert distribution is None and sourcepackagename is None, (
-                "project implies no distribution or sourcepackagename. "
-                "Got %r, %r, %r."
-                % (project, distribution, sourcepackagename))
+            assert (distribution is None and sourcepackagename is None
+                    and oci_project is None), (
+                "project implies no distribution, sourcepackagename"
+                " or oci_project. "
+                "Got %r, %r, %r, %r."
+                % (project, distribution, sourcepackagename, oci_project))
             return ProjectGitNamespace(person, project)
         elif distribution is not None:
-            assert sourcepackagename is not None, (
-                "distribution implies sourcepackagename. Got %r, %r"
-                % (distribution, sourcepackagename))
+            assert (sourcepackagename is not None), (
+                "sourcepackagename must be set. Got %r." % (sourcepackagename))
             return PackageGitNamespace(
                 person, distribution.getSourcePackage(sourcepackagename))
+        elif oci_project is not None:
+            return OCIProjectGitNamespace(person, oci_project)
         else:
             return PersonalGitNamespace(person)

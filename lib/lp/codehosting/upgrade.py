@@ -18,18 +18,16 @@ import os
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from bzrlib.bzrdir import (
-    BzrDir,
-    format_registry,
-    )
-from bzrlib.errors import UpToDateFormat
-from bzrlib.plugins.loom import (
+from breezy.bzr.bzrdir import BzrDir
+from breezy.bzr.groupcompress_repo import RepositoryFormat2aSubtree
+from breezy.controldir import format_registry
+from breezy.errors import UpToDateFormat
+from breezy.plugins.loom import (
     NotALoom,
     require_loom_branch,
     )
-from bzrlib.repofmt.groupcompress_repo import RepositoryFormat2aSubtree
-from bzrlib.upgrade import upgrade
-from bzrlib.url_policy_open import (
+from breezy.upgrade import upgrade
+from breezy.url_policy_open import (
     BranchOpener,
     SingleSchemePolicy,
     )
@@ -75,7 +73,7 @@ class Upgrader:
         :param branch: The bzr branch to upgrade
         :return: A Metadir format instance.
         """
-        format = format_registry.make_bzrdir('2a')
+        format = format_registry.make_controldir('2a')
         try:
             require_loom_branch(self.bzr_branch)
         except NotALoom:
@@ -205,5 +203,5 @@ class Upgrader:
     def mirror_branch(self, bzr_branch, target_bd):
         """Mirror the actual branch from a bzr_branch to a target bzrdir."""
         target = target_bd.get_branch_transport(bzr_branch._format)
-        source = bzr_branch.bzrdir.get_branch_transport(bzr_branch._format)
+        source = bzr_branch.controldir.get_branch_transport(bzr_branch._format)
         source.copy_tree_to_transport(target)

@@ -7,8 +7,8 @@ __all__ = [
     'PocketChroot'
     ]
 
-from cStringIO import StringIO
 import hashlib
+from io import BytesIO
 
 from sqlobject import (
     BoolCol,
@@ -204,7 +204,7 @@ class DistroArchSeries(SQLBase):
         # the file content from the request, since the passed in one has been
         # wrongly encoded.
         data = get_raw_form_value_from_current_request(data, 'data')
-        if isinstance(data, str):
+        if isinstance(data, bytes):
             filecontent = data
         else:
             filecontent = data.read()
@@ -232,7 +232,7 @@ class DistroArchSeries(SQLBase):
             self.distroseries.distribution.name, self.distroseries.name,
             self.architecturetag)
         lfa = getUtility(ILibraryFileAliasSet).create(
-            name=filename, size=len(filecontent), file=StringIO(filecontent),
+            name=filename, size=len(filecontent), file=BytesIO(filecontent),
             contentType='application/octet-stream')
         if lfa.content.sha1 != sha1sum:
             raise InvalidChrootUploaded("Chroot upload checksums do not match")

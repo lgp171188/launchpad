@@ -1,6 +1,6 @@
-#! /usr/bin/python
+#! /usr/bin/python2
 #
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the scan_branches script."""
@@ -39,7 +39,7 @@ class TestScanBranches(TestCaseWithFactory):
         target, target_tree = self.create_branch_and_tree(db_branch=db_branch)
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             target_tree.commit('First commit', rev_id='rev1')
             target_tree.commit('Second commit', rev_id='rev2')
             target_tree.commit('Third commit', rev_id='rev3')
@@ -76,7 +76,7 @@ class TestScanBranches(TestCaseWithFactory):
         store = Store.of(db_branch)
         result = store.find(
             BranchJob,
-            BranchJob.jobID == Job.id,
+            BranchJob.job_id == Job.id,
             Job._status == JobStatus.WAITING,
             BranchJob.job_type == BranchJobType.REVISION_MAIL,
             BranchJob.branch == db_branch)

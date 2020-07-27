@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository views."""
@@ -31,6 +31,7 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+import six
 from six.moves.urllib_parse import (
     urlsplit,
     urlunsplit,
@@ -87,6 +88,7 @@ from lp.code.browser.widgets.gitrepositorytarget import (
     )
 from lp.code.enums import (
     GitGranteeType,
+    GitRepositoryStatus,
     GitRepositoryType,
     )
 from lp.code.errors import (
@@ -451,6 +453,12 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         if not scan_job:
             return False
         return scan_job.job.status == JobStatus.FAILED
+
+    @property
+    def warning_message(self):
+        if self.context.status == GitRepositoryStatus.CREATING:
+            return "This repository is being created."
+        return None
 
 
 class GitRepositoryRescanView(LaunchpadEditFormView):
@@ -1273,9 +1281,8 @@ class GitRepositoryDeletionView(LaunchpadFormView):
         :return: A list of tuples of (item, action, reason, allowed)
         """
         reqs = []
-        for item, (action, reason) in (
-                self.context.getDeletionRequirements(
-                    eager_load=True).iteritems()):
+        for item, (action, reason) in six.iteritems(
+                self.context.getDeletionRequirements(eager_load=True)):
             allowed = check_permission("launchpad.Edit", item)
             reqs.append((item, action, reason, allowed))
         return reqs
@@ -1285,6 +1292,8 @@ class GitRepositoryDeletionView(LaunchpadFormView):
 
         Uses display_deletion_requirements as its source data.
         """
+        if self.context.status == GitRepositoryStatus.CREATING:
+            return False
         return len([item for item, action, reason, allowed in
             self.display_deletion_requirements if not allowed]) == 0
 
@@ -1324,6 +1333,12 @@ class GitRepositoryDeletionView(LaunchpadFormView):
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
+    @property
+    def warning_message(self):
+        if self.context.status == GitRepositoryStatus.CREATING:
+            return "This repository is being created and cannot be deleted."
+        return None
 
 
 class GitRepositoryActivityView(LaunchpadView):

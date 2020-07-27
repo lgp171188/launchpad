@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -57,7 +57,7 @@ class CacheCountryMirrors(LaunchpadScript):
             mirrors_file.close()
             filename = os.path.join(dir_name, '%s.txt' % country.iso3166code2)
             shutil.move(tmpfile, filename)
-            os.chmod(filename, 0644)
+            os.chmod(filename, 0o644)
 
 
 if __name__ == '__main__':

@@ -166,17 +166,19 @@ An nonexistent source:
 
     >>> admin_browser.getControl(
     ...    name='field.selected_sources').value = ['100']
-    Traceback (most recent call last):
-    ...
-    ItemNotFoundError: insufficient items with name u'100'
+    >>> admin_browser.getControl('Request Deletion').click()
+    >>> print_feedback_messages(admin_browser.contents)
+    There is 1 error.
+    No sources selected.
 
 An invalid value.
 
     >>> admin_browser.getControl(
     ...    name='field.selected_sources').value = ['blah']
-    Traceback (most recent call last):
-    ...
-    ItemNotFoundError: insufficient items with name u'blah'
+    >>> admin_browser.getControl('Request Deletion').click()
+    >>> print_feedback_messages(admin_browser.contents)
+    There is 1 error.
+    No sources selected.
 
 The deleted record is now presented accordingly in the +index page. We
 will use another browser to inspect the results of our deletions.
@@ -376,6 +378,7 @@ section indicates to the user that it is still published.
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
+    Created ... ago by Foo Bar
     Changelog
     Builds
       i386
@@ -402,6 +405,7 @@ available for deletion because it contains a PUBLISHED binary.
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
+    Created ... ago by Foo Bar
     Changelog
     Builds
       i386
@@ -418,13 +422,14 @@ filter is 'Any Status', but the user can choose another.
     ['']
 
 When the user selects 'Published' filter and update the results, no
-records are presented.
+records are presented. No error message should be shown, since no text
+filter was added.
 
     >>> user_browser.getControl(
     ...     name='field.status_filter').value = ['published']
     >>> user_browser.getControl("Filter").click()
     >>> print_ppa_packages(user_browser.contents)
-    No matching package for ''.
+
 
 When they select 'Superseded' the SUPERSEDED source shows up again.
 
@@ -543,4 +548,4 @@ as it would refer to non-existent links.
     Published on 2006-12-01
     Copied from ubuntu breezy-autotest in Primary Archive for Ubuntu Linux
     ...
-    &laquo;back
+    «back

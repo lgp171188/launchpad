@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for base-layout.pt and its macros.
@@ -13,13 +13,14 @@ in the root element. The template provides common layout to Launchpad.
 
 __metaclass__ = type
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 
 from lp.registry.interfaces.person import PersonVisibility
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    login,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -39,8 +40,12 @@ class TestBaseLayout(TestCaseWithFactory):
         self.user = self.factory.makePerson(name='waffles')
         self.context = None
 
-    def makeTemplateView(self, layout, context=None):
-        """Return a view that uses the specified layout."""
+    def makeTemplateView(self, layout, context=None, view_attributes=None):
+        """Return a view that uses the specified layout.
+
+        :params view_attributes: A dict containing extra attributes for the
+                                 view object.
+        """
 
         class TemplateView(LaunchpadView):
             """A simple view to test base-layout."""
@@ -60,6 +65,9 @@ class TestBaseLayout(TestCaseWithFactory):
         request.setPrincipal(self.user)
         request.traversed_objects.append(self.context)
         view = TemplateView(self.context, request)
+        if view_attributes:
+            for k, v in view_attributes.items():
+                setattr(view, k, v)
         request.traversed_objects.append(view)
         return view
 
@@ -227,3 +235,59 @@ class TestBaseLayout(TestCaseWithFactory):
         content = extract_text(find_tag_by_id(view(), 'maincontent'))
         self.assertNotIn(
             'The information in this page is not shared with you.', content)
+
+    def test_referrer_policy_set_private_view(self):
+        login('admin@canonical.com')
+        owner = self.factory.makePerson()
+        with person_logged_in(owner):
+            team = self.factory.makeTeam(
+                owner=owner,
+                visibility=PersonVisibility.PRIVATE)
+        view = self.makeTemplateView('main_side', context=team)
+        content = BeautifulSoup(view())
+        referrer = content.find('meta',
+                                {'name': 'referrer',
+                                 'content': 'origin-when-cross-origin'})
+        self.assertIsNotNone(referrer)
+        self.assertEqual(referrer.get('content'), 'origin-when-cross-origin')
+        self.assertEqual(referrer.get('name'), 'referrer')
+
+    def test_referrer_policy_set_public_view(self):
+        view = self.makeTemplateView('main_side')
+        content = BeautifulSoup(view())
+        referrer = content.find('meta', content="origin-when-cross-origin")
+        self.assertIsNone(referrer)
+
+    def test_opengraph_metadata(self):
+        view = self.makeTemplateView('main_side')
+        content = BeautifulSoup(view())
+
+        # https://ogp.me/ - "The four required properties for every page are:"
+        og_title = content.find('meta', {'property': 'og:title'})
+        self.assertIsNotNone(og_title)
+        og_type = content.find('meta', {'property': 'og:type'})
+        self.assertIsNotNone(og_type)
+        og_image = content.find('meta', {'property': 'og:image'})
+        self.assertIsNotNone(og_image)
+        og_url = content.find('meta', {'property': 'og:url'})
+        self.assertIsNotNone(og_url)
+
+        # And some basic validity checks
+        self.assertEqual(og_type.get('content'), 'website')
+        self.assertIn('png', og_image.get('content'))
+        self.assertIn('Test', og_title.get('content'))
+        self.assertIn('http', og_url.get('content'))
+
+    def test_opengraph_metadata_missing_on_404_page(self):
+        view = self.makeTemplateView(
+            'main_side', view_attributes={'show_opengraph_meta': False})
+        content = BeautifulSoup(view())
+
+        og_title = content.find('meta', {'property': 'og:title'})
+        self.assertIsNone(og_title)
+        og_type = content.find('meta', {'property': 'og:type'})
+        self.assertIsNone(og_type)
+        og_image = content.find('meta', {'property': 'og:image'})
+        self.assertIsNone(og_image)
+        og_url = content.find('meta', {'property': 'og:url'})
+        self.assertIsNone(og_url)

@@ -12,7 +12,7 @@ bugs, teams, etc.).
     ...         contents = anon_browser.contents
     ...     tag = find_tag_by_id(contents, 'search-results')
     ...     if tag:
-    ...         print extract_text(tag)
+    ...         print(extract_text(tag))
 
     # Another helper to make searching convenient.
 
@@ -29,7 +29,7 @@ The search form is available on almost every Launchpad page.
 
     >>> anon_browser.open('http://launchpad.test/ubuntu')
     >>> search_for('test1')
-    >>> print anon_browser.url
+    >>> print(anon_browser.url)
     http://launchpad.test/+search?field.text=test1
 
 But the search results page has its own search form, so the global one
@@ -44,19 +44,19 @@ If by chance someone ends up at /+search with no search parameters, they
 get an explanation of the search function.
 
     >>> anon_browser.open('http://launchpad.test/+search')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Search Launchpad
 
     >>> print_search_results()
 
-    >>> print extract_text(find_tag_by_id(anon_browser.contents, 'no-search'))
+    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'no-search')))
     Enter a term or many terms to find matching pages...
 
 When the user searches for specific item, such as a project name, they
 see a result for that exact match in Launchpad.
 
     >>> search_for('firefox')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Pages matching "firefox" in Launchpad
 
     >>> print_search_results()
@@ -71,7 +71,7 @@ matching question number, if one exists. Searching for "3", the user
 sees that a bug matched.
 
     >>> search_for('3')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Pages matching "3" in Launchpad
 
     >>> print_search_results()
@@ -88,11 +88,11 @@ navigation states that the page is showing 1 through 20 of 25 total results.
     # Use our pre-defined search results for the 'bug' search.
 
     >>> search_for('bug')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Pages matching "bug" in Launchpad
 
     >>> print_search_results()
-    1 &rarr; 20 of 25 pages matching "bug"...
+    1 → 20 of 25 pages matching "bug"...
     Launchpad Bugs...
     Bugs in Ubuntu...
     Bugs related to Sample Person...
@@ -127,7 +127,7 @@ matching ...".
     # Use our pre-defined search results for the 'launchpad' search.
 
     >>> search_for('launchpad')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Pages matching "launchpad" in Launchpad
 
     >>> print_search_results()
@@ -139,7 +139,7 @@ matching ...".
     Launchpad Developers (launchpad)
     Launchpad developers
     Created on 2005-10-13...
-    1 &rarr; 20 of 25 other pages matching "launchpad"...
+    1 → 20 of 25 other pages matching "launchpad"...
     Launchpad Bugs...
 
 
@@ -238,11 +238,11 @@ the user. The text field is focused so that the user can try another
 search.
 
     >>> search_for('fnord')
-    >>> print extract_text(
-    ...     find_main_content(anon_browser.contents), skip_tags=[])
+    >>> print(extract_text(
+    ...     find_main_content(anon_browser.contents), skip_tags=[]))
     Pages matching "fnord" in Launchpad
-    &lt;!-- setFocusByName('field.text'); // --&gt;
-    Your search for &ldquo;fnord&rdquo; did not return any results.
+    <!-- setFocusByName('field.text'); // -->
+    Your search for “fnord” did not return any results.
 
 
 Searches when there is no page service
@@ -254,7 +254,7 @@ displayed that explains that the search can be performed again to find
 matching pages.
 
     >>> search_for('gnomebaker')
-    >>> print find_tag_by_id(anon_browser.contents, 'no-page-service')
+    >>> print(find_tag_by_id(anon_browser.contents, 'no-page-service'))
     <p id="no-page-service">
     The page search service was not available when this search was
     performed.
@@ -271,7 +271,7 @@ field, the page does not contain any results. The user can see that the
 page is identical to the page visited without performing a search.
 
     >>> search_for('')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Search Launchpad
 
     >>> print_search_results()
@@ -303,17 +303,17 @@ Most pages have the global search form in them. Any user can enter terms
 in the page they are viewing and submit the form to see the results.
 
     >>> anon_browser.open('http://bugs.launchpad.test/firefox')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Bugs : Mozilla Firefox
 
-    >>> print anon_browser.url
+    >>> print(anon_browser.url)
     http://bugs.launchpad.test/firefox
 
     >>> search_for('mozilla')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Pages matching "mozilla" in Launchpad
 
-    >>> print anon_browser.url
+    >>> print(anon_browser.url)
     http://launchpad.test/+search?...
 
     >>> print_search_results()

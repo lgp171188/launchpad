@@ -13,25 +13,24 @@ __all__ = [
     "NoSuchSnapBase",
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import Interface
 from zope.schema import (
@@ -58,7 +57,7 @@ class NoSuchSnapBase(NameLookupFailed):
     _message_prefix = "No such base"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotDeleteSnapBase(Exception):
     """The base cannot be deleted at this time."""
 
@@ -138,13 +137,12 @@ class ISnapBaseEdit(Interface):
         """
 
 
+# XXX cjwatson 2019-01-28 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ISnapBase(ISnapBaseView, ISnapBaseEditableAttributes):
     """A base for snaps."""
-
-    # XXX cjwatson 2019-01-28 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
 
 
 class ISnapBaseSetEdit(Interface):
@@ -172,10 +170,9 @@ class ISnapBaseSetEdit(Interface):
         """
 
 
+@exported_as_webservice_collection(ISnapBase)
 class ISnapBaseSet(ISnapBaseSetEdit):
     """Interface representing the set of bases for snaps."""
-
-    export_as_webservice_collection(ISnapBase)
 
     def __iter__():
         """Iterate over `ISnapBase`s."""

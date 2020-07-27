@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BinaryPackageBuildBehaviour."""
@@ -13,17 +13,17 @@ import shutil
 import tempfile
 
 from storm.store import Store
+from testscenarios import load_tests_apply_scenarios
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import defer
-from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.diskpool import poolify
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
@@ -37,6 +37,7 @@ from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
+from lp.buildmaster.manager import BuilddManager
 from lp.buildmaster.tests.mock_slaves import (
     AbortingSlave,
     BuildingSlave,
@@ -354,7 +355,7 @@ class TestBinaryBuildPackageBehaviour(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         builder = self.factory.makeBuilder()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
-        yield IArchiveSigningKey(archive).setSigningKey(
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
             key_path, async_keyserver=True)
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         self.factory.makeBinaryPackagePublishingHistory(
@@ -424,6 +425,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         switch_dbuser('testadmin')
 
         self.builder = self.factory.makeBuilder()
+        self.manager = BuilddManager()
         self.interactor = BuilderInteractor()
         self.build = self.factory.makeBinaryPackageBuild(
             builder=self.builder, pocket=PackagePublishingPocket.RELEASE)
@@ -442,7 +444,8 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         slave_status = yield slave.status()
         yield self.interactor.updateBuild(
             bf.getVitals('foo'), slave, slave_status, bf,
-            self.interactor.getBuildBehaviour)
+            self.interactor.getBuildBehaviour, self.manager)
+        self.manager.flushLogTails()
 
     def assertBuildProperties(self, build):
         """Check that a build happened by making sure some of its properties
@@ -631,5 +634,8 @@ class TestVerifySuccessfulBuildForBinaryPackageBuild(
 
 
 class TestHandleStatusForBinaryPackageBuild(
-    MakeBinaryPackageBuildMixin, TestHandleStatusMixin, TrialTestCase):
+    MakeBinaryPackageBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with binary builds."""
+
+
+load_tests = load_tests_apply_scenarios

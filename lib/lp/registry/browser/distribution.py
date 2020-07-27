@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for distributions."""
@@ -13,6 +13,7 @@ __all__ = [
     'DistributionArchivesView',
     'DistributionChangeMembersView',
     'DistributionChangeMirrorAdminView',
+    'DistributionChangeOCIProjectAdminView',
     'DistributionCountryArchiveMirrorsView',
     'DistributionDisabledMirrorsView',
     'DistributionEditView',
@@ -104,8 +105,13 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
     )
+from lp.registry.interfaces.ociproject import (
+    IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.features import getFeatureFlag
 from lp.services.feeds.browser import FeedsMixin
 from lp.services.geoip.helpers import (
     ipaddress_from_request,
@@ -118,7 +124,6 @@ from lp.services.webapp import (
     canonical_url,
     ContextMenu,
     enabled_with_permission,
-    GetitemNavigation,
     LaunchpadView,
     Link,
     Navigation,
@@ -137,7 +142,7 @@ from lp.soyuz.interfaces.archive import IArchiveSet
 
 
 class DistributionNavigation(
-    GetitemNavigation, BugTargetTraversalMixin, QuestionTargetTraversalMixin,
+    Navigation, BugTargetTraversalMixin, QuestionTargetTraversalMixin,
     FAQTargetNavigationMixin, StructuralSubscriptionTargetTraversalMixin,
     PillarNavigationMixin, TargetDefaultVCSNavigationMixin):
 
@@ -155,6 +160,10 @@ class DistributionNavigation(
     def traverse_sources(self, name):
         return self.context.getSourcePackage(name)
 
+    @stepthrough('+oci')
+    def traverse_oci(self, name):
+        return self.context.getOCIProject(name)
+
     @stepthrough('+milestone')
     def traverse_milestone(self, name):
         return self.context.getMilestone(name)
@@ -171,12 +180,24 @@ class DistributionNavigation(
     def traverse_archive(self, name):
         return self.context.getArchive(name)
 
-    def traverse(self, name):
+    def _resolveSeries(self, name):
         try:
-            return super(DistributionNavigation, self).traverse(name)
+            return self.context[name], False
         except NotFoundError:
             resolved = self.context.resolveSeriesAlias(name)
-            return self.redirectSubTree(canonical_url(resolved), status=303)
+            return resolved, True
+
+    @stepthrough('+series')
+    def traverse_series(self, name):
+        series, _ = self._resolveSeries(name)
+        return self.redirectSubTree(canonical_url(series), status=303)
+
+    def traverse(self, name):
+        series, is_alias = self._resolveSeries(name)
+        if is_alias:
+            return self.redirectSubTree(canonical_url(series), status=303)
+        else:
+            return series
 
 
 class DistributionSetNavigation(Navigation):
@@ -302,11 +323,28 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
     def sharing(self):
         return Link('+sharing', 'Sharing', icon='edit')
 
+    def new_oci_project(self):
+        text = 'Create an OCI project'
+        link = Link('+new-oci-project', text, icon='add')
+        link.enabled = (
+            bool(getFeatureFlag(OCI_PROJECT_ALLOW_CREATE))
+            and self.context.canAdministerOCIProjects(self.user))
+        return link
+
+    def search_oci_project(self):
+        oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
+            self.context, u'')
+        text = 'Search for OCI project'
+        link = Link('+search-oci-project', text, icon='info')
+        link.enabled = not oci_projects.is_empty()
+        return link
+
     @cachedproperty
     def links(self):
         return [
             'edit', 'admin', 'pubconf', 'subscribe_to_bug_mail',
-            'edit_bug_mail', 'sharing']
+            'edit_bug_mail', 'sharing', 'new_oci_project',
+            'search_oci_project']
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
@@ -320,6 +358,7 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
         'search',
         'members',
         'mirror_admin',
+        'oci_project_admin',
         'reassign',
         'addseries',
         'series',
@@ -407,6 +446,11 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
         text = 'Change mirror admins'
         enabled = self.context.supports_mirrors
         return Link('+selectmirroradmins', text, enabled=enabled, icon='edit')
+
+    @enabled_with_permission('launchpad.Edit')
+    def oci_project_admin(self):
+        text = 'Change OCI project admins'
+        return Link('+select-oci-project-admins', text, icon='edit')
 
     def search(self):
         text = 'Search packages'
@@ -675,6 +719,21 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
             header='Change the mirror administrator',
             edit_view='+selectmirroradmins', null_display_value=empty_value,
             step_title='Select a new mirror administrator')
+
+    @property
+    def oci_project_admin_widget(self):
+        if canWrite(self.context, 'oci_project_admin'):
+            empty_value = ' Specify an OCI project administrator'
+        else:
+            empty_value = 'None'
+        return InlinePersonEditPickerWidget(
+            self.context, IDistribution['oci_project_admin'],
+            format_link(
+                self.context.oci_project_admin, empty_value=empty_value),
+            header='Change the OCI project administrator',
+            edit_view='+select-oci-project-admins',
+            null_display_value=empty_value,
+            step_title='Select a new OCI project administrator')
 
     def linkedMilestonesForSeries(self, series):
         """Return a string of linkified milestones in the series."""
@@ -1046,6 +1105,18 @@ class DistributionChangeMirrorAdminView(RegistryEditFormView):
     def label(self):
         """See `LaunchpadFormView`."""
         return "Change the %s mirror administrator" % self.context.displayname
+
+
+class DistributionChangeOCIProjectAdminView(RegistryEditFormView):
+    """A view to change the OCI project administrator."""
+    schema = IDistribution
+    field_names = ['oci_project_admin']
+
+    @property
+    def label(self):
+        """See `LaunchpadFormView`."""
+        return "Change the %s OCI project administrator" % (
+            self.context.displayname)
 
 
 class DistributionChangeMembersView(RegistryEditFormView):

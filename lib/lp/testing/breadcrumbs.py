@@ -52,6 +52,6 @@ class BaseBreadcrumbTestCase(TestCaseWithFactory):
         obj, view, request = test_traverse(url)
         # Sometimes test_traverse returns the __call__, while the template
         # always has access to the instance.
-        view = getattr(removeSecurityProxy(view), 'im_self', view)
+        view = getattr(removeSecurityProxy(view), '__self__', view)
         hier = create_initialized_view(view, '+hierarchy', request=request)
         return hier.items

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation of the lp: htmlform: fmt: namespaces in TALES."""
@@ -10,19 +10,22 @@ from datetime import (
     datetime,
     timedelta,
     )
-from email.utils import formatdate
+from email.utils import (
+    formatdate,
+    mktime_tz,
+    )
 import math
 import os.path
-import rfc822
 import sys
 from textwrap import dedent
-import urllib
 
 from lazr.enum import enumerated_type_registry
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import pytz
-from z3c.ptcompat import ViewPageTemplateFile
+import six
+from six.moves.urllib.parse import quote
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
     getMultiAdapter,
@@ -480,6 +483,12 @@ class DBSchemaAPI:
             return enum.items[self._number].title
         else:
             raise TraversalError(name)
+
+
+# Python 3 doesn't have types.NoneType, but we still need to be able to
+# refer to the type of None from ZCML so that we can register the
+# NoneFormatter adapter.
+NoneType = type(None)
 
 
 @implementer(ITraversable)
@@ -1416,7 +1425,7 @@ class CustomizableFormatter(ObjectFormatterAPI):
         """
         values = dict(
             (k, v if v is not None else '')
-            for k, v in self._link_summary_values().iteritems())
+            for k, v in six.iteritems(self._link_summary_values()))
         return structured(self._link_summary_template, **values).escapedtext
 
     def _title_values(self):
@@ -1438,7 +1447,7 @@ class CustomizableFormatter(ObjectFormatterAPI):
             return None
         values = dict(
             (k, v if v is not None else '')
-            for k, v in self._title_values().iteritems())
+            for k, v in six.iteritems(self._title_values()))
         return structured(title_template, **values).escapedtext
 
     def sprite_css(self):
@@ -1645,7 +1654,7 @@ class ProductReleaseFileFormatterAPI(ObjectFormatterAPI):
         url = urlappend(canonical_url(self._release), '+download')
         # Quote the filename to eliminate non-ascii characters which
         # are invalid in the url.
-        return urlappend(url, urllib.quote(lfa.filename.encode('utf-8')))
+        return urlappend(url, quote(lfa.filename.encode('utf-8')))
 
 
 class BranchFormatterAPI(ObjectFormatterAPI):
@@ -1900,6 +1909,20 @@ class LiveFSFormatterAPI(CustomizableFormatter):
     def _link_summary_values(self):
         return {'distroseries': self._context.distro_series.name,
                 'name': self._context.name,
+                'owner': self._context.owner.displayname}
+
+
+class OCIRecipeFormatterAPI(CustomizableFormatter):
+    """Adapter providing fmt support for IOCIRecipe objects."""
+
+    _link_summary_template = _(
+        'OCI recipe %(pillar_name)s/%(oci_project_name)s/%(recipe_name)s for '
+        '%(owner)s')
+
+    def _link_summary_values(self):
+        return {'pillar_name': self._context.oci_project.pillar.name,
+                'oci_project_name': self._context.oci_project.name,
+                'recipe_name': self._context.name,
                 'owner': self._context.owner.displayname}
 
 
@@ -2288,8 +2311,7 @@ class DateTimeFormatterAPI:
         return "%s %s" % (self.date(), self.time())
 
     def rfc822utcdatetime(self):
-        return formatdate(
-            rfc822.mktime_tz(self._datetime.utctimetuple() + (0, )))
+        return formatdate(mktime_tz(self._datetime.utctimetuple() + (0, )))
 
     def isodate(self):
         return self._datetime.isoformat()

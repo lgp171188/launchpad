@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Archive interfaces."""
@@ -54,22 +54,20 @@ __all__ = [
     'validate_external_dependencies',
     ]
 
-import httplib
 import re
-from urlparse import urlparse
 
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -81,6 +79,8 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
+from six.moves import http_client
+from six.moves.urllib.parse import urlparse
 from zope.interface import (
     Attribute,
     Interface,
@@ -123,7 +123,7 @@ from lp.soyuz.interfaces.component import IComponent
 NAMED_AUTH_TOKEN_FEATURE_FLAG = u"soyuz.named_auth_token.allow_new"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ArchiveDependencyError(Exception):
     """Raised when an `IArchiveDependency` does not fit the context archive.
 
@@ -137,12 +137,12 @@ class ArchiveDependencyError(Exception):
 
 # Exceptions used in the webservice that need to be in this file to get
 # picked up therein.
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotCopy(Exception):
     """Exception raised when a copy cannot be performed."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotSwitchPrivacy(Exception):
     """Raised when switching the privacy of an archive that has
     publishing records."""
@@ -153,17 +153,17 @@ class PocketNotFound(NameLookupFailed):
     _message_prefix = "No such pocket"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class AlreadySubscribed(Exception):
     """Raised when creating a subscription for a subscribed person."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ArchiveNotPrivate(Exception):
     """Raised when creating an archive subscription for a public archive."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NoTokensForTeams(Exception):
     """Raised when creating a token for a team, rather than a person."""
 
@@ -173,7 +173,7 @@ class ComponentNotFound(NameLookupFailed):
     _message_prefix = 'No such component'
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidComponent(Exception):
     """Invalid component name."""
 
@@ -193,17 +193,17 @@ class NoSuchPPA(NameLookupFailed):
     _message_prefix = "No such ppa"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class VersionRequiresName(Exception):
     """Raised on some queries when version is specified but name is not."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ArchiveAlreadyDeleted(Exception):
     """Archive already deleted."""
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CannotUploadToArchive(Exception):
     """A reason for not being able to upload to an archive."""
 
@@ -220,7 +220,7 @@ class InvalidPocketForPartnerArchive(CannotUploadToArchive):
     _fmt = "Partner uploads must be for the RELEASE or PROPOSED pocket."
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CannotUploadToPocket(Exception):
     """Returned when a pocket is closed for uploads."""
 
@@ -230,7 +230,7 @@ class CannotUploadToPocket(Exception):
             "'%s' state." % (pocket.name, distroseries.status.name))
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class RedirectedPocket(Exception):
     """Returned for a pocket that would normally be redirected to another.
 
@@ -301,7 +301,7 @@ class CannotUploadToSeries(CannotUploadToArchive):
             distroseries=distroseries.name)
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidExternalDependencies(Exception):
     """Tried to set external dependencies to an invalid value."""
 
@@ -311,7 +311,7 @@ class InvalidExternalDependencies(Exception):
         self.errors = errors
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CannotModifyArchiveProcessor(Exception):
     """Tried to enable or disable a restricted processor on an archive."""
 
@@ -324,13 +324,13 @@ class CannotModifyArchiveProcessor(Exception):
             self._fmt % {'processor': processor.name})
 
 
-@error_status(httplib.CONFLICT)
+@error_status(http_client.CONFLICT)
 class DuplicateTokenName(Exception):
     """Raised when creating a named token and an active token for this archive
      with this name already exists."""
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class NamedAuthTokenFeatureDisabled(Unauthorized):
     """Only certain users can create named authorization tokens."""
 
@@ -461,6 +461,12 @@ class IArchiveSubscriberView(Interface):
             "explicit publish flag and any other constraints."))
     series_with_sources = Attribute(
         "DistroSeries to which this archive has published sources")
+    signing_key_fingerprint = exported(
+        Text(
+            title=_("Archive signing key fingerprint"), required=False,
+            description=_("A OpenPGP signing key fingerprint (40 chars) "
+                          "for this PPA or None if there is no signing "
+                          "key available.")))
     signing_key = Object(
         title=_('Repository signing key.'), required=False, schema=IGPGKey)
 
@@ -537,7 +543,8 @@ class IArchiveSubscriberView(Interface):
                             distroseries=None, pocket=None,
                             exact_match=False, created_since_date=None,
                             eager_load=False, component_name=None,
-                            order_by_date=False):
+                            order_by_date=False, include_removed=True,
+                            only_unpublished=False):
         """All `ISourcePackagePublishingHistory` target to this archive.
 
         :param name: source name filter (exact match or SQL LIKE controlled
@@ -560,6 +567,10 @@ class IArchiveSubscriberView(Interface):
             If not specified, publications are ordered by source
             package name (lexicographically), then by descending version
             and then descending ID.
+        :param include_removed: If True, include publications that have been
+            removed from disk as well as those that have not.
+        :param only_unpublished: If True, only include publications that
+            have never been published to disk.
 
         :return: SelectResults containing `ISourcePackagePublishingHistory`,
             ordered by name. If there are multiple results for the same
@@ -1183,13 +1194,6 @@ class IArchiveView(IHasBuildRecords):
         description=_(
             "The password used by the build farm to access the archive."))
 
-    signing_key_fingerprint = exported(
-        Text(
-            title=_("Archive signing key fingerprint"), required=False,
-            description=_("A OpenPGP signing key fingerprint (40 chars) "
-                          "for this PPA or None if there is no signing "
-                          "key available.")))
-
     @call_with(eager_load=True)
     @rename_parameters_as(
         name="binary_name", distroarchseries="distro_arch_series")
@@ -1240,6 +1244,7 @@ class IArchiveView(IHasBuildRecords):
                                 distroarchseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
                                 ordered=True, order_by_date=False,
+                                include_removed=True, only_unpublished=False,
                                 eager_load=False):
         """All `IBinaryPackagePublishingHistory` target to this archive.
 
@@ -1261,6 +1266,10 @@ class IArchiveView(IHasBuildRecords):
         :param order_by_date: Order publications by descending creation date
             and then by descending ID.  This is suitable for applications
             that need to catch up with publications since their last run.
+        :param include_removed: If True, include publications that have been
+            removed from disk as well as those that have not.
+        :param only_unpublished: If True, only include publications that
+            have never been published to disk.
 
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """
@@ -2273,11 +2282,11 @@ class IArchiveRestricted(Interface):
             "with a higher score will build sooner.")))
 
 
+@exported_as_webservice_entry()
 class IArchive(IArchivePublic, IArchiveAppend, IArchiveEdit, IArchiveDelete,
                IArchiveSubscriberView, IArchiveView, IArchiveAdmin,
                IArchiveRestricted):
     """Main Archive interface."""
-    export_as_webservice_entry()
 
 
 class IPPA(IArchive):
@@ -2295,10 +2304,9 @@ class IArchiveEditDependenciesForm(Interface):
         title=_('Add PPA dependency'), required=False, vocabulary='PPA')
 
 
+@exported_as_webservice_collection(IArchive)
 class IArchiveSet(Interface):
     """Interface for ArchiveSet"""
-
-    export_as_webservice_collection(IArchive)
 
     title = Attribute('Title')
 
@@ -2452,7 +2460,7 @@ class IArchiveSet(Interface):
         """Return a result set containing all private PPAs."""
 
     def getPublicationsInArchives(source_package_name, archive_list,
-                                  distribution):
+                                  distribution=None, distroseries=None):
         """Return a result set of publishing records for the source package.
 
         :param source_package_name: an `ISourcePackageName` identifying the
@@ -2460,6 +2468,8 @@ class IArchiveSet(Interface):
         :param archive_list: a list of at least one archive with which to
             restrict the search.
         :param distribution: the distribution by which the results will
+            be limited.
+        :param distroseries: the distroseries by which the results will
             be limited.
         :return: a resultset of the `ISourcePackagePublishingHistory` objects
             that are currently published in the given archives.

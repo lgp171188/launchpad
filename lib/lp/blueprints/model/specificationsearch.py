@@ -1,4 +1,4 @@
-# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper methods to search specifications."""
@@ -12,6 +12,7 @@ __all__ = [
     ]
 
 from collections import defaultdict
+from functools import reduce
 
 from storm.expr import (
     And,
@@ -155,7 +156,7 @@ def search_specifications(context, base_clauses, user, sort=None,
                     work_items_by_spec[spec.id], key=lambda wi: wi.sequence)
         if need_branches:
             spec_branches = load_referencing(
-                SpecificationBranch, rows, ['specificationID'])
+                SpecificationBranch, rows, ['specification_id'])
             for sbranch in spec_branches:
                 spec_cache = get_property_cache(sbranch.specification)
                 spec_cache.linked_branches.append(sbranch)

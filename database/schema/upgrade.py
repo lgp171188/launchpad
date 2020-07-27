@@ -1,6 +1,6 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """
@@ -17,9 +17,6 @@ import os.path
 import re
 import subprocess
 from textwrap import dedent
-
-from bzrlib.branch import Branch
-from bzrlib.errors import NotBranchError
 
 from lp.services.database.sqlbase import (
     connect,
@@ -93,7 +90,7 @@ FIX_PATCH_TIMES_POST_SQL = dedent("""\
     SET
         start_time=_start_time.start_time,
         branch_nick = %s,
-        revno = %s,
+        revno = NULL,
         revid = %s
     FROM _start_time
     WHERE
@@ -224,7 +221,8 @@ def apply_other(con, script, no_commit=False):
     log.info("Applying %s" % script)
     cur = con.cursor()
     path = os.path.join(os.path.dirname(__file__), script)
-    sql = open(path).read()
+    with open(path) as f:
+        sql = f.read()
     if not sql.rstrip().endswith(';'):
         # This is important because patches are concatenated together
         # into a single script when we apply them to a replicated
@@ -250,33 +248,20 @@ _vcs_details_cache = None
 
 
 def get_vcs_details():
-    """Return (branch_nick, revno, revision_id) of this VCS branch.
+    """Return (branch_nick, revision_id) of this Git branch.
 
-    If this is a Git branch, then revno will be None.
-
-    Returns (None, None, None) if the tree this code is running from
-    is not a VCS branch.
+    Returns (None, None) if the tree this code is running from is not a Git
+    branch.
     """
     global _vcs_details_cache
     if _vcs_details_cache is None:
-        top = os.path.dirname(os.path.dirname(SCHEMA_DIR))
-        if os.path.exists(os.path.join(top, ".git")):
-            branch_nick = subprocess.check_output(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                universal_newlines=True).rstrip("\n")
-            revno = None
-            revision_id = subprocess.check_output(
-                ["git", "rev-parse", "HEAD"],
-                universal_newlines=True).rstrip("\n")
-        else:
-            try:
-                branch = Branch.open_containing(SCHEMA_DIR)[0]
-                revno, revision_id = branch.last_revision_info()
-                branch_nick = branch.get_config().get_nickname()
-            except NotBranchError:
-                log.warning("Not a Bazaar branch - branch details unavailable")
-                revision_id, revno, branch_nick = None, None, None
-        _vcs_details_cache = (branch_nick, revno, revision_id)
+        branch_nick = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            universal_newlines=True).rstrip("\n")
+        revision_id = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            universal_newlines=True).rstrip("\n")
+        _vcs_details_cache = (branch_nick, revision_id)
     return _vcs_details_cache
 
 

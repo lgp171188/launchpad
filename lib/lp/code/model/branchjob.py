@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -19,37 +19,37 @@ import shutil
 from StringIO import StringIO
 import tempfile
 
-from bzrlib.branch import Branch as BzrBranch
-from bzrlib.diff import show_diff_trees
-from bzrlib.errors import (
+from breezy.branch import Branch as BzrBranch
+from breezy.diff import show_diff_trees
+from breezy.errors import (
     NoSuchFile,
     NotBranchError,
     )
-from bzrlib.log import (
+from breezy.log import (
     log_formatter,
     show_log,
     )
-from bzrlib.revision import NULL_REVISION
-from bzrlib.revisionspec import RevisionInfo
-from bzrlib.transport import get_transport
-from bzrlib.upgrade import upgrade
+from breezy.revision import NULL_REVISION
+from breezy.revisionspec import RevisionInfo
+from breezy.transport import get_transport
+from breezy.upgrade import upgrade
 from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-import simplejson
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
+import six
 from storm.exceptions import LostObjectError
 from storm.expr import (
     And,
     SQL,
     )
-from storm.locals import Store
+from storm.locals import (
+    Int,
+    JSON,
+    Reference,
+    Store,
+    )
 import transaction
 from zope.component import getUtility
 from zope.interface import (
@@ -57,6 +57,7 @@ from zope.interface import (
     provider,
     )
 
+from lp.app.errors import NotFoundError
 from lp.code.bzr import (
     branch_revision_history,
     get_branch_formats,
@@ -100,7 +101,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.productseries import IProductSeriesSet
 from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -110,7 +111,7 @@ from lp.services.database.locking import (
     LockType,
     try_advisory_lock,
     )
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import (
     EnumeratedSubclass,
@@ -197,22 +198,22 @@ class BranchJobType(DBEnumeratedType):
 
 
 @implementer(IBranchJob)
-class BranchJob(SQLBase):
+class BranchJob(StormBase):
     """Base class for jobs related to branches."""
 
-    _table = 'BranchJob'
+    __storm_table__ = 'BranchJob'
 
-    job = ForeignKey(foreignKey='Job', notNull=True)
+    id = Int(primary=True)
 
-    branch = ForeignKey(foreignKey='Branch')
+    job_id = Int(name='job', allow_none=False)
+    job = Reference(job_id, 'Job.id')
 
-    job_type = EnumCol(enum=BranchJobType, notNull=True)
+    branch_id = Int(name='branch', allow_none=True)
+    branch = Reference(branch_id, 'Branch.id')
 
-    _json_data = StringCol(dbName='json_data')
+    job_type = DBEnum(name='job_type', enum=BranchJobType, allow_none=False)
 
-    @property
-    def metadata(self):
-        return simplejson.loads(self._json_data)
+    metadata = JSON('json_data', allow_none=True)
 
     def __init__(self, branch, job_type, metadata, **job_args):
         """Constructor.
@@ -225,14 +226,15 @@ class BranchJob(SQLBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        json_data = simplejson.dumps(metadata)
-        SQLBase.__init__(
-            self, job=Job(**job_args), branch=branch, job_type=job_type,
-            _json_data=json_data)
+        super(BranchJob, self).__init__()
+        self.job = Job(**job_args)
+        self.branch = branch
+        self.job_type = job_type
+        self.metadata = metadata
 
     def destroySelf(self):
         """See `IBranchJob`."""
-        SQLBase.destroySelf(self)
+        Store.of(self).remove(self)
         self.job.destroySelf()
 
     def makeDerived(self):
@@ -240,9 +242,8 @@ class BranchJob(SQLBase):
 
 
 @delegate_to(IBranchJob)
-class BranchJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class BranchJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     def __init__(self, branch_job):
         self.context = branch_job
@@ -281,11 +282,11 @@ class BranchJobDerived(BaseRunnableJob):
     def get(cls, key):
         """Return the instance of this class whose key is supplied.
 
-        :raises: SQLObjectNotFound
+        :raises: NotFoundError
         """
         instance = IStore(BranchJob).get(BranchJob, key)
         if instance is None or instance.job_type != cls.class_job_type:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 'No occurrence of %s has key %s' % (cls.__name__, key))
         return cls(instance)
 
@@ -533,7 +534,7 @@ class RevisionsAddedJob(BranchJobDerived):
         repository = self.bzr_branch.repository
         added_revisions = repository.get_graph().find_unique_ancestors(
             self.last_revision_id, [self.last_scanned_id])
-        # Avoid hitting the database since bzrlib makes it easy to check.
+        # Avoid hitting the database since breezy makes it easy to check.
         # There are possibly more efficient ways to get the mainline
         # revisions, but this is simple and it works.
         history = branch_revision_history(self.bzr_branch)
@@ -625,7 +626,7 @@ class RevisionsAddedJob(BranchJobDerived):
         """Determine which revisions were merged by this revision.
 
         :param revision_id: ID of the revision to examine.
-        :param graph: a bzrlib.graph.Graph.
+        :param graph: a breezy.graph.Graph.
         :return: a set of revision IDs.
         """
         parents = graph.get_parent_map([revision_id])[revision_id]
@@ -683,7 +684,7 @@ class RevisionsAddedJob(BranchJobDerived):
                 proposals[source_id] = (proposal, date_created)
 
         return sorted(
-            [proposal for proposal, date_created in proposals.itervalues()],
+            [proposal for proposal, date_created in six.itervalues(proposals)],
             key=operator.attrgetter('date_created'), reverse=True)
 
     def getRevisionMessage(self, revision_id, revno):
@@ -901,7 +902,7 @@ class RosettaUploadJob(BranchJobDerived):
                             continue
                         file_id, (from_path, to_path) = changed_file[:2]
                         changed_files.append((
-                            to_path, to_tree.get_file_text(file_id)))
+                            to_path, to_tree.get_file_text(to_path)))
             finally:
                 from_tree.unlock()
         finally:
@@ -968,7 +969,7 @@ class RosettaUploadJob(BranchJobDerived):
         """See `IRosettaUploadJobSource`."""
         store = IMasterStore(BranchJob)
         match = And(
-            Job.id == BranchJob.jobID,
+            Job.id == BranchJob.job_id,
             BranchJob.branch == branch,
             BranchJob.job_type == BranchJobType.ROSETTA_UPLOAD,
             Job._status != JobStatus.COMPLETED,

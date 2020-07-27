@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,9 +7,13 @@ __all__ = [
     ]
 
 from datetime import timedelta
+import json
 import math
 
+from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+import six
+from storm.expr import Cast
 from storm.locals import (
     Bool,
     DateTime,
@@ -24,6 +28,7 @@ from storm.locals import (
     Unicode,
     )
 from zope.component import getUtility
+from zope.event import notify
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -53,10 +58,13 @@ from lp.services.database.interfaces import (
     )
 from lp.services.database.stormexpr import (
     Greatest,
+    IsDistinctFrom,
     NullsLast,
     )
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webhooks.interfaces import IWebhookSet
+from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.interfaces.archive import ArchiveDisabled
 from lp.soyuz.interfaces.livefs import (
     CannotDeleteLiveFS,
@@ -88,7 +96,7 @@ def livefs_modified(livefs, event):
 
 
 @implementer(ILiveFS, IHasOwner)
-class LiveFS(Storm):
+class LiveFS(Storm, WebhookTargetMixin):
     """See `ILiveFS`."""
 
     __storm_table__ = 'LiveFS'
@@ -139,6 +147,10 @@ class LiveFS(Storm):
         self.keep_binary_files_days = keep_binary_files_days
 
     @property
+    def valid_webhook_event_types(self):
+        return ["livefs:build:0.1"]
+
+    @property
     def private(self):
         """See `IPrivacy`."""
         # A LiveFS has no privacy support of its own, but it is private if
@@ -175,14 +187,25 @@ class LiveFS(Storm):
             # See rationale in `LiveFSBuildArchiveOwnerMismatch` docstring.
             raise LiveFSBuildArchiveOwnerMismatch()
 
-        pending = IStore(self).find(
-            LiveFSBuild,
+        clauses = [
             LiveFSBuild.livefs_id == self.id,
             LiveFSBuild.archive_id == archive.id,
             LiveFSBuild.distro_arch_series_id == distro_arch_series.id,
             LiveFSBuild.pocket == pocket,
-            LiveFSBuild.unique_key == unique_key,
-            LiveFSBuild.status == BuildStatus.NEEDSBUILD)
+            Not(IsDistinctFrom(LiveFSBuild.unique_key, unique_key)),
+            # Cast to jsonb in order to compare the JSON structures rather
+            # than their encoding, since the latter might differ in
+            # insignificant ways.
+            Not(IsDistinctFrom(
+                Cast(LiveFSBuild.metadata_override, "jsonb"),
+                Cast(
+                    None if metadata_override is None
+                    else six.ensure_text(
+                        json.dumps(metadata_override, ensure_ascii=False)),
+                    "jsonb"))),
+            LiveFSBuild.status == BuildStatus.NEEDSBUILD,
+            ]
+        pending = IStore(self).find(LiveFSBuild, *clauses)
         if pending.any() is not None:
             raise LiveFSBuildAlreadyPending
 
@@ -191,6 +214,7 @@ class LiveFS(Storm):
             unique_key=unique_key, metadata_override=metadata_override,
             version=version)
         build.queueBuild()
+        notify(ObjectCreatedEvent(build, user=requester))
         return build
 
     def _getBuilds(self, filter_term, order_by):
@@ -255,6 +279,7 @@ class LiveFS(Storm):
         if not self.builds.is_empty():
             raise CannotDeleteLiveFS(
                 "Cannot delete a live filesystem with builds.")
+        getUtility(IWebhookSet).delete(self.webhooks)
         IStore(LiveFS).remove(self)
 
 

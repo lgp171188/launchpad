@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for table Archive."""
@@ -617,7 +617,8 @@ class Archive(SQLBase):
                             distroseries=None, pocket=None,
                             exact_match=False, created_since_date=None,
                             eager_load=False, component_name=None,
-                            order_by_date=False, include_removed=True):
+                            order_by_date=False, include_removed=True,
+                            only_unpublished=False):
         """See `IArchive`."""
         clauses = [SourcePackagePublishingHistory.archiveID == self.id]
 
@@ -692,6 +693,10 @@ class Archive(SQLBase):
 
         if not include_removed:
             clauses.append(SourcePackagePublishingHistory.dateremoved == None)
+
+        if only_unpublished:
+            clauses.append(
+                SourcePackagePublishingHistory.datepublished == None)
 
         store = Store.of(self)
         resultset = store.find(
@@ -803,7 +808,7 @@ class Archive(SQLBase):
         self, name=None, version=None, status=None, distroarchseries=None,
         pocket=None, exact_match=False, created_since_date=None,
         ordered=True, order_by_date=False, include_removed=True,
-        need_bpr=False):
+        only_unpublished=False, need_bpr=False):
         """Base clauses for binary publishing queries.
 
         Returns a list of 'clauses' (to be joined in the callsite).
@@ -880,13 +885,18 @@ class Archive(SQLBase):
         if not include_removed:
             clauses.append(BinaryPackagePublishingHistory.dateremoved == None)
 
+        if only_unpublished:
+            clauses.append(
+                BinaryPackagePublishingHistory.datepublished == None)
+
         return clauses, order_by
 
     def getAllPublishedBinaries(self, name=None, version=None, status=None,
                                 distroarchseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
                                 ordered=True, order_by_date=False,
-                                include_removed=True, eager_load=False):
+                                include_removed=True, only_unpublished=False,
+                                eager_load=False):
         """See `IArchive`."""
         # Circular imports.
         from lp.registry.model.distroseries import DistroSeries
@@ -896,7 +906,8 @@ class Archive(SQLBase):
             name=name, version=version, status=status, pocket=pocket,
             distroarchseries=distroarchseries, exact_match=exact_match,
             created_since_date=created_since_date, ordered=ordered,
-            order_by_date=order_by_date, include_removed=include_removed)
+            order_by_date=order_by_date, include_removed=include_removed,
+            only_unpublished=only_unpublished)
 
         result = Store.of(self).find(
             BinaryPackagePublishingHistory, *clauses).order_by(*order_by)
@@ -1915,8 +1926,7 @@ class Archive(SQLBase):
             # publication.
             published_sources = from_archive.getPublishedSources(
                 name=name, distroseries=from_series_obj, exact_match=True,
-                status=(PackagePublishingStatus.PUBLISHED,
-                        PackagePublishingStatus.PENDING))
+                status=active_publishing_status)
             first_source = published_sources.first()
             if first_source is not None:
                 sources.append(first_source)
@@ -2939,7 +2949,7 @@ class ArchiveSet:
         return query.order_by(Archive.name)
 
     def getPublicationsInArchives(self, source_package_name, archive_list,
-                                  distribution):
+                                  distribution=None, distroseries=None):
         """See `IArchiveSet`."""
         archive_ids = [archive.id for archive in archive_list]
 
@@ -2949,17 +2959,23 @@ class ArchiveSet:
         # given list of archives. Note: importing DistroSeries here to
         # avoid circular imports.
         from lp.registry.model.distroseries import DistroSeries
-        results = store.find(
-            SourcePackagePublishingHistory,
+        clauses = [
             Archive.id.is_in(archive_ids),
             SourcePackagePublishingHistory.archive == Archive.id,
             (SourcePackagePublishingHistory.status ==
                 PackagePublishingStatus.PUBLISHED),
             SourcePackagePublishingHistory.sourcepackagename ==
                 source_package_name,
-            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
-            DistroSeries.distribution == distribution,
-            )
+            ]
+        if distribution is not None:
+            clauses.extend([
+                SourcePackagePublishingHistory.distroseries == DistroSeries.id,
+                DistroSeries.distribution == distribution,
+                ])
+        if distroseries is not None:
+            clauses.append(
+                SourcePackagePublishingHistory.distroseries == distroseries)
+        results = store.find(SourcePackagePublishingHistory, *clauses)
 
         return results.order_by(SourcePackagePublishingHistory.id)
 

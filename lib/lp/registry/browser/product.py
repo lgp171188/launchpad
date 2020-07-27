@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for products."""
@@ -42,17 +42,17 @@ __all__ = [
 
 
 from operator import attrgetter
-from urlparse import urlunsplit
 
-from bzrlib import urlutils
-from bzrlib.revision import NULL_REVISION
+from breezy import urlutils
+from breezy.revision import NULL_REVISION
 from lazr.delegates import delegate_to
 from lazr.restful.interface import (
     copy_field,
     use_template,
     )
 from lazr.restful.interfaces import IJSONRequestCache
-from z3c.ptcompat import ViewPageTemplateFile
+from six.moves.urllib.parse import urlunsplit
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
@@ -181,6 +181,10 @@ from lp.registry.browser.pillar import (
     PillarViewMixin,
     )
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.ociproject import (
+    IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import (
     IProduct,
@@ -198,6 +202,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.features import getFeatureFlag
 from lp.services.feeds.browser import FeedsMixin
 from lp.services.fields import (
     PillarAliases,
@@ -274,6 +279,15 @@ class ProductNavigation(
     @stepthrough('+commercialsubscription')
     def traverse_commercialsubscription(self, name):
         return self.context.commercial_subscription
+
+    @stepthrough('+oci')
+    def traverse_oci(self, name):
+        return self.context.getOCIProject(name)
+
+    @stepthrough('+series')
+    def traverse_series(self, name):
+        series = self.context.getSeries(name)
+        return self.redirectSubTree(canonical_url(series), status=303)
 
     def traverse(self, name):
         return self.context.getSeries(name)
@@ -499,6 +513,25 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
     def sharing(self):
         return Link('+sharing', 'Sharing', icon='edit')
 
+    def search_oci_project(self):
+        product = self.context.context
+        oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
+            product, u'')
+        text = 'Search for OCI project'
+        link = Link('+search-oci-project', text, icon='info')
+        link.enabled = not oci_projects.is_empty()
+        return link
+
+    @enabled_with_permission('launchpad.Driver')
+    def new_oci_project(self):
+        text = 'Create an OCI project'
+        link = Link('+new-oci-project', text, icon='add')
+        product = self.context.context
+        link.enabled = (
+            bool(getFeatureFlag(OCI_PROJECT_ALLOW_CREATE))
+            and product.canAdministerOCIProjects(self.user))
+        return link
+
 
 class IProductEditMenu(Interface):
     """A marker interface for the 'Change details' navigation menu."""
@@ -517,7 +550,8 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
 
     @cachedproperty
     def links(self):
-        links = ['edit', 'review_license', 'administer', 'sharing']
+        links = ['edit', 'review_license', 'administer', 'sharing',
+                 'search_oci_project', 'new_oci_project']
         add_subscribe_link(links)
         return links
 
@@ -920,6 +954,10 @@ class ProductDownloadFileMixin:
 @implementer(IProductActionMenu)
 class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
                   FeedsMixin, ProductDownloadFileMixin):
+
+    @cachedproperty
+    def is_probationary_or_invalid_project(self):
+        return not self.context.active or self.context.owner.is_probationary
 
     @property
     def maintainer_widget(self):
@@ -1589,7 +1627,7 @@ class ProductReviewLicenseView(ReturnToReferrerMixin, ProductEditView,
                     'license_approved',
                     'Proprietary projects may not be manually '
                     'approved to use Launchpad.  Proprietary projects '
-                    'must use the commercial subscription voucher system '
+                    'must be granted a commercial subscription '
                     'to be allowed to use Launchpad.')
             else:
                 # An Other/Open Source licence was specified so it may be

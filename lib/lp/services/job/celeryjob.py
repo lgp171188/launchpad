@@ -28,23 +28,18 @@ from celery import (
     Task,
     )
 from lazr.jobrunner.celerytask import RunJob
-from storm.zope.interfaces import IZStorm
 import transaction
-from zope.component import getUtility
 
 from lp.code.model.branchjob import BranchScanJob
 from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import dbconfig
-from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import disconnect_stores
 from lp.services.features import (
     install_feature_controller,
     make_script_feature_controller,
     )
 from lp.services.mail.sendmail import set_immediate_mail_delivery
-from lp.services.job.model.job import (
-    Job,
-    UniversalJobSource,
-    )
+from lp.services.job.model.job import UniversalJobSource
 from lp.services.job.runner import (
     BaseJobRunner,
     celery_enabled,
@@ -141,6 +136,7 @@ def run_missing_ready(_no_init=False):
         for job in find_missing_ready(BranchScanJob):
             if not celery_enabled(job.__class__.__name__):
                 continue
+            job.extractJobState()
             job.celeryCommitHook(True)
             count += 1
         info('Scheduled %d missing jobs.', count)
@@ -167,9 +163,6 @@ def task_init(dbuser):
     :param dbuser: The database user to use for running the task.
     """
     ensure_zcml()
-    transaction.abort()
-    store = IStore(Job)
-    getUtility(IZStorm).remove(store)
-    store.close()
+    disconnect_stores()
     dbconfig.override(dbuser=dbuser, isolation_level='read_committed')
     install_feature_controller(make_script_feature_controller('celery'))

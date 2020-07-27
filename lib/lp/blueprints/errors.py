@@ -9,12 +9,11 @@ __all__ = [
     'TargetAlreadyHasSpecification',
     ]
 
-import httplib
-
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class TargetAlreadyHasSpecification(Exception):
     """The ISpecificationTarget already has a specification of that name."""
 

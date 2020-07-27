@@ -3,6 +3,8 @@
 
 """Validators for the .name attribute (defined in various schemas.)"""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import re
@@ -28,10 +30,10 @@ def sanitize_name(name):
     The characters not allowed in Launchpad names are described by
     invalid_name_pattern.
 
-    >>> sanitize_name('foo_bar')
-    'foobar'
-    >>> sanitize_name('baz bar $fd')
-    'bazbarfd'
+    >>> print(sanitize_name('foo_bar'))
+    foobar
+    >>> print(sanitize_name('baz bar $fd'))
+    bazbarfd
     """
     return invalid_name_pattern.sub('', name)
 

@@ -18,9 +18,9 @@ from CVS.protocol import (
     )
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import ReferenceChoice
@@ -77,10 +77,9 @@ def validate_cvs_module(cvsmodule):
     return True
 
 
+@exported_as_webservice_entry()
 class ICodeImport(Interface):
     """A code import to a Bazaar Branch."""
-
-    export_as_webservice_entry()
 
     id = Int(readonly=True, required=True)
     date_created = Datetime(
@@ -187,6 +186,17 @@ class ICodeImport(Interface):
 
         :param data: dictionary whose keys are attribute names and values are
             attribute values.
+        :param user: user who made the change, to record in the
+            `CodeImportEvent`.  May be ``None``.
+        :return: The MODIFY `CodeImportEvent`, if any changes were made, or
+            None if no changes were made.
+        """
+
+    def updateURL(new_url, user):
+        """Update the URL for this `CodeImport`.
+
+        A separate setter as it has lower permissions than updateFromData.
+        :param new_url: string of the proposed new URL.
         :param user: user who made the change, to record in the
             `CodeImportEvent`.  May be ``None``.
         :return: The MODIFY `CodeImportEvent`, if any changes were made, or

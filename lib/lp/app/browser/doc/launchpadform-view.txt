@@ -11,7 +11,7 @@ can be used for subordinate field indentation, for example.
     >>> from zope.interface import Interface
     >>> from zope.schema import TextLine
     >>> from lp.services.config import config
-    >>> from z3c.ptcompat import ViewPageTemplateFile
+    >>> from zope.browserpage import ViewPageTemplateFile
     >>> from lp.app.browser.launchpadform import LaunchpadFormView
     >>> from lp.testing.pages import find_tags_by_class
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
@@ -35,10 +35,10 @@ can be used for subordinate field indentation, for example.
     >>> view = TestView(person, request)
     >>> view.initialize()
     >>> for tag in find_tags_by_class(view.render(), 'subordinate'):
-    ...     print tag
+    ...     print(tag)
     <div class="field subordinate">
     <label for="field.nickname">Nickname:</label>
     <div>
-    <input class="textType" id="field.nickname" name="field.nickname" ... />
+    <input class="textType" id="field.nickname" name="field.nickname" .../>
     </div>
     </div>

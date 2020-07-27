@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -602,6 +602,51 @@
         provides="zope.traversing.interfaces.IPathAdapter"
         for="lp.registry.interfaces.sourcepackage.ISourcePackage"
         />
+    <browser:defaultView
+        name="+index"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        />
+    <browser:url
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        path_expression="string:+oci/${name}"
+        attribute_to_parent="pillar"
+        />
+    <browser:url
+        for="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"
+        path_expression="string:+series/${name}"
+        attribute_to_parent="oci_project"
+        />
+    <browser:navigation
+        module="lp.registry.browser.ociproject"
+        classes="OCIProjectNavigation"
+        />
+    <browser:page
+        name="+index"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        class="lp.services.webapp.LaunchpadView"
+        permission="launchpad.View"
+        template="../templates/ociproject-index.pt"
+        />
+    <browser:page
+        name="+edit"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        class="lp.registry.browser.ociproject.OCIProjectEditView"
+        permission="launchpad.Edit"
+        template="../../app/templates/generic-edit.pt"
+        />
+    <browser:menus
+        module="lp.registry.browser.ociproject"
+        classes="
+            OCIProjectFacets
+            OCIProjectNavigationMenu
+            OCIProjectContextMenu"
+        />
+    <adapter
+        name="fmt"
+        factory="lp.registry.browser.ociproject.OCIProjectFormatterAPI"
+        provides="zope.traversing.interfaces.IPathAdapter"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        />
     <browser:url
         for="lp.registry.interfaces.commercialsubscription.ICommercialSubscription"
         path_expression="string:+commercialsubscription/${id}"
@@ -1107,13 +1152,6 @@
         template="../templates/person-portlet-related-projects.pt"
         />
     <browser:page
-        name="+vouchers"
-        for="lp.registry.interfaces.person.IPerson"
-        class="lp.registry.browser.person.PersonVouchersView"
-        permission="launchpad.Commercial"
-        template="../templates/person-vouchers.pt"
-        />
-    <browser:page
         name="+rdf"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonRdfView"
@@ -1191,6 +1229,26 @@
         class="lp.registry.browser.person.PersonOAuthTokensView"
         permission="launchpad.Edit"
         template="../templates/person-oauth-tokens.pt"
+        />
+    <browser:page
+        name="+oci-registry-credentials"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonOCIRegistryCredentialsView"
+        permission="launchpad.Edit"
+        template="../templates/person-ociregistrycredentials.pt"
+        />
+    <browser:page
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonEditOCIRegistryCredentialsView"
+        permission="launchpad.Edit"
+        name="+edit-oci-registry-credentials"
+        template="../templates/person-edit-ociregistrycredentials.pt" />
+    <browser:page
+        name="+livefs"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonLiveFSView"
+        permission="launchpad.View"
+        template="../templates/person-livefses.pt"
         />
     <browser:page
         name="+index"
@@ -1409,7 +1467,7 @@
         name="+adminpeoplemerge"
         for="lp.registry.interfaces.person.IPersonSet"
         class="lp.registry.browser.peoplemerge.AdminPeopleMergeView"
-        permission="launchpad.Admin"
+        permission="launchpad.Moderate"
         template="../templates/people-adminrequestmerge.pt"
         />
     <browser:page
@@ -2111,6 +2169,34 @@
         template="../templates/distribution-newmirror.pt">
     </browser:page>
     <browser:page
+        name="+new-oci-project"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.ociproject.OCIProjectAddView"
+        permission="launchpad.AnyPerson"
+        template="../templates/ociproject-new.pt"
+        />
+    <browser:page
+        name="+new-oci-project"
+        for="lp.registry.interfaces.product.IProduct"
+        class="lp.registry.browser.ociproject.OCIProjectAddView"
+        permission="launchpad.AnyPerson"
+        template="../templates/ociproject-new.pt"
+        />
+    <browser:page
+        name="+search-oci-project"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.ociproject.OCIProjectSearchView"
+        permission="zope.Public"
+        template="../templates/search-oci-projects.pt"
+        />
+    <browser:page
+        name="+search-oci-project"
+        for="lp.registry.interfaces.product.IProduct"
+        class="lp.registry.browser.ociproject.OCIProjectSearchView"
+        permission="zope.Public"
+        template="../templates/search-oci-projects.pt"
+        />
+    <browser:page
         name="+search"
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.distribution.DistributionPackageSearchView"
@@ -2209,6 +2295,13 @@
         name="+selectmirroradmins"
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.distribution.DistributionChangeMirrorAdminView"
+        permission="launchpad.Edit"
+        template="../../app/templates/generic-edit.pt"
+        />
+    <browser:page
+        name="+select-oci-project-admins"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.distribution.DistributionChangeOCIProjectAdminView"
         permission="launchpad.Edit"
         template="../../app/templates/generic-edit.pt"
         />
@@ -2517,6 +2610,15 @@
         module="lp.registry.browser.persondistributionsourcepackage"
         classes="
                  PersonDistributionSourcePackageFacets"
+        />
+    <browser:url
+        for="lp.registry.interfaces.personociproject.IPersonOCIProject"
+        path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}"
+        attribute_to_parent="person"
+        />
+    <browser:navigation
+        module="lp.registry.browser.personociproject"
+        classes="PersonOCIProjectNavigation"
         />
     <browser:url
         for="lp.registry.interfaces.personproduct.IPersonProduct"

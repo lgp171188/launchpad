@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -12,16 +12,17 @@ __all__ = [
 from functools import partial
 import json
 import re
-from urllib import (
-    quote,
-    quote_plus,
-    )
-from urlparse import urlsplit
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import requests
 import six
+from six.moves.urllib.parse import (
+    quote,
+    quote_plus,
+    urlsplit,
+    )
+from storm.expr import And
 from storm.locals import (
     DateTime,
     Int,
@@ -65,6 +66,7 @@ from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitref import (
     IGitRef,
     IGitRefRemoteSet,
+    IGitRefSet,
     )
 from lp.code.interfaces.gitrule import describe_git_permissions
 from lp.code.model.branchmergeproposal import (
@@ -485,6 +487,7 @@ class GitRefMixin:
 
 
 @implementer(IGitRef)
+@provider(IGitRefSet)
 class GitRef(StormBase, GitRefMixin):
     """See `IGitRef`."""
 
@@ -619,6 +622,36 @@ class GitRef(StormBase, GitRefMixin):
             registrant, merge_target, merge_prerequisite,
             needs_review=needs_review, description=initial_comment,
             commit_message=commit_message, review_requests=review_requests)
+
+    @classmethod
+    def findByReposAndPaths(cls, repos_and_paths):
+        """See `IGitRefSet`"""
+        def full_path(path):
+            if path.startswith(u"refs/heads/"):
+                return path
+            return u"refs/heads/%s" % path
+
+        condition = None
+        for repo, path in repos_and_paths:
+            clause = And(
+                GitRef.path.is_in([path, full_path(path)]),
+                (GitRef.repository_id == repo.id))
+            condition = clause if condition is None else condition | clause
+        result = {}
+
+        for row in IStore(GitRef).find(GitRef, condition):
+            result[(row.repository_id, row.path)] = row
+
+        return_value = {}
+        for repo, path in repos_and_paths:
+            if path == "HEAD":
+                value = GitRefDefault(repo)
+            else:
+                key, full_key = [(repo.id, path), (repo.id, full_path(path))]
+                value = result.get(key, result.get(full_key))
+            if value is not None:
+                return_value[(repo, path)] = value
+        return return_value
 
 
 class GitRefDatabaseBackedMixin(GitRefMixin):

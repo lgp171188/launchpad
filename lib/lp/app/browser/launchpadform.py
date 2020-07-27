@@ -19,6 +19,7 @@ __all__ = [
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import simplejson
+import six
 import transaction
 from zope.event import notify
 from zope.formlib import form
@@ -213,7 +214,7 @@ class LaunchpadFormView(LaunchpadView):
             self.form_fields, self.prefix, context, self.request,
             data=self.initial_values, adapters=self.adapters,
             ignore_request=False)
-        for field_name, help_link in self.help_links.iteritems():
+        for field_name, help_link in six.iteritems(self.help_links):
             self.widgets[field_name].help_link = help_link
 
     @property
@@ -225,6 +226,16 @@ class LaunchpadFormView(LaunchpadView):
     def adapters(self):
         """Provide custom adapters for use when setting up the widgets."""
         return {}
+
+    @property
+    def invariant_context(self):
+        """The context against which to check form invariants.
+
+        If None, invariants will only be checked against values in the form
+        itself.  This is useful for forms that create new objects, since
+        their context may not be adaptable to their schema.
+        """
+        return self.context
 
     @property
     def action_url(self):
@@ -320,7 +331,8 @@ class LaunchpadFormView(LaunchpadView):
             widgets = form.Widgets(widgets, len(self.prefix) + 1)
         for error in form.getWidgetsData(widgets, self.prefix, data):
             self.errors.append(error)
-        for error in form.checkInvariants(self.form_fields, data):
+        for error in form.checkInvariants(
+                self.form_fields, data, self.invariant_context):
             self.addError(error)
         return self.errors
 

@@ -57,7 +57,7 @@ for close_bugs_for_queue_item to operate on.
     ...        pocket=PackagePublishingPocket.RELEASE,
     ...        archive=None, distroseries=None):
     ...     """Create a PackageUpload record."""
-    ...     changes = changes_template % fixing_text
+    ...     changes = (changes_template % fixing_text).encode('UTF-8')
     ...     if distroseries is None:
     ...         distroseries = ubuntu_hoary
     ...     if archive is None:
@@ -146,8 +146,10 @@ comment addition. The both notifications will be batched together into a
 single email later.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> notifications = BugNotification.select(orderBy='id')
-    >>> for notification in notifications[-2:]:
+    >>> from lp.services.database.interfaces import IStore
+    >>> notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id)
+    >>> for notification in list(notifications)[-2:]:
     ...     print("From %s:\n%s\n" % (
     ...         notification.message.owner.displayname,
     ...         notification.message.text_contents))
@@ -178,7 +180,8 @@ packages are synced from Debian.
 
     >>> close_bugs_for_queue_item(queue_item)
 
-    >>> notifications = BugNotification.select(orderBy='id')
+    >>> notifications = IStore(BugNotification).find(
+    ...     BugNotification).order_by(BugNotification.id)
     >>> new_notifications = notifications[number_of_old_notifications:]
     >>> [notification.message.text_contents
     ...  for notification in new_notifications]

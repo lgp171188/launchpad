@@ -21,12 +21,15 @@ __all__ = [
 import datetime
 import operator
 import re
-import urllib
 
 import pytz
-from six.moves.urllib.parse import parse_qsl
-from z3c.ptcompat import ViewPageTemplateFile
+import six
+from six.moves.urllib.parse import (
+    parse_qsl,
+    urlencode,
+    )
 from zope import datetime as zope_datetime
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.utility import setUpWidgets
@@ -94,7 +97,7 @@ def revert_unselected_translations(translations, current_message,
         original_translations = dict(enumerate(current_message.translations))
 
     output = {}
-    for plural_form, translation in translations.iteritems():
+    for plural_form, translation in six.iteritems(translations):
         if plural_form in plural_indices_to_store:
             output[plural_form] = translation
         elif original_translations.get(plural_form) is None:
@@ -111,7 +114,7 @@ def contains_translations(translations):
     :param translations: a dict mapping plural forms to their respective
         translation strings.
     """
-    for text in translations.itervalues():
+    for text in six.itervalues(translations):
         if text is not None and len(text) != 0:
             return True
     return False
@@ -863,7 +866,7 @@ class BaseTranslationView(LaunchpadView):
         else:
             base_url = new_url
 
-        new_query = urllib.urlencode(sorted(parameters.items()))
+        new_query = urlencode(sorted(parameters.items()))
 
         if new_query:
             new_url = '%s?%s' % (base_url, new_query)

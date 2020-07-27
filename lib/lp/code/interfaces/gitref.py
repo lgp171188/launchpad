@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git reference ("ref") interfaces."""
@@ -9,17 +9,18 @@ __all__ = [
     'IGitRef',
     'IGitRefBatchNavigator',
     'IGitRefRemoteSet',
+    'IGitRefSet',
     ]
 
 from textwrap import dedent
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -419,7 +420,9 @@ class IGitRefEdit(Interface):
             # _schema_circular_imports.py.
             value_type=InlineObject(schema=Interface),
             description=_(dedent("""\
-                The new list of grants for this reference.  For example::
+                The new list of grants for this reference.
+
+                For example::
 
                     [
                         {
@@ -457,13 +460,28 @@ class IGitRefEdit(Interface):
         """
 
 
+# XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IGitRef(IGitRefView, IGitRefEdit):
     """A reference in a Git repository."""
 
-    # XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
-    # generation working.  Individual attributes must set their version to
-    # "devel".
-    export_as_webservice_entry(as_of="beta")
+
+class IGitRefSet(Interface):
+    def findByReposAndPaths(repos_and_paths):
+        """Returns the collection of GitRefs for the given list of tuples
+        (GitRepository, path).
+
+        The "path" part of the tuple can be the shortcut version (e.g
+        "master") or the full path (e.g "refs/heads/master"). If it's the
+        short version, we also search for "refs/head/$path".
+
+        :param repos_and_paths: A list of tuples with git repos and paths
+        :return: A dict where the keys are the tuples provided, and the
+                 values are the GitRef objects. If a given tuple is not
+                 found, the key will be missing in the dictionary.
+        """
 
 
 class IGitRefBatchNavigator(ITableBatchNavigator):

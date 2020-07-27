@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -88,14 +88,15 @@ def main():
             msg['Subject'] = "Scripts failed to run: %s" % ", ".join(subj)
             msg['From'] = 'script-failures@launchpad.net'
             msg['Reply-To'] = 'canonical-launchpad@lists.canonical.com'
-            msg['To'] = 'canonical-launchpad@lists.canonical.com'
+            msg['To'] = 'launchpad-error-reports@lists.canonical.com'
 
             # Send out the email.
             smtp = smtplib.SMTP()
             smtp.connect()
             smtp.sendmail(
                 'script-failures@launchpad.net',
-                ['canonical-launchpad@lists.canonical.com'], msg.as_string())
+                ['launchpad-error-reports@lists.canonical.com'],
+                msg.as_string())
             smtp.close()
             return 2
     except:

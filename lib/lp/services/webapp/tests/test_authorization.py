@@ -489,7 +489,7 @@ class LoneObject(LaunchpadContainer):
 
     def __init__(self):
         super(LoneObject, self).__init__(self)
-        self.id = LoneObject._id_counter.next()
+        self.id = next(LoneObject._id_counter)
 
     def getParentContainers(self):
         return []

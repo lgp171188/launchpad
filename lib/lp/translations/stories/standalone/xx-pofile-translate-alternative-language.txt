@@ -24,16 +24,18 @@ in the form's main language.
     ...     """
     ...     if not browser.url.endswith('/+translate'):
     ...         raise AssertionError("Not a +translate page: " + browser.url)
+    ...     alternative_language = browser.getControl(
+    ...         name='field.alternative_language')
     ...     try:
-    ...         browser.getControl('English (en)', index=0).selected
+    ...         alternative_language.getControl(
+    ...             browser.toStr('English (en)')).selected
     ...         raise AssertionError(
     ...             "Looking up English among alternative languages "
     ...             "should have failed, but didn't.")
     ...     except LookupError:
     ...         pass
     ...
-    ...     return browser.getControl(
-    ...         name='field.alternative_language')
+    ...     return alternative_language
 
 An anonymous user is offered all available languages except English for
 alternative suggestions.  We do not offer suggestions from standard English
@@ -79,7 +81,8 @@ Spanish as an alternative language.
 
     >>> import re
     >>> browser.open(re.sub('/es/', '/ca/', translate_page))
-    >>> browser.getControl('Spanish (es)').selected = True
+    >>> get_alternative_languages_widget(browser).getControl(
+    ...     'Spanish (es)').selected = True
     >>> browser.getControl('Change').click()
 
 The Spanish translations now show up as suggestions.  For example, where
@@ -131,7 +134,8 @@ and other alternative languages does not exist, of course, if no preferred
 languages are defined.  Suggestions just work for anonymous users.
 
     >>> anon_browser.open(re.sub('/es/', '/ca/', translate_page))
-    >>> anon_browser.getControl('Spanish (es)').selected = True
+    >>> get_alternative_languages_widget(anon_browser).getControl(
+    ...     anon_browser.toStr('Spanish (es)')).selected = True
     >>> anon_browser.getControl('Change').click()
 
     >>> print(extract_text(find_main_content(
@@ -161,8 +165,10 @@ show only the strings they are interested in.
 Carlos sets the filter to display only the untranslated strings.
 
     >>> browser.open(translate_page)
-    >>> browser.getControl('Catalan (ca)').selected = True
-    >>> browser.getControl('untranslated').selected = True
+    >>> get_alternative_languages_widget(browser).getControl(
+    ...     'Catalan (ca)').selected = True
+    >>> browser.getControl('Translating').getControl(
+    ...     'untranslated').selected = True
     >>> browser.getControl('Change').click()
     >>> print(extract_url_parameter(
     ...     browser.url, 'field.alternative_language'))
@@ -174,7 +180,7 @@ Carlos can see that he is viewing the first page of results in the
 navigation bar between the translation controls and the messages.
 
     >>> navigation = find_tags_by_class(browser.contents, 'results')[0].td
-    >>> print(extract_text(navigation).decode('utf-8'))
+    >>> print(extract_text(navigation))
     1 ... 10  of 15 results ...
 
 Carlos uses the 'Save & Continue' button to see the next page of

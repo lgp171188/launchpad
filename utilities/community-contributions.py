@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 #
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
@@ -38,6 +38,8 @@ Options:
 #
 # For understanding the code, you may find it helpful to see
 # bzrlib/log.py and http://bazaar-vcs.org/Integrating_with_Bazaar.
+
+from __future__ import absolute_import, print_function
 
 import getopt
 import re
@@ -621,7 +623,7 @@ log.log_formatter_registry.register('external_contributors', LogExCons,
 
 
 def usage():
-    print __doc__
+    print(__doc__)
 
 
 # Use backslashes to suppress newlines because this is wiki syntax,
@@ -700,7 +702,7 @@ def main():
 
         logger = log.Logger(b, {'direction': 'reverse', 'levels': 0})
         if not quiet:
-            print "Calculating (this may take a while)..."
+            print("Calculating (this may take a while)...")
 
         # Set information about the current branch for later formatting.
         lec.branch_info = branch_info
@@ -717,13 +719,13 @@ def main():
 
     if not dry_run:
         if not quiet:
-            print "Updating wiki..."
+            print("Updating wiki...")
         # Not sure how to get editmoin to obey our quiet flag.
         editshortcut(wiki_dest, editfile_func=update_if_modified)
         if not quiet:
-            print "Done updating wiki."
+            print("Done updating wiki.")
     else:
-        print page_contents
+        print(page_contents)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-
 It is possible for anybody to upload a BLOB to Launchpad which will be
 stored for a short period of time, and deleted if unused.
 
@@ -9,8 +8,8 @@ stored for a short period of time, and deleted if unused.
 And we test the ability to upload a blob. We have a \0 character in the
 middle of the data so we can ensure binary data is handled correctly.
 
-    >>> from cStringIO import StringIO
-    >>> blob_file = StringIO('abcd\0efg')
+    >>> from io import BytesIO
+    >>> blob_file = BytesIO(b'abcd\0efg')
     >>> anon_browser.getControl('BLOB').add_file(
     ...     blob_file, 'ignored/mimetype', 'ignored.filename'
     ...     )
@@ -21,7 +20,7 @@ middle of the data so we can ensure binary data is handled correctly.
     ...     'Your ticket is &quot;([\w-]+)&quot;', anon_browser.contents)
     >>> match is not None
     True
-    >>> ticket = match.group(1)
+    >>> ticket = six.ensure_text(match.group(1))
 
 For easy access to the token in scripts, it's also stored in a HTTP
 header in the response: X-Launchpad-Blob-Token
@@ -33,10 +32,11 @@ Retrieve the blob and make sure it got stored correctly.
 
     >>> from lp.testing import login, logout, ANONYMOUS
     >>> login(ANONYMOUS)
-    >>> from lp.services.temporaryblobstorage.model import (
-    ...     TemporaryBlobStorage)
-    >>> blob = TemporaryBlobStorage.byUuid(ticket)
-    >>> blob.blob
-    'abcd\x00efg'
+    >>> from zope.component import getUtility
+    >>> from lp.services.temporaryblobstorage.interfaces import (
+    ...     ITemporaryStorageManager,
+    ...     )
+    >>> blob = getUtility(ITemporaryStorageManager).fetch(ticket)
+    >>> blob.blob == b'abcd\x00efg'
+    True
     >>> logout()
-

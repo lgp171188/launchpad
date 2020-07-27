@@ -113,6 +113,7 @@ bugs.
 
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.model.bugnotification import BugNotification
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing import ANONYMOUS, login, logout
     >>> from zope.component import getUtility
 
@@ -125,7 +126,8 @@ bugs.
     ...         activity.person.name))
     bug, added bug, salgado
 
-    >>> for notification in BugNotification.selectBy(bug=bug, orderBy='id'):
+    >>> for notification in IStore(BugNotification).find(
+    ...         BugNotification, bug=bug).order_by(BugNotification.id):
     ...     print('%s, %s, %s' % (
     ...         notification.message.owner.name, notification.is_comment,
     ...         notification.message.text_contents))
@@ -1244,7 +1246,7 @@ An attachment can be added to the bug:
 
     >>> response = webservice.named_post(
     ...     bug_one['self_link'], 'addAttachment',
-    ...     data="12345", filename="numbers.txt", content_type='foo/bar',
+    ...     data=b"12345", filename="numbers.txt", content_type='foo/bar',
     ...     comment="The numbers you asked for.")
     >>> print(response)
     HTTP/1.1 201 Created...
@@ -1297,7 +1299,7 @@ we must follow to download the data.
     Location: http://.../numbers.txt
     ...
 
-    >>> from urllib2 import urlopen
+    >>> from six.moves.urllib.request import urlopen
 
     >>> data = None
     >>> conn = urlopen(data_response.getHeader('Location'))

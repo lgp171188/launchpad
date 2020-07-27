@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -15,14 +15,13 @@ from datetime import (
     timedelta,
     )
 from operator import attrgetter
-from urlparse import urlsplit
 
-from bzrlib import urlutils
-from bzrlib.errors import InvalidURLJoin
+from breezy import urlutils
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
 import pytz
 import six
+from six.moves.urllib.parse import urlsplit
 from storm.expr import (
     And,
     Desc,
@@ -690,18 +689,27 @@ class Snap(Storm, WebhookTargetMixin):
     @staticmethod
     def _findBase(snapcraft_data):
         """Find a suitable base for a build."""
+        base = snapcraft_data.get("base")
+        build_base = snapcraft_data.get("build-base")
+        name = snapcraft_data.get("name")
+        snap_type = snapcraft_data.get("type")
+
+        # Keep this in sync with
+        # snapcraft.internal.meta.snap.Snap.get_build_base.
         snap_base_set = getUtility(ISnapBaseSet)
-        snap_base_name = snapcraft_data.get("base")
+        if build_base is not None:
+            snap_base_name = build_base
+        elif name is not None and snap_type == "base":
+            snap_base_name = name
+        else:
+            snap_base_name = base
+
         if isinstance(snap_base_name, bytes):
             snap_base_name = snap_base_name.decode("UTF-8")
-        if snap_base_name == "bare":
-            snap_base_name = snapcraft_data.get("build-base")
-            if isinstance(snap_base_name, bytes):
-                snap_base_name = snap_base_name.decode("UTF-8")
         if snap_base_name is not None:
             return snap_base_set.getByName(snap_base_name), snap_base_name
         else:
-            return snap_base_set.getDefault(), snap_base_name
+            return snap_base_set.getDefault(), None
 
     def _pickDistroSeries(self, snap_base, snap_base_name):
         """Pick a suitable `IDistroSeries` for a build."""
@@ -1365,7 +1373,7 @@ class SnapSet:
                 raise MissingSnapcraftYaml(context.unique_name)
         except GitRepositoryBlobUnsupportedRemote as e:
             raise CannotFetchSnapcraftYaml(str(e), unsupported_remote=True)
-        except InvalidURLJoin as e:
+        except urlutils.InvalidURLJoin as e:
             raise CannotFetchSnapcraftYaml(str(e))
         except (BranchHostingFault, GitRepositoryScanFault) as e:
             msg = "Failed to get snap manifest from %s"

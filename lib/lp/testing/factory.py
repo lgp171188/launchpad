@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Testing infrastructure for the Launchpad application.
@@ -34,25 +34,25 @@ from email.utils import (
     )
 import hashlib
 from itertools import count
-from operator import (
-    isMappingType,
-    isSequenceType,
-    )
 import os
 from StringIO import StringIO
 import sys
 from textwrap import dedent
-from types import InstanceType
+import types
 import uuid
 import warnings
 
-from bzrlib.plugins.builder.recipe import BaseRecipeBranch
-from bzrlib.revision import Revision as BzrRevision
+from breezy.plugins.builder.recipe import BaseRecipeBranch
+from breezy.revision import Revision as BzrRevision
 from cryptography.utils import int_to_bytes
 from lazr.jobrunner.jobrunner import SuspendJobException
 import pytz
 from pytz import UTC
 import six
+from six.moves.collections_abc import (
+    Mapping,
+    Sequence,
+    )
 from twisted.conch.ssh.common import (
     MP,
     NS,
@@ -64,7 +64,6 @@ from zope.component import (
     getUtility,
     )
 from zope.security.proxy import (
-    builtin_isinstance,
     Proxy,
     ProxyFactory,
     removeSecurityProxy,
@@ -158,6 +157,14 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
+from lp.oci.model.ocirecipe import OCIRecipeArch
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -278,6 +285,9 @@ from lp.services.propertycache import (
     clear_property_cache,
     get_property_cache,
     )
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.model.signingkey import SigningKey
 from lp.services.temporaryblobstorage.interfaces import (
     ITemporaryStorageManager,
     )
@@ -419,10 +429,9 @@ class GPGSigningContext:
         self.mode = mode
 
 
-class ObjectFactory:
+class ObjectFactory(
+        six.with_metaclass(AutoDecorate(default_master_store)), object):
     """Factory methods for creating basic Python objects."""
-
-    __metaclass__ = AutoDecorate(default_master_store)
 
     # This allocates process-wide unique integers.  We count on Python doing
     # only cooperative threading to make this safe across threads.
@@ -437,7 +446,7 @@ class ObjectFactory:
         For each thread, this will be a series of increasing numbers, but the
         starting point will be unique per thread.
         """
-        return ObjectFactory._unique_int_counter.next()
+        return next(ObjectFactory._unique_int_counter)
 
     def getUniqueHexString(self, digits=None):
         """Return a unique hexadecimal string.
@@ -446,7 +455,7 @@ class ObjectFactory:
             don't care.
         :return: A hexadecimal string, with 'a'-'f' in lower case.
         """
-        hex_number = '%x' % self.getUniqueInteger()
+        hex_number = u'%x' % self.getUniqueInteger()
         if digits is not None:
             hex_number = hex_number.zfill(digits)
         return hex_number
@@ -482,6 +491,10 @@ class ObjectFactory:
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
+    # XXX cjwatson 2020-02-20: We should disentangle this; most uses of
+    # getUniqueString should probably use getUniqueUnicode instead.
+    getUniqueBytes = getUniqueString
+
     def getUniqueUnicode(self, prefix=None):
         return self.getUniqueString(prefix=prefix).decode('latin-1')
 
@@ -490,8 +503,8 @@ class ObjectFactory:
         if scheme is None:
             scheme = 'http'
         if host is None:
-            host = "%s.domain.com" % self.getUniqueString('domain')
-        return '%s://%s/%s' % (scheme, host, self.getUniqueString('path'))
+            host = "%s.domain.com" % self.getUniqueUnicode('domain')
+        return '%s://%s/%s' % (scheme, host, self.getUniqueUnicode('path'))
 
     def getUniqueDate(self):
         """Return a unique date since January 1 2009.
@@ -519,9 +532,9 @@ class ObjectFactory:
         elif rcstype == 'cvs':
             assert url is None
             if cvs_root is None:
-                cvs_root = self.getUniqueString()
+                cvs_root = self.getUniqueUnicode()
             if cvs_module is None:
-                cvs_module = self.getUniqueString()
+                cvs_module = self.getUniqueUnicode()
         elif rcstype == 'git':
             assert cvs_root is cvs_module is None
             if url is None:
@@ -964,7 +977,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                               milestone=milestone)
         with person_logged_in(release.milestone.product.owner):
             release_file = release.addReleaseFile(
-                filename, 'test', 'text/plain',
+                filename, b'test', 'text/plain',
                 uploader=release.milestone.product.owner,
                 signature_filename=signature_filename,
                 signature_content=signature_content,
@@ -1733,7 +1746,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             revision = revision_set.new(
                 revision_id=self.getUniqueString('revision-id'),
                 log_body=self.getUniqueString('log-body'),
-                revision_date=date_generator.next(),
+                revision_date=next(date_generator),
                 revision_author=author,
                 parent_ids=parent_ids,
                 properties={})
@@ -1772,7 +1785,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if name is None:
-            name = self.getUniqueString('gitrepository').decode('utf-8')
+            name = self.getUniqueUnicode('gitrepository')
 
         if target is _DEFAULT:
             target = self.makeProduct()
@@ -1811,7 +1824,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if repository is None:
             repository = self.makeGitRepository(**repository_kwargs)
         if paths is None:
-            paths = [self.getUniqueString('refs/heads/path').decode('utf-8')]
+            paths = [self.getUniqueUnicode('refs/heads/path')]
         refs_info = {
             path: {
                 u"sha1": unicode(
@@ -1828,9 +1841,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeGitRefRemote(self, repository_url=None, path=None):
         """Create an object representing a ref in a remote repository."""
         if repository_url is None:
-            repository_url = self.getUniqueURL().decode('utf-8')
+            repository_url = self.getUniqueURL()
         if path is None:
-            path = self.getUniqueString('refs/heads/path').decode('utf-8')
+            path = self.getUniqueUnicode('refs/heads/path')
         return getUtility(IGitRefRemoteSet).new(repository_url, path)
 
     def makeGitRule(self, repository=None, ref_pattern=u"refs/heads/*",
@@ -2114,7 +2127,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (int, long, basestring)):
+        elif isinstance(bug, (six.integer_types, basestring)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2149,12 +2162,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (int, long, basestring)):
+        elif isinstance(bug, (six.integer_types, basestring)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
         if data is None:
-            data = self.getUniqueString()
+            data = self.getUniqueBytes()
         if description is None:
             description = self.getUniqueString()
         if comment is None:
@@ -2513,7 +2526,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         The machine will be in the OFFLINE state."""
         if hostname is None:
-            hostname = self.getUniqueString('machine-')
+            hostname = self.getUniqueUnicode('machine-')
         if set_online:
             state = CodeImportMachineState.ONLINE
         else:
@@ -2531,14 +2544,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             machine = self.makeCodeImportMachine()
         requesting_user = None
         if log_excerpt is None:
-            log_excerpt = self.getUniqueString()
+            log_excerpt = self.getUniqueUnicode()
         if result_status is None:
             result_status = CodeImportResultStatus.FAILURE
         if date_finished is None:
             # If a date_started is specified, then base the finish time
             # on that.
             if date_started is None:
-                date_finished = time_counter().next()
+                date_finished = next(time_counter())
             else:
                 date_finished = date_started + timedelta(hours=4)
         if date_started is None:
@@ -2653,7 +2666,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                          aliases=None, bug_supervisor=None, driver=None,
                          publish_root_dir=None, publish_base_url=None,
                          publish_copy_base_url=None, no_pubconf=False,
-                         icon=None, summary=None, vcs=None):
+                         icon=None, summary=None, vcs=None,
+                         oci_project_admin=None):
         """Make a new distribution."""
         if name is None:
             name = self.getUniqueString(prefix="distribution")
@@ -2681,6 +2695,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             naked_distro.driver = driver
         if bug_supervisor is not None:
             naked_distro.bug_supervisor = bug_supervisor
+        if oci_project_admin is not None:
+            naked_distro.oci_project_admin = oci_project_admin
         if not no_pubconf:
             self.makePublisherConfig(
                 distro, publish_root_dir, publish_base_url,
@@ -3037,7 +3053,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         If no branches are passed, return a recipe text that references an
         arbitrary branch.
         """
-        from bzrlib.plugins.builder.recipe import RecipeParser
+        from breezy.plugins.builder.recipe import RecipeParser
         parser = RecipeParser(self.makeRecipeText(*branches))
         return parser.parse()
 
@@ -3065,7 +3081,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             distroseries = self.makeSourcePackageRecipeDistroseries()
 
         if name is None:
-            name = self.getUniqueString('spr-name').decode('utf8')
+            name = self.getUniqueUnicode('spr-name')
         if description is None:
             description = self.getUniqueString(
                 'spr-description').decode('utf8')
@@ -3401,7 +3417,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                         by_maintainer=False):
         """Create a `TranslationImportQueueEntry`."""
         if path is None:
-            path = self.getUniqueString() + '.pot'
+            path = self.getUniqueUnicode() + '.pot'
 
         for_distro = not (distroseries is None and sourcepackagename is None)
         for_project = productseries is not None
@@ -3425,7 +3441,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             uploader = self.makePerson()
 
         if content is None:
-            content = self.getUniqueString()
+            content = self.getUniqueBytes()
 
         if format is None:
             format = TranslationFileFormat.PO
@@ -3433,8 +3449,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if status is None:
             status = RosettaImportStatus.NEEDS_REVIEW
 
-        if type(content) == unicode:
-            content = content.encode('utf-8')
+        content = six.ensure_binary(content)
 
         entry = getUtility(ITranslationImportQueue).addOrUpdateEntry(
             path=path, content=content, by_maintainer=by_maintainer,
@@ -3520,13 +3535,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return proberecord
 
     def makeMirror(self, distribution, displayname=None, country=None,
-                   http_url=None, ftp_url=None, rsync_url=None,
+                   http_url=None, https_url=None, ftp_url=None, rsync_url=None,
                    official_candidate=False):
         """Create a mirror for the distribution."""
         if displayname is None:
             displayname = self.getUniqueString("mirror")
         # If no URL is specified create an HTTP URL.
-        if http_url is None and ftp_url is None and rsync_url is None:
+        if http_url is https_url is ftp_url is rsync_url is None:
             http_url = self.getUniqueURL()
         # If no country is given use Argentina.
         if country is None:
@@ -3540,6 +3555,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             display_name=displayname,
             description=None,
             http_base_url=http_url,
+            https_base_url=https_url,
             ftp_base_url=ftp_url,
             rsync_base_url=rsync_url,
             official_candidate=official_candidate)
@@ -3614,7 +3630,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if changes_filename is None:
             changes_filename = self.getUniqueString("changesfilename")
         if changes_file_content is None:
-            changes_file_content = self.getUniqueString("changesfilecontent")
+            changes_file_content = self.getUniqueBytes(b"changesfilecontent")
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
         package_upload = distroseries.createQueueEntry(
@@ -3981,7 +3997,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                            sourcepackagename=None,
                                            version=None,
                                            architecturespecific=False,
-                                           with_debug=False, with_file=False):
+                                           with_debug=False, with_file=False,
+                                           creator=None):
         """Make a `BinaryPackagePublishingHistory`."""
         if distroarchseries is None:
             if archive is None:
@@ -4074,7 +4091,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 binpackageformat=BinaryPackageFormat.DDEB,
                 sourcepackagename=sourcepackagename,
                 architecturespecific=architecturespecific,
-                with_file=with_file)
+                with_file=with_file,
+                creator=creator)
             removeSecurityProxy(bpph.binarypackagerelease).debug_package = (
                 debug_bpph.binarypackagerelease)
             return bpphs[0], debug_bpph
@@ -4177,6 +4195,32 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if date_created is not None:
             removeSecurityProxy(bpr).datecreated = date_created
         return bpr
+
+    def makeSigningKey(self, key_type=None, fingerprint=None,
+                       public_key=None, description=None):
+        """Makes a SigningKey (integration with lp-signing)
+        """
+        if key_type is None:
+            key_type = SigningKeyType.UEFI
+        if fingerprint is None:
+            fingerprint = self.getUniqueUnicode('fingerprint')
+        if public_key is None:
+            public_key = self.getUniqueHexString(64).encode('ASCII')
+        store = IMasterStore(SigningKey)
+        signing_key = SigningKey(
+            key_type=key_type, fingerprint=fingerprint, public_key=public_key,
+            description=description)
+        store.add(signing_key)
+        return signing_key
+
+    def makeArchiveSigningKey(self, archive=None, distro_series=None,
+                              signing_key=None):
+        if archive is None:
+            archive = self.makeArchive()
+        if signing_key is None:
+            signing_key = self.makeSigningKey()
+        return getUtility(IArchiveSigningKeySet).create(
+            archive, distro_series, signing_key)
 
     def makeSection(self, name=None):
         """Make a `Section`."""
@@ -4426,9 +4470,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if blob_file is not None:
             blob_path = os.path.join(
                 config.root, 'lib/lp/bugs/tests/testfiles', blob_file)
-            blob = open(blob_path).read()
+            with open(blob_path, 'rb') as blob_file:
+                blob = blob_file.read()
         if blob is None:
-            blob = self.getUniqueString()
+            blob = self.getUniqueBytes()
         new_uuid = getUtility(ITemporaryStorageManager).new(blob, expires)
 
         return getUtility(ITemporaryStorageManager).fetch(new_uuid)
@@ -4439,7 +4484,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         It doesn't actually run the job. It fakes it, and uses a fake
         librarian file so as to work without the librarian.
         """
-        blob = TemporaryBlobStorage(uuid=str(uuid.uuid1()), file_alias=1)
+        blob = TemporaryBlobStorage(
+            uuid=six.text_type(uuid.uuid1()), file_alias=1)
         job = getUtility(IProcessApportBlobJobSource).create(blob)
         job.job.start()
         removeSecurityProxy(job).metadata = {
@@ -4631,29 +4677,32 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return fileupload
 
     def makeCommercialSubscription(self, product, expired=False,
-                                   voucher_id='new'):
+                                   voucher_id=u'new'):
         """Create a commercial subscription for the given product."""
-        if CommercialSubscription.selectOneBy(product=product) is not None:
+        if IStore(CommercialSubscription).find(
+                CommercialSubscription, product=product).one() is not None:
             raise AssertionError(
                 "The product under test already has a CommercialSubscription.")
         if expired:
             expiry = datetime.now(pytz.UTC) - timedelta(days=1)
         else:
             expiry = datetime.now(pytz.UTC) + timedelta(days=30)
-        CommercialSubscription(
+        commercial_subscription = CommercialSubscription(
             product=product,
             date_starts=datetime.now(pytz.UTC) - timedelta(days=90),
             date_expires=expiry,
             registrant=product.owner,
             purchaser=product.owner,
             sales_system_id=voucher_id,
-            whiteboard='')
+            whiteboard=u'')
+        del get_property_cache(product).commercial_subscription
+        return commercial_subscription
 
-    def grantCommercialSubscription(self, person, months=12):
+    def grantCommercialSubscription(self, person):
         """Give 'person' a commercial subscription."""
         product = self.makeProduct(owner=person)
-        product.redeemSubscriptionVoucher(
-            self.getUniqueString(), person, person, months)
+        self.makeCommercialSubscription(
+            product, voucher_id=self.getUniqueUnicode())
 
     def makeLiveFS(self, registrant=None, owner=None, distroseries=None,
                    name=None, metadata=None, require_virtualized=True,
@@ -4737,7 +4786,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if target is None:
             target = self.makeGitRepository()
         if delivery_url is None:
-            delivery_url = self.getUniqueURL().decode('utf-8')
+            delivery_url = self.getUniqueURL()
         return getUtility(IWebhookSet).new(
             target, self.makePerson(), delivery_url, event_types or [],
             active, secret)
@@ -4901,7 +4950,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIProjectName(self, name=None):
         if name is None:
             name = self.getUniqueString(u"oci-project-name")
-        return getUtility(IOCIProjectNameSet).new(name)
+        return getUtility(IOCIProjectNameSet).getOrCreateByName(name)
 
     def makeOCIProject(self, registrant=None, pillar=None,
                        ociprojectname=None, date_created=DEFAULT,
@@ -4935,35 +4984,157 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             oci_project = self.makeOCIProject(**kwargs)
         return oci_project.newSeries(name, summary, registrant)
 
+    def makeOCIRecipe(self, name=None, registrant=None, owner=None,
+                      oci_project=None, git_ref=None, description=None,
+                      official=False, require_virtualized=True,
+                      build_file=None, date_created=DEFAULT):
+        """Make a new OCIRecipe."""
+        if name is None:
+            name = self.getUniqueString(u"oci-recipe-name")
+        if registrant is None:
+            registrant = self.makePerson()
+        if description is None:
+            description = self.getUniqueString(u"oci-recipe-description")
+        if owner is None:
+            owner = self.makeTeam(members=[registrant])
+        if oci_project is None:
+            oci_project = self.makeOCIProject()
+        if git_ref is None:
+            [git_ref] = self.makeGitRefs()
+        if build_file is None:
+            build_file = self.getUniqueUnicode(u"build_file_for")
+        return getUtility(IOCIRecipeSet).new(
+            name=name,
+            registrant=registrant,
+            owner=owner,
+            oci_project=oci_project,
+            git_ref=git_ref,
+            build_file=build_file,
+            description=description,
+            official=official,
+            require_virtualized=require_virtualized,
+            date_created=date_created)
+
+    def makeOCIRecipeArch(self, recipe=None, processor=None):
+        """Make a new OCIRecipeArch."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if processor is None:
+            processor = self.makeProcessor()
+        return OCIRecipeArch(recipe, processor)
+
+    def makeOCIRecipeBuild(self, requester=None, registrant=None, recipe=None,
+                           distro_arch_series=None, date_created=DEFAULT,
+                           status=BuildStatus.NEEDSBUILD, builder=None,
+                           duration=None):
+        """Make a new OCIRecipeBuild."""
+        if requester is None:
+            requester = self.makePerson()
+        if distro_arch_series is None:
+            if recipe is not None:
+                distribution = recipe.oci_project.distribution
+            else:
+                distribution = None
+            distroseries = self.makeDistroSeries(
+                distribution=distribution, status=SeriesStatus.CURRENT)
+            processor = getUtility(IProcessorSet).getByName("386")
+            distro_arch_series = self.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag="i386",
+                processor=processor)
+        if recipe is None:
+            oci_project = self.makeOCIProject(
+                pillar=distro_arch_series.distroseries.distribution)
+            if registrant is None:
+                registrant = requester
+            recipe = self.makeOCIRecipe(
+                registrant=registrant, oci_project=oci_project)
+        oci_build = getUtility(IOCIRecipeBuildSet).new(
+            requester, recipe, distro_arch_series, date_created)
+        if duration is not None:
+            removeSecurityProxy(oci_build).updateStatus(
+                BuildStatus.BUILDING, builder=builder,
+                date_started=oci_build.date_created)
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder,
+                date_finished=oci_build.date_started + duration)
+        else:
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder)
+        IStore(oci_build).flush()
+        return oci_build
+
+    def makeOCIFile(self, build=None, library_file=None,
+                    layer_file_digest=None, content=None, filename=None):
+        """Make a new OCIFile."""
+        if build is None:
+            build = self.makeOCIRecipeBuild()
+        if library_file is None:
+            library_file = self.makeLibraryFileAlias(
+                content=content, filename=filename)
+        return OCIFile(build=build, library_file=library_file,
+                       layer_file_digest=layer_file_digest)
+
+    def makeOCIRegistryCredentials(self, owner=None, url=None,
+                                   credentials=None):
+        """Make a new OCIRegistryCredentials."""
+        if owner is None:
+            owner = self.makePerson()
+        if url is None:
+            url = self.getUniqueURL()
+        if credentials is None:
+            credentials = {
+                'username': self.getUniqueUnicode(),
+                'password': self.getUniqueUnicode()}
+        return getUtility(IOCIRegistryCredentialsSet).new(
+            owner=owner,
+            url=url,
+            credentials=credentials)
+
+    def makeOCIPushRule(self, recipe=None, registry_credentials=None,
+                        image_name=None):
+        """Make a new OCIPushRule."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if registry_credentials is None:
+            registry_credentials = self.makeOCIRegistryCredentials()
+        if image_name is None:
+            image_name = self.getUniqueUnicode(u"oci-image-name")
+        return getUtility(IOCIPushRuleSet).new(
+            recipe=recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
 # other Python libraries.
-unwrapped_types = frozenset((
-        BaseRecipeBranch,
-        DSCFile,
-        InstanceType,
-        Message,
-        datetime,
-        int,
-        str,
-        unicode,
-        ))
+unwrapped_types = {
+    BaseRecipeBranch,
+    DSCFile,
+    Message,
+    datetime,
+    int,
+    str,
+    six.text_type,
+    }
+if sys.version_info[0] < 3:
+    unwrapped_types.add(types.InstanceType)
+unwrapped_types = frozenset(unwrapped_types)
 
 
 def is_security_proxied_or_harmless(obj):
     """Check that the object is security wrapped or a harmless object."""
     if obj is None:
         return True
-    if builtin_isinstance(obj, Proxy):
+    if isinstance(obj, Proxy):
         return True
     if type(obj) in unwrapped_types:
         return True
-    if isSequenceType(obj) or isinstance(obj, (set, frozenset)):
+    if isinstance(obj, (Sequence, set, frozenset)):
         return all(
             is_security_proxied_or_harmless(element)
             for element in obj)
-    if isMappingType(obj):
+    if isinstance(obj, Mapping):
         return all(
             (is_security_proxied_or_harmless(key) and
              is_security_proxied_or_harmless(obj[key]))

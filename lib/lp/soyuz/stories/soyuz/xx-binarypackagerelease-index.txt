@@ -29,9 +29,21 @@ XXX: noodles 2009-01-16 bug 317863: move this into the STP.
 
   >>> login('foo.bar@canonical.com')
   >>> build = getUtility(IBinaryPackageBuildSet).getByID(2)
+
+The sample data doesn't have any Built-Using references.  For now, just
+manually insert one so that we can check how it's rendered.
+
+  >>> from lp.soyuz.enums import BinarySourceReferenceType
+  >>> from lp.soyuz.interfaces.binarysourcereference import (
+  ...     IBinarySourceReferenceSet,
+  ...     )
+  >>> bpr = build.getBinaryPackageRelease('mozilla-firefox')
+  >>> _ = getUtility(IBinarySourceReferenceSet).createFromRelationship(
+  ...     bpr, 'iceweasel (= 1.0)', BinarySourceReferenceType.BUILT_USING)
+
   >>> package_upload = build.distro_series.createQueueEntry(
   ...     PackagePublishingPocket.UPDATES, build.archive,
-  ...    'changes.txt', 'my changes')
+  ...    'changes.txt', b'my changes')
   >>> package_upload_build = PackageUploadBuild(
   ...     packageupload =package_upload,
   ...     build=build)
@@ -73,10 +85,16 @@ links to a binary in the context in question.
   TEXT: "bar"
   LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
-
   >>> print_relation('breaks')
   TEXT: "baz"
   LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+
+The 'Built-Using' section contains a link to a source in the context in
+question.
+
+  >>> print_relation('builtusing')
+  LINK: "iceweasel (= 1.0)" ->
+  http://launchpad.test/ubuntu/warty/+source/iceweasel
 
 
 'Depends', 'Conflicts', 'Replaces', 'Suggests' and 'Recommends'
@@ -84,11 +102,11 @@ sections contain only unsatisfied dependencies, which are rendered as
 text:
 
   >>> print_relation('depends')
-  TEXT: "gcc-3.4 (&gt;= 3.4.1-4sarge1)"
-  TEXT: "gcc-3.4 (&lt;&lt; 3.4.2)"
+  TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
+  TEXT: "gcc-3.4 (<< 3.4.2)"
   TEXT: "gcc-3.4-base"
-  TEXT: "libc6 (&gt;= 2.3.2.ds1-4)"
-  TEXT: "libstdc++6-dev (&gt;= 3.4.1-4sarge1)"
+  TEXT: "libc6 (>= 2.3.2.ds1-4)"
+  TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
 
   >>> print_relation('conflicts')
   TEXT: "firefox"
@@ -103,11 +121,11 @@ text:
   TEXT: "gnome-mozilla-browser"
 
   >>> print_relation('recommends')
-  TEXT: "gcc-3.4 (&gt;= 3.4.1-4sarge1)"
-  TEXT: "gcc-3.4 (&lt;&lt; 3.4.2)"
+  TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
+  TEXT: "gcc-3.4 (<< 3.4.2)"
   TEXT: "gcc-3.4-base"
-  TEXT: "libc6 (&gt;= 2.3.2.ds1-4)"
-  TEXT: "libstdc++6-dev (&gt;= 3.4.1-4sarge1)"
+  TEXT: "libc6 (>= 2.3.2.ds1-4)"
+  TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
 
 Even when there is no information to present and the package control
 files don't contain the field, we still present the  corresponding

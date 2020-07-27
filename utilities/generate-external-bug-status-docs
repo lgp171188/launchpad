@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -25,6 +25,8 @@ from datetime import datetime
 from itertools import chain
 from optparse import OptionParser
 import sys
+
+import six
 
 from lp.bugs.externalbugtracker import BUG_TRACKER_CLASSES
 
@@ -85,7 +87,7 @@ def generate_table(typ, cls):
 
 def generate_documentable_classes():
     """Yield each class that has a mapping table defined."""
-    for typ, cls in BUG_TRACKER_CLASSES.iteritems():
+    for typ, cls in six.iteritems(BUG_TRACKER_CLASSES):
         if getattr(cls, '_status_lookup', None) is not None:
             yield typ, cls
 

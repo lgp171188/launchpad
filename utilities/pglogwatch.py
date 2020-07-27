@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -6,6 +6,8 @@
 """
 Watch live PostgreSQL logs for interesting stuff
 """
+
+from __future__ import absolute_import, print_function
 
 from optparse import OptionParser
 import re
@@ -34,7 +36,7 @@ def generate_loglines(logfile):
     while cmd.poll() is None:
         yield cmd.stdout.readline()
     if cmd.returncode != 0:
-        print >> sys.stderr, cmd.stderr.read()
+        print(cmd.stderr.read(), file=sys.stderr)
         raise RuntimeError("tail returned %d" % cmd.returncode)
 
 
@@ -158,8 +160,8 @@ class Watcher(object):
             return
 
         if process.duration > options.slow:
-            print '[%5d] %s' % (process.pid, process.statement)
-            print '        Duration: %0.3f' % (process.duration,)
+            print('[%5d] %s' % (process.pid, process.statement))
+            print('        Duration: %0.3f' % (process.duration,))
 
 if __name__ == '__main__':
     options = get_options()

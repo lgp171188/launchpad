@@ -179,7 +179,7 @@
          specification may only be changed by people who may also view
          the specification. -->
     <require
-        permission="launchpad.AnyAllowedPerson"
+        permission="launchpad.AnyLegitimatePerson"
         set_attributes="whiteboard"/>
     <!-- NB: goals and goalstatus are not to be set directly, it should
          only be set through the proposeGoal / acceptBy / declineBy
@@ -201,7 +201,7 @@
         permission="launchpad.LimitedView"
         attributes="bugs"/>
     <require
-        permission="launchpad.AnyAllowedPerson"
+        permission="launchpad.AnyLegitimatePerson"
         attributes="linkBug
                     unlinkBug
                     setWorkItems"/>

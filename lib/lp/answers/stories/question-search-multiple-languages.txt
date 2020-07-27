@@ -118,10 +118,6 @@ The mozilla-firefox sourcepackage only has English questions. When the
 anonymous user makes a request from a GeoIP that has no languages
 mapped, we assume they speak the default language of English.
 
-    >>> for pos, (key, _) in enumerate(anon_browser.mech_browser.addheaders):
-    ...     if key == 'X_FORWARDED_FOR':
-    ...         del anon_browser.mech_browser.addheaders[pos]
-    ...         break
     >>> anon_browser.addHeader('X_FORWARDED_FOR', '172.16.1.1')
     >>> anon_browser.open(
     ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+questions')
@@ -175,10 +171,6 @@ languages and the target's question languages is 'en'.
 When the project languages are just English, and the user speaks
 that language, we do not show the language controls.
 
-    >>> for pos, (key, _) in enumerate(user_browser.mech_browser.addheaders):
-    ...     if key == 'X_FORWARDED_FOR':
-    ...         del user_browser.mech_browser.addheaders[pos]
-    ...         break
     >>> user_browser.addHeader('X_FORWARDED_FOR', '172.16.1.1')
     >>> user_browser.open(
     ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+questions')

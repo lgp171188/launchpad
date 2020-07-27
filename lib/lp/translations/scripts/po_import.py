@@ -17,6 +17,7 @@ from datetime import (
 import sys
 
 import pytz
+import six
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -212,5 +213,5 @@ class TranslationsImport(LaunchpadCronScript):
 
     def _reportFailures(self):
         """Bulk-report deferred failures as oopses."""
-        for reason, entries in self.failures.iteritems():
+        for reason, entries in six.iteritems(self.failures):
             self._reportOops(reason, entries)

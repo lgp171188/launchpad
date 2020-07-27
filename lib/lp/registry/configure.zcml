@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -745,19 +745,23 @@
             permission="launchpad.Edit"
             interface="lp.registry.interfaces.ociproject.IOCIProjectEdit"
             set_schema="lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes" />
+        <require
+            permission="launchpad.AnyLegitimatePerson"
+            interface="lp.registry.interfaces.ociproject.IOCIProjectLegitimate"/>
     </class>
-    <securedutility
-        class="lp.registry.model.ociproject.OCIProject"
-        provides="lp.registry.interfaces.ociproject.IOCIProject">
-        <allow
-            interface="lp.registry.interfaces.ociproject.IOCIProject"/>
-    </securedutility>
+    <subscriber
+        for="lp.registry.interfaces.ociproject.IOCIProject zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+        handler="lp.registry.model.ociproject.oci_project_modified" />
     <securedutility
         class="lp.registry.model.ociproject.OCIProjectSet"
         provides="lp.registry.interfaces.ociproject.IOCIProjectSet">
         <allow
             interface="lp.registry.interfaces.ociproject.IOCIProjectSet"/>
     </securedutility>
+    <adapter
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        provides="lp.services.webapp.interfaces.IBreadcrumb"
+        factory="lp.registry.browser.ociproject.OCIProjectBreadcrumb"/>
 
     <!-- OCIProjectSeries -->
     <class
@@ -1427,7 +1431,6 @@
                 owner
                 programminglang
                 projectgroup
-                redeemSubscriptionVoucher
                 releaseroot
                 screenshotsurl
                 sourceforgeproject
@@ -1828,6 +1831,7 @@
                 members
                 mirror_admin
                 mugshot
+                oci_project_admin
                 official_answers
                 official_blueprints
                 official_malone
@@ -2046,6 +2050,7 @@
                 description
                 distribution
                 http_base_url
+                https_base_url
                 ftp_base_url
                 rsync_base_url
                 enabled
@@ -2084,8 +2089,9 @@
         <require
             permission="launchpad.Edit"
             set_attributes="name display_name description whiteboard
-                            http_base_url ftp_base_url rsync_base_url enabled
-                            speed country content official_candidate owner"
+                            http_base_url https_base_url ftp_base_url
+                            rsync_base_url enabled speed country content
+                            official_candidate owner"
             attributes="official_candidate whiteboard resubmitForReview" />
         <require
             permission="launchpad.Admin"
@@ -2197,6 +2203,21 @@
         class="lp.registry.model.personnotification.PersonNotificationSet">
         <allow
             interface="lp.registry.interfaces.personnotification.IPersonNotificationSet"/>
+    </securedutility>
+
+    <!-- PersonOCIProject -->
+
+    <class
+        class="lp.registry.model.personociproject.PersonOCIProject">
+        <allow
+            interface="lp.registry.interfaces.personociproject.IPersonOCIProject"/>
+    </class>
+
+    <securedutility
+        component="lp.registry.model.personociproject.PersonOCIProject"
+        provides="lp.registry.interfaces.personociproject.IPersonOCIProjectFactory">
+        <allow
+            interface="lp.registry.interfaces.personociproject.IPersonOCIProjectFactory"/>
     </securedutility>
 
     <!-- PersonProduct -->

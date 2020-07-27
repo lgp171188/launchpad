@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -7,6 +7,7 @@ __metaclass__ = type
 __all__ = [
     'BeginTeamClaimView',
     'CommonMenuLinks',
+    'PersonEditOCIRegistryCredentialsView',
     'EmailToPersonView',
     'PeopleSearchView',
     'PersonAccountAdministerView',
@@ -27,8 +28,10 @@ __all__ = [
     'PersonIndexView',
     'PersonKarmaView',
     'PersonLanguagesView',
+    'PersonLiveFSView',
     'PersonNavigation',
     'PersonOAuthTokensView',
+    'PersonOCIRegistryCredentialsView',
     'PersonOverviewMenu',
     'PersonOwnedTeamsView',
     'PersonRdfContentsView',
@@ -39,7 +42,6 @@ __all__ = [
     'PersonSetContextMenu',
     'PersonSetNavigation',
     'PersonView',
-    'PersonVouchersView',
     'PPANavigationMenuMixIn',
     'RedirectToEditLanguagesView',
     'RestrictedMembershipsPersonView',
@@ -55,7 +57,6 @@ from operator import (
     itemgetter,
     )
 from textwrap import dedent
-import urllib
 
 from lazr.config import as_timedelta
 from lazr.delegates import delegate_to
@@ -64,15 +65,17 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
+from six.moves.urllib.parse import (
+    quote,
+    urlencode,
+    )
 from storm.zope.interfaces import IResultSet
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
     getUtility,
     queryMultiAdapter,
     )
-from zope.error.interfaces import IErrorReportingUtility
-from zope.formlib import form
 from zope.formlib.form import FormFields
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import (
@@ -83,12 +86,14 @@ from zope.interface import (
     classImplements,
     implementer,
     Interface,
+    invariant,
     )
 from zope.interface.exceptions import Invalid
-from zope.interface.interface import invariant
 from zope.publisher.interfaces import NotFound
 from zope.schema import (
+    Bool,
     Choice,
+    Password,
     Text,
     TextLine,
     )
@@ -97,7 +102,10 @@ from zope.schema.vocabulary import (
     SimpleVocabulary,
     )
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -121,7 +129,6 @@ from lp.app.validators.email import valid_email
 from lp.app.validators.username import username_validator
 from lp.app.widgets.image import ImageChangeWidget
 from lp.app.widgets.itemswidgets import (
-    LaunchpadDropdownWidget,
     LaunchpadRadioWidget,
     LaunchpadRadioWidgetWithDescription,
     )
@@ -133,6 +140,13 @@ from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
 from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    OCIRegistryCredentialsAlreadyExist,
+    )
+from lp.oci.model.ocirecipe import OCIRecipe
 from lp.registry.browser import BaseRdfView
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.menu import (
@@ -142,7 +156,6 @@ from lp.registry.browser.menu import (
     )
 from lp.registry.browser.teamjoin import TeamJoinMixin
 from lp.registry.enums import PersonVisibility
-from lp.registry.errors import VoucherAlreadyRedeemed
 from lp.registry.interfaces.codeofconduct import ISignedCodeOfConductSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
@@ -161,6 +174,7 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonClaim,
@@ -169,6 +183,7 @@ from lp.registry.interfaces.person import (
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.persontransferjob import (
     IPersonDeactivateJobSource,
@@ -189,11 +204,13 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.interfaces.wikiname import IWikiNameSet
 from lp.registry.mail.notification import send_direct_contact_email
-from lp.registry.model.person import get_recipients
+from lp.registry.model.person import (
+    get_recipients,
+    Person,
+    )
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.sqlbase import flush_database_updates
-from lp.services.features import getFeatureFlag
 from lp.services.feeds.browser import FeedsMixin
 from lp.services.geoip.interfaces import IRequestPreferredLanguages
 from lp.services.gpg.interfaces import (
@@ -226,11 +243,6 @@ from lp.services.openid.interfaces.openid import IOpenIDPersistentIdentity
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
-    )
-from lp.services.salesforce.interfaces import (
-    ISalesforceVoucherProxy,
-    REDEEMABLE_VOUCHER_STATUSES,
-    SalesforceVoucherProxyException,
     )
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
@@ -392,19 +404,21 @@ class BranchTraversalMixin:
             for _ in range(num_traversed):
                 self.request.stepstogo.consume()
 
+            using_pillar_alias = False
             if IProduct.providedBy(target):
                 if target.name != pillar_name:
-                    # This repository was accessed through one of its
-                    # project's aliases, so we must redirect to its
-                    # canonical URL.
-                    return self.redirectSubTree(canonical_url(repository))
-
-            if IDistributionSourcePackage.providedBy(target):
+                    using_pillar_alias = True
+            elif IDistributionSourcePackage.providedBy(target):
                 if target.distribution.name != pillar_name:
-                    # This branch or repository was accessed through one of its
-                    # distribution's aliases, so we must redirect to its
-                    # canonical URL.
-                    return self.redirectSubTree(canonical_url(repository))
+                    using_pillar_alias = True
+            elif IOCIProject.providedBy(target):
+                if target.pillar.name != pillar_name:
+                    using_pillar_alias = True
+
+            if using_pillar_alias:
+                # This repository was accessed through one of its project's
+                # aliases, so we must redirect to its canonical URL.
+                return self.redirectSubTree(canonical_url(repository))
 
             return repository
         except (NotFoundError, InvalidNamespace, InvalidProductName):
@@ -412,7 +426,9 @@ class BranchTraversalMixin:
 
         # If the pillar is a product, then return the PersonProduct; if it
         # is a distribution and further segments provide a source package,
-        # then return the PersonDistributionSourcePackage.
+        # then return the PersonDistributionSourcePackage; if it is a
+        # distribution and further segments provide an OCI project, then
+        # return the PersonOCIProject.
         pillar = getUtility(IPillarNameSet).getByName(pillar_name)
         if IProduct.providedBy(pillar):
             person_product = getUtility(IPersonProductFactory).create(
@@ -424,24 +440,30 @@ class BranchTraversalMixin:
                     status=301)
             getUtility(IOpenLaunchBag).add(pillar)
             return person_product
-        elif IDistribution.providedBy(pillar):
-            if (len(self.request.stepstogo) >= 2 and
-                self.request.stepstogo.peek() == "+source"):
+        elif (IDistribution.providedBy(pillar) and
+                len(self.request.stepstogo) >= 2):
+            if self.request.stepstogo.peek() == "+source":
+                get_target = IDistribution(pillar).getSourcePackage
+                factory = getUtility(IPersonDistributionSourcePackageFactory)
+            elif self.request.stepstogo.peek() == "+oci":
+                get_target = IDistribution(pillar).getOCIProject
+                factory = getUtility(IPersonOCIProjectFactory)
+            else:
+                get_target, factory = None, None
+            if get_target is not None:
                 self.request.stepstogo.consume()
                 spn_name = self.request.stepstogo.consume()
-                dsp = IDistribution(pillar).getSourcePackage(spn_name)
-                if dsp is not None:
-                    factory = getUtility(
-                        IPersonDistributionSourcePackageFactory)
-                    person_dsp = factory.create(self.context, dsp)
+                target = get_target(spn_name)
+                if target is not None:
+                    person_target = factory.create(self.context, target)
                     # If accessed through an alias, redirect to the proper
                     # name.
                     if pillar.name != pillar_name:
                         return self.redirectSubTree(
-                            canonical_url(person_dsp, request=self.request),
+                            canonical_url(person_target, request=self.request),
                             status=301)
                     getUtility(IOpenLaunchBag).add(pillar)
-                    return person_dsp
+                    return person_target
 
         # Otherwise look for a branch.
         try:
@@ -565,6 +587,14 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
             return None
         return irc_nick
 
+    @stepthrough('+oci-registry-credential')
+    def traverse_oci_registry_credential(self, id):
+        """Traverse to this person's OCI registry credentials."""
+        oci_credentials = getUtility(IOCIRegistryCredentialsSet).get(id)
+        if oci_credentials is None or oci_credentials.person != self.context:
+            return None
+        return oci_credentials
+
     @stepto('+archivesubscriptions')
     def traverse_archive_subscription(self):
         """Traverse to the archive subscription for this person."""
@@ -653,12 +683,12 @@ class PersonSetContextMenu(ContextMenu, TopLevelMenuMixin):
         text = 'Merge accounts'
         return Link('+requestmerge', text, icon='edit')
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission('launchpad.Moderate')
     def adminpeoplemerge(self):
         text = 'Admin merge people'
         return Link('+adminpeoplemerge', text, icon='edit')
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission('launchpad.Moderate')
     def adminteammerge(self):
         text = 'Admin merge teams'
         return Link('+adminteammerge', text, icon='edit')
@@ -792,12 +822,12 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         'projects',
         'activate_ppa',
         'maintained',
-        'manage_vouchers',
         'owned_teams',
         'synchronised',
         'view_ppa_subscriptions',
         'ppa',
         'oauth_tokens',
+        'oci_registry_credentials',
         'related_software_summary',
         'view_recipes',
         'view_snaps',
@@ -820,14 +850,10 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         return Link(target, text, enabled=enabled, icon='info')
 
     @enabled_with_permission('launchpad.Edit')
-    def manage_vouchers(self):
-        target = '+vouchers'
-        text = 'Manage commercial subscriptions'
-        summary = 'Purchase and redeem commercial subscription vouchers'
-        return Link(
-            target, text, summary, icon='info',
-            enabled=not bool(
-                getFeatureFlag('commercial_subscriptions.new.disabled')))
+    def oci_registry_credentials(self):
+        target = '+oci-registry-credentials'
+        text = 'OCI registry credentials'
+        return Link(target, text, icon='info')
 
     @enabled_with_permission('launchpad.Edit')
     def editlanguages(self):
@@ -1352,126 +1378,6 @@ class PersonAccountAdministerView(LaunchpadFormView):
         self.context.setStatus(data['status'], self.user, data['comment'])
 
 
-class PersonVouchersView(LaunchpadFormView):
-    """Form for displaying and redeeming commercial subscription vouchers."""
-
-    custom_widget_voucher = LaunchpadDropdownWidget
-
-    @property
-    def page_title(self):
-        return 'Commercial subscription vouchers'
-
-    @property
-    def cancel_url(self):
-        """See `LaunchpadFormView`."""
-        return canonical_url(self.context)
-
-    def setUpFields(self):
-        """Set up the fields for this view."""
-
-        self.form_fields = []
-        self.form_fields = (self.createProjectField() +
-                            self.createVoucherField())
-
-    def createProjectField(self):
-        """Create the project field for selection commercial projects.
-
-        The vocabulary shows commercial projects owned by the current user.
-        """
-        field = FormFields(
-            Choice(__name__='project',
-                   title=_('Select the project you wish to subscribe'),
-                   description=_('Commercial projects you administer'),
-                   vocabulary="CommercialProjects",
-                   required=True),
-            render_context=self.render_context)
-        return field
-
-    def createVoucherField(self):
-        """Create voucher field.
-
-        Only redeemable vouchers owned by the user are shown.
-        """
-        terms = []
-        for voucher in self.redeemable_vouchers:
-            text = "%s (%d months)" % (
-                voucher.voucher_id, voucher.term_months)
-            terms.append(SimpleTerm(voucher, voucher.voucher_id, text))
-        voucher_vocabulary = SimpleVocabulary(terms)
-        field = FormFields(
-            Choice(__name__='voucher',
-                   title=_('Select a voucher'),
-                   description=_('Choose one of these redeemable vouchers'),
-                   vocabulary=voucher_vocabulary,
-                   required=True),
-            render_context=self.render_context)
-        return field
-
-    @cachedproperty
-    def show_voucher_selection(self):
-        return self.redeemable_vouchers or self.errors
-
-    @cachedproperty
-    def redeemable_vouchers(self):
-        """Get the list redeemable vouchers owned by the user."""
-        vouchers = [
-            voucher for voucher in
-            self.context.getRedeemableCommercialSubscriptionVouchers()]
-        return vouchers
-
-    def removeRedeemableVoucher(self, voucher):
-        """Remove the voucher from the cached list of redeemable vouchers.
-
-        Updated the voucher field and widget so that the form can be reused.
-        """
-        vouchers = get_property_cache(self).redeemable_vouchers
-        vouchers.remove(voucher)
-        # Setup the fields and widgets again, but withut the submitted data.
-        self.form_fields = (
-            self.createProjectField() + self.createVoucherField())
-        self.widgets = form.setUpWidgets(
-            self.form_fields.select('project', 'voucher'),
-            self.prefix, self.context, self.request,
-            data=self.initial_values, ignore_request=True)
-
-    @action(_("Redeem"), name="redeem")
-    def redeem_action(self, action, data):
-        salesforce_proxy = getUtility(ISalesforceVoucherProxy)
-        project = data['project']
-        voucher = data['voucher']
-
-        try:
-            # Perform a check that the submitted voucher id is valid.
-            check_voucher = salesforce_proxy.getVoucher(voucher.voucher_id)
-            if not check_voucher.status in REDEEMABLE_VOUCHER_STATUSES:
-                self.addError(
-                    _("Voucher %s has invalid status %s"
-                      % (check_voucher.voucher_id, check_voucher.status)))
-                return
-            # Redeem the voucher in Launchpad, marking the subscription as
-            # pending. Launchpad will honour the subscription but a job will
-            # still need to be run to notify Salesforce.
-            try:
-                project.redeemSubscriptionVoucher(
-                    voucher='pending-' + voucher.voucher_id,
-                    registrant=self.context,
-                    purchaser=self.context,
-                    subscription_months=voucher.term_months)
-            except VoucherAlreadyRedeemed as error:
-                self.setFieldError('voucher', _(error.message))
-                return
-            self.request.response.addInfoNotification(
-                _("Voucher redeemed successfully"))
-            self.removeRedeemableVoucher(voucher)
-        except SalesforceVoucherProxyException as error:
-            self.addError(
-                _("The voucher could not be redeemed at this time."))
-            # Log an OOPS report without raising an error.
-            info = (error.__class__, error, None)
-            globalErrorUtility = getUtility(IErrorReportingUtility)
-            globalErrorUtility.raising(info, self.request)
-
-
 class PersonLanguagesView(LaunchpadFormView):
     """Edit preferred languages for a person or team."""
     schema = Interface
@@ -1778,17 +1684,17 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     @cachedproperty
     def openpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getOpenPolls()
+        return list(IPollSubset(self.context).getOpenPolls())
 
     @cachedproperty
     def closedpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getClosedPolls()
+        return list(IPollSubset(self.context).getClosedPolls())
 
     @cachedproperty
     def notyetopenedpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getNotYetOpenedPolls()
+        return list(IPollSubset(self.context).getNotYetOpenedPolls())
 
     @cachedproperty
     def contributions(self):
@@ -1847,7 +1753,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         """Return an URL to a page which lists all bugs assigned to this
         person that are In Progress.
         """
-        query_string = urllib.urlencode(
+        query_string = urlencode(
             [('field.status', BugTaskStatus.INPROGRESS.title)])
         url = "%s/+assignedbugs" % canonical_url(self.context)
         return ("%(url)s?search=Search&%(query_string)s"
@@ -2306,7 +2212,7 @@ class PersonCodeOfConductEditView(LaunchpadView):
             for sig_id in sig_ids:
                 sig_id = int(sig_id)
                 # Deactivating signature.
-                comment = 'Deactivated by Owner'
+                comment = u'Deactivated by Owner'
                 sCoC_util.modifySignature(sig_id, self.user, comment, False)
 
 
@@ -3082,7 +2988,7 @@ class PersonEditEmailsView(LaunchpadFormView):
                     "to be confirmed as yours." % newemail)
             else:
                 owner = email.person
-                owner_name = urllib.quote(owner.name)
+                owner_name = quote(owner.name)
                 merge_url = (
                     '%s/+requestmerge?field.dupe_person=%s'
                     % (canonical_url(getUtility(IPersonSet)), owner_name))
@@ -3745,6 +3651,352 @@ class PersonOAuthTokensView(LaunchpadView):
                 "revoked already?" % consumer.key)
         self.request.response.redirect(
             canonical_url(self.context, view_name='+oauth-tokens'))
+
+
+class PersonOCIRegistryCredentialsView(LaunchpadView):
+    """View for Person:+oci-registry-credentials."""
+
+    @cachedproperty
+    def oci_registry_credentials(self):
+        return list(getUtility(
+            IOCIRegistryCredentialsSet).findByOwner(self.context))
+
+    page_title = "OCI registry credentials"
+
+    @property
+    def label(self):
+        return "OCI registry credentials for %s" % self.context.display_name
+
+    @property
+    def has_credentials(self):
+        return len(self.oci_registry_credentials) > 0
+
+
+class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
+    """View for Person:+edit-oci-registry-credentials."""
+
+    @cachedproperty
+    def oci_registry_credentials(self):
+        if IPerson.providedBy(self.context):
+            owner = self.context
+        elif IOCIRecipe.providedBy(self.context):
+            owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
+
+        return list(getUtility(IOCIRegistryCredentialsSet).findByOwner(owner))
+
+    schema = Interface
+
+    def _getFieldName(self, name, credentials_id):
+        """Get the combined field name for an `OCIRegistryCredentials` ID.
+
+        In order to be able to render a table, we encode the credentials ID
+        in the form field name.
+        """
+        return "%s.%d" % (name, credentials_id)
+
+    def getEditFieldsRow(self, credentials=None):
+        id = getattr(credentials, 'id', None)
+        owner = Choice(
+            title=u'Owner',
+            vocabulary=(
+                'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
+            default=credentials.owner.name,
+            __name__=self._getFieldName('owner', id))
+
+        username = TextLine(
+            title=u'Username',
+            __name__=self._getFieldName('username', id),
+            default=credentials.username,
+            required=False, readonly=False)
+
+        password = Password(
+            title=u'Password',
+            __name__=self._getFieldName('password', id),
+            default=None,
+            required=False, readonly=False)
+
+        confirm_password = Password(
+            title=u'Confirm password',
+            __name__=self._getFieldName('confirm_password', id),
+            default=None,
+            required=False, readonly=False)
+
+        url = TextLine(
+            title=u'Registry URL',
+            __name__=self._getFieldName('url', id),
+            default=credentials.url,
+            required=True, readonly=False)
+
+        delete = Bool(
+            title=u'Delete',
+            __name__=self._getFieldName('delete', id),
+            default=False,
+            required=True, readonly=False)
+
+        return owner, username, password, confirm_password, url, delete
+
+    def getAddFieldsRow(self):
+        add_url = TextLine(
+            title=u'Registry URL',
+            __name__=u'add_url',
+            required=False, readonly=False)
+        add_username = TextLine(
+            title=u'Username',
+            __name__=u'add_username',
+            required=False, readonly=False)
+        add_password = Password(
+            title=u'Password',
+            __name__=u'add_password',
+            required=False, readonly=False)
+        add_confirm_password = Password(
+            title=u'Confirm password',
+            __name__=u'add_confirm_password',
+            required=False, readonly=False)
+
+        return add_url, add_username, add_password, add_confirm_password
+
+    def _parseFieldName(self, field_name):
+        """Parse a combined field name as described in `_getFieldName`.
+
+        :raises UnexpectedFormData: if the field name cannot be parsed or
+            the `OCIRegistryCredentials` cannot be found.
+        """
+        field_bits = field_name.split(".")
+        if len(field_bits) != 2:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        field_type = field_bits[0]
+        try:
+            credentials_id = int(field_bits[1])
+        except ValueError:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        return field_type, credentials_id
+
+    def setUpFields(self):
+        """See `LaunchpadFormView`."""
+        LaunchpadFormView.setUpFields(self)
+
+        for elem in self.oci_registry_credentials:
+            fields = self.getEditFieldsRow(elem)
+            self.form_fields += FormFields(*fields)
+
+        add_fields = self.getAddFieldsRow()
+        self.form_fields += FormFields(*add_fields)
+
+    @property
+    def label(self):
+        return 'Edit OCI registry credentials'
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    def getCredentialsWidgets(self, credentials):
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+        owner_field_name = (
+                "field." + self._getFieldName("owner", credentials.id))
+        username_field_name = (
+                "field." + self._getFieldName("username", credentials.id))
+        password_field_name = (
+                "field." + self._getFieldName("password", credentials.id))
+        confirm_password_field_name = (
+                "field." + self._getFieldName("confirm_password",
+                                              credentials.id))
+        url_field_name = "field." + self._getFieldName("url", credentials.id)
+        delete_field_name = (
+                "field." + self._getFieldName("delete", credentials.id))
+        return {
+            "owner": widgets_by_name[owner_field_name],
+            "username": widgets_by_name[username_field_name],
+            "password": widgets_by_name[password_field_name],
+            "confirm_password": widgets_by_name[confirm_password_field_name],
+            "url": widgets_by_name[url_field_name],
+            "delete": widgets_by_name[delete_field_name]
+        }
+
+    def parseData(self, data):
+        """Rearrange form data to make it easier to process."""
+        parsed_data = {}
+        add_url = data["add_url"]
+        add_username = data["add_username"]
+        add_password = data["add_password"]
+        add_confirm_password = data["add_confirm_password"]
+        if add_url or add_username or add_password or add_confirm_password:
+            parsed_data.setdefault(None, {
+                "username": add_username,
+                "password": add_password,
+                "confirm_password": add_confirm_password,
+                "url": add_url,
+                "action": "add",
+            })
+        for field_name in (
+                name for name in data if name.split(".")[0] == "owner"):
+            _, credentials_id = self._parseFieldName(field_name)
+            owner_field_name = self._getFieldName(
+                "owner", credentials_id)
+            username_field_name = self._getFieldName(
+                "username", credentials_id)
+            password_field_name = self._getFieldName(
+                "password", credentials_id)
+            confirm_password_field_name = self._getFieldName(
+                "confirm_password", credentials_id)
+            url_field_name = self._getFieldName("url", credentials_id)
+            delete_field_name = self._getFieldName("delete", credentials_id)
+            if data.get(delete_field_name):
+                action = "delete"
+            else:
+                action = "change"
+            parsed_data.setdefault(credentials_id, {
+                "username": data.get(username_field_name),
+                "password": data.get(password_field_name),
+                "confirm_password": data.get(confirm_password_field_name),
+                "url": data.get(url_field_name),
+                "owner": data.get(owner_field_name),
+                "action": action,
+            })
+
+        return parsed_data
+
+    def changeCredentials(self, parsed_credentials, credentials):
+        username = parsed_credentials["username"]
+        password = parsed_credentials["password"]
+        confirm_password = parsed_credentials["confirm_password"]
+        owner = parsed_credentials["owner"]
+        if password or confirm_password:
+            if password != confirm_password:
+                self.setFieldError(
+                    self._getFieldName(
+                        "confirm_password", credentials.id),
+                    "Passwords do not match.")
+            else:
+                credentials.setCredentials(
+                    {"username": username,
+                     "password": password})
+                credentials.url = parsed_credentials["url"]
+        elif username != credentials.username:
+            removeSecurityProxy(credentials).username = username
+            credentials.url = parsed_credentials["url"]
+        elif parsed_credentials["url"] != credentials.url:
+            credentials.url = parsed_credentials["url"]
+        if owner != credentials.owner:
+            credentials.owner = owner
+
+    def deleteCredentials(self, credentials):
+        push_rule_set = getUtility(IOCIPushRuleSet)
+        if not push_rule_set.findByRegistryCredentials(
+                credentials).is_empty():
+            self.setFieldError(
+                self._getFieldName(
+                    "delete", credentials.id),
+                "These credentials cannot be deleted as there are "
+                "push rules defined that still use them.")
+        else:
+            credentials.destroySelf()
+
+    def addCredentials(self, parsed_add_credentials):
+        if IPerson.providedBy(self.context):
+            owner = self.context
+        elif IOCIRecipe.providedBy(self.context):
+            owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
+        url = parsed_add_credentials["url"]
+        password = parsed_add_credentials["password"]
+        confirm_password = parsed_add_credentials["confirm_password"]
+        username = parsed_add_credentials["username"]
+        if url:
+            if password or confirm_password:
+                if not password == confirm_password:
+                    self.setFieldError(
+                        "add_password",
+                        "Please make sure the new "
+                        "password matches the "
+                        "confirm password field.")
+                    return
+
+                credentials = {
+                    'username': username,
+                    'password': password}
+                try:
+                    getUtility(IOCIRegistryCredentialsSet).new(
+                        owner=owner,
+                        url=url,
+                        credentials=credentials)
+                except OCIRegistryCredentialsAlreadyExist:
+                    self.setFieldError(
+                        "add_url",
+                        "Credentials already exist "
+                        "with the same URL and "
+                        "username.")
+            else:
+                credentials = {'username': username}
+                try:
+                    getUtility(IOCIRegistryCredentialsSet).new(
+                        owner=owner,
+                        url=url,
+                        credentials=credentials)
+                except OCIRegistryCredentialsAlreadyExist:
+                    self.setFieldError(
+                        "add_url",
+                        "Credentials already exist "
+                        "with the same URL and username.")
+        else:
+            self.setFieldError(
+                "add_url",
+                "Registry URL cannot be empty.")
+
+    def updateCredentialsFromData(self, parsed_data):
+        credentials_map = {
+            credentials.id: credentials
+            for credentials in self.oci_registry_credentials}
+
+        for credentials_id, parsed_credentials in parsed_data.items():
+            credentials = credentials_map.get(credentials_id)
+            action = parsed_credentials["action"]
+
+            if action == "change":
+                self.changeCredentials(parsed_credentials, credentials)
+            elif action == "delete":
+                self.deleteCredentials(credentials)
+            elif action == "add":
+                parsed_add_credentials = parsed_data[credentials]
+                self.addCredentials(parsed_add_credentials)
+            else:
+                raise AssertionError("unknown action: %s" % action)
+
+    @action("Save")
+    def save(self, action, data):
+        parsed_data = self.parseData(data)
+        self.updateCredentialsFromData(parsed_data)
+
+        if not self.errors:
+            self.request.response.addNotification("Saved credentials")
+            self.next_url = canonical_url(self.context)
+
+
+class PersonLiveFSView(LaunchpadView):
+    """Default view for the list of live filesystems owned by a person."""
+    page_title = 'LiveFS'
+
+    @property
+    def label(self):
+        return 'Live filesystems for %s' % self.context.display_name
+
+    @property
+    def livefses(self):
+        livefses = getUtility(ILiveFSSet).getByPerson(self.context)
+        return livefses.order_by('name')
+
+    @property
+    def livefses_navigator(self):
+        return BatchNavigator(self.livefses, self.request)
+
+    @cachedproperty
+    def count(self):
+        return self.livefses_navigator.batch.total()
 
 
 class PersonTimeZoneForm(Interface):

@@ -250,12 +250,10 @@ excludes architecture-independent duplications which is necessary for
 having correct publication counters and archive size.
 
     >>> from lp.soyuz.enums import PackagePublishingStatus
-
-    >>> active_status = [PackagePublishingStatus.PENDING,
-    ...                  PackagePublishingStatus.PUBLISHED]
-
-    >>> inactive_status = [PackagePublishingStatus.SUPERSEDED,
-    ...                    PackagePublishingStatus.DELETED]
+    >>> from lp.soyuz.interfaces.publishing import (
+    ...     active_publishing_status,
+    ...     inactive_publishing_status,
+    ...     )
 
     >>> warty = cprov_archive.distribution['warty']
     >>> hoary = cprov_archive.distribution['hoary']
@@ -365,19 +363,19 @@ Both methods support 'status' filter:
     4
 
     >>> cprov_archive.getPublishedOnDiskBinaries(
-    ...     status=active_status).count()
+    ...     status=active_publishing_status).count()
     3
 
     >>> cprov_archive.getAllPublishedBinaries(
-    ...     status=active_status).count()
+    ...     status=active_publishing_status).count()
     4
 
     >>> cprov_archive.getPublishedOnDiskBinaries(
-    ...     status=inactive_status).count()
+    ...     status=inactive_publishing_status).count()
     0
 
     >>> cprov_archive.getAllPublishedBinaries(
-    ...     status=inactive_status).count()
+    ...     status=inactive_publishing_status).count()
     0
 
 Using 'distroarchseries' filter:
@@ -429,44 +427,44 @@ Using 'pocket' filter:
 Associating 'name' and 'status' filters:
 
     >>> status_lookup = cprov_archive.getPublishedOnDiskBinaries(
-    ...     name=u'pmount', status=active_status)
+    ...     name=u'pmount', status=active_publishing_status)
     >>> status_lookup.count()
     1
 
     >>> status_lookup = cprov_archive.getAllPublishedBinaries(
-    ...     name=u'pmount', status=active_status)
+    ...     name=u'pmount', status=active_publishing_status)
     >>> status_lookup.count()
     2
 
     >>> status_lookup = cprov_archive.getPublishedOnDiskBinaries(
-    ...     name=u'foo', status=active_status)
+    ...     name=u'foo', status=active_publishing_status)
     >>> status_lookup.count()
     0
 
     >>> status_lookup = cprov_archive.getAllPublishedBinaries(
-    ...     name=u'foo', status=active_status)
+    ...     name=u'foo', status=active_publishing_status)
     >>> status_lookup.count()
     0
 
 Associating 'name', 'version' and 'status' filters:
 
     >>> status_lookup = cprov_archive.getPublishedOnDiskBinaries(
-    ...     name=u'pmount', version='0.1-1', status=active_status)
+    ...     name=u'pmount', version='0.1-1', status=active_publishing_status)
     >>> status_lookup.count()
     1
 
     >>> status_lookup = cprov_archive.getAllPublishedBinaries(
-    ...     name=u'pmount', version='0.1-1', status=active_status)
+    ...     name=u'pmount', version='0.1-1', status=active_publishing_status)
     >>> status_lookup.count()
     2
 
     >>> status_lookup = cprov_archive.getPublishedOnDiskBinaries(
-    ...     name=u'pmount', version='666', status=active_status)
+    ...     name=u'pmount', version='666', status=active_publishing_status)
     >>> status_lookup.count()
     0
 
     >>> status_lookup = cprov_archive.getAllPublishedBinaries(
-    ...     name=u'pmount', version='666', status=active_status)
+    ...     name=u'pmount', version='666', status=active_publishing_status)
     >>> status_lookup.count()
     0
 
@@ -475,14 +473,14 @@ and 'exact_match' flag:
 
     >>> status_lookup = cprov_archive.getAllPublishedBinaries(
     ...     name=u'pmount', version='0.1-1', distroarchseries=warty_i386,
-    ...     status=active_status, exact_match=True)
+    ...     status=active_publishing_status, exact_match=True)
     >>> status_lookup.count()
     1
 
     >>> status_lookup = cprov_archive.getAllPublishedBinaries(
     ...     name=u'pmount', version='0.1-1',
     ...     distroarchseries=[warty_i386, warty_hppa],
-    ...     status=active_status, exact_match=True)
+    ...     status=active_publishing_status, exact_match=True)
     >>> status_lookup.count()
     2
 

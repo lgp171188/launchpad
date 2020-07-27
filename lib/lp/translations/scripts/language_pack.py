@@ -32,9 +32,6 @@ from lp.services.librarian.interfaces.client import (
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.translations.enums import LanguagePackType
 from lp.translations.interfaces.languagepack import ILanguagePackSet
-from lp.translations.interfaces.translationfileformat import (
-    TranslationFileFormat,
-    )
 from lp.translations.interfaces.vpoexport import IVPOExportSet
 
 
@@ -93,7 +90,6 @@ def export(distroseries, component, update, force_utf8, logger):
 
     # XXX JeroenVermeulen 2008-02-06: Is there anything here that we can unify
     # with the export-queue code?
-    xpi_templates_to_export = set()
     path_prefix = 'rosetta-%s' % distroseries.name
 
     pofiles = export_set.get_distroseries_pofiles(
@@ -137,14 +133,7 @@ def export(distroseries, component, update, force_utf8, logger):
 
         domain = potemplate.translation_domain.encode('ascii')
         code = pofile.getFullLanguageCode().encode('UTF-8')
-
-        if potemplate.source_file_format == TranslationFileFormat.XPI:
-            xpi_templates_to_export.add(potemplate)
-            path = os.path.join(
-                path_prefix, 'xpi', domain, '%s.po' % code)
-        else:
-            path = os.path.join(
-                path_prefix, code, 'LC_MESSAGES', '%s.po' % domain)
+        path = os.path.join(path_prefix, code, 'LC_MESSAGES', '%s.po' % domain)
 
         try:
             # We don't want obsolete entries here, it makes no sense for a
@@ -160,25 +149,13 @@ def export(distroseries, component, update, force_utf8, logger):
 
         store.invalidate(pofile)
 
-    logger.info("Exporting XPI template files.")
-    librarian_client = getUtility(ILibrarianClient)
-    for template in xpi_templates_to_export:
-        if template.source_file is None:
-            logger.warning(
-                "%s doesn't have source file registered." % potemplate.title)
-            continue
-        domain = template.translation_domain.encode('ascii')
-        archive.add_file(
-            os.path.join(path_prefix, 'xpi', domain, 'en-US.xpi'),
-            librarian_client.getFileByAlias(
-                template.source_file.id).read())
-
     logger.info("Adding timestamp file")
     # Is important that the timestamp contain the date when the export
     # started, not when it finished because that notes how old is the
     # information the export contains.
     archive.add_file(
-        'rosetta-%s/timestamp.txt' % distroseries.name, '%s\n' % start_date)
+        'rosetta-%s/timestamp.txt' % distroseries.name,
+        ('%s\n' % start_date).encode('UTF-8'))
 
     logger.info("Adding mapping file")
     mapping_text = ''
@@ -186,7 +163,8 @@ def export(distroseries, component, update, force_utf8, logger):
     for sourcepackagename, translationdomain in mapping:
         mapping_text += "%s %s\n" % (sourcepackagename, translationdomain)
     archive.add_file(
-        'rosetta-%s/mapping.txt' % distroseries.name, mapping_text)
+        'rosetta-%s/mapping.txt' % distroseries.name,
+        mapping_text.encode('UTF-8'))
 
     logger.info("Done.")
 
@@ -251,9 +229,12 @@ def export_language_pack(distribution_name, series_name, logger,
         if output_file == '-':
             output_filehandle = sys.stdout
         else:
-            output_filehandle = file(output_file, 'wb')
+            output_filehandle = open(output_file, 'wb')
 
         copyfileobj(filehandle, output_filehandle)
+
+        if output_filehandle != sys.stdout:
+            output_filehandle.close()
     else:
         # Upload the tarball to the librarian.
 

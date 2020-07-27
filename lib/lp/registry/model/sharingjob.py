@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Job classes related to the sharing feature are in here."""
@@ -18,6 +18,7 @@ from lazr.enum import (
     DBItem,
     )
 import simplejson
+import six
 from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
@@ -160,7 +161,7 @@ class SharingJob(StormBase):
             self.distro = pillar
         # XXX AaronBentley 2009-01-29 bug=322819: This should be a bytestring,
         # but the DB representation is unicode.
-        self._json_data = json_data.decode('utf-8')
+        self._json_data = six.ensure_text(json_data)
 
     def destroySelf(self):
         Store.of(self).remove(self)
@@ -171,10 +172,9 @@ class SharingJob(StormBase):
 
 @delegate_to(ISharingJob)
 @provider(ISharingJobSource)
-class SharingJobDerived(BaseRunnableJob):
+class SharingJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
     """Intermediate class for deriving from SharingJob."""
-
-    __metaclass__ = EnumeratedSubclass
 
     def __init__(self, job):
         self.context = job
@@ -418,7 +418,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                         TeamParticipation.personID,
                         where=TeamParticipation.team == self.grantee)))
             branch_filters.append(
-                In(BranchSubscription.personID,
+                In(BranchSubscription.person_id,
                     Select(
                         TeamParticipation.personID,
                         where=TeamParticipation.team == self.grantee)))
@@ -447,10 +447,10 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     sub.person, self.requestor, ignore_permissions=True)
         if branch_filters:
             branch_filters.append(Not(
-                Or(*get_branch_privacy_filter(BranchSubscription.personID))))
+                Or(*get_branch_privacy_filter(BranchSubscription.person_id))))
             branch_subscriptions = IStore(BranchSubscription).using(
                 BranchSubscription,
-                Join(Branch, Branch.id == BranchSubscription.branchID)
+                Join(Branch, Branch.id == BranchSubscription.branch_id)
                 ).find(BranchSubscription, *branch_filters).config(
                     distinct=True)
             for sub in branch_subscriptions:

@@ -10,13 +10,16 @@ __all__ = [
     ]
 
 from lazr.restful.fields import Reference
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import TextLine
 
-from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.person import IPerson
 
 
 class IPersonDistributionSourcePackage(Interface):
@@ -24,7 +27,8 @@ class IPersonDistributionSourcePackage(Interface):
 
     person = Reference(IPerson)
     distro_source_package = Reference(IDistributionSourcePackage)
-    displayname = TextLine()
+    display_name = TextLine()
+    displayname = Attribute("Display name (deprecated)")
 
 
 class IPersonDistributionSourcePackageFactory(Interface):

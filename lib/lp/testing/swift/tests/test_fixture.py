@@ -37,8 +37,8 @@ class TestSwiftFixture(TestCase):
 
     def makeSampleObject(self, client, contents, content_type=None):
         """Create a new container and a new sample object within it."""
-        cname = self.factory.getUniqueString()
-        oname = self.factory.getUniqueString()
+        cname = self.factory.getUniqueUnicode()
+        oname = self.factory.getUniqueUnicode()
         client.put_container(cname)
         client.put_object(cname, oname, contents, content_type=content_type)
         return cname, oname
@@ -47,13 +47,13 @@ class TestSwiftFixture(TestCase):
         client = self.swift_fixture.connect()
         size = 30
         headers, body = client.get_object("size", str(size))
-        self.assertEqual("0" * size, body)
+        self.assertEqual(b"0" * size, body)
         self.assertEqual(str(size), headers["content-length"])
         self.assertEqual("text/plain", headers["content-type"])
 
     def test_get_404(self):
         client = self.swift_fixture.connect()
-        cname = self.factory.getUniqueString()
+        cname = self.factory.getUniqueUnicode()
         client.put_container(cname)
         exc = self.assertRaises(
             swiftclient.ClientException,
@@ -72,7 +72,7 @@ class TestSwiftFixture(TestCase):
 
     def test_put(self):
         client = self.swift_fixture.connect()
-        message = "Hello World!"
+        message = b"Hello World!"
         cname, oname = self.makeSampleObject(client, message, "text/something")
         for x in range(1, 10):
             headers, body = client.get_object(cname, oname)
@@ -86,7 +86,7 @@ class TestSwiftFixture(TestCase):
         # Basic container listing.
         start = datetime.utcnow().replace(microsecond=0)
         client = self.swift_fixture.connect()
-        message = "42"
+        message = b"42"
         cname, oname = self.makeSampleObject(client, message, "text/something")
         client.put_object(cname, oname + ".2", message)
 
@@ -105,7 +105,7 @@ class TestSwiftFixture(TestCase):
     def test_get_container_marker(self):
         # Container listing supports the marker parameter.
         client = self.swift_fixture.connect()
-        message = "Hello"
+        message = b"Hello"
         cname, oname = self.makeSampleObject(client, message, "text/something")
         oname2 = oname + ".2"
         oname3 = oname + ".3"
@@ -121,7 +121,7 @@ class TestSwiftFixture(TestCase):
     def test_get_container_end_marker(self):
         # Container listing supports the end_marker parameter.
         client = self.swift_fixture.connect()
-        message = "Hello"
+        message = b"Hello"
         cname, oname = self.makeSampleObject(client, message, "text/something")
         oname2 = oname + ".2"
         oname3 = oname + ".3"
@@ -137,7 +137,7 @@ class TestSwiftFixture(TestCase):
     def test_get_container_limit(self):
         # Container listing supports the limit parameter.
         client = self.swift_fixture.connect()
-        message = "Hello"
+        message = b"Hello"
         cname, oname = self.makeSampleObject(client, message, "text/something")
         oname2 = oname + ".2"
         oname3 = oname + ".3"
@@ -152,7 +152,7 @@ class TestSwiftFixture(TestCase):
 
     def test_get_container_prefix(self):
         client = self.swift_fixture.connect()
-        message = "Hello"
+        message = b"Hello"
         cname, oname = self.makeSampleObject(client, message, "text/something")
         oname2 = "different"
         oname3 = oname + ".3"
@@ -167,7 +167,7 @@ class TestSwiftFixture(TestCase):
 
     def test_get_container_full_listing(self):
         client = self.swift_fixture.connect()
-        message = "42"
+        message = b"42"
         cname, oname = self.makeSampleObject(client, message, "text/something")
 
         _, container = client.get_container(cname, full_listing=True)
@@ -194,7 +194,7 @@ class TestSwiftFixture(TestCase):
         # Things work fine when the Swift server is up.
         self.swift_fixture.startup()
         headers, body = client.get_object("size", str(size))
-        self.assertEqual(body, "0" * size)
+        self.assertEqual(body, b"0" * size)
 
         # But if the Swift server goes away again, we end up with
         # different failures since the connection has already
@@ -214,7 +214,7 @@ class TestSwiftFixture(TestCase):
         # But fresh connections are fine.
         client = self.swift_fixture.connect()
         headers, body = client.get_object("size", str(size))
-        self.assertEqual(body, "0" * size)
+        self.assertEqual(body, b"0" * size)
 
     def test_env(self):
         self.assertEqual(

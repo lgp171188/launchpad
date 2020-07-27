@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad XMLRPC faults."""
@@ -385,6 +385,13 @@ class GitRepositoryNotFound(PathTranslationError):
     """Raised when a Git repository path lookup fails."""
 
     msg_template = "Repository '%(path)s' not found."
+
+
+class GitRepositoryBeingCreated(PathTranslationError):
+    """Raised when a Git repository path is currently being created on
+    hosting service."""
+
+    msg_template = "Repository '%(path)s' creation is in progress."
 
 
 class InvalidPath(LaunchpadFault):

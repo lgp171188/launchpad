@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Queue interfaces."""
@@ -9,34 +9,38 @@ __all__ = [
     'CustomUploadError',
     'ICustomUploadHandler',
     'IHasQueueItems',
-    'IPackageUploadQueue',
     'IPackageUpload',
     'IPackageUploadBuild',
-    'IPackageUploadSource',
     'IPackageUploadCustom',
+    'IPackageUploadLog',
+    'IPackageUploadQueue',
     'IPackageUploadSet',
+    'IPackageUploadSource',
     'NonBuildableSourceUploadError',
     'QueueAdminUnauthorizedError',
     'QueueBuildAcceptError',
     'QueueInconsistentStateError',
     'QueueSourceAcceptError',
-    'QueueStateWriteProtectedError',
+    'QueueStateWriteProtectedError'
     ]
 
-import httplib
-
+from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
     )
-from lazr.restful.fields import Reference
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -53,7 +57,9 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.webservice.apihelpers import patch_reference_property
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.packagecopyjob import IPackageCopyJob
 
@@ -66,7 +72,7 @@ class QueueStateWriteProtectedError(Exception):
     """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class QueueInconsistentStateError(Exception):
     """Queue state machine error.
 
@@ -111,10 +117,46 @@ class IPackageUploadQueue(Interface):
     """
 
 
+@exported_as_webservice_entry(publish_web_link=True, as_of="devel")
+class IPackageUploadLog(Interface):
+    """A log entry recording a change in a package upload's status."""
+
+    id = Int(title=_('ID'), required=True, readonly=True)
+
+    package_upload = exported(
+        Reference(
+            Interface, title=_("The package upload that generated this log"),
+            required=True, readonly=True))
+
+    date_created = exported(
+        Datetime(
+            title=_("When this action happened."), required=True,
+            readonly=True))
+
+    reviewer = exported(
+        Reference(
+            IPerson, title=_("Who did this action."),
+            required=True, readonly=True))
+
+    old_status = exported(
+        Choice(
+            vocabulary=PackageUploadStatus, description=_("Old status."),
+            required=True, readonly=True))
+
+    new_status = exported(
+        Choice(
+            vocabulary=PackageUploadStatus, description=_("New status."),
+            required=True, readonly=True))
+
+    comment = exported(
+        TextLine(
+            title=_("User's comment about this change."),
+            required=False, readonly=True))
+
+
+@exported_as_webservice_entry(publish_web_link=False)
 class IPackageUpload(Interface):
     """A Queue item for the archive uploader."""
-
-    export_as_webservice_entry(publish_web_link=False)
 
     id = exported(
         Int(
@@ -180,6 +222,14 @@ class IPackageUpload(Interface):
             title=_("Archive"), required=True, readonly=True))
     sources = Attribute("The queue sources associated with this queue item")
     builds = Attribute("The queue builds associated with the queue item")
+
+    logs = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("The package upload logs"),
+                value_type=Reference(schema=IPackageUploadLog),
+                readonly=True)),
+        as_of="devel")
 
     customfiles = Attribute("Custom upload files associated with this "
                             "queue item")
@@ -491,6 +541,9 @@ class IPackageUpload(Interface):
         """
 
 
+patch_reference_property(IPackageUploadLog, 'package_upload', IPackageUpload)
+
+
 class IPackageUploadBuild(Interface):
     """A Queue item's related builds."""
 
@@ -503,9 +556,7 @@ class IPackageUploadBuild(Interface):
             readonly=False,
             )
 
-    build = Int(
-            title=_("The related build"), required=True, readonly=False,
-            )
+    build = Int(title=_("The related build"), required=True, readonly=False)
 
     def binaries():
         """Returns the properties of the binaries in this build.
@@ -548,8 +599,7 @@ class IPackageUploadSource(Interface):
 
     sourcepackagerelease = Int(
             title=_("The related source package release"), required=True,
-            readonly=False,
-            )
+            readonly=False)
 
     def getSourceAncestryForDiffs():
         """Return a suitable ancestry publication for this context.

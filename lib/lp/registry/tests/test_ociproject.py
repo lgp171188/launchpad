@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `OCIProject` and `OCIProjectSet`."""
@@ -7,21 +7,34 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import json
+
+from six import text_type
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    )
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
     )
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
+from lp.services.features.testing import FeatureFixture
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
+    api_url,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 
 
 class TestOCIProject(TestCaseWithFactory):
@@ -33,12 +46,50 @@ class TestOCIProject(TestCaseWithFactory):
         with admin_logged_in():
             self.assertProvides(oci_project, IOCIProject)
 
+    def test_product_pillar(self):
+        product = self.factory.makeProduct(name="some-project")
+        oci_project = self.factory.makeOCIProject(pillar=product)
+        self.assertEqual(product, oci_project.pillar)
+
+    def test_prevents_moving_pillar_to_invalid_type(self):
+        project = self.factory.makeProduct()
+        distro = self.factory.makeDistribution()
+
+        project_oci_project = self.factory.makeOCIProject(pillar=project)
+        distro_oci_project = self.factory.makeOCIProject(pillar=distro)
+
+        with admin_logged_in():
+            project_oci_project.pillar = distro
+            self.assertEqual(project_oci_project.distribution, distro)
+            self.assertIsNone(project_oci_project.project)
+
+            distro_oci_project.pillar = project
+            self.assertIsNone(distro_oci_project.distribution)
+            self.assertEqual(distro_oci_project.project, project)
+
+            self.assertRaises(
+                ValueError, setattr, distro_oci_project, 'pillar', 'Invalid')
+
     def test_newSeries(self):
         driver = self.factory.makePerson()
         distribution = self.factory.makeDistribution(driver=driver)
         registrant = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         with person_logged_in(driver):
+            series = oci_project.newSeries(
+                'test-series',
+                'test-summary',
+                registrant)
+            self.assertProvides(series, IOCIProjectSeries)
+
+    def test_newSeries_as_oci_project_admin(self):
+        admin_person = self.factory.makePerson()
+        admin_team = self.factory.makeTeam(members=[admin_person])
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=admin_team)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        registrant = self.factory.makePerson()
+        with person_logged_in(admin_person):
             series = oci_project.newSeries(
                 'test-series',
                 'test-summary',
@@ -66,6 +117,20 @@ class TestOCIProject(TestCaseWithFactory):
             self.factory.makeOCIProjectSeries(
                 oci_project=second_oci_project)
             self.assertContentEqual([first_series], first_oci_project.series)
+
+    def test_name(self):
+        oci_project_name = self.factory.makeOCIProjectName(name='test-name')
+        oci_project = self.factory.makeOCIProject(
+            ociprojectname=oci_project_name)
+        self.assertEqual('test-name', oci_project.name)
+
+    def test_display_name(self):
+        oci_project_name = self.factory.makeOCIProjectName(name='test-name')
+        oci_project = self.factory.makeOCIProject(
+            ociprojectname=oci_project_name)
+        self.assertEqual(
+            'OCI project test-name for %s' % oci_project.pillar.display_name,
+            oci_project.display_name)
 
 
 class TestOCIProjectSet(TestCaseWithFactory):
@@ -103,6 +168,148 @@ class TestOCIProjectSet(TestCaseWithFactory):
 
         with person_logged_in(registrant):
             fetched_result = getUtility(
-                IOCIProjectSet).getByDistributionAndName(
+                IOCIProjectSet).getByPillarAndName(
                     distribution, oci_project.ociprojectname.name)
             self.assertEqual(oci_project, fetched_result)
+
+
+class TestOCIProjectWebservice(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIProjectWebservice, self).setUp()
+        self.person = self.factory.makePerson(displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+
+    def getAbsoluteURL(self, target):
+        """Get the webservice absolute URL of the given object or relative
+        path."""
+        if not isinstance(target, text_type):
+            target = api_url(target)
+        return self.webservice.getAbsoluteUrl(target)
+
+    def load_from_api(self, url):
+        response = self.webservice.get(url)
+        self.assertEqual(200, response.status, response.body)
+        return response.jsonBody()
+
+    def assertCanCreateOCIProject(self, distro, registrant):
+        url = api_url(distro)
+        obj = {"name": "someprojectname", "description": "My OCI project"}
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
+        self.assertEqual(201, resp.status, resp.body)
+
+        new_obj_url = resp.getHeader("Location")
+        oci_project = self.webservice.get(new_obj_url).jsonBody()
+        with person_logged_in(self.person):
+            self.assertThat(oci_project, ContainsDict({
+                "registrant_link": Equals(self.getAbsoluteURL(registrant)),
+                "name": Equals(obj["name"]),
+                "description": Equals(obj["description"]),
+                "distribution_link": Equals(self.getAbsoluteURL(distro)),
+            }))
+
+    def test_api_get_oci_project(self):
+        with person_logged_in(self.person):
+            person = removeSecurityProxy(self.person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=self.person))
+            self.factory.makeOCIProjectSeries(
+                oci_project=project, registrant=self.person)
+            url = api_url(project)
+
+        ws_project = self.load_from_api(url)
+
+        series_url = "{project_path}/series".format(
+            project_path=self.getAbsoluteURL(project))
+
+        self.assertThat(ws_project, ContainsDict(dict(
+            date_created=Equals(project.date_created.isoformat()),
+            date_last_modified=Equals(project.date_last_modified.isoformat()),
+            display_name=Equals(project.display_name),
+            registrant_link=Equals(self.getAbsoluteURL(person)),
+            series_collection_link=Equals(series_url)
+            )))
+
+    def test_api_save_oci_project(self):
+        with person_logged_in(self.person):
+            # Only the owner of the distribution (which is the pillar of the
+            # OCIProject) is allowed to update its attributes.
+            distro = self.factory.makeDistribution(owner=self.person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=self.person, pillar=distro))
+            url = api_url(project)
+
+        new_description = 'Some other description'
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'description': new_description}))
+        self.assertEqual(209, resp.status, resp.body)
+
+        ws_project = self.load_from_api(url)
+        self.assertEqual(new_description, ws_project['description'])
+
+    def test_api_save_oci_project_prevents_updates_from_others(self):
+        with admin_logged_in():
+            other_person = self.factory.makePerson()
+        with person_logged_in(other_person):
+            # Only the owner of the distribution (which is the pillar of the
+            # OCIProject) is allowed to update its attributes.
+            distro = self.factory.makeDistribution(owner=other_person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=other_person, pillar=distro,
+                description="old description"))
+            url = api_url(project)
+
+        new_description = 'Some other description'
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'description': new_description}))
+        self.assertEqual(401, resp.status, resp.body)
+
+        ws_project = self.load_from_api(url)
+        self.assertEqual("old description", ws_project['description'])
+
+    def test_create_oci_project(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+
+        self.assertCanCreateOCIProject(distro, self.person)
+
+    def test_ociproject_admin_can_create(self):
+        with person_logged_in(self.person):
+            owner = self.factory.makePerson()
+            distro = self.factory.makeDistribution(
+                owner=owner, oci_project_admin=self.person)
+        self.assertCanCreateOCIProject(distro, self.person)
+
+    def test_team_member_of_ociproject_admin_can_create(self):
+        with admin_logged_in():
+            team = self.factory.makeTeam()
+            team.addMember(self.person, team.teamowner)
+            distro = self.factory.makeDistribution(
+                owner=team.teamowner, oci_project_admin=team)
+
+        self.assertCanCreateOCIProject(distro, self.person)
+
+    def test_not_everyone_can_create_oci_project(self):
+        with person_logged_in(self.person):
+            owner = self.factory.makePerson()
+            distro = self.factory.makeDistribution(
+                owner=owner, oci_project_admin=owner)
+            url = api_url(distro)
+        obj = {"name": "someprojectname", "description": "My OCI project"}
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
+        self.assertEqual(401, resp.status, resp.body)
+
+    def test_api_create_oci_project_is_enabled_by_feature_flag(self):
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: 'on'}))
+        with admin_logged_in():
+            other_user = self.factory.makePerson()
+            distro = removeSecurityProxy(self.factory.makeDistribution(
+                owner=other_user))
+
+        self.assertCanCreateOCIProject(distro, self.person)

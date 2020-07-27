@@ -27,7 +27,6 @@ __all__ = [
     ]
 
 from cgi import FieldStorage
-import httplib
 import re
 from wsgiref.headers import Headers
 
@@ -40,6 +39,9 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
+import six
+from six.moves import http_client
+from six.moves.urllib.parse import urlparse
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
     getUtility,
@@ -94,7 +96,7 @@ from lp.services.webapp.vhosts import allvhosts
 
 # Monkeypatch NotFound to always avoid generating OOPS
 # from NotFound in web service calls.
-error_status(httplib.NOT_FOUND)(NotFound)
+error_status(http_client.NOT_FOUND)(NotFound)
 
 # Used to match zope namespaces eg ++model++.
 RESERVED_NAMESPACE = re.compile('\\+\\+.*\\+\\+')
@@ -369,6 +371,17 @@ class LaunchpadView(UserAttributeCache):
         return getattr(self.context, 'description', None)
 
     @property
+    def opengraph_description(self):
+        """Return a string for the description used in the OpenGraph metadata
+
+        Some pages may wish to override the values used in the OpenGraph
+        metadata to provide more useful link previews.
+
+        Default to the page_description in the base views.
+        """
+        return self.page_description
+
+    @property
     def template(self):
         """The page's template, if configured in zcml."""
         return self.index
@@ -616,9 +629,10 @@ class CanonicalAbsoluteURL:
         self.context = context
         self.request = request
 
-    def __unicode__(self):
-        """Returns the URL as a unicode string."""
-        raise NotImplementedError()
+    if six.PY2:
+        def __unicode__(self):
+            """Returns the URL as a unicode string."""
+            raise NotImplementedError()
 
     def __str__(self):
         """Returns an ASCII string with all unicode characters url quoted."""

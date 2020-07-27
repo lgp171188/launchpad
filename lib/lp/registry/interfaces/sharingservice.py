@@ -12,9 +12,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     call_with,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
+    exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -47,12 +47,11 @@ from lp.registry.interfaces.pillar import IPillar
 from lp.registry.interfaces.product import IProduct
 
 
+# XXX 2012-02-24 wallyworld bug 939910
+# Need to export for version 'beta' even though we only want to use it in
+# version 'devel'
+@exported_as_webservice_entry(publish_web_link=False, as_of='beta')
 class ISharingService(IService):
-
-    # XXX 2012-02-24 wallyworld bug 939910
-    # Need to export for version 'beta' even though we only want to use it in
-    # version 'devel'
-    export_as_webservice_entry(publish_web_link=False, as_of='beta')
 
     def checkPillarAccess(pillars, information_type, person):
         """Check the person's access to the given pillars and information type.

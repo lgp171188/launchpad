@@ -1,8 +1,10 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 # Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Generate the database statistics report."""
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
@@ -268,25 +270,25 @@ def main():
         parser.error("Only one sample in that time range.")
 
     user_cpu = get_cpu_stats(cur, options)
-    print "== Most Active Users =="
-    print
+    print("== Most Active Users ==")
+    print()
     for cpu, username in sorted(user_cpu, reverse=True)[:options.limit]:
-        print "%40s || %10.2f%% CPU" % (username, float(cpu) / 10)
+        print("%40s || %10.2f%% CPU" % (username, float(cpu) / 10))
 
-    print
-    print "== Most Written Tables =="
-    print
+    print()
+    print("== Most Written Tables ==")
+    print()
     tables_sort = [
         'total_tup_written', 'n_tup_upd', 'n_tup_ins', 'n_tup_del', 'relname']
     most_written_tables = sorted(
         tables, key=attrgetter(*tables_sort), reverse=True)
     for table in most_written_tables[:options.limit]:
-        print "%40s || %10.2f tuples/sec" % (
-            table.relname, table.total_tup_written / per_second)
+        print("%40s || %10.2f tuples/sec" % (
+            table.relname, table.total_tup_written / per_second))
 
-    print
-    print "== Most Read Tables =="
-    print
+    print()
+    print("== Most Read Tables ==")
+    print()
     # These match the pg_user_table_stats view. schemaname is the
     # namespace (normally 'public'), relname is the table (relation)
     # name. total_tup_red is the total number of rows read.
@@ -295,37 +297,37 @@ def main():
     most_read_tables = sorted(
         tables, key=attrgetter(*tables_sort), reverse=True)
     for table in most_read_tables[:options.limit]:
-        print "%40s || %10.2f tuples/sec" % (
-            table.relname, table.total_tup_read / per_second)
+        print("%40s || %10.2f tuples/sec" % (
+            table.relname, table.total_tup_read / per_second))
 
     table_bloat_stats = get_bloat_stats(cur, options, 'r')
 
     if not table_bloat_stats:
-        print
-        print "(There is no bloat information available in this time range.)"
+        print()
+        print("(There is no bloat information available in this time range.)")
 
     else:
-        print
-        print "== Most Bloated Tables =="
-        print
+        print()
+        print("== Most Bloated Tables ==")
+        print()
         for bloated_table in table_bloat_stats[:options.limit]:
-            print "%40s || %2d%% || %s of %s" % (
+            print("%40s || %2d%% || %s of %s" % (
                 bloated_table.name,
                 bloated_table.end_bloat_percent,
                 bloated_table.bloat_size,
-                bloated_table.table_size)
+                bloated_table.table_size))
 
         index_bloat_stats = get_bloat_stats(cur, options, 'i')
 
-        print
-        print "== Most Bloated Indexes =="
-        print
+        print()
+        print("== Most Bloated Indexes ==")
+        print()
         for bloated_index in index_bloat_stats[:options.limit]:
-            print "%65s || %2d%% || %s of %s" % (
+            print("%65s || %2d%% || %s of %s" % (
                 bloated_index.sub_name,
                 bloated_index.end_bloat_percent,
                 bloated_index.bloat_size,
-                bloated_index.table_size)
+                bloated_index.table_size))
 
         # Order bloat delta report by size of bloat increase.
         # We might want to change this to percentage bloat increase.
@@ -335,39 +337,39 @@ def main():
             table_bloat_stats, key=bloating_sort_key, reverse=True)
 
         if table_bloating_stats[0].num_samples <= 1:
-            print
-            print fill(dedent("""\
+            print()
+            print(fill(dedent("""\
                 (There are not enough samples in this time range to display
                 bloat change statistics)
-                """))
+                """)))
         else:
-            print
-            print "== Most Bloating Tables =="
-            print
+            print()
+            print("== Most Bloating Tables ==")
+            print()
 
             for bloated_table in table_bloating_stats[:options.limit]:
                 # Bloat decreases are uninteresting, and would need to be in
                 # a separate table sorted in reverse anyway.
                 if bloated_table.delta_bloat_percent > 0:
-                    print "%40s || +%4.2f%% || +%s" % (
+                    print("%40s || +%4.2f%% || +%s" % (
                         bloated_table.name,
                         bloated_table.delta_bloat_percent,
-                        bloated_table.delta_bloat_size)
+                        bloated_table.delta_bloat_size))
 
             index_bloating_stats = sorted(
                 index_bloat_stats, key=bloating_sort_key, reverse=True)
 
-            print
-            print "== Most Bloating Indexes =="
-            print
+            print()
+            print("== Most Bloating Indexes ==")
+            print()
             for bloated_index in index_bloating_stats[:options.limit]:
                 # Bloat decreases are uninteresting, and would need to be in
                 # a separate table sorted in reverse anyway.
                 if bloated_index.delta_bloat_percent > 0:
-                    print "%65s || +%4.2f%% || +%s" % (
+                    print("%65s || +%4.2f%% || +%s" % (
                         bloated_index.sub_name,
                         bloated_index.delta_bloat_percent,
-                        bloated_index.delta_bloat_size)
+                        bloated_index.delta_bloat_size))
 
 
 if __name__ == '__main__':

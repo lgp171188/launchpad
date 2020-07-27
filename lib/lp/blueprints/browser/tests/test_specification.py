@@ -174,7 +174,7 @@ class TestSpecificationView(BrowserTestCase):
             spec, name='+index', principal=spec.owner,
             rootsite='blueprints')
         li = find_tag_by_id(view.render(), 'spec-url')
-        self.assertEqual('nofollow', li.a['rel'])
+        self.assertEqual(['nofollow'], li.a['rel'])
         self.assertEqual(spec.specurl, li.a['href'])
 
     def test_registration_date_displayed(self):
@@ -250,7 +250,7 @@ class TestSpecificationSet(BrowserTestCase):
         product = self.factory.makeProduct()
         removeSecurityProxy(product).official_blueprints = True
         self.factory.makeSpecification(product=product)
-        limit = BrowsesWithQueryLimit(42, product.owner, rootsite='blueprints')
+        limit = BrowsesWithQueryLimit(29, product.owner, rootsite='blueprints')
         self.assertThat(product, limit)
         login_celebrity('admin')
         [self.factory.makeSpecification(product=product) for i in range(4)]

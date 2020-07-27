@@ -19,14 +19,6 @@ from zope.formlib import itemswidgets
 
 itemswidgets.EXPLICIT_EMPTY_SELECTION = False
 
-# Monkeypatch our embedded BeautifulSoup and the one in mechanize to
-# teach them that wbr (new in HTML5, but widely supported forever) is
-# self-closing.
-import BeautifulSoup
-import mechanize._beautifulsoup
-BeautifulSoup.BeautifulSoup.SELF_CLOSING_TAGS['wbr'] = None
-mechanize._beautifulsoup.BeautifulSoup.SELF_CLOSING_TAGS['wbr'] = None
-
 # Load versioninfo.py so that we get errors on start-up rather than waiting
 # for first page load.
 import lp.app.versioninfo

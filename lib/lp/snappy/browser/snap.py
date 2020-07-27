@@ -18,13 +18,12 @@ __all__ = [
     'SnapView',
     ]
 
-from urllib import urlencode
-
 from lazr.restful.fields import Reference
 from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.formlib.widget import CustomWidgetFactory

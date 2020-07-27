@@ -11,8 +11,8 @@ __all__ = [
 
 
 from textwrap import TextWrapper
-from urllib import quote
 
+from six.moves.urllib.parse import quote
 from zope.component import getUtility
 
 from lp.app.browser.tales import PersonFormatterAPI

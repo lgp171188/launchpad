@@ -28,6 +28,8 @@ from signal import (
     )
 import time
 
+import six
+
 
 def remove_tree(path):
     """Remove the tree at 'path' from disk."""
@@ -41,7 +43,7 @@ def set_environ(new_values):
     :return: a dict of the old values
     """
     old_values = {}
-    for name, value in new_values.iteritems():
+    for name, value in six.iteritems(new_values):
         old_values[name] = os.environ.get(name)
         if value is None:
             if old_values[name] is not None:
@@ -152,7 +154,8 @@ def get_pid_from_file(pidfile_path):
     if not os.path.exists(pidfile_path):
         return None
     # Get the pid.
-    pid = open(pidfile_path, 'r').read().split()[0]
+    with open(pidfile_path) as pidfile:
+        pid = pidfile.read().split()[0]
     try:
         pid = int(pid)
     except ValueError:

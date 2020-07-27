@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -31,9 +31,9 @@ from zope.component import getUtility
 from zope.interface import (
     Attribute,
     Interface,
+    invariant,
     )
 from zope.interface.exceptions import Invalid
-from zope.interface.interface import invariant
 from zope.schema import (
     Bool,
     Choice,
@@ -171,7 +171,9 @@ class IPoll(Interface):
             raise Invalid(
                 "A poll cannot close at the time (or before) it opens.")
         now = datetime.now(pytz.UTC)
-        twelve_hours_ahead = now + timedelta(hours=12)
+        # Allow a bit of slack to account for time between form creation and
+        # validation.
+        twelve_hours_ahead = now + timedelta(hours=12) - timedelta(seconds=60)
         start_date = poll.dateopens.astimezone(pytz.UTC)
         if start_date < twelve_hours_ahead:
             raise Invalid(
@@ -294,16 +296,16 @@ class IPollSet(Interface):
             secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE):
         """Create a new Poll for the given team."""
 
-    def selectByTeam(team, status=PollStatus.ALL, orderBy=None, when=None):
+    def findByTeam(team, status=PollStatus.ALL, order_by=None, when=None):
         """Return all Polls for the given team, filtered by status.
 
         :status: is a sequence containing as many values as you want from
         PollStatus.
 
-        :orderBy: can be either a string with the column name you want to sort
-        or a list of column names as strings.
-        If no orderBy is specified the results will be ordered using the
-        default ordering specified in Poll._defaultOrder.
+        :order_by: can be either a string with the column name you want to
+        sort or a list of column names as strings.
+        If no order_by is specified the results will be ordered using the
+        default ordering specified in Poll.sortingColumns.
 
         The optional :when argument is used only by our tests, to test if the
         poll is/was/will-be open at a specific date.
@@ -405,7 +407,7 @@ class IPollOptionSet(Interface):
     def new(poll, name, title, active=True):
         """Create a new PollOption."""
 
-    def selectByPoll(poll, only_active=False):
+    def findByPoll(poll, only_active=False):
         """Return all PollOptions of the given poll.
 
         If :only_active is True, then return only the active polls.

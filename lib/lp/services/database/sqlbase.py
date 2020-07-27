@@ -1,6 +1,8 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'block_implicit_flushes',
@@ -8,6 +10,7 @@ __all__ = [
     'connect',
     'convert_storm_clause_to_string',
     'cursor',
+    'disconnect_stores',
     'flush_database_caches',
     'flush_database_updates',
     'get_transaction_timestamp',
@@ -50,6 +53,7 @@ from storm.locals import (
     Storm,
     )
 from storm.zope.interfaces import IZStorm
+import transaction
 from twisted.python.util import mergeFunctionMetadata
 from zope.component import getUtility
 from zope.interface import implementer
@@ -421,15 +425,15 @@ def quote_identifier(identifier):
     In SQL, identifiers are quoted using " rather than ' which is reserved
     for strings.
 
-    >>> print quoteIdentifier('hello')
+    >>> print(quoteIdentifier('hello'))
     "hello"
-    >>> print quoteIdentifier("'")
+    >>> print(quoteIdentifier("'"))
     "'"
-    >>> print quoteIdentifier('"')
+    >>> print(quoteIdentifier('"'))
     """"
-    >>> print quoteIdentifier("\\")
+    >>> print(quoteIdentifier("\\"))
     "\"
-    >>> print quoteIdentifier('\\"')
+    >>> print(quoteIdentifier('\\"'))
     "\"""
     '''
     return '"%s"' % identifier.replace('"', '""')
@@ -451,28 +455,28 @@ def convert_storm_clause_to_string(storm_clause):
     >>> from lp.bugs.interfaces.bugtask import BugTaskImportance
     >>> from storm.expr import And, Or
 
-    >>> print convert_storm_clause_to_string(BugTask)
+    >>> print(convert_storm_clause_to_string(BugTask))
     BugTask
 
-    >>> print convert_storm_clause_to_string(BugTask.id == 16)
+    >>> print(convert_storm_clause_to_string(BugTask.id == 16))
     BugTask.id = 16
 
-    >>> print convert_storm_clause_to_string(
-    ...     BugTask.importance == BugTaskImportance.UNKNOWN)
+    >>> print(convert_storm_clause_to_string(
+    ...     BugTask.importance == BugTaskImportance.UNKNOWN))
     BugTask.importance = 999
 
-    >>> print convert_storm_clause_to_string(Bug.title == "foo'bar'")
+    >>> print(convert_storm_clause_to_string(Bug.title == "foo'bar'"))
     Bug.title = E'foo''bar'''
 
-    >>> print convert_storm_clause_to_string(
+    >>> print(convert_storm_clause_to_string(
     ...     Or(BugTask.importance == BugTaskImportance.UNKNOWN,
-    ...        BugTask.importance == BugTaskImportance.HIGH))
+    ...        BugTask.importance == BugTaskImportance.HIGH)))
     BugTask.importance = 999 OR BugTask.importance = 40
 
-    >>> print convert_storm_clause_to_string(
+    >>> print(convert_storm_clause_to_string(
     ...    And(Bug.title == 'foo', BugTask.bug == Bug.id,
     ...        Or(BugTask.importance == BugTaskImportance.UNKNOWN,
-    ...           BugTask.importance == BugTaskImportance.HIGH)))
+    ...           BugTask.importance == BugTaskImportance.HIGH))))
     Bug.title = E'foo' AND BugTask.bug = Bug.id AND
     (BugTask.importance = 999 OR BugTask.importance = 40)
     """
@@ -631,3 +635,24 @@ class cursor:
 def session_store():
     """Return a store connected to the session DB."""
     return getUtility(IZStorm).get('session', 'launchpad-session:')
+
+
+def disconnect_stores():
+    """Disconnect Storm stores.
+
+    Note that any existing Storm objects will be broken, so this should only
+    be used in situations where we can guarantee that we have no such object
+    references in hand (other than in Storm caches, which will be dropped as
+    a process of removing stores anyway).
+    """
+    zstorm = getUtility(IZStorm)
+    stores = [
+        store for name, store in zstorm.iterstores() if name != 'session']
+
+    # If we have any stores, abort the transaction and close them.
+    if stores:
+        for store in stores:
+            zstorm.remove(store)
+        transaction.abort()
+        for store in stores:
+            store.close()

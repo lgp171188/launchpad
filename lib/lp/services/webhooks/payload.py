@@ -9,9 +9,10 @@ __all__ = [
     'WebhookPayloadRequest',
     ]
 
-import StringIO
+from io import BytesIO
 
 from lazr.restful.interfaces import IFieldMarshaller
+import six
 from zope.component import getMultiAdapter
 from zope.interface import implementer
 from zope.traversing.browser.interfaces import IAbsoluteURL
@@ -30,7 +31,7 @@ class WebhookPayloadRequest(LaunchpadBrowserRequest):
     """An internal fake request used while composing webhook payloads."""
 
     def __init__(self):
-        super(WebhookPayloadRequest, self).__init__(StringIO.StringIO(), {})
+        super(WebhookPayloadRequest, self).__init__(BytesIO(), {})
 
 
 @implementer(IAbsoluteURL)
@@ -42,9 +43,10 @@ class WebhookAbsoluteURL:
         self.context = context
         self.request = request
 
-    def __unicode__(self):
-        """Returns the URL as a unicode string."""
-        raise NotImplementedError()
+    if six.PY2:
+        def __unicode__(self):
+            """Returns the URL as a unicode string."""
+            raise NotImplementedError()
 
     def __str__(self):
         """Returns an ASCII string with all unicode characters url quoted."""

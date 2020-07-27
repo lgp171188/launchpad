@@ -12,17 +12,21 @@ __metaclass__ = type
 
 
 import glob
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 import logging
 import os
 import sys
-from urlparse import (
+
+from lazr.config import ImplicitTypeSchema
+from lazr.config.interfaces import ConfigErrors
+import six
+from six.moves.urllib.parse import (
     urlparse,
     urlunparse,
     )
-
-import importlib_resources
-from lazr.config import ImplicitTypeSchema
-from lazr.config.interfaces import ConfigErrors
 import ZConfig
 
 from lp.services.osutils import open_for_writing
@@ -70,8 +74,8 @@ def find_instance_name():
     if instance_name is None:
         for config_lookup_file in CONFIG_LOOKUP_FILES:
             if os.path.exists(config_lookup_file):
-                instance_name = file(
-                    config_lookup_file, 'r').read()[:80].strip()
+                with open(config_lookup_file) as f:
+                    instance_name = f.read()[:80].strip()
                 break
 
     # Of instance_name falls back for developers.
@@ -108,8 +112,8 @@ class LaunchpadConfig:
         :param process_name: the process configuration name to use. Defaults
             to the basename of sys.argv[0] without any extension, or None if
             sys.argv is not available.
-       """
-        self._config = None
+        """
+        self._invalidateConfig()
         if instance_name is None:
             instance_name = find_instance_name()
 
@@ -158,6 +162,8 @@ class LaunchpadConfig:
     def _invalidateConfig(self):
         """Invalidate the config, causing the config to be regenerated."""
         self._config = None
+        self._devmode = None
+        self._servers = None
 
     def reloadConfig(self):
         """Reload the config."""
@@ -220,7 +226,6 @@ class LaunchpadConfig:
         except ConfigErrors as error:
             message = '\n'.join([str(e) for e in error.errors])
             raise ConfigErrors(message)
-        self._setZConfig()
 
     def _loadConfigOverlays(self, config_file):
         """Apply config overlays from the launchpad.config_overlay_dir."""
@@ -239,23 +244,35 @@ class LaunchpadConfig:
         """Return the path to the ZConfig file for this instance."""
         return os.path.join(self.config_dir, 'launchpad.conf')
 
-    def _setZConfig(self):
+    def _getZConfig(self):
         """Modify the config, adding automatically generated settings"""
-        with importlib_resources.path(
-                'zope.app.server', 'schema.xml') as schemafile:
+        with resources.path('zope.app.server', 'schema.xml') as schemafile:
             schema = ZConfig.loadSchema(str(schemafile))
         root_options, handlers = ZConfig.loadConfig(
             schema, self.zope_config_file)
+        self._devmode = root_options.devmode
+        self._servers = root_options.servers
 
-        # Devmode from the zope.app.server.main config, copied here for
-        # ease of access.
-        self.devmode = root_options.devmode
+    @property
+    def devmode(self):
+        """Devmode from the zope.app.server.main config.
 
-        # The defined servers.
-        self.servers = root_options.servers
+        Copied here for ease of access.
+        """
+        if self._devmode is None:
+            self._getZConfig()
+        return self._devmode
 
-        # The number of configured threads.
-        self.threads = root_options.threads
+    @devmode.setter
+    def devmode(self, value):
+        self._devmode = value
+
+    @property
+    def servers(self):
+        """The defined servers."""
+        if self._servers is None:
+            self._getZConfig()
+        return self._servers
 
     def generate_overrides(self):
         """Ensure correct config.zcml overrides will be called.
@@ -457,7 +474,7 @@ class DatabaseConfig:
 
         Overriding a value to None removes the override.
         """
-        for attr, value in kwargs.iteritems():
+        for attr, value in six.iteritems(kwargs):
             assert attr in self._db_config_attrs, (
                 "%s cannot be overridden" % attr)
             if value is None:

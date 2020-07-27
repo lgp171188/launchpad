@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -43,7 +43,7 @@ class BranchPortletSubscribersContent(LaunchpadView):
         # The security adaptor will do the job also but we don't want or need
         # the expense of running several complex SQL queries.
         subscriptions = list(self.context.subscriptions)
-        person_ids = [sub.personID for sub in subscriptions]
+        person_ids = [sub.person_id for sub in subscriptions]
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
         if self.user is not None:

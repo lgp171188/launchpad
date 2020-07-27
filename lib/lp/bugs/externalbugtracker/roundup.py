@@ -7,9 +7,9 @@ __metaclass__ = type
 __all__ = ['Roundup']
 
 import csv
-from urllib import quote_plus
 
 from lazr.uri import URI
+from six.moves.urllib.parse import quote_plus
 
 from lp.bugs.externalbugtracker import (
     BugNotFound,
@@ -219,7 +219,7 @@ class Roundup(ExternalBugTracker):
         bug_id = int(bug_id)
         query_url = self.getSingleBugExportURL(bug_id)
         reader = csv.DictReader(self._getPage(query_url).iter_lines())
-        return (bug_id, reader.next())
+        return (bug_id, next(reader))
 
     def getRemoteBugBatch(self, bug_ids):
         """See `ExternalBugTracker`"""

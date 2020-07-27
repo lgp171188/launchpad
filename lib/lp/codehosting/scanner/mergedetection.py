@@ -9,7 +9,7 @@ __all__ = [
     'auto_merge_proposals',
     ]
 
-from bzrlib.revision import NULL_REVISION
+from breezy.revision import NULL_REVISION
 from zope.component import getUtility
 
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
@@ -127,7 +127,7 @@ def find_merged_revno(merge_sorted, tip_rev_id):
     iterator = iter(merge_sorted)
     while True:
         try:
-            rev_id, depth, revno, ignored = iterator.next()
+            rev_id, depth, revno, ignored = next(iterator)
         except StopIteration:
             break
         if depth == 0:

@@ -1,11 +1,15 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = ['start_launchpad']
 
-
-from contextlib import nested
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 import os
 import signal
 import subprocess
@@ -19,7 +23,6 @@ from zope.app.server.main import main
 
 from lp.services.config import config
 from lp.services.daemons import tachandler
-from lp.services.mailman import runmailman
 from lp.services.osutils import ensure_directory_exists
 from lp.services.pidfile import (
     make_pidfile,
@@ -117,17 +120,6 @@ class TacFile(Service):
         process.stdin.close()
 
 
-class MailmanService(Service):
-
-    @property
-    def should_launch(self):
-        return config.mailman.launch
-
-    def launch(self):
-        runmailman.start_mailman()
-        self.addCleanup(runmailman.stop_mailman)
-
-
 class CodebrowseService(Service):
 
     @property
@@ -202,13 +194,13 @@ class ForkingSessionService(Service):
         # service.
         if not self.should_launch:
             return
-        from lp.codehosting import get_bzr_path
-        command = [config.root + '/bin/py', get_bzr_path(),
+        from lp.codehosting import get_brz_path
+        command = [config.root + '/bin/py', get_brz_path(),
                    'launchpad-forking-service',
                    '--path', config.codehosting.forking_daemon_socket,
                   ]
         env = dict(os.environ)
-        env['BZR_PLUGIN_PATH'] = config.root + '/bzrplugins'
+        env['BRZ_PLUGIN_PATH'] = config.root + '/brzplugins'
         logfile = self.logfile
         if logfile == '-':
             # This process uses a different logging infrastructure from the
@@ -216,7 +208,7 @@ class ForkingSessionService(Service):
             # as the logfile. So we just ignore this setting.
             pass
         else:
-            env['BZR_LOG'] = logfile
+            env['BRZ_LOG'] = logfile
         process = subprocess.Popen(command, env=env, stdin=subprocess.PIPE)
         self.addCleanup(stop_process, process)
         process.stdin.close()
@@ -256,7 +248,6 @@ SERVICES = {
                          'librarian_server', prepare_for_librarian),
     'sftp': TacFile('sftp', 'daemons/sftp.tac', 'codehosting'),
     'forker': ForkingSessionService(),
-    'mailman': MailmanService(),
     'bing-webservice': BingWebService(),
     'codebrowse': CodebrowseService(),
     'memcached': MemcachedService(),
@@ -371,15 +362,11 @@ def start_testapp(argv=list(sys.argv)):
         fixture = ConfigUseFixture(BaseLayer.appserver_config_name)
         fixture.setUp()
         teardowns.append(fixture.cleanUp)
-        # Interactive tests always need this.  We let functional tests use
-        # a local one too because of simplicity.
-        LayerProcessController.startSMTPServer()
-        teardowns.append(LayerProcessController.stopSMTPServer)
         if interactive_tests:
             root_url = config.appserver_root_url()
-            print '*' * 70
-            print 'In a few seconds, go to ' + root_url + '/+yuitest'
-            print '*' * 70
+            print('*' * 70)
+            print('In a few seconds, go to ' + root_url + '/+yuitest')
+            print('*' * 70)
     try:
         start_launchpad(argv, setup)
     finally:
@@ -407,7 +394,9 @@ def start_launchpad(argv=list(sys.argv), setup=None):
         # This is the setup from start_testapp, above.
         setup()
     try:
-        with nested(*services):
+        with ExitStack() as stack:
+            for service in services:
+                stack.enter_context(service)
             # Store our process id somewhere
             make_pidfile('launchpad')
             if config.launchpad.launch:
@@ -422,19 +411,19 @@ def start_launchpad(argv=list(sys.argv), setup=None):
                 except KeyboardInterrupt:
                     pass
     except Exception as e:
-        print >> sys.stderr, "stopping services on exception %r" % e
+        print("stopping services on exception %r" % e, file=sys.stderr)
         for service in services:
-            print >> sys.stderr, service, "fixture details:"
+            print(service, "fixture details:", file=sys.stderr)
             # There may be no details on some services if they haven't been
             # initialized yet.
             if getattr(service, '_details', None) is None:
-                print >> sys.stderr, "(not ready yet?)"
+                print("(not ready yet?)", file=sys.stderr)
                 continue
             details_str = _details_to_str(service.getDetails())
             if details_str:
-                print >> sys.stderr, details_str
+                print(details_str, file=sys.stderr)
             else:
-                print >> sys.stderr, "(no details present)"
+                print("(no details present)", file=sys.stderr)
         raise
 
 

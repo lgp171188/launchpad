@@ -31,9 +31,11 @@ from zope.interface import (
     implementer,
     Interface,
     )
-from BeautifulSoup import BeautifulStoneSoup as BSS
-from BeautifulSoup import SoupStrainer
 
+from lp.services.beautifulsoup import (
+    BeautifulSoup,
+    SoupStrainer,
+    )
 from lp.services.webapp.publisher import LaunchpadView
 
 
@@ -62,25 +64,23 @@ class ThingFeedView(LaunchpadView):
 def parse_entries(contents):
     """Define a helper function for parsing feed entries."""
     strainer = SoupStrainer('entry')
-    entries = [tag for tag in BSS(contents,
-                                  parseOnlyThese=strainer)]
+    entries = [
+        tag for tag in BeautifulSoup(contents, 'xml', parse_only=strainer)]
     return entries
 
 
 def parse_links(contents, rel):
     """Define a helper function for parsing feed links."""
     strainer = SoupStrainer('link', rel=rel)
-    entries = [tag for tag in BSS(contents,
-                                  parseOnlyThese=strainer,
-                                  selfClosingTags=['link'])]
+    entries = [
+        tag for tag in BeautifulSoup(contents, 'xml', parse_only=strainer)]
     return entries
 
 
 def parse_ids(contents):
     """Define a helper function for parsing ids."""
     strainer = SoupStrainer('id')
-    ids = [tag for tag in BSS(contents,
-                              parseOnlyThese=strainer)]
+    ids = [tag for tag in BeautifulSoup(contents, 'xml', parse_only=strainer)]
     return ids
 
 

@@ -24,13 +24,14 @@ import errno
 import os
 import stat
 
-from bzrlib import (
+from breezy import (
     errors as bzr_errors,
     osutils,
     urlutils,
     )
-from bzrlib.transport.local import LocalTransport
+from breezy.transport.local import LocalTransport
 from lazr.sshserver.sftp import FileIsADirectory
+import six
 from twisted.conch.interfaces import (
     ISFTPFile,
     ISFTPServer,
@@ -97,7 +98,7 @@ def with_sftp_error(func):
     return util.mergeFunctionMetadata(func, decorator)
 
 
-class DirectoryListing:
+class DirectoryListing(six.Iterator):
     """Class to satisfy openDirectory return interface.
 
     openDirectory returns an iterator -- with a `close` method.  Hence
@@ -110,8 +111,8 @@ class DirectoryListing:
     def __iter__(self):
         return self
 
-    def next(self):
-        return self.iter.next()
+    def __next__(self):
+        return next(self.iter)
 
     def close(self):
         # I can't believe we had to implement a whole class just to
@@ -160,7 +161,7 @@ class TransportSFTPFile:
     def _truncateFile(self):
         """Truncate this file."""
         self._written = True
-        return self.transport.put_bytes(self._escaped_path, '')
+        return self.transport.put_bytes(self._escaped_path, b'')
 
     @with_sftp_error
     def writeChunk(self, offset, data):
@@ -191,14 +192,14 @@ class TransportSFTPFile:
             self._escaped_path, [(offset, length)])
 
         def get_first_chunk(read_things):
-            return read_things.next()[1]
+            return next(read_things)[1]
 
         def handle_short_read(failure):
             """Handle short reads by reading what was available.
 
             Doing things this way around, by trying to read all the data
             requested and then handling the short read error, might be a bit
-            inefficient, but the bzrlib sftp transport doesn't read past the
+            inefficient, but the breezy sftp transport doesn't read past the
             end of files, so we don't need to worry too much about performance
             here.
             """

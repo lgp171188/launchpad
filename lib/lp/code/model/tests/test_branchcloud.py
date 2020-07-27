@@ -119,7 +119,7 @@ class TestBranchCloud(TestCaseWithFactory):
         store = Store.of(product)
         for i in range(4):
             revision = self.factory.makeRevision(
-                revision_date=date_generator.next())
+                revision_date=next(date_generator))
             cache = RevisionCache(revision)
             cache.product = product
             store.add(cache)

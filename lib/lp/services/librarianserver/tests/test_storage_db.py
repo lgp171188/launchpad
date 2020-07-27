@@ -1,6 +1,8 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import hashlib
 import os.path
 import time
@@ -41,7 +43,7 @@ class LibrarianStorageDBTests(TestCase):
         self.storage = LibrarianStorage(self.directory, db.Library())
 
     def test_addFile(self):
-        data = 'data ' * 50
+        data = b'data ' * 50
         digest = hashlib.sha1(data).hexdigest()
         newfile = self.storage.startAddFile('file1', len(data))
         newfile.srcDigest = digest
@@ -51,7 +53,7 @@ class LibrarianStorageDBTests(TestCase):
 
     def test_addFiles_identical(self):
         # Start adding two files with identical data
-        data = 'data ' * 5000
+        data = b'data ' * 5000
         newfile1 = self.storage.startAddFile('file1', len(data))
         newfile2 = self.storage.startAddFile('file2', len(data))
         newfile1.append(data)
@@ -68,7 +70,7 @@ class LibrarianStorageDBTests(TestCase):
         self.assertNotEqual(id1, id2)
 
     def test_badDigest(self):
-        data = 'data ' * 50
+        data = b'data ' * 50
         digest = 'crud'
         newfile = self.storage.startAddFile('file', len(data))
         newfile.srcDigest = digest
@@ -77,7 +79,7 @@ class LibrarianStorageDBTests(TestCase):
 
     def test_alias(self):
         # Add a file (and so also add an alias)
-        data = 'data ' * 50
+        data = b'data ' * 50
         newfile = self.storage.startAddFile('file1', len(data))
         newfile.mimetype = 'text/unknown'
         newfile.append(data)
@@ -117,7 +119,7 @@ class LibrarianStorageDBTests(TestCase):
         # Check the new behaviour specified by LibrarianTransactions
         # spec: allow duplicate content with distinct IDs.
 
-        content = 'some content'
+        content = b'some content'
 
         # Store a file with id 6661
         newfile1 = LibraryFileUpload(self.storage, 'filename', 0)

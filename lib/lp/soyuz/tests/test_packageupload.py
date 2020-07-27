@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Build features."""
@@ -7,17 +7,20 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import timedelta
 import io
-from urllib2 import (
-    HTTPError,
-    urlopen,
-    )
+import os.path
+import shutil
 
 from debian.deb822 import Changes
 from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesListwise,
+    MatchesStructure,
+    )
+from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import (
     getUtility,
@@ -87,6 +90,32 @@ class PackageUploadTestCase(TestCaseWithFactory):
         super(PackageUploadTestCase, self).setUp()
         self.test_publisher = SoyuzTestPublisher()
 
+    def tearDown(self):
+        super(PackageUploadTestCase, self).tearDown()
+        if os.path.exists(config.personalpackagearchive.root):
+            shutil.rmtree(config.personalpackagearchive.root)
+
+    def test_add_log_entry(self):
+        upload = self.factory.makePackageUpload(
+            status=PackageUploadStatus.UNAPPROVED)
+        upload = removeSecurityProxy(upload)
+        self.assertEqual(0, len(upload.logs))
+
+        person = self.factory.makePerson(name='lpusername')
+
+        upload._addLog(person, PackageUploadStatus.REJECTED, 'just because')
+
+        log = upload.logs[0]
+        self.assertThat(log, MatchesStructure.byEquality(
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.REJECTED, comment='just because'))
+
+        expected_repr = (
+            "<PackageUploadLog ~lpusername "
+            "changed {self.package_upload} to Rejected "
+            "on {self.date_created}>").format(self=log)
+        self.assertEqual(str(expected_repr), repr(log))
+
     def test_realiseUpload_for_overridden_component_archive(self):
         # If the component of an upload is overridden to 'Partner' for
         # example, then the new publishing record should be for the
@@ -95,7 +124,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # Get some sample changes file content for the new upload.
         changes_file = open(
-            datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'))
+            datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'), 'rb')
         changes_file_content = changes_file.read()
         changes_file.close()
 
@@ -354,8 +383,14 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # Accepting one of them works.  (Since it's a single source upload,
         # it goes straight to DONE.)
-        upload_one.acceptFromQueue()
+        person = self.factory.makePerson()
+        upload_one.acceptFromQueue(person)
         self.assertEqual("DONE", upload_one.status.name)
+
+        log = upload_one.logs[0]
+        self.assertThat(log, MatchesStructure.byEquality(
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.ACCEPTED, comment=None))
         transaction.commit()
 
         # Trying to accept the second fails.
@@ -364,8 +399,14 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.assertEqual("UNAPPROVED", upload_two.status.name)
 
         # Rejecting the second upload works.
-        upload_two.rejectFromQueue(self.factory.makePerson())
+        upload_two.rejectFromQueue(person, 'Because yes')
         self.assertEqual("REJECTED", upload_two.status.name)
+
+        self.assertEqual(1, len(upload_two.logs))
+        log = upload_two.logs[0]
+        self.assertThat(log, MatchesStructure.byEquality(
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.REJECTED, comment='Because yes'))
 
     def test_rejectFromQueue_source_sends_email(self):
         # Rejecting a source package sends an email to the uploader.
@@ -1044,9 +1085,9 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         return upload, self.load(upload, person)
 
     def assertCanOpenRedirectedUrl(self, browser, url):
-        redirection = self.assertRaises(HTTPError, browser.open, url)
-        self.assertEqual(303, redirection.code)
-        urlopen(redirection.hdrs["Location"]).close()
+        browser.open(url)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        urlopen(browser.headers["Location"]).close()
 
     def assertRequiresEdit(self, method_name, **kwargs):
         """Test that a web service queue method requires launchpad.Edit."""
@@ -1128,6 +1169,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertContentEqual(source_file_urls, ws_source_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
+        browser.raiseHttpErrors = False
         for ws_source_file_url in ws_source_file_urls:
             self.assertCanOpenRedirectedUrl(browser, ws_source_file_url)
         self.assertCanOpenRedirectedUrl(browser, ws_upload.changes_file_url)
@@ -1217,6 +1259,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertContentEqual(binary_file_urls, ws_binary_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
+        browser.raiseHttpErrors = False
         for ws_binary_file_url in ws_binary_file_urls:
             self.assertCanOpenRedirectedUrl(browser, ws_binary_file_url)
         self.assertCanOpenRedirectedUrl(browser, ws_upload.changes_file_url)
@@ -1380,6 +1423,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertContentEqual(custom_file_urls, ws_custom_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
+        browser.raiseHttpErrors = False
         for ws_custom_file_url in ws_custom_file_urls:
             self.assertCanOpenRedirectedUrl(browser, ws_custom_file_url)
         self.assertCanOpenRedirectedUrl(browser, ws_upload.changes_file_url)
@@ -1440,3 +1484,26 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
                 person, component=self.universe),
             5)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_api_package_upload_log(self):
+        # API clients can see upload logs of a source uploads.
+        admin = self.makeQueueAdmin([self.universe])
+        upload, ws_upload = self.makeSourcePackageUpload(
+            admin, sourcepackagename="hello", component=self.universe)
+        with person_logged_in(admin):
+            upload.rejectFromQueue(admin, 'not a good change')
+            upload.acceptFromQueue(admin)
+
+        logs = removeSecurityProxy(upload).logs
+        ws_logs = ws_upload.logs
+        self.assertEqual(len(ws_logs), len(logs))
+        self.assertThat(ws_upload.logs, MatchesListwise([
+            MatchesStructure(
+                comment=Equals(log.comment),
+                date_created=Equals(log.date_created),
+                new_status=Equals(log.new_status.title),
+                old_status=Equals(log.old_status.title),
+                reviewer=MatchesStructure.byEquality(
+                    name=log.reviewer.name),
+                package_upload=MatchesStructure.byEquality(id=ws_upload.id))
+            for log in removeSecurityProxy(upload).logs]))

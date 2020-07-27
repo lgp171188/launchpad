@@ -8,21 +8,21 @@ __metaclass__ = type
 import gc
 from StringIO import StringIO
 
-import bzrlib.branch
-from bzrlib.branch import BranchReferenceFormat
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import (
+import breezy.branch
+from breezy.bzr.branch import BranchReferenceFormat
+from breezy.bzr.bzrdir import BzrDir
+from breezy.errors import (
     IncompatibleRepositories,
     NotBranchError,
     NotStacked,
     )
-from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import (
+from breezy.revision import NULL_REVISION
+from breezy.tests import (
     TestCaseInTempDir,
     TestCaseWithTransport,
     )
-from bzrlib.transport import get_transport
-from bzrlib.url_policy_open import (
+from breezy.transport import get_transport
+from breezy.url_policy_open import (
     AcceptAnythingPolicy,
     BadUrl,
     BranchOpener,
@@ -124,7 +124,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
             source_tree.branch.base, self.get_url('dest'))
         source_tree.commit('commit message')
         to_mirror.mirrorWithoutChecks()
-        mirrored_branch = bzrlib.branch.Branch.open(to_mirror.dest)
+        mirrored_branch = breezy.branch.Branch.open(to_mirror.dest)
         self.assertEqual(
             source_tree.last_revision(), mirrored_branch.last_revision())
 
@@ -134,7 +134,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
         to_mirror = self.makePullerWorker(
             source_branch.base, self.get_url('dest'))
         to_mirror.mirrorWithoutChecks()
-        mirrored_branch = bzrlib.branch.Branch.open(to_mirror.dest)
+        mirrored_branch = breezy.branch.Branch.open(to_mirror.dest)
         self.assertEqual(NULL_REVISION, mirrored_branch.last_revision())
 
     def testCanMirrorWhenDestDirExists(self):
@@ -150,9 +150,9 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
         dest.mkdir('.bzr')
         # 'dest' is not a branch.
         self.assertRaises(
-            NotBranchError, bzrlib.branch.Branch.open, to_mirror.dest)
+            NotBranchError, breezy.branch.Branch.open, to_mirror.dest)
         to_mirror.mirrorWithoutChecks()
-        mirrored_branch = bzrlib.branch.Branch.open(to_mirror.dest)
+        mirrored_branch = breezy.branch.Branch.open(to_mirror.dest)
         self.assertEqual(
             source_tree.last_revision(), mirrored_branch.last_revision())
 
@@ -179,7 +179,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
             source_branch.base, self.get_url('destdir'),
             policy=PrearrangedStackedBranchPolicy(stack_on.base))
         to_mirror.mirrorWithoutChecks()
-        dest = bzrlib.branch.Branch.open(self.get_url('destdir'))
+        dest = breezy.branch.Branch.open(self.get_url('destdir'))
         self.assertFalse(dest._format.supports_stacking())
 
     def test_defaultStackedOnBranchIncompatibleMirrorsOK(self):
@@ -192,7 +192,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
             source_branch.base, self.get_url('destdir'),
             policy=PrearrangedStackedBranchPolicy(stack_on.base))
         to_mirror.mirrorWithoutChecks()
-        dest = bzrlib.branch.Branch.open(self.get_url('destdir'))
+        dest = breezy.branch.Branch.open(self.get_url('destdir'))
         self.assertRaises(NotStacked, dest.get_stacked_on_url)
 
     def testCanMirrorWithIncompatibleRepos(self):
@@ -212,7 +212,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
         # IncompatibleRepositories.
         self.assertRaises(
             IncompatibleRepositories,
-            bzrlib.branch.Branch.open, 'dest/stacked')
+            breezy.branch.Branch.open, 'dest/stacked')
         source_branch = self.make_branch(
             'source-branch', format='2a')
         to_mirror = self.makePullerWorker(
@@ -220,7 +220,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
         # The branch can be mirrored without errors and the destionation
         # location is upgraded to match the source format.
         to_mirror.mirrorWithoutChecks()
-        mirrored_branch = bzrlib.branch.Branch.open(to_mirror.dest)
+        mirrored_branch = breezy.branch.Branch.open(to_mirror.dest)
         self.assertEqual(
             source_branch.repository._format,
             mirrored_branch.repository._format)
@@ -286,7 +286,7 @@ class TestReferenceOpener(TestCaseWithTransport):
         :return: file url to the created pure branch reference.
         """
         # XXX DavidAllouche 2007-09-12 bug=139109:
-        # We do this manually because the bzrlib API does not support creating
+        # We do this manually because the breezy API does not support creating
         # a branch reference without opening it.
         t = get_transport(self.get_url('.'))
         t.mkdir('reference')
@@ -314,7 +314,7 @@ class TestReferenceOpener(TestCaseWithTransport):
 
         # Open the branch reference and check that the result is indeed the
         # branch we wanted it to point at.
-        opened_branch = bzrlib.branch.Branch.open(reference_url)
+        opened_branch = breezy.branch.Branch.open(reference_url)
         self.assertEqual(opened_branch.base, target_branch.base)
 
     def testFollowReferenceValue(self):
@@ -496,9 +496,9 @@ class TestWorkerProgressReporting(TestCaseWithTransport):
     def setUp(self):
         super(TestWorkerProgressReporting, self).setUp()
         BranchOpener.install_hook()
-        self.saved_factory = bzrlib.ui.ui_factory
+        self.saved_factory = breezy.ui.ui_factory
         self.disable_directory_isolation()
-        self.addCleanup(setattr, bzrlib.ui, 'ui_factory', self.saved_factory)
+        self.addCleanup(setattr, breezy.ui, 'ui_factory', self.saved_factory)
 
     def getHttpServerForCwd(self):
         """Get an `HttpServer` instance that serves from '.'."""
@@ -530,7 +530,7 @@ class TestWorkerProgressReporting(TestCaseWithTransport):
 
         p = self.StubProtocol()
         install_worker_ui_factory(p)
-        b2_http = bzrlib.branch.Branch.open(
+        b2_http = breezy.branch.Branch.open(
             http_server.get_url() + 'some-other-branch')
         b1.pull(b2_http)
         self.assertSubset([WORKER_ACTIVITY_NETWORK], p.calls)

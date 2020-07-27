@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database implementation of the Git repository lookup utility."""
@@ -35,11 +35,15 @@ from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.code.model.gitrepository import GitRepository
-from lp.registry.errors import NoSuchSourcePackageName
+from lp.registry.errors import (
+    NoSuchOCIProjectName,
+    NoSuchSourcePackageName,
+    )
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -162,16 +166,24 @@ class DistributionGitTraversable(_BaseGitTraversable):
         """
         # Distributions don't support named repositories themselves, so
         # ignore the base traverse method.
-        if name != "+source":
+        if name not in {"+source", "+oci"}:
             raise InvalidNamespace("/".join(segments.traversed))
         try:
             spn_name = next(segments)
         except StopIteration:
             raise InvalidNamespace("/".join(segments.traversed))
-        distro_source_package = self.context.getSourcePackage(spn_name)
-        if distro_source_package is None:
-            raise NoSuchSourcePackageName(spn_name)
-        return owner, distro_source_package, None
+        if name == "+source":
+            distro_source_package = self.context.getSourcePackage(spn_name)
+            if distro_source_package is None:
+                raise NoSuchSourcePackageName(spn_name)
+            return owner, distro_source_package, None
+        elif name == "+oci":
+            oci_project = self.context.getOCIProject(spn_name)
+            if oci_project is None:
+                raise NoSuchOCIProjectName(spn_name)
+            return owner, oci_project, None
+        else:
+            raise AssertionError("name '%s' is not +source or +oci" % name)
 
 
 @adapter(IDistributionSourcePackage)
@@ -228,14 +240,28 @@ class PersonGitTraversable(_BaseGitTraversable):
             return owner, pillar, None
 
 
-class SegmentIterator:
+@adapter(IOCIProject)
+@implementer(IGitTraversable)
+class DistributionOCIProjectGitTraversable(_BaseGitTraversable):
+    """Git repository traversable for distribution-based OCI Projects.
+
+    From here, you can traverse to a named distribution-based OCI Project
+    repository.
+    """
+
+    def getNamespace(self, owner):
+        return getUtility(IGitNamespaceSet).get(
+            owner, oci_project=self.context)
+
+
+class SegmentIterator(six.Iterator):
     """An iterator that remembers the elements it has traversed."""
 
     def __init__(self, iterator):
         self._iterator = iterator
         self.traversed = []
 
-    def next(self):
+    def __next__(self):
         segment = six.ensure_text(next(self._iterator), encoding="US-ASCII")
         self.traversed.append(segment)
         return segment

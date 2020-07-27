@@ -9,6 +9,7 @@ from functools import partial
 from itertools import count
 import socket
 
+import six
 from testtools.testcase import ExpectedException
 import transaction
 from transaction._transaction import Status as TransactionStatus
@@ -391,12 +392,12 @@ class TestRabbit(RabbitTestCase):
 
     def get_synced_sessions(self):
         try:
-            syncs_set = transaction.manager._synchs
+            syncs_set = transaction.manager.manager._synchs
         except KeyError:
             return set()
         else:
             return set(
-                sync.session for sync in syncs_set.data.itervalues()
+                sync.session for sync in six.itervalues(syncs_set.data)
                 if isinstance(sync, RabbitSessionTransactionSync))
 
     def test_global_session(self):

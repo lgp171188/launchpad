@@ -12,11 +12,12 @@ import os
 import signal
 import socket
 import sys
-import urlparse
 
 from lazr.sshserver.events import AvatarEvent
 from lazr.sshserver.session import DoNothingSession
+import six
 from six import reraise
+from six.moves.urllib.parse import urlparse
 from twisted.internet import (
     error,
     interfaces,
@@ -26,7 +27,7 @@ from twisted.python import log
 from zope.event import notify
 from zope.interface import implementer
 
-from lp.codehosting import get_bzr_path
+from lp.codehosting import get_brz_path
 from lp.services.config import config
 
 
@@ -141,16 +142,17 @@ class ForkedProcessTransport(process.BaseProcess):
 
         :return: The pid, communication directory, and request socket.
         """
-        assert executable == 'bzr', executable  # Maybe .endswith()
-        assert args[0] == 'bzr', args[0]
+        assert executable == 'brz', executable  # Maybe .endswith()
+        assert args[0] == 'brz', args[0]
         message = ['fork-env %s\n' % (' '.join(args[1:]),)]
-        for key, value in environment.iteritems():
-            # XXX: Currently we only pass BZR_EMAIL, should we be passing
+        for key, value in six.iteritems(environment):
+            # XXX: Currently we only pass BRZ_EMAIL, should we be passing
             #      everything else? Note that many won't be handled properly,
             #      since the process is already running.
-            if key != 'BZR_EMAIL':
-                continue
-            message.append('%s: %s\n' % (key, value))
+            if key in ('BZR_EMAIL', 'BRZ_EMAIL'):
+                # Map both of these to BRZ_EMAIL, since we run brz on the
+                # server.
+                message.append('BRZ_EMAIL: %s\n' % (value,))
         message.append('end\n')
         message = ''.join(message)
         response, sock = self._sendMessageToService(message)
@@ -418,7 +420,7 @@ class ForkingRestrictedExecOnlySession(RestrictedExecOnlySession):
     def _simplifyEnvironment(self, env):
         """Pull out the bits of the environment we want to pass along."""
         env = {}
-        for env_var in ['BZR_EMAIL']:
+        for env_var in ['BRZ_EMAIL']:
             if env_var in self.environment:
                 env[env_var] = self.environment[env_var]
         return env
@@ -426,15 +428,15 @@ class ForkingRestrictedExecOnlySession(RestrictedExecOnlySession):
     def getCommandToFork(self, executable, arguments, env):
         assert executable.endswith('/bin/py')
         assert arguments[0] == executable
-        assert arguments[1].endswith('/bzr')
-        executable = 'bzr'
+        assert arguments[1].endswith('/brz')
+        executable = 'brz'
         arguments = arguments[1:]
-        arguments[0] = 'bzr'
+        arguments[0] = 'brz'
         env = self._simplifyEnvironment(env)
         return executable, arguments, env
 
     def _spawn(self, protocol, executable, arguments, env):
-        # When spawning, adapt the idea of "bin/py .../bzr" to just using "bzr"
+        # When spawning, adapt the idea of "bin/py .../brz" to just using "brz"
         # and the executable
         executable, arguments, env = self.getCommandToFork(executable,
                                                            arguments, env)
@@ -449,16 +451,18 @@ def lookup_command_template(command):
     :return: Command template
     :raise ForbiddenCommand: Raised when command isn't allowed
     """
-    python_command = "%(root)s/bin/py %(bzr)s" % {
+    python_command = "%(root)s/bin/py %(brz)s" % {
             'root': config.root,
-            'bzr': get_bzr_path(),
+            'brz': get_brz_path(),
             }
     args = " lp-serve --inet %(user_id)s"
     command_template = python_command + args
 
-    if command == 'bzr serve --inet --directory=/ --allow-writes':
+    if command in (
+            'bzr serve --inet --directory=/ --allow-writes',
+            'brz serve --inet --directory=/ --allow-writes'):
         return command_template
-    # At the moment, only bzr branch serving is allowed.
+    # At the moment, only bzr/brz branch serving is allowed.
     raise ForbiddenCommand("Not allowed to execute %r." % (command,))
 
 
@@ -468,8 +472,8 @@ def launch_smart_server(avatar):
     environment = dict(os.environ)
 
     # Extract the hostname from the supermirror root config.
-    hostname = urlparse.urlparse(config.codehosting.supermirror_root)[1]
-    environment['BZR_EMAIL'] = '%s@%s' % (avatar.username, hostname)
+    hostname = urlparse(config.codehosting.supermirror_root)[1]
+    environment['BRZ_EMAIL'] = '%s@%s' % (avatar.username, hostname)
     # TODO: Use a FeatureFlag to enable this in a more fine-grained approach.
     #       If the forking daemon has been spawned, then we can use it if the
     #       feature is set to true for the given user, etc.

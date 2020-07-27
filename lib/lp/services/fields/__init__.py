@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -54,8 +54,8 @@ __all__ = [
     ]
 
 
+import io
 import re
-from StringIO import StringIO
 from textwrap import dedent
 
 from lazr.restful.fields import Reference
@@ -65,7 +65,10 @@ from lazr.uri import (
     URI,
     )
 from zope.component import getUtility
-from zope.interface import implementer
+from zope.interface import (
+    implementer,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Bytes,
@@ -83,7 +86,6 @@ from zope.schema.interfaces import (
     IBytes,
     IDate,
     IDatetime,
-    Interface,
     IObject,
     IText,
     ITextLine,
@@ -696,7 +698,7 @@ class BaseImageUpload(Bytes):
             raise LaunchpadValidationError(_(dedent("""
                 This image exceeds the maximum allowed size in bytes.""")))
         try:
-            pil_image = PIL.Image.open(StringIO(image))
+            pil_image = PIL.Image.open(io.BytesIO(image))
         except (IOError, ValueError):
             raise LaunchpadValidationError(_(dedent("""
                 The file uploaded was not recognized as an image; please

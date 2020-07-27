@@ -8,9 +8,10 @@ from __future__ import print_function
 __metaclass__ = type
 
 import inspect
-import StringIO
 import sys
 import warnings
+
+import six
 
 
 class WarningReport:
@@ -60,7 +61,7 @@ class ImportantInfo:
         return '\n'.join(L)
 
 # ViewPageTemplateFile has .filename.
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 
 # PythonExpr has .text, the text of the expression.
 from zope.tales.pythonexpr import PythonExpr
@@ -161,7 +162,7 @@ def launchpad_showwarning(message, category, filename, lineno, file=None,
                           line=None):
     if file is None:
         file = sys.stderr
-    stream = StringIO.StringIO()
+    stream = six.StringIO()
     old_show_warning(message, category, filename, lineno, stream, line=line)
     warning_message = stream.getvalue()
     important_info = find_important_info()
@@ -211,7 +212,7 @@ def report_other_warnings():
     if other_warnings:
         print(file=sys.stderr)
         print("General warnings.", file=sys.stderr)
-        for warninginfo in other_warnings.itervalues():
+        for warninginfo in six.itervalues(other_warnings):
             print(file=sys.stderr)
             print(warninginfo, file=sys.stderr)
 

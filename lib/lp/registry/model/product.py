@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes including and related to Product."""
@@ -12,9 +12,7 @@ __all__ = [
     ]
 
 
-import calendar
 import datetime
-import httplib
 import itertools
 import operator
 
@@ -22,6 +20,7 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.declarations import error_status
 from lazr.restful.utils import safe_hasattr
 import pytz
+from six.moves import http_client
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -137,13 +136,13 @@ from lp.registry.errors import (
     CannotChangeInformationType,
     CommercialSubscribersOnly,
     ProprietaryProduct,
-    VoucherAlreadyRedeemed,
     )
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicyGrantSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import (
     IPersonSet,
@@ -258,7 +257,7 @@ def get_license_status(license_approved, project_reviewed, licenses):
         return LicenseStatus.OPEN_SOURCE
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class UnDeactivateable(Exception):
     """Raised when a project is requested to deactivate but can not."""
 
@@ -802,84 +801,14 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
 
     @cachedproperty
     def commercial_subscription(self):
-        return CommercialSubscription.selectOneBy(product=self)
+        return IStore(CommercialSubscription).find(
+            CommercialSubscription, product=self).one()
 
     @property
     def has_current_commercial_subscription(self):
         now = datetime.datetime.now(pytz.timezone('UTC'))
         return (self.commercial_subscription
             and self.commercial_subscription.date_expires > now)
-
-    def redeemSubscriptionVoucher(self, voucher, registrant, purchaser,
-                                  subscription_months, whiteboard=None,
-                                  current_datetime=None):
-        """See `IProduct`."""
-
-        def add_months(start, num_months):
-            """Given a start date find the new date `num_months` later.
-
-            If the start date day is the last day of the month and the new
-            month does not have that many days, then the new date will be the
-            last day of the new month.  February is handled correctly too,
-            including leap years, where th 28th-31st maps to the 28th or
-            29th.
-            """
-            # The months are 1-indexed but the divmod calculation will only
-            # work if it is 0-indexed.  Subtract 1 from the months and then
-            # add it back to the new_month later.
-            years, new_month = divmod(start.month - 1 + num_months, 12)
-            new_month += 1
-            new_year = start.year + years
-            # If the day is not valid for the new month, make it the last day
-            # of that month, e.g. 20080131 + 1 month = 20080229.
-            weekday, days_in_month = calendar.monthrange(new_year, new_month)
-            new_day = min(days_in_month, start.day)
-            return start.replace(
-                year=new_year, month=new_month, day=new_day)
-
-        # The voucher may already have been redeemed or marked as redeemed
-        # pending notification being sent to Salesforce.
-        voucher_expr = (
-            "trim(leading 'pending-' "
-            "from CommercialSubscription.sales_system_id)")
-        already_redeemed = Store.of(self).find(
-            CommercialSubscription,
-            SQL(voucher_expr) == unicode(voucher)).any()
-        if already_redeemed:
-            raise VoucherAlreadyRedeemed(
-                "Voucher %s has already been redeemed for %s"
-                      % (voucher, already_redeemed.product.displayname))
-
-        if current_datetime is None:
-            current_datetime = datetime.datetime.now(pytz.timezone('UTC'))
-
-        if self.commercial_subscription is None:
-            date_starts = current_datetime
-            date_expires = add_months(date_starts, subscription_months)
-            subscription = CommercialSubscription(
-                product=self,
-                date_starts=date_starts,
-                date_expires=date_expires,
-                registrant=registrant,
-                purchaser=purchaser,
-                sales_system_id=voucher,
-                whiteboard=whiteboard)
-            get_property_cache(self).commercial_subscription = subscription
-        else:
-            if current_datetime <= self.commercial_subscription.date_expires:
-                # Extend current subscription.
-                self.commercial_subscription.date_expires = (
-                    add_months(self.commercial_subscription.date_expires,
-                               subscription_months))
-            else:
-                # Start the new subscription now and extend for the new
-                # period.
-                self.commercial_subscription.date_starts = current_datetime
-                self.commercial_subscription.date_expires = (
-                    add_months(current_datetime, subscription_months))
-            self.commercial_subscription.sales_system_id = voucher
-            self.commercial_subscription.registrant = registrant
-            self.commercial_subscription.purchaser = purchaser
 
     @property
     def qualifies_for_free_hosting(self):
@@ -1056,9 +985,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
             lp_janitor = getUtility(ILaunchpadCelebrities).janitor
             now = datetime.datetime.now(pytz.UTC)
             date_expires = now + datetime.timedelta(days=30)
-            sales_system_id = 'complimentary-30-day-%s' % now
+            sales_system_id = u'complimentary-30-day-%s' % now
             whiteboard = (
-                "Complimentary 30 day subscription. -- Launchpad %s" %
+                u"Complimentary 30 day subscription. -- Launchpad %s" %
                 now.date().isoformat())
             subscription = CommercialSubscription(
                 product=self, date_starts=now, date_expires=date_expires,
@@ -1212,6 +1141,23 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     def bugtargetname(self):
         """See `IBugTarget`."""
         return self.name
+
+    def getOCIProject(self, name):
+        return getUtility(IOCIProjectSet).getByPillarAndName(
+            self, name)
+
+    def canAdministerOCIProjects(self, person):
+        if person is None:
+            return False
+        # XXX: pappacena 2020-05-25: Maybe we should have an attribute named
+        # oci_project_admin on Product too, the same way we have on
+        # Distribution.
+        if person.inTeam(self.driver):
+            return True
+        person_roles = IPersonRoles(person)
+        if person_roles.in_admin or person_roles.isOwner(self):
+            return True
+        return False
 
     def getPackage(self, distroseries):
         """See `IProduct`."""
@@ -1463,11 +1409,6 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `HasCustomLanguageCodesMixin`."""
         return CustomLanguageCode.product == self
 
-    def createCustomLanguageCode(self, language_code, language):
-        """See `IHasCustomLanguageCodes`."""
-        return CustomLanguageCode(
-            product=self, language_code=language_code, language=language)
-
     def userCanEdit(self, user):
         """See `IProduct`."""
         if user is None:
@@ -1657,8 +1598,8 @@ def get_precached_products(products, need_licences=False,
 
     for subscription in IStore(CommercialSubscription).find(
         CommercialSubscription,
-        CommercialSubscription.productID.is_in(product_ids)):
-        cache = caches[subscription.productID]
+        CommercialSubscription.product_id.is_in(product_ids)):
+        cache = caches[subscription.product_id]
         cache.commercial_subscription = subscription
     if need_licences:
         for license in IStore(ProductLicense).find(
@@ -1994,7 +1935,7 @@ class ProductSet:
             subscription_expr = Exists(Select(
                 1, tables=[CommercialSubscription],
                 where=And(*
-                    [CommercialSubscription.productID == Product.id]
+                    [CommercialSubscription.product == Product.id]
                     + subscription_conditions)))
             if has_subscription is False:
                 subscription_expr = Not(subscription_expr)

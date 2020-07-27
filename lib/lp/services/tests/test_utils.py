@@ -15,6 +15,7 @@ import sys
 
 from fixtures import TempDir
 from pytz import UTC
+import six
 from testtools.matchers import (
     Equals,
     GreaterThan,
@@ -68,8 +69,9 @@ class TestAutoDecorate(TestCase):
     def test_auto_decorate(self):
         # All of the decorators passed to AutoDecorate are applied as
         # decorators in reverse order.
-        class AutoDecoratedClass:
-            __metaclass__ = AutoDecorate(self.decorator_1, self.decorator_2)
+        class AutoDecoratedClass(
+            six.with_metaclass(
+                AutoDecorate(self.decorator_1, self.decorator_2), object)):
 
             def method_a(s):
                 self.log.append('a')
@@ -201,8 +203,8 @@ class TestCachingIterator(TestCase):
         ci = CachingIterator(partial(iter, [0, 1, 2, 3, 4]))
         i1 = iter(ci)
         i2 = iter(ci)
-        self.assertEqual(0, i1.next())
-        self.assertEqual(0, i2.next())
+        self.assertEqual(0, next(i1))
+        self.assertEqual(0, next(i2))
         self.assertEqual([1, 2, 3, 4], list(i2))
         self.assertEqual([1, 2, 3, 4], list(i1))
 
@@ -346,7 +348,8 @@ class TestFileExists(TestCase):
         self.useTempDir()
 
     def test_finds_file(self):
-        file("a-real-file.txt", "w").write("Here I am.")
+        with open("a-real-file.txt", "w") as f:
+            f.write("Here I am.")
         self.assertTrue(file_exists("a-real-file.txt"))
 
     def test_finds_directory(self):

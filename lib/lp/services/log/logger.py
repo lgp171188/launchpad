@@ -3,6 +3,8 @@
 
 """Loggers."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'BufferLogger',
@@ -13,9 +15,10 @@ __all__ = [
     ]
 
 import logging
-from StringIO import StringIO
 import sys
 import traceback
+
+import six
 
 from lp.services.log import loglevels
 
@@ -127,7 +130,7 @@ class FakeLogger:
         else:
             output_file = self.output_file
         prefix = LEVEL_PREFIXES.get(level, "%d>" % level)
-        print >> output_file, prefix, self._format_message(msg, *stuff)
+        print(prefix, self._format_message(msg, *stuff), file=output_file)
 
         if 'exc_info' in kw:
             traceback.print_exc(file=output_file)
@@ -196,7 +199,7 @@ class BufferLogger(FakeLogger):
     # service.
 
     def __init__(self):
-        super(BufferLogger, self).__init__(StringIO())
+        super(BufferLogger, self).__init__(six.StringIO())
 
     def getLogBuffer(self):
         """Return the existing log messages."""
@@ -204,7 +207,7 @@ class BufferLogger(FakeLogger):
 
     def clearLogBuffer(self):
         """Clear out the existing log messages."""
-        self.output_file = StringIO()
+        self.output_file = six.StringIO()
 
     def getLogBufferAndClear(self):
         """Return the existing log messages and clear the buffer."""

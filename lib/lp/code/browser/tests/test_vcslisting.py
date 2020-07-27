@@ -126,6 +126,62 @@ class TestPersonDistributionSourcePackageDefaultVCSView(TestCaseWithFactory):
         self.assertCodeViewClass(VCSType.GIT, PersonTargetGitListingView)
 
 
+class TestOCIProjectDefaultVCSView(TestCaseWithFactory):
+    """Tests that OCIProject:+code delegates to +git.
+
+    This is regardless of the distribution's preferred VCS.  It can't delegate
+    to +branches, as OCIProject:+branches doesn't exist.
+    """
+
+    layer = DatabaseFunctionalLayer
+
+    def assertCodeViewClass(self, vcs, cls):
+        distro = self.factory.makeDistribution(vcs=vcs)
+        oci_project = self.factory.makeOCIProject(pillar=distro)
+        self.assertEqual(vcs, distro.vcs)
+        view = test_traverse(
+            '/%s/+oci/%s/+code' % (distro.name, oci_project.name))[1]
+        self.assertIsInstance(view, cls)
+
+    def test_default_unset(self):
+        self.assertCodeViewClass(None, TargetGitListingView)
+
+    def test_default_bzr(self):
+        self.assertCodeViewClass(VCSType.BZR, TargetGitListingView)
+
+    def test_git(self):
+        self.assertCodeViewClass(VCSType.GIT, TargetGitListingView)
+
+
+class TestPersonOCIProjectDefaultVCSView(TestCaseWithFactory):
+    """Tests that OCIProject:+code delegates to +git.
+
+    This is regardless of the distribution's preferred VCS.  It can't
+    delegate to +branches, as PersonOCIProject:+branches doesn't exist.
+    """
+
+    layer = DatabaseFunctionalLayer
+
+    def assertCodeViewClass(self, vcs, cls):
+        person = self.factory.makePerson()
+        distro = self.factory.makeDistribution(vcs=vcs)
+        oci_project = self.factory.makeOCIProject(pillar=distro)
+        self.assertEqual(vcs, distro.vcs)
+        view = test_traverse(
+            '~%s/%s/+oci/%s/+code'
+            % (person.name, distro.name, oci_project.name))[1]
+        self.assertIsInstance(view, cls)
+
+    def test_default_unset(self):
+        self.assertCodeViewClass(None, PersonTargetGitListingView)
+
+    def test_default_bzr(self):
+        self.assertCodeViewClass(VCSType.BZR, PersonTargetGitListingView)
+
+    def test_git(self):
+        self.assertCodeViewClass(VCSType.GIT, PersonTargetGitListingView)
+
+
 class TestDistributionDefaultVCSView(TestCaseWithFactory):
     """Tests that Distribution:+code delegates to +git or +branches."""
 

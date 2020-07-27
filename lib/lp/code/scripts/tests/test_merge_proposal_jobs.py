@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python2
 #
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -37,14 +37,15 @@ class TestMergeProposalJobScript(DiffTestCase):
             'Log opened.\n'
             'INFO    Log opened.\n'
             'ProcessPool stats:\n'
+            '    workers:       0\n'
+            '(.|\n)*'
             'INFO    ProcessPool stats:\n'
-            '\tworkers: 0\n'
-            'INFO    \tworkers: 0\n'
+            '    workers:       0\n'
             '(.|\n)*'
             'INFO    Running '
             '<GENERATE_INCREMENTAL_DIFF job for merge .*?> \(ID %d\).\n'
             '(.|\n)*'
-            'INFO    STOPPING: \'\'\n'
+            'INFO    STOPPING: \n'
             'Main loop terminated.\n'
             'INFO    Main loop terminated.\n'
             'INFO    Ran 1 GenerateIncrementalDiffJob jobs.\n' % job.job.id)

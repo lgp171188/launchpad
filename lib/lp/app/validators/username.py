@@ -3,6 +3,8 @@
 
 """Validators for the clean-username (`Person.name`) attribute."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import re
@@ -27,12 +29,12 @@ def sanitize_username(username):
     The characters not allowed in Launchpad usernames are described by
     `username_invalid_pattern`.
 
-    >>> sanitize_username('foo_bar')
-    'foobar'
-    >>> sanitize_username('foo.bar+baz')
-    'foobarbaz'
-    >>> sanitize_username('-#foo -$fd?.0+-')
-    'foo-fd0'
+    >>> print(sanitize_username('foo_bar'))
+    foobar
+    >>> print(sanitize_username('foo.bar+baz'))
+    foobarbaz
+    >>> print(sanitize_username('-#foo -$fd?.0+-'))
+    foo-fd0
 
     """
     return username_invalid_pattern.sub('', username)

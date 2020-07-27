@@ -1,42 +1,34 @@
 {
-    "bzr-builder": [
-        70, 
-        "launchpad@pqm.canonical.com-20111114140506-6bmt9isw6lcud7yt"
-    ], 
+    "brz-builder": [
+        180,
+        "jelmer@jelmer.uk-20180624153632-1f0weftl0pawz6wj"
+    ],
+    "brz-loom": [
+        166,
+        "jelmer@jelmer.uk-20190822193925-ydrq7fgdi78lpgm7"
+    ],
     "bzr-git": [
-        280, 
+        280,
         "launchpad@pqm.canonical.com-20171222005919-u98ut0f5z2g618um"
-    ], 
-    "bzr-loom": [
-        55, 
-        "launchpad@pqm.canonical.com-20120830090804-cg49kky93htwax7s"
-    ], 
+    ],
     "bzr-svn": [
-        2725, 
+        2725,
         "launchpad@pqm.canonical.com-20130816045016-wzr810hu2z459t4y"
-    ], 
+    ],
     "cscvs": [
-        433, 
+        433,
         "launchpad@pqm.canonical.com-20130816043319-bts3l3bckmx431q1"
-    ], 
+    ],
     "difftacular": [
-        11, 
+        11,
         "cjwatson@canonical.com-20190614154330-091l9edcnubsjmsx"
-    ], 
+    ],
     "loggerhead": [
-        493, 
-        "cjwatson@canonical.com-20190621112125-3aaxj3hrmty19lr6"
-    ], 
-    "mailman": [
-        977, 
-        "launchpad@pqm.canonical.com-20130405041235-9ud0xancja2eefd7"
-    ], 
-    "old_xmlplus": [
-        4, 
-        "sinzui-20090526164636-1swugzupwvjgomo4"
-    ], 
+        506,
+        "cjwatson@canonical.com-20200710095850-o3aa6eo5a22jhuun"
+    ],
     "pygettextpo": [
-        25, 
+        25,
         "launchpad@pqm.canonical.com-20140116030912-lqm1dtb6a0y4femq"
     ]
 }

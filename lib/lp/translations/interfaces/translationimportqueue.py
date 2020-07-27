@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import timedelta
-import httplib
 
 from lazr.enum import (
     DBEnumeratedType,
@@ -14,11 +13,11 @@ from lazr.restful.declarations import (
     call_with,
     collection_default_content,
     error_status,
-    export_as_webservice_collection,
-    export_as_webservice_entry,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
@@ -26,6 +25,7 @@ from lazr.restful.declarations import (
     )
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -78,7 +78,7 @@ class TranslationImportQueueConflictError(
     conflicts with existing entries."""
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class UserCannotSetTranslationImportStatus(Unauthorized):
     """User not permitted to change status.
 
@@ -120,11 +120,11 @@ class SpecialTranslationImportTargetFilter(DBEnumeratedType):
         """)
 
 
+@exported_as_webservice_entry(
+    singular_name='translation_import_queue_entry',
+    plural_name='translation_import_queue_entries')
 class ITranslationImportQueueEntry(Interface):
     """An entry of the Translation Import Queue."""
-    export_as_webservice_entry(
-        singular_name='translation_import_queue_entry',
-        plural_name='translation_import_queue_entries')
 
     id = exported(Int(title=_('The entry ID'), required=True, readonly=True))
 
@@ -290,9 +290,9 @@ class ITranslationImportQueueEntry(Interface):
         """
 
 
+@exported_as_webservice_collection(ITranslationImportQueueEntry)
 class ITranslationImportQueue(Interface):
     """A set of files to be imported into Rosetta."""
-    export_as_webservice_collection(ITranslationImportQueueEntry)
 
     def __iter__():
         """Iterate over all entries in the queue."""

@@ -1,15 +1,16 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import re
-from urlparse import (
+
+import requests
+from six.moves.urllib.parse import (
     parse_qs,
     urlparse,
+    urlunparse,
     )
-
-from lazr.restfulclient.errors import NotFound as RestfulNotFound
 import transaction
 from zope.component import (
     getMultiAdapter,
@@ -17,24 +18,27 @@ from zope.component import (
     )
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
-from zope.security.management import endInteraction
 
 from lp.bugs.browser.bugattachment import BugAttachmentFileNavigation
+from lp.services.config import config
 from lp.services.librarian.interfaces import ILibraryFileAliasWithParent
-from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.interfaces import (
+    ILaunchBag,
+    OAuthPermission,
+    )
 from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
-    launchpadlib_for,
+    api_url,
     login_person,
+    logout,
     TestCaseWithFactory,
-    ws_object,
     )
-from lp.testing.layers import (
-    AppServerLayer,
-    LaunchpadFunctionalLayer,
+from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.pages import (
+    LaunchpadWebServiceCaller,
+    webservice_for_person,
     )
-from lp.testing.pages import LaunchpadWebServiceCaller
 
 
 class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
@@ -49,7 +53,8 @@ class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
         self.bugattachment = self.factory.makeBugAttachment(
-            bug=self.bug, filename='foo.txt', data='file content')
+            owner=self.bug_owner, bug=self.bug, filename='foo.txt',
+            data=b'file content')
 
     def test_traversal_to_lfa_of_bug_attachment(self):
         # Traversing to the URL provided by a ProxiedLibraryFileAlias of a
@@ -119,7 +124,7 @@ class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
 class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
     """Tests access to bug attachments via the webservice."""
 
-    layer = AppServerLayer
+    layer = LaunchpadFunctionalLayer
 
     def setUp(self):
         super(TestWebserviceAccessToBugAttachmentFiles, self).setUp()
@@ -127,48 +132,41 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
         getUtility(ILaunchBag).clear()
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
-        self.bugattachment = self.factory.makeBugAttachment(
-            bug=self.bug, filename='foo.txt', data='file content')
+        self.factory.makeBugAttachment(
+            bug=self.bug, filename='foo.txt', data=b'file content')
+        self.bug_url = api_url(self.bug)
 
     def test_anon_access_to_public_bug_attachment(self):
         # Attachments of public bugs can be accessed by anonymous users.
-        #
-        # Need to endInteraction() because launchpadlib_for_anonymous() will
-        # setup a new one.
-        endInteraction()
-        launchpad = launchpadlib_for('test', None, version='devel')
-        ws_bug = ws_object(launchpad, self.bug)
-        ws_bugattachment = ws_bug.attachments[0]
-        self.assertEqual(
-            'file content', ws_bugattachment.data.open().read())
+        logout()
+        webservice = LaunchpadWebServiceCaller(
+            'test', '', default_api_version='devel')
+        ws_bug = self.getWebserviceJSON(webservice, self.bug_url)
+        ws_bug_attachment = self.getWebserviceJSON(
+            webservice, ws_bug['attachments_collection_link'])['entries'][0]
+        response = webservice.get(ws_bug_attachment['data_link'])
+        self.assertEqual(303, response.status)
+        response = requests.get(response.getHeader('Location'))
+        response.raise_for_status()
+        self.assertEqual(b'file content', response.content)
 
     def test_user_access_to_private_bug_attachment(self):
         # Users having access to private bugs can also read attachments
         # of these bugs.
         self.bug.setPrivate(True, self.bug_owner)
         other_user = self.factory.makePerson()
-        launchpad = launchpadlib_for('test', self.bug_owner, version='devel')
-        ws_bug = ws_object(launchpad, self.bug)
-        ws_bugattachment = ws_bug.attachments[0]
-
-        # The attachment contains a link to a HostedBytes resource;
-        # the response to a GET request of this URL is a redirect to a
-        # Librarian URL.  We cannot simply access these Librarian URLs
-        # for restricted Librarian files because the host name used in
-        # the URLs is different for each file, and our test envireonment
-        # does not support wildcard DNS, and because the Launchpadlib
-        # browser automatically follows redirects.
-        # LaunchpadWebServiceCaller, on the other hand, gives us
-        # access to a raw HTTPResonse object.
-        webservice = LaunchpadWebServiceCaller(
-            'launchpad-library', 'salgado-change-anything')
-        response = webservice.get(ws_bugattachment.data._wadl_resource._url)
+        webservice = webservice_for_person(
+            self.bug_owner, permission=OAuthPermission.READ_PRIVATE)
+        ws_bug = self.getWebserviceJSON(webservice, self.bug_url)
+        ws_bug_attachment = self.getWebserviceJSON(
+            webservice, ws_bug['attachments_collection_link'])['entries'][0]
+        response = webservice.get(ws_bug_attachment['data_link'])
         self.assertEqual(303, response.status)
 
         # The Librarian URL has, for our test case, the form
         # "https://NNNN.restricted.launchpad.test:PORT/NNNN/foo.txt?token=..."
         # where NNNN and PORT are integers.
-        parsed_url = urlparse(response.getHeader('location'))
+        parsed_url = urlparse(response.getHeader('Location'))
         self.assertEqual('https', parsed_url.scheme)
         mo = re.search(
             r'^i\d+\.restricted\..+:\d+$', parsed_url.netloc)
@@ -178,10 +176,20 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
         params = parse_qs(parsed_url.query)
         self.assertEqual(['token'], params.keys())
 
+        # Our test environment does not support wildcard DNS.  Work around
+        # this.
+        librarian_netloc = '%s:%d' % (
+            config.librarian.download_host, config.librarian.download_port)
+        url = urlunparse(
+            ('http', librarian_netloc, parsed_url.path, parsed_url.params,
+             parsed_url.query, parsed_url.fragment))
+        response = requests.get(url, headers={'Host': parsed_url.netloc})
+        response.raise_for_status()
+        self.assertEqual(b'file content', response.content)
+
         # If a user which cannot access the private bug itself tries to
-        # to access the attachment, an NotFound error is raised.
-        other_launchpad = launchpadlib_for(
-            'test_unauthenticated', other_user, version='devel')
-        self.assertRaises(
-            RestfulNotFound, other_launchpad._browser.get,
-            ws_bugattachment.data._wadl_resource._url)
+        # to access the attachment, we deny its existence.
+        other_webservice = webservice_for_person(
+            other_user, permission=OAuthPermission.READ_PRIVATE)
+        response = other_webservice.get(ws_bug_attachment['data_link'])
+        self.assertEqual(404, response.status)

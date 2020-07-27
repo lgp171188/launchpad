@@ -11,7 +11,6 @@ import shutil
 import socket
 import tempfile
 from textwrap import dedent
-import time
 
 from fixtures import FunctionFixture
 from swiftclient import client as swiftclient
@@ -100,6 +99,4 @@ class SwiftFixture(TacTestFixture):
         self.setUp()
 
     def shutdown(self):
-        self.killTac()
-        while self._hasDaemonStarted():
-            time.sleep(0.1)
+        self.cleanUp()

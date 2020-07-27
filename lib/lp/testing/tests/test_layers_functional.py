@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import with_statement
@@ -11,12 +11,9 @@ to confirm that the environment hasn't been corrupted by tests
 
 __metaclass__ = type
 
-from contextlib import nested
 from cStringIO import StringIO
 import os
 import signal
-import smtplib
-from urllib import urlopen
 import uuid
 
 import amqp
@@ -25,8 +22,8 @@ from fixtures import (
     Fixture,
     TestWithFixtures,
     )
-from lazr.config import as_host_port
-import testtools
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.request import urlopen
 from zope.component import (
     ComponentLookupError,
     getUtility,
@@ -40,6 +37,7 @@ from lp.services.librarian.client import (
 from lp.services.librarian.interfaces.client import ILibrarianClient
 from lp.services.memcache.client import memcache_client_factory
 from lp.services.pidfile import pidfile_path
+from lp.testing import TestCase
 from lp.testing.layers import (
     AppServerLayer,
     BaseLayer,
@@ -107,7 +105,7 @@ class LayerFixture(Fixture):
         self.addCleanup(self.layer.tearDown)
 
 
-class TestBaseLayer(testtools.TestCase, TestWithFixtures):
+class TestBaseLayer(TestCase):
 
     def test_allocates_LP_TEST_INSTANCE(self):
         self.useFixture(BaseLayerIsolator())
@@ -155,7 +153,7 @@ class TestBaseLayer(testtools.TestCase, TestWithFixtures):
         self.assertFalse(os.path.exists(runner_appserver_root))
 
 
-class BaseTestCase(testtools.TestCase):
+class BaseTestCase(TestCase):
     """Both the Base layer tests, as well as the base Test Case
     for all the other Layer tests.
     """
@@ -304,7 +302,7 @@ class LibrarianTestCase(BaseTestCase):
             'foo.txt', len(data), StringIO(data), 'text/plain')
 
 
-class LibrarianLayerTest(testtools.TestCase, TestWithFixtures):
+class LibrarianLayerTest(TestCase, TestWithFixtures):
 
     def test_makes_unique_instance(self):
         # Capture the original settings
@@ -312,10 +310,7 @@ class LibrarianLayerTest(testtools.TestCase, TestWithFixtures):
         download_port = config.librarian.download_port
         restricted_download_port = config.librarian.restricted_download_port
         self.useFixture(BaseLayerIsolator())
-        with nested(
-            LayerFixture(BaseLayer),
-            LayerFixture(DatabaseLayer),
-            ):
+        with LayerFixture(BaseLayer), LayerFixture(DatabaseLayer):
             with LayerFixture(LibrarianLayer):
                 active_root = config.librarian_server.root
                 # The config settings have changed:
@@ -335,7 +330,7 @@ class LibrarianLayerTest(testtools.TestCase, TestWithFixtures):
             self.assertFalse(os.path.exists(active_root))
 
 
-class LibrarianResetTestCase(testtools.TestCase):
+class LibrarianResetTestCase(TestCase):
     """Our page tests need to run multple tests without destroying
     the librarian database in between.
     """
@@ -358,13 +353,10 @@ class LibrarianResetTestCase(testtools.TestCase):
         LibrarianLayer.testTearDown()
         LibrarianLayer.testSetUp()
         # Which should have nuked the old file.
-        # XXX: StuartBishop 2006-06-30 Bug=51370:
-        # We should get a DownloadFailed exception here.
-        data = urlopen(LibrarianTestCase.url).read()
-        self.assertNotEqual(data, self.sample_data)
+        self.assertRaises(HTTPError, urlopen, LibrarianTestCase.url)
 
 
-class LibrarianHideTestCase(testtools.TestCase):
+class LibrarianHideTestCase(TestCase):
     layer = LaunchpadLayer
 
     def testHideLibrarian(self):
@@ -498,33 +490,20 @@ class LayerProcessControllerInvariantsTestCase(BaseTestCase):
             'Is your project registered yet?' in home_page,
             "Home page couldn't be retrieved:\n%s" % home_page)
 
-    def testSMTPServerIsAvailable(self):
-        # Test that the SMTP server is up and running.
-        smtpd = smtplib.SMTP()
-        host, port = as_host_port(config.mailman.smtp)
-        code, message = smtpd.connect(host, port)
-        self.assertEqual(code, 220)
-
     def testStartingAppServerTwiceRaisesInvariantError(self):
         # Starting the appserver twice should raise an exception.
         self.assertRaises(LayerInvariantError,
                           LayerProcessController.startAppServer)
 
-    def testStartingSMTPServerTwiceRaisesInvariantError(self):
-        # Starting the SMTP server twice should raise an exception.
-        self.assertRaises(LayerInvariantError,
-                          LayerProcessController.startSMTPServer)
 
-
-class LayerProcessControllerTestCase(testtools.TestCase):
+class LayerProcessControllerTestCase(TestCase):
     """Tests for the `LayerProcessController`."""
     # We need the database to be set up, no more.
     layer = DatabaseLayer
 
     def tearDown(self):
         super(LayerProcessControllerTestCase, self).tearDown()
-        # Stop both servers.  It's okay if they aren't running.
-        LayerProcessController.stopSMTPServer()
+        # Stop the app server.  It's okay if it isn't running.
         LayerProcessController.stopAppServer()
 
     def test_stopAppServer(self):
@@ -564,11 +543,11 @@ class LayerProcessControllerTestCase(testtools.TestCase):
         self.assertEqual(True, LaunchpadTestSetup()._reset_db)
 
 
-class TestNameTestCase(testtools.TestCase):
+class TestNameTestCase(TestCase):
     layer = BaseLayer
 
     def testTestName(self):
         self.assertEqual(
-                BaseLayer.test_name,
-                "testTestName "
-                "(lp.testing.tests.test_layers_functional.TestNameTestCase)")
+            BaseLayer.test_name,
+            "lp.testing.tests.test_layers_functional.TestNameTestCase."
+            "testTestName")

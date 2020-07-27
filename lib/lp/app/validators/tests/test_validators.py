@@ -41,7 +41,7 @@ def test_suite():
 def suitefor(module):
     """Make a doctest suite with common setUp and tearDown functions."""
     suite = DocTestSuite(
-        module, setUp=setUp, tearDown=tearDown,
+        module, setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         optionflags=ELLIPSIS | NORMALIZE_WHITESPACE)
     # We have to invoke the LaunchpadFunctionalLayer in order to
     # initialize the ZCA machinery, which is a pre-requisite for using

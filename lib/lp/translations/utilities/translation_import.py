@@ -14,6 +14,7 @@ from operator import attrgetter
 
 import posixpath
 import pytz
+import six
 from storm.exceptions import TimeoutError
 import transaction
 from zope.component import getUtility
@@ -57,7 +58,6 @@ from lp.translations.interfaces.translationmessage import (
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.utilities.gettext_po_importer import GettextPOImporter
 from lp.translations.utilities.kde_po_importer import KdePOImporter
-from lp.translations.utilities.mozilla_xpi_importer import MozillaXpiImporter
 from lp.translations.utilities.sanitize import (
     sanitize_translations_from_import,
     )
@@ -73,7 +73,6 @@ from lp.translations.utilities.validate import (
 importers = {
     TranslationFileFormat.KDEPO: KdePOImporter(),
     TranslationFileFormat.PO: GettextPOImporter(),
-    TranslationFileFormat.XPI: MozillaXpiImporter(),
     }
 
 
@@ -276,7 +275,7 @@ class TranslationImporter:
         """See `ITranslationImporter`."""
         file_extensions = []
 
-        for importer in importers.itervalues():
+        for importer in six.itervalues(importers):
             file_extensions.extend(importer.file_extensions)
 
         return sorted(set(file_extensions))
@@ -292,7 +291,7 @@ class TranslationImporter:
 
     def isTemplateName(self, path):
         """See `ITranslationImporter`."""
-        for importer in importers.itervalues():
+        for importer in six.itervalues(importers):
             if path.endswith(importer.template_suffix):
                 return True
         return False

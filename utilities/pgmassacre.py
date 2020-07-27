@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 #
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -12,6 +12,8 @@ dropdb only more so.
 Cut off access, slaughter connections and burn the database to the ground
 (but do nothing that could put the system into recovery mode).
 """
+
+from __future__ import absolute_import, print_function
 
 import _pythonpath
 
@@ -115,13 +117,14 @@ def massacre(database):
             """ % activity_cols(cur), [database])
         for pid, success in cur.fetchall():
             if not success:
-                print >> sys.stderr, (
-                    "pg_terminate_backend(%s) failed" % pid)
+                print(
+                    "pg_terminate_backend(%s) failed" % pid, file=sys.stderr)
         con.close()
 
         if still_open(database):
-            print >> sys.stderr, (
-                    "Unable to kill all backends! Database not destroyed.")
+            print(
+                "Unable to kill all backends! Database not destroyed.",
+                file=sys.stderr)
             return 9
 
         # Destroy the database.
@@ -146,8 +149,9 @@ def massacre(database):
 
 def rebuild(database, template):
     if still_open(template, 20):
-        print >> sys.stderr, (
-            "Giving up waiting for connections to %s to drop." % template)
+        print(
+            "Giving up waiting for connections to %s to drop." % template,
+            file=sys.stderr)
         report_open_connections(template)
         return 10
 
@@ -178,7 +182,7 @@ def rebuild(database, template):
         now = time.time()
     con.close()
 
-    print >> sys.stderr, "Unable to recreate database: %s" % error_msg
+    print("Unable to recreate database: %s" % error_msg, file=sys.stderr)
     return 11
 
 
@@ -193,8 +197,9 @@ def report_open_connections(database):
         ORDER BY datname, usename
         """ % activity_cols(cur))
     for usename, datname, num_connections in cur.fetchall():
-        print >> sys.stderr, "%d connections by %s to %s" % (
-            num_connections, usename, datname)
+        print(
+            "%d connections by %s to %s" % (num_connections, usename, datname),
+            file=sys.stderr)
     con.close()
 
 
@@ -241,7 +246,7 @@ def main():
     if db_exists:
         rv = massacre(database)
         if rv != 0:
-            print >> sys.stderr, "Fail %d" % rv
+            print("Fail %d" % rv, file=sys.stderr)
             return rv
 
     if options.template is not None:

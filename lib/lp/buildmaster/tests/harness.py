@@ -40,7 +40,8 @@ class BuilddManagerTestSetup(TacTestSetup):
         remove_tree(self.root)
         os.makedirs(self.root)
         if self.logfilecontent is not None:
-            open(self.logfile, "w").write(self.logfilecontent)
+            with open(self.logfile, "w") as f:
+                f.write(self.logfilecontent)
 
     @property
     def root(self):

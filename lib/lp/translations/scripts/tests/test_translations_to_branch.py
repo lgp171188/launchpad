@@ -7,8 +7,9 @@ import datetime
 import re
 from textwrap import dedent
 
-from bzrlib.errors import NotBranchError
+from breezy.errors import NotBranchError
 import pytz
+import six
 from testtools.matchers import MatchesRegex
 import transaction
 from zope.component import getUtility
@@ -116,8 +117,8 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
                 msgstr "Hallo Wereld"\n""",
         }
 
-        branch_filenames = set(branch_contents.iterkeys())
-        expected_filenames = set(expected_contents.iterkeys())
+        branch_filenames = set(branch_contents)
+        expected_filenames = set(expected_contents)
 
         unexpected_filenames = branch_filenames - expected_filenames
         self.assertEqual(set(), unexpected_filenames)
@@ -125,7 +126,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         missing_filenames = expected_filenames - branch_filenames
         self.assertEqual(set(), missing_filenames)
 
-        for filename, expected in expected_contents.iteritems():
+        for filename, expected in six.iteritems(expected_contents):
             contents = branch_contents[filename].lstrip('\n')
             pattern = dedent(expected.lstrip('\n'))
             if not re.match(pattern, contents, re.MULTILINE):
@@ -193,7 +194,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         self.assertTrue("GruesomeException" in message)
 
     def test_exportToBranches_handles_unpushed_branches(self):
-        # bzrlib raises NotBranchError when accessing a nonexistent
+        # breezy raises NotBranchError when accessing a nonexistent
         # branch.  The exporter deals with that by calling
         # _handleUnpushedBranch.
         exporter = ExportTranslationsToBranch(test_args=[])

@@ -13,12 +13,12 @@ __all__ = [
 
 from functools import partial
 import os.path
-import urllib2
 
 from openid.fetchers import (
     setDefaultFetcher,
     Urllib2Fetcher,
     )
+from six.moves.urllib.request import urlopen
 
 from lp.services.config import config
 
@@ -28,6 +28,13 @@ def set_default_openid_fetcher():
     # if pycurl is installed.
     fetcher = Urllib2Fetcher()
     if config.launchpad.enable_test_openid_provider:
-        cafile = os.path.join(config.root, "configs/development/launchpad.crt")
-        fetcher.urlopen = partial(urllib2.urlopen, cafile=cafile)
+        # Tests have an instance name that looks like 'testrunner-appserver'
+        # or similar. We're in 'development' there, so just use that config.
+        if config.instance_name.startswith("testrunner"):
+            instance_name = 'development'
+        else:
+            instance_name = config.instance_name
+        cert_path = "configs/{}/launchpad.crt".format(instance_name)
+        cafile = os.path.join(config.root, cert_path)
+        fetcher.urlopen = partial(urlopen, cafile=cafile)
     setDefaultFetcher(fetcher)

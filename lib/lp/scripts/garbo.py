@@ -1,7 +1,9 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database garbage collection."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
@@ -32,9 +34,9 @@ import pytz
 import simplejson
 from storm.expr import (
     And,
+    Cast,
     In,
     Join,
-    Like,
     Max,
     Min,
     Or,
@@ -57,6 +59,7 @@ from lp.bugs.scripts.checkwatches.scheduler import (
     BugWatchScheduler,
     MAX_SAMPLE_SIZE,
     )
+from lp.code.enums import GitRepositoryStatus
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.codeimportevent import CodeImportEvent
 from lp.code.model.codeimportresult import CodeImportResult
@@ -64,12 +67,13 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
+from lp.code.model.gitrepository import GitRepository
 from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
     )
 from lp.hardwaredb.model.hwdb import HWSubmission
-from lp.registry.model.commercialsubscription import CommercialSubscription
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -107,10 +111,6 @@ from lp.services.log.logger import PrefixFilter
 from lp.services.looptuner import TunableLoop
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
 from lp.services.propertycache import cachedproperty
-from lp.services.salesforce.interfaces import (
-    ISalesforceVoucherProxy,
-    SalesforceVoucherProxyException,
-    )
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LOCK_PATH,
@@ -122,7 +122,7 @@ from lp.services.webhooks.interfaces import IWebhookJobSource
 from lp.services.webhooks.model import WebhookJob
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJobType
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
@@ -436,58 +436,6 @@ class BugSummaryJournalRollup(TunableLoop):
         self.store.commit()
 
 
-class VoucherRedeemer(TunableLoop):
-    """Redeem pending sales vouchers with Salesforce."""
-    maximum_chunk_size = 5
-
-    voucher_expr = (
-        "trim(leading 'pending-' "
-        "from CommercialSubscription.sales_system_id)")
-
-    def __init__(self, log, abort_time=None):
-        super(VoucherRedeemer, self).__init__(log, abort_time)
-        self.store = IMasterStore(CommercialSubscription)
-
-    @cachedproperty
-    def _salesforce_proxy(self):
-        return getUtility(ISalesforceVoucherProxy)
-
-    @property
-    def _pending_subscriptions(self):
-        return self.store.find(
-            CommercialSubscription,
-            Like(CommercialSubscription.sales_system_id, u'pending-%')
-        )
-
-    def isDone(self):
-        return self._pending_subscriptions.count() == 0
-
-    def __call__(self, chunk_size):
-        successful_ids = []
-        for sub in self._pending_subscriptions[:chunk_size]:
-            sales_system_id = sub.sales_system_id[len('pending-'):]
-            try:
-                # The call to redeemVoucher returns True if it succeeds or it
-                # raises an exception.  Therefore the return value does not
-                # need to be checked.
-                self._salesforce_proxy.redeemVoucher(
-                    sales_system_id, sub.purchaser, sub.product)
-                successful_ids.append(unicode(sub.sales_system_id))
-            except SalesforceVoucherProxyException as error:
-                self.log.error(
-                    "Failed to redeem voucher %s: %s"
-                    % (sales_system_id, error.message))
-        # Update the successfully redeemed voucher ids to be not pending.
-        if successful_ids:
-            self.store.find(
-                CommercialSubscription,
-                CommercialSubscription.sales_system_id.is_in(successful_ids)
-            ).set(
-                CommercialSubscription.sales_system_id ==
-                SQL(self.voucher_expr))
-        transaction.commit()
-
-
 class PopulateDistributionSourcePackageCache(TunableLoop):
     """Populate the DistributionSourcePackageCache table.
 
@@ -526,9 +474,8 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
              Archive.distributionID,
              SourcePackageName.id,
              SourcePackageName.name),
-            SourcePackagePublishingHistory.status.is_in((
-                PackagePublishingStatus.PENDING,
-                PackagePublishingStatus.PUBLISHED)),
+            SourcePackagePublishingHistory.status.is_in(
+                active_publishing_status),
             SourcePackagePublishingHistory.id > self.last_spph_id)
         return rows.order_by(SourcePackagePublishingHistory.id)
 
@@ -1548,8 +1495,10 @@ class ProductVCSPopulator(TunableLoop):
         self.store = IMasterStore(Product)
 
     def findProducts(self):
-        return self.store.find(
-            Product, Product.id >= self.start_at).order_by(Product.id)
+        products = self.store.find(
+            Product,
+            Product.id >= self.start_at, Product.vcs == None)
+        return products.order_by(Product.id)
 
     def isDone(self):
         return self.findProducts().is_empty()
@@ -1557,8 +1506,7 @@ class ProductVCSPopulator(TunableLoop):
     def __call__(self, chunk_size):
         products = list(self.findProducts()[:chunk_size])
         for product in products:
-            if not product.vcs:
-                product.vcs = product.inferred_vcs
+            product.vcs = product.inferred_vcs
         self.start_at = products[-1].id + 1
         transaction.commit()
 
@@ -1624,6 +1572,46 @@ class SnapFilePruner(BulkPruner):
             AND SnapFile.libraryfile = LibraryFileAlias.id
             AND LibraryFileAlias.filename LIKE '%%.snap'
         """ % (SnapBuildJobType.STORE_UPLOAD.value, JobStatus.COMPLETED.value)
+
+
+class OCIFilePruner(BulkPruner):
+    """Prune old `OCIFile`s that have expired."""
+    target_table_class = OCIFile
+    ids_to_prune_query = """
+        SELECT DISTINCT OCIFile.id
+        FROM OCIFile
+        WHERE
+            OCIFile.date_last_used <
+                CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('7 days' AS INTERVAL)
+        """
+
+
+class GitRepositoryPruner(TunableLoop):
+    """Remove GitRepositories that are "CREATING" for far too long."""
+
+    maximum_chunk_size = 500
+    repository_creation_timeout = timedelta(hours=1)
+
+    def __init__(self, log, abort_time=None):
+        super(GitRepositoryPruner, self).__init__(log, abort_time)
+        self.store = IMasterStore(GitRepository)
+
+    def findRepositories(self):
+        min_date = UTC_NOW - Cast(self.repository_creation_timeout, "interval")
+        repositories = self.store.find(
+            GitRepository,
+            GitRepository.status == GitRepositoryStatus.CREATING,
+            GitRepository.date_created < min_date)
+        return repositories.order_by(GitRepository.date_created)
+
+    def isDone(self):
+        return self.findRepositories().is_empty()
+
+    def __call__(self, chunk_size):
+        for repository in self.findRepositories()[:chunk_size]:
+            repository.destroySelf(break_references=True)
+        transaction.commit()
 
 
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
@@ -1859,7 +1847,6 @@ class FrequentDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         OpenIDConsumerNoncePruner,
         PopulateDistributionSourcePackageCache,
         PopulateLatestPersonSourcePackageReleaseCache,
-        VoucherRedeemer,
         ]
     experimental_tunable_loops = []
 
@@ -1878,6 +1865,7 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     tunable_loops = [
         BugHeatUpdater,
         DuplicateSessionPruner,
+        GitRepositoryPruner,
         RevisionCachePruner,
         UnusedSessionPruner,
         ]
@@ -1909,6 +1897,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         HWSubmissionEmailLinker,
         LiveFSFilePruner,
         LoginTokenPruner,
+        OCIFilePruner,
         ObsoleteBugAttachmentPruner,
         OldTimeLimitedTokenDeleter,
         POTranslationPruner,

@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Build interfaces."""
@@ -86,9 +86,6 @@ class IBuildQueue(Interface):
     def markAsBuilding(builder):
         """Set this queue item to a 'building' state."""
 
-    def collectStatus(slave_status):
-        """Collect status information from the builder."""
-
     def suspend():
         """Suspend this waiting job, removing it from the active queue."""
 
@@ -147,3 +144,11 @@ class IBuildQueueSet(Interface):
 
     def preloadForBuildFarmJobs(builds):
         """Preload buildqueue_record for the given IBuildFarmJobs."""
+
+    def findBuildCandidates(processor, virtualized, limit):
+        """Find candidate jobs for dispatch to idle builders.
+
+        :return: A sequence of up to `limit` `IBuildQueue` items with the
+            highest score that are for the given `processor` and that match
+            the given value of `virtualized`.
+        """

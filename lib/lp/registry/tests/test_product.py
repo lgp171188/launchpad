@@ -1,13 +1,13 @@
-# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
     )
+from io import BytesIO
 
 import pytz
 from storm.locals import Store
@@ -93,7 +93,6 @@ from lp.registry.model.product import (
 from lp.registry.model.productlicense import ProductLicense
 from lp.services.database.interfaces import IStore
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.escaping import html_escape
 from lp.testing import (
     celebrity_logged_in,
     login,
@@ -125,6 +124,7 @@ from lp.translations.interfaces.customlanguagecode import (
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
     )
+
 
 PRIVATE_PROJECT_TYPES = [InformationType.PROPRIETARY]
 
@@ -588,7 +588,7 @@ class TestProduct(TestCaseWithFactory):
                 CannotChangeInformationType,
                 'This project has queued translations.'):
                 raise error
-        removeSecurityProxy(entry).delete(entry.id)
+        Store.of(entry).remove(entry)
         with person_logged_in(product.owner):
             for info_type in PRIVATE_PROJECT_TYPES:
                 self.assertContentEqual(
@@ -844,8 +844,9 @@ class TestProduct(TestCaseWithFactory):
             'bug_reported_acknowledgement', 'bug_reporting_guidelines',
             'bug_sharing_policy', 'bug_subscriptions', 'bug_supervisor',
             'bug_tracking_usage', 'bugtargetname',
-            'bugtracker', 'canUserAlterAnswerContact', 'codehosting_usage',
-            'coming_sprints', 'commercial_subscription',
+            'bugtracker', 'canAdministerOCIProjects',
+            'canUserAlterAnswerContact',
+            'codehosting_usage', 'coming_sprints', 'commercial_subscription',
             'commercial_subscription_is_due', 'createBug',
             'createCustomLanguageCode', 'custom_language_codes',
             'date_next_suggest_packaging', 'datecreated', 'description',
@@ -864,8 +865,8 @@ class TestProduct(TestCaseWithFactory):
             'getEffectiveTranslationPermission', 'getExternalBugTracker',
             'getFAQ', 'getFirstEntryToImport', 'getLinkedBugWatches',
             'getMergeProposals', 'getMilestone', 'getMilestonesAndReleases',
-            'getQuestion', 'getQuestionLanguages', 'getPackage', 'getRelease',
-            'getSeries', 'getSubscription',
+            'getOCIProject', 'getQuestion', 'getQuestionLanguages',
+            'getPackage', 'getRelease', 'getSeries', 'getSubscription',
             'getSubscriptions', 'getSupportedLanguages', 'getTimeline',
             'getTopContributors', 'getTopContributorsGroupedByCategory',
             'getTranslationGroups', 'getTranslationImportQueueEntries',
@@ -882,7 +883,7 @@ class TestProduct(TestCaseWithFactory):
             'past_sprints', 'personHasDriverRights',
             'primary_translatable', 'private_bugs',
             'programminglang', 'qualifies_for_free_hosting',
-            'recipes', 'redeemSubscriptionVoucher', 'registrant', 'releases',
+            'recipes', 'registrant', 'releases',
             'remote_product', 'removeCustomLanguageCode',
             'screenshotsurl',
             'searchFAQs', 'searchQuestions', 'security_contact',
@@ -934,7 +935,7 @@ class TestProduct(TestCaseWithFactory):
                 'license_info', 'licenses', 'logo', 'mugshot',
                 'official_answers', 'official_blueprints',
                 'official_codehosting', 'owner', 'private',
-                'programminglang', 'projectgroup', 'redeemSubscriptionVoucher',
+                'programminglang', 'projectgroup',
                 'releaseroot', 'screenshotsurl', 'sourceforgeproject',
                 'summary', 'uses_launchpad', 'wikiurl', 'vcs')),
             'launchpad.Moderate': set((
@@ -1421,8 +1422,8 @@ class TestProductFiles(TestCase):
         filename = u'foo\xa5.txt'.encode('utf-8')
         firefox_owner.open(
             'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
-        foo_file = StringIO('Foo installer package...')
-        foo_signature = StringIO('Dummy GPG signature for the Foo installer')
+        foo_file = BytesIO(b'Foo installer package...')
+        foo_signature = BytesIO(b'Dummy GPG signature for the Foo installer')
         firefox_owner.getControl(name='field.filecontent').add_file(
             foo_file, 'text/plain', filename)
         firefox_owner.getControl(name='field.signature').add_file(
@@ -1433,7 +1434,7 @@ class TestProductFiles(TestCase):
         firefox_owner.getControl("Upload").click()
         self.assertEqual(
             get_feedback_messages(firefox_owner.contents),
-            [html_escape(u"Your file 'foo\xa5.txt' has been uploaded.")])
+            [u"Your file 'foo\xa5.txt' has been uploaded."])
         firefox_owner.open('http://launchpad.test/firefox/+download')
         content = find_main_content(firefox_owner.contents)
         rows = content.findAll('tr')
@@ -1487,27 +1488,6 @@ class ProductAttributeCacheTestCase(TestCaseWithFactory):
         ProductLicense(product=self.product, license=License.MIT)
         self.assertEqual(self.product.licenses,
                          (License.ACADEMIC, License.AFFERO, License.MIT))
-
-    def testCommercialSubscriptionCache(self):
-        """commercial_subscription cache should not traverse transactions."""
-        self.assertEqual(self.product.commercial_subscription, None)
-        self.factory.makeCommercialSubscription(self.product)
-        self.assertEqual(self.product.commercial_subscription, None)
-        self.product.redeemSubscriptionVoucher(
-            'hello', self.product.owner, self.product.owner, 1)
-        self.assertEqual(
-            'hello', self.product.commercial_subscription.sales_system_id)
-        transaction.abort()
-        # Cache is cleared.
-        self.assertIs(None, self.product.commercial_subscription)
-
-        # Cache is cleared again.
-        transaction.abort()
-        self.factory.makeCommercialSubscription(self.product)
-        # Cache is cleared and it sees database changes that occur
-        # before the cache is populated.
-        self.assertEqual(
-            'new', self.product.commercial_subscription.sales_system_id)
 
 
 class ProductLicensingTestCase(TestCaseWithFactory):
@@ -1602,7 +1582,7 @@ class ProductLicensingTestCase(TestCaseWithFactory):
         product = self.factory.makeProduct()
         self.factory.makeCommercialSubscription(product)
         with celebrity_logged_in('admin'):
-            product.commercial_subscription.sales_system_id = 'testing'
+            product.commercial_subscription.sales_system_id = u'testing'
             date_expires = product.commercial_subscription.date_expires
         with person_logged_in(product.owner):
             product.licenses = [License.OTHER_PROPRIETARY]

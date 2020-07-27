@@ -1,11 +1,14 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from operator import attrgetter
 import os.path
 
+import six
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -166,7 +169,7 @@ class TestCanSetStatusBase:
         # that are targeted to Ubuntu.
         self._setUpUbuntu()
         ubuntu_entry = self.queue.addOrUpdateEntry(
-            'demo.pot', '#demo', False, self.uploaderperson,
+            'demo.pot', b'#demo', False, self.uploaderperson,
             distroseries=self.factory.makeDistroSeries(self.ubuntu),
             sourcepackagename=self.factory.makeSourcePackageName(),
             potemplate=self.potemplate)
@@ -193,7 +196,7 @@ class TestCanSetStatusPOTemplate(TestCanSetStatusBase, TestCaseWithFactory):
         self.potemplate = self.factory.makePOTemplate(
             productseries=self.productseries)
         self.entry = self.queue.addOrUpdateEntry(
-            'demo.pot', '#demo', False, self.uploaderperson,
+            'demo.pot', b'#demo', False, self.uploaderperson,
             productseries=self.productseries, potemplate=self.potemplate)
 
 
@@ -209,7 +212,7 @@ class TestCanSetStatusPOFile(TestCanSetStatusBase, TestCaseWithFactory):
         self.pofile = self.factory.makePOFile(
             'eo', potemplate=self.potemplate)
         self.entry = self.queue.addOrUpdateEntry(
-            'demo.po', '#demo', False, self.uploaderperson,
+            'demo.po', b'#demo', False, self.uploaderperson,
             productseries=self.productseries, pofile=self.pofile)
 
 
@@ -279,8 +282,8 @@ class TestGetGuessedPOFile(TestCaseWithFactory):
         package, pot = self.createSourcePackageAndPOTemplate(
             source_name, template_name)
         queue_entry = self.queue.addOrUpdateEntry(
-            '%s.po' % template_path, template_name, True, self.uploaderperson,
-            distroseries=package.distroseries,
+            '%s.po' % template_path, six.ensure_binary(template_name), True,
+            self.uploaderperson, distroseries=package.distroseries,
             sourcepackagename=package.sourcepackagename)
         pofile = queue_entry.getGuessedPOFile()
         return (pot, pofile)
@@ -353,7 +356,7 @@ class TestProductOwnerEntryImporter(TestCaseWithFactory):
         # Changing the Product owner also updates the importer of the entry.
         with person_logged_in(self.old_owner):
             entry = self.import_queue.addOrUpdateEntry(
-                u'po/sr.po', 'foo', True, self.old_owner,
+                u'po/sr.po', b'foo', True, self.old_owner,
                 productseries=self.product.series[0])
             self.product.owner = self.new_owner
         self.assertEqual(self.new_owner, entry.importer)
@@ -364,11 +367,11 @@ class TestProductOwnerEntryImporter(TestCaseWithFactory):
         # cause an non-unique key for the entry.
         with person_logged_in(self.new_owner):
             self.import_queue.addOrUpdateEntry(
-                u'po/sr.po', 'foo', True, self.new_owner,
+                u'po/sr.po', b'foo', True, self.new_owner,
                 productseries=self.product.series[0])
         with person_logged_in(self.old_owner):
             old_entry = self.import_queue.addOrUpdateEntry(
-                u'po/sr.po', 'foo', True, self.old_owner,
+                u'po/sr.po', b'foo', True, self.old_owner,
                 productseries=self.product.series[0])
             self.product.owner = self.new_owner
         self.assertEqual(self.old_owner, old_entry.importer)
@@ -390,12 +393,12 @@ class TestTranslationImportQueue(TestCaseWithFactory):
 
         Returns a tuple (name, content).
         """
-        filename = self.factory.getUniqueString()
+        filename = self.factory.getUniqueUnicode()
         if extension is not None:
             filename = "%s.%s" % (filename, extension)
         if directory is not None:
             filename = os.path.join(directory, filename)
-        content = self.factory.getUniqueString()
+        content = self.factory.getUniqueBytes()
         return (filename, content)
 
     def _getQueuePaths(self):
@@ -407,7 +410,6 @@ class TestTranslationImportQueue(TestCaseWithFactory):
         files = dict((
             self._makeFile('pot'),
             self._makeFile('po'),
-            self._makeFile('xpi'),
             ))
         tarfile_content = LaunchpadWriteTarFile.files_to_stream(files)
         self.import_queue.addOrUpdateEntriesFromTarball(
@@ -470,7 +472,7 @@ class TestTranslationImportQueue(TestCaseWithFactory):
         # Repeated occurrence of the same approval conflict will not
         # result in repeated setting of error_output.
         series = self.factory.makeProductSeries()
-        domain = self.factory.getUniqueString()
+        domain = self.factory.getUniqueUnicode()
         templates = [
             self.factory.makePOTemplate(
                 productseries=series, translation_domain=domain)
@@ -510,7 +512,7 @@ class TestHelpers(TestCaseWithFactory):
         # The output from compose_approval_conflict_notice summarizes
         # the conflict: what translation domain is affected and how many
         # clashing templates are there?
-        domain = self.factory.getUniqueString()
+        domain = self.factory.getUniqueUnicode()
         num_templates = self.factory.getUniqueInteger()
 
         notice = compose_approval_conflict_notice(domain, num_templates, [])
@@ -527,9 +529,9 @@ class TestHelpers(TestCaseWithFactory):
             def __init__(self, displayname):
                 self.displayname = displayname
 
-        domain = self.factory.getUniqueString()
+        domain = self.factory.getUniqueUnicode()
         samples = [
-            FakePOTemplate(self.factory.getUniqueString())
+            FakePOTemplate(self.factory.getUniqueUnicode())
             for counter in range(3)]
         sorted_samples = sorted(samples, key=attrgetter('displayname'))
 
@@ -548,9 +550,9 @@ class TestHelpers(TestCaseWithFactory):
             def __init__(self, displayname):
                 self.displayname = displayname
 
-        domain = self.factory.getUniqueString()
+        domain = self.factory.getUniqueUnicode()
         samples = [
-            FakePOTemplate(self.factory.getUniqueString())
+            FakePOTemplate(self.factory.getUniqueUnicode())
             for counter in range(3)]
         samples.sort(key=attrgetter('displayname'))
 

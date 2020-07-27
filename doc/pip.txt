@@ -102,11 +102,12 @@ pip:
     information beyond these recipes, see the setuptools and distutils
     documentation.
 
-``pip-requirements.txt``
+``setup-requirements.txt``
     This is a `requirements file`_ used to upgrade pip itself to a
-    reasonably recent version.  We use this so that we aren't confined to
-    features of pip supported by the version supplied by the operating
-    system.
+    reasonably recent version and install a few other packages that must be
+    installed before installing anything else.  We use this so that we
+    aren't confined to features of pip supported by the version supplied by
+    the operating system.
 
 ``constraints.txt``
     This is a `constraints file`_ that specifies the precise versions of the
@@ -371,6 +372,5 @@ Possible Future Goals
 =====================
 
 - Use wheels.
-- No longer use system site-packages.
 - No longer use make.
 - Get rid of the sourcecode directory.

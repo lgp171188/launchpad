@@ -26,11 +26,11 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     accessor_for,
     call_with,
-    export_as_webservice_entry,
     export_factory_operation,
     export_read_operation,
     export_write_operation,
     exported,
+    exported_as_webservice_entry,
     mutator_for,
     operation_for_version,
     operation_parameters,
@@ -698,7 +698,7 @@ class IBugAppend(Interface):
         """Attach a file to this bug.
 
         :owner: An IPerson.
-        :data: A file-like object, or a `str`.
+        :data: A file-like object, or a `bytes`.
         :description: A brief description of the attachment.
         :comment: An IMessage or string.
         :filename: A string.
@@ -1009,9 +1009,9 @@ class IBugAppend(Interface):
         """
 
 
+@exported_as_webservice_entry()
 class IBug(IBugPublic, IBugView, IBugAppend, IHasLinkedBranches):
     """The core bug entry."""
-    export_as_webservice_entry()
 
     linked_bugbranches = exported(
         CollectionField(
@@ -1251,7 +1251,6 @@ class IFileBugData(Interface):
     subscribers = Attribute("The initial subscribers for the bug.")
     comments = Attribute("Comments to add to the bug.")
     attachments = Attribute("Attachments to add to the bug.")
-    hwdb_submission_keys = Attribute("HWDB submission keys for the bug.")
 
 
 class IBugMute(Interface):

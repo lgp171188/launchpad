@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection routines"""
@@ -20,6 +20,7 @@ from time import time
 import iso8601
 import pytz
 import scandir
+import six
 from swiftclient import client as swiftclient
 from zope.interface import implementer
 
@@ -100,7 +101,7 @@ def open_stream(content_id):
 
 def sha1_file(content_id):
     file = open_stream(content_id)
-    chunks_iter = iter(lambda: file.read(STREAM_CHUNK_SIZE), '')
+    chunks_iter = iter(lambda: file.read(STREAM_CHUNK_SIZE), b'')
     length = 0
     hasher = hashlib.sha1()
     for chunk in chunks_iter:
@@ -224,8 +225,6 @@ def merge_duplicates(con):
     dupe_size = 0
     for sha1, filesize in rows:
         cur = con.cursor()
-
-        sha1 = sha1.encode('US-ASCII')  # Can't pass Unicode to execute (yet)
 
         # Get a list of our dupes. Where multiple files exist, we return
         # the most recently added one first, because this is the version
@@ -751,14 +750,18 @@ def swift_files(max_lfc_id):
         while container != final_container:
             container_num += 1
             container = swift.SWIFT_CONTAINER_PREFIX + str(container_num)
+            seen_names = set()
             try:
-                names = sorted(
+                objs = sorted(
                     swift.quiet_swiftclient(
                         swift_connection.get_container,
                         container, full_listing=True)[1],
-                    key=lambda x: map(int, x['name'].split('/')))
-                for name in names:
-                    yield (container, name)
+                    key=lambda x: [
+                        int(segment) for segment in x['name'].split('/')])
+                for obj in objs:
+                    if obj['name'] not in seen_names:
+                        yield (container, obj)
+                    seen_names.add(obj['name'])
             except swiftclient.ClientException as x:
                 if x.http_status == 404:
                     continue
@@ -860,7 +863,7 @@ def delete_unwanted_swift_files(con):
 def get_file_path(content_id):
     """Return the physical file path to the matching LibraryFileContent id.
     """
-    assert isinstance(content_id, (int, long)), (
+    assert isinstance(content_id, six.integer_types), (
         'Invalid content_id %s' % repr(content_id))
     return os.path.join(get_storage_root(), relative_file_path(content_id))
 

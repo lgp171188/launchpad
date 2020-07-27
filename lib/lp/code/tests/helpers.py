@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions for code testing live here."""
@@ -26,7 +26,7 @@ from datetime import timedelta
 from difflib import unified_diff
 from itertools import count
 
-from bzrlib.plugins.builder.recipe import RecipeParser
+from breezy.plugins.builder.recipe import RecipeParser
 import fixtures
 import transaction
 from zope.component import getUtility
@@ -49,8 +49,8 @@ from lp.code.model.seriessourcepackagebranch import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.sqlbase import cursor
-from lp.services.propertycache import get_property_cache
 from lp.services.memcache.testing import MemcacheFixture
+from lp.services.propertycache import get_property_cache
 from lp.testing import (
     run_with_login,
     time_counter,
@@ -160,7 +160,7 @@ def consistent_branch_names():
         yield name
     index = count(1)
     while True:
-        yield "branch-%s" % index.next()
+        yield "branch-%s" % next(index)
 
 
 def make_package_branches(factory, series, sourcepackagename, branch_count,
@@ -180,8 +180,8 @@ def make_package_branches(factory, series, sourcepackagename, branch_count,
         factory.makePackageBranch(
             distroseries=series,
             sourcepackagename=sourcepackagename,
-            date_created=time_gen.next(),
-            name=branch_names.next(), owner=owner, registrant=registrant)
+            date_created=next(time_gen),
+            name=next(branch_names), owner=owner, registrant=registrant)
         for i in range(branch_count)]
 
     official = []
@@ -271,9 +271,18 @@ def recipe_parser_newest_version(version):
         RecipeParser.NEWEST_VERSION = old_version
 
 
-def make_merge_proposal_without_reviewers(factory, **kwargs):
+def make_merge_proposal_without_reviewers(
+        factory, for_git=False, source=None, target=None, **kwargs):
     """Make a merge proposal and strip of any review votes."""
-    proposal = factory.makeBranchMergeProposal(**kwargs)
+    kwargs = dict(kwargs)
+    if for_git:
+        kwargs["source_ref"] = source
+        kwargs["target_ref"] = target
+        proposal = factory.makeBranchMergeProposalForGit(**kwargs)
+    else:
+        kwargs["source_branch"] = source
+        kwargs["target_branch"] = target
+        proposal = factory.makeBranchMergeProposal(**kwargs)
     for vote in proposal.votes:
         removeSecurityProxy(vote).destroySelf()
     del get_property_cache(proposal).votes

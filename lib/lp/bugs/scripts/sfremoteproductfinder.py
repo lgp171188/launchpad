@@ -8,9 +8,8 @@ __all__ = [
     'SourceForgeRemoteProductFinder',
     ]
 
-import urllib
-
 import requests
+from six.moves.urllib.parse import splitvalue
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -71,7 +70,7 @@ class SourceForgeRemoteProductFinder:
                 "No tracker link for project '%s'" % sf_project)
             return None
 
-        tracker_url = tracker_link.findParent()['href']
+        tracker_url = tracker_link['href']
 
         # Clean any leading '/' from tracker_url so that urlappend
         # doesn't choke on it.
@@ -91,7 +90,7 @@ class SourceForgeRemoteProductFinder:
                 "No bug tracker link for project '%s'" % sf_project)
             return None
 
-        bugtracker_url = bugtracker_link.findParent()['href']
+        bugtracker_url = bugtracker_link['href']
 
         # We need to replace encoded ampersands in the URL since
         # SourceForge usually encodes them.
@@ -101,7 +100,7 @@ class SourceForgeRemoteProductFinder:
         query_dict = {}
         query_bits = query.split('&')
         for bit in query_bits:
-            key, value = urllib.splitvalue(bit)
+            key, value = splitvalue(bit)
             query_dict[key] = value
 
         try:

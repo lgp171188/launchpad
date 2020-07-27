@@ -20,6 +20,7 @@ import logging
 import re
 
 import pytz
+import six
 from zope import datetime as zope_datetime
 from zope.interface import implementer
 
@@ -43,6 +44,7 @@ from lp.translations.utilities.translation_common_format import (
     )
 
 
+@six.python_2_unicode_compatible
 class POSyntaxWarning(Warning):
     """Syntax warning in a PO file."""
     def __init__(self, message, line_number=None):
@@ -61,8 +63,8 @@ class POSyntaxWarning(Warning):
             self.message = message
         logging.info(self.message)
 
-    def __unicode__(self):
-        return unicode(self.message)
+    def __str__(self):
+        return six.ensure_text(self.message)
 
 
 def parse_charset(string_to_parse, is_escaped=True):
@@ -230,7 +232,7 @@ class POHeader:
 
     def _parseHeaderFields(self):
         """Return plural form values based on the parsed header."""
-        for key, value in self._header_dictionary.iteritems():
+        for key, value in six.iteritems(self._header_dictionary):
             if key == 'plural-forms':
                 parts = self._parseAssignments(value)
                 nplurals = parts.get('nplurals')
@@ -362,7 +364,7 @@ class POHeader:
                 raise AssertionError('key %s is not being handled!' % value)
 
         # Now, we copy any other header information in the original .po file.
-        for key, value in self._header_dictionary.iteritems():
+        for key, value in six.iteritems(self._header_dictionary):
             if key in self._handled_keys_mapping:
                 # It's already handled, skip it.
                 continue

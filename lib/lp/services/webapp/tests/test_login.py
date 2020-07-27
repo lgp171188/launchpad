@@ -17,10 +17,7 @@ from datetime import (
     datetime,
     timedelta,
     )
-import httplib
 import unittest
-import urllib
-import urlparse
 
 from openid.consumer.consumer import (
     FAILURE,
@@ -31,18 +28,24 @@ from openid.extensions import (
     sreg,
     )
 from openid.yadis.discover import DiscoveryFailure
+from six.moves import http_client
 from six.moves.urllib.error import HTTPError
+from six.moves.urllib.parse import (
+    parse_qsl,
+    quote,
+    urlsplit,
+    )
 from testtools.matchers import (
     Contains,
     ContainsDict,
     Equals,
     MatchesListwise,
     )
-from zope.app.testing.testbrowser import Browser as TestBrowser
 from zope.component import getUtility
 from zope.security.management import newInteraction
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
+from zope.testbrowser.wsgi import Browser as TestBrowser
 
 from lp.registry.interfaces.person import IPerson
 from lp.services.database.interfaces import (
@@ -240,7 +243,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
                 person.account, email=test_email)
         self.assertTrue(view.login_called)
         response = view.request.response
-        self.assertEqual(httplib.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         # The 'last_write' flag was not updated (unlike in the other test
@@ -409,7 +412,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             view, html = self._createAndRenderView(openid_response)
         self.assertTrue(view.login_called)
         response = view.request.response
-        self.assertEqual(httplib.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         self.assertEqual(AccountStatus.ACTIVE, person.account.status)
@@ -577,7 +580,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             view_class=StubbedOpenIDCallbackViewLoggedIn)
         self.assertFalse(view.login_called)
         response = view.request.response
-        self.assertEqual(httplib.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         notification_msg = view.request.response.notifications[0].message
@@ -625,7 +628,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            httplib.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.STARTING_URL)
 
@@ -639,7 +642,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            httplib.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.STARTING_URL)
 
@@ -651,12 +654,9 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            httplib.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.APPLICATION_URL)
-
-
-urls_redirected_to = []
 
 
 def fill_login_form_and_submit(browser, email_address):
@@ -671,7 +671,7 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
 
     def test_replay_attacks_do_not_succeed(self):
         browser = Browser()
-        browser.mech_browser.set_handle_redirect(False)
+        browser.followRedirects = False
         browser.open('%s/+login' % self.layer.appserver_root_url())
         # On a JS-enabled browser this page would've been auto-submitted
         # (thanks to the onload handler), but here we have to do it manually.
@@ -679,24 +679,22 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
         browser.getControl('Continue').click()
 
         self.assertEqual('Login', browser.title)
-        redirection = self.assertRaises(
-            HTTPError,
-            fill_login_form_and_submit, browser, 'test@canonical.com')
-        self.assertEqual(httplib.FOUND, redirection.code)
-        callback_url = redirection.hdrs['Location']
-        self.assertIn('+openid-callback', callback_url)
-        callback_redirection = self.assertRaises(
-            HTTPError, browser.open, callback_url)
+        fill_login_form_and_submit(browser, 'test@canonical.com')
         self.assertEqual(
-            httplib.TEMPORARY_REDIRECT, callback_redirection.code)
-        browser.open(callback_redirection.hdrs['Location'])
+            http_client.FOUND, int(browser.headers['Status'].split(' ', 1)[0]))
+        callback_url = browser.headers['Location']
+        self.assertIn('+openid-callback', callback_url)
+        browser.open(callback_url)
+        self.assertEqual(
+            http_client.TEMPORARY_REDIRECT,
+            int(browser.headers['Status'].split(' ', 1)[0]))
+        browser.open(browser.headers['Location'])
         login_status = extract_text(
             find_tag_by_id(browser.contents, 'logincontrol'))
         self.assertIn('Sample Person (name12)', login_status)
 
-        # Now we look up (in urls_redirected_to) the +openid-callback URL that
-        # was used to complete the authentication and open it on a different
-        # browser with a fresh set of cookies.
+        # Now we open the +openid-callback URL that was used to complete the
+        # authentication on a different browser with a fresh set of cookies.
         replay_browser = Browser()
         replay_browser.open(callback_url)
         login_status = extract_text(
@@ -778,7 +776,7 @@ class ForwardsCorrectly:
     """
 
     def match(self, query_string):
-        args = dict(urlparse.parse_qsl(query_string))
+        args = dict(parse_qsl(query_string))
         request = LaunchpadTestRequest(form=args)
         request.processInputs()
         # This is a hack to make the request.getURL(1) call issued by the view
@@ -786,8 +784,8 @@ class ForwardsCorrectly:
         request._app_names = ['foo']
         view = StubbedOpenIDLogin(object(), request)
         view()
-        escaped_args = tuple(map(urllib.quote, args.items()[0]))
-        expected_fragment = urllib.quote('%s=%s' % escaped_args)
+        escaped_args = tuple(map(quote, args.items()[0]))
+        expected_fragment = quote('%s=%s' % escaped_args)
         return Contains(
             expected_fragment).match(view.openid_request.return_to)
 
@@ -816,8 +814,8 @@ class TestOpenIDLogin(TestCaseWithFactory):
         # Sometimes the form params are unicode because a decode('utf8')
         # worked in the form machinery... and if so they cannot be trivially
         # quoted but must be encoded first.
-        key = urllib.quote(u'key\xf3'.encode('utf8'))
-        value = urllib.quote(u'value\xf3'.encode('utf8'))
+        key = quote(u'key\xf3'.encode('utf8'))
+        value = quote(u'value\xf3'.encode('utf8'))
         query_string = "%s=%s" % (key, value)
         self.assertThat(query_string, ForwardsCorrectly())
 
@@ -880,8 +878,8 @@ class TestOpenIDLogin(TestCaseWithFactory):
         macaroon_extension = extensions[1]
         self.assertIsInstance(macaroon_extension, MacaroonRequest)
         self.assertEqual(caveat_id, macaroon_extension.caveat_id)
-        return_to_args = dict(urlparse.parse_qsl(
-            urlparse.urlsplit(view.openid_request.return_to).query))
+        return_to_args = dict(parse_qsl(
+            urlsplit(view.openid_request.return_to).query))
         self.assertEqual(
             'field.actions.complete',
             return_to_args['discharge_macaroon_action'])

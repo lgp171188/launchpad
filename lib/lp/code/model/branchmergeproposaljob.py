@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Job classes related to BranchMergeProposals are in here.
@@ -21,7 +21,10 @@ __all__ = [
     'UpdatePreviewDiffJob',
     ]
 
-from contextlib import contextmanager
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 from datetime import (
     datetime,
     timedelta,
@@ -34,6 +37,7 @@ from lazr.enum import (
     )
 import pytz
 import simplejson
+import six
 from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
@@ -183,7 +187,7 @@ class BranchMergeProposalJob(StormBase):
         self.job_type = job_type
         # XXX AaronBentley 2009-01-29 bug=322819: This should be a bytestring,
         # but the DB representation is unicode.
-        self._json_data = json_data.decode('utf-8')
+        self._json_data = six.ensure_text(json_data)
 
     def sync(self):
         store = Store.of(self)
@@ -221,10 +225,9 @@ class BranchMergeProposalJob(StormBase):
 
 
 @delegate_to(IBranchMergeProposalJob)
-class BranchMergeProposalJobDerived(BaseRunnableJob):
+class BranchMergeProposalJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
     """Intermediate class for deriving from BranchMergeProposalJob."""
-
-    __metaclass__ = EnumeratedSubclass
 
     def __init__(self, job):
         self.context = job
@@ -363,15 +366,12 @@ class UpdatePreviewDiffJob(BranchMergeProposalJobDerived):
     def run(self):
         """See `IRunnableJob`."""
         self.checkReady()
-        if self.branch_merge_proposal.source_branch is not None:
-            server_context = server(get_ro_server(), no_replace=True)
-        else:
-            # A no-op context manager.  (This could be simplified with
-            # contextlib.ExitStack from Python 3.3.)
-            server_context = contextmanager(lambda: (None for _ in [None]))()
+        if self.branch_merge_proposal.source_git_ref is not None:
             # Update related bug links based on commits in the source branch.
             self.branch_merge_proposal.updateRelatedBugsFromSource()
-        with server_context:
+        with ExitStack() as stack:
+            if self.branch_merge_proposal.source_branch is not None:
+                stack.enter_context(server(get_ro_server(), no_replace=True))
             with BranchMergeProposalDelta.monitor(self.branch_merge_proposal):
                 PreviewDiff.fromBranchMergeProposal(self.branch_merge_proposal)
 

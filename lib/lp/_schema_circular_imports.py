@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Update the interface schema values due to circular imports.
@@ -118,6 +118,7 @@ from lp.registry.interfaces.milestone import (
     IHasMilestones,
     IMilestone,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonEditRestricted,
@@ -189,6 +190,7 @@ from lp.soyuz.interfaces.binarypackagerelease import (
     )
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
 from lp.soyuz.interfaces.livefs import ILiveFSView
 from lp.soyuz.interfaces.livefsbuild import (
     ILiveFSBuild,
@@ -358,6 +360,10 @@ patch_reference_property(
 patch_reference_property(
     ISourcePackagePublishingHistory, 'archive', IArchive)
 patch_reference_property(
+    IBinaryPackagePublishingHistory, 'copied_from_archive', IArchive)
+patch_reference_property(
+    ISourcePackagePublishingHistory, 'copied_from_archive', IArchive)
+patch_reference_property(
     ISourcePackagePublishingHistory, 'ancestor',
     ISourcePackagePublishingHistory)
 patch_reference_property(
@@ -450,10 +456,14 @@ patch_collection_return_type(
     IDistribution, 'getDevelopmentSeries', IDistroSeries)
 patch_entry_return_type(
     IDistribution, 'getSourcePackage', IDistributionSourcePackage)
+patch_entry_return_type(IDistribution, 'getOCIProject', IOCIProject)
 patch_collection_return_type(
     IDistribution, 'searchSourcePackages', IDistributionSourcePackage)
 patch_reference_property(IDistribution, 'main_archive', IArchive)
 patch_collection_property(IDistribution, 'all_distro_archives', IArchive)
+patch_entry_return_type(IDistribution, 'newOCIProject', IOCIProject)
+patch_collection_return_type(
+    IDistribution, 'searchOCIProjects', IOCIProject)
 
 
 # IDistributionMirror
@@ -496,6 +506,8 @@ patch_reference_property(
 patch_reference_property(IDistroArchSeries, 'main_archive', IArchive)
 patch_plain_parameter_type(
     IDistroArchSeries, 'setChrootFromBuild', 'livefsbuild', ILiveFSBuild)
+patch_entry_return_type(
+    IDistroArchSeries, 'getSourceFilter', IDistroArchSeriesFilter)
 patch_plain_parameter_type(
     IDistroArchSeries, 'setSourceFilter', 'packageset', IPackageset)
 

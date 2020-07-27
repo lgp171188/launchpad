@@ -3,14 +3,17 @@
 
 """Profile the test layers."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['profiled', 'setup_profiling']
 
 import atexit
-import cPickle as pickle
 import os
 import tempfile
 import time
+
+from six.moves import cPickle as pickle
 
 
 _profile_stats_filename = os.environ.get('lp_layer_profile_filename', None)
@@ -81,9 +84,9 @@ def report_profile_stats():
     """Print a report about our collected statistics to stdout."""
     stats = pickle.load(open(_profile_stats_filename, 'rb'))
 
-    print
-    print 'Test suite profiling information'
-    print '================================'
+    print()
+    print('Test suite profiling information')
+    print('================================')
 
     total_profiled_duration = 0.0
     for key, value in sorted(stats.items()):
@@ -93,14 +96,14 @@ def report_profile_stats():
             duration = 'negligible time'
         else:
             duration = '%0.1fs' % duration
-        print '%-45s %4d calls taking %s.' % (
-                key[:45], hits, duration)
+        print('%-45s %4d calls taking %s.' % (
+                key[:45], hits, duration))
 
-    print
-    print "Total duration of profiled methods %0.1f seconds." % (
-            total_profiled_duration)
+    print()
+    print("Total duration of profiled methods %0.1f seconds." % (
+            total_profiled_duration))
 
     global _profiling_setup_time
-    print
-    print "Total duration of test run %0.1f seconds." % (
-            time.time() - _profiling_setup_time)
+    print()
+    print("Total duration of test run %0.1f seconds." % (
+            time.time() - _profiling_setup_time))

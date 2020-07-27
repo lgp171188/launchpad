@@ -1,12 +1,16 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function
+
 import cStringIO
 from datetime import datetime
 import email
 import os
 import re
 import subprocess
+
+import six
 
 
 class Bug:
@@ -97,7 +101,7 @@ class Database:
         self.debbugs_pl = debbugs_pl
         self.subdir = subdir
 
-    class bug_iterator:
+    class bug_iterator(six.Iterator):
         index_record = re.compile(
             r'^(?P<package>\S+) (?P<bugid>\d+) (?P<date>\d+) (?P<status>\w+) '
             r'\[(?P<originator>.*)\] (?P<severity>\w+)(?: (?P<tags>.*))?$')
@@ -107,7 +111,7 @@ class Database:
             self.index = open(os.path.join(self.db.root, 'index/index.db'))
             self.filter = filter
 
-        def next(self):
+        def __next__(self):
             line = self.index.readline()
             if not line:
                 raise StopIteration
@@ -269,6 +273,6 @@ if __name__ == '__main__':
 
     for bug in Database('/srv/debzilla.no-name-yet.com/debbugs'):
         try:
-            print bug, bug.subject
+            print(bug, bug.subject)
         except Exception as e:
-            print >>sys.stderr, '%s: %s' % (e.__class__.__name__, str(e))
+            print('%s: %s' % (e.__class__.__name__, str(e)), file=sys.stderr)

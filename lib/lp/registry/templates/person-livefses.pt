@@ -1,0 +1,48 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad"
+>
+
+<body>
+  <metal:side fill-slot="side">
+    <div tal:replace="structure context/@@+global-actions"/>
+  </metal:side>
+
+  <div metal:fill-slot="main">
+      <div class="main-portlet">
+        <p tal:define="count view/count" tal:condition="count">
+          <span tal:condition="python: count == 1">There is <strong>1</strong> live filesystem</span>
+          <span tal:condition="python: count != 1">There are <strong tal:content="count"/> live filesystems</span>
+          registered for <tal:owner replace="context/display_name" />.
+        </p>
+        <p tal:condition="not: view/count">There are no live filesystems for <tal:owner replace="context/display_name"/></p>
+      </div>
+
+      <table class="listing" id="livefses_list" tal:condition="view/count">
+        <tbody>
+          <tr class="head">
+            <th>Name</th>
+            <th>Series</th>
+            <th>Date created</th>
+          </tr>
+
+          <tr tal:repeat="filesystem view/livefses">
+            <td>
+              <a tal:content="filesystem/name"
+                 tal:attributes="href filesystem/fmt:url" />
+            </td>
+            <td tal:content="filesystem/distro_series/display_name " />
+            <td tal:content="filesystem/date_created/fmt:displaydate" />
+          </tr>
+        </tbody>
+      </table>
+
+      <tal:navigation replace="structure view/livefses_navigator/@@+navigation-links-lower" />
+  </div>
+
+</body>
+</html>

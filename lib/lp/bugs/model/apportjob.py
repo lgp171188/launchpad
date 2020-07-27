@@ -13,7 +13,7 @@ from cStringIO import StringIO
 
 from lazr.delegates import delegate_to
 import simplejson
-from sqlobject import SQLObjectNotFound
+import six
 from storm.expr import And
 from storm.locals import (
     Int,
@@ -26,6 +26,7 @@ from zope.interface import (
     provider,
     )
 
+from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.apportjob import (
     ApportJobType,
     IApportJob,
@@ -73,7 +74,7 @@ class ApportJob(StormBase):
     # only delegates to ApportJob we can't simply directly access the
     # _json_data property, so we use a getter and setter here instead.
     def _set_metadata(self, metadata):
-        self._json_data = unicode(
+        self._json_data = six.ensure_text(
             simplejson.dumps(metadata, 'utf-8'))
 
     def _get_metadata(self):
@@ -96,14 +97,14 @@ class ApportJob(StormBase):
         self.job_type = job_type
         # XXX AaronBentley 2009-01-29 bug=322819: This should be a
         # bytestring, but the DB representation is unicode.
-        self._json_data = json_data.decode('utf-8')
+        self._json_data = six.ensure_text(json_data)
 
     @classmethod
     def get(cls, key):
         """Return the instance of this class whose key is supplied."""
         instance = IStore(cls).get(cls, key)
         if instance is None:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 'No occurrence of %s has key %s' % (cls.__name__, key))
         return instance
 
@@ -113,9 +114,9 @@ class ApportJob(StormBase):
 
 @delegate_to(IApportJob)
 @provider(IApportJobSource)
-class ApportJobDerived(BaseRunnableJob):
+class ApportJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
     """Intermediate class for deriving from ApportJob."""
-    __metaclass__ = EnumeratedSubclass
 
     def __init__(self, job):
         self.context = job
@@ -135,12 +136,12 @@ class ApportJobDerived(BaseRunnableJob):
 
         :return: the ApportJob with the specified id, as the current
                  ApportJobDerived subclass.
-        :raises: SQLObjectNotFound if there is no job with the specified id,
+        :raises: NotFoundError if there is no job with the specified id,
                  or its job_type does not match the desired subclass.
         """
         job = ApportJob.get(job_id)
         if job.job_type != cls.class_job_type:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 'No object found with id %d and type %s' % (job_id,
                 cls.class_job_type.title))
         return cls(job)
@@ -210,7 +211,7 @@ class ProcessApportBlobJob(ApportJobDerived):
         job_for_blob = jobs_for_blob.one()
 
         if job_for_blob is None:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 "No ProcessApportBlobJob found for UUID %s" % uuid)
 
         return cls(job_for_blob)
@@ -269,7 +270,6 @@ class ProcessApportBlobJob(ApportJobDerived):
                 subscribers=processed_data['subscribers'],
                 extra_description=processed_data['extra_description'],
                 comments=processed_data['comments'],
-                hwdb_submission_keys=processed_data['hwdb_submission_keys'],
                 attachments=attachment_data)
         else:
             return FileBugData()

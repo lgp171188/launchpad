@@ -4,7 +4,7 @@
 __metaclass__ = type
 
 from datetime import datetime
-from operator import isSequenceType
+from functools import reduce
 import re
 
 from iso8601 import (
@@ -14,6 +14,7 @@ from iso8601 import (
 import lazr.batchnavigator
 from lazr.batchnavigator.interfaces import IRangeFactory
 import simplejson
+from six.moves.collections_abc import Sequence
 from storm import Undef
 from storm.expr import (
     And,
@@ -220,7 +221,8 @@ class ShadowedList:
     BatchNavigator and Batch.
     """
     def __init__(self, values, shadow_values):
-        if not isSequenceType(values) or not isSequenceType(shadow_values):
+        if (not isinstance(values, Sequence) or
+                not isinstance(shadow_values, Sequence)):
             raise TypeError("values and shadow_values must be sequences.")
         if len(values) != len(shadow_values):
             raise ValueError(

@@ -10,7 +10,7 @@ __all__ = [
     'SnapBuildChannelsWidget',
     ]
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import (
@@ -36,7 +36,7 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
 
     template = ViewPageTemplateFile("templates/snapbuildchannels.pt")
     hint = False
-    snap_names = ["core", "core18", "snapcraft"]
+    snap_names = ["core", "core18", "core20", "snapcraft"]
     _widgets_set_up = False
 
     def __init__(self, context, request):

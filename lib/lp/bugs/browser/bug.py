@@ -989,7 +989,7 @@ class DeprecatedAssignedBugsView(RedirectionView):
     """
 
     def __init__(self, context, request):
-        self.context = context
+        self._context = context
         self.request = request
         self.status = 303
 
@@ -997,6 +997,10 @@ class DeprecatedAssignedBugsView(RedirectionView):
         self.target = canonical_url(
             getUtility(ILaunchBag).user, view_name='+assignedbugs')
         super(DeprecatedAssignedBugsView, self).__call__()
+
+    @property
+    def context(self):
+        return self._context
 
 
 normalize_mime_type = re.compile(r'\s+')

@@ -13,18 +13,17 @@ __all__ = [
     'SSHKeyType',
     ]
 
-import httplib
-
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
 from lazr.restful.declarations import (
     error_status,
-    export_as_webservice_entry,
     exported,
+    exported_as_webservice_entry,
     )
 import six
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Choice,
@@ -70,10 +69,9 @@ SSH_TEXT_TO_KEY_TYPE = {
     }
 
 
+@exported_as_webservice_entry('ssh_key')
 class ISSHKey(Interface):
     """SSH public key"""
-
-    export_as_webservice_entry('ssh_key')
 
     id = Int(title=_("Database ID"), required=True, readonly=True)
     person = Int(title=_("Owner"), required=True, readonly=True)
@@ -128,7 +126,7 @@ class ISSHKeySet(Interface):
         """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class SSHKeyAdditionError(Exception):
     """Raised when the SSH public key is invalid.
 

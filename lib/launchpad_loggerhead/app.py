@@ -4,17 +4,14 @@
 import logging
 import os
 import threading
-import urllib
-import urlparse
-import xmlrpclib
 
-from bzrlib import (
+from breezy import (
     errors,
     lru_cache,
     urlutils,
     )
-from bzrlib.transport import get_transport
-from bzrlib.url_policy_open import open_only_scheme
+from breezy.transport import get_transport
+from breezy.url_policy_open import open_only_scheme
 from loggerhead.apps import (
     favicon_app,
     static_app,
@@ -41,6 +38,11 @@ from paste.request import (
     construct_url,
     parse_querystring,
     path_info_pop,
+    )
+from six.moves import xmlrpc_client
+from six.moves.urllib.parse import (
+    urlencode,
+    urljoin,
     )
 
 from lp.code.interfaces.codehosting import (
@@ -73,7 +75,7 @@ set_default_openid_fetcher()
 def check_fault(fault, *fault_classes):
     """Check if 'fault's faultCode matches any of 'fault_classes'.
 
-    :param fault: An instance of `xmlrpclib.Fault`.
+    :param fault: An instance of `xmlrpc_client.Fault`.
     :param fault_classes: Any number of `LaunchpadFault` subclasses.
     """
     for cls in fault_classes:
@@ -99,7 +101,7 @@ class RootApp:
     def get_branchfs(self):
         t = getattr(thread_locals, 'branchfs', None)
         if t is None:
-            thread_locals.branchfs = xmlrpclib.ServerProxy(
+            thread_locals.branchfs = xmlrpc_client.ServerProxy(
                 config.codehosting.codehosting_endpoint)
         return thread_locals.branchfs
 
@@ -127,7 +129,7 @@ class RootApp:
         raise HTTPMovedPermanently(openid_request.redirectURL(
             config.codehosting.secure_codebrowse_root,
             config.codehosting.secure_codebrowse_root + '+login/?'
-            + urllib.urlencode({'back_to': back_to})))
+            + urlencode({'back_to': back_to})))
 
     def _complete_login(self, environ, start_response):
         """Complete the OpenID authentication process.
@@ -222,7 +224,7 @@ class RootApp:
                 branchfs = self.get_branchfs()
                 transport_type, info, trail = branchfs.translatePath(
                     identity_url, urlutils.escape(path))
-            except xmlrpclib.Fault as f:
+            except xmlrpc_client.Fault as f:
                 if check_fault(f, faults.PathTranslationError):
                     raise HTTPNotFound()
                 elif check_fault(f, faults.PermissionDenied):
@@ -261,7 +263,7 @@ class RootApp:
             environ['PATH_INFO'] = trail
             environ['SCRIPT_NAME'] += consumed.rstrip('/')
             branch_url = lp_server.get_url() + branch_name
-            branch_link = urlparse.urljoin(
+            branch_link = urljoin(
                 config.codebrowse.launchpad_root, branch_name)
             cachepath = os.path.join(
                 config.codebrowse.cachepath, branch_name[1:])

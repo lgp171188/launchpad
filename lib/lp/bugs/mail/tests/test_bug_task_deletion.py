@@ -8,6 +8,7 @@ from zope.component import getUtility
 
 from lp.bugs.model.bugnotification import BugNotification
 from lp.bugs.scripts.bugnotification import construct_email_notifications
+from lp.services.database.interfaces import IStore
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -30,7 +31,8 @@ class TestDeletionNotification(TestCaseWithFactory):
         """Test X-Launchpad-Bug-Modifier appears when a bugtask is deleted."""
         self.bug_task.delete(self.user)
         transaction.commit()
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
+        latest_notification = IStore(BugNotification).find(
+            BugNotification).order_by(BugNotification.id).last()
         notifications, omitted, messages = construct_email_notifications(
             [latest_notification])
         self.assertEqual(len(notifications), 1,

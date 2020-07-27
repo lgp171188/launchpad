@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for methods of CodeImport and CodeImportSet."""
@@ -12,7 +12,6 @@ from datetime import (
 from functools import partial
 
 import pytz
-from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -47,6 +46,7 @@ from lp.code.model.codeimportresult import CodeImportResult
 from lp.code.tests.codeimporthelpers import make_running_import
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.interfaces import IStore
 from lp.testing import (
     login,
     login_person,
@@ -344,11 +344,9 @@ class TestCodeImportDeletion(TestCodeImportBase):
             code_import=code_import)
         code_import_event_id = code_import_event.id
         CodeImportSet().delete(code_import_event.code_import)
-        # CodeImportEvent.get should not raise anything.
-        # But since it populates the object cache, we must invalidate it.
-        Store.of(code_import_event).invalidate(code_import_event)
-        self.assertRaises(
-            SQLObjectNotFound, CodeImportEvent.get, code_import_event_id)
+        store = Store.of(code_import_event)
+        store.invalidate(code_import_event)
+        self.assertIsNone(store.get(CodeImportEvent, code_import_event_id))
 
     def test_deleteIncludesResult(self):
         """Ensure deleting CodeImport objects deletes associated results."""
@@ -358,11 +356,9 @@ class TestCodeImportDeletion(TestCodeImportBase):
             code_import=code_import)
         code_import_result_id = code_import_result.id
         CodeImportSet().delete(code_import_result.code_import)
-        # CodeImportResult.get should not raise anything.
-        # But since it populates the object cache, we must invalidate it.
-        Store.of(code_import_result).invalidate(code_import_result)
-        self.assertRaises(
-            SQLObjectNotFound, CodeImportResult.get, code_import_result_id)
+        store = Store.of(code_import_result)
+        store.invalidate(code_import_result)
+        self.assertIsNone(store.get(CodeImportResult, code_import_result_id))
 
 
 class TestCodeImportStatusUpdate(TestCodeImportBase):
@@ -377,7 +373,7 @@ class TestCodeImportStatusUpdate(TestCodeImportBase):
         self.import_operator = getUtility(IPersonSet).getByEmail(
             'david.allouche@canonical.com')
         # Remove existing jobs.
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
 
     def makeApprovedImportWithPendingJob(self):
@@ -532,11 +528,11 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
             origin=datetime(2007, 9, 9, 12, tzinfo=pytz.UTC),
             delta=timedelta(days=1))
         first = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         second = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         third = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         self.assertTrue(first.date_job_started < second.date_job_started)
         self.assertTrue(second.date_job_started < third.date_job_started)
         results = list(self.code_import.results)
@@ -552,11 +548,11 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
             origin=datetime(2007, 9, 11, 12, tzinfo=pytz.UTC),
             delta=timedelta(days=-1))
         first = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         second = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         third = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         self.assertTrue(first.date_job_started > second.date_job_started)
         self.assertTrue(second.date_job_started > third.date_job_started)
         results = list(self.code_import.results)

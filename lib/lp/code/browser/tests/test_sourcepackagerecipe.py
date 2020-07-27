@@ -15,13 +15,13 @@ import re
 from textwrap import dedent
 
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
 from pytz import UTC
 from testtools.matchers import Equals
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -52,7 +52,6 @@ from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.database.constants import UTC_NOW
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp import canonical_url
-from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
@@ -506,7 +505,7 @@ class TestSourcePackageRecipeAddViewMixin:
         browser.getControl('Create Recipe').click()
         self.assertEqual(
             get_feedback_messages(browser.contents)[1],
-            html_escape('The recipe instruction "run" is not permitted here.'))
+            'The recipe instruction "run" is not permitted here.')
 
     def createRecipe(self, recipe_text, branch=None):
         if branch is None:
@@ -730,7 +729,7 @@ class TestSourcePackageRecipeAddViewMixin:
         browser.getControl('Create Recipe').click()
         self.assertEqual(
             get_feedback_messages(browser.contents)[1],
-            html_escape("You already have a PPA for Ubuntu named 'foo'."))
+            "You already have a PPA for Ubuntu named 'foo'.")
 
     def test_create_new_ppa_missing_name(self):
         # If a new PPA is being created, and the user has not specified a
@@ -990,7 +989,7 @@ class TestSourcePackageRecipeEditViewMixin:
 
         self.assertEqual(
             get_feedback_messages(browser.contents)[1],
-            html_escape('The recipe instruction "run" is not permitted here.'))
+            'The recipe instruction "run" is not permitted here.')
 
     def test_edit_recipe_format_too_new(self):
         # If the recipe's format version is too new, we should notify the
@@ -1363,12 +1362,12 @@ class TestSourcePackageRecipeViewMixin:
         # use id as the ordering attribute and lower ids mean created earlier.
         date_gen = time_counter(
             datetime(2010, 3, 16, tzinfo=UTC), timedelta(days=1))
-        build1 = self.makeBuildJob(recipe, date_gen.next())
-        build2 = self.makeBuildJob(recipe, date_gen.next())
-        build3 = self.makeBuildJob(recipe, date_gen.next())
-        build4 = self.makeBuildJob(recipe, date_gen.next())
-        build5 = self.makeBuildJob(recipe, date_gen.next())
-        build6 = self.makeBuildJob(recipe, date_gen.next())
+        build1 = self.makeBuildJob(recipe, next(date_gen))
+        build2 = self.makeBuildJob(recipe, next(date_gen))
+        build3 = self.makeBuildJob(recipe, next(date_gen))
+        build4 = self.makeBuildJob(recipe, next(date_gen))
+        build5 = self.makeBuildJob(recipe, next(date_gen))
+        build6 = self.makeBuildJob(recipe, next(date_gen))
         view = SourcePackageRecipeView(recipe, None)
         self.assertEqual(
             [build6, build5, build4, build3, build2, build1],

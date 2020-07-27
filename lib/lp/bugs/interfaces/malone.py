@@ -8,9 +8,9 @@ __metaclass__ = type
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
-    export_as_webservice_collection,
     export_factory_operation,
     export_read_operation,
+    exported_as_webservice_collection,
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
@@ -33,9 +33,9 @@ __all__ = [
     ]
 
 
+@exported_as_webservice_collection(IBug)
 class IMaloneApplication(ILaunchpadApplication, IHasBugs):
     """Application root for malone."""
-    export_as_webservice_collection(IBug)
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(

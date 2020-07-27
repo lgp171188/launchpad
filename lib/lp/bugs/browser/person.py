@@ -18,8 +18,8 @@ __all__ = [
 
 import copy
 from operator import itemgetter
-import urllib
 
+from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 
 from lp.bugs.browser.buglisting import BugTaskSearchListingView
@@ -58,14 +58,14 @@ def get_package_search_url(dsp_bugs_url, extra_params=None):
         "field.status": [
             status.title for status in UNRESOLVED_BUGTASK_STATUSES]}
     if extra_params is not None:
-        # We must UTF-8 encode searchtext to play nicely with
-        # urllib.urlencode, because it may contain non-ASCII characters.
+        # We must UTF-8 encode searchtext to play nicely with urlencode,
+        # because it may contain non-ASCII characters.
         if 'field.searchtext' in extra_params:
             extra_params["field.searchtext"] = (
                 extra_params["field.searchtext"].encode("utf8"))
         params.update(extra_params)
     return '%s?%s' % (
-        dsp_bugs_url, urllib.urlencode(sorted(params.items()), doseq=True))
+        dsp_bugs_url, urlencode(sorted(params.items()), doseq=True))
 
 
 class PersonBugsMenu(NavigationMenu):

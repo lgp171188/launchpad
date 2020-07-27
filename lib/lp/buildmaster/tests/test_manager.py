@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the renovated slave scanner aka BuilddManager."""
@@ -12,14 +12,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import signal
 import time
-import xmlrpclib
 
+from six.moves import xmlrpc_client
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
-from testtools.twistedsupport import (
-    assert_fails_with,
-    AsynchronousDeferredRunTest,
-    )
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import (
     defer,
@@ -40,6 +37,7 @@ from lp.buildmaster.interactor import (
     BuilderInteractor,
     BuilderSlave,
     extract_vitals_from_db,
+    shut_down_default_process_pool,
     )
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
@@ -53,7 +51,6 @@ from lp.buildmaster.manager import (
     BuilderFactory,
     JOB_RESET_THRESHOLD,
     judge_failure,
-    NewBuildersScanner,
     PrefetchedBuilderFactory,
     recover_failure,
     SlaveScanner,
@@ -120,6 +117,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         hoary = ubuntu.getSeries('hoary')
         self.test_publisher.setUpDefaultDistroSeries(hoary)
         self.test_publisher.addFakeChroots(db_only=True)
+        self.addCleanup(shut_down_default_process_pool)
 
     def _resetBuilder(self, builder):
         """Reset the given builder and its job."""
@@ -153,8 +151,11 @@ class TestSlaveScannerScan(TestCaseWithFactory):
             builder_name = BOB_THE_BUILDER_NAME
         if builder_factory is None:
             builder_factory = BuilderFactory()
+        manager = BuilddManager(builder_factory=builder_factory, clock=clock)
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            builder_name, builder_factory, BufferLogger(), clock=clock)
+            builder_name, builder_factory, manager, BufferLogger(),
+            clock=clock)
         scanner.logger.name = 'slave-scanner'
 
         return scanner
@@ -179,28 +180,18 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.assertEqual(0, builder.failure_count)
         self.assertTrue(builder.currentjob is not None)
 
-    def _checkNoDispatch(self, slave, builder):
-        """Assert that no dispatch has occurred.
-
-        'slave' is None, so no interations would be passed
-        to the asynchonous dispatcher and the builder remained active
-        and IDLE.
-        """
-        self.assertTrue(slave is None, "Unexpected slave.")
-
+    def _checkNoDispatch(self, builder):
+        """Assert that no dispatch has occurred."""
         builder = getUtility(IBuilderSet).get(builder.id)
         self.assertTrue(builder.builderok)
         self.assertTrue(builder.currentjob is None)
 
-    def _checkJobRescued(self, slave, builder, job):
+    def _checkJobRescued(self, builder, job):
         """`SlaveScanner.scan` rescued the job.
 
         Nothing gets dispatched,  the 'broken' builder remained disabled
         and the 'rescued' job is ready to be dispatched.
         """
-        self.assertTrue(
-            slave is None, "Unexpected slave.")
-
         builder = getUtility(IBuilderSet).get(builder.id)
         self.assertFalse(builder.builderok)
 
@@ -231,25 +222,23 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         transaction.commit()
 
         # Run 'scan' and check its result.
-        slave = yield scanner.scan()
+        yield scanner.scan()
         self.assertIs(None, builder.currentjob)
-        self._checkJobRescued(slave, builder, job)
+        self._checkJobRescued(builder, job)
 
-    def _checkJobUpdated(self, slave, builder, job,
-                         logtail='This is a build log: 0'):
+    def _checkJobUpdated(self, builder, job, logtail='This is a build log: 0'):
         """`SlaveScanner.scan` updates legitimate jobs.
 
         Job is kept assigned to the active builder and its 'logtail' is
         updated.
         """
-        self.assertTrue(slave is None, "Unexpected slave.")
-
         builder = getUtility(IBuilderSet).get(builder.id)
         self.assertTrue(builder.builderok)
 
         job = getUtility(IBuildQueueSet).get(job.id)
         self.assertBuildingJob(job, builder, logtail=logtail)
 
+    @defer.inlineCallbacks
     def testScanUpdatesBuildingJobs(self):
         # Enable sampledata builder attached to an appropriate testing
         # slave. It will respond as if it was building the sampledata job.
@@ -268,10 +257,11 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         # Run 'scan' and check its result.
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        d = defer.maybeDeferred(scanner.scan)
-        d.addCallback(self._checkJobUpdated, builder, job)
-        return d
+        yield scanner.scan()
+        scanner.manager.flushLogTails()
+        self._checkJobUpdated(builder, job)
 
+    @defer.inlineCallbacks
     def test_scan_with_nothing_to_dispatch(self):
         factory = LaunchpadObjectFactory()
         builder = factory.makeBuilder()
@@ -279,9 +269,10 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
-        d = scanner.scan()
-        return d.addCallback(self._checkNoDispatch, builder)
+        yield scanner.scan()
+        self._checkNoDispatch(builder)
 
+    @defer.inlineCallbacks
     def test_scan_with_manual_builder(self):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
@@ -290,9 +281,8 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         builder.manual = True
         transaction.commit()
         scanner = self._getScanner()
-        d = scanner.scan()
-        d.addCallback(self._checkNoDispatch, builder)
-        return d
+        yield scanner.scan()
+        self._checkNoDispatch(builder)
 
     @defer.inlineCallbacks
     def test_scan_with_not_ok_builder(self):
@@ -307,6 +297,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         # Because the builder is not ok, we can't use _checkNoDispatch.
         self.assertIsNone(builder.currentjob)
 
+    @defer.inlineCallbacks
     def test_scan_of_broken_slave(self):
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
@@ -315,9 +306,10 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         builder.failure_count = 0
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
-        d = scanner.scan()
-        return assert_fails_with(d, xmlrpclib.Fault)
+        with ExpectedException(xmlrpc_client.Fault):
+            yield scanner.scan()
 
+    @defer.inlineCallbacks
     def test_scan_of_partial_utf8_logtail(self):
         # The builder returns a fixed number of bytes from the tail of the
         # log, so the first character can easily end up being invalid UTF-8.
@@ -325,7 +317,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
             @defer.inlineCallbacks
             def status(self):
                 status = yield super(BrokenUTF8Slave, self).status()
-                status["logtail"] = xmlrpclib.Binary(
+                status["logtail"] = xmlrpc_client.Binary(
                     u"───".encode("UTF-8")[1:])
                 defer.returnValue(status)
 
@@ -343,10 +335,11 @@ class TestSlaveScannerScan(TestCaseWithFactory):
 
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        d = defer.maybeDeferred(scanner.scan)
-        d.addCallback(
-            self._checkJobUpdated, builder, job, logtail=u"\uFFFD\uFFFD──")
+        yield scanner.scan()
+        scanner.manager.flushLogTails()
+        self._checkJobUpdated(builder, job, logtail=u"\uFFFD\uFFFD──")
 
+    @defer.inlineCallbacks
     def test_scan_of_logtail_containing_nul(self):
         # PostgreSQL text columns can't store ASCII NUL (\0) characters, so
         # we make sure to filter those out of the logtail.
@@ -354,7 +347,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
             @defer.inlineCallbacks
             def status(self):
                 status = yield super(NULSlave, self).status()
-                status["logtail"] = xmlrpclib.Binary(b"foo\0bar\0baz")
+                status["logtail"] = xmlrpc_client.Binary(b"foo\0bar\0baz")
                 defer.returnValue(status)
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
@@ -371,9 +364,9 @@ class TestSlaveScannerScan(TestCaseWithFactory):
 
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        d = defer.maybeDeferred(scanner.scan)
-        d.addCallback(
-            self._checkJobUpdated, builder, job, logtail=u"foobarbaz")
+        yield scanner.scan()
+        scanner.manager.flushLogTails()
+        self._checkJobUpdated(builder, job, logtail=u"foobarbaz")
 
     @defer.inlineCallbacks
     def test_scan_calls_builder_factory_prescanUpdate(self):
@@ -449,11 +442,13 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
         yield scanner.scan()
+        yield scanner.manager.flushLogTails()
         self.assertBuildingJob(job, builder, logtail="This is a build log: 0")
         self.assertIsNone(build.revision_id)
         slave.revision_id = "dummy"
         scanner = self._getScanner(builder_name=builder.name)
         yield scanner.scan()
+        yield scanner.manager.flushLogTails()
         self.assertBuildingJob(job, builder, logtail="This is a build log: 1")
         self.assertEqual("dummy", build.revision_id)
 
@@ -495,21 +490,21 @@ class TestSlaveScannerScan(TestCaseWithFactory):
     def test_scan_first_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
-        self._assertFailureCounting(
+        return self._assertFailureCounting(
             builder_count=0, job_count=0, expected_builder_count=1,
             expected_job_count=1)
 
     def test_scan_second_builder_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
-        self._assertFailureCounting(
+        return self._assertFailureCounting(
             builder_count=1, job_count=0, expected_builder_count=2,
             expected_job_count=1)
 
     def test_scan_second_job_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
-        self._assertFailureCounting(
+        return self._assertFailureCounting(
             builder_count=0, job_count=1, expected_builder_count=1,
             expected_job_count=2)
 
@@ -660,6 +655,10 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
+    def setUp(self):
+        super(TestSlaveScannerWithLibrarian, self).setUp()
+        self.addCleanup(shut_down_default_process_pool)
+
     @defer.inlineCallbacks
     def test_end_to_end(self):
         # Test that SlaveScanner.scan() successfully finds, dispatches,
@@ -685,8 +684,10 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
         # control.
         get_slave = FakeMethod(OkSlave())
         clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            builder.name, BuilderFactory(), BufferLogger(),
+            builder.name, BuilderFactory(), manager, BufferLogger(),
             slave_factory=get_slave, clock=clock)
 
         # The slave is idle and dirty, so the first scan will clean it
@@ -714,10 +715,13 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
         # updated.
         get_slave.result = BuildingSlave(build.build_cookie)
         yield scanner.scan()
+        yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 0", bq.logtail)
         yield scanner.scan()
+        yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 1", bq.logtail)
         yield scanner.scan()
+        yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 2", bq.logtail)
         self.assertEqual(
             ['status', 'status', 'status'], get_slave.result.method_log)
@@ -757,7 +761,8 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
 
     def test_update(self):
         # update grabs all of the Builders and their BuildQueues in a
-        # single query.
+        # single query, plus an additional two queries to grab all the
+        # associated Processors.
         builders = [self.factory.makeBuilder() for i in range(5)]
         for i in range(3):
             bq = self.factory.makeBinaryPackageBuild().queueBuild()
@@ -767,7 +772,7 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         pbf.update()
         with StormStatementRecorder() as recorder:
             pbf.update()
-        self.assertThat(recorder, HasQueryCount(Equals(1)))
+        self.assertThat(recorder, HasQueryCount(Equals(3)))
 
     def test_getVitals(self):
         # PrefetchedBuilderFactory.getVitals looks up the BuilderVitals
@@ -831,10 +836,63 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
             4, len([v for v in all_vitals if v.build_queue is not None]))
         self.assertContentEqual(BuilderFactory().iterVitals(), all_vitals)
 
+    def test_findBuildCandidate_avoids_duplicates(self):
+        # findBuildCandidate removes the job it finds from its internal list
+        # of candidates, so a second call returns a different job.
+        das = self.factory.makeDistroArchSeries()
+        builders = [
+            self.factory.makeBuilder(
+                processors=[das.processor]) for _ in range(2)]
+        builder_names = [builder.name for builder in builders]
+        for _ in range(5):
+            self.factory.makeBinaryPackageBuild(
+                distroarchseries=das).queueBuild()
+        transaction.commit()
+        pbf = PrefetchedBuilderFactory()
+        pbf.update()
+
+        candidate0 = pbf.findBuildCandidate(pbf.getVitals(builder_names[0]))
+        self.assertIsNotNone(candidate0)
+        transaction.abort()
+        with StormStatementRecorder() as recorder:
+            candidate1 = pbf.findBuildCandidate(
+                pbf.getVitals(builder_names[1]))
+        self.assertIsNotNone(candidate1)
+        self.assertNotEqual(candidate0, candidate1)
+        # The second call made only a single query, to fetch the candidate
+        # by ID.
+        self.assertThat(recorder, HasQueryCount(Equals(1)))
+
+    def test_acquireBuildCandidate_marks_building(self):
+        # acquireBuildCandidate calls findBuildCandidate and marks the build
+        # as building.
+        builder = self.factory.makeBuilder(virtualized=False)
+        self.factory.makeBinaryPackageBuild().queueBuild()
+        transaction.commit()
+        pbf = PrefetchedBuilderFactory()
+        pbf.update()
+
+        candidate = pbf.acquireBuildCandidate(
+            pbf.getVitals(builder.name), builder)
+        self.assertEqual(BuildQueueStatus.RUNNING, candidate.status)
+
+
+class FakeBuilddManager:
+    """A minimal fake version of `BuilddManager`."""
+
+    pending_logtails = {}
+
+    def addLogTail(self, build_queue_id, logtail):
+        self.pending_logtails[build_queue_id] = logtail
+
 
 class TestSlaveScannerWithoutDB(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest
+
+    def setUp(self):
+        super(TestSlaveScannerWithoutDB, self).setUp()
+        self.addCleanup(shut_down_default_process_pool)
 
     def getScanner(self, builder_factory=None, interactor=None, slave=None,
                    behaviour=None):
@@ -849,7 +907,7 @@ class TestSlaveScannerWithoutDB(TestCase):
         if behaviour is None:
             behaviour = TrivialBehaviour()
         return SlaveScanner(
-            'mock', builder_factory, BufferLogger(),
+            'mock', builder_factory, FakeBuilddManager(), BufferLogger(),
             interactor_factory=FakeMethod(interactor),
             slave_factory=FakeMethod(slave),
             behaviour_factory=FakeMethod(behaviour))
@@ -939,8 +997,11 @@ class TestSlaveScannerWithoutDB(TestCase):
     def test_getExpectedCookie_caches(self):
         bq = FakeBuildQueue('trivial')
         bf = MockBuilderFactory(MockBuilder(), bq)
+        manager = BuilddManager()
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            'mock', bf, BufferLogger(), interactor_factory=FakeMethod(None),
+            'mock', bf, manager, BufferLogger(),
+            interactor_factory=FakeMethod(None),
             slave_factory=FakeMethod(None),
             behaviour_factory=FakeMethod(TrivialBehaviour()))
 
@@ -1028,14 +1089,17 @@ class TestCancellationChecking(TestCaseWithFactory):
         builder_name = BOB_THE_BUILDER_NAME
         self.builder = getUtility(IBuilderSet)[builder_name]
         self.builder.virtualized = True
+        self.addCleanup(shut_down_default_process_pool)
 
     @property
     def vitals(self):
         return extract_vitals_from_db(self.builder)
 
     def _getScanner(self, clock=None):
+        manager = BuilddManager(clock=clock)
+        manager.logger = BufferLogger()
         scanner = SlaveScanner(
-            None, BuilderFactory(), BufferLogger(), clock=clock)
+            None, BuilderFactory(), manager, BufferLogger(), clock=clock)
         scanner.logger.name = 'slave-scanner'
         return scanner
 
@@ -1087,7 +1151,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         slave = LostBuildingBrokenSlave()
         self.builder.current_build.cancel()
         with ExpectedException(
-                xmlrpclib.Fault, "<Fault 8002: u'Could not abort'>"):
+                xmlrpc_client.Fault, "<Fault 8002: u'Could not abort'>"):
             yield self._getScanner().checkCancellation(self.vitals, slave)
 
 
@@ -1101,7 +1165,7 @@ class TestBuilddManager(TestCase):
         self.patch(SlaveScanner, 'startCycle', FakeMethod())
 
     def test_addScanForBuilders(self):
-        # Test that addScanForBuilders generates NewBuildersScanner objects.
+        # Test that addScanForBuilders generates SlaveScanner objects.
         self._stub_out_scheduleNextScanCycle()
 
         manager = BuilddManager()
@@ -1111,20 +1175,37 @@ class TestBuilddManager(TestCase):
         scanner_names = set(scanner.builder_name for scanner in scanners)
         self.assertEqual(builder_names, scanner_names)
 
-    def test_startService_adds_NewBuildersScanner(self):
+    def test_startService_adds_scanBuilders_loop(self):
         # When startService is called, the manager will start up a
-        # NewBuildersScanner object.
+        # scanBuilders loop.
         self._stub_out_scheduleNextScanCycle()
         clock = task.Clock()
         manager = BuilddManager(clock=clock)
 
-        # Replace scan() with FakeMethod so we can see if it was called.
-        manager.new_builders_scanner.scan = FakeMethod()
+        # Replace scanBuilders() with FakeMethod so we can see if it was
+        # called.
+        manager.scanBuilders = FakeMethod()
 
         manager.startService()
-        advance = NewBuildersScanner.SCAN_INTERVAL + 1
+        advance = BuilddManager.SCAN_BUILDERS_INTERVAL + 1
         clock.advance(advance)
-        self.assertNotEqual(0, manager.new_builders_scanner.scan.call_count)
+        self.assertNotEqual(0, manager.scanBuilders.call_count)
+
+    def test_startService_adds_flushLogTails_loop(self):
+        # When startService is called, the manager will start up a
+        # flushLogTails loop.
+        self._stub_out_scheduleNextScanCycle()
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+
+        # Replace flushLogTails() with FakeMethod so we can see if it was
+        # called.
+        manager.flushLogTails = FakeMethod()
+
+        manager.startService()
+        advance = BuilddManager.FLUSH_LOGTAILS_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, manager.flushLogTails.call_count)
 
 
 class TestFailureAssessments(TestCaseWithFactory):
@@ -1276,51 +1357,49 @@ class TestNewBuilders(TestCase):
 
     layer = LaunchpadZopelessLayer
 
-    def _getScanner(self, clock=None):
-        nbs = NewBuildersScanner(
-            manager=BuilddManager(builder_factory=BuilderFactory()),
-            clock=clock)
-        nbs.checkForNewBuilders()
-        return nbs
+    def _getManager(self, clock=None):
+        manager = BuilddManager(clock=clock, builder_factory=BuilderFactory())
+        manager.checkForNewBuilders()
+        return manager
 
-    def test_scheduleScan(self):
-        # Test that scheduleScan calls the "scan" method.
+    def test_startService(self):
+        # Test that startService calls the "scanBuilders" method.
         clock = task.Clock()
-        builder_scanner = self._getScanner(clock=clock)
-        builder_scanner.scan = FakeMethod()
-        builder_scanner.scheduleScan()
+        manager = self._getManager(clock=clock)
+        manager.scanBuilders = FakeMethod()
+        manager.startService()
+        self.addCleanup(manager.stopService)
 
-        advance = NewBuildersScanner.SCAN_INTERVAL + 1
+        advance = manager.SCAN_BUILDERS_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(
-            0, builder_scanner.scan.call_count,
-            "scheduleScan did not schedule anything")
+            0, manager.scanBuilders.call_count,
+            "startService did not schedule a scanBuilders loop")
 
     def test_checkForNewBuilders(self):
         # Test that checkForNewBuilders() detects a new builder
 
         # The basic case, where no builders are added.
-        builder_scanner = self._getScanner()
-        self.assertEqual([], builder_scanner.checkForNewBuilders())
+        manager = self._getManager()
+        self.assertEqual([], manager.checkForNewBuilders())
 
         # Add two builders and ensure they're returned.
         new_builders = ["scooby", "lassie"]
         factory = LaunchpadObjectFactory()
         for builder_name in new_builders:
             factory.makeBuilder(name=builder_name)
-        self.assertEqual(
-            new_builders, builder_scanner.checkForNewBuilders())
+        self.assertEqual(new_builders, manager.checkForNewBuilders())
 
     def test_checkForNewBuilders_detects_builder_only_once(self):
         # checkForNewBuilders() only detects a new builder once.
-        builder_scanner = self._getScanner()
-        self.assertEqual([], builder_scanner.checkForNewBuilders())
+        manager = self._getManager()
+        self.assertEqual([], manager.checkForNewBuilders())
         LaunchpadObjectFactory().makeBuilder(name="sammy")
-        self.assertEqual(["sammy"], builder_scanner.checkForNewBuilders())
-        self.assertEqual([], builder_scanner.checkForNewBuilders())
+        self.assertEqual(["sammy"], manager.checkForNewBuilders())
+        self.assertEqual([], manager.checkForNewBuilders())
 
-    def test_scan(self):
-        # See if scan detects new builders.
+    def test_scanBuilders(self):
+        # See if scanBuilders detects new builders.
 
         def fake_checkForNewBuilders():
             return "new_builders"
@@ -1329,31 +1408,101 @@ class TestNewBuilders(TestCase):
             self.assertEqual("new_builders", new_builders)
 
         clock = task.Clock()
-        builder_scanner = self._getScanner(clock=clock)
-        builder_scanner.checkForNewBuilders = fake_checkForNewBuilders
-        builder_scanner.manager.addScanForBuilders = fake_addScanForBuilders
-        builder_scanner.scheduleScan = FakeMethod()
+        manager = self._getManager(clock=clock)
+        manager.checkForNewBuilders = fake_checkForNewBuilders
+        manager.addScanForBuilders = fake_addScanForBuilders
+        manager.scheduleScan = FakeMethod()
 
-        builder_scanner.scan()
-        advance = NewBuildersScanner.SCAN_INTERVAL + 1
+        manager.scanBuilders()
+        advance = manager.SCAN_BUILDERS_INTERVAL + 1
         clock.advance(advance)
 
-    def test_scan_swallows_exceptions(self):
-        # scan() swallows exceptions so the LoopingCall always retries.
+    def test_scanBuilders_swallows_exceptions(self):
+        # scanBuilders() swallows exceptions so the LoopingCall always
+        # retries.
         clock = task.Clock()
-        scanner = self._getScanner(clock=clock)
-        scanner.checkForNewBuilders = FakeMethod(
+        manager = self._getManager(clock=clock)
+        manager.checkForNewBuilders = FakeMethod(
             failure=Exception("CHAOS REIGNS"))
-        scanner.scheduleScan()
-        self.assertEqual(1, scanner.checkForNewBuilders.call_count)
+        manager.startService()
+        self.addCleanup(manager.stopService)
+        self.assertEqual(1, manager.checkForNewBuilders.call_count)
 
         # Even though the previous checkForNewBuilders caused an
         # exception, a rescan will happen as normal.
-        advance = NewBuildersScanner.SCAN_INTERVAL + 1
+        advance = manager.SCAN_BUILDERS_INTERVAL + 1
         clock.advance(advance)
-        self.assertEqual(2, scanner.checkForNewBuilders.call_count)
+        self.assertEqual(2, manager.checkForNewBuilders.call_count)
         clock.advance(advance)
-        self.assertEqual(3, scanner.checkForNewBuilders.call_count)
+        self.assertEqual(3, manager.checkForNewBuilders.call_count)
+
+
+class TestFlushLogTails(TestCaseWithFactory):
+    """Test flushing of log tail updates."""
+
+    layer = LaunchpadZopelessLayer
+
+    def _getManager(self, clock=None):
+        return BuilddManager(clock=clock, builder_factory=BuilderFactory())
+
+    def test_startService(self):
+        # startService calls the "flushLogTails" method.
+        clock = task.Clock()
+        manager = self._getManager(clock=clock)
+        manager.scanBuilders = FakeMethod()
+        manager.flushLogTails = FakeMethod()
+        manager.startService()
+        self.addCleanup(manager.stopService)
+
+        clock.advance(manager.FLUSH_LOGTAILS_INTERVAL + 1)
+        self.assertNotEqual(
+            0, manager.flushLogTails.call_count,
+            "scheduleUpdate did not schedule a flushLogTails loop")
+
+    def test_flushLogTails(self):
+        # flushLogTails flushes pending log tail updates to the database.
+        manager = self._getManager()
+        bqs = [
+            self.factory.makeBinaryPackageBuild().queueBuild()
+            for _ in range(3)]
+        manager.addLogTail(bqs[0].id, "A log tail")
+        manager.addLogTail(bqs[1].id, "Another log tail")
+        transaction.commit()
+
+        manager.flushLogTails()
+        self.assertEqual("A log tail", bqs[0].logtail)
+        self.assertEqual("Another log tail", bqs[1].logtail)
+        self.assertIsNone(bqs[2].logtail)
+
+        self.assertEqual({}, manager.pending_logtails)
+        manager.flushLogTails()
+        self.assertEqual("A log tail", bqs[0].logtail)
+        self.assertEqual("Another log tail", bqs[1].logtail)
+        self.assertIsNone(bqs[2].logtail)
+
+    def test_flushLogTails_swallows_exceptions(self):
+        # flushLogTails swallows exceptions so the LoopingCall always
+        # retries.
+        clock = task.Clock()
+        manager = self._getManager(clock=clock)
+        manager.logger = BufferLogger()
+        manager.scanBuilders = FakeMethod()
+        bq = self.factory.makeBinaryPackageBuild().queueBuild()
+        manager.addLogTail("nonsense", "A log tail")
+        transaction.commit()
+
+        manager.startService()
+        self.addCleanup(manager.stopService)
+        self.assertIn(
+            "Failure while flushing log tail updates:",
+            manager.logger.getLogBuffer())
+
+        # Even though the previous flushUpdates raised an exception, further
+        # updates will happen as normal.
+        manager.addLogTail(bq.id, "Another log tail")
+        advance = manager.FLUSH_LOGTAILS_INTERVAL + 1
+        clock.advance(advance)
+        self.assertEqual("Another log tail", bq.logtail)
 
 
 def is_file_growing(filepath, poll_interval=1, poll_repeat=10):

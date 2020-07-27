@@ -19,9 +19,10 @@ import hashlib
 import os.path
 import re
 import time
-import urllib
 
 import scandir
+import six
+from six.moves.urllib.parse import quote
 from swiftclient import client as swiftclient
 
 from lp.services.config import config
@@ -233,11 +234,10 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
                     lfc_id, disk_md5_hash, db_md5_hash))
             raise AssertionError('md5 mismatch')
 
-        manifest = '{0}/{1}/'.format(
-            urllib.quote(container), urllib.quote(obj_name))
+        manifest = '{0}/{1}/'.format(quote(container), quote(obj_name))
         manifest_headers = {'X-Object-Manifest': manifest}
         swift_connection.put_object(
-            container, obj_name, '', 0, headers=manifest_headers)
+            container, obj_name, b'', 0, headers=manifest_headers)
 
 
 def swift_location(lfc_id):
@@ -246,7 +246,7 @@ def swift_location(lfc_id):
     Per https://answers.launchpad.net/swift/+question/181977, we can't
     simply stuff everything into one container.
     '''
-    assert isinstance(lfc_id, (int, long)), 'Not a LibraryFileContent.id'
+    assert isinstance(lfc_id, six.integer_types), 'Not a LibraryFileContent.id'
 
     # Don't change this unless you are also going to rebuild the Swift
     # storage, as objects will no longer be found in the expected
@@ -281,10 +281,10 @@ class SwiftStream:
             raise ValueError('I/O operation on closed file')
 
         if self._swift_connection is None:
-            return ''
+            return b''
 
         if size == 0:
-            return ''
+            return b''
 
         return_chunks = []
         return_size = 0
@@ -306,11 +306,11 @@ class SwiftStream:
             return_size += len(return_chunks[-1])
 
         self._offset += return_size
-        return ''.join(return_chunks)
+        return b''.join(return_chunks)
 
     def _next_chunk(self):
         try:
-            return self._chunks.next()
+            return next(self._chunks)
         except StopIteration:
             return None
 
@@ -341,7 +341,7 @@ class HashStream:
     def read(self, size=-1):
         if self._remaining is not None:
             if self._remaining <= 0:
-                return ''
+                return b''
             size = min(size, self._remaining)
         chunk = self._stream.read(size)
         if self._remaining is not None:

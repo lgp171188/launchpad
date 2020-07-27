@@ -10,6 +10,7 @@ __all__ = [
     'ISourcePackageNameSet',
     ]
 
+import six
 from zope.interface import (
     Attribute,
     Interface,
@@ -36,8 +37,12 @@ class ISourcePackageName(Interface):
     packagings = Attribute("Everything we know about the packaging of "
         "packages with this source package name.")
 
-    def __unicode__():
+    def __str__():
         """Return the name"""
+
+    if six.PY2:
+        def __unicode__():
+            """Return the name"""
 
 
 class ISourcePackageNameSet(Interface):

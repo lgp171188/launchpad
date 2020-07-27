@@ -132,5 +132,5 @@ def make_all_result_types(code_import, factory, machine, start, count):
     for result_status in sorted(CodeImportResultStatus.items)[
             start:start + count]:
         factory.makeCodeImportResult(
-            code_import, result_status, start_dates.next(), end_dates.next(),
+            code_import, result_status, next(start_dates), next(end_dates),
             machine=machine)

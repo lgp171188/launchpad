@@ -27,15 +27,16 @@ __all__ = [
     ]
 
 from operator import attrgetter
-import urlparse
 
 from lazr.delegates import delegate_to
 from lazr.enum import (
     EnumeratedType,
     Item,
     )
+import six
+from six.moves.urllib.parse import parse_qs
 from storm.expr import Desc
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import (
@@ -496,7 +497,7 @@ class BranchListingView(LaunchpadFormView, FeedsMixin):
     @property
     def template(self):
         query_string = self.request.get('QUERY_STRING') or ''
-        query_params = urlparse.parse_qs(query_string)
+        query_params = parse_qs(query_string)
         render_table_only = 'batch_request' in query_params
         if render_table_only:
             return self.table_only_template
@@ -1306,7 +1307,7 @@ class GroupedDistributionSourcePackageBranchesView(LaunchpadView,
         # For each distro series, we only want the "best" pocket if one branch
         # is linked to more than one pocket.  Best here means smaller value.
         official_branches = {}
-        for key, value in distro_links.iteritems():
+        for key, value in six.iteritems(distro_links):
             ordered = sorted(value, key=attrgetter('pocket'))
             seen_branches = set()
             branches = []
@@ -1363,7 +1364,7 @@ class GroupedDistributionSourcePackageBranchesView(LaunchpadView,
         and merge proposal links for badges.
         """
         visible_branches = []
-        for branches, count in self.series_branches_map.itervalues():
+        for branches, count in six.itervalues(self.series_branches_map):
             visible_branches.extend(branches)
         return visible_branches
 
