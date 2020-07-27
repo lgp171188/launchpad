@@ -58,3 +58,23 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
             public_rpc_proxy.getPersonDetailsByOpenIDIdentifier,
             openid_identifier)
         self.assertEqual(404, e.errcode)
+
+
+class TestMailingListAPIApplication(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestMailingListAPIApplication, self).setUp()
+        self.rpc_proxy = xmlrpc_client.ServerProxy(
+            'http://xmlrpc-private.launchpad.test:8087/mailinglists',
+            transport=XMLRPCTestTransport())
+
+    def test_getMembershipInformation(self):
+        person = self.factory.makePerson(time_zone='Australia/Melbourne')
+        team, mlist = self.factory.makeTeamAndMailingList(
+            team_name='teamname', owner_name=person.name)
+        result = self.rpc_proxy.getMembershipInformation(
+            ['teamname'])
+        import pdb; pdb.set_trace()
+        self.assertTrue(result)
