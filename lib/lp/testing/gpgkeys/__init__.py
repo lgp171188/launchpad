@@ -94,7 +94,8 @@ def import_secret_test_key(keyfile='test@canonical.com.sec'):
     :param keyfile: The name of the file to be imported.
     """
     gpghandler = getUtility(IGPGHandler)
-    seckey = open(os.path.join(gpgkeysdir, keyfile)).read()
+    with open(os.path.join(gpgkeysdir, keyfile)) as f:
+        seckey = f.read()
     return gpghandler.importSecretKey(seckey)
 
 
@@ -105,7 +106,8 @@ def test_pubkey_file_from_email(email_addr):
 
 def test_pubkey_from_email(email_addr):
     """Get the on disk content for a test pubkey by email address."""
-    return open(test_pubkey_file_from_email(email_addr)).read()
+    with open(test_pubkey_file_from_email(email_addr)) as f:
+        return f.read()
 
 
 def test_keyrings():

@@ -7,6 +7,7 @@ __all__ = [
     'BinaryPackageNameSet',
     ]
 
+import six
 from sqlobject import (
     SQLObjectNotFound,
     StringCol,
@@ -26,13 +27,14 @@ from lp.soyuz.interfaces.binarypackagename import (
 from lp.soyuz.interfaces.publishing import active_publishing_status
 
 
+@six.python_2_unicode_compatible
 @implementer(IBinaryPackageName)
 class BinaryPackageName(SQLBase):
     _table = 'BinaryPackageName'
     name = StringCol(dbName='name', notNull=True, unique=True,
                      alternateID=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def __repr__(self):

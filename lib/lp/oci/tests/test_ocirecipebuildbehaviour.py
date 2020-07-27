@@ -121,6 +121,7 @@ class MakeOCIBuildMixin:
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+        self.addCleanup(shut_down_default_process_pool)
 
         # Taken from test_archivedependencies.py
         for component_name in ("main", "universe"):
@@ -429,8 +430,8 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         super(TestHandleStatusForOCIRecipeBuild, self).setUp()
         self.useFixture(fixtures.FakeLogger())
         features = {OCI_RECIPE_ALLOW_CREATE: 'on'}
-        if self.download_in_subprocess:
-            features['buildmaster.download_in_subprocess'] = 'on'
+        if not self.download_in_subprocess:
+            features['buildmaster.download_in_subprocess'] = ''
         self.useFixture(FeatureFixture(features))
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
@@ -500,7 +501,7 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         }
         self.factory.makeOCIFile(
             build=self.build, layer_file_digest=u'digest_1',
-            content="retrieved from librarian")
+            content=b"retrieved from librarian")
 
     def assertResultCount(self, count, result):
         self.assertEqual(
@@ -543,7 +544,7 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         """We should be able to reuse a layer file from a separate build."""
         oci_file = self.factory.makeOCIFile(
             layer_file_digest=u'digest_2',
-            content="layer 2 retrieved from librarian")
+            content=b"layer 2 retrieved from librarian")
 
         now = datetime.now(pytz.UTC)
         mock_datetime = self.useFixture(MockPatch(

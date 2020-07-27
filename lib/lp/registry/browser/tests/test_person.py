@@ -13,6 +13,7 @@ import re
 from textwrap import dedent
 
 from fixtures import FakeLogger
+from six.moves.urllib.parse import urljoin
 import soupmatchers
 from storm.store import Store
 from testtools.matchers import (
@@ -70,6 +71,7 @@ from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.servers import LaunchpadTestRequest
+from lp.services.webapp.vhosts import allvhosts
 from lp.soyuz.enums import (
     ArchivePurpose,
     ArchiveStatus,
@@ -117,7 +119,9 @@ class TestPersonNavigation(TestCaseWithFactory):
     def assertRedirect(self, path, redirect):
         view = test_traverse(path)[1]
         self.assertIsInstance(view, RedirectionView)
-        self.assertEqual(':/' + redirect, removeSecurityProxy(view).target)
+        self.assertEqual(
+            urljoin(allvhosts.configs['mainsite'].rooturl, redirect),
+            removeSecurityProxy(view).target)
 
     def test_traverse_archive_distroful(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)

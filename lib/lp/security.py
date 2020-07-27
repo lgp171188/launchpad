@@ -3571,3 +3571,13 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
 class ViewOCIPushRule(AnonymousAuthorization):
     """Anyone can view an `IOCIPushRule`."""
     usedfor = IOCIPushRule
+
+
+class OCIPushRuleEdit(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIPushRule
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj.recipe) or
+            user.in_commercial_admin or user.in_admin)

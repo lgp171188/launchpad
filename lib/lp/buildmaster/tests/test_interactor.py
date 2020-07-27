@@ -32,7 +32,6 @@ from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
-    SynchronousDeferredRunTest,
     )
 import treq
 from twisted.internet import (
@@ -80,7 +79,6 @@ from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
     )
 from lp.testing import (
-    clean_up_reactor,
     TestCase,
     TestCaseWithFactory,
     )
@@ -682,7 +680,8 @@ class TestSlaveTimeouts(TestCase):
     # Testing that the methods that call callRemote() all time out
     # as required.
 
-    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=10)
 
     def setUp(self):
         super(TestSlaveTimeouts, self).setUp()
@@ -726,18 +725,16 @@ class TestSlaveConnectionTimeouts(TestCase):
     # Testing that we can override the default 30 second connection
     # timeout.
 
-    run_test = SynchronousDeferredRunTest
+    # The timeouts in test_connection_timeout are relative to the artificial
+    # Clock rather than to true wallclock time, so it's not a problem for
+    # this timeout to be shorter than them.
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
     def setUp(self):
         super(TestSlaveConnectionTimeouts, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
         self.addCleanup(shut_down_default_process_pool)
-
-    def tearDown(self):
-        # We need to remove any DelayedCalls that didn't actually get called.
-        clean_up_reactor()
-        super(TestSlaveConnectionTimeouts, self).tearDown()
 
     def test_connection_timeout(self):
         # The default timeout of 30 seconds should not cause a timeout,
@@ -772,9 +769,9 @@ class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
 
     def setUp(self):
         super(TestSlaveWithLibrarian, self).setUp()
-        if self.download_in_subprocess:
+        if not self.download_in_subprocess:
             self.useFixture(FeatureFixture(
-                {'buildmaster.download_in_subprocess': 'on'}))
+                {'buildmaster.download_in_subprocess': ''}))
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         if self.download_in_subprocess:
             self.addCleanup(shut_down_default_process_pool)

@@ -1379,10 +1379,10 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.setUpKmodKeys()
         self.setUpOpalKeys()
         self.openArchive("test", "1.0", "amd64")
-        self.tarfile.add_file("1.0/empty.efi", "")
-        self.tarfile.add_file("1.0/empty.ko", "")
-        self.tarfile.add_file("1.0/empty.opal", "")
-        self.tarfile.add_file("1.0/empty.sipl", "")
+        self.tarfile.add_file("1.0/empty.efi", b"")
+        self.tarfile.add_file("1.0/empty.ko", b"")
+        self.tarfile.add_file("1.0/empty.opal", b"")
+        self.tarfile.add_file("1.0/empty.sipl", b"")
         self.process_emulate()
         sha256file = os.path.join(self.getSignedPath("test", "amd64"),
             "1.0", "SHA256SUMS")
@@ -1811,7 +1811,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         # Write data on the archive
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
-            self.tarfile.add_file(filename, b"somedata for %s" % filename)
+            self.tarfile.add_file(
+                filename, ("somedata for %s" % filename).encode("UTF-8"))
 
         self.assertRaises(IOError, self.process_emulate)
 
@@ -1827,7 +1828,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
-            self.tarfile.add_file(filename, b"some data for %s" % filename)
+            self.tarfile.add_file(
+                filename, ("some data for %s" % filename).encode("UTF-8"))
 
         self.process_emulate()
 
@@ -1860,7 +1862,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
             self.tarfile.add_file(
-                filename, b"data - %s" % filename.encode("UTF-8"))
+                filename, ("data - %s" % filename).encode("UTF-8"))
 
         self.tarfile.close()
         self.buffer.close()
@@ -1975,7 +1977,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
             self.tarfile.add_file(
-                filename, b"data - %s" % filename.encode("UTF-8"))
+                filename, ("data - %s" % filename).encode("UTF-8"))
 
         self.tarfile.close()
         self.buffer.close()
@@ -2041,7 +2043,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
             self.tarfile.add_file(
-                filename, b"data - %s" % filename.encode("UTF-8"))
+                filename, ("data - %s" % filename).encode("UTF-8"))
         self.tarfile.close()
         self.buffer.close()
 
@@ -2098,7 +2100,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
             self.tarfile.add_file(
-                filename, b"data - %s" % filename.encode("UTF-8"))
+                filename, ("data - %s" % filename).encode("UTF-8"))
         self.tarfile.close()
         self.buffer.close()
 

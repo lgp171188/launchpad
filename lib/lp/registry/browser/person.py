@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -102,7 +102,10 @@ from zope.schema.vocabulary import (
     SimpleVocabulary,
     )
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -138,10 +141,12 @@ from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
     )
+from lp.oci.model.ocirecipe import OCIRecipe
 from lp.registry.browser import BaseRdfView
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.menu import (
@@ -199,7 +204,10 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.interfaces.wikiname import IWikiNameSet
 from lp.registry.mail.notification import send_direct_contact_email
-from lp.registry.model.person import get_recipients
+from lp.registry.model.person import (
+    get_recipients,
+    Person,
+    )
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.sqlbase import flush_database_updates
@@ -2204,7 +2212,7 @@ class PersonCodeOfConductEditView(LaunchpadView):
             for sig_id in sig_ids:
                 sig_id = int(sig_id)
                 # Deactivating signature.
-                comment = 'Deactivated by Owner'
+                comment = u'Deactivated by Owner'
                 sCoC_util.modifySignature(sig_id, self.user, comment, False)
 
 
@@ -3669,8 +3677,14 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     @cachedproperty
     def oci_registry_credentials(self):
-        return list(getUtility(
-            IOCIRegistryCredentialsSet).findByOwner(self.context))
+        if IPerson.providedBy(self.context):
+            owner = self.context
+        elif IOCIRecipe.providedBy(self.context):
+            owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
+
+        return list(getUtility(IOCIRegistryCredentialsSet).findByOwner(owner))
 
     schema = Interface
 
@@ -3883,6 +3897,12 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             credentials.destroySelf()
 
     def addCredentials(self, parsed_add_credentials):
+        if IPerson.providedBy(self.context):
+            owner = self.context
+        elif IOCIRecipe.providedBy(self.context):
+            owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
         url = parsed_add_credentials["url"]
         password = parsed_add_credentials["password"]
         confirm_password = parsed_add_credentials["confirm_password"]
@@ -3902,7 +3922,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                     'password': password}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=self.context,
+                        owner=owner,
                         url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
@@ -3915,7 +3935,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 credentials = {'username': username}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=self.context,
+                        owner=owner,
                         url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:

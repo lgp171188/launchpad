@@ -10,7 +10,6 @@ from datetime import datetime
 import itertools
 import logging
 import os.path
-from StringIO import StringIO
 
 import OpenSSL
 from OpenSSL.SSL import (
@@ -18,6 +17,7 @@ from OpenSSL.SSL import (
     TLSv1_2_METHOD,
     )
 import requests
+import six
 from six.moves import http_client
 from six.moves.urllib.parse import (
     unquote,
@@ -1037,7 +1037,7 @@ class DistroMirrorProber:
                 continue
 
             probed_mirrors.append(mirror)
-            logfile = StringIO()
+            logfile = six.StringIO()
             logfiles[mirror_id] = logfile
             probe_function(mirror, logfile, unchecked_keys, self.logger,
                            max_parallel, max_parallel_per_host)

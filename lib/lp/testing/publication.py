@@ -14,7 +14,10 @@ __all__ = [
 
 from cStringIO import StringIO
 
-from six.moves.urllib_parse import unquote
+from six.moves.urllib_parse import (
+    unquote,
+    urljoin,
+    )
 from zope.app.publication.requestpublicationregistry import factoryRegistry
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import (
@@ -34,6 +37,7 @@ from lp.services.webapp.interaction import (
     )
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.servers import ProtocolErrorPublication
+from lp.services.webapp.vhosts import allvhosts
 
 
 # Defines an helper function that returns the appropriate
@@ -96,6 +100,9 @@ def test_traverse(url):
     transaction.
     """
     url_parts = urlsplit(url)
+    if not url_parts[0]:
+        url_parts = urlsplit(
+            urljoin(allvhosts.configs['mainsite'].rooturl, url))
     server_url = '://'.join(url_parts[0:2])
     path_info = url_parts[2]
     request, publication = get_request_and_publication(

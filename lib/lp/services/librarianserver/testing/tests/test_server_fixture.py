@@ -96,7 +96,7 @@ class TestLibrarianServerFixture(TestCase):
             self.assertIsInstance(chunks, list)
         found_started = False
         for chunk in chunks:
-            if 'daemon ready' in chunk:
+            if b'daemon ready' in chunk:
                 found_started = True
         self.assertTrue(found_started)
 
@@ -113,9 +113,9 @@ class TestLibrarianServerFixture(TestCase):
                 config.librarian.restricted_download_host,
                 fixture.restricted_download_port)
             # Both download ports work:
-            self.assertIn('Copyright', urlopen(librarian_url).read())
+            self.assertIn(b'Copyright', urlopen(librarian_url).read())
             self.assertIn(
-                'Copyright', urlopen(restricted_librarian_url).read())
+                b'Copyright', urlopen(restricted_librarian_url).read())
             os.path.isdir(fixture.root)
         # Ports are closed on cleanUp.
         self.assertRaises(IOError, urlopen, librarian_url)
@@ -126,4 +126,4 @@ class TestLibrarianServerFixture(TestCase):
             librarian_url = "http://%s:%d" % (
                 config.librarian.download_host,
                 fixture.download_port)
-            self.assertIn('Copyright', urlopen(librarian_url).read())
+            self.assertIn(b'Copyright', urlopen(librarian_url).read())

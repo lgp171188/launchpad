@@ -5,6 +5,8 @@
 Replace the psycopg connect method with one that returns a wrapped connection.
 '''
 
+from __future__ import absolute_import, print_function
+
 import logging
 import textwrap
 import traceback
@@ -19,15 +21,15 @@ def LN(*args, **kwargs):
     A variable number of positional arguments are allowed. If
         LN(obj0, obj1, obj2)
     is called, the text part of the output looks like the output from
-        print obj0, obj1, obj2
+        print(obj0, obj1, obj2)
     The optional keyword "wrap" causes the message to be line-wrapped. The
     argument to "wrap" should be "1" or "True". "name" is another optional
     keyword parameter. This is best explained by an example:
         from linenum import LN
         def fun1():
-            print LN('error', 'is', 'here')
+            print(LN('error', 'is', 'here'))
         def fun2():
-            print LN('error',  'is', 'here', name='mess')
+            print(LN('error',  'is', 'here', name='mess'))
         fun1()
         fun2()
     The output is:
@@ -60,12 +62,12 @@ class ConnectionWrapper(object):
 
     def __getattr__(self, key):
         if key in ('rollback', 'close', 'commit'):
-            print '%s %r.__getattr__(%r)' % (LN(), self, key)
+            print('%s %r.__getattr__(%r)' % (LN(), self, key))
             self.__dict__['_log']('__getattr__(%r)', key)
         return getattr(self._real_con, key)
 
     def __setattr__(self, key, val):
-        print '%s %r.__setattr__(%r, %r)' % (LN(), self, key, val)
+        print('%s %r.__setattr__(%r, %r)' % (LN(), self, key, val))
         self.__dict__['_log']('__setattr__(%r, %r)', key, val)
         return setattr(self._real_con, key, val)
 
@@ -79,7 +81,7 @@ def debug_connect(*args, **kw):
     logging.getLogger('lp.services.database.debug').debug(
             'connect(*%r, **%r) == %r', args, kw, con
             )
-    print '%s connect(*%r, **%r) == %r' % (LN(), args, kw, con)
+    print('%s connect(*%r, **%r) == %r' % (LN(), args, kw, con))
     return con
 
 

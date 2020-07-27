@@ -8,6 +8,7 @@ __metaclass__ = type
 from contextlib import contextmanager
 
 import six
+from six.moves.collections_abc import Set
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import queryAdapter
@@ -71,7 +72,7 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
 
     def test_BugSubscriberSet(self):
         subscriber_set = BugSubscriberSet(self.subscribers_set)
-        self.assertIsInstance(subscriber_set, frozenset)
+        self.assertIsInstance(subscriber_set, Set)
         self.assertEqual(self.subscribers_set, subscriber_set)
         self.assertEqual(self.subscribers_sorted, subscriber_set.sorted)
 
@@ -82,7 +83,7 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
                 bug.subscribe(subscriber, subscriber)
                 for subscriber in self.subscribers_set)
         subscription_set = BugSubscriptionSet(subscriptions)
-        self.assertIsInstance(subscription_set, frozenset)
+        self.assertIsInstance(subscription_set, Set)
         self.assertEqual(subscriptions, subscription_set)
         # BugSubscriptionSet.sorted returns a tuple of subscriptions ordered
         # by subscribers.
@@ -102,7 +103,7 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
                 product.addSubscription(subscriber, subscriber)
                 for subscriber in self.subscribers_set)
         subscription_set = StructuralSubscriptionSet(subscriptions)
-        self.assertIsInstance(subscription_set, frozenset)
+        self.assertIsInstance(subscription_set, Set)
         self.assertEqual(subscriptions, subscription_set)
         # StructuralSubscriptionSet.sorted returns a tuple of subscriptions
         # ordered by subscribers.

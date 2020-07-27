@@ -1251,7 +1251,6 @@ class IFileBugData(Interface):
     subscribers = Attribute("The initial subscribers for the bug.")
     comments = Attribute("Comments to add to the bug.")
     attachments = Attribute("Attachments to add to the bug.")
-    hwdb_submission_keys = Attribute("HWDB submission keys for the bug.")
 
 
 class IBugMute(Interface):

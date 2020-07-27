@@ -4,8 +4,8 @@
 """Code for 'processing' 'uploads'. Also see nascentupload.py.
 
 Uploads are directories in the 'incoming' queue directory. They may have
-arrived manually from a distribution contributor, via a poppy upload, or
-they may have come from a build.
+arrived manually from a distribution contributor via txpkgupload, or they
+may have come from a build.
 
 Within an upload, we may find no changes file, one, or several. One is
 the usual number. To process the upload, we process each changes file

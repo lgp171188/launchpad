@@ -9,6 +9,8 @@ PostgreSQL as stored procedures.
 See README.txt for discussion
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from zope.formlib.exception import (
@@ -41,13 +43,13 @@ class LaunchpadValidationError(ValidationError):
     may contain XHTML markup suitable for inclusion in an inline tag
     such as <span>.
 
-    >>> LaunchpadValidationError('<br/>oops').snippet()
-    u'&lt;br/&gt;oops'
+    >>> print(LaunchpadValidationError('<br/>oops').snippet())
+    &lt;br/&gt;oops
 
     >>> from lp.services.webapp.escaping import structured
-    >>> LaunchpadValidationError(
-    ...     structured('<a title="%s">Ok</a>', '<evil/>')).snippet()
-    u'<a title="&lt;evil/&gt;">Ok</a>'
+    >>> print(LaunchpadValidationError(
+    ...     structured('<a title="%s">Ok</a>', '<evil/>')).snippet())
+    <a title="&lt;evil/&gt;">Ok</a>
     """
 
     def __init__(self, message, already_escaped=False):
@@ -104,16 +106,16 @@ class WidgetInputErrorView(Z3WidgetInputErrorView):
         >>> bold_error = LaunchpadValidationError(structured("<b>Foo</b>"))
         >>> err = WidgetInputError("foo", "Foo", bold_error)
         >>> view = WidgetInputErrorView(err, None)
-        >>> view.snippet()
-        u'<b>Foo</b>'
+        >>> print(view.snippet())
+        <b>Foo</b>
 
         >>> class TooSmallError(object):
         ...     def doc(self):
         ...         return "Foo input < 1"
         >>> err = WidgetInputError("foo", "Foo", TooSmallError())
         >>> view = WidgetInputErrorView(err, None)
-        >>> view.snippet()
-        u'Foo input &lt; 1'
+        >>> print(view.snippet())
+        Foo input &lt; 1
         """
         if (hasattr(self.context, 'errors') and
                 ILaunchpadValidationError.providedBy(self.context.errors)):

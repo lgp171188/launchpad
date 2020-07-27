@@ -39,7 +39,9 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
+import six
 from six.moves import http_client
+from six.moves.urllib.parse import urlparse
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
     getUtility,
@@ -627,9 +629,10 @@ class CanonicalAbsoluteURL:
         self.context = context
         self.request = request
 
-    def __unicode__(self):
-        """Returns the URL as a unicode string."""
-        raise NotImplementedError()
+    if six.PY2:
+        def __unicode__(self):
+            """Returns the URL as a unicode string."""
+            raise NotImplementedError()
 
     def __str__(self):
         """Returns an ASCII string with all unicode characters url quoted."""

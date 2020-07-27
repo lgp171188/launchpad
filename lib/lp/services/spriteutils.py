@@ -224,7 +224,8 @@ class SpriteUtil:
 
     def loadPositioning(self, filename):
         """Load file with the positions of sprites in the combined image."""
-        json = open(filename).read()
+        with open(filename) as f:
+            json = f.read()
         # Remove comments from the beginning of the file.
         start = json.index('{')
         json = json[start:]

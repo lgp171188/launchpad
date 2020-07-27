@@ -25,7 +25,7 @@ notification they would like to receive.
     >>> target_owner = factory.makePerson(email='target_owner@example.com')
     >>> target_branch = factory.makeBranch(owner=target_owner)
     >>> bmp = make_merge_proposal_without_reviewers(
-    ...     factory, target_branch=target_branch)
+    ...     factory, target=target_branch)
     >>> previewdiff = factory.makePreviewDiff(merge_proposal=bmp)
     >>> transaction.commit()
     >>> source_subscriber = factory.makePerson(

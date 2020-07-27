@@ -803,7 +803,8 @@ def find_copyright(source_dir, logger):
         raise UploadWarning("No copyright file found.")
 
     logger.debug("Copying copyright contents.")
-    return open(copyright_file).read().strip()
+    with open(copyright_file) as f:
+        return f.read().strip()
 
 
 def find_changelog(source_dir, logger):
@@ -824,7 +825,8 @@ def find_changelog(source_dir, logger):
 
     # Move the changelog file out of the package direcotry
     logger.debug("Found changelog")
-    return open(changelog_file, 'r').read()
+    with open(changelog_file) as changelog:
+        return changelog.read()
 
 
 def check_format_1_0_files(filename, file_type_counts,

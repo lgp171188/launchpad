@@ -40,11 +40,14 @@ class TestConfigFixture(TestCase):
             for base in to_copy:
                 path = 'configs/testtestconfig/' + base
                 source = 'configs/testrunner/' + base
-                old = open(source, 'rb').read()
-                new = open(path, 'rb').read()
+                with open(source, 'rb') as f:
+                    old = f.read()
+                with open(path, 'rb') as f:
+                    new = f.read()
                 self.assertEqual(old, new)
             confpath = 'configs/testtestconfig/launchpad-lazr.conf'
-            lazr_config = open(confpath, 'rb').read()
+            with open(confpath) as f:
+                lazr_config = f.read()
             self.assertEqual(
                 "[meta]\n"
                 "extends: ../testrunner/launchpad-lazr.conf",

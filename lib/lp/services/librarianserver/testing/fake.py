@@ -16,7 +16,7 @@ __all__ = [
     ]
 
 import hashlib
-from StringIO import StringIO
+import io
 
 from fixtures import Fixture
 import six
@@ -54,7 +54,7 @@ class InstrumentedLibraryFileAlias(LibraryFileAlias):
 
     def open(self, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
         self.checkCommitted()
-        self._datafile = StringIO(self.content_string)
+        self._datafile = io.BytesIO(self.content_bytes)
 
     def read(self, chunksize=None, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
         return self._datafile.read(chunksize)
@@ -127,7 +127,7 @@ class FakeLibrarian(Fixture):
         """See `IFileDownloadClient`."""
         alias = self[aliasID]
         alias.checkCommitted()
-        return StringIO(alias.content_string)
+        return io.BytesIO(alias.content_bytes)
 
     def pretendCommit(self):
         """Pretend that there's been a commit.
@@ -146,7 +146,7 @@ class FakeLibrarian(Fixture):
         """Create a `LibraryFileAlias`."""
         alias = InstrumentedLibraryFileAlias(
             contentID=file_id, filename=name, mimetype=content_type)
-        alias.content_string = content
+        alias.content_bytes = content
         return alias
 
     def _makeLibraryFileContent(self, content):

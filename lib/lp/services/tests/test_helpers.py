@@ -26,18 +26,18 @@ def make_test_tarball_1():
 
     return LaunchpadWriteTarFile.files_to_tarfile({
         'uberfrob-0.1/README':
-            'Uberfrob is an advanced frobnicator.',
+            b'Uberfrob is an advanced frobnicator.',
         'uberfrob-0.1/po/cy.po':
-            '# Blah.',
+            b'# Blah.',
         'uberfrob-0.1/po/es.po':
-            '# Blah blah.',
+            b'# Blah blah.',
         'uberfrob-0.1/po/uberfrob.pot':
-            '# Yowza!',
+            b'# Yowza!',
         'uberfrob-0.1/blah/po/la':
-            'la la',
+            b'la la',
         'uberfrob-0.1/uberfrob.py':
-            'import sys\n'
-            'print "Frob!"\n',
+            b'import sys\n'
+            b'print "Frob!"\n',
         })
 
 
@@ -64,13 +64,13 @@ def make_test_tarball_2():
         # Test POT file.
         msgid "foo"
         msgstr ""
-        """).strip()
+        """).strip().encode('UTF-8')
 
     po = dedent("""
         # Test PO file.
         msgid "foo"
         msgstr "bar"
-        """).strip()
+        """).strip().encode('UTF-8')
 
     return LaunchpadWriteTarFile.files_to_tarfile({
         'test/test.pot': pot,

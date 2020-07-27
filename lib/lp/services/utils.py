@@ -41,7 +41,6 @@ from itertools import (
 import os
 import re
 import string
-from StringIO import StringIO
 import sys
 from textwrap import dedent
 from types import FunctionType
@@ -266,8 +265,8 @@ class CapturedOutput(Fixture):
 
     def __init__(self):
         super(CapturedOutput, self).__init__()
-        self.stdout = StringIO()
-        self.stderr = StringIO()
+        self.stdout = six.StringIO()
+        self.stderr = six.StringIO()
 
     def _setUp(self):
         self.useFixture(MonkeyPatch('sys.stdout', self.stdout))
