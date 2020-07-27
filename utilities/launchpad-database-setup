@@ -3,6 +3,8 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+set -e  # Exit immediately if a command exits with a non-zero status.
+
 if [ -n "$1" ]; then
     USER=$1
     echo "Creating Launchpad database for $USER"
@@ -21,8 +23,7 @@ fi
 pgversion=
 for try_pgversion in 10
 do
-  sudo grep -qs "^auto" /etc/postgresql/$try_pgversion/main/start.conf
-  if [ $? -eq 0 ]; then
+  if sudo grep -qs "^auto" /etc/postgresql/$try_pgversion/main/start.conf; then
     pgversion="$try_pgversion"
     break
   fi
@@ -37,8 +38,7 @@ fi
 echo "Using postgres $pgversion"
 
 # Make sure that we have the correct version running on port 5432
-sudo grep -q "port.*5432" /etc/postgresql/$pgversion/main/postgresql.conf
-if [ $? -ne 0 ]; then
+if ! sudo grep -q "port.*5432" /etc/postgresql/$pgversion/main/postgresql.conf; then
   echo "Please check /etc/postgresql/$pgversion/main/postgresql.conf and"
   echo "ensure postgres is running on port 5432."
 fi;
