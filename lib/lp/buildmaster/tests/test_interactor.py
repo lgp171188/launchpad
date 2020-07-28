@@ -489,23 +489,25 @@ class TestSlave(TestCase):
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.addCleanup(shut_down_default_process_pool)
 
+    @defer.inlineCallbacks
     def test_abort(self):
         slave = self.slave_helper.getClientSlave()
         # We need to be in a BUILDING state before we can abort.
-        d = self.slave_helper.triggerGoodBuild(slave)
-        d.addCallback(lambda ignored: slave.abort())
-        d.addCallback(self.assertEqual, BuilderStatus.ABORTING)
-        return d
+        build_id = 'some-id'
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
+        response = yield slave.abort()
+        self.assertEqual(BuilderStatus.ABORTING, response)
 
+    @defer.inlineCallbacks
     def test_build(self):
         # Calling 'build' with an expected builder type, a good build id,
         # valid chroot & filemaps works and returns a BuilderStatus of
         # BUILDING.
         build_id = 'some-id'
         slave = self.slave_helper.getClientSlave()
-        d = self.slave_helper.triggerGoodBuild(slave, build_id)
-        return d.addCallback(
-            self.assertEqual, [BuilderStatus.BUILDING, build_id])
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
 
     def test_clean(self):
         slave = self.slave_helper.getClientSlave()
@@ -515,13 +517,14 @@ class TestSlave(TestCase):
         # time being, we'll just assert that a clean attribute exists.
         self.assertNotEqual(getattr(slave, 'clean', None), None)
 
+    @defer.inlineCallbacks
     def test_echo(self):
         # Calling 'echo' contacts the server which returns the arguments we
         # gave it.
         self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
-        d = slave.echo('foo', 'bar', 42)
-        return d.addCallback(self.assertEqual, ['foo', 'bar', 42])
+        response = yield slave.echo('foo', 'bar', 42)
+        self.assertEqual(['foo', 'bar', 42], response)
 
     @defer.inlineCallbacks
     def test_info(self):
@@ -556,28 +559,29 @@ class TestSlave(TestCase):
         # build has been triggered, the status is BUILDING.
         slave = self.slave_helper.getClientSlave()
         build_id = 'status-build-id'
-        yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
         status = yield slave.status()
         self.assertEqual(BuilderStatus.BUILDING, status['builder_status'])
         self.assertEqual(build_id, status['build_id'])
         self.assertIsInstance(status['logtail'], xmlrpc_client.Binary)
 
+    @defer.inlineCallbacks
     def test_ensurepresent_not_there(self):
         # ensurepresent checks to see if a file is there.
         self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
-        d = slave.ensurepresent('blahblah', None, None, None)
-        d.addCallback(self.assertEqual, [False, 'No URL'])
-        return d
+        response = yield slave.ensurepresent('blahblah', None, None, None)
+        self.assertEqual([False, 'No URL'], response)
 
+    @defer.inlineCallbacks
     def test_ensurepresent_actually_there(self):
         # ensurepresent checks to see if a file is there.
         tachandler = self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
         self.slave_helper.makeCacheFile(tachandler, 'blahblah')
-        d = slave.ensurepresent('blahblah', None, None, None)
-        d.addCallback(self.assertEqual, [True, 'No URL'])
-        return d
+        response = yield slave.ensurepresent('blahblah', None, None, None)
+        self.assertEqual([True, 'No URL'], response)
 
     def test_sendFileToSlave_not_there(self):
         self.slave_helper.getServerSlave()
@@ -585,22 +589,19 @@ class TestSlave(TestCase):
         d = slave.sendFileToSlave('blahblah', None, None, None)
         return assert_fails_with(d, CannotFetchFile)
 
+    @defer.inlineCallbacks
     def test_sendFileToSlave_actually_there(self):
         tachandler = self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
         self.slave_helper.makeCacheFile(tachandler, 'blahblah')
-        d = slave.sendFileToSlave('blahblah', None, None, None)
+        yield slave.sendFileToSlave('blahblah', None, None, None)
+        response = yield slave.ensurepresent('blahblah', None, None, None)
+        self.assertEqual([True, 'No URL'], response)
 
-        def check_present(ignored):
-            d = slave.ensurepresent('blahblah', None, None, None)
-            return d.addCallback(self.assertEqual, [True, 'No URL'])
-
-        d.addCallback(check_present)
-        return d
-
+    @defer.inlineCallbacks
     def test_resumeHost_success(self):
         # On a successful resume resume() fires the returned deferred
-        # callback with 'None'.
+        # callback with (stdout, stderr, subprocess exit code).
         self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
 
@@ -608,17 +609,12 @@ class TestSlave(TestCase):
         self.assertEqual(
             'echo %(vm_host)s', config.builddmaster.vm_resume_command)
 
-        # On success the response is None.
-        def check_resume_success(response):
-            out, err, code = response
-            self.assertEqual(os.EX_OK, code)
-            # XXX: JonathanLange 2010-09-23: We should instead pass the
-            # expected vm_host into the client slave. Not doing this now,
-            # since the SlaveHelper is being moved around.
-            self.assertEqual("%s\n" % slave._vm_host, out)
-        d = slave.resume()
-        d.addBoth(check_resume_success)
-        return d
+        out, err, code = yield slave.resume()
+        self.assertEqual(os.EX_OK, code)
+        # XXX: JonathanLange 2010-09-23: We should instead pass the
+        # expected vm_host into the client slave. Not doing this now,
+        # since the SlaveHelper is being moved around.
+        self.assertEqual("%s\n" % slave._vm_host, out)
 
     def test_resumeHost_failure(self):
         # On a failed resume, 'resumeHost' fires the returned deferred
