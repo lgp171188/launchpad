@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'SnappyDistroSeries',
+    'SnappyDistroSeriesMixin',
     'SnappySeries',
     ]
 
@@ -164,8 +165,36 @@ class SnappySeries(Storm):
             get_property_cache(self)._can_infer_distro_series = False
 
 
+class SnappyDistroSeriesMixin:
+
+    @property
+    def title(self):
+        # The conditional for SeriesStatus.CURRENT here
+        # was introduced in 2020 when CURRENT meant 16
+        # When we need to introduce a new store_series;
+        # we can initially add it as FUTURE or EXPERIMENTAL
+        # until we sort out the UI.
+
+        if self.distro_series is not None:
+            if (self.snappy_series is not None and
+                    self.snappy_series.status != SeriesStatus.CURRENT):
+                return "%s, for %s" % (
+                    self.distro_series.fullseriesname,
+                    self.snappy_series.title)
+            else:
+                return self.distro_series.fullseriesname
+        else:
+            if self.snappy_series is not None:
+                if self.snappy_series.status == SeriesStatus.CURRENT:
+                    return "Infer from snapcraft.yaml (recommended)"
+                else:
+                    return self.snappy_series.title
+            else:
+                return None
+
+
 @implementer(ISnappyDistroSeries)
-class SnappyDistroSeries(Storm):
+class SnappyDistroSeries(Storm, SnappyDistroSeriesMixin):
     """Link table between `SnappySeries` and `DistroSeries`."""
 
     __storm_table__ = 'SnappyDistroSeries'
@@ -185,30 +214,6 @@ class SnappyDistroSeries(Storm):
         self.snappy_series = snappy_series
         self.distro_series = distro_series
         self.preferred = preferred
-
-    @property
-    def title(self):
-        # The conditional for SeriesStatus.CURRENT here
-        # was introduced in 2020 when CURRENT meant 16
-        # When we need to introduce a new store_series;
-        # we can initially add it as FUTURE or EXPERIMENTAL
-        # until we sort out the UI.
-
-        if self.distro_series is not None:
-            if self.snappy_series is not None:
-                if self.snappy_series.status != SeriesStatus.CURRENT:
-                    return "%s, for %s" % (
-                        self.distro_series.fullseriesname,
-                        self.snappy_series.title)
-            return self.distro_series.fullseriesname
-        else:
-            if self.snappy_series is not None:
-                if self.snappy_series.status == SeriesStatus.CURRENT:
-                    return "Infer from snapcraft.yaml (recommended)"
-                else:
-                    return self.snappy_series.title
-            else:
-                return None
 
 
 @implementer(ISnappySeriesSet)

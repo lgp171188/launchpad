@@ -1,12 +1,9 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the GNU
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the GNU
 # Affero General Public License version 3 (see the file LICENSE).
 
 """Snappy vocabularies."""
 
 from __future__ import absolute_import, print_function, unicode_literals
-
-from lp.registry.interfaces.series import SeriesStatus
-from lp.snappy.interfaces.snappyseries import ISnappyDistroSeries
 
 
 __metaclass__ = type
@@ -37,17 +34,15 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.services.database.interfaces import IStore
-from lp.services.database.stormexpr import (
-    IsDistinctFrom,
-    )
-from lp.services.utils import (
-    seconds_since_epoch,
-    )
+from lp.services.database.stormexpr import IsDistinctFrom
+from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.vocabulary import StormVocabularyBase
 from lp.snappy.interfaces.snap import ISnap
+from lp.snappy.interfaces.snappyseries import ISnappyDistroSeries
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snappyseries import (
     SnappyDistroSeries,
+    SnappyDistroSeriesMixin,
     SnappySeries,
     )
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -78,36 +73,12 @@ class SnappySeriesVocabulary(StormVocabularyBase):
 
 
 @implementer(ISnappyDistroSeries)
-class SyntheticSnappyDistroSeries:
+class SyntheticSnappyDistroSeries(SnappyDistroSeriesMixin):
     def __init__(self, snappy_series, distro_series):
         self.snappy_series = snappy_series
         self.distro_series = distro_series
 
     preferred = False
-
-    @property
-    def title(self):
-        # The conditional for SeriesStatus.CURRENT here
-        # was introduced in 2020 when CURRENT meant 16
-        # When we need to introduce a new store_series;
-        # we can initially add it as FUTURE or EXPERIMENTAL
-        # until we sort out the UI.
-
-        if self.distro_series is not None:
-            if self.snappy_series is not None:
-                if self.snappy_series.status != SeriesStatus.CURRENT:
-                    return "%s, for %s" % (
-                        self.distro_series.fullseriesname,
-                        self.snappy_series.title)
-            return self.distro_series.fullseriesname
-        else:
-            if self.snappy_series is not None:
-                if self.snappy_series.status == SeriesStatus.CURRENT:
-                    return "Infer from snapcraft.yaml (recommended)"
-                else:
-                    return self.snappy_series.title
-            else:
-                return None
 
 
 def sorting_tuple_date_created(element):
