@@ -55,7 +55,8 @@ class SmokeTestTestCase(TestCaseWithFactory):
         # and return the file's HTTP URL works.
         aid, url = store_file(self.fake_librarian)
         self.assertEqual(
-            'http://localhost:58000/%d/smoke-test-file' % aid, url)
+            '%s%d/smoke-test-file' % (self.fake_librarian.download_url, aid),
+            url)
 
     def test_good_data(self):
         # If storing and retrieving both the public and private files work,
