@@ -60,7 +60,10 @@ from lp.buildmaster.interfaces.builder import (
     CannotFetchFile,
     CannotResumeHost,
     )
-from lp.buildmaster.manager import BaseBuilderFactory
+from lp.buildmaster.manager import (
+    BaseBuilderFactory,
+    PrefetchedBuilderFactory,
+    )
 from lp.buildmaster.tests.mock_slaves import (
     AbortingSlave,
     BuildingSlave,
@@ -75,6 +78,7 @@ from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.twistedsupport.testing import TReqFixture
 from lp.services.twistedsupport.treq import check_status
+from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
     )
@@ -429,6 +433,37 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         d = BuilderInteractor.findAndStartJob(
             vitals, builder, OkSlave(), builder_factory)
         return d.addCallback(self.assertEqual, candidate)
+
+    @defer.inlineCallbacks
+    def test_findAndStartJob_supersedes_builds(self):
+        # findAndStartJob checks whether queued jobs are for superseded
+        # source package releases and marks the corresponding build records
+        # as SUPERSEDED.
+        builder, distroseries, distroarchseries = self._setupBuilder()
+        builds = [
+            self.factory.makeBinaryPackageBuild(
+                distroarchseries=distroarchseries)
+            for _ in range(3)]
+        candidates = [build.queueBuild() for build in builds]
+        builder_factory = PrefetchedBuilderFactory()
+        candidates_iter = iter(candidates)
+        builder_factory.findBuildCandidate = lambda _: next(candidates_iter)
+        vitals = extract_vitals_from_db(builder)
+
+        # Supersede some of the builds' source packages.
+        for build in builds[:2]:
+            publication = build.current_source_publication
+            publication.status = PackagePublishingStatus.SUPERSEDED
+
+        # Starting a job selects a non-superseded candidate, and supersedes
+        # the candidates that have superseded source packages.
+        candidate = yield BuilderInteractor.findAndStartJob(
+            vitals, builder, OkSlave(), builder_factory)
+        self.assertEqual(candidates[2], candidate)
+        self.assertEqual(
+            [BuildStatus.SUPERSEDED, BuildStatus.SUPERSEDED,
+             BuildStatus.BUILDING],
+            [build.status for build in builds])
 
     def test_findAndStartJob_starts_job(self):
         # findAndStartJob finds the next queued job using findBuildCandidate
