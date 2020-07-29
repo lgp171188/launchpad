@@ -167,8 +167,7 @@ class LibrarianFileWrapperTestCase(TestCase):
 
 
 class EchoServer(threading.Thread):
-    """Fake TCP server that only replies back the data sent to it,
-    and closes the connection.
+    """Fake TCP server that only replies back the data sent to it.
 
     This is used to test librarian server early replies with error messages
     during the upload process.
@@ -251,7 +250,7 @@ class LibrarianClientTestCase(TestCase):
         client = LibrarianClient()
 
         self.assertRaisesRegex(
-            UploadFailed, 'Server said: STORE 7 sample.txt',
+            UploadFailed, 'Server said early: STORE 7 sample.txt',
             client.addFile, 'sample.txt', 7, StringIO('sample'), 'text/plain')
 
     def test_addFile_uses_master(self):
