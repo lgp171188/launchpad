@@ -169,5 +169,5 @@ class ProcessJobSource(LaunchpadScript):
                 if isinstance(handler, OopsHandler):
                     root_logger.removeHandler(handler)
         if failure_count:
-            self.logger.error('%d job sources failed.' % failure_count)
+            self.logger.info('%d job sources failed.' % failure_count)
             raise SilentLaunchpadScriptFailure(failure_count)

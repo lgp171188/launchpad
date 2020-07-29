@@ -5,6 +5,10 @@
 
 __metaclass__ = type
 
+import os.path
+from textwrap import dedent
+
+from contrib.glock import GlobalLock
 import transaction
 from zope.component import getUtility
 
@@ -14,6 +18,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.services.config import config
 from lp.services.job.scripts import process_job_source
+from lp.services.scripts.base import LOCK_PATH
 from lp.services.scripts.tests import run_script
 from lp.testing import (
     login_person,
@@ -66,6 +71,28 @@ class ProcessJobSourceTest(TestCaseWithFactory):
             'INFO    Creating lockfile: .*launchpad-process-job-'
             'source-IMembershipNotificationJobSource.lock.*')
         self.assertTextMatchesExpressionIgnoreWhitespace(expected, error)
+
+    def test_locked(self):
+        # If the script is already locked, running it logs the fact and exits
+        # non-zero, but doesn't log anything above INFO.
+        lock_file_path = os.path.join(
+            LOCK_PATH,
+            'launchpad-process-job-source-IMembershipNotificationJobSource'
+            '.lock')
+        lock = GlobalLock(lock_file_path)
+        lock.acquire()
+        try:
+            returncode, output, error = run_script(
+                self.script, ['IMembershipNotificationJobSource'],
+                expect_returncode=1)
+            expected = dedent('''\
+                INFO    Creating lockfile: {lock}
+                INFO    Lockfile {lock} in use
+                INFO    1 job sources failed.
+                ''').format(lock=lock_file_path)
+            self.assertTextMatchesExpressionIgnoreWhitespace(expected, error)
+        finally:
+            lock.release()
 
     def test_processed(self):
         # The script should output the number of jobs it processed.
