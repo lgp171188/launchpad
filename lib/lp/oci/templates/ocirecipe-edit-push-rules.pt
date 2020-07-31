@@ -7,6 +7,14 @@
   i18n:domain="launchpad">
 <body>
 
+<metal:block fill-slot="head_epilogue">
+  <style type="text/css">
+    .subordinate {
+      margin: 0.5em 0 0.5em 4em;
+    }
+  </style>
+</metal:block>
+
 <div metal:fill-slot="main">
     <div metal:use-macro="context/@@launchpad_form/form">
     <metal:formbody fill-slot="widgets">
@@ -32,9 +40,68 @@
             </td>
           </tal:rules_widgets>
         </tr>
+        <tr>
+          <td>
+            <h2>Add new push rule</h2>
+          </td>
+        </tr>
+        <tr>
+          <td tal:define="widget nocall:view/widgets/add_image_name">
+            <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <tal:widget define="widget nocall:view/widgets/use_existing_creds">
+              <metal:block use-macro="context/@@launchpad_form/widget_div" />
+            </tal:widget>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <table class="subordinate">
+              <tal:widget define="widget nocall:view/widgets/existing_credentials">
+                <metal:row use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <tal:widget define="widget nocall:view/widgets/add_new_creds">
+              <metal:block use-macro="context/@@launchpad_form/widget_row" />
+            </tal:widget>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <table class="subordinate">
+              <tal:widget define="widget nocall:view/widgets/add_url">
+                <metal:row use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+              <tal:widget define="widget nocall:view/widgets/add_username">
+                <metal:row use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+              <tal:widget define="widget nocall:view/widgets/add_password">
+                <metal:row use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+              <tal:widget define="widget nocall:view/widgets/add_confirm_password">
+                <metal:row use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+            </table>
+          </td>
+        </tr>
       </table>
     </metal:formbody>
 </div>
+
+  <script type="text/javascript">
+    LPJS.use('lp.oci.ocirecipe.edit', function(Y) {
+      Y.on('domready', function(e) {
+        Y.lp.oci.ocirecipe.edit.setup();
+      }, window);
+    });
+  </script>
 
 </div>
 </body>
