@@ -104,8 +104,7 @@ class SnapProxyMixin:
         response = yield treq.post(
             url, headers={'Authorization': auth_header},
             json={'username': proxy_username},
-            reactor=self._slave.reactor,
-            pool=self._slave.pool)
+            reactor=self._slave.reactor)
         response = yield check_status(response)
         token = yield treq.json_content(response)
         defer.returnValue(token)
