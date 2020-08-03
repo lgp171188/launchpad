@@ -118,8 +118,8 @@ class FileUploadClient:
         poll_result = self.state.s_poll.poll(0)
         if poll_result:
             fileno, event = poll_result[0]
-            assert fileno == self.state.s.fileno()
-            assert event == select.EPOLLIN
+            if fileno != self.state.s.fileno() or event != select.EPOLLIN:
+                return
             response = six.ensure_str(
                 self.state.f.readline().strip(), errors='replace')
             raise UploadFailed('Server said early: ' + response)

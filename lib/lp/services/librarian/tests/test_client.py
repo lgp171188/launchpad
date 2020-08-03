@@ -179,6 +179,7 @@ class EchoServer(threading.Thread):
         self.socket.settimeout(1)
         self.socket.bind(('localhost', 0))
         self.socket.listen(1)
+        self.connections = []
 
     def join(self, *args, **kwargs):
         self.should_stop = True
@@ -188,14 +189,17 @@ class EchoServer(threading.Thread):
         while not self.should_stop:
             try:
                 conn, addr = self.socket.accept()
+                self.connections.append(conn)
                 data = conn.recv(1024)
                 conn.sendall(data)
-                conn.close()
             except socket.timeout:
                 # We use the timeout to control how much time we will wait
                 # to check again if self.should_stop was set, and the thread
                 # will join.
                 pass
+        for conn in self.connections:
+            conn.close()
+        self.connections = []
         self.socket.close()
 
 
