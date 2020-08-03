@@ -111,9 +111,12 @@ class FileWritingProtocol(Protocol):
 class LimitedHTTPConnectionPool(HTTPConnectionPool):
     """A connection pool with an upper limit on open connections.
 
-    Deprecation warning: This connection pool seems to be deadlocking
-    quite frequently, and should be deprecated as soon as we fully migrate
-    to download files in a subprocess pool."""
+    WARNING: Connections that should not be returned to the pool (like any
+    non-persistent connection) are not releasing the semaphore (see
+    HTTP11ClientProtocol._finishResponse_WAITING), leading this pool to
+    lock forever once the limit is reached. This should be fixed before
+    using this class.
+    """
 
     # XXX cjwatson 2016-05-25: This actually only limits active connections,
     # and doesn't count idle but open connections towards the limit; this is
@@ -139,14 +142,6 @@ class LimitedHTTPConnectionPool(HTTPConnectionPool):
         # release it here then the next request may start using this
         # connection's parser before this request has quite finished with
         # it.
-        # XXX pappacena 2020-06-31: This may cause deadlocks in the
-        # event loop: something else in the event loop queue might be
-        # waiting to acquire the semaphore when no tokens are left before
-        # we have a chance to release a token.
-        # Please, note that calling release() right away is not a solution
-        # either, since Twisted returns the connection to the pool before
-        # the body was fetched, and this connection cannot be reused right
-        # away.
         self._reactor.callLater(0, self._semaphore.release)
 
 
