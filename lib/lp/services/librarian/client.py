@@ -123,7 +123,7 @@ class FileUploadClient:
             # after sending data, we will receive [EPOLLHUP | EPOLLERR |
             # EPOLLIN] == 25, for example). EPOLLIN is the first bit,
             # so we should check just that for incoming data.
-            if fileno != self.state.s.fileno() or not event & select.EPOLLIN:
+            if fileno != self.state.s.fileno() or not (event & select.EPOLLIN):
                 return
             response = six.ensure_str(
                 self.state.f.readline().strip(), errors='replace')
