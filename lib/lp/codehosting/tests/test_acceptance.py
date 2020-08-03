@@ -7,10 +7,6 @@ __metaclass__ = type
 
 import os
 import re
-import signal
-import subprocess
-import sys
-import time
 
 import breezy.branch
 from breezy.tests import TestCaseWithTransport
@@ -56,85 +52,9 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
 
 
-class ForkingServerForTests(object):
-    """Map starting/stopping a LPForkingService to setUp() and tearDown()."""
-
-    def __init__(self):
-        self.process = None
-        self.socket_path = None
-
-    def setUp(self):
-        brz_path = get_brz_path()
-        BRZ_PLUGIN_PATH = get_BRZ_PLUGIN_PATH_for_subprocess()
-        env = os.environ.copy()
-        env['BRZ_PLUGIN_PATH'] = BRZ_PLUGIN_PATH
-        # TODO: We probably want to use a random disk path for
-        #       forking_daemon_socket, but we need to update config so that
-        #       the CodeHosting service can find it.
-        #       The main problem is that CodeHostingTac seems to start a tac
-        #       server directly from the disk configs, and doesn't use the
-        #       in-memory config. So we can't just override the memory
-        #       settings, we have to somehow pass it a new config-on-disk to
-        #       use.
-        self.socket_path = config.codehosting.forking_daemon_socket
-        command = [sys.executable, brz_path, 'launchpad-forking-service',
-                   '--path', self.socket_path, '-Derror']
-        process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
-        self.process = process
-        stderr = []
-        # The first line should be "Preloading" indicating it is ready
-        stderr.append(process.stderr.readline())
-        # The next line is the "Listening on socket" line
-        stderr.append(process.stderr.readline())
-        # Now it should be ready.  If there were any errors, let's check, and
-        # report them.
-        if (process.poll() is not None or
-            not stderr[1].strip().startswith('Listening on socket')):
-            if process.poll() is None:
-                time.sleep(1)  # Give the traceback a chance to render.
-                os.kill(process.pid, signal.SIGTERM)
-                process.wait()
-                self.process = None
-            # Looks like there was a problem. We cannot use the "addDetail"
-            # method because this class is not a TestCase and does not have
-            # access to one.  It runs as part of a layer. A "print" is the
-            # best we can do.  That should still be visible on buildbot, which
-            # is where we have seen spurious failures so far.
-            print
-            print "stdout:"
-            print process.stdout.read()
-            print "-" * 70
-            print "stderr:"
-            print ''.join(stderr)
-            print process.stderr.read()
-            print "-" * 70
-            raise RuntimeError(
-                'Breezy server did not start correctly.  See stdout and '
-                'stderr reported above. Command was "%s".  PYTHONPATH was '
-                '"%s".  BRZ_PLUGIN_PATH was "%s".' %
-                (' '.join(command),
-                 env.get('PYTHONPATH'),
-                 env.get('BRZ_PLUGIN_PATH')))
-
-    def tearDown(self):
-        # SIGTERM is the graceful exit request, potentially we could wait a
-        # bit and send something stronger?
-        if self.process is not None and self.process.poll() is None:
-            os.kill(self.process.pid, signal.SIGTERM)
-            self.process.wait()
-            self.process = None
-        # We want to make sure the socket path has been cleaned up, so that
-        # future runs can work correctly
-        if os.path.exists(self.socket_path):
-            # Should there be a warning/error here?
-            os.remove(self.socket_path)
-
-
 class SSHServerLayer(ZopelessAppServerLayer):
 
     _tac_handler = None
-    _forker_service = None
 
     @classmethod
     def getTacHandler(cls):
@@ -144,26 +64,17 @@ class SSHServerLayer(ZopelessAppServerLayer):
         return cls._tac_handler
 
     @classmethod
-    def getForker(cls):
-        if cls._forker_service is None:
-            cls._forker_service = ForkingServerForTests()
-        return cls._forker_service
-
-    @classmethod
     @profiled
     def setUp(cls):
         tac_handler = SSHServerLayer.getTacHandler()
         tac_handler.setUp()
         SSHServerLayer._reset()
-        forker = SSHServerLayer.getForker()
-        forker.setUp()
 
     @classmethod
     @profiled
     def tearDown(cls):
         SSHServerLayer._reset()
         SSHServerLayer.getTacHandler().tearDown()
-        SSHServerLayer.getForker().tearDown()
 
     @classmethod
     @profiled
