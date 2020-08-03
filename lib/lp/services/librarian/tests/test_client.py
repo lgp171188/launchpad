@@ -190,12 +190,12 @@ class EchoServer(threading.Thread):
                 conn, addr = self.socket.accept()
                 data = conn.recv(1024)
                 conn.sendall(data)
+                conn.close()
             except socket.timeout:
                 # We use the timeout to control how much time we will wait
                 # to check again if self.should_stop was set, and the thread
                 # will join.
                 pass
-        conn.close()
         self.socket.close()
 
 
@@ -244,8 +244,8 @@ class LibrarianClientTestCase(TestCase):
         self.addCleanup(server.join)
 
         upload_host, upload_port = server.socket.getsockname()
-        self.pushConfig('librarian', upload_host=upload_host)
-        self.pushConfig('librarian', upload_port=upload_port)
+        self.pushConfig(
+            'librarian', upload_host=upload_host, upload_port=upload_port)
 
         client = LibrarianClient()
 
