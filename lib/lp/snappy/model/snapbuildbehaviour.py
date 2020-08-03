@@ -120,7 +120,7 @@ class SnapProxyMixin:
         response = yield treq.post(
             url, headers={'Authorization': auth_header},
             json={'username': proxy_username},
-            pool=proxy_pool(),
+            pool=proxy_pool(self._slave.reactor),
             timeout=config.builddmaster.authentication_timeout,
             reactor=self._slave.reactor)
         response = yield check_status(response)

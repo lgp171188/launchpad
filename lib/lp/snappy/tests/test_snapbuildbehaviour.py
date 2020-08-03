@@ -318,7 +318,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
-        self.addCleanup(proxy_pool().closeCachedConnections)
+        self.addCleanup(proxy_pool(slave.reactor).closeCachedConnections)
         return job
 
     @defer.inlineCallbacks
