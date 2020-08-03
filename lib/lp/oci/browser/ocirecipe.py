@@ -196,6 +196,14 @@ class OCIRecipeView(LaunchpadView):
 
     @cachedproperty
     def push_rules(self):
+        # XXX: We need to think about rearranging the permissions on
+        # OCIRegistryCredentials so that only the actual secrets are
+        # secret; the registry URL and probably the username could
+        # arguably be public and displayed in the table with the push rules
+        # on lib/lp/oci/templates/ocirecipe-index.pt.
+        # We're still not sure how this plays into
+        # plans for internal registry announcements and such, so we
+        # land redaction first and think about this later.
         return list(
             getUtility(IOCIPushRuleSet).findByRecipe(self.context))
 

@@ -50,12 +50,14 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    anonymous_logged_in,
     BrowserTestCase,
     login,
     login_person,
@@ -78,7 +80,10 @@ from lp.testing.pages import (
     find_tags_by_class,
     )
 from lp.testing.publication import test_traverse
-from lp.testing.views import create_view
+from lp.testing.views import (
+    create_initialized_view,
+    create_view,
+    )
 
 
 class TestOCIRecipeNavigation(TestCaseWithFactory):
@@ -848,13 +853,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
-        self.architectures = []
-        for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
-            das = self.factory.makeDistroArchSeries(
-                distroseries=self.distroseries, architecturetag=architecture,
-                processor=getUtility(IProcessorSet).getByName(processor))
-            das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-            self.architectures.append(das)
+
         self.useFixture(FeatureFixture({
             OCI_RECIPE_ALLOW_CREATE: "on",
             "oci.build_series.%s" % self.distroseries.distribution.name:
@@ -868,6 +867,122 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             oci_project=oci_project)
 
         self.setConfig()
+
+    def test_view_oci_push_rules_owner(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        push_rule = getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        view = create_initialized_view(
+                self.recipe, "+index", principal=self.person)
+
+        # Display the Registry URL and the Username
+        # for the credentials owner
+        with person_logged_in(self.person):
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=registry_credentials.url)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=registry_credentials.username)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
+
+    def test_view_oci_push_rules_non_owner(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        push_rule = getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        non_owner = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName('admins')])
+        view = create_initialized_view(
+                self.recipe, "+index", principal=non_owner)
+
+        # Display only the image name for users
+        # who are not the registry credentials owner
+        with person_logged_in(non_owner):
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
+
+        # Anonymous users can't see registry credentials
+        # even though they can see the push rule
+        with anonymous_logged_in():
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
+
+        # Although not the owner of the registry credentials
+        # the admin user has launchpad.View permission on
+        # OCI registry credentials and should be able to see
+        # the registry URL and username of the owner.
+        # see ViewOCIRegistryCredentials
+        with person_logged_in(admin):
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=registry_credentials.url)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=registry_credentials.username)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
 
     def test_edit_oci_push_rules(self):
         url = unicode(self.factory.getUniqueURL())
