@@ -118,7 +118,12 @@ class FileUploadClient:
         poll_result = self.state.s_poll.poll(0)
         if poll_result:
             fileno, event = poll_result[0]
-            if fileno != self.state.s.fileno() or event != select.EPOLLIN:
+            # Accepts any event that contains input data. Even if we
+            # only subscribed to EPOLLIN, when connection is closed right
+            # after sending data, we will receive [EPOLLHUP | EPOLLERR |
+            # EPOLLIN] == 25, for example). EPOLLIN is the first bit,
+            # so we should check just that for incoming data.
+            if fileno != self.state.s.fileno() or not event & select.EPOLLIN:
                 return
             response = six.ensure_str(
                 self.state.f.readline().strip(), errors='replace')
