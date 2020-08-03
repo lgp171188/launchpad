@@ -95,6 +95,7 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.model.snapbuildbehaviour import (
     format_as_rfc3339,
+    proxy_pool,
     SnapBuildBehaviour,
     )
 from lp.soyuz.adapters.archivedependencies import (
@@ -317,6 +318,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+        self.addCleanup(proxy_pool().closeCachedConnections)
         return job
 
     @defer.inlineCallbacks
