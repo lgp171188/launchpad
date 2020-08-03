@@ -598,8 +598,19 @@ class BuilderInteractor(object):
             found or None if no job was found.
         """
         logger = cls._getSlaveScannerLogger()
-        candidate = builder_factory.acquireBuildCandidate(vitals, builder)
-        if candidate is None:
+        # Try a few candidates so that we make reasonable progress if we
+        # have only a few idle builders but lots of candidates that fail
+        # postprocessing due to old source publications or similar.  The
+        # chance of a large prefix of the queue being bad candidates is
+        # negligible, and we want reasonably bounded per-cycle performance
+        # even if the prefix is large.
+        for _ in range(10):
+            candidate = builder_factory.acquireBuildCandidate(vitals, builder)
+            if candidate is not None:
+                if candidate.specific_source.postprocessCandidate(
+                        candidate, logger):
+                    break
+        else:
             logger.debug("No build candidates available for builder.")
             defer.returnValue(None)
 

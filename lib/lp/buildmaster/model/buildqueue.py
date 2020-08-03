@@ -6,7 +6,6 @@ __metaclass__ = type
 __all__ = [
     'BuildQueue',
     'BuildQueueSet',
-    'specific_build_farm_job_sources',
     ]
 
 from datetime import datetime
@@ -121,12 +120,15 @@ class BuildQueue(StormBase):
     processor = Reference(processor_id, 'Processor.id')
     virtualized = Bool(name='virtualized')
 
+    @property
+    def specific_source(self):
+        """See `IBuildQueue`."""
+        return specific_build_farm_job_sources()[self._build_farm_job.job_type]
+
     @cachedproperty
     def specific_build(self):
         """See `IBuildQueue`."""
-        bfj = self._build_farm_job
-        specific_source = specific_build_farm_job_sources()[bfj.job_type]
-        return specific_source.getByBuildFarmJob(bfj)
+        return self.specific_source.getByBuildFarmJob(self._build_farm_job)
 
     @property
     def build_cookie(self):
@@ -340,8 +342,8 @@ class BuildQueueSet(object):
                 BuildQueue.lastscore >= max(minimum_scores))
 
         store = IStore(BuildQueue)
-        candidate_jobs = store.using(BuildQueue, BuildFarmJob).find(
-            (BuildQueue.id,),
+        return list(store.using(BuildQueue, BuildFarmJob).find(
+            BuildQueue,
             BuildFarmJob.id == BuildQueue._build_farm_job_id,
             BuildQueue.status == BuildQueueStatus.WAITING,
             BuildQueue.processor == processor,
@@ -350,22 +352,4 @@ class BuildQueueSet(object):
             And(*(job_type_conditions + score_conditions))
             # This must match the ordering used in
             # PrefetchedBuildCandidates._getSortKey.
-            ).order_by(Desc(BuildQueue.lastscore), BuildQueue.id)
-
-        # Only try a limited number of jobs. It's much easier on the
-        # database, the chance of a large prefix of the queue being
-        # bad candidates is negligible, and we want reasonably bounded
-        # per-cycle performance even if the prefix is large.
-        candidates = []
-        for (candidate_id,) in candidate_jobs[:max(limit * 2, 10)]:
-            candidate = getUtility(IBuildQueueSet).get(candidate_id)
-            job_source = job_sources[
-                removeSecurityProxy(candidate)._build_farm_job.job_type]
-            candidate_approved = job_source.postprocessCandidate(
-                candidate, logger)
-            if candidate_approved:
-                candidates.append(candidate)
-                if len(candidates) >= limit:
-                    break
-
-        return candidates
+            ).order_by(Desc(BuildQueue.lastscore), BuildQueue.id)[:limit])
