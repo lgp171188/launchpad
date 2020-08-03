@@ -123,9 +123,9 @@
            style="margin-bottom: 1em; ">
       <thead>
         <tr>
-          <th>Image Name</th>
           <th>Registry URL</th>
           <th>Username</th>
+          <th>Image Name</th>
         </tr>
       </thead>
       <tbody>

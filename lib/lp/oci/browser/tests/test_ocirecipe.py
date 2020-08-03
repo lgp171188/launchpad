@@ -923,10 +923,12 @@ class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
             self.assertThat(rendered_view, soupmatchers.HTMLContains(
                 soupmatchers.Within(
                     row,
-                    soupmatchers.Tag("Registry URL", "td")),
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=soupmatchers._not_passed)),
                 soupmatchers.Within(
                     row,
-                    soupmatchers.Tag("Username", "td")),
+                    soupmatchers.Tag("Username", "td",
+                                     text=soupmatchers._not_passed)),
                 soupmatchers.Within(
                     row,
                     soupmatchers.Tag(
@@ -941,10 +943,12 @@ class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
             self.assertThat(rendered_view, soupmatchers.HTMLContains(
                 soupmatchers.Within(
                     row,
-                    soupmatchers.Tag("Registry URL", "td")),
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=soupmatchers._not_passed)),
                 soupmatchers.Within(
                     row,
-                    soupmatchers.Tag("Username", "td")),
+                    soupmatchers.Tag("Username", "td",
+                                     text=soupmatchers._not_passed)),
                 soupmatchers.Within(
                     row,
                     soupmatchers.Tag(
