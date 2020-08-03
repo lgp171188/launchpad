@@ -1,11 +1,13 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from cStringIO import StringIO
 import hashlib
 import os
 import re
+import socket
 import textwrap
+import threading
 import unittest
 
 from fixtures import (
@@ -164,7 +166,40 @@ class LibrarianFileWrapperTestCase(TestCase):
         self.assertRaises(http_client.IncompleteRead, file.read, chunksize=4)
 
 
-class LibrarianClientTestCase(unittest.TestCase):
+class EchoServer(threading.Thread):
+    """Fake TCP server that only replies back the data sent to it.
+
+    This is used to test librarian server early replies with error messages
+    during the upload process.
+    """
+    def __init__(self):
+        super(EchoServer, self).__init__()
+        self.should_stop = False
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.settimeout(1)
+        self.socket.bind(('localhost', 0))
+        self.socket.listen(1)
+
+    def join(self, *args, **kwargs):
+        self.should_stop = True
+        super(EchoServer, self).join(*args, **kwargs)
+
+    def run(self):
+        while not self.should_stop:
+            try:
+                conn, addr = self.socket.accept()
+                data = conn.recv(1024)
+                conn.sendall(data)
+                conn.close()
+            except socket.timeout:
+                # We use the timeout to control how much time we will wait
+                # to check again if self.should_stop was set, and the thread
+                # will join.
+                pass
+        self.socket.close()
+
+
+class LibrarianClientTestCase(TestCase):
     layer = LaunchpadFunctionalLayer
 
     def test_addFileSendsDatabaseName(self):
@@ -202,6 +237,21 @@ class LibrarianClientTestCase(unittest.TestCase):
                 'Unexpected UploadFailed error: ' + msg)
         else:
             self.fail("UploadFailed not raised")
+
+    def test_addFile_fails_when_server_returns_error_msg_on_socket(self):
+        server = EchoServer()
+        server.start()
+        self.addCleanup(server.join)
+
+        upload_host, upload_port = server.socket.getsockname()
+        self.pushConfig(
+            'librarian', upload_host=upload_host, upload_port=upload_port)
+
+        client = LibrarianClient()
+
+        self.assertRaisesRegex(
+            UploadFailed, 'Server said early: STORE 7 sample.txt',
+            client.addFile, 'sample.txt', 7, StringIO('sample'), 'text/plain')
 
     def test_addFile_uses_master(self):
         # addFile is a write operation, so it should always use the
