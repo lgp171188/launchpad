@@ -162,10 +162,10 @@ class TxSwiftStream(swift.SwiftStream):
             raise ValueError('I/O operation on closed file')
 
         if self._swift_connection is None:
-            defer.returnValue('')  # EOF already reached, connection returned.
+            defer.returnValue(b'')  # EOF already reached, connection returned.
 
         if size == 0:
-            defer.returnValue('')
+            defer.returnValue(b'')
 
         if not self._chunk:
             self._chunk = yield deferToThread(self._next_chunk)
@@ -177,7 +177,7 @@ class TxSwiftStream(swift.SwiftStream):
                     swift.connection_pool.put(self._swift_connection)
                     self._swift_connection = None
                 self._chunks = None
-                defer.returnValue('')
+                defer.returnValue(b'')
         return_chunk = self._chunk[:size]
         self._chunk = self._chunk[size:]
 
@@ -203,7 +203,7 @@ class LibraryFileUpload(object):
 
         # Create temporary file
         tmpfile, tmpfilepath = tempfile.mkstemp(dir=self.storage.incoming)
-        self.tmpfile = os.fdopen(tmpfile, 'w')
+        self.tmpfile = os.fdopen(tmpfile, 'wb')
         self.tmpfilepath = tmpfilepath
         self.md5_digester = hashlib.md5()
         self.sha1_digester = hashlib.sha1()

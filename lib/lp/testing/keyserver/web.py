@@ -145,7 +145,8 @@ class LookUp(Resource):
 
         path = locate_key(self.root, filename)
         if path is not None:
-            content = cgi.escape(open(path).read())
+            with open(path) as f:
+                content = cgi.escape(f.read())
             page = ('<html>\n<head>\n'
                     '<title>Results for Key %s</title>\n'
                     '</head>\n<body>'

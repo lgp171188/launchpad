@@ -44,6 +44,7 @@ from lp.translations.utilities.translation_common_format import (
     )
 
 
+@six.python_2_unicode_compatible
 class POSyntaxWarning(Warning):
     """Syntax warning in a PO file."""
     def __init__(self, message, line_number=None):
@@ -62,8 +63,8 @@ class POSyntaxWarning(Warning):
             self.message = message
         logging.info(self.message)
 
-    def __unicode__(self):
-        return unicode(self.message)
+    def __str__(self):
+        return six.ensure_text(self.message)
 
 
 def parse_charset(string_to_parse, is_escaped=True):

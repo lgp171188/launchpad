@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An OpenStack Swift server mock using Twisted.
@@ -359,8 +359,8 @@ class SwiftContainer(resource.Resource):
             child = self.container_children.get(name, None)
         elif request.method == b"DELETE":
             child = self.container_children.get(name, None)
-            if child is None: # delete unknown object
-                return EmptyPage(http.NO_CONTENT)
+            if child is None:  # delete unknown object
+                return EmptyPage(http.NOT_FOUND)
             del self.container_children[name]
             return EmptyPage(http.NO_CONTENT)
         else:

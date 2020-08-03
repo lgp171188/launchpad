@@ -612,7 +612,8 @@ class MemcachedLayer(BaseLayer):
 
         # Store the pidfile for other processes to kill.
         pid_file = MemcachedLayer.getPidFile()
-        open(pid_file, 'w').write(str(MemcachedLayer._memcached_process.pid))
+        with open(pid_file, 'w') as f:
+            f.write(str(MemcachedLayer._memcached_process.pid))
 
     @classmethod
     @profiled

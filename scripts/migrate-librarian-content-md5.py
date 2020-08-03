@@ -9,8 +9,8 @@ __metaclass__ = type
 
 import _pythonpath
 
-import commands
 import os
+import subprocess
 import sys
 
 import scandir
@@ -33,7 +33,8 @@ def main(path, minimumID=0):
             if databaseID < minimumID:
                 continue
             filename = os.path.join(dirpath, filename)
-            md5sum = commands.getoutput('md5sum ' + filename).split(' ', 1)[0]
+            md5sum = subprocess.check_output(
+                ['md5sum', filename], universal_newlines=True).split(' ', 1)[0]
             yield databaseID, md5sum
 
 

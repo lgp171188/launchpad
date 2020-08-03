@@ -19,6 +19,8 @@ from fixtures import FakeLogger
 import pytz
 import soupmatchers
 from testtools.matchers import (
+    Equals,
+    MatchesDict,
     MatchesSetwise,
     MatchesStructure,
     )
@@ -35,7 +37,10 @@ from lp.oci.browser.ocirecipe import (
     OCIRecipeEditView,
     OCIRecipeView,
     )
-from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocipushrule import (
+    IOCIPushRuleSet,
+    OCIPushRuleAlreadyExists,
+    )
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     IOCIRecipeSet,
@@ -841,13 +846,14 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
             extract_text(find_main_content(browser.contents)))
 
 
-class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
-                                 BaseTestOCIRecipeView):
+class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
+                                     BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIRecipePushRulesView, self).setUp()
+        super(TestOCIRecipeEditPushRulesView, self).setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
+
         self.useFixture(FeatureFixture({
             OCI_RECIPE_ALLOW_CREATE: "on",
             "oci.build_series.%s" % self.distroseries.distribution.name:
@@ -859,9 +865,10 @@ class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
         self.recipe = self.factory.makeOCIRecipe(
             name="recipe-name", registrant=self.person, owner=self.person,
             oci_project=oci_project)
+
         self.setConfig()
 
-    def test_view_oci_push_rules(self):
+    def test_view_oci_push_rules_owner(self):
         url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
@@ -976,6 +983,128 @@ class TestOCIRecipePushRulesView(OCIConfigHelperMixin,
                     row,
                     soupmatchers.Tag(
                         "Image name", "td", text=image_name))))
+
+    def test_edit_oci_push_rules(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        push_rule = getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        # assert image name is displayed correctly
+        with person_logged_in(self.person):
+            self.assertEqual(image_name, browser.getControl(
+                name="field.image_name.%d" % push_rule.id).value)
+
+        # assert image name is required
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.image_name.%d" % push_rule.id).value = ""
+        browser.getControl("Save").click()
+        self.assertIn("Required input is missing", browser.contents)
+
+        # set image name to valid string
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.image_name.%d" % push_rule.id).value = "image1"
+        browser.getControl("Save").click()
+        # and assert model changed
+        with person_logged_in(self.person):
+            self.assertEqual(
+                push_rule.image_name, "image1")
+            # Create a second push rule and test we call setNewImageName only
+            # in cases where image name is different than the one on the model
+            # otherwise we get the exception on rows the user doesn't actually
+            # edit as the image name stays the same as it already is on the
+            # model and setNewImageName will obviously find that rule in the
+            # db with the same details
+            second_rule = getUtility(IOCIPushRuleSet).new(
+                recipe=self.recipe,
+                registry_credentials=registry_credentials,
+                image_name="second image")
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.image_name.%d" % push_rule.id).value = "image2"
+        browser.getControl("Save").click()
+        with person_logged_in(self.person):
+            self.assertEqual(
+                push_rule.image_name, "image2")
+
+        # Attempt to set the same name on the second rule
+        # will result in expected exception
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.image_name.%d" % second_rule.id).value = "image2"
+        self.assertRaises(OCIPushRuleAlreadyExists,
+                          browser.getControl("Save").click)
+
+    def test_delete_oci_push_rules(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        push_rule = getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.delete.%d" % push_rule.id).value = True
+        browser.getControl("Save").click()
+
+        with person_logged_in(self.person):
+            self.assertIsNone(
+                getUtility(IOCIPushRuleSet).getByID(push_rule.id))
+
+    def test_edit_oci_registry_creds(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        image_name = self.factory.getUniqueUnicode()
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        browser.getLink("Edit OCI registry credentials").click()
+
+        browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_username").value = "new_username"
+        browser.getControl(name="field.add_password").value = "password"
+        browser.getControl(name="field.add_confirm_password"
+                           ).value = "password"
+
+        browser.getControl("Save").click()
+        with person_logged_in(self.person):
+            creds = list(getUtility(
+                IOCIRegistryCredentialsSet).findByOwner(
+                self.person))
+
+            self.assertEqual(url, creds[1].url)
+            self.assertThat(
+                (creds[1]).getCredentials(),
+                MatchesDict({"username": Equals("new_username"),
+                             "password": Equals("password")}))
 
 
 class TestOCIProjectRecipesView(BaseTestOCIRecipeView):

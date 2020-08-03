@@ -1,11 +1,11 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test `lp.testing.ZopeTestInSubProcess`.
+"""Test `lp.testing.RunIsolatedTest`.
 
 How does it do this?
 
-A `TestCase`, mixed-in with `ZopeTestInSubProcess`, is run by the Zope
+A `TestCase`, using `run_tests_with = RunIsolatedTest`, is run by the Zope
 test runner. This test case sets its own layer, to keep track of the
 PIDs when certain methods are called. It also records pids for its own
 methods. Assertions are made as these methods are called to ensure that
@@ -18,9 +18,11 @@ __metaclass__ = type
 
 import functools
 import os
-import unittest
 
-from lp.testing import ZopeTestInSubProcess
+from lp.testing import (
+    RunIsolatedTest,
+    TestCase,
+    )
 
 
 def record_pid(method):
@@ -36,13 +38,12 @@ def record_pid(method):
     return wrapper
 
 
-class TestZopeTestInSubProcessLayer:
-    """Helper to test `ZopeTestInSubProcess`.
+class TestRunIsolatedTestLayer:
+    """Helper to test `RunIsolatedTest`.
 
     Asserts that layers are set up and torn down in the expected way,
-    namely that setUp() and tearDown() are called in the parent
-    process, and testSetUp() and testTearDown() are called in the
-    child process.
+    namely that setUp(), testSetUp(), testTearDown(), and tearDown() are
+    called in the parent process.
 
     The assertions for tearDown() and testTearDown() must be done here
     because the test case runs before these methods are called. In the
@@ -50,7 +51,7 @@ class TestZopeTestInSubProcessLayer:
     testSetUp() are done here too.
 
     This layer expects to be *instantiated*, which is not the norm for
-    Zope layers. See `TestZopeTestInSubProcess` for its use.
+    Zope layers. See `TestRunIsolatedTest` for its use.
     """
 
     @record_pid
@@ -68,15 +69,15 @@ class TestZopeTestInSubProcessLayer:
 
     @record_pid
     def testSetUp(self):
-        # Runs in the child process.
-        assert self.pid_in___init__ != self.pid_in_testSetUp, (
-            "layer.testSetUp() called in parent process.")
+        # Runs in the parent process.
+        assert self.pid_in___init__ == self.pid_in_testSetUp, (
+            "layer.testSetUp() not called in parent process.")
 
     @record_pid
     def testTearDown(self):
-        # Runs in the child process.
-        assert self.pid_in_testSetUp == self.pid_in_testTearDown, (
-            "layer.testTearDown() not called in same process as testSetUp().")
+        # Runs in the parent process.
+        assert self.pid_in___init__ == self.pid_in_testTearDown, (
+            "layer.testTearDown() not called in parent process.")
 
     @record_pid
     def tearDown(self):
@@ -85,31 +86,33 @@ class TestZopeTestInSubProcessLayer:
             "layer.tearDown() not called in parent process.")
 
 
-class TestZopeTestInSubProcess(ZopeTestInSubProcess, unittest.TestCase):
-    """Test `ZopeTestInSubProcess`.
+class TestRunIsolatedTest(TestCase):
+    """Test `RunIsolatedTest`.
 
     Assert that setUp(), test() and tearDown() are called in the child
     process.
 
     Sets its own layer attribute. This layer is then responsible for
     recording the PID at interesting moments. Specifically,
-    layer.testSetUp() must be called in the same process as
-    test.setUp().
+    test.setUp(), test.test(), and test.tearDown() must all be called in
+    the same child process.
     """
+
+    run_tests_with = RunIsolatedTest
 
     @record_pid
     def __init__(self, method_name='runTest'):
         # Runs in the parent process.
-        super(TestZopeTestInSubProcess, self).__init__(method_name)
-        self.layer = TestZopeTestInSubProcessLayer()
+        super(TestRunIsolatedTest, self).__init__(method_name)
+        self.layer = TestRunIsolatedTestLayer()
 
     @record_pid
     def setUp(self):
         # Runs in the child process.
-        super(TestZopeTestInSubProcess, self).setUp()
-        self.assertEqual(
-            self.layer.pid_in_testSetUp, self.pid_in_setUp,
-            "setUp() not called in same process as layer.testSetUp().")
+        super(TestRunIsolatedTest, self).setUp()
+        self.assertNotEqual(
+            self.layer.pid_in___init__, self.pid_in_setUp,
+            "setUp() called in parent process.")
 
     @record_pid
     def test(self):
@@ -121,7 +124,7 @@ class TestZopeTestInSubProcess(ZopeTestInSubProcess, unittest.TestCase):
     @record_pid
     def tearDown(self):
         # Runs in the child process.
-        super(TestZopeTestInSubProcess, self).tearDown()
+        super(TestRunIsolatedTest, self).tearDown()
         self.assertEqual(
             self.pid_in_setUp, self.pid_in_tearDown,
             "tearDown() not run in same process as setUp().")

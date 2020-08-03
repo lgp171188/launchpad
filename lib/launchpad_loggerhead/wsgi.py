@@ -29,6 +29,7 @@ from launchpad_loggerhead.app import (
     oops_middleware,
     RootApp,
     )
+from launchpad_loggerhead.revision import RevisionHeaderHandler
 from launchpad_loggerhead.session import SessionHandler
 import lp.codehosting
 from lp.services.config import config
@@ -171,6 +172,7 @@ class LoggerheadApplication(Application):
         app = RootApp(SESSION_VAR)
         app = HTTPExceptionHandler(app)
         app = SessionHandler(app, SESSION_VAR, secret)
+        app = RevisionHeaderHandler(app)
         app = log_request_start_and_stop(app)
         app = PrefixMiddleware(app)
         app = oops_middleware(app)

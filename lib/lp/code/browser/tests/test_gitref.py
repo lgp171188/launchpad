@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for GitRefView."""
@@ -274,6 +274,17 @@ class TestGitRefView(BrowserTestCase):
             [link["href"] for link in details[5].findAll("a")])
         self.assertThat(
             contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
+
+    def test_show_merge_link_for_personal_repo(self):
+        person = self.factory.makePerson()
+        repo = self.factory.makeGitRepository(
+            owner=person, target=person)
+        [ref] = self.factory.makeGitRefs(
+            repository=repo, paths=["refs/heads/branch"])
+
+        view = create_initialized_view(ref, "+index")
+        self.assertTrue(view.show_merge_links)
+        self.assertEqual(1, len(view.propose_merge_notes))
 
     def _test_all_commits_link(self, branch_name, encoded_branch_name=None):
         if encoded_branch_name is None:

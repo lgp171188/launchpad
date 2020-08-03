@@ -7,6 +7,7 @@ from datetime import datetime
 import time
 
 from pymacaroons import Macaroon
+import six
 from six.moves.urllib.parse import urlparse
 from storm.exceptions import DisconnectionError
 from twisted.internet import (
@@ -17,10 +18,7 @@ from twisted.internet import (
 from twisted.internet.interfaces import IPushProducer
 from twisted.internet.threads import deferToThread
 from twisted.python import log
-from twisted.python.compat import (
-    intToBytes,
-    networkString,
-    )
+from twisted.python.compat import intToBytes
 from twisted.web import (
     http,
     proxy,
@@ -110,7 +108,7 @@ class LibraryFileAliasResource(resource.Resource):
         # self.aliasIDd, And that the host precisely matches what we generate
         # (specifically to stop people putting a good prefix to the left of an
         # attacking one).
-        hostname = request.getRequestHostname()
+        hostname = six.ensure_str(request.getRequestHostname())
         if '.restricted.' in hostname:
             # Configs can change without warning: evaluate every time.
             download_url = config.librarian.download_url
@@ -126,7 +124,7 @@ class LibraryFileAliasResource(resource.Resource):
                     (expected_hostname, hostname))
                 return fourOhFour
 
-        token = request.args.get('token', [None])[0]
+        token = request.args.get(b'token', [None])[0]
         if token is None:
             if not request.getUser() and request.getPassword():
                 try:
@@ -135,7 +133,7 @@ class LibraryFileAliasResource(resource.Resource):
                 # https://github.com/ecordell/pymacaroons/issues/50 is fixed.
                 except Exception:
                     pass
-        path = request.path
+        path = six.ensure_text(request.path)
         deferred = deferToThread(
             self._getFileAlias, self.aliasID, token, path)
         deferred.addCallback(
@@ -182,7 +180,7 @@ class LibraryFileAliasResource(resource.Resource):
         if stream is not None:
             # XXX: Brad Crittenden 2007-12-05 bug=174204: When encodings are
             # stored as part of a file's metadata this logic will be replaced.
-            encoding, mimetype = guess_librarian_encoding(filename, mimetype)
+            encoding, mimetype = guess_librarian_encoding(dbfilename, mimetype)
             file = File(mimetype, encoding, date_created, stream, size)
             # Set our caching headers. Public Librarian files can be
             # cached forever, while private ones mustn't be at all.
@@ -221,10 +219,11 @@ class File(resource.Resource):
     def _setContentHeaders(self, request):
         request.setHeader(b'content-length', intToBytes(self.size))
         if self.type:
-            request.setHeader(b'content-type', networkString(self.type))
+            request.setHeader(
+                b'content-type', six.ensure_binary(self.type, 'ASCII'))
         if self.encoding:
             request.setHeader(
-                b'content-encoding', networkString(self.encoding))
+                b'content-encoding', six.ensure_binary(self.encoding, 'ASCII'))
 
     def render_GET(self, request):
         """See `Resource`."""

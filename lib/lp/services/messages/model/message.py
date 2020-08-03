@@ -29,6 +29,7 @@ import os.path
 
 from lazr.config import as_timedelta
 import pytz
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -484,6 +485,7 @@ class MessageSet:
         return message
 
 
+@six.python_2_unicode_compatible
 @implementer(IMessageChunk)
 class MessageChunk(SQLBase):
     """One part of a possibly multipart Message"""
@@ -502,7 +504,7 @@ class MessageChunk(SQLBase):
         foreignKey='LibraryFileAlias', dbName='blob', notNull=False,
         default=None)
 
-    def __unicode__(self):
+    def __str__(self):
         """Return a text representation of this chunk.
 
         This is either the content, or a link to the blob in a format

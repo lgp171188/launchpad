@@ -10,6 +10,7 @@ __all__ = [
     'BlobUploadFailed',
     'IOCIRegistryClient',
     'ManifestUploadFailed',
+    'MultipleOCIRegistryError',
     'OCIRegistryError',
 ]
 
@@ -22,6 +23,19 @@ class OCIRegistryError(Exception):
     def __init__(self, summary, errors):
         super(OCIRegistryError, self).__init__(summary)
         self.errors = errors
+
+
+class MultipleOCIRegistryError(OCIRegistryError):
+    def __init__(self, exceptions):
+        self.exceptions = exceptions
+
+    def __str__(self):
+        return " / ".join(str(i) for i in self.exceptions)
+
+    @property
+    def errors(self):
+        return [i.errors for i in self.exceptions
+                if isinstance(i, OCIRegistryError)]
 
 
 class BlobUploadFailed(OCIRegistryError):

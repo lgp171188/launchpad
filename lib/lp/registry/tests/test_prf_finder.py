@@ -4,10 +4,10 @@
 import logging
 import os
 import shutil
-from StringIO import StringIO
 import tempfile
 
 import responses
+import six
 from testtools import ExpectedException
 import transaction
 from zope.component import getUtility
@@ -389,7 +389,7 @@ class HandleReleaseTestCase(TestCase):
         # Test that handleRelease() handles the case where a version can't be
         # parsed from the url given.
         ztm = self.layer.txn
-        output = StringIO()
+        output = six.StringIO()
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
         logger.addHandler(logging.StreamHandler(output))

@@ -8,7 +8,6 @@ from __future__ import print_function
 __metaclass__ = type
 
 import inspect
-import StringIO
 import sys
 import warnings
 
@@ -163,7 +162,7 @@ def launchpad_showwarning(message, category, filename, lineno, file=None,
                           line=None):
     if file is None:
         file = sys.stderr
-    stream = StringIO.StringIO()
+    stream = six.StringIO()
     old_show_warning(message, category, filename, lineno, stream, line=line)
     warning_message = stream.getvalue()
     important_info = find_important_info()

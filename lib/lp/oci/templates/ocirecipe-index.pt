@@ -144,6 +144,11 @@
       This OCI recipe has no push rules defined yet.
     </p>
 
+    <div tal:define="link context/menu:context/edit_push_rules"
+         tal:condition="link/enabled">
+      <tal:edit-push-rules replace="structure link/fmt:link"/>
+    </div>
+
   </div>
 
 </body>

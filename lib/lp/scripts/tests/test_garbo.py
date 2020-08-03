@@ -14,10 +14,10 @@ from datetime import (
     )
 import hashlib
 import logging
-from StringIO import StringIO
 import time
 
 from pytz import UTC
+import six
 from storm.exceptions import LostObjectError
 from storm.expr import (
     In,
@@ -431,7 +431,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runFrequently()
 
         # Capture garbo log output to tests can examine it.
-        self.log_buffer = StringIO()
+        self.log_buffer = six.StringIO()
         handler = logging.StreamHandler(self.log_buffer)
         self.log.addHandler(handler)
         self.addDetail(

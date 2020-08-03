@@ -1666,7 +1666,8 @@ class TestDebBugsDB:
             raise debbugs.LogParseFailed(
                 'debbugs-log.pl exited with code 512')
 
-        comment_data = open(self.data_file).read()
+        with open(self.data_file) as f:
+            comment_data = f.read()
         bug._emails = []
         bug.comments = [comment.strip() for comment in
             comment_data.split('--\n')]
