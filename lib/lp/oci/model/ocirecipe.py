@@ -145,11 +145,14 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     require_virtualized = Bool(name="require_virtualized", default=True,
                                allow_none=False)
 
+    allow_internet = Bool(name='allow_internet', allow_none=False)
+
     build_daily = Bool(name="build_daily", default=False)
 
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
-                 build_file=None, build_daily=False, date_created=DEFAULT):
+                 build_file=None, build_daily=False, date_created=DEFAULT,
+                 allow_internet=True):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
@@ -165,6 +168,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.date_created = date_created
         self.date_last_modified = date_created
         self.git_ref = git_ref
+        self.allow_internet = allow_internet
 
     def __repr__(self):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
@@ -502,7 +506,8 @@ class OCIRecipeSet:
 
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            build_daily=False, processors=None, date_created=DEFAULT):
+            build_daily=False, processors=None, date_created=DEFAULT,
+            allow_internet=True):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -524,7 +529,7 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created)
+            date_created, allow_internet)
         store.add(oci_recipe)
 
         if processors is None:
