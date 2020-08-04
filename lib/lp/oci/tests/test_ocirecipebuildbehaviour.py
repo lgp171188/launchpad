@@ -80,6 +80,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
+from lp.snappy.model.snapbuildbehaviour import proxy_pool
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -122,6 +123,7 @@ class MakeOCIBuildMixin:
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+        self.addCleanup(proxy_pool(slave.reactor).closeCachedConnections)
         self.addCleanup(shut_down_default_process_pool)
 
         # Taken from test_archivedependencies.py
