@@ -109,7 +109,14 @@ class FileWritingProtocol(Protocol):
 
 
 class LimitedHTTPConnectionPool(HTTPConnectionPool):
-    """A connection pool with an upper limit on open connections."""
+    """A connection pool with an upper limit on open connections.
+
+    WARNING: Connections that should not be returned to the pool (like any
+    non-persistent connection) are not releasing the semaphore (see
+    HTTP11ClientProtocol._finishResponse_WAITING), leading this pool to
+    lock forever once the limit is reached. This should be fixed before
+    using this class.
+    """
 
     # XXX cjwatson 2016-05-25: This actually only limits active connections,
     # and doesn't count idle but open connections towards the limit; this is
