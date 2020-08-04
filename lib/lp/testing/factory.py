@@ -4987,7 +4987,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipe(self, name=None, registrant=None, owner=None,
                       oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
-                      build_file=None, date_created=DEFAULT):
+                      build_file=None, date_created=DEFAULT,
+                      allow_internet=True):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -5013,7 +5014,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             description=description,
             official=official,
             require_virtualized=require_virtualized,
-            date_created=date_created)
+            date_created=date_created,
+            allow_internet=allow_internet)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""
@@ -5026,7 +5028,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipeBuild(self, requester=None, registrant=None, recipe=None,
                            distro_arch_series=None, date_created=DEFAULT,
                            status=BuildStatus.NEEDSBUILD, builder=None,
-                           duration=None):
+                           duration=None, **kwargs):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -5047,7 +5049,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             if registrant is None:
                 registrant = requester
             recipe = self.makeOCIRecipe(
-                registrant=registrant, oci_project=oci_project)
+                registrant=registrant, oci_project=oci_project, **kwargs)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
         if duration is not None:

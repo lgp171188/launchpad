@@ -499,6 +499,7 @@ class IOCIRecipeEditSchema(Interface):
         "build_file",
         "build_daily",
         "require_virtualized",
+        "allow_internet",
         "push_rules",
         ])
 
@@ -612,7 +613,7 @@ class OCIRecipeAdminView(BaseOCIRecipeEditView):
 
     page_title = "Administer"
 
-    field_names = ("require_virtualized",)
+    field_names = ("require_virtualized", "allow_internet")
 
 
 class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):

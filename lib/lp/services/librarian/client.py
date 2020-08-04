@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -14,7 +14,7 @@ __all__ = [
 
 
 import hashlib
-from select import select
+import select
 import socket
 from socket import (
     SOCK_STREAM,
@@ -98,20 +98,36 @@ class FileUploadClient:
             self.state.s = socket.socket(AF_INET, SOCK_STREAM)
             self.state.s.connect((self.upload_host, self.upload_port))
             self.state.f = self.state.s.makefile('rwb', 0)
+
+            # Register epoll for the socket.
+            self.state.s_poll = select.epoll()
+            self.state.s_poll.register(self.state.s.fileno(), select.EPOLLIN)
         except socket.error as x:
             raise UploadFailed(
                 '[%s:%s]: %s' % (self.upload_host, self.upload_port, x))
 
     def _close(self):
         """Close connection"""
+        self.state.s_poll.unregister(self.state.s.fileno())
+        self.state.s_poll.close()
+        del self.state.s_poll
         del self.state.s
         del self.state.f
 
     def _checkError(self):
-        if select([self.state.s], [], [], 0)[0]:
+        poll_result = self.state.s_poll.poll(0)
+        if poll_result:
+            fileno, event = poll_result[0]
+            # Accepts any event that contains input data. Even if we
+            # only subscribed to EPOLLIN, when connection is closed right
+            # after sending data, we will receive [EPOLLHUP | EPOLLERR |
+            # EPOLLIN] == 25, for example). EPOLLIN is the first bit,
+            # so we should check just that for incoming data.
+            if fileno != self.state.s.fileno() or not (event & select.EPOLLIN):
+                return
             response = six.ensure_str(
                 self.state.f.readline().strip(), errors='replace')
-            raise UploadFailed('Server said: ' + response)
+            raise UploadFailed('Server said early: ' + response)
 
     def _sendLine(self, line, check_for_error_responses=True):
         self.state.f.write(six.ensure_binary(line + '\r\n'))

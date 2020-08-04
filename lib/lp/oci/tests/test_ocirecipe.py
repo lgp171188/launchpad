@@ -806,6 +806,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         self.assertEqual(target.official, False)
         self.assertEqual(target.require_virtualized, False)
         self.assertEqual(target.git_ref, git_ref)
+        self.assertTrue(target.allow_internet)
 
     def test_already_exists(self):
         owner = self.factory.makePerson()

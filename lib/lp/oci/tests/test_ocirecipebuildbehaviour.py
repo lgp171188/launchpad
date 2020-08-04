@@ -80,6 +80,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
+from lp.snappy.model.snapbuildbehaviour import proxy_pool
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -106,13 +107,14 @@ class MakeOCIBuildMixin:
         build.queueBuild()
         return build
 
-    def makeJob(self, git_ref, recipe=None, build=None):
+    def makeJob(self, git_ref, recipe=None, build=None, **kwargs):
         """Create a sample `IOCIRecipeBuildBehaviour`."""
         if build is None:
             if recipe is None:
-                build = self.factory.makeOCIRecipeBuild()
+                build = self.factory.makeOCIRecipeBuild(**kwargs)
             else:
-                build = self.factory.makeOCIRecipeBuild(recipe=recipe)
+                build = self.factory.makeOCIRecipeBuild(
+                    recipe=recipe, **kwargs)
         build.recipe.git_ref = git_ref
 
         job = IBuildFarmJobBehaviour(build)
@@ -121,6 +123,7 @@ class MakeOCIBuildMixin:
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+        self.addCleanup(proxy_pool(slave.reactor).closeCachedConnections)
         self.addCleanup(shut_down_default_process_pool)
 
         # Taken from test_archivedependencies.py
@@ -330,7 +333,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
     def test_dispatchBuildToSlave_prefers_lxd(self):
         self.pushConfig("snappy", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
-        job = self.makeJob(git_ref=ref)
+        job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
         slave = OkSlave()
@@ -349,7 +352,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):
         self.pushConfig("snappy", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
-        job = self.makeJob(git_ref=ref)
+        job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
         slave = OkSlave()
@@ -400,6 +403,17 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         # and check inside the arguments dict that we build
         # for Distro series
         self.assertEqual(distroseries.name, slave.call_log[1][5]['series'])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_disallow_internet(self):
+        # If external network access is not allowed for the OCI Recipe,
+        # extraBuildArgs does not dispatch a proxy token.
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref, allow_internet=False)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertNotIn("proxy_url", args)
+        self.assertNotIn("revocation_endpoint", args)
 
 
 class TestHandleStatusForOCIRecipeBuild(WithScenarios,

@@ -1649,6 +1649,8 @@ class PageTestLayer(LaunchpadFunctionalLayer, BingServiceLayer):
     """Environment for page tests.
     """
 
+    log_location = None
+
     @classmethod
     @profiled
     def setUp(cls):
@@ -1656,7 +1658,8 @@ class PageTestLayer(LaunchpadFunctionalLayer, BingServiceLayer):
             PageTestLayer.profiler = Profile()
         else:
             PageTestLayer.profiler = None
-        file_handler = logging.FileHandler('logs/pagetests-access.log', 'w')
+        cls.log_location = tempfile.NamedTemporaryFile().name
+        file_handler = logging.FileHandler(cls.log_location, 'w')
         file_handler.setFormatter(logging.Formatter())
         logger = PythonLogger('pagetests-access')
         logger.logger.addHandler(file_handler)
