@@ -36,7 +36,6 @@ class IRevision(Interface):
     revision_author_id = Attribute("Revision author identifier id.")
     revision_author = Attribute("The revision author identifier.")
 
-    gpgkey = Attribute("The OpenPGP key used to sign the revision.")
     revision_id = Attribute("The globally unique revision identifier.")
     revision_date = Datetime(
         title=_("The date the revision was committed."),
