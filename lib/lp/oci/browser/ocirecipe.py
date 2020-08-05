@@ -500,7 +500,6 @@ class IOCIRecipeEditSchema(Interface):
         "build_daily",
         "require_virtualized",
         "allow_internet",
-        "push_rules",
         ])
 
 
@@ -632,7 +631,6 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
         "git_ref",
         "build_file",
         "build_daily",
-        "push_rules",
         )
     custom_widget_git_ref = GitRefWidget
 
