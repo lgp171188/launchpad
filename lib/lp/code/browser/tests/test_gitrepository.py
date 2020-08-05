@@ -244,9 +244,8 @@ class TestGitRepositoryView(BrowserTestCase):
         git_push_url_hint_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Push url hint', 'span',
-                text='git+ssh://%s@git.launchpad.test/~%s/%s/+git/%s' %
-                     (self.user.name, self.user.name,
-                      repository.target.name, repository.name)))
+                text='git+ssh://%s@git.launchpad.test/~%s/%s' %
+                     (self.user.name, self.user.name, repository.target.name)))
         with person_logged_in(self.user):
             rendered_view = view.render()
             self.assertThat(rendered_view, git_push_url_text_match)
@@ -315,6 +314,27 @@ class TestGitRepositoryView(BrowserTestCase):
             self.assertThat(rendered_view, git_push_url_text_match)
             self.assertThat(rendered_view, git_push_url_hint_match)
 
+    def test_push_directions_logged_in_cannot_push_personal_project(self):
+        # If the user is logged in but cannot push to a repository owned by
+        # a person, we explain who can push.
+        repository = self.factory.makeGitRepository(
+            owner=self.user, target=self.user)
+        other_user = self.factory.makePerson()
+        login_person(other_user)
+        view = create_initialized_view(
+            repository, '+index', principal=other_user)
+        git_push_url_text_match = soupmatchers.Tag(
+                'Push url text', 'a',
+                text=self.user.displayname)
+        with person_logged_in(other_user):
+            rendered_view = view.render()
+            div = soupmatchers.Tag("Push directions", "div",
+                                    attrs={"id": "push-directions"})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    div,
+                    git_push_url_text_match)))
+
     def test_push_directions_logged_in_cannot_push_team(self):
         # If the user is logged in but cannot push to a repository owned by
         # a team, we explain who can push.
@@ -331,9 +351,8 @@ class TestGitRepositoryView(BrowserTestCase):
         git_push_url_hint_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Push url hint', 'span',
-                text='git+ssh://%s@git.launchpad.test/~%s/%s/+git/%s' %
-                     (self.user.name, self.user.name,
-                      repository.target.name, repository.name)))
+                text='git+ssh://%s@git.launchpad.test/~%s/%s' %
+                     (self.user.name, self.user.name, repository.target.name)))
         with person_logged_in(self.user):
             rendered_view = view.render()
             self.assertThat(rendered_view, git_push_url_text_match)

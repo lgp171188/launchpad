@@ -173,11 +173,8 @@ class TestGitRefView(BrowserTestCase):
             soupmatchers.Tag(
                 'Push url hint', 'span',
                 text=('git+ssh://%s@git.launchpad.test/'
-                      '~%s/%s/+git/%s') % (
-                    self.user.name,
-                    self.user.name,
-                    repo.target.name,
-                    repo.name)))
+                      '~%s/%s') % (
+                    self.user.name, self.user.name, repo.target.name)))
         with person_logged_in(self.user):
             rendered_view = view.render()
             self.assertThat(rendered_view, git_push_url_text_match)

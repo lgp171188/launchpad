@@ -388,30 +388,27 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         return urlunsplit(url)
 
     @property
+    def personal_project(self):
+        return (IPerson.providedBy(self.context.owner)
+                and IPerson.providedBy(self.context.target) and
+                (self.context.owner == self.context.target))
+
+    @property
     def git_ssh_url_non_owner(self):
         """The git+ssh:// URL for this repository, adjusted for this user.
         The user is not the owner of the repository."""
 
-        if not self.context.target_default:
-            base_url = urlsplit(self.git_ssh_url)
-            url = list(base_url)
-            url[1] = "{}@{}".format(self.user.name, base_url.hostname)
-            url[2] = url[2].replace(
-                "/~%s" % self.context.owner.name,
-                "/~%s" % self.user.name, 1)
-            return urlunsplit(url)
-        else:
-            contributor = ContributorGitIdentity(
-                owner=self.user,
-                target=self.context.target,
-                owner_default=True,
-                target_default=False,
-                repository=self.context)
-            base_url = urlutils.join(
-                config.codehosting.git_ssh_root, contributor.shortened_path)
-            url = list(urlsplit(base_url))
-            url[1] = "{}@{}".format(self.user.name, url[1])
-            return urlunsplit(url)
+        contributor = ContributorGitIdentity(
+            owner=self.user,
+            target=self.context.target,
+            owner_default=True,
+            target_default=False,
+            repository=self.context)
+        base_url = urlutils.join(
+            config.codehosting.git_ssh_root, contributor.shortened_path)
+        url = list(urlsplit(base_url))
+        url[1] = "{}@{}".format(self.user.name, url[1])
+        return urlunsplit(url)
 
     @property
     def user_can_push(self):
