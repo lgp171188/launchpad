@@ -324,7 +324,7 @@ class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
             recipe, "date_last_modified", UTC_NOW)
 
 
-class TestOCIRecipeEditView(BaseTestOCIRecipeView):
+class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def setUp(self):
         super(TestOCIRecipeEditView, self).setUp()
@@ -335,6 +335,7 @@ class TestOCIRecipeEditView(BaseTestOCIRecipeView):
             "oci.build_series.%s" % self.distribution.name:
                 self.distroseries.name,
             }))
+        self.setConfig()
 
     def setUpDistroSeries(self):
         """Set up self.distroseries with some available processors."""
@@ -368,6 +369,7 @@ class TestOCIRecipeEditView(BaseTestOCIRecipeView):
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         [new_git_ref] = self.factory.makeGitRefs()
+        self.factory.makeOCIPushRule(recipe=recipe)
 
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit OCI recipe").click()
