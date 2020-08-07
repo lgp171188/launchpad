@@ -27,6 +27,7 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -52,6 +53,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
@@ -581,9 +583,14 @@ class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
         # An OCI recipe with builds can be deleted.
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person)
-        self.factory.makeOCIRecipeBuild(recipe=recipe)
-        # XXX cjwatson 2020-02-19: This should also add a file to the build
-        # once that works.
+        ocibuild = self.factory.makeOCIRecipeBuild(recipe=recipe)
+        job = self.factory.makeOCIRecipeBuildJob(build=ocibuild)
+        ocifile = self.factory.makeOCIFile(build=ocibuild)
+
+        unrelated_build = self.factory.makeOCIRecipeBuild()
+        unrelated_job = self.factory.makeOCIRecipeBuildJob()
+        unrelated_file = self.factory.makeOCIFile(build=unrelated_build)
+
         recipe_url = canonical_url(recipe)
         oci_project_url = canonical_url(recipe.oci_project)
         browser = self.getViewBrowser(recipe, user=self.person)
@@ -591,6 +598,22 @@ class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
         browser.getControl("Delete OCI recipe").click()
         self.assertEqual(oci_project_url, browser.url)
         self.assertRaises(NotFound, browser.open, recipe_url)
+
+        # Checks that only the related artifacts were deleted too.
+        def obj_exists(obj, search_key='id'):
+            obj = removeSecurityProxy(obj)
+            store = IStore(obj)
+            cls = obj.__class__
+            cls_attribute = getattr(cls, search_key)
+            identifier = getattr(obj, search_key)
+            return not store.find(cls, cls_attribute == identifier).is_empty()
+        self.assertFalse(obj_exists(ocibuild))
+        self.assertFalse(obj_exists(ocifile))
+        self.assertFalse(obj_exists(job, 'job_id'))
+
+        self.assertTrue(obj_exists(unrelated_build))
+        self.assertTrue(obj_exists(unrelated_file))
+        self.assertTrue(obj_exists(unrelated_job, 'job_id'))
 
 
 class TestOCIRecipeView(BaseTestOCIRecipeView):

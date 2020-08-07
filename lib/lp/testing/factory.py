@@ -165,6 +165,10 @@ from lp.oci.interfaces.ociregistrycredentials import (
     )
 from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
+from lp.oci.model.ocirecipebuildjob import (
+    OCIRecipeBuildJob,
+    OCIRecipeBuildJobType,
+    )
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -5075,6 +5079,15 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 content=content, filename=filename)
         return OCIFile(build=build, library_file=library_file,
                        layer_file_digest=layer_file_digest)
+
+    def makeOCIRecipeBuildJob(self, build=None):
+        store = IStore(OCIRecipeBuildJob)
+        if build is None:
+            build = self.makeOCIRecipeBuild()
+        job = OCIRecipeBuildJob(
+            build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
+        store.add(job)
+        return job
 
     def makeOCIRegistryCredentials(self, owner=None, url=None,
                                    credentials=None):
