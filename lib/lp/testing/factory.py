@@ -974,7 +974,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         signature_content = None
         if signed:
             signature_filename = '%s.asc' % filename
-            signature_content = '123'
+            signature_content = b'123'
         if release is None:
             release = self.makeProductRelease(product=product,
                                               productseries=productseries,
