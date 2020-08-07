@@ -150,7 +150,6 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
-from lp.codehosting.codeimport.worker import CodeImportSourceDetails
 from lp.hardwaredb.interfaces.hwdb import (
     HWSubmissionFormat,
     IHWDeviceDriverLinkSet,
@@ -523,6 +522,14 @@ class ObjectFactory(
                                     target_rcstype=None, url=None,
                                     cvs_root=None, cvs_module=None,
                                     stacked_on_url=None, macaroon=None):
+        if not six.PY2:
+            raise NotImplementedError(
+                "Code imports do not yet work on Python 3.")
+
+        # XXX cjwatson 2020-08-07: Move this back up to module level once
+        # codeimport has been ported to Breezy.
+        from lp.codehosting.codeimport.worker import CodeImportSourceDetails
+
         if target_id is None:
             target_id = self.getUniqueInteger()
         if rcstype is None:
