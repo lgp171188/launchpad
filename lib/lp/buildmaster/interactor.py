@@ -61,43 +61,6 @@ class QuietQueryFactory(xmlrpc._QueryFactory):
     noisy = False
 
 
-class LimitedHTTPConnectionPool(HTTPConnectionPool):
-    """A connection pool with an upper limit on open connections.
-
-    WARNING: Connections that should not be returned to the pool (like any
-    non-persistent connection) are not releasing the semaphore (see
-    HTTP11ClientProtocol._finishResponse_WAITING), leading this pool to
-    lock forever once the limit is reached. This should be fixed before
-    using this class.
-    """
-
-    # XXX cjwatson 2016-05-25: This actually only limits active connections,
-    # and doesn't count idle but open connections towards the limit; this is
-    # because it's very difficult to do the latter with HTTPConnectionPool's
-    # current design.  Users of this pool must therefore expect some
-    # additional file descriptors to be open for idle connections.
-
-    def __init__(self, reactor, limit, persistent=True):
-        super(LimitedHTTPConnectionPool, self).__init__(
-            reactor, persistent=persistent)
-        self._semaphore = defer.DeferredSemaphore(limit)
-
-    def getConnection(self, key, endpoint):
-        d = self._semaphore.acquire()
-        d.addCallback(
-            lambda _: super(LimitedHTTPConnectionPool, self).getConnection(
-                key, endpoint))
-        return d
-
-    def _putConnection(self, key, connection):
-        super(LimitedHTTPConnectionPool, self)._putConnection(key, connection)
-        # Only release the semaphore in the next main loop iteration; if we
-        # release it here then the next request may start using this
-        # connection's parser before this request has quite finished with
-        # it.
-        self._reactor.callLater(0, self._semaphore.release)
-
-
 _default_pool = None
 _default_process_pool = None
 _default_process_pool_shutdown = None
