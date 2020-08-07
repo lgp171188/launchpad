@@ -472,11 +472,11 @@ class EqualsIgnoringWhitespace(Equals):
     """
 
     def __init__(self, expected):
-        if isinstance(expected, (str, unicode)):
+        if isinstance(expected, six.string_types):
             expected = normalize_whitespace(expected)
         super(EqualsIgnoringWhitespace, self).__init__(expected)
 
     def match(self, observed):
-        if isinstance(observed, (str, unicode)):
+        if isinstance(observed, six.string_types):
             observed = normalize_whitespace(observed)
         return super(EqualsIgnoringWhitespace, self).match(observed)

@@ -824,7 +824,7 @@ def get_raw_form_value_from_current_request(field, field_name):
     # Zope wrongly encodes any form element that doesn't look like a file,
     # so re-fetch the file content if it has been encoded.
     if request and field_name in request.form and isinstance(
-        request.form[field_name], unicode):
+            request.form[field_name], six.text_type):
         request._environ['wsgi.input'].seek(0)
         fs = FieldStorage(fp=request._body_instream, environ=request._environ)
         return fs[field_name].value

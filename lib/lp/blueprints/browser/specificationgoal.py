@@ -10,6 +10,7 @@ __all__ = [
     ]
 
 
+import six
 from zope.component import getUtility
 
 from lp.blueprints.browser.specificationtarget import HasSpecificationsView
@@ -79,7 +80,7 @@ class GoalDecideView(HasSpecificationsView, LaunchpadView):
                 action = 'Declined'
 
         selected_specs = form['specification']
-        if isinstance(selected_specs, unicode):
+        if isinstance(selected_specs, six.text_type):
             # only a single item was selected, but we want to deal with a
             # list for the general case, so convert it to a list
             selected_specs = [selected_specs]

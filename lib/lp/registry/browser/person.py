@@ -65,6 +65,7 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
+import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
@@ -2773,7 +2774,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         """
         terms = []
         for term in self.unvalidated_addresses:
-            if isinstance(term, unicode):
+            if isinstance(term, six.text_type):
                 term = SimpleTerm(term)
             else:
                 term = SimpleTerm(term, term.email)
@@ -2814,7 +2815,7 @@ class PersonEditEmailsView(LaunchpadFormView):
                 "self.context.id(%s,%d) (%s)"
                 % (person.name, person.id, self.context.name, self.context.id,
                    email.email))
-        elif isinstance(email, unicode):
+        elif isinstance(email, six.text_type):
             tokenset = getUtility(ILoginTokenSet)
             email = tokenset.searchByEmailRequesterAndType(
                 email, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -2940,7 +2941,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         if IEmailAddress.providedBy(emailaddress):
             emailaddress.destroySelf()
             email = emailaddress.email
-        elif isinstance(emailaddress, unicode):
+        elif isinstance(emailaddress, six.text_type):
             logintokenset = getUtility(ILoginTokenSet)
             logintokenset.deleteByEmailRequesterAndType(
                 emailaddress, self.context, LoginTokenType.VALIDATEEMAIL)

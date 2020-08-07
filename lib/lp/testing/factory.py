@@ -4178,7 +4178,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             binpackageformat = BinaryPackageFormat.DEB
         if component is None:
             component = build.source_package_release.component
-        elif isinstance(component, unicode):
+        elif isinstance(component, six.text_type):
             component = getUtility(IComponentSet)[component]
         if isinstance(section_name, basestring):
             section_name = self.makeSection(section_name)
