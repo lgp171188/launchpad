@@ -28,8 +28,7 @@ import fixtures
 from lpbuildd.tests.harness import BuilddSlaveTestSetup
 import six
 from six.moves import xmlrpc_client
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import attach_file
 from twisted.internet import defer
 from twisted.web import xmlrpc
 
@@ -308,11 +307,8 @@ class SlaveTestHelpers(fixtures.Fixture):
         :return: A `BuilddSlaveTestSetup` object.
         """
         tachandler = self.useFixture(LPBuilddSlaveTestSetup())
-        self.addDetail(
-            'xmlrpc-log-file',
-            Content(
-                UTF8_TEXT,
-                lambda: open(tachandler.logfile, 'r').readlines()))
+        attach_file(
+            self, tachandler.logfile, name='xmlrpc-log-file', buffer_now=False)
         return tachandler
 
     def getClientSlave(self, reactor=None, proxy=None,
