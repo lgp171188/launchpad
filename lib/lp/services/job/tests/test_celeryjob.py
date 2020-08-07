@@ -6,8 +6,7 @@ from time import sleep
 
 from lazr.jobrunner.bin.clear_queues import clear_queues
 import six
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 
 from lp.code.model.branchjob import BranchScanJob
 from lp.scripts.helpers import TransactionFreeOperation
@@ -71,8 +70,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
                   (expected_len, actual_len))
 
     def addTextDetail(self, name, text):
-        content = Content(UTF8_TEXT, lambda: text)
-        self.addDetail(name, content)
+        self.addDetail(name, text_content(text))
 
     def test_find_missing_ready(self):
         """A job which is ready but not queued is "missing"."""

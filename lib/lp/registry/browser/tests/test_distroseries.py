@@ -13,6 +13,7 @@ from textwrap import TextWrapper
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from lxml import html
+import six
 from six.moves.urllib.parse import (
     urlencode,
     urlparse,
@@ -975,7 +976,7 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
                     list(prepare_statements(rec1)),
                     list(prepare_statements(rec2)))
                 for line in diff:
-                    yield "%s\n" % line
+                    yield six.ensure_binary("%s\n" % line)
 
             return statement_diff
 
