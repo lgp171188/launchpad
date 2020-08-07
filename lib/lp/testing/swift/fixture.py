@@ -53,7 +53,8 @@ class SwiftFixture(TacTestFixture):
         self.addCleanup(lambda: os.path.exists(logfile) and os.unlink(logfile))
 
         testtools.content.attach_file(
-            self, logfile, 'swift-log', testtools.content_type.UTF8_TEXT)
+            self, logfile, 'swift-log', testtools.content_type.UTF8_TEXT,
+            buffer_now=False)
 
         service_config = dedent("""\
             [librarian_server]
