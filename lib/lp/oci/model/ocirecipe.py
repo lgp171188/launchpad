@@ -184,13 +184,21 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         """See `IOCIProject.setOfficialRecipe` method."""
         return self._official
 
-    def _destroyRelatedBuilds(self):
-        """Remove builds associated with this OCIRecipe and its files."""
+    def destroySelf(self):
+        """See `IOCIRecipe`."""
+        # XXX twom 2019-11-26 This needs to expand as more build artifacts
+        # are added
         store = IStore(OCIRecipe)
+        store.find(OCIRecipeArch, OCIRecipeArch.recipe == self).remove()
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id == OCIRecipeBuild.build_farm_job_id,
+            OCIRecipeBuild.recipe == self)
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(store.find(
+            OCIRecipeBuild.build_farm_job_id, OCIRecipeBuild.recipe == self))
 
-        # Doing manual queries here due to the lack of support for
-        # `DELETE FROM...USING` or `DELETE FROM ... WHERE id IN (SUBQUERY)`
-        # on Storm ORM.
         store.execute("""
             DELETE FROM OCIFile
             USING OCIRecipeBuild
@@ -212,24 +220,6 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
         builds = store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self)
         builds.remove()
-
-    def destroySelf(self):
-        """See `IOCIRecipe`."""
-        # XXX twom 2019-11-26 This needs to expand as more build artifacts
-        # are added
-        store = IStore(OCIRecipe)
-        store.find(OCIRecipeArch, OCIRecipeArch.recipe == self).remove()
-        buildqueue_records = store.find(
-            BuildQueue,
-            BuildQueue._build_farm_job_id == OCIRecipeBuild.build_farm_job_id,
-            OCIRecipeBuild.recipe == self)
-        for buildqueue_record in buildqueue_records:
-            buildqueue_record.destroySelf()
-        build_farm_job_ids = list(store.find(
-            OCIRecipeBuild.build_farm_job_id, OCIRecipeBuild.recipe == self))
-
-        self._destroyRelatedBuilds()
-
         getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
