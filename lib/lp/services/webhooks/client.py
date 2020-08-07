@@ -45,7 +45,9 @@ def create_request(user_agent, secret, delivery_id, event_type, payload):
         'X-Launchpad-Delivery': delivery_id,
         }
     if secret is not None:
-        hexdigest = hmac.new(secret, body, digestmod=hashlib.sha1).hexdigest()
+        hexdigest = hmac.new(
+            secret.encode('UTF-8'), body.encode('UTF-8'),
+            digestmod=hashlib.sha1).hexdigest()
         headers['X-Hub-Signature'] = 'sha1=%s' % hexdigest
     return (body, headers)
 
