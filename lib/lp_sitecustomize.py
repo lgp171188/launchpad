@@ -21,6 +21,7 @@ from lp.services.log import loglevels
 from lp.services.log.logger import LaunchpadLogger
 from lp.services.log.mappingfilter import MappingFilter
 from lp.services.mime import customizeMimetypes
+from lp.services.openid.fetcher import set_default_openid_fetcher
 
 
 def add_custom_loglevels():
@@ -178,6 +179,7 @@ def main(instance_name=None):
     customizeMimetypes()
     silence_warnings()
     customize_logger()
+    set_default_openid_fetcher()
     checker.BasicTypes.update({defaultdict: checker.NoProxy})
     checker.BasicTypes.update({Deferred: checker.NoProxy})
     checker.BasicTypes.update({DeferredList: checker.NoProxy})

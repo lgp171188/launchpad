@@ -278,10 +278,7 @@ python-dateutil==2.8.1
 python-debian==0.1.32
 python-keystoneclient==0.7.1
 python-memcached==1.58
-# XXX: deryck 2012-08-10
-# See lp:~deryck/python-openid/python-openid-fix1034376 which
-# reapplied a patch from wgrant to get codehosting going again.
-python-openid==2.2.5-fix1034376
+python-openid2==3.2
 python-swiftclient==2.0.3
 PyYAML==3.10
 rabbitfixture==0.4.2

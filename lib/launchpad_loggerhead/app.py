@@ -53,7 +53,6 @@ from lp.code.interfaces.codehosting import (
 from lp.codehosting.vfs import get_lp_server
 from lp.services.config import config
 from lp.services.webapp.errorlog import ErrorReportingUtility
-from lp.services.webapp.openid import set_default_openid_fetcher
 from lp.services.webapp.vhosts import allvhosts
 from lp.xmlrpc import faults
 
@@ -67,9 +66,6 @@ robots_app = DataApp(robots_txt, content_type='text/plain')
 
 
 thread_locals = threading.local()
-
-
-set_default_openid_fetcher()
 
 
 def check_fault(fault, *fault_classes):
@@ -124,7 +120,7 @@ class RootApp:
         openid_request = self._make_consumer(environ).begin(
             config.launchpad.openid_provider_root)
         openid_request.addExtension(
-            SRegRequest(required=['nickname']))
+            SRegRequest(required=[u'nickname']))
         back_to = construct_url(environ)
         raise HTTPMovedPermanently(openid_request.redirectURL(
             config.codehosting.secure_codebrowse_root,

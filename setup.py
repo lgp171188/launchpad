@@ -216,7 +216,7 @@ setup(
         'python-keystoneclient',
         'python-memcached',
         'python-mimeparse',
-        'python-openid',
+        'python-openid2',
         'python-subunit',
         'python-swiftclient',
         'pytz',
