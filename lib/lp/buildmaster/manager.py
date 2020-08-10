@@ -17,6 +17,7 @@ import functools
 import logging
 
 import six
+import statsd
 from storm.expr import (
     Column,
     LeftJoin,
@@ -61,6 +62,7 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.propertycache import get_property_cache
+from lp.services.statsd import LPStatsClient
 
 
 BUILDD_MANAGER_LOG_NAME = "slave-scanner"
@@ -691,6 +693,9 @@ class BuilddManager(service.Service):
     # How often to flush logtail updates, in seconds.
     FLUSH_LOGTAILS_INTERVAL = 15
 
+    # How often to update stats, in seconds
+    UPDATE_STATS_INTERVAL = 60
+
     def __init__(self, clock=None, builder_factory=None):
         # Use the clock if provided, it's so that tests can
         # advance it.  Use the reactor by default.
@@ -720,6 +725,30 @@ class BuilddManager(service.Service):
         logger.addHandler(channel)
         logger.setLevel(level)
         return logger
+
+    def updateStats(self):
+        """Update statsd with the builder statuses."""
+        counts_by_processor = {}
+        for builder in self.builder_factory.iterVitals():
+            for processor_name in builder.processor_names:
+                counts = counts_by_processor.get(
+                    processor_name,
+                    {
+                        'cleaning': 0,
+                        'ok': 0,
+                        'disabled': 0,
+                        })
+                if builder.clean_status == BuilderCleanStatus.CLEANING:
+                    counts['cleaning'] += 1
+                elif builder.builderok:
+                    counts['ok'] += 1
+                else:
+                    counts['disabled'] += 1
+                counts_by_processor[processor_name] = counts
+        for processor, counts in counts_by_processor.items():
+            for count_name, count_value in counts.items():
+                gauge_name = "builders.{}.{}".format(processor, count_name)
+                LPStatsClient.gauge(gauge_name, count_value)
 
     def checkForNewBuilders(self):
         """Add and return any new builders."""
@@ -790,6 +819,9 @@ class BuilddManager(service.Service):
         # Schedule bulk flushes for build queue logtail updates.
         self.flush_logtails_loop, self.flush_logtails_deferred = (
             self._startLoop(self.FLUSH_LOGTAILS_INTERVAL, self.flushLogTails))
+        # Schedule stats updates.
+        self.stats_update_loop, self.stats_update_deferred = (
+            self._startLoop(self.UPDATE_STATS_INTERVAL, self.updateStats))
 
     def stopService(self):
         """Callback for when we need to shut down."""
@@ -798,9 +830,11 @@ class BuilddManager(service.Service):
         deferreds = [slave.stopping_deferred for slave in self.builder_slaves]
         deferreds.append(self.scan_builders_deferred)
         deferreds.append(self.flush_logtails_deferred)
+        deferreds.append(self.stats_update_deferred)
 
         self.flush_logtails_loop.stop()
         self.scan_builders_loop.stop()
+        self.stats_update_loop.stop()
         for slave in self.builder_slaves:
             slave.stopCycle()
 

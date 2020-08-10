@@ -298,6 +298,7 @@ SimpleTAL==4.3; python_version < "3"
 SimpleTAL==5.2; python_version >= "3"
 soupmatchers==0.4
 soupsieve==1.9
+statsd==3.3.0
 # lp:~launchpad-committers/storm/lp
 storm==0.24+lp416
 subprocess32==3.2.6

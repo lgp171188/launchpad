@@ -229,6 +229,7 @@ setup(
         'six',
         'soupmatchers',
         'Sphinx',
+        'statsd',
         'storm',
         'subvertpy',
         'tenacity',
