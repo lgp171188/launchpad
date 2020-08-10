@@ -60,7 +60,8 @@ def filter_tests(list_name, reorder_tests=False):
     """
     def do_filter(tests_by_layer_name):
         # Read the tests, filtering out any blank lines.
-        tests = filter(None, [line.strip() for line in open(list_name, 'rb')])
+        with open(list_name) as f:
+            tests = [line.strip() for line in f if line]
         if reorder_tests:
             tests.sort()
         test_lookup = {}
