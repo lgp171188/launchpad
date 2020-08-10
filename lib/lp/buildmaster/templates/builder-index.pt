@@ -96,13 +96,14 @@
       <tal:builderok condition="builder/builderok">
         <tal:idle condition="not: builder/manual">
           <tal:cleaning condition="not: builder/clean_status/enumvalue:CLEAN">
-          <span class="sortkey" tal:content="string:0" />
-          <img width="14" height="14" src="/@@/processing" alt="[cleaning]" />
-          Cleaning
+            <span class="sortkey" tal:content="string:0" />
+            <img width="14" height="14" src="/@@/processing"
+                 alt="[cleaning]" />
+            <tal:info content="python: view.getCleanInfo(builder)" />
           </tal:cleaning>
           <tal:clean condition="builder/clean_status/enumvalue:CLEAN">
-          <span class="sortkey" tal:content="string:1" />
-          <span class="sprite yes">Idle</span>
+            <span class="sortkey" tal:content="string:1" />
+            <span class="sprite yes">Idle</span>
           </tal:clean>
         </tal:idle>
         <tal:manual tal:condition="builder/manual">
