@@ -1280,8 +1280,9 @@ class RunIsolatedTest(testtools.RunTest):
             protocol.readFrom(fdread)
             fdread.close()
             os.waitpid(pid, 0)
-            if issubclass(self.case.layer, DatabaseLayer):
-                self.case.layer.force_dirty_database()
+            layer = getattr(self.case, 'layer', None)
+            if layer is not None and issubclass(layer, DatabaseLayer):
+                layer.force_dirty_database()
 
 
 class EventRecorder:
