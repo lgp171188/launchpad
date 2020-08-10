@@ -25,11 +25,16 @@ class ISigningServiceClient(Interface):
         """Get nonce, to be used when sending messages.
         """
 
-    def generate(key_type, description):
+    def generate(key_type, description,
+                 openpgp_key_algorithm=None, length=None):
         """Generate a key to be used when signing.
 
         :param key_type: One of available key types at SigningKeyType
         :param description: String description of the generated key
+        :param openpgp_key_algorithm: One of `OpenPGPKeyAlgorithm` (required
+            if key_type is SigningKeyType.OPENPGP)
+        :param length: The key length (required if key_type is
+            SigningKeyType.OPENPGP)
         :return: A dict with 'fingerprint' (str) and 'public-key' (bytes)
         """
 

@@ -144,20 +144,33 @@ class SigningServiceClient:
         encrypted_message = box.encrypt(message, nonce, encoder=Base64Encoder)
         return encrypted_message.ciphertext
 
-    def generate(self, key_type, description):
+    def generate(self, key_type, description,
+                 openpgp_key_algorithm=None, length=None):
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
+        if key_type == SigningKeyType.OPENPGP:
+            if openpgp_key_algorithm is None:
+                raise ValueError(
+                    "SigningKeyType.OPENPGP requires openpgp_key_algorithm")
+            if length is None:
+                raise ValueError("SigningKeyType.OPENPGP requires length")
 
         nonce = self.getNonce()
         response_nonce = self._makeResponseNonce()
-        data = json.dumps({
+        raw_payload = {
             "key-type": key_type.name,
             "description": description,
-            }).encode("UTF-8")
+            }
+        if key_type == SigningKeyType.OPENPGP:
+            raw_payload.update({
+                "openpgp-key-algorithm": openpgp_key_algorithm.name,
+                "length": length,
+                })
+        payload = json.dumps(raw_payload).encode("UTF-8")
         ret = self._requestJson(
             "/generate", "POST",
             headers=self._getAuthHeaders(nonce, response_nonce),
-            data=self._encryptPayload(nonce, data))
+            data=self._encryptPayload(nonce, payload))
         return {
             "fingerprint": ret["fingerprint"],
             "public-key": base64.b64decode(ret["public-key"])}
