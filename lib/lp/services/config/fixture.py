@@ -42,7 +42,7 @@ class ConfigFixture(Fixture):
 
     def add_section(self, sectioncontent):
         """Add sectioncontent to the lazy config."""
-        with open(self.absroot + '/launchpad-lazr.conf', 'ab') as out:
+        with open(self.absroot + '/launchpad-lazr.conf', 'a') as out:
             out.write(sectioncontent)
         # Trigger a refresh if and only if the config is in use at the moment
         # in order to make these new values available.
@@ -59,8 +59,8 @@ class ConfigFixture(Fixture):
             if entry.name == 'launchpad-lazr.conf':
                 self.add_section(self._extend_str % self.copy_from_instance)
                 continue
-            with open(entry.path, 'rb') as input:
-                with open(os.path.join(root, entry.name), 'wb') as out:
+            with open(entry.path) as input:
+                with open(os.path.join(root, entry.name), 'w') as out:
                     out.write(input.read())
 
 
