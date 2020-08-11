@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for builders."""
@@ -16,10 +16,15 @@ __all__ = [
     'BuilderView',
     ]
 
+from datetime import (
+    datetime,
+    timedelta,
+    )
 from itertools import groupby
 import operator
 
 from lazr.restful.utils import smartquote
+import pytz
 import six
 from zope.component import getUtility
 from zope.event import notify
@@ -33,6 +38,7 @@ from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
+from lp.app.browser.tales import DurationFormatterAPI
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.app.widgets.owner import HiddenUserWidget
 from lp.buildmaster.interfaces.builder import (
@@ -141,7 +147,29 @@ class BuilderOverviewMenu(ApplicationMenu):
         return Link('+mode', text, icon='edit')
 
 
-class BuilderSetView(LaunchpadView):
+class CleanInfoMixin:
+    """View support for showing information about a builder's cleaning status.
+
+    This supports the status-summary macro.  We want the current time to be
+    a cached property so that it's consistent across multiple builders.
+    """
+
+    @cachedproperty
+    def _now(self):
+        return datetime.now(pytz.UTC)
+
+    def getCleanInfo(self, builder):
+        duration = self._now - builder.date_clean_status_changed
+        # A builder that has been cleaning for more than ten minutes is a
+        # little suspicious.
+        if duration > timedelta(minutes=10):
+            return "Cleaning for {}".format(
+                DurationFormatterAPI(duration).approximateduration())
+        else:
+            return "Cleaning"
+
+
+class BuilderSetView(CleanInfoMixin, LaunchpadView):
     """Default BuilderSet view class."""
 
     @property
@@ -285,7 +313,7 @@ class BuilderCategory:
             self._builder_groups.append(builder_group)
 
 
-class BuilderView(LaunchpadView):
+class BuilderView(CleanInfoMixin, LaunchpadView):
     """Default Builder view class
 
     Implements useful actions for the page template.

@@ -1230,17 +1230,20 @@
         permission="launchpad.Edit"
         template="../templates/person-oauth-tokens.pt"
         />
+    <!-- Person:+oci-registry-credentials and
+         Person:+edit-oci-registry-credentials do their own additional
+         permission checking.  -->
     <browser:page
         name="+oci-registry-credentials"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonOCIRegistryCredentialsView"
-        permission="launchpad.Edit"
+        permission="launchpad.View"
         template="../templates/person-ociregistrycredentials.pt"
         />
     <browser:page
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonEditOCIRegistryCredentialsView"
-        permission="launchpad.Edit"
+        permission="launchpad.View"
         name="+edit-oci-registry-credentials"
         template="../templates/person-edit-ociregistrycredentials.pt" />
     <browser:page

@@ -3563,6 +3563,8 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
     usedfor = IOCIRegistryCredentials
 
     def checkAuthenticated(self, user):
+        # This must be kept in sync with user_can_edit_credentials_for_owner
+        # in lp.oci.interfaces.ociregistrycredentials.
         return (
             user.isOwner(self.obj) or
             user.in_admin)

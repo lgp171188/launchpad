@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Package copying utilities."""
@@ -15,9 +15,15 @@ __all__ = [
 
 import apt_pkg
 from lazr.delegates import delegate_to
-from zope.component import getUtility
+from zope.component import (
+    getAdapter,
+    getUtility,
+    )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.interfaces.security import IAuthorization
+from lp.registry.interfaces.role import IPersonRoles
+from lp.registry.model.person import Person
 from lp.services.database.bulk import load_related
 from lp.soyuz.adapters.overrides import SourceOverride
 from lp.soyuz.enums import SourcePackageFormat
@@ -141,7 +147,8 @@ class CheckedCopy:
             return {'status': BuildSetStatus.NEEDSBUILD}
 
 
-def check_copy_permissions(person, archive, series, pocket, sources):
+def check_copy_permissions(person, archive, series, pocket, sources,
+                           move=False):
     """Check that `person` has permission to copy a package.
 
     :param person: User attempting the upload.
@@ -150,9 +157,12 @@ def check_copy_permissions(person, archive, series, pocket, sources):
     :param pocket: Destination `Pocket`.
     :param sources: Sequence of `SourcePackagePublishingHistory`s for the
         packages to be copied.
+    :param move: If True, also check whether `person` has permission to
+        delete the sources.
     :raises CannotCopy: If the copy is not allowed.
     """
     # Circular import.
+    from lp.soyuz.model.archive import Archive
     from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
     if person is None:
@@ -161,6 +171,12 @@ def check_copy_permissions(person, archive, series, pocket, sources):
     if len(sources) > 1:
         # Bulk-load the data we'll need from each source publication.
         load_related(SourcePackageRelease, sources, ["sourcepackagereleaseID"])
+        if move:
+            # Bulk-load at least some of the data we'll need for permission
+            # checks on each source archive.  Not all of this is currently
+            # preloadable.
+            archives = load_related(Archive, sources, ["archiveID"])
+            load_related(Person, archives, ["ownerID"])
 
     # If there is a requester, check that they have upload permission into
     # the destination (archive, component, pocket). This check is done
@@ -190,6 +206,29 @@ def check_copy_permissions(person, archive, series, pocket, sources):
             if not archive.canAdministerQueue(
                 person, override.component, pocket, dest_series):
                 raise CannotCopy(reason)
+
+    if move:
+        roles = IPersonRoles(person)
+        for source_archive in set(source.archive for source in sources):
+            # XXX cjwatson 2019-10-09: Checking the archive rather than the
+            # SPPH duplicates security adapter logic, which is unfortunate;
+            # but too much of the logic required to use
+            # DelegatedAuthorization-based adapters such as the one used for
+            # launchpad.Edit on SPPH lives in
+            # lp.services.webapp.authorization and is hard to use without a
+            # full Zope interaction.
+            source_archive_authz = getAdapter(
+                source_archive, IAuthorization, "launchpad.Append")
+            if not source_archive_authz.checkAuthenticated(roles):
+                raise CannotCopy(
+                    "%s is not permitted to delete publications from %s." %
+                    (person.display_name, source_archive.displayname))
+        for source in sources:
+            if not source.archive.canModifySuite(
+                    source.distroseries, source.pocket):
+                raise CannotCopy(
+                    "Cannot delete publications from suite '%s'" %
+                    source.distroseries.getSuite(source.pocket))
 
 
 class CopyChecker:
@@ -388,7 +427,7 @@ class CopyChecker:
                         "different contents." % lf.libraryfile.filename)
 
     def checkCopy(self, source, series, pocket, person=None,
-                  check_permissions=True):
+                  check_permissions=True, move=False):
         """Check if the source can be copied to the given location.
 
         Check possible conflicting publications in the destination archive.
@@ -407,13 +446,15 @@ class CopyChecker:
         :param person: requester `IPerson`.
         :param check_permissions: boolean indicating whether or not the
             requester's permissions to copy should be checked.
+        :param move: if True, also check whether `person` has permission to
+            delete the source.
 
         :raise CannotCopy when a copy is not allowed to be performed
             containing the reason of the error.
         """
         if check_permissions:
             check_copy_permissions(
-                person, self.archive, series, pocket, [source])
+                person, self.archive, series, pocket, [source], move=move)
 
         if series.distribution != self.archive.distribution:
             raise CannotCopy(
@@ -483,7 +524,7 @@ def do_copy(sources, archive, series, pocket, include_binaries=False,
             send_email=False, strict_binaries=True, close_bugs=True,
             create_dsd_job=True, announce_from_person=None, sponsored=None,
             packageupload=None, unembargo=False, phased_update_percentage=None,
-            logger=None):
+            move=False, logger=None):
     """Perform the complete copy of the given sources incrementally.
 
     Verifies if each copy can be performed using `CopyChecker` and
@@ -532,6 +573,8 @@ def do_copy(sources, archive, series, pocket, include_binaries=False,
         doing so.
     :param phased_update_percentage: The phased update percentage to apply
         to the copied publication.
+    :param move: If True, delete the source publication after copying to the
+        destination.
     :param logger: An optional logger.
 
     :raise CannotCopy when one or more copies were not allowed. The error
@@ -554,7 +597,8 @@ def do_copy(sources, archive, series, pocket, include_binaries=False,
             destination_series = series
         try:
             copy_checker.checkCopy(
-                source, destination_series, pocket, person, check_permissions)
+                source, destination_series, pocket, person, check_permissions,
+                move=move)
         except CannotCopy as reason:
             errors.append("%s (%s)" % (source.displayname, reason))
             continue
@@ -610,7 +654,8 @@ def do_copy(sources, archive, series, pocket, include_binaries=False,
             override, close_bugs=close_bugs, create_dsd_job=create_dsd_job,
             close_bugs_since_version=old_version, creator=creator,
             sponsor=sponsor, packageupload=packageupload,
-            phased_update_percentage=phased_update_percentage, logger=logger)
+            phased_update_percentage=phased_update_percentage, move=move,
+            logger=logger)
         if send_email and sub_copies:
             mailer = PackageUploadMailer.forAction(
                 'accepted', person, source.sourcepackagerelease, [], [],
@@ -639,7 +684,7 @@ def _do_direct_copy(source, archive, series, pocket, include_binaries,
                     override=None, close_bugs=True, create_dsd_job=True,
                     close_bugs_since_version=None, creator=None,
                     sponsor=None, packageupload=None,
-                    phased_update_percentage=None, logger=None):
+                    phased_update_percentage=None, move=False, logger=None):
     """Copy publishing records to another location.
 
     Copy each item of the given list of `SourcePackagePublishingHistory`
@@ -671,6 +716,8 @@ def _do_direct_copy(source, archive, series, pocket, include_binaries,
         to be created.
     :param phased_update_percentage: The phased update percentage to apply
         to the copied publication.
+    :param move: If True, delete the source publication after copying to the
+        destination.
     :param logger: An optional logger.
 
     :return: a list of `ISourcePackagePublishingHistory` and
@@ -741,5 +788,12 @@ def _do_direct_copy(source, archive, series, pocket, include_binaries,
     # after copying the binaries.
     # XXX cjwatson 2012-06-22 bug=869308: Fails to honour P-a-s.
     source_copy.createMissingBuilds(logger=logger)
+
+    if move:
+        removal_comment = "Moved to %s" % series.getSuite(pocket)
+        if archive != source.archive:
+            removal_comment += " in %s" % archive.reference
+        getUtility(IPublishingSet).requestDeletion(
+            [source], creator, removal_comment=removal_comment)
 
     return copies

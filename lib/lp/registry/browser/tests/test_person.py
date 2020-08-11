@@ -13,14 +13,20 @@ import re
 from textwrap import dedent
 
 from fixtures import FakeLogger
+import six
 from six.moves.urllib.parse import urljoin
 import soupmatchers
 from storm.store import Store
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from testtools.matchers import (
     DocTestMatches,
     Equals,
     LessThan,
     MatchesDict,
+    MatchesStructure,
     Not,
     )
 from testtools.testcase import ExpectedException
@@ -392,14 +398,10 @@ class TestPersonIndexView(BrowserTestCase):
                 text='OCI registry credentials'))
         self.assertThat(markup, link_match)
 
-        link_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'OCIRegistryCredentials missing link', 'a',
-                text='OCI registry credentials'))
-
         login(ANONYMOUS)
         markup = self.get_markup(view, person)
-        self.assertNotIn(link_match, markup)
+        self.assertNotEqual('', markup)
+        self.assertThat(markup, Not(link_match))
 
     def test_ppas_query_count(self):
         owner = self.factory.makePerson()
@@ -1317,16 +1319,23 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
         self.assertThat(view(), next_match)
 
 
-class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
-                                           OCIConfigHelperMixin):
+class TestPersonOCIRegistryCredentialsView(
+        WithScenarios, BrowserTestCase, OCIConfigHelperMixin):
 
     layer = DatabaseFunctionalLayer
+
+    scenarios = [
+        ('person', {'use_team': False}),
+        ('team', {'use_team': True}),
+        ]
 
     def setUp(self):
         super(TestPersonOCIRegistryCredentialsView, self).setUp()
         self.setConfig()
-        self.person = self.factory.makePerson(
-            name="test-person", displayname="Test Person")
+        if self.use_team:
+            self.owner = self.factory.makeTeam(members=[self.user])
+        else:
+            self.owner = self.user
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -1338,37 +1347,33 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
         self.recipe = self.factory.makeOCIRecipe(
-            registrant=self.person, owner=self.person,
-            oci_project=oci_project)
+            registrant=self.owner, owner=self.owner, oci_project=oci_project)
 
-    def test_view_oci_registry_credentials_on_person_page(self):
+    def test_view_oci_registry_credentials(self):
         # Verify view helper attributes.
         url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.user,
-            url=url,
-            credentials=credentials)
-        view = create_initialized_view(self.user, '+oci-registry-credentials')
+            owner=self.owner, url=url, credentials=credentials)
+        login_person(self.user)
+        view = create_initialized_view(
+            self.owner, '+oci-registry-credentials', principal=self.user)
         self.assertEqual('OCI registry credentials', view.page_title)
-        with person_logged_in(self.user):
-            self.assertEqual(
-                credentials.get('username'),
-                view.oci_registry_credentials[0].getCredentials()['username'])
-            self.assertEqual(url, view.oci_registry_credentials[0].url)
+        self.assertEqual(
+            credentials.get('username'),
+            view.oci_registry_credentials[0].getCredentials()['username'])
+        self.assertEqual(url, view.oci_registry_credentials[0].url)
 
-    def test_edit_oci_registry_creds_on_person_page(self):
+    def test_edit_oci_registry_credentials(self):
         url = unicode(self.factory.getUniqueURL())
         newurl = unicode(self.factory.getUniqueURL())
         third_url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.user,
-            url=url,
-            credentials=credentials)
+            owner=self.owner, url=url, credentials=credentials)
 
         browser = self.getViewBrowser(
-            self.user, view_name='+oci-registry-credentials', user=self.user)
+            self.owner, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
 
         # Change only the username
@@ -1378,6 +1383,8 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         username_control.value = 'different_username'
         browser.getControl("Save").click()
         with person_logged_in(self.user):
+            self.assertThat(registry_credentials, MatchesStructure.byEquality(
+                owner=self.owner, url=url))
             self.assertThat(
                 registry_credentials.getCredentials(),
                 MatchesDict(
@@ -1386,25 +1393,32 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
 
         # change only the registry url
         browser = self.getViewBrowser(
-            self.user, view_name='+oci-registry-credentials', user=self.user)
+            self.owner, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
         url_control = browser.getControl(
             name="field.url.%d" % registry_credentials_id)
         url_control.value = newurl
         browser.getControl("Save").click()
         with person_logged_in(self.user):
-            self.assertEqual(newurl, registry_credentials.url)
+            self.assertThat(registry_credentials, MatchesStructure.byEquality(
+                owner=self.owner, url=newurl))
+            self.assertThat(
+                registry_credentials.getCredentials(),
+                MatchesDict(
+                    {"username": Equals("different_username"),
+                     "password": Equals("bar")}))
 
         # change only the password
         browser = self.getViewBrowser(
-            self.user, view_name='+oci-registry-credentials', user=self.user)
+            self.owner, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
         password_control = browser.getControl(
             name="field.password.%d" % registry_credentials_id)
         password_control.value = 'newpassword'
 
         browser.getControl("Save").click()
-        self.assertIn("Passwords do not match.", browser.contents)
+        self.assertIn(
+            "Passwords do not match.", six.ensure_text(browser.contents))
 
         # change all fields with one edit action
         username_control = browser.getControl(
@@ -1421,28 +1435,27 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         confirm_password_control.value = 'third_newpassword'
         browser.getControl("Save").click()
         with person_logged_in(self.user):
+            self.assertThat(registry_credentials, MatchesStructure.byEquality(
+                owner=self.owner, url=third_url))
             self.assertThat(
                 registry_credentials.getCredentials(),
                 MatchesDict(
                     {"username": Equals("third_different_username"),
                      "password": Equals("third_newpassword")}))
-            self.assertEqual(third_url, registry_credentials.url)
 
-    def test_add_oci_registry_creds_on_person_page(self):
+    def test_add_oci_registry_credentials(self):
         url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         image_name = self.factory.getUniqueUnicode()
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.user,
-            url=url,
-            credentials=credentials)
+            owner=self.owner, url=url, credentials=credentials)
         getUtility(IOCIPushRuleSet).new(
             recipe=self.recipe,
             registry_credentials=registry_credentials,
             image_name=image_name)
 
         browser = self.getViewBrowser(
-            self.user, view_name='+oci-registry-credentials', user=self.user)
+            self.owner, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
 
         browser.getControl(name="field.add_url").value = url
@@ -1453,24 +1466,21 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         browser.getControl("Save").click()
 
         with person_logged_in(self.user):
-            creds = list(getUtility(
-                IOCIRegistryCredentialsSet).findByOwner(
-                self.user))
+            creds = list(
+                getUtility(IOCIRegistryCredentialsSet).findByOwner(self.owner))
             self.assertEqual(url, creds[1].url)
             self.assertThat(
                 removeSecurityProxy(creds[1]).getCredentials(),
                 MatchesDict({"username": Equals("new_username"),
                 "password": Equals("password")}))
 
-    def test_delete_oci_registry_creds_on_person_page(self):
-        # Test that we do not delete creds when there are
+    def test_delete_oci_registry_credentials(self):
+        # Test that we do not delete credentials when there are
         # push rules defined to use them
         url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.person,
-            url=url,
-            credentials=credentials)
+            owner=self.owner, url=url, credentials=credentials)
         IStore(registry_credentials).flush()
         registry_credentials_id = removeSecurityProxy(registry_credentials).id
         image_name = self.factory.getUniqueUnicode()
@@ -1480,8 +1490,7 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
             image_name=image_name)
 
         browser = self.getViewBrowser(
-            self.person, view_name='+oci-registry-credentials',
-            user=self.person)
+            self.owner, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
         # assert full rule is displayed
         self.assertEqual(url, browser.getControl(
@@ -1496,11 +1505,11 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         browser.getControl("Save").click()
         self.assertIn("These credentials cannot be deleted as there are "
                       "push rules defined that still use them.",
-                      browser.contents)
+                      six.ensure_text(browser.contents))
 
         # make sure we don't have any push rules defined to use
         # the credentials we want to remove
-        with person_logged_in(self.person):
+        with person_logged_in(self.user):
             removeSecurityProxy(push_rule).destroySelf()
 
         delete_control = browser.getControl(
@@ -1508,9 +1517,9 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         delete_control.getControl('Delete').selected = True
         browser.getControl("Save").click()
         credentials_set = getUtility(IOCIRegistryCredentialsSet)
-        with person_logged_in(self.person):
+        with person_logged_in(self.user):
             self.assertEqual(
-                0, credentials_set.findByOwner(self.person).count())
+                0, credentials_set.findByOwner(self.owner).count())
 
 
 class TestPersonLiveFSView(BrowserTestCase):
@@ -2077,3 +2086,6 @@ class TestPersonRdfView(BrowserTestCase):
             content_disposition, browser.headers['Content-disposition'])
         self.assertEqual(
             'application/rdf+xml', browser.headers['Content-type'])
+
+
+load_tests = load_tests_apply_scenarios
