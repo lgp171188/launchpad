@@ -58,6 +58,10 @@ import six
 import subvertpy
 import subvertpy.client
 import subvertpy.ra
+from testtools.matchers import (
+    ContainsAll,
+    LessThan,
+    )
 
 import lp.codehosting
 from lp.codehosting.codeimport.tarball import (
@@ -81,6 +85,7 @@ from lp.codehosting.codeimport.worker import (
     ForeignTreeStore,
     get_default_bazaar_branch_store,
     GitImportWorker,
+    GitToGitImportWorker,
     ImportDataStore,
     ToBzrImportWorker,
     )
@@ -1356,6 +1361,53 @@ class TestBzrImport(WorkerTest, TestActualImportMixin,
         self.assertEqual(
             "Some Random Hacker <jane@example.com>",
             branch.repository.get_revision(branch.last_revision()).committer)
+
+
+class TestGitToGitImportWorker(TestCase):
+
+    def test_throttleProgress(self):
+        source_details = self.factory.makeCodeImportSourceDetails(
+            rcstype="git", target_rcstype="git")
+        logger = BufferLogger()
+        worker = GitToGitImportWorker(
+            source_details, logger, AcceptAnythingPolicy())
+        read_fd, write_fd = os.pipe()
+        pid = os.fork()
+        if pid == 0:  # child
+            os.close(read_fd)
+            with os.fdopen(write_fd, "wb") as write:
+                write.write(b"Starting\n")
+                for i in range(50):
+                    time.sleep(0.1)
+                    write.write(("%d ...\r" % i).encode("UTF-8"))
+                    if (i % 10) == 9:
+                        write.write(
+                            ("Interval %d\n" % (i // 10)).encode("UTF-8"))
+                write.write(b"Finishing\n")
+            os._exit(0)
+        else:  # parent
+            os.close(write_fd)
+            with os.fdopen(read_fd, "rb") as read:
+                lines = list(worker._throttleProgress(read, timeout=0.5))
+            os.waitpid(pid, 0)
+            # Matching the exact sequence of lines would be too brittle, but
+            # we require some things to be true:
+            # All the non-progress lines must be present, in the right
+            # order.
+            self.assertEqual(
+                [u"Starting\n", u"Interval 0\n", u"Interval 1\n",
+                 u"Interval 2\n", u"Interval 3\n", u"Interval 4\n",
+                 u"Finishing\n"],
+                [line for line in lines if not line.endswith(u"\r")])
+            # No more than 15 progress lines may be present (allowing some
+            # slack for the child process being slow).
+            progress_lines = [line for line in lines if line.endswith(u"\r")]
+            self.assertThat(len(progress_lines), LessThan(16))
+            # All the progress lines immediately before interval markers
+            # must be present.
+            self.assertThat(
+                progress_lines,
+                ContainsAll([u"%d ...\r" % i for i in (9, 19, 29, 39, 49)]))
 
 
 class CodeImportBranchOpenPolicyTests(TestCase):
