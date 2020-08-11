@@ -693,7 +693,7 @@ class BuilddManager(service.Service):
     FLUSH_LOGTAILS_INTERVAL = 15
 
     # How often to update stats, in seconds
-    UPDATE_STATS_INTERVAL = 5
+    UPDATE_STATS_INTERVAL = 60
 
     def __init__(self, clock=None, builder_factory=None):
         # Use the clock if provided, it's so that tests can
