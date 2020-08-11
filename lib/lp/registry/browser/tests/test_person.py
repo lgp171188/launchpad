@@ -13,14 +13,20 @@ import re
 from textwrap import dedent
 
 from fixtures import FakeLogger
+import six
 from six.moves.urllib.parse import urljoin
 import soupmatchers
 from storm.store import Store
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from testtools.matchers import (
     DocTestMatches,
     Equals,
     LessThan,
     MatchesDict,
+    MatchesStructure,
     Not,
     )
 from testtools.testcase import ExpectedException
@@ -1313,15 +1319,23 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
         self.assertThat(view(), next_match)
 
 
-class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
-                                           OCIConfigHelperMixin):
+class TestPersonOCIRegistryCredentialsView(
+        WithScenarios, BrowserTestCase, OCIConfigHelperMixin):
 
     layer = DatabaseFunctionalLayer
+
+    scenarios = [
+        ('person', {'use_team': False}),
+        ('team', {'use_team': True}),
+        ]
 
     def setUp(self):
         super(TestPersonOCIRegistryCredentialsView, self).setUp()
         self.setConfig()
-        self.owner = self.user
+        if self.use_team:
+            self.owner = self.factory.makeTeam(members=[self.user])
+        else:
+            self.owner = self.user
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -1369,6 +1383,8 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         username_control.value = 'different_username'
         browser.getControl("Save").click()
         with person_logged_in(self.user):
+            self.assertThat(registry_credentials, MatchesStructure.byEquality(
+                owner=self.owner, url=url))
             self.assertThat(
                 registry_credentials.getCredentials(),
                 MatchesDict(
@@ -1384,7 +1400,13 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         url_control.value = newurl
         browser.getControl("Save").click()
         with person_logged_in(self.user):
-            self.assertEqual(newurl, registry_credentials.url)
+            self.assertThat(registry_credentials, MatchesStructure.byEquality(
+                owner=self.owner, url=newurl))
+            self.assertThat(
+                registry_credentials.getCredentials(),
+                MatchesDict(
+                    {"username": Equals("different_username"),
+                     "password": Equals("bar")}))
 
         # change only the password
         browser = self.getViewBrowser(
@@ -1395,7 +1417,8 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         password_control.value = 'newpassword'
 
         browser.getControl("Save").click()
-        self.assertIn("Passwords do not match.", browser.contents)
+        self.assertIn(
+            "Passwords do not match.", six.ensure_text(browser.contents))
 
         # change all fields with one edit action
         username_control = browser.getControl(
@@ -1412,12 +1435,13 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         confirm_password_control.value = 'third_newpassword'
         browser.getControl("Save").click()
         with person_logged_in(self.user):
+            self.assertThat(registry_credentials, MatchesStructure.byEquality(
+                owner=self.owner, url=third_url))
             self.assertThat(
                 registry_credentials.getCredentials(),
                 MatchesDict(
                     {"username": Equals("third_different_username"),
                      "password": Equals("third_newpassword")}))
-            self.assertEqual(third_url, registry_credentials.url)
 
     def test_add_oci_registry_credentials(self):
         url = unicode(self.factory.getUniqueURL())
@@ -1481,7 +1505,7 @@ class TestPersonOCIRegistryCredentialsView(BrowserTestCase,
         browser.getControl("Save").click()
         self.assertIn("These credentials cannot be deleted as there are "
                       "push rules defined that still use them.",
-                      browser.contents)
+                      six.ensure_text(browser.contents))
 
         # make sure we don't have any push rules defined to use
         # the credentials we want to remove
@@ -2062,3 +2086,6 @@ class TestPersonRdfView(BrowserTestCase):
             content_disposition, browser.headers['Content-disposition'])
         self.assertEqual(
             'application/rdf+xml', browser.headers['Content-type'])
+
+
+load_tests = load_tests_apply_scenarios

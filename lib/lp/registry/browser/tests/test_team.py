@@ -887,10 +887,10 @@ class TestTeamIndexView(TestCaseWithFactory):
         return markup
 
     def test_show_oci_registry_credentials_link(self):
-        team = self.factory.makeTeam()
-        view = create_initialized_view(
-            team, '+index', principal=team.teamowner)
-        with person_logged_in(team.teamowner):
+        member = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[member])
+        view = create_initialized_view(team, '+index', principal=member)
+        with person_logged_in(member):
             markup = self.get_markup(view, team)
         link_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(

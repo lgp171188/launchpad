@@ -55,6 +55,9 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeFeatureDisabled,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ociregistrycredentials import (
+    user_can_edit_credentials_for_owner,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
@@ -275,6 +278,11 @@ class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
     @property
     def has_push_rules(self):
         return len(self.push_rules) > 0
+
+    @cachedproperty
+    def can_edit_credentials(self):
+        return user_can_edit_credentials_for_owner(
+            self.context.owner, self.user)
 
     def _getFieldName(self, name, rule_id):
         """Get the combined field name for an `OCIPushRule` ID.
