@@ -764,6 +764,12 @@ class CommonMenuLinks:
         text = 'Structural subscriptions'
         return Link(target, text, icon='info')
 
+    @enabled_with_permission('launchpad.Edit')
+    def oci_registry_credentials(self):
+        target = '+oci-registry-credentials'
+        text = 'OCI registry credentials'
+        return Link(target, text, icon='info')
+
 
 class PersonMenuMixin(CommonMenuLinks):
 
@@ -848,12 +854,6 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         request_tokens = self.context.oauth_request_tokens
         enabled = bool(access_tokens or request_tokens)
         return Link(target, text, enabled=enabled, icon='info')
-
-    @enabled_with_permission('launchpad.Edit')
-    def oci_registry_credentials(self):
-        target = '+oci-registry-credentials'
-        text = 'OCI registry credentials'
-        return Link(target, text, icon='info')
 
     @enabled_with_permission('launchpad.Edit')
     def editlanguages(self):

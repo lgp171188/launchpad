@@ -72,6 +72,10 @@
         Upcoming work assigned to members of this team
       </a>
     </li>
+    <li
+      tal:define="link context/menu:overview/oci_registry_credentials"
+      tal:condition="link/enabled"
+      tal:content="structure link/fmt:link" />
   </ul>
 
   <div class="yui-g">
