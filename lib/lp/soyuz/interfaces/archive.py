@@ -1522,7 +1522,7 @@ class IArchiveView(IHasBuildRecords):
                     person, to_series=None, include_binaries=False,
                     sponsored=None, unembargo=False, auto_approve=False,
                     silent=False, from_pocket=None, from_series=None,
-                    phased_update_percentage=None):
+                    phased_update_percentage=None, move=False):
         """Copy a single named source into this archive.
 
         Asynchronously copy a specific version of a named source to the
@@ -1563,6 +1563,8 @@ class IArchiveView(IHasBuildRecords):
             omitted, copy from any series with a matching version.
         :param phased_update_percentage: the phased update percentage to
             apply to the copied publication.
+        :param move: if True, delete the source publication after copying it
+            to the destination.
 
         :raises NoSuchSourcePackageName: if the source name is invalid
         :raises PocketNotFound: if the pocket name is invalid

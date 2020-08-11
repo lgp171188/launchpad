@@ -1829,7 +1829,7 @@ class Archive(SQLBase):
                     person, to_series=None, include_binaries=False,
                     sponsored=None, unembargo=False, auto_approve=False,
                     silent=False, from_pocket=None, from_series=None,
-                    phased_update_percentage=None):
+                    phased_update_percentage=None, move=False):
         """See `IArchive`."""
         # Asynchronously copy a package using the job system.
         from lp.soyuz.scripts.packagecopier import check_copy_permissions
@@ -1854,7 +1854,8 @@ class Archive(SQLBase):
             from_pocket=from_pocket)
         if series is None:
             series = source.distroseries
-        check_copy_permissions(person, self, series, pocket, [source])
+        check_copy_permissions(
+            person, self, series, pocket, [source], move=move)
 
         job_source = getUtility(IPlainPackageCopyJobSource)
         job_source.create(
@@ -1866,12 +1867,12 @@ class Archive(SQLBase):
             sponsored=sponsored, unembargo=unembargo,
             auto_approve=auto_approve, silent=silent,
             source_distroseries=from_series, source_pocket=from_pocket,
-            phased_update_percentage=phased_update_percentage)
+            phased_update_percentage=phased_update_percentage, move=move)
 
     def copyPackages(self, source_names, from_archive, to_pocket,
                      person, to_series=None, from_series=None,
                      include_binaries=None, sponsored=None, unembargo=False,
-                     auto_approve=False, silent=False):
+                     auto_approve=False, silent=False, move=False):
         """See `IArchive`."""
         from lp.soyuz.scripts.packagecopier import check_copy_permissions
         sources = self._collectLatestPublishedSources(
@@ -1880,7 +1881,8 @@ class Archive(SQLBase):
         # Now do a mass check of permissions.
         pocket = self._text_to_pocket(to_pocket)
         series = self._text_to_series(to_series)
-        check_copy_permissions(person, self, series, pocket, sources)
+        check_copy_permissions(
+            person, self, series, pocket, sources, move=move)
 
         # If we get this far then we can create the PackageCopyJob.
         copy_tasks = []
@@ -1899,7 +1901,8 @@ class Archive(SQLBase):
         job_source.createMultiple(
             copy_tasks, person, copy_policy=PackageCopyPolicy.MASS_SYNC,
             include_binaries=include_binaries, sponsored=sponsored,
-            unembargo=unembargo, auto_approve=auto_approve, silent=silent)
+            unembargo=unembargo, auto_approve=auto_approve, silent=silent,
+            move=move)
 
     def _collectLatestPublishedSources(self, from_archive, from_series,
                                        source_names):
