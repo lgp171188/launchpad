@@ -17,7 +17,6 @@ import functools
 import logging
 
 import six
-import statsd
 from storm.expr import (
     Column,
     LeftJoin,
@@ -62,7 +61,7 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.propertycache import get_property_cache
-from lp.services.statsd import LPStatsClient
+from lp.services.statsd import getStatsdClient
 
 
 BUILDD_MANAGER_LOG_NAME = "slave-scanner"
@@ -694,7 +693,7 @@ class BuilddManager(service.Service):
     FLUSH_LOGTAILS_INTERVAL = 15
 
     # How often to update stats, in seconds
-    UPDATE_STATS_INTERVAL = 60
+    UPDATE_STATS_INTERVAL = 5
 
     def __init__(self, clock=None, builder_factory=None):
         # Use the clock if provided, it's so that tests can
@@ -707,6 +706,7 @@ class BuilddManager(service.Service):
         self.logger = self._setupLogger()
         self.current_builders = []
         self.pending_logtails = {}
+        self.statsd_client = getStatsdClient()
 
     def _setupLogger(self):
         """Set up a 'slave-scanner' logger that redirects to twisted.
@@ -748,7 +748,8 @@ class BuilddManager(service.Service):
         for processor, counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
                 gauge_name = "builders.{}.{}".format(processor, count_name)
-                LPStatsClient.gauge(gauge_name, count_value)
+                self.logger.debug("{}: {}".format(gauge_name, count_name))
+                self.statsd_client.gauge(gauge_name, count_value)
 
     def checkForNewBuilders(self):
         """Add and return any new builders."""

@@ -6,11 +6,12 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
-__all__ = ['LPStatsClient']
+__all__ = ['getStatsdClient']
 
+
+from statsd import StatsClient
 
 from lp.services.config import config
-from statsd import StatsClient
 
 
 class UnconfiguredStatsdClient:
@@ -24,10 +25,11 @@ class UnconfiguredStatsdClient:
         return lambda *args, **kwargs: None
 
 
-if config.statsd.host:
-    LPStatsClient = StatsClient(
-        host=config.statsd.host,
-        port=config.statsd.port,
-        prefix=config.statsd.prefix)
-else:
-    LPStatsClient = UnconfiguredStatsdClient()
+def getStatsdClient():
+    if getattr(config, 'statsd', None) and config.statsd.host:
+        return StatsClient(
+            host=config.statsd.host,
+            port=config.statsd.port,
+            prefix=config.statsd.prefix)
+    else:
+        return UnconfiguredStatsdClient()

@@ -13,8 +13,12 @@ import os
 import signal
 import time
 
+from fixtures import MockPatch
 from six.moves import xmlrpc_client
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesListwise,
+    )
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
@@ -45,6 +49,7 @@ from lp.buildmaster.interfaces.builder import (
     IBuilderSet,
     )
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.manager import (
     BuilddManager,
     BUILDER_FAILURE_THRESHOLD,
@@ -1596,3 +1601,69 @@ class TestBuilddManagerScript(TestCaseWithFactory):
         self.assertFalse(
             os.access(rotated_logfilepath, os.F_OK),
             "Twistd's log file was rotated by twistd.")
+
+
+class TestStats(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
+
+    def setUp(self):
+        super(TestStats, self).setUp()
+        self.stats_client = self.useFixture(
+            MockPatch(
+                'lp.buildmaster.manager.getStatsdClient'
+            )).mock()
+
+    def test_single_processor(self):
+        builder = self.factory.makeBuilder()
+        builder.setCleanStatus(BuilderCleanStatus.CLEAN)
+        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
+        transaction.commit()
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+        manager.builder_factory.update()
+        manager.updateStats()
+
+        self.assertEqual(3, self.stats_client.gauge.call_count)
+        for call in self.stats_client.mock.gauge.call_args_list:
+            self.assertIn('386', call[0][0])
+
+    def test_multiple_processor(self):
+        builder = self.factory.makeBuilder(
+            processors=[getUtility(IProcessorSet).getByName('amd64')])
+        builder.setCleanStatus(BuilderCleanStatus.CLEAN)
+        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
+        transaction.commit()
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+        manager.builder_factory.update()
+        manager.updateStats()
+
+        self.assertEqual(6, self.stats_client.gauge.call_count)
+        i386_calls = [c for c in self.stats_client.gauge.call_args_list
+                      if '386' in c[0][0]]
+        amd64_calls = [c for c in self.stats_client.gauge.call_args_list
+                       if 'amd64' in c[0][0]]
+        self.assertEqual(3, len(i386_calls))
+        self.assertEqual(3, len(amd64_calls))
+
+    def test_correct_values(self):
+        builder = self.factory.makeBuilder(
+            processors=[getUtility(IProcessorSet).getByName('amd64')])
+        builder.setCleanStatus(BuilderCleanStatus.CLEANING)
+        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
+        transaction.commit()
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+        manager.builder_factory.update()
+        manager.updateStats()
+
+        self.assertEqual(6, self.stats_client.gauge.call_count)
+        calls = [c[0] for c in self.stats_client.gauge.call_args_list
+                 if 'amd64' in c[0][0]]
+        self.assertThat(
+            calls, MatchesListwise(
+                [Equals(('builders.amd64.disabled', 0)),
+                 Equals(('builders.amd64.ok', 0)),
+                 Equals(('builders.amd64.cleaning', 1))]))
