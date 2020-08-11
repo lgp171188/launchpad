@@ -392,14 +392,10 @@ class TestPersonIndexView(BrowserTestCase):
                 text='OCI registry credentials'))
         self.assertThat(markup, link_match)
 
-        link_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'OCIRegistryCredentials missing link', 'a',
-                text='OCI registry credentials'))
-
         login(ANONYMOUS)
         markup = self.get_markup(view, person)
-        self.assertNotIn(link_match, markup)
+        self.assertNotEqual('', markup)
+        self.assertThat(markup, Not(link_match))
 
     def test_ppas_query_count(self):
         owner = self.factory.makePerson()
