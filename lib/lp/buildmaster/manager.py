@@ -733,11 +733,7 @@ class BuilddManager(service.Service):
             for processor_name in builder.processor_names:
                 counts = counts_by_processor.get(
                     processor_name,
-                    {
-                        'cleaning': 0,
-                        'ok': 0,
-                        'disabled': 0,
-                        })
+                    {'cleaning': 0, 'ok': 0, 'disabled': 0})
                 if builder.clean_status == BuilderCleanStatus.CLEANING:
                     counts['cleaning'] += 1
                 elif builder.builderok:
