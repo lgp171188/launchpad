@@ -381,7 +381,7 @@ def obfuscate_structure(o):
         elements, and dict keys and values have undergone obfuscate_email
         recursively.
     """
-    if isinstance(o, basestring):
+    if isinstance(o, six.string_types):
         return obfuscate_email(o)
     elif isinstance(o, (list, tuple)):
         return [obfuscate_structure(value) for value in o]

@@ -87,7 +87,7 @@ class NotificationRecipientSet:
 
     def getReason(self, person_or_email):
         """See `INotificationRecipientSet`."""
-        if zope_isinstance(person_or_email, basestring):
+        if zope_isinstance(person_or_email, six.string_types):
             try:
                 person = self._emailToPerson[person_or_email]
             except KeyError:
