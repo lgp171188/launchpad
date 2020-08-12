@@ -31,7 +31,7 @@ from zope.security.proxy import (
 
 from lp.buildmaster.downloader import (
     DownloadCommand,
-    DownloadProcess,
+    RequestProcess,
     )
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
@@ -91,7 +91,7 @@ def make_download_process_pool(**kwargs):
     # currently configurable, but if we find we need to tweak it further
     # then we should add a configuration setting for it.
     kwargs.setdefault("maxIdle", 300)
-    return ProcessPool(DownloadProcess, starter=starter, **kwargs)
+    return ProcessPool(RequestProcess, starter=starter, **kwargs)
 
 
 def default_process_pool(reactor=None):
