@@ -88,6 +88,7 @@ class FileUploadClient:
         # it will be shared between threads. The easiest way of making this
         # class thread safe is by storing all state in a thread local.
         self.state = threading.local()
+        self.state.s_poll_timeout = 0
 
     def _connect(self):
         """Connect this client.
@@ -115,7 +116,7 @@ class FileUploadClient:
         del self.state.f
 
     def _checkError(self):
-        poll_result = self.state.s_poll.poll(0)
+        poll_result = self.state.s_poll.poll(self.state.s_poll_timeout)
         if poll_result:
             fileno, event = poll_result[0]
             # Accepts any event that contains input data. Even if we
