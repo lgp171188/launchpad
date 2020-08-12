@@ -1,7 +1,6 @@
 # Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-
 from doctest import DocTestSuite
 from email.mime.multipart import MIMEMultipart
 import logging
@@ -43,7 +42,10 @@ from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.gpgkeys import import_secret_test_key
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
-from lp.testing.systemdocs import LayeredDocFileSuite
+from lp.testing.systemdocs import (
+    LayeredDocFileSuite,
+    setGlobs,
+    )
 
 
 @implementer(IMailHandler)
@@ -344,6 +346,7 @@ class TestExtractAddresses(TestCaseWithFactory):
 
 
 def setUp(test):
+    setGlobs(test, future=True)
     test._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
     switch_dbuser(config.processmail.dbuser)
 

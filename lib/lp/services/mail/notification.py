@@ -2,6 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Event handlers that send email notifications."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'send_process_error_notification',
@@ -83,10 +85,10 @@ def get_unified_diff(old_text, new_text, text_width):
     Before the diff is produced, the texts are wrapped to the given text
     width.
 
-        >>> print get_unified_diff(
+        >>> print(get_unified_diff(
         ...     'Some text\nAnother line\n',get_un
         ...     'Some more text\nAnother line\n',
-        ...     text_width=72)
+        ...     text_width=72))
         - Some text
         + Some more text
           Another line
