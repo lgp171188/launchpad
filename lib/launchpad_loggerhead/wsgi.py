@@ -19,7 +19,6 @@ import traceback
 
 from gunicorn.app.base import Application
 from gunicorn.glogging import Logger
-from openid import oidutil
 from paste.deploy.config import PrefixMiddleware
 from paste.httpexceptions import HTTPExceptionHandler
 from paste.request import construct_url
@@ -88,10 +87,6 @@ class LoggerheadLogger(Logger):
         log_options, _ = parser.parse_args(
             ['-q', '--ms', '--log-file=DEBUG:%s' % cfg.errorlog])
         logger(log_options)
-
-        # Make the OpenID library use proper logging rather than writing to
-        # stderr.
-        oidutil.log = lambda message, level=0: log.debug(message)
 
 
 def _on_starting_hook(arbiter):

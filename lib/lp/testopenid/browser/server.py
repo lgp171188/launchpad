@@ -15,7 +15,6 @@ __all__ = [
 
 from datetime import timedelta
 
-from openid import oidutil
 from openid.extensions.sreg import (
     SRegRequest,
     SRegResponse,
@@ -76,10 +75,6 @@ from lp.testopenid.interfaces.server import (
 OPENID_REQUEST_SESSION_KEY = 'testopenid.request'
 SESSION_PKG_KEY = 'TestOpenID'
 openid_store = MemoryStore()
-
-
-# Shut up noisy OpenID library
-oidutil.log = lambda message, level=0: None
 
 
 @implementer(ICanonicalUrlData)
@@ -151,8 +146,7 @@ class OpenIDMixin:
         query = {}
         for key, value in self.request.form.items():
             if key.startswith('openid.'):
-                # All OpenID query args are supposed to be ASCII.
-                query[key.encode('US-ASCII')] = value.encode('US-ASCII')
+                query[key] = value
         return query
 
     def getSession(self):

@@ -37,7 +37,7 @@ POST request.
     >>> print anon_browser.headers
     Status: 200 Ok
     ...
-    Content-Type: text/plain
+    Content-Type: text/plain;charset=utf-8
     ...
     >>> print anon_browser.contents
     assoc_handle:{HMAC-SHA1}{...}{...}
