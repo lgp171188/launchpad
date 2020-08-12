@@ -66,7 +66,6 @@ from lp.services.webapp.interfaces import (
     IPlacelessLoginSource,
     LoggedOutEvent,
     )
-from lp.services.webapp.openid import set_default_openid_fetcher
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts
@@ -158,9 +157,6 @@ def register_basiclogin(event):
             required=(ILaunchpadApplication, IHTTPApplicationRequest),
             provided=Interface,
             name='+basiclogin')
-
-
-set_default_openid_fetcher()
 
 
 class OpenIDLogin(LaunchpadView):

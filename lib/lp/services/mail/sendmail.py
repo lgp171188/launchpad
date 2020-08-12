@@ -46,6 +46,7 @@ from smtplib import SMTP
 import sys
 
 from lazr.restful.utils import get_current_browser_request
+import six
 from zope.component import getUtility
 from zope.security.proxy import (
     isinstance as zisinstance,
@@ -218,7 +219,7 @@ class MailController(object):
     def addAttachment(self, content, content_type='application/octet-stream',
                       inline=False, filename=None, charset=None):
         attachment = Message()
-        if charset and isinstance(content, unicode):
+        if charset and isinstance(content, six.text_type):
             content = content.encode(charset)
         attachment.add_header('Content-Type', content_type)
         if inline:

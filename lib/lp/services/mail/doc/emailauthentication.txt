@@ -123,7 +123,7 @@ message.
     GPGVerificationError: (7, 8, u'Bad signature')
 
     >>> getUtility(IGPGHandler).getVerifiedSignature(
-    ...     msg.signedContent.replace('\n', '\r\n'), msg.signature)
+    ...     msg.signedContent.replace(b'\n', b'\r\n'), msg.signature)
     <...PymeSignature...>
 
 authenticateEmail() doesn't have any problems verifying the signature:
@@ -135,7 +135,7 @@ authenticateEmail() doesn't have any problems verifying the signature:
     ...     msg.parsed_string = msg.as_string()
     ...     principal = authenticateEmail(msg, accept_any_timestamp)
     ...     authenticated_person = IPerson(principal)
-    ...     print authenticated_person.preferredemail.email
+    ...     print(authenticated_person.preferredemail.email)
     test@canonical.com
     test@canonical.com
 
@@ -147,19 +147,19 @@ starts failing, Python is probably fixed, so the manual boundary parsing
 hack can be removed.
 
     >>> msg = read_test_message('signed_folded_header.txt')
-    >>> print msg.parsed_string #doctest: -NORMALIZE_WHITESPACE
+    >>> print(msg.parsed_string) #doctest: -NORMALIZE_WHITESPACE
     Date:...
     ...
     Content-Type: multipart/mixed;
      boundary="--------------------EuxKj2iCbKjpUGkD"
     ...
 
-    >>> print msg.get_payload(i=0).as_string() #doctest: -NORMALIZE_WHITESPACE
+    >>> print(msg.get_payload(i=0).as_string()) #doctest: -NORMALIZE_WHITESPACE
     Content-Type: multipart/mixed; boundary="--------------------EuxKj2iCbKjpUGkD"
     ...
 
     >>> principal = authenticateEmail(msg, accept_any_timestamp)
-    >>> print IPerson(principal).displayname
+    >>> print(IPerson(principal).displayname)
     Sample Person
 
 
@@ -184,7 +184,7 @@ An unsigned email:
     >>> IWeaklyAuthenticatedPrincipal.providedBy(principal)
     True
 
-    >>> print launchbag.user.displayname
+    >>> print(launchbag.user.displayname)
     Foo Bar
     >>> launchbag.login
     'foo.bar@canonical.com'
@@ -197,7 +197,7 @@ authenticated user:
     >>> IWeaklyAuthenticatedPrincipal.providedBy(principal)
     True
 
-    >>> print launchbag.user.displayname
+    >>> print(launchbag.user.displayname)
     Sample Person
     >>> launchbag.login
     'testing@canonical.com'
@@ -211,7 +211,7 @@ principal.
     >>> IWeaklyAuthenticatedPrincipal.providedBy(principal)
     False
 
-    >>> print launchbag.user.displayname
+    >>> print(launchbag.user.displayname)
     Sample Person
     >>> launchbag.login
     'test@canonical.com'

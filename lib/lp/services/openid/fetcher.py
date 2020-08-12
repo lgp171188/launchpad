@@ -21,12 +21,24 @@ from openid.fetchers import (
 from six.moves.urllib.request import urlopen
 
 from lp.services.config import config
+from lp.services.encoding import wsgi_native_string
+
+
+class WSGIFriendlyUrllib2Fetcher(Urllib2Fetcher):
+
+    def fetch(self, url, body=None, headers=None):
+        if headers is not None:
+            headers = {
+                wsgi_native_string(key): wsgi_native_string(value)
+                for key, value in headers.items()}
+        return super(WSGIFriendlyUrllib2Fetcher, self).fetch(
+            url, body=body, headers=headers)
 
 
 def set_default_openid_fetcher():
     # Make sure we're using the same fetcher that we use in production, even
     # if pycurl is installed.
-    fetcher = Urllib2Fetcher()
+    fetcher = WSGIFriendlyUrllib2Fetcher()
     if config.launchpad.enable_test_openid_provider:
         # Tests have an instance name that looks like 'testrunner-appserver'
         # or similar. We're in 'development' there, so just use that config.

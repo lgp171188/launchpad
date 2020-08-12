@@ -21,6 +21,7 @@ from openid.consumer.discover import (
 from six.moves.urllib.error import HTTPError
 from zope.testbrowser.wsgi import Browser
 
+from lp.services.encoding import wsgi_native_string
 from lp.services.webapp import LaunchpadView
 from lp.testopenid.interfaces.server import get_server_url
 
@@ -44,8 +45,8 @@ class ZopeFetcher(fetchers.HTTPFetcher):
         browser = Browser()
         if headers is not None:
             for key, value in headers.items():
-                browser.addHeader(key, value)
-        browser.addHeader('X-Zope-Handle-Errors', 'True')
+                browser.addHeader(key, wsgi_native_string(value))
+        browser.addHeader('X-Zope-Handle-Errors', wsgi_native_string('True'))
         try:
             browser.open(url, data=body)
         except HTTPError as e:

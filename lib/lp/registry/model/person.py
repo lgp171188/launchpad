@@ -45,6 +45,7 @@ from lazr.restful.utils import (
     smartquote,
     )
 import pytz
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -1296,7 +1297,7 @@ class Person(
             return False
 
         # Translate the team name to an ITeam if we were passed a team.
-        if isinstance(team, (str, unicode)):
+        if isinstance(team, six.string_types):
             team = PersonSet().getByName(team)
             if team is None:
                 # No team, no membership.
@@ -3316,7 +3317,7 @@ class PersonSet:
             "account.")
         db_updated = False
 
-        assert isinstance(openid_identifier, unicode)
+        assert isinstance(openid_identifier, six.text_type)
         assert openid_identifier != u'', (
             "OpenID identifier must not be empty.")
 

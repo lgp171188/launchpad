@@ -49,12 +49,14 @@ class ProcessMailLayer(LaunchpadZopelessLayer):
 special = {
     'emailauthentication.txt': LayeredDocFileSuite(
         '../doc/emailauthentication.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=ProcessMailLayer,
         stdout_logging=False)
     }
 
 
 def test_suite():
-    suite = build_test_suite(here, special, layer=DatabaseFunctionalLayer)
+    suite = build_test_suite(
+        here, special, setUp=lambda test: setUp(test, future=True),
+        layer=DatabaseFunctionalLayer)
     return suite

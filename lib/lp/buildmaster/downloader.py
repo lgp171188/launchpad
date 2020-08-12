@@ -12,7 +12,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'DownloadCommand',
-    'DownloadProcess',
+    'RequestProcess',
+    'RequestProxyTokenCommand',
     ]
 
 import os.path
@@ -42,8 +43,25 @@ class DownloadCommand(amp.Command):
         }
 
 
-class DownloadProcess(AMPChild):
-    """A subprocess that downloads a file to disk."""
+class RequestProxyTokenCommand(amp.Command):
+
+    arguments = [
+        (b"url", amp.Unicode()),
+        (b"auth_header", amp.String()),
+        (b"proxy_username", amp.Unicode()),
+        ]
+    response = [
+        (b"username", amp.Unicode()),
+        (b"secret", amp.Unicode()),
+        (b"timestamp", amp.Unicode()),
+        ]
+    errors = {
+        RequestException: b"REQUEST_ERROR",
+        }
+
+
+class RequestProcess(AMPChild):
+    """A subprocess that performs requests for buildd-manager."""
 
     @DownloadCommand.responder
     def downloadCommand(self, file_url, path_to_write, timeout):
@@ -64,3 +82,13 @@ class DownloadProcess(AMPChild):
             f.close()
             os.rename(f.name, path_to_write)
         return {}
+
+    @RequestProxyTokenCommand.responder
+    def requestProxyTokenCommand(self, url, auth_header, proxy_username):
+        session = Session()
+        session.trust_env = False
+        response = session.post(
+            url, headers={"Authorization": auth_header},
+            json={"username": proxy_username})
+        response.raise_for_status()
+        return response.json()
