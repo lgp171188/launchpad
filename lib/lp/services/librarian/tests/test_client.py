@@ -256,7 +256,7 @@ class LibrarianClientTestCase(TestCase):
         # The fake server is running in another thread, and we are sure it
         # will (eventually) reply with an error message. So, let's just wait
         # until that message arrives.
-        client.state.s_poll_timeout = -1
+        client.state.s_poll_timeout = 120
 
         # Please, note the mismatch between file size (7) and its actual size
         # of the content (6). This is intentional, to make sure we are raising
