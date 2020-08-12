@@ -13,18 +13,22 @@ from datetime import timedelta
 from io import BytesIO
 import uuid
 
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
+import pytz
+import six
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Unicode,
     )
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.app.errors import NotFoundError
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.temporaryblobstorage.interfaces import (
@@ -36,17 +40,22 @@ from lp.services.utils import utc_now
 
 
 @implementer(ITemporaryBlobStorage)
-class TemporaryBlobStorage(SQLBase):
+class TemporaryBlobStorage(StormBase):
     """A temporary BLOB stored in Launchpad."""
 
-    _table = 'TemporaryBlobStorage'
+    __storm_table__ = 'TemporaryBlobStorage'
 
-    uuid = StringCol(notNull=True, alternateID=True)
-    file_alias = ForeignKey(
-            dbName='file_alias', foreignKey='LibraryFileAlias', notNull=True,
-            alternateID=True
-            )
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
+    id = Int(primary=True)
+
+    uuid = Unicode(allow_none=False)
+    file_alias_id = Int(name='file_alias', allow_none=False)
+    file_alias = Reference(file_alias_id, 'LibraryFileAlias.id')
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+
+    def __init__(self, uuid, file_alias):
+        super(TemporaryBlobStorage, self).__init__()
+        self.uuid = uuid
+        self.file_alias = file_alias
 
     @property
     def blob(self):
@@ -63,7 +72,7 @@ class TemporaryBlobStorage(SQLBase):
         try:
             job_for_blob = getUtility(
                 IProcessApportBlobJobSource).getByBlobUUID(self.uuid)
-        except SQLObjectNotFound:
+        except NotFoundError:
             return None
 
         return job_for_blob
@@ -115,30 +124,33 @@ class TemporaryStorageManager:
 
         # create the BLOB and return the UUID
 
-        new_uuid = str(uuid.uuid1())
+        new_uuid = six.text_type(uuid.uuid1())
 
         # We use a random filename, so only things that can look up the
         # secret can retrieve the original data (which is why we don't use
         # the UUID we return to the user as the filename, nor the filename
         # of the object they uploaded).
-        secret = str(uuid.uuid1())
+        secret = six.text_type(uuid.uuid1())
 
         file_alias = getUtility(ILibraryFileAliasSet).create(
                 secret, len(blob), BytesIO(blob),
                 'application/octet-stream', expires
                 )
-        TemporaryBlobStorage(uuid=new_uuid, file_alias=file_alias)
+        IStore(TemporaryBlobStorage).add(
+            TemporaryBlobStorage(uuid=new_uuid, file_alias=file_alias))
         return new_uuid
 
     def fetch(self, uuid):
         """See ITemporaryStorageManager."""
-        return TemporaryBlobStorage.selectOneBy(uuid=uuid)
+        return IStore(TemporaryBlobStorage).find(
+            TemporaryBlobStorage, uuid=uuid).one()
 
     def delete(self, uuid):
         """See ITemporaryStorageManager."""
-        blob = TemporaryBlobStorage.selectOneBy(uuid=uuid)
+        store = IStore(TemporaryBlobStorage)
+        blob = store.find(TemporaryBlobStorage, uuid=uuid).one()
         if blob is not None:
-            TemporaryBlobStorage.delete(blob.id)
+            store.remove(blob)
 
     def default_temporary_blob_storage_list(self):
         """See `ITemporaryStorageManager`."""

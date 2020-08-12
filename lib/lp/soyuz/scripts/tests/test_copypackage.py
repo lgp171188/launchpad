@@ -1732,6 +1732,50 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         self.assertIsInstance(copies[1], BinaryPackagePublishingHistory)
         self.assertEqual("i386", copies[1].distroarchseries.architecturetag)
 
+    def test_copy_without_move(self):
+        # A copy with move=False (the default) leaves the source publication
+        # intact.
+        nobby, archive, source = self._setup_archive()
+        target_archive = self.factory.makeArchive(
+            distribution=self.test_publisher.ubuntutest)
+        [copied_source] = do_copy(
+            [source], target_archive, nobby, source.pocket,
+            include_binaries=False, person=target_archive.owner,
+            check_permissions=False, send_email=False)
+        self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
+        self.assertEqual(PackagePublishingStatus.PENDING, source.status)
+
+    def test_copy_with_move(self):
+        # A copy with move=True deletes the source publication.
+        nobby, archive, source = self._setup_archive()
+        target_archive = self.factory.makeArchive(
+            distribution=self.test_publisher.ubuntutest)
+        [copied_source] = do_copy(
+            [source], target_archive, nobby, source.pocket,
+            include_binaries=False, person=target_archive.owner,
+            check_permissions=False, send_email=False, move=True)
+        self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
+        self.assertEqual(PackagePublishingStatus.DELETED, source.status)
+        self.assertEqual(
+            "Moved to %s in %s" % (
+                nobby.getSuite(source.pocket), target_archive.reference),
+            source.removal_comment)
+
+    def test_copy_with_move_failure(self):
+        # If a copy with move=True fails, then the source publication is
+        # left intact.
+        nobby, archive, source = self._setup_archive()
+        self.test_publisher.getPubSource(
+            sourcename=source.source_package_name,
+            archive=nobby.main_archive, version="1.0-2",
+            architecturehintlist="any")
+        self.assertRaises(
+            CannotCopy, do_copy,
+            [source], archive, nobby, source.pocket,
+            include_binaries=False, person=source.sourcepackagerelease.creator,
+            check_permissions=False, send_email=False, move=True)
+        self.assertEqual(PackagePublishingStatus.PENDING, source.status)
+
 
 class TestCopyBuildRecords(TestCaseWithFactory):
     """Test handling of binaries and their build records when copying."""

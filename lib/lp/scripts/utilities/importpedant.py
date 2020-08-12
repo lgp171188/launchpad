@@ -3,14 +3,16 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import __builtin__
 import atexit
 import itertools
 from operator import attrgetter
 import types
 
+import six
+from six.moves import builtins
 
-original_import = __builtin__.__import__
+
+original_import = builtins.__import__
 naughty_imports = set()
 
 # Silence bogus warnings from Hardy's python-pkg-resources package.
@@ -182,7 +184,8 @@ class NotFoundPolicyViolation(PedantDisagreesError):
 # The names of the arguments form part of the interface of __import__(...),
 # and must not be changed, as code may choose to invoke __import__ using
 # keyword arguments - e.g. the encodings module in Python 2.6.
-def import_pedant(name, globals={}, locals={}, fromlist=[], level=-1):
+def import_pedant(name, globals={}, locals={}, fromlist=[],
+                  level=(0 if six.PY3 else -1)):
     global naughty_imports
 
     module = original_import(name, globals, locals, fromlist, level)
@@ -321,5 +324,5 @@ def report_naughty_imports():
 
 
 def install_import_pedant():
-    __builtin__.__import__ = import_pedant
+    builtins.__import__ = import_pedant
     atexit.register(report_naughty_imports)

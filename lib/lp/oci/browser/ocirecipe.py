@@ -11,6 +11,7 @@ __all__ = [
     'OCIRecipeAdminView',
     'OCIRecipeContextMenu',
     'OCIRecipeDeleteView',
+    'OCIRecipeEditPushRulesView',
     'OCIRecipeEditView',
     'OCIRecipeNavigation',
     'OCIRecipeNavigationMenu',
@@ -23,10 +24,13 @@ from lazr.restful.interface import (
     use_template,
     )
 from zope.component import getUtility
+from zope.formlib.form import FormFields
 from zope.interface import Interface
 from zope.schema import (
+    Bool,
     Choice,
     List,
+    TextLine,
     )
 
 from lp.app.browser.launchpadform import (
@@ -36,6 +40,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
+from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
@@ -50,6 +55,9 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeFeatureDisabled,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ociregistrycredentials import (
+    user_can_edit_credentials_for_owner,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
@@ -138,11 +146,16 @@ class OCIRecipeContextMenu(ContextMenu):
 
     facet = 'overview'
 
-    links = ('request_builds',)
+    links = ('request_builds', 'edit_push_rules')
 
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
         return Link('+request-builds', 'Request builds', icon='add')
+
+    @enabled_with_permission('launchpad.Edit')
+    def edit_push_rules(self):
+        return Link(
+            '+edit-push-rules', 'Edit push rules', icon='edit')
 
 
 class OCIProjectRecipesView(LaunchpadView):
@@ -186,6 +199,14 @@ class OCIRecipeView(LaunchpadView):
 
     @cachedproperty
     def push_rules(self):
+        # XXX: We need to think about rearranging the permissions on
+        # OCIRegistryCredentials so that only the actual secrets are
+        # secret; the registry URL and probably the username could
+        # arguably be public and displayed in the table with the push rules
+        # on lib/lp/oci/templates/ocirecipe-index.pt.
+        # We're still not sure how this plays into
+        # plans for internal registry announcements and such, so we
+        # land redaction first and think about this later.
         return list(
             getUtility(IOCIPushRuleSet).findByRecipe(self.context))
 
@@ -241,6 +262,170 @@ def new_builds_notification_text(builds, already_pending=None):
         return structured("<p>%s</p><p>%s</p>", builds_text, already_pending)
     else:
         return builds_text
+
+
+class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
+    """View for +ocirecipe-edit-push-rules.pt."""
+
+    class schema(Interface):
+        """Schema for editing push rules."""
+
+    @cachedproperty
+    def push_rules(self):
+        return list(
+            getUtility(IOCIPushRuleSet).findByRecipe(self.context))
+
+    @property
+    def has_push_rules(self):
+        return len(self.push_rules) > 0
+
+    @cachedproperty
+    def can_edit_credentials(self):
+        return user_can_edit_credentials_for_owner(
+            self.context.owner, self.user)
+
+    def _getFieldName(self, name, rule_id):
+        """Get the combined field name for an `OCIPushRule` ID.
+
+        In order to be able to render a table, we encode the rule ID
+        in the form field name.
+        """
+        return "%s.%d" % (name, rule_id)
+
+    def _parseFieldName(self, field_name):
+        """Parse a combined field name as described in `_getFieldName`.
+
+        :raises UnexpectedFormData: if the field name cannot be parsed or
+            the `OCIPushRule` cannot be found.
+        """
+        field_bits = field_name.split(".")
+        if len(field_bits) != 2:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        field_type = field_bits[0]
+        try:
+            rule_id = int(field_bits[1])
+        except ValueError:
+            raise UnexpectedFormData(
+                "Cannot parse field name: %s" % field_name)
+        return field_type, rule_id
+
+    def setUpFields(self):
+        """See `LaunchpadEditFormView`."""
+        LaunchpadEditFormView.setUpFields(self)
+
+        image_fields = []
+        delete_fields = []
+        creds = []
+        for elem in list(self.context.push_rules):
+            image_fields.append(
+                TextLine(
+                    title=u'Image name',
+                    __name__=self._getFieldName('image_name', elem.id),
+                    default=elem.image_name,
+                    required=True, readonly=False))
+            delete_fields.append(
+                Bool(
+                    title=u'Delete',
+                    __name__=self._getFieldName('delete', elem.id),
+                    default=False,
+                    required=True, readonly=False))
+            creds.append(
+                TextLine(
+                    title=u'Username',
+                    __name__=self._getFieldName('username', elem.id),
+                    default=elem.registry_credentials.username,
+                    required=True, readonly=True))
+            creds.append(
+                TextLine(
+                    title=u'Registry URL',
+                    __name__=self._getFieldName('url', elem.id),
+                    default=elem.registry_credentials.url,
+                    required=True, readonly=True))
+
+        self.form_fields += FormFields(*image_fields)
+        self.form_fields += FormFields(*creds)
+        self.form_fields += FormFields(*delete_fields)
+
+    @property
+    def label(self):
+        return 'Edit OCI push rules for %s' % self.context.name
+
+    page_title = 'Edit OCI push rules'
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    def getRulesWidgets(self, rule):
+
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+        image_field_name = (
+                "field." + self._getFieldName("image_name", rule.id))
+        username_field_name = (
+                "field." + self._getFieldName("username", rule.id))
+        url_field_name = (
+                "field." + self._getFieldName("url", rule.id))
+        delete_field_name = (
+                "field." + self._getFieldName("delete", rule.id))
+        return {
+            "image_name": widgets_by_name[image_field_name],
+            "username": widgets_by_name[username_field_name],
+            "url": widgets_by_name[url_field_name],
+            "delete": widgets_by_name[delete_field_name],
+        }
+
+    def parseData(self, data):
+        """Rearrange form data to make it easier to process."""
+        parsed_data = {}
+
+        for field_name in sorted(
+                name for name in data if name.split(".")[0] == "image_name"):
+            _, rule_id = self._parseFieldName(field_name)
+            image_field_name = self._getFieldName("image_name", rule_id)
+            delete_field_name = self._getFieldName("delete", rule_id)
+            if data.get(delete_field_name):
+                action = "delete"
+            else:
+                action = "change"
+            parsed_data.setdefault(rule_id, {
+                "image_name": data.get(image_field_name),
+                "action": action,
+            })
+
+        return parsed_data
+
+    def updatePushRulesFromData(self, parsed_data):
+        rules_map = {
+            rule.id: rule
+            for rule in self.context.push_rules}
+        for rule_id, parsed_rules in parsed_data.items():
+            rule = rules_map.get(rule_id)
+            action = parsed_rules["action"]
+
+            if action == "change":
+                image_name = parsed_rules["image_name"]
+                if not image_name:
+                    self.setFieldError(
+                        self._getFieldName(
+                            "image_name", rule_id),
+                        "Image name must be set.")
+                else:
+                    if rule.image_name != image_name:
+                        rule.setNewImageName(image_name)
+            elif action == "delete":
+                rule.destroySelf()
+            else:
+                raise AssertionError("unknown action: %s" % action)
+
+    @action("Save")
+    def save(self, action, data):
+        parsed_data = self.parseData(data)
+        self.updatePushRulesFromData(parsed_data)
+
+        if not self.errors:
+            self.request.response.addNotification("Saved push rules")
+            self.next_url = canonical_url(self.context)
 
 
 class OCIRecipeRequestBuildsView(LaunchpadFormView):
@@ -322,6 +507,7 @@ class IOCIRecipeEditSchema(Interface):
         "build_file",
         "build_daily",
         "require_virtualized",
+        "allow_internet",
         ])
 
 
@@ -434,7 +620,7 @@ class OCIRecipeAdminView(BaseOCIRecipeEditView):
 
     page_title = "Administer"
 
-    field_names = ("require_virtualized",)
+    field_names = ("require_virtualized", "allow_internet")
 
 
 class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):

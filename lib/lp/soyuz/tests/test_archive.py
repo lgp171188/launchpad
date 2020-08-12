@@ -2798,20 +2798,23 @@ class TestCopyPackage(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def _setup_copy_data(self, source_distribution=None, source_private=False,
+    def _setup_copy_data(self, source_distribution=None, source_purpose=None,
+                         source_private=False, source_pocket=None,
                          target_purpose=None,
                          target_status=SeriesStatus.DEVELOPMENT,
                          same_distribution=False):
         if target_purpose is None:
             target_purpose = ArchivePurpose.PPA
         source_archive = self.factory.makeArchive(
-            distribution=source_distribution, private=source_private)
+            distribution=source_distribution, purpose=source_purpose,
+            private=source_private)
         target_distribution = (
             source_archive.distribution if same_distribution else None)
         target_archive = self.factory.makeArchive(
             distribution=target_distribution, purpose=target_purpose)
         source = self.factory.makeSourcePackagePublishingHistory(
-            archive=source_archive, status=PackagePublishingStatus.PUBLISHED)
+            archive=source_archive, pocket=source_pocket,
+            status=PackagePublishingStatus.PUBLISHED)
         with person_logged_in(source_archive.owner):
             source_name = source.source_package_name
             version = source.source_package_version
@@ -2854,7 +2857,8 @@ class TestCopyPackage(TestCaseWithFactory):
             include_binaries=False,
             sponsored=sponsored,
             copy_policy=PackageCopyPolicy.INSECURE,
-            phased_update_percentage=30))
+            phased_update_percentage=30,
+            move=False))
 
     def test_copyPackage_disallows_non_primary_archive_uploaders(self):
         # If copying to a primary archive and you're not an uploader for
@@ -3052,6 +3056,63 @@ class TestCopyPackage(TestCaseWithFactory):
         self.assertEqual(source.distroseries, copy_job.source_distroseries)
         self.assertEqual(source.pocket, copy_job.source_pocket)
 
+    def test_copyPackage_move(self):
+        # Passing move=True causes copyPackage to create a copy job that
+        # will delete the source publication after copying.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        with person_logged_in(source_archive.owner):
+            target_archive.copyPackage(
+                source_name, version, source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
+
+        # There should be one copy job, with move=True set.
+        job_source = getUtility(IPlainPackageCopyJobSource)
+        copy_job = job_source.getActiveJobs(target_archive).one()
+        self.assertTrue(copy_job.move)
+
+    def test_copyPackage_move_without_permission(self):
+        # Passing move=True checks that the user is permitted to delete the
+        # source publication.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            expected_error = (
+                "%s is not permitted to delete publications from %s." % (
+                    target_archive.owner.display_name,
+                    source_archive.displayname))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackage,
+                source_name, version, source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=target_archive.owner, move=True)
+
+    def test_copyPackage_move_from_immutable_suite(self):
+        # Passing move=True checks that the source suite can be modified.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution(),
+            source_purpose=ArchivePurpose.PRIMARY,
+            source_pocket=PackagePublishingPocket.RELEASE)
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        removeSecurityProxy(source.distroseries).status = (
+            SeriesStatus.SUPPORTED)
+        with person_logged_in(source_archive.owner):
+            expected_error = (
+                "Cannot delete publications from suite '%s'" % (
+                    source.distroseries.getSuite(source.pocket)))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackage,
+                source_name, version, source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
+
     def test_copyPackages_with_single_package(self):
         (source, source_archive, source_name, target_archive, to_pocket,
          to_series, version) = self._setup_copy_data()
@@ -3080,7 +3141,8 @@ class TestCopyPackage(TestCaseWithFactory):
             target_pocket=to_pocket,
             include_binaries=False,
             sponsored=sponsored,
-            copy_policy=PackageCopyPolicy.MASS_SYNC))
+            copy_policy=PackageCopyPolicy.MASS_SYNC,
+            move=False))
 
     def test_copyPackages_with_multiple_packages(self):
         # PENDING and PUBLISHED packages should both be copied.
@@ -3296,6 +3358,63 @@ class TestCopyPackage(TestCaseWithFactory):
         job_source = getUtility(IPlainPackageCopyJobSource)
         copy_job = job_source.getActiveJobs(target_archive).one()
         self.assertEqual(to_pocket, copy_job.target_pocket)
+
+    def test_copyPackages_move(self):
+        # Passing move=True causes copyPackages to create copy jobs that
+        # will delete the source publication after copying.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        with person_logged_in(source_archive.owner):
+            target_archive.copyPackages(
+                [source_name], source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
+
+        # There should be one copy job, with move=True set.
+        job_source = getUtility(IPlainPackageCopyJobSource)
+        copy_job = job_source.getActiveJobs(target_archive).one()
+        self.assertTrue(copy_job.move)
+
+    def test_copyPackages_move_without_permission(self):
+        # Passing move=True checks that the user is permitted to delete the
+        # source publication.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            expected_error = (
+                "%s is not permitted to delete publications from %s." % (
+                    target_archive.owner.display_name,
+                    source_archive.displayname))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackages,
+                [source_name], source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=target_archive.owner, move=True)
+
+    def test_copyPackages_move_from_immutable_suite(self):
+        # Passing move=True checks that the source suite can be modified.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution(),
+            source_purpose=ArchivePurpose.PRIMARY,
+            source_pocket=PackagePublishingPocket.RELEASE)
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        removeSecurityProxy(source.distroseries).status = (
+            SeriesStatus.SUPPORTED)
+        with person_logged_in(source_archive.owner):
+            expected_error = (
+                "Cannot delete publications from suite '%s'" % (
+                    source.distroseries.getSuite(source.pocket)))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackages,
+                [source_name], source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
 
 
 class TestgetAllPublishedBinaries(TestCaseWithFactory):

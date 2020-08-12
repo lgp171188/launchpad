@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An `IBuildFarmJobBehaviour` for `SnapBuild`.
@@ -22,7 +22,11 @@ from six.moves.urllib.parse import (
     urlunsplit,
     )
 import treq
-from twisted.internet import defer
+from twisted.internet import (
+    defer,
+    reactor as default_reactor,
+    )
+from twisted.web.client import HTTPConnectionPool
 from zope.component import adapter
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -49,6 +53,18 @@ from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
 from lp.soyuz.interfaces.archive import ArchiveDisabled
+
+
+_proxy_pool = None
+
+
+def proxy_pool(reactor=None):
+    global _proxy_pool
+    if reactor is None:
+        reactor = default_reactor
+    if _proxy_pool is None:
+        _proxy_pool = HTTPConnectionPool(reactor)
+    return _proxy_pool
 
 
 def format_as_rfc3339(timestamp):
@@ -104,8 +120,9 @@ class SnapProxyMixin:
         response = yield treq.post(
             url, headers={'Authorization': auth_header},
             json={'username': proxy_username},
-            reactor=self._slave.reactor,
-            pool=self._slave.pool)
+            pool=proxy_pool(self._slave.reactor),
+            timeout=config.builddmaster.authentication_timeout,
+            reactor=self._slave.reactor)
         response = yield check_status(response)
         token = yield treq.json_content(response)
         defer.returnValue(token)

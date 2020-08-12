@@ -13,6 +13,7 @@ from openid.yadis.constants import (
     YADIS_CONTENT_TYPE,
     YADIS_HEADER_NAME,
     )
+import six
 
 from lp.services.openid.adapters.openid import CurrentOpenIDEndPoint
 from lp.services.propertycache import cachedproperty
@@ -55,9 +56,10 @@ class XRDSContentNegotiationMixin:
             # the value of the "Accept" header.
             self.request.response.setHeader('Vary', 'Accept')
 
-            accept_content = self.request.get('HTTP_ACCEPT', '')
+            accept_content = six.ensure_text(
+                self.request.get('HTTP_ACCEPT', ''), encoding='ISO-8859-1')
             acceptable = getAcceptable(accept_content,
-                                       ['text/html', YADIS_CONTENT_TYPE])
+                                       [u'text/html', YADIS_CONTENT_TYPE])
             # Return the XRDS document if it is preferred to text/html.
             for mtype in acceptable:
                 if mtype == 'text/html':

@@ -3563,6 +3563,8 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
     usedfor = IOCIRegistryCredentials
 
     def checkAuthenticated(self, user):
+        # This must be kept in sync with user_can_edit_credentials_for_owner
+        # in lp.oci.interfaces.ociregistrycredentials.
         return (
             user.isOwner(self.obj) or
             user.in_admin)
@@ -3571,3 +3573,13 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
 class ViewOCIPushRule(AnonymousAuthorization):
     """Anyone can view an `IOCIPushRule`."""
     usedfor = IOCIPushRule
+
+
+class OCIPushRuleEdit(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIPushRule
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj.recipe) or
+            user.in_commercial_admin or user.in_admin)

@@ -19,7 +19,6 @@ import fixtures
 from pymacaroons import Macaroon
 import pytz
 from six.moves.urllib_parse import urlsplit
-from testscenarios import load_tests_apply_scenarios
 from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,
@@ -57,6 +56,7 @@ from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
     )
+from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
@@ -94,6 +94,7 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.model.snapbuildbehaviour import (
     format_as_rfc3339,
+    proxy_pool,
     SnapBuildBehaviour,
     )
 from lp.soyuz.adapters.archivedependencies import (
@@ -305,6 +306,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.now = time.time()
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
+        self.addCleanup(shut_down_default_process_pool)
 
     def makeJob(self, **kwargs):
         # We need a builder slave in these tests, in order that requesting a
@@ -315,6 +317,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+        self.addCleanup(proxy_pool(slave.reactor).closeCachedConnections)
         return job
 
     @defer.inlineCallbacks
@@ -845,6 +848,3 @@ class TestVerifySuccessfulBuildForSnapBuild(
 class TestHandleStatusForSnapBuild(
     MakeSnapBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
     """IPackageBuild.handleStatus works with Snap builds."""
-
-
-load_tests = load_tests_apply_scenarios

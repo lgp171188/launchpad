@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database garbage collection."""
@@ -34,6 +34,7 @@ import pytz
 import simplejson
 from storm.expr import (
     And,
+    Cast,
     In,
     Join,
     Max,
@@ -58,6 +59,7 @@ from lp.bugs.scripts.checkwatches.scheduler import (
     BugWatchScheduler,
     MAX_SAMPLE_SIZE,
     )
+from lp.code.enums import GitRepositoryStatus
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.codeimportevent import CodeImportEvent
 from lp.code.model.codeimportresult import CodeImportResult
@@ -65,6 +67,7 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
+from lp.code.model.gitrepository import GitRepository
 from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
@@ -1492,8 +1495,10 @@ class ProductVCSPopulator(TunableLoop):
         self.store = IMasterStore(Product)
 
     def findProducts(self):
-        return self.store.find(
-            Product, Product.id >= self.start_at).order_by(Product.id)
+        products = self.store.find(
+            Product,
+            Product.id >= self.start_at, Product.vcs == None)
+        return products.order_by(Product.id)
 
     def isDone(self):
         return self.findProducts().is_empty()
@@ -1501,8 +1506,7 @@ class ProductVCSPopulator(TunableLoop):
     def __call__(self, chunk_size):
         products = list(self.findProducts()[:chunk_size])
         for product in products:
-            if not product.vcs:
-                product.vcs = product.inferred_vcs
+            product.vcs = product.inferred_vcs
         self.start_at = products[-1].id + 1
         transaction.commit()
 
@@ -1581,6 +1585,33 @@ class OCIFilePruner(BulkPruner):
                 CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
                 - CAST('7 days' AS INTERVAL)
         """
+
+
+class GitRepositoryPruner(TunableLoop):
+    """Remove GitRepositories that are "CREATING" for far too long."""
+
+    maximum_chunk_size = 500
+    repository_creation_timeout = timedelta(hours=1)
+
+    def __init__(self, log, abort_time=None):
+        super(GitRepositoryPruner, self).__init__(log, abort_time)
+        self.store = IMasterStore(GitRepository)
+
+    def findRepositories(self):
+        min_date = UTC_NOW - Cast(self.repository_creation_timeout, "interval")
+        repositories = self.store.find(
+            GitRepository,
+            GitRepository.status == GitRepositoryStatus.CREATING,
+            GitRepository.date_created < min_date)
+        return repositories.order_by(GitRepository.date_created)
+
+    def isDone(self):
+        return self.findRepositories().is_empty()
+
+    def __call__(self, chunk_size):
+        for repository in self.findRepositories()[:chunk_size]:
+            repository.destroySelf(break_references=True)
+        transaction.commit()
 
 
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
@@ -1834,6 +1865,7 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     tunable_loops = [
         BugHeatUpdater,
         DuplicateSessionPruner,
+        GitRepositoryPruner,
         RevisionCachePruner,
         UnusedSessionPruner,
         ]

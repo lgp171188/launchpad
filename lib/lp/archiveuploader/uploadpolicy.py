@@ -185,7 +185,7 @@ class AbstractUploadPolicy:
 
 
 class InsecureUploadPolicy(AbstractUploadPolicy):
-    """The insecure upload policy is used by the poppy interface."""
+    """The insecure upload policy is used by the txpkgupload interface."""
 
     name = 'insecure'
     accepted_type = ArchiveUploadType.SOURCE_ONLY

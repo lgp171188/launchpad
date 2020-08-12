@@ -248,10 +248,10 @@ class TestSourcePackageData(TestCaseWithFactory):
         with open(os.path.join(
             pool_dir, "foo_1.0-1.debian.tar.gz"), "wb+") as buffer:
             debian_tar = LaunchpadWriteTarFile(buffer)
-            debian_tar.add_file("debian/source/format", "3.0 (quilt)\n")
+            debian_tar.add_file("debian/source/format", b"3.0 (quilt)\n")
             debian_tar.add_file(
-                "debian/patches/ubuntu.series", "--- corrupt patch\n")
-            debian_tar.add_file("debian/rules", "")
+                "debian/patches/ubuntu.series", b"--- corrupt patch\n")
+            debian_tar.add_file("debian/rules", b"")
             debian_tar.close()
             buffer.seek(0)
             debian_tar_contents = buffer.read()
@@ -303,9 +303,10 @@ class TestSourcePackageData(TestCaseWithFactory):
         with open(os.path.join(
             pool_dir, "foo_1.0-1.debian.tar.gz"), "wb+") as buffer:
             debian_tar = LaunchpadWriteTarFile(buffer)
-            debian_tar.add_file("debian/source/format", "3.0 (quilt)\n")
-            debian_tar.add_file("debian/patches/series", "--- corrupt patch\n")
-            debian_tar.add_file("debian/rules", "")
+            debian_tar.add_file("debian/source/format", b"3.0 (quilt)\n")
+            debian_tar.add_file(
+                "debian/patches/series", b"--- corrupt patch\n")
+            debian_tar.add_file("debian/rules", b"")
             debian_tar.close()
             buffer.seek(0)
             debian_tar_contents = buffer.read()

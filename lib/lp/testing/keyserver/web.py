@@ -82,7 +82,7 @@ class _BaseResource(Resource):
 
     def getChild(self, name, request):
         """Redirect trailing slash correctly."""
-        if name == '':
+        if name == b'':
             return self
         return Resource.getChild(
             self, name, request)
@@ -93,7 +93,7 @@ class KeyServerResource(_BaseResource):
 
     def __init__(self, root):
         _BaseResource.__init__(self)
-        self.putChild('pks', PksResource(root))
+        self.putChild(b'pks', PksResource(root))
 
     def render_GET(self, request):
         return GREETING
@@ -103,8 +103,8 @@ class PksResource(_BaseResource):
 
     def __init__(self, root):
         _BaseResource.__init__(self)
-        self.putChild('lookup', LookUp(root))
-        self.putChild('add', SubmitKey(root))
+        self.putChild(b'lookup', LookUp(root))
+        self.putChild(b'add', SubmitKey(root))
 
     def render_GET(self, request):
         return 'Welcome To Fake SKS service.\n'
@@ -145,7 +145,8 @@ class LookUp(Resource):
 
         path = locate_key(self.root, filename)
         if path is not None:
-            content = cgi.escape(open(path).read())
+            with open(path) as f:
+                content = cgi.escape(f.read())
             page = ('<html>\n<head>\n'
                     '<title>Results for Key %s</title>\n'
                     '</head>\n<body>'

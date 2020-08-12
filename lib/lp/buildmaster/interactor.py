@@ -12,7 +12,6 @@ from collections import namedtuple
 import logging
 import os.path
 import sys
-import tempfile
 import traceback
 
 from ampoule.pool import ProcessPool
@@ -22,13 +21,9 @@ from twisted.internet import (
     defer,
     reactor as default_reactor,
     )
-from twisted.internet.protocol import Protocol
+from twisted.internet.interfaces import IReactorCore
 from twisted.web import xmlrpc
-from twisted.web.client import (
-    Agent,
-    HTTPConnectionPool,
-    ResponseDone,
-    )
+from twisted.web.client import HTTPConnectionPool
 from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
@@ -52,7 +47,6 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.services.config import config
-from lp.services.features import getFeatureFlag
 from lp.services.job.runner import (
     QuietAMPConnector,
     VirtualEnvProcessStarter,
@@ -67,76 +61,6 @@ class QuietQueryFactory(xmlrpc._QueryFactory):
     noisy = False
 
 
-class FileWritingProtocol(Protocol):
-    """A protocol that saves data to a file."""
-
-    def __init__(self, finished, file_to_write):
-        self.finished = finished
-        if isinstance(file_to_write, (bytes, unicode)):
-            self.filename = file_to_write
-            self.file = tempfile.NamedTemporaryFile(
-                mode="wb", prefix=os.path.basename(self.filename) + "_",
-                dir=os.path.dirname(self.filename), delete=False)
-        else:
-            self.filename = None
-            self.file = file_to_write
-
-    def dataReceived(self, data):
-        try:
-            self.file.write(data)
-        except IOError:
-            try:
-                self.file.close()
-            except IOError:
-                pass
-            self.file = None
-            self.finished.errback()
-
-    def connectionLost(self, reason):
-        try:
-            if self.file is not None:
-                self.file.close()
-            if self.filename is not None and reason.check(ResponseDone):
-                os.rename(self.file.name, self.filename)
-        except IOError:
-            self.finished.errback()
-        else:
-            if reason.check(ResponseDone):
-                self.finished.callback(None)
-            else:
-                self.finished.errback(reason)
-
-
-class LimitedHTTPConnectionPool(HTTPConnectionPool):
-    """A connection pool with an upper limit on open connections."""
-
-    # XXX cjwatson 2016-05-25: This actually only limits active connections,
-    # and doesn't count idle but open connections towards the limit; this is
-    # because it's very difficult to do the latter with HTTPConnectionPool's
-    # current design.  Users of this pool must therefore expect some
-    # additional file descriptors to be open for idle connections.
-
-    def __init__(self, reactor, limit, persistent=True):
-        super(LimitedHTTPConnectionPool, self).__init__(
-            reactor, persistent=persistent)
-        self._semaphore = defer.DeferredSemaphore(limit)
-
-    def getConnection(self, key, endpoint):
-        d = self._semaphore.acquire()
-        d.addCallback(
-            lambda _: super(LimitedHTTPConnectionPool, self).getConnection(
-                key, endpoint))
-        return d
-
-    def _putConnection(self, key, connection):
-        super(LimitedHTTPConnectionPool, self)._putConnection(key, connection)
-        # Only release the semaphore in the next main loop iteration; if we
-        # release it here then the next request may start using this
-        # connection's parser before this request has quite finished with
-        # it.
-        self._reactor.callLater(0, self._semaphore.release)
-
-
 _default_pool = None
 _default_process_pool = None
 _default_process_pool_shutdown = None
@@ -147,15 +71,7 @@ def default_pool(reactor=None):
     if reactor is None:
         reactor = default_reactor
     if _default_pool is None:
-        # Circular import.
-        from lp.buildmaster.manager import SlaveScanner
-        # Short cached connection timeout to avoid potential weirdness with
-        # virtual builders that reboot frequently.
-        _default_pool = LimitedHTTPConnectionPool(
-            reactor, config.builddmaster.download_connections)
-        _default_pool.maxPersistentPerHost = (
-            config.builddmaster.idle_download_connections_per_builder)
-        _default_pool.cachedConnectionTimeout = SlaveScanner.SCAN_INTERVAL
+        _default_pool = HTTPConnectionPool(reactor)
     return _default_pool
 
 
@@ -168,6 +84,13 @@ def make_download_process_pool(**kwargs):
     starter.connectorFactory = QuietAMPConnector
     kwargs = dict(kwargs)
     kwargs.setdefault("max", config.builddmaster.download_connections)
+    # ampoule defaults to stopping child processes after they've been idle
+    # for 20 seconds, which is a bit eager since that's close to our scan
+    # interval.  Bump this to five minutes so that we have less unnecessary
+    # process stop/start activity.  This isn't essential tuning so isn't
+    # currently configurable, but if we find we need to tweak it further
+    # then we should add a configuration setting for it.
+    kwargs.setdefault("maxIdle", 300)
     return ProcessPool(DownloadProcess, starter=starter, **kwargs)
 
 
@@ -178,9 +101,10 @@ def default_process_pool(reactor=None):
     if _default_process_pool is None:
         _default_process_pool = make_download_process_pool()
         _default_process_pool.start()
-        shutdown_id = reactor.addSystemEventTrigger(
-            "during", "shutdown", _default_process_pool.stop)
-        _default_process_pool_shutdown = (reactor, shutdown_id)
+        if IReactorCore.providedBy(reactor):
+            shutdown_id = reactor.addSystemEventTrigger(
+                "during", "shutdown", _default_process_pool.stop)
+            _default_process_pool_shutdown = (reactor, shutdown_id)
     return _default_process_pool
 
 
@@ -226,17 +150,12 @@ class BuilderSlave(object):
         if reactor is None:
             reactor = default_reactor
         self.reactor = reactor
-        self._download_in_subprocess = bool(
-            getFeatureFlag('buildmaster.download_in_subprocess'))
         if pool is None:
             pool = default_pool(reactor=reactor)
         self.pool = pool
-        if self._download_in_subprocess:
-            if process_pool is None:
-                process_pool = default_process_pool(reactor=reactor)
-            self.process_pool = process_pool
-        else:
-            self.process_pool = None
+        if process_pool is None:
+            process_pool = default_process_pool(reactor=reactor)
+        self.process_pool = process_pool
 
     @classmethod
     def makeBuilderSlave(cls, builder_url, vm_host, timeout, reactor=None,
@@ -313,29 +232,16 @@ class BuilderSlave(object):
         """
         file_url = self.getURL(sha_sum)
         try:
-            # Select download behaviour according to the
-            # buildmaster.download_in_subprocess feature rule: if enabled,
-            # defer the download to a subprocess; if disabled, download the
-            # file asynchronously in Twisted.  We've found that in practice
-            # the asynchronous approach only works well up to a bit over a
-            # hundred builders, and beyond that it struggles to keep up with
-            # incoming packets in time to avoid TCP timeouts (perhaps
-            # because of too much synchronous work being done on the reactor
-            # thread).  The exact reason for this is as yet unproven, so we
-            # use a feature rule to allow us to try out different
-            # approaches.
-            if self._download_in_subprocess:
-                yield self.process_pool.doWork(
-                    DownloadCommand,
-                    file_url=file_url, path_to_write=path_to_write,
-                    timeout=self.timeout)
-            else:
-                response = yield Agent(self.reactor, pool=self.pool).request(
-                    "GET", file_url)
-                finished = defer.Deferred()
-                response.deliverBody(
-                    FileWritingProtocol(finished, path_to_write))
-                yield finished
+            # Download the file in a subprocess.  We used to download it
+            # asynchronously in Twisted, but in practice this only worked well
+            # up to a bit over a hundred builders; beyond that it struggled to
+            # keep up with incoming packets in time to avoid TCP timeouts
+            # (perhaps because of too much synchronous work being done on the
+            # reactor thread).
+            yield self.process_pool.doWork(
+                DownloadCommand,
+                file_url=file_url, path_to_write=path_to_write,
+                timeout=self.timeout)
             if logger is not None:
                 logger.info("Grabbed %s" % file_url)
         except Exception as e:
@@ -586,8 +492,19 @@ class BuilderInteractor(object):
             found or None if no job was found.
         """
         logger = cls._getSlaveScannerLogger()
-        candidate = builder_factory.acquireBuildCandidate(vitals, builder)
-        if candidate is None:
+        # Try a few candidates so that we make reasonable progress if we
+        # have only a few idle builders but lots of candidates that fail
+        # postprocessing due to old source publications or similar.  The
+        # chance of a large prefix of the queue being bad candidates is
+        # negligible, and we want reasonably bounded per-cycle performance
+        # even if the prefix is large.
+        for _ in range(10):
+            candidate = builder_factory.acquireBuildCandidate(vitals, builder)
+            if candidate is not None:
+                if candidate.specific_source.postprocessCandidate(
+                        candidate, logger):
+                    break
+        else:
             logger.debug("No build candidates available for builder.")
             defer.returnValue(None)
 
@@ -626,7 +543,7 @@ class BuilderInteractor(object):
         """
         builder_status = slave_status["builder_status"]
         if builder_status == "BuilderStatus.ABORTING":
-            logtail = "Waiting for slave process to be terminated"
+            logtail = u"Waiting for slave process to be terminated"
         elif slave_status.get("logtail") is not None:
             # slave_status["logtail"] is normally an xmlrpc_client.Binary
             # instance, and the contents might include invalid UTF-8 due to
@@ -637,7 +554,7 @@ class BuilderInteractor(object):
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
             # in going through contortions to store them.
-            logtail = logtail.replace("\0", "")
+            logtail = logtail.replace(u"\0", u"")
         else:
             logtail = None
         return logtail

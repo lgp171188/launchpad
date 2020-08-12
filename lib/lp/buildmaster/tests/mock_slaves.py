@@ -23,13 +23,12 @@ __all__ = [
 
 import os
 import sys
-import types
 
 import fixtures
 from lpbuildd.tests.harness import BuilddSlaveTestSetup
+import six
 from six.moves import xmlrpc_client
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import attach_file
 from twisted.internet import defer
 from twisted.web import xmlrpc
 
@@ -173,7 +172,7 @@ class BuildingSlave(OkSlave):
     def getFile(self, sum, file_to_write):
         self.call_log.append('getFile')
         if sum == "buildlog":
-            if isinstance(file_to_write, types.StringTypes):
+            if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
             file_to_write.write("This is a build log")
             file_to_write.close()
@@ -212,7 +211,7 @@ class WaitingSlave(OkSlave):
     def getFile(self, hash, file_to_write):
         self.call_log.append('getFile')
         if hash in self.valid_files:
-            if isinstance(file_to_write, types.StringTypes):
+            if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
             if not self.valid_files[hash]:
                 content = b"This is a %s" % hash
@@ -308,11 +307,8 @@ class SlaveTestHelpers(fixtures.Fixture):
         :return: A `BuilddSlaveTestSetup` object.
         """
         tachandler = self.useFixture(LPBuilddSlaveTestSetup())
-        self.addDetail(
-            'xmlrpc-log-file',
-            Content(
-                UTF8_TEXT,
-                lambda: open(tachandler.logfile, 'r').readlines()))
+        attach_file(
+            self, tachandler.logfile, name='xmlrpc-log-file', buffer_now=False)
         return tachandler
 
     def getClientSlave(self, reactor=None, proxy=None,

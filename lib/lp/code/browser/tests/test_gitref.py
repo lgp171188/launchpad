@@ -370,6 +370,17 @@ class TestGitRefView(BrowserTestCase):
         self.assertThat(
             contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
 
+    def test_show_merge_link_for_personal_repo(self):
+        person = self.factory.makePerson()
+        repo = self.factory.makeGitRepository(
+            owner=person, target=person)
+        [ref] = self.factory.makeGitRefs(
+            repository=repo, paths=["refs/heads/branch"])
+
+        view = create_initialized_view(ref, "+index")
+        self.assertTrue(view.show_merge_links)
+        self.assertEqual(1, len(view.propose_merge_notes))
+
     def _test_all_commits_link(self, branch_name, encoded_branch_name=None):
         if encoded_branch_name is None:
             encoded_branch_name = branch_name

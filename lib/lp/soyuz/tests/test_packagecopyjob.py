@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for sync package jobs."""
@@ -220,7 +220,7 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
             package_version="1.0-1", include_binaries=False,
             copy_policy=PackageCopyPolicy.MASS_SYNC,
             requester=requester, sponsored=sponsored,
-            phased_update_percentage=20)
+            phased_update_percentage=20, move=True)
         self.assertProvides(job, IPackageCopyJob)
         self.assertEqual(archive1.id, job.source_archive_id)
         self.assertEqual(archive1, job.source_archive)
@@ -230,11 +230,12 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
         self.assertEqual(PackagePublishingPocket.RELEASE, job.target_pocket)
         self.assertEqual("foo", job.package_name)
         self.assertEqual("1.0-1", job.package_version)
-        self.assertEqual(False, job.include_binaries)
+        self.assertFalse(job.include_binaries)
         self.assertEqual(PackageCopyPolicy.MASS_SYNC, job.copy_policy)
         self.assertEqual(requester, job.requester)
         self.assertEqual(sponsored, job.sponsored)
         self.assertEqual(20, job.phased_update_percentage)
+        self.assertTrue(job.move)
 
     def test_createMultiple_creates_one_job_per_copy(self):
         mother = self.factory.makeDistroSeriesParent()
@@ -1725,6 +1726,30 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
         self.assertEqual(
             1, archive.getPublishedOnDiskBinaries(
                 status=PackagePublishingStatus.PENDING).count())
+
+    def test_move(self):
+        # A job with move=True deletes the old publication after copying it.
+        source_archive = self.factory.makeArchive(
+            self.distroseries.distribution)
+        target_archive = self.factory.makeArchive(
+            self.distroseries.distribution)
+        spph = self.publisher.getPubSource(
+            distroseries=self.distroseries, sourcename="moveme",
+            archive=source_archive)
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        job = self.createCopyJobForSPPH(
+            spph, source_archive, target_archive,
+            requester=source_archive.owner, move=True)
+        self.runJob(job)
+        self.assertEqual(JobStatus.COMPLETED, job.status)
+        new_spph = target_archive.getPublishedSources(name="moveme").one()
+        self.assertEqual(PackagePublishingStatus.PENDING, new_spph.status)
+        self.assertEqual(PackagePublishingStatus.DELETED, spph.status)
+        self.assertEqual(
+            "Moved to %s in %s" % (
+                self.distroseries.name, target_archive.reference),
+            spph.removal_comment)
 
 
 class TestViaCelery(TestCaseWithFactory):

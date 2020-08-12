@@ -32,16 +32,16 @@ we rely on that to find out whether or not to reset stores.
     ...     alive_items = len(IStore(Person)._alive)
 
     >>> request_salgados_homepage()
-    >>> print thread_name
+    >>> print(thread_name)
     MainThread
-    >>> print alive_items > 0
+    >>> print(alive_items > 0)
     True
 
     >>> from threading import Thread
     >>> thread = Thread(target=request_salgados_homepage)
     >>> thread.start()
     >>> thread.join()
-    >>> print thread_name != 'MainThread'
+    >>> print(thread_name != 'MainThread')
     True
-    >>> print alive_items
+    >>> print(alive_items)
     0

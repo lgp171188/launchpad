@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -65,6 +65,7 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
+import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
@@ -138,9 +139,11 @@ from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
+    user_can_edit_credentials_for_owner,
     )
 from lp.registry.browser import BaseRdfView
 from lp.registry.browser.branding import BrandingChangeView
@@ -189,6 +192,7 @@ from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     )
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,
@@ -756,6 +760,12 @@ class CommonMenuLinks:
         text = 'Structural subscriptions'
         return Link(target, text, icon='info')
 
+    def oci_registry_credentials(self):
+        target = '+oci-registry-credentials'
+        text = 'OCI registry credentials'
+        enabled = user_can_edit_credentials_for_owner(self.context, self.user)
+        return Link(target, text, enabled=enabled, icon='info')
+
 
 class PersonMenuMixin(CommonMenuLinks):
 
@@ -840,12 +850,6 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         request_tokens = self.context.oauth_request_tokens
         enabled = bool(access_tokens or request_tokens)
         return Link(target, text, enabled=enabled, icon='info')
-
-    @enabled_with_permission('launchpad.Edit')
-    def oci_registry_credentials(self):
-        target = '+oci-registry-credentials'
-        text = 'OCI registry credentials'
-        return Link(target, text, icon='info')
 
     @enabled_with_permission('launchpad.Edit')
     def editlanguages(self):
@@ -1676,17 +1680,17 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     @cachedproperty
     def openpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getOpenPolls()
+        return list(IPollSubset(self.context).getOpenPolls())
 
     @cachedproperty
     def closedpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getClosedPolls()
+        return list(IPollSubset(self.context).getClosedPolls())
 
     @cachedproperty
     def notyetopenedpolls(self):
         assert self.context.is_team
-        return IPollSubset(self.context).getNotYetOpenedPolls()
+        return list(IPollSubset(self.context).getNotYetOpenedPolls())
 
     @cachedproperty
     def contributions(self):
@@ -2204,7 +2208,7 @@ class PersonCodeOfConductEditView(LaunchpadView):
             for sig_id in sig_ids:
                 sig_id = int(sig_id)
                 # Deactivating signature.
-                comment = 'Deactivated by Owner'
+                comment = u'Deactivated by Owner'
                 sCoC_util.modifySignature(sig_id, self.user, comment, False)
 
 
@@ -2765,7 +2769,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         """
         terms = []
         for term in self.unvalidated_addresses:
-            if isinstance(term, unicode):
+            if isinstance(term, six.text_type):
                 term = SimpleTerm(term)
             else:
                 term = SimpleTerm(term, term.email)
@@ -2806,7 +2810,7 @@ class PersonEditEmailsView(LaunchpadFormView):
                 "self.context.id(%s,%d) (%s)"
                 % (person.name, person.id, self.context.name, self.context.id,
                    email.email))
-        elif isinstance(email, unicode):
+        elif isinstance(email, six.text_type):
             tokenset = getUtility(ILoginTokenSet)
             email = tokenset.searchByEmailRequesterAndType(
                 email, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -2932,7 +2936,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         if IEmailAddress.providedBy(emailaddress):
             emailaddress.destroySelf()
             email = emailaddress.email
-        elif isinstance(emailaddress, unicode):
+        elif isinstance(emailaddress, six.text_type):
             logintokenset = getUtility(ILoginTokenSet)
             logintokenset.deleteByEmailRequesterAndType(
                 emailaddress, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -3655,6 +3659,11 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
 
     page_title = "OCI registry credentials"
 
+    def initialize(self):
+        if not user_can_edit_credentials_for_owner(self.context, self.user):
+            raise Unauthorized
+        super(PersonOCIRegistryCredentialsView, self).initialize()
+
     @property
     def label(self):
         return "OCI registry credentials for %s" % self.context.display_name
@@ -3669,10 +3678,21 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     @cachedproperty
     def oci_registry_credentials(self):
-        return list(getUtility(
-            IOCIRegistryCredentialsSet).findByOwner(self.context))
+        if IPerson.providedBy(self.context):
+            owner = self.context
+        elif IOCIRecipe.providedBy(self.context):
+            owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
+
+        return list(getUtility(IOCIRegistryCredentialsSet).findByOwner(owner))
 
     schema = Interface
+
+    def initialize(self):
+        if not user_can_edit_credentials_for_owner(self.context, self.user):
+            raise Unauthorized
+        super(PersonEditOCIRegistryCredentialsView, self).initialize()
 
     def _getFieldName(self, name, credentials_id):
         """Get the combined field name for an `OCIRegistryCredentials` ID.
@@ -3688,7 +3708,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             title=u'Owner',
             vocabulary=(
                 'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
-            default=credentials.owner.name,
+            default=credentials.owner,
             __name__=self._getFieldName('owner', id))
 
         username = TextLine(
@@ -3883,6 +3903,12 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             credentials.destroySelf()
 
     def addCredentials(self, parsed_add_credentials):
+        if IPerson.providedBy(self.context):
+            owner = self.context
+        elif IOCIRecipe.providedBy(self.context):
+            owner = self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
         url = parsed_add_credentials["url"]
         password = parsed_add_credentials["password"]
         confirm_password = parsed_add_credentials["confirm_password"]
@@ -3902,7 +3928,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                     'password': password}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=self.context,
+                        owner=owner,
                         url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
@@ -3915,7 +3941,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 credentials = {'username': username}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=self.context,
+                        owner=owner,
                         url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:

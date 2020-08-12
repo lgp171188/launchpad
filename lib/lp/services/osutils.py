@@ -154,7 +154,8 @@ def get_pid_from_file(pidfile_path):
     if not os.path.exists(pidfile_path):
         return None
     # Get the pid.
-    pid = open(pidfile_path, 'r').read().split()[0]
+    with open(pidfile_path) as pidfile:
+        pid = pidfile.read().split()[0]
     try:
         pid = int(pid)
     except ValueError:

@@ -327,7 +327,7 @@ start-gdb: build inplace stop support_files run.gdb
 
 run_all: build inplace stop
 	bin/run \
-	 -r librarian,sftp,forker,codebrowse,bing-webservice,\
+	 -r librarian,sftp,codebrowse,bing-webservice,\
 	memcached,rabbitmq -i $(LPCONFIG)
 
 run_codebrowse: compile
@@ -340,7 +340,7 @@ stop_codebrowse:
 	$(PY) scripts/stop-loggerhead.py
 
 run_codehosting: build inplace stop
-	bin/run -r librarian,sftp,forker,codebrowse,rabbitmq -i $(LPCONFIG)
+	bin/run -r librarian,sftp,codebrowse,rabbitmq -i $(LPCONFIG)
 
 start_librarian: compile
 	bin/start_librarian

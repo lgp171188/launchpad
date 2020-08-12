@@ -14,10 +14,10 @@ from datetime import (
     )
 import hashlib
 import logging
-from StringIO import StringIO
 import time
 
 from pytz import UTC
+import six
 from storm.exceptions import LostObjectError
 from storm.expr import (
     In,
@@ -30,8 +30,7 @@ from storm.locals import (
     Storm,
     )
 from storm.store import Store
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 from testtools.matchers import (
     AfterPreprocessing,
     Equals,
@@ -56,7 +55,10 @@ from lp.code.bzr import (
     BranchFormat,
     RepositoryFormat,
     )
-from lp.code.enums import CodeImportResultStatus
+from lp.code.enums import (
+    CodeImportResultStatus,
+    GitRepositoryStatus,
+    )
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.branchjob import (
@@ -70,6 +72,7 @@ from lp.code.model.gitjob import (
     GitJob,
     GitRefScanJob,
     )
+from lp.code.model.gitrepository import GitRepository
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
@@ -92,6 +95,7 @@ from lp.scripts.garbo import (
     load_garbo_job_state,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
+    ProductVCSPopulator,
     save_garbo_job_state,
     UnusedPOTMsgSetPruner,
     UnusedSessionPruner,
@@ -426,12 +430,10 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runFrequently()
 
         # Capture garbo log output to tests can examine it.
-        self.log_buffer = StringIO()
+        self.log_buffer = six.StringIO()
         handler = logging.StreamHandler(self.log_buffer)
         self.log.addHandler(handler)
-        self.addDetail(
-            'garbo-log',
-            Content(UTF8_TEXT, lambda: [self.log_buffer.getvalue()]))
+        self.addDetail('garbo-log', text_content(self.log_buffer.getvalue()))
 
     def runFrequently(self, maximum_chunk_size=2, test_args=()):
         switch_dbuser('garbo_daily')
@@ -1107,6 +1109,54 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser('testadmin')
         self.assertEqual(1, store.find(OCIFile).count())
 
+    def test_GitRepositoryPruner_removes_stale_creations(self):
+        # Garbo removes GitRepository with status = CREATING for too long.
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        switch_dbuser('testadmin')
+        store = IMasterStore(GitRepository)
+        now = datetime.now(UTC)
+        recently = now - timedelta(minutes=2)
+        long_ago = now - timedelta(minutes=65)
+
+        # Creating a bunch of old stale repositories to be deleted,
+        # to make sure the chunk size is being respected.
+        for i in range(5):
+            repo = removeSecurityProxy(self.factory.makeGitRepository())
+            [ref1, ref2] = self.factory.makeGitRefs(
+                repository=repo, paths=["a", "b"])
+            self.factory.makeBranchMergeProposalForGit(
+                target_ref=ref1, source_ref=ref2)
+            self.factory.makeSourcePackageRecipe(branches=[ref1])
+            self.factory.makeSnap(git_ref=ref2)
+            self.factory.makeOCIRecipe(git_ref=ref1)
+            repo.date_created = long_ago
+            repo.status = GitRepositoryStatus.CREATING
+            long_ago += timedelta(seconds=1)
+
+        recent_creating, old_available, recent_available = [
+            removeSecurityProxy(self.factory.makeGitRepository())
+            for _ in range(3)]
+
+        recent_creating.date_created = recently
+        recent_creating.status = GitRepositoryStatus.CREATING
+
+        old_available.date_created = long_ago
+        old_available.status = GitRepositoryStatus.AVAILABLE
+
+        recent_available.date_created = recently
+        recent_available.status = GitRepositoryStatus.AVAILABLE
+
+        self.assertEqual(8, store.find(GitRepository).count())
+
+        self.runHourly(maximum_chunk_size=2)
+
+        switch_dbuser('testadmin')
+        remaining_repos = store.find(GitRepository)
+        self.assertEqual(3, remaining_repos.count())
+        self.assertEqual(
+            {old_available, recent_available, recent_creating},
+            set(remaining_repos))
+
     def test_WebhookJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
         switch_dbuser('testadmin')
@@ -1343,6 +1393,24 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runDaily()
 
         self.assertEqual(VCSType.GIT, product.vcs)
+
+    def test_ProductVCSPopulator_findProducts_filters_correctly(self):
+        switch_dbuser('testadmin')
+
+        # Create 2 products: one with VCS set, and another one without.
+        product = self.factory.makeProduct()
+        self.assertIsNone(product.vcs)
+
+        product_with_vcs = self.factory.makeProduct(vcs=VCSType.GIT)
+        self.assertIsNotNone(product_with_vcs.vcs)
+
+        populator = ProductVCSPopulator(None)
+        # Consider only products created by this test.
+        populator.start_at = product.id
+
+        rs = populator.findProducts()
+        self.assertEqual(1, rs.count())
+        self.assertEqual(product, rs.one())
 
     def test_PopulateDistributionSourcePackageCache(self):
         switch_dbuser('testadmin')

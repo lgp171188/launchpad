@@ -55,7 +55,7 @@ name.
 It's also possible to iterate over the recipients:
 
     >>> for person in recipients:
-    ...     print person.displayname
+    ...     print(person.displayname)
     Celso Providelo
     Sample Person
 
@@ -98,13 +98,17 @@ Obtaining the rationale
 You can obtain the rationale, header tuple by using the getReason()
 method:
 
-    >>> recipients.getReason(cprov)
-    ('You are notified for no reason.', 'Why not')
+    >>> def print_reason(reason):
+    ...     rationale, header = reason
+    ...     print('%s (%s)' % (header, rationale))
+
+    >>> print_reason(recipients.getReason(cprov))
+    Why not (You are notified for no reason.)
 
 You can also ask the reason associated with an email address:
 
-    >>> recipients.getReason('test@canonical.com')
-    ('You are notified because...', 'Unknown')
+    >>> print_reason(recipients.getReason('test@canonical.com'))
+    Unknown (You are notified because...)
 
 Requesting the reason for somebody that is not a recipient raises a
 UnknownRecipientError:
@@ -114,7 +118,7 @@ UnknownRecipientError:
       ...
     UnknownRecipientError: ...
 
-    >>> recipients.getReason('no-priv@canonical.com')
+    >>> recipients.getReason(six.ensure_str('no-priv@canonical.com'))
     Traceback (most recent call last):
       ...
     UnknownRecipientError: 'no-priv@canonical.com'
@@ -135,7 +139,7 @@ person:
 
     >>> ubuntu_team = person_set.getByName('ubuntu-team')
     >>> ignored = login_person(ubuntu_team.teamowner)
-    >>> print ubuntu_team.preferredemail.email
+    >>> print(ubuntu_team.preferredemail.email)
     support@ubuntu.com
 
     >>> recipients.add(ubuntu_team, 'You are notified for fun.', 'Fun')
@@ -158,7 +162,7 @@ addresses are added to the recipients list, and this recursively.
 
     >>> recipients = NotificationRecipientSet()
     >>> ubuntu_gnome_team = person_set.getByName('name18')
-    >>> print ubuntu_gnome_team.preferredemail
+    >>> print(ubuntu_gnome_team.preferredemail)
     None
 
     >>> recipients.add(
@@ -182,7 +186,7 @@ be notified for they're a member of Warty Security Team, itself a member of
 Ubuntu Gnome Team:
 
     >>> warty_security_team = person_set.getByName('name20')
-    >>> print warty_security_team.displayname
+    >>> print(warty_security_team.displayname)
     Warty Security Team
 
     >>> sample_person.inTeam(warty_security_team)
@@ -202,11 +206,11 @@ Ubuntu Gnome Team:
 
 Their email will have the same rationale than the team:
 
-    >>> recipients.getReason(ubuntu_gnome_team)
-    ('Notified because a member of the team', 'Team')
+    >>> print_reason(recipients.getReason(ubuntu_gnome_team))
+    Team (Notified because a member of the team)
 
-    >>> recipients.getReason('test@canonical.com')
-    ('Notified because a member of the team', 'Team')
+    >>> print_reason(recipients.getReason('test@canonical.com'))
+    Team (Notified because a member of the team)
 
 
 Adding many persons at the same time
@@ -221,11 +225,11 @@ be added with the same rationale:
     >>> [person.displayname for person in recipients.getRecipients()]
     [u'No Privileges Person', u'Sample Person']
 
-    >>> recipients.getReason(no_priv)
-    ('Notified for fun.', 'Fun')
+    >>> print_reason(recipients.getReason(no_priv))
+    Fun (Notified for fun.)
 
-    >>> recipients.getReason(sample_person)
-    ('Notified for fun.', 'Fun')
+    >>> print_reason(recipients.getReason(sample_person))
+    Fun (Notified for fun.)
 
 
 Removing recipients
@@ -262,8 +266,8 @@ will be the one returned.
     >>> recipients.add(sample_person, 'A good reason', 'Good')
     >>> recipients.add(sample_person, 'Not a good reason', 'No good')
 
-    >>> recipients.getReason(sample_person)
-    ('A good reason', 'Good')
+    >>> print_reason(recipients.getReason(sample_person))
+    Good (A good reason)
 
 But if a person already had a rationale added through a team, the
 rationale specific to the person is used:
@@ -274,8 +278,8 @@ rationale specific to the person is used:
     ...     'Team')
     >>> recipients.add(sample_person, 'A more specific reason', 'Specific')
 
-    >>> recipients.getReason('test@canonical.com')
-    ('A more specific reason', 'Specific')
+    >>> print_reason (recipients.getReason('test@canonical.com'))
+    Specific (A more specific reason)
 
 Adding a rationale for another team won't override the one for the first
 one:
@@ -285,8 +289,8 @@ one:
     ...     warty_security_team, 'Member of Warty', 'Warty')
     >>> recipients.add(
     ...     ubuntu_gnome_team, 'Member of Ubuntu Gnome', 'Ubuntu Gnome')
-    >>> recipients.getReason('test@canonical.com')
-    ('Member of Warty', 'Warty')
+    >>> print_reason(recipients.getReason('test@canonical.com'))
+    Warty (Member of Warty)
 
 Nor adding a team rationale, when there is already one for the person:
 
@@ -294,8 +298,8 @@ Nor adding a team rationale, when there is already one for the person:
     >>> recipients.add(sample_person, 'Sample Person', 'Person')
     >>> recipients.add(
     ...     warty_security_team, 'Member of Warty.', 'Team')
-    >>> recipients.getReason('test@canonical.com')
-    ('Sample Person', 'Person')
+    >>> print_reason(recipients.getReason('test@canonical.com'))
+    Person (Sample Person)
 
 
 Merging recipients set
@@ -313,7 +317,7 @@ recipient is already part of the first set, the reason won't be updated.
     >>> recipients.update(other_recipients)
     >>> for person in recipients:
     ...     reason, code = recipients.getReason(person)
-    ...     print '%s: %s (%s)' % (person.displayname, code, reason)
+    ...     print('%s: %s (%s)' % (person.displayname, code, reason))
     Celso Providelo: B (Reason B)
     No Privileges Person: B (Reason B)
     Sample Person: A (Reason A)

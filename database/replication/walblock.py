@@ -3,7 +3,9 @@
 # Copyright 2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Feed stdin to stout, blocking if there are too many unshipped WAL files"""
+"""Feed stdin to stdout, blocking if there are too many unshipped WAL files."""
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 __all__ = []
@@ -39,11 +41,13 @@ def main():
         while len(glob(ready_wal_glob)) > options.num_ready:
             if options.verbose and not notified:
                 notified = True
-                print >> sys.stderr, 'Blocking on {0} unshipped WAL'.format(
-                    len(glob(ready_wal_glob))),
+                print(
+                    'Blocking on {0} unshipped WAL'.format(
+                        len(glob(ready_wal_glob))),
+                    end='', file=sys.stderr)
             time.sleep(5)
         if options.verbose and notified:
-            print >> sys.stderr, '... Done'
+            print(' ... Done', file=sys.stderr)
 
         chunk = sys.stdin.read(chunk_size)
         if chunk == '':

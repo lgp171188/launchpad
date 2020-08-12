@@ -23,12 +23,15 @@ from breezy.library_state import BzrLibraryState as BrzLibraryState
 from breezy.plugin import load_plugins as brz_load_plugins
 # This import is needed so that brz's logger gets registered.
 import breezy.trace
-from bzrlib.plugin import load_plugins as bzr_load_plugins
-# This import is needed so that bzr's logger gets registered.
-import bzrlib.trace
+import six
 from zope.security import checker
 
 from lp.services.config import config
+
+if six.PY2:
+    from bzrlib.plugin import load_plugins as bzr_load_plugins
+    # This import is needed so that bzr's logger gets registered.
+    import bzrlib.trace
 
 
 def get_brz_path():
@@ -93,9 +96,10 @@ os.environ['BRZ_DISABLE_PLUGINS'] = ':'.join([
     'mtn',
     ])
 
-# We want to have full access to Launchpad's Bazaar plugins throughout the
+# We want to have full access to Launchpad's Breezy plugins throughout the
 # codehosting package.
-bzr_load_plugins([_get_bzr_plugins_path()])
+if six.PY2:
+    bzr_load_plugins([_get_bzr_plugins_path()])
 brz_load_plugins()
 
 

@@ -53,7 +53,8 @@ Now we successfully create a poll which starts 12h from now.
 
 == Displaying results of condorcet polls ==
 
-  >>> poll = getUtility(IPollSet).getByTeamAndName(ubuntu_team, 'director-2004')
+  >>> poll = getUtility(IPollSet).getByTeamAndName(
+  ...     ubuntu_team, u'director-2004')
   >>> poll.type.title
   'Condorcet Voting'
 

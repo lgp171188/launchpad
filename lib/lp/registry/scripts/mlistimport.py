@@ -11,6 +11,7 @@ __all__ = [
 
 from email.utils import parseaddr
 
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -32,15 +33,15 @@ class Importer:
     """Perform mailing list imports for command line scripts."""
 
     def __init__(self, team_name, log=None):
-        self.team_name = team_name
-        self.team = getUtility(IPersonSet).getByName(team_name)
+        self.team_name = six.ensure_text(team_name)
+        self.team = getUtility(IPersonSet).getByName(self.team_name)
         assert self.team is not None, (
-            'No team with name: %s' % team_name)
-        self.mailing_list = getUtility(IMailingListSet).get(team_name)
+            'No team with name: %s' % self.team_name)
+        self.mailing_list = getUtility(IMailingListSet).get(self.team_name)
         assert self.mailing_list is not None, (
-            'Team has no mailing list: %s' % team_name)
+            'Team has no mailing list: %s' % self.team_name)
         assert self.mailing_list.status == MailingListStatus.ACTIVE, (
-            'Team mailing list is not active: %s' % team_name)
+            'Team mailing list is not active: %s' % self.team_name)
         if log is None:
             self.log = BufferLogger()
         else:

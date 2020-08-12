@@ -105,6 +105,8 @@ class IBuildQueue(Interface):
         Everyone else wants to use cancel().
         """
 
+    specific_source = Attribute("Type of concrete build farm job.")
+
     specific_build = Reference(
         IBuildFarmJob, title=_("Build farm job"),
         description=_("Concrete build farm job object."))

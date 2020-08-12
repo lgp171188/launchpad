@@ -105,13 +105,13 @@ a search term of None, all active lists are returned.
 If given, the search term matches the team name.
 
     >>> sorted(mailing_list.team.displayname
-    ...        for mailing_list in list_vocabulary.search('player'))
+    ...        for mailing_list in list_vocabulary.search(u'player'))
     [u'Bass Players', u'Guitar Players']
 
 The IHugeVocabulary interface also requires a search method that returns
 a CountableIterator.
 
-    >>> iter = list_vocabulary.searchForTerms('player')
+    >>> iter = list_vocabulary.searchForTerms(u'player')
     >>> from lp.services.webapp.vocabulary import CountableIterator
     >>> isinstance(iter, CountableIterator)
     True
@@ -186,10 +186,10 @@ Non-ACTIVE mailing lists are also not contained in the vocabulary.
 
 Sometimes, the vocabulary search doesn't return any active lists.
 
-    >>> list(list_vocabulary.search('flautists'))
+    >>> list(list_vocabulary.search(u'flautists'))
     []
 
-    >>> list(list_vocabulary.search('cellists'))
+    >>> list(list_vocabulary.search(u'cellists'))
     []
 
 
@@ -1118,13 +1118,13 @@ They can be looked up by their aliases too.
     >>> vocab.getTermByToken('iceweasel').token
     'firefox'
 
-    >>> [term.token for term in vocab.searchForTerms(query='iceweasel')]
+    >>> [term.token for term in vocab.searchForTerms(query=u'iceweasel')]
     ['firefox']
 
 Aliases are not among the terms when their name does not match the
 token/name.
 
-    >>> [term.token for term in vocab.searchForTerms(query='ubuntu')]
+    >>> [term.token for term in vocab.searchForTerms(query=u'ubuntu')]
     ['ubuntu', 'kubuntu', 'ubuntutest']
 
     >>> vocab.getTermByToken('ubuntu').token
@@ -1187,7 +1187,7 @@ They can be looked up by their aliases too.
     >>> vocab.getTermByToken('ubantoo').token
     'ubuntu'
 
-    >>> [term.token for term in vocab.searchForTerms(query='ubantoo')]
+    >>> [term.token for term in vocab.searchForTerms(query=u'ubantoo')]
     ['ubuntu']
 
 Inactive projects and project groups are not available.

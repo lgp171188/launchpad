@@ -17,6 +17,8 @@ __all__ = [
 from math import ceil
 import re
 
+import six
+
 from lp.services import helpers
 from lp.services.webapp.escaping import html_escape
 from lp.translations.interfaces.translations import TranslationConstants
@@ -109,7 +111,7 @@ def convert_newlines_to_web_form(unicode_text):
     if unicode_text is None:
         return None
 
-    assert isinstance(unicode_text, unicode), (
+    assert isinstance(unicode_text, six.text_type), (
         "The given text must be unicode instead of %s" % type(unicode_text))
 
     if unicode_text is None:

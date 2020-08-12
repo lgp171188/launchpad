@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An OpenStack Swift server mock using Twisted.
@@ -102,7 +102,7 @@ class FakeKeystone(resource.Resource):
 
     def getChild(self, path, request):
         """See `twisted.web.resource.Resource.getChild`."""
-        if path in ("v2.0", "tokens"):
+        if path in (b"v2.0", b"tokens"):
             return self
         return resource.NoResource("Not a valid keystone URL.")
 
@@ -110,27 +110,29 @@ class FakeKeystone(resource.Resource):
         """Validate provided credentials and return service catalog."""
         if "application/json" not in request.getHeader('content-type'):
             request.setResponseCode(http.BAD_REQUEST)
-            return ""
-        credentials = json.load(request.content)
+            return b""
+        # XXX cjwatson 2020-06-15: Python 3.5 doesn't allow this to be a
+        # binary file; 3.6 does.
+        credentials = json.loads(request.content.read().decode("UTF-8"))
         if not "auth" in credentials:
             request.setResponseCode(http.FORBIDDEN)
-            return ""
+            return b""
         if ((not "tenantName" in credentials["auth"] or
              not "passwordCredentials" in credentials["auth"])):
             request.setResponseCode(http.FORBIDDEN)
-            return ""
+            return b""
         tenant_name = credentials["auth"]["tenantName"]
         pw_creds = credentials["auth"]["passwordCredentials"]
         username, password = pw_creds.get("username"), pw_creds.get("password")
         if not tenant_name in self.root.tenants:
             request.setResponseCode(http.FORBIDDEN)
-            return ""
+            return b""
         if not username in self.users:
             request.setResponseCode(http.FORBIDDEN)
-            return ""
+            return b""
         if password != DEFAULT_PASSWORD:
             request.setResponseCode(http.FORBIDDEN)
-            return ""
+            return b""
 
         self.ensureValidToken(tenant_name)
 
@@ -142,7 +144,7 @@ class FakeKeystone(resource.Resource):
                 "token": self.getValidToken(tenant_name),
                 "user": self.getUser(username),
                 }
-            })
+            }).encode("UTF-8")
 
 
 def parse_range_header(range):
@@ -175,7 +177,7 @@ class EmptyPage(resource.Resource):
     """Return an empty document."""
     isLeaf = True
 
-    def __init__(self, retcode=http.OK, headers=None, body=""):
+    def __init__(self, retcode=http.OK, headers=None, body=b""):
         resource.Resource.__init__(self)
         self._retcode = retcode
         self._headers = headers
@@ -252,9 +254,9 @@ class SwiftObject(resource.Resource):
             request.setHeader("ETag", self._etag)
         range = request.getHeader("Range")
         size = len(self.contents)
-        if request.method == 'HEAD':
+        if request.method == b'HEAD':
             request.setHeader("Content-Length", str(size))
-            return ""
+            return b""
         if range:
             ranges = parse_range_header(range)
             length = 0
@@ -263,7 +265,7 @@ class SwiftObject(resource.Resource):
                 if begin is None:
                     request.setResponseCode(
                         http.REQUESTED_RANGE_NOT_SATISFIABLE)
-                    return ''
+                    return b''
                 if not end:
                     end = size
                 elif end < size:
@@ -273,7 +275,7 @@ class SwiftObject(resource.Resource):
                         http.REQUESTED_RANGE_NOT_SATISFIABLE)
                     request.setHeader(
                         'content-range', 'bytes */%d' % size)
-                    return ''
+                    return b''
                 else:
                     request.setHeader(
                         'content-range',
@@ -285,7 +287,7 @@ class SwiftObject(resource.Resource):
             else:
                 # multiple ranges should be returned in a multipart response
                 request.setResponseCode(http.REQUESTED_RANGE_NOT_SATISFIABLE)
-                return ''
+                return b''
 
         else:
             request.setHeader("Content-Length", str(size))
@@ -318,7 +320,7 @@ class SwiftObject(resource.Resource):
         request.setHeader("ETag", self.get_etag())
         logger.debug("created object container=%s name=%s size=%d" % (
             self.container, self.name, len(data)))
-        return ""
+        return b""
 
 
 class SwiftContainer(resource.Resource):
@@ -351,18 +353,19 @@ class SwiftContainer(resource.Resource):
         if name and request.postpath:
             name = os.path.join(*((name,)+tuple(request.postpath)))
         assert (name), "Wrong call stack for name='%s'" % (name,)
-        if request.method == "PUT":
+        if request.method == b"PUT":
             child = SwiftObject(self, name)
-        elif request.method in ("GET", "HEAD") :
+        elif request.method in (b"GET", b"HEAD"):
             child = self.container_children.get(name, None)
-        elif request.method == "DELETE":
+        elif request.method == b"DELETE":
             child = self.container_children.get(name, None)
-            if child is None: # delete unknown object
-                return EmptyPage(http.NO_CONTENT)
+            if child is None:  # delete unknown object
+                return EmptyPage(http.NOT_FOUND)
             del self.container_children[name]
             return EmptyPage(http.NO_CONTENT)
         else:
-            logger.error("UNHANDLED request method %s" % request.method)
+            logger.error(
+                "UNHANDLED request method %s" % request.method.decode("UTF-8"))
             return EmptyPage(http.METHOD_NOT_ALLOWED)
         if child is None:
             return EmptyPage(http.NOT_FOUND)
@@ -370,25 +373,25 @@ class SwiftContainer(resource.Resource):
 
     def render_GET(self, request):
         """Return list of keys in response to GET on container."""
-        if request.args.get('format', [])[0] != "json":
+        if request.args.get(b'format', [])[0] != b"json":
             raise NotImplementedError()
 
         results = []
-        marker = request.args.get('marker', [None])[0]
-        end_marker = request.args.get('end_marker', [None])[0]
-        prefix = request.args.get('prefix', [None])[0]
-        format_ = request.args.get('format', [None])[0]
-        delimiter = request.args.get('delimiter', None)
-        path = request.args.get('path', None)
+        marker = request.args.get(b'marker', [None])[0]
+        end_marker = request.args.get(b'end_marker', [None])[0]
+        prefix = request.args.get(b'prefix', [None])[0]
+        format_ = request.args.get(b'format', [None])[0]
+        delimiter = request.args.get(b'delimiter', None)
+        path = request.args.get(b'path', None)
 
-        if format_ != 'json' or delimiter or path:
+        if format_ != b'json' or delimiter or path:
             raise NotImplementedError()
 
         # According to the docs, limit will be 10000 if no query
         # parameters are passed. However, as we require at least the
         # 'format' query parameter above, the default is always
         # unlimited.
-        limit = int(request.args.get('limit', [sys.maxint])[0])
+        limit = int(request.args.get(b'limit', [2 ** 31 - 1])[0])
 
         results = []
         for name, child in sorted(self.iter_children()):
@@ -407,14 +410,14 @@ class SwiftContainer(resource.Resource):
                 '%Y-%m-%dT%H:%M:%S.%f')
 
             results.append({
-                'name': name,
+                'name': name.decode('UTF-8'),
                 'bytes': child.get_size(),
                 'hash': child._etag,
                 'content-type': child.content_type,
                 'last_modified': mod_time,
                 })
 
-        return json.dumps(results)
+        return json.dumps(results).encode('UTF-8')
 
 
 class FakeContent(io.IOBase):
@@ -461,7 +464,7 @@ class SizeContainer(SwiftContainer):
     def getChild(self, name, request):
         """Get the next object down the chain."""
         try:
-            fake = FakeContent("0", int(name))
+            fake = FakeContent(b"0", int(name))
             o = SwiftObject(self, name, fake, "text/plain", fake.hexdigest())
             return o
         except ValueError:
@@ -475,7 +478,7 @@ class FakeSwift(resource.Resource):
         resource.Resource.__init__(self)
         self.root = root
         self.containers = {
-            "size": SizeContainer("size", DEFAULT_TENANT_NAME),
+            b"size": SizeContainer(b"size", DEFAULT_TENANT_NAME),
             }
 
     def addContainer(self, name):
@@ -492,24 +495,24 @@ class FakeSwift(resource.Resource):
 
         # if we operate on a key, pass control
         if (((request.postpath and request.postpath[0]) or
-             (not request.postpath and request.method == "GET"))):
+             (not request.postpath and request.method == b"GET"))):
             if container is None:
                 # container does not exist, yet we attempt operation on
                 # an object from that container
                 return EmptyPage(http.NOT_FOUND)
             return container
 
-        if request.method == "HEAD":
+        if request.method == b"HEAD":
             if container is None:
                 return EmptyPage(http.NOT_FOUND)
             return EmptyPage(http.NO_CONTENT)
 
-        if request.method == "PUT":
+        if request.method == b"PUT":
             if container is None:
                 container = self.addContainer(name)
             return EmptyPage()
 
-        if request.method == "DELETE":
+        if request.method == b"DELETE":
             if container is None:  # delete unknown object
                 return EmptyPage(http.NO_CONTENT)
             del self.containers[name]
@@ -519,7 +522,7 @@ class FakeSwift(resource.Resource):
 
     def getChild(self, name, request):
         """See `twisted.web.resource.Resource.getChild`."""
-        if name == "v1" or name.startswith("AUTH_"):
+        if name == b"v1" or name.startswith(b"AUTH_"):
             return self
 
         resource = self._getResource(name, request)
@@ -553,8 +556,8 @@ class Root(resource.Resource):
         self.keystone = FakeKeystone(
             self, allow_default_access=allow_default_access)
         self.swift = FakeSwift(self)
-        self.putChild("keystone", self.keystone)
-        self.putChild("swift", self.swift)
+        self.putChild(b"keystone", self.keystone)
+        self.putChild(b"swift", self.swift)
 
     def getCatalog(self, tenant, request):
         """Compute service catalog for the given request and tenant."""

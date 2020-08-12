@@ -76,12 +76,17 @@ class SigningServiceClient:
             include a X-Response-Nonce, and returns back an encrypted
             response JSON.
         """
+        headers = kwargs.get("headers", {})
+
         timeline = get_request_timeline(get_current_browser_request())
+        redacted_kwargs = dict(kwargs)
+        if "X-Client-Public-Key" in headers and "data" in redacted_kwargs:
+            # The data will be encrypted, and possibly also very large.
+            del redacted_kwargs["data"]
         action = timeline.start(
             "services-signing-proxy-%s" % method, "%s %s" %
-            (path, json.dumps(kwargs)))
+            (path, json.dumps(redacted_kwargs)))
 
-        headers = kwargs.get("headers", {})
         response_nonce = None
         if "X-Response-Nonce" in headers:
             response_nonce = base64.b64decode(headers["X-Response-Nonce"])

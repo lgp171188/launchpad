@@ -3,11 +3,14 @@
 
 """XML-RPC interface for extracting real time stats from the appserver."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ["OpStats"]
 
-from cStringIO import StringIO
 from time import time
+
+import six
 
 from lp.services.webapp import LaunchpadXMLRPCView
 
@@ -65,13 +68,13 @@ class OpStats(LaunchpadXMLRPCView):
 
     def __call__(self):
         now = time()
-        out = StringIO()
+        out = six.StringIO()
         for stat_key in sorted(OpStats.stats.keys()):
-            print >> out, '%s:%d@%d' % (
+            print('%s:%d@%d' % (
                     # Make keys more cricket friendly
                     stat_key.replace(' ', '_').replace('-', ''),
                     OpStats.stats[stat_key], now
-                    )
+                    ), file=out)
         self.request.response.setHeader(
                 'Content-Type', 'text/plain; charset=US-ASCII'
                 )

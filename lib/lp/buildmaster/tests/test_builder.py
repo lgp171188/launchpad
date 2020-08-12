@@ -172,34 +172,6 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
             [bq3, bq2],
             self.bq_set.findBuildCandidates(bq2.processor, True, 3))
 
-    def test_findBuildCandidates_supersedes_builds(self):
-        # BuildQueueSet.findBuildCandidates identifies if there are builds
-        # for superseded source package releases in the queue and marks the
-        # corresponding build record as SUPERSEDED.
-        archive = self.factory.makeArchive()
-        self.publisher.getPubSource(
-            sourcename="gedit", status=PackagePublishingStatus.PUBLISHED,
-            archive=archive).createMissingBuilds()
-        old_candidates = self.bq_set.findBuildCandidates(
-            self.proc_386, True, 2)
-
-        # The candidate starts off as NEEDSBUILD:
-        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(
-            old_candidates[0])
-        self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
-
-        # Now supersede the source package:
-        publication = build.current_source_publication
-        publication.status = PackagePublishingStatus.SUPERSEDED
-
-        # The list of candidates returned is now different:
-        new_candidates = self.bq_set.findBuildCandidates(
-            self.proc_386, True, 2)
-        self.assertNotEqual(new_candidates, old_candidates)
-
-        # And the old_candidate is superseded:
-        self.assertEqual(BuildStatus.SUPERSEDED, build.status)
-
     def test_findBuildCandidates_honours_limit(self):
         # BuildQueueSet.findBuildCandidates returns no more than the number
         # of candidates requested.
@@ -215,13 +187,6 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
             bqs, self.bq_set.findBuildCandidates(processor, True, 10))
         self.assertEqual(
             bqs, self.bq_set.findBuildCandidates(processor, True, 11))
-
-        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(bqs[0])
-        build.current_source_publication.status = (
-            PackagePublishingStatus.SUPERSEDED)
-
-        self.assertEqual(
-            bqs[1:6], self.bq_set.findBuildCandidates(processor, True, 5))
 
     def test_findBuildCandidates_honours_minimum_score(self):
         # Sometimes there's an emergency that requires us to lock down the

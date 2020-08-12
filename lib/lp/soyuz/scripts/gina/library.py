@@ -45,8 +45,8 @@ def checkLibraryForFile(path, filename):
     fullpath = os.path.join(path, filename)
     assert os.path.exists(fullpath)
     digester = hashlib.sha256()
-    openfile = open(fullpath, "r")
-    for chunk in iter(lambda: openfile.read(1024 * 4), ''):
+    openfile = open(fullpath, "rb")
+    for chunk in iter(lambda: openfile.read(1024 * 4), b''):
         digester.update(chunk)
     digest = digester.hexdigest()
     openfile.close()

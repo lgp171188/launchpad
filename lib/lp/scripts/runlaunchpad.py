@@ -168,52 +168,6 @@ class MemcachedService(Service):
         process.stdin.close()
 
 
-class ForkingSessionService(Service):
-    """A lp-forking-service for handling codehosting access."""
-
-    # TODO: The "sftp" (aka codehosting) server depends fairly heavily on this
-    #       service. It would seem reasonable to make one always start if the
-    #       other one is started. Though this might be a way to "FeatureFlag"
-    #       whether this is active or not.
-    @property
-    def should_launch(self):
-        return (config.codehosting.launch and
-                config.codehosting.use_forking_daemon)
-
-    @property
-    def logfile(self):
-        """Return the log file to use.
-
-        Default to the value of the configuration key logfile.
-        """
-        return config.codehosting.forker_logfile
-
-    def launch(self):
-        # Following the logic in TacFile. Specifically, if you configure sftp
-        # to not run (and thus bzr+ssh) then we don't want to run the forking
-        # service.
-        if not self.should_launch:
-            return
-        from lp.codehosting import get_brz_path
-        command = [config.root + '/bin/py', get_brz_path(),
-                   'launchpad-forking-service',
-                   '--path', config.codehosting.forking_daemon_socket,
-                  ]
-        env = dict(os.environ)
-        env['BRZ_PLUGIN_PATH'] = config.root + '/brzplugins'
-        logfile = self.logfile
-        if logfile == '-':
-            # This process uses a different logging infrastructure from the
-            # rest of the Launchpad code. As such, it cannot trivially use '-'
-            # as the logfile. So we just ignore this setting.
-            pass
-        else:
-            env['BRZ_LOG'] = logfile
-        process = subprocess.Popen(command, env=env, stdin=subprocess.PIPE)
-        self.addCleanup(stop_process, process)
-        process.stdin.close()
-
-
 class RabbitService(Service):
     """A RabbitMQ service."""
 
@@ -247,7 +201,6 @@ SERVICES = {
     'librarian': TacFile('librarian', 'daemons/librarian.tac',
                          'librarian_server', prepare_for_librarian),
     'sftp': TacFile('sftp', 'daemons/sftp.tac', 'codehosting'),
-    'forker': ForkingSessionService(),
     'bing-webservice': BingWebService(),
     'codebrowse': CodebrowseService(),
     'memcached': MemcachedService(),
@@ -312,7 +265,6 @@ def start_testapp(argv=list(sys.argv)):
     from lp.testing.layers import (
         BaseLayer,
         DatabaseLayer,
-        LayerProcessController,
         LibrarianLayer,
         RabbitMQLayer,
         )

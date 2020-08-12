@@ -39,7 +39,9 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
+import six
 from six.moves import http_client
+from six.moves.urllib.parse import urlparse
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
     getUtility,
@@ -369,6 +371,17 @@ class LaunchpadView(UserAttributeCache):
         return getattr(self.context, 'description', None)
 
     @property
+    def opengraph_description(self):
+        """Return a string for the description used in the OpenGraph metadata
+
+        Some pages may wish to override the values used in the OpenGraph
+        metadata to provide more useful link previews.
+
+        Default to the page_description in the base views.
+        """
+        return self.page_description
+
+    @property
     def template(self):
         """The page's template, if configured in zcml."""
         return self.index
@@ -616,9 +629,10 @@ class CanonicalAbsoluteURL:
         self.context = context
         self.request = request
 
-    def __unicode__(self):
-        """Returns the URL as a unicode string."""
-        raise NotImplementedError()
+    if six.PY2:
+        def __unicode__(self):
+            """Returns the URL as a unicode string."""
+            raise NotImplementedError()
 
     def __str__(self):
         """Returns an ASCII string with all unicode characters url quoted."""
@@ -810,7 +824,7 @@ def get_raw_form_value_from_current_request(field, field_name):
     # Zope wrongly encodes any form element that doesn't look like a file,
     # so re-fetch the file content if it has been encoded.
     if request and field_name in request.form and isinstance(
-        request.form[field_name], unicode):
+            request.form[field_name], six.text_type):
         request._environ['wsgi.input'].seek(0)
         fs = FieldStorage(fp=request._body_instream, environ=request._environ)
         return fs[field_name].value

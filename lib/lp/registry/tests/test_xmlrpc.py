@@ -5,12 +5,35 @@
 
 __metaclass__ = type
 
+from email import message_from_string
+from textwrap import dedent
+
 from six.moves import xmlrpc_client
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.registry.enums import PersonVisibility
-from lp.testing import TestCaseWithFactory
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.registry.enums import (
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
+from lp.registry.interfaces.mailinglist import (
+    IMailingListSet,
+    IMessageApprovalSet,
+    MailingListStatus,
+    PostedMessageStatus,
+    )
+from lp.registry.interfaces.person import PersonalStanding
+from lp.services.config import config
+from lp.testing import (
+    admin_logged_in,
+    person_logged_in,
+    TestCaseWithFactory,
+    )
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
+from lp.testing.mail_helpers import pop_notifications
 from lp.testing.xmlrpc import XMLRPCTestTransport
 
 
@@ -58,3 +81,130 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
             public_rpc_proxy.getPersonDetailsByOpenIDIdentifier,
             openid_identifier)
         self.assertEqual(404, e.errcode)
+
+
+class TestMailingListXMLRPC(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestMailingListXMLRPC, self).setUp()
+        self.rpc_proxy = xmlrpc_client.ServerProxy(
+            'http://xmlrpc-private.launchpad.test:8087/mailinglists',
+            transport=XMLRPCTestTransport())
+
+    def test_getMembershipInformation(self):
+        team, member = self.factory.makeTeamWithMailingListSubscribers(
+            'team', auto_subscribe=False)
+        result = self.rpc_proxy.getMembershipInformation(
+            [team.name])
+        self.assertIn(team.name, result.keys())
+
+    def test_reportStatus(self):
+        # Successful constructions lead to ACTIVE lists.
+        team = self.factory.makeTeam(name='team')
+        team_list = getUtility(IMailingListSet).new(team, team.teamowner)
+        self.rpc_proxy.getPendingActions()
+        self.rpc_proxy.reportStatus({'team': 'success'})
+        self.assertEqual(MailingListStatus.ACTIVE, team_list.status)
+
+    def test_isTeamPublic(self):
+        self.factory.makeTeam(
+            name='team-a', visibility=PersonVisibility.PUBLIC)
+        self.factory.makeTeam(
+            name='team-b', visibility=PersonVisibility.PRIVATE)
+        self.assertIs(True, self.rpc_proxy.isTeamPublic('team-a'))
+        self.assertIs(False, self.rpc_proxy.isTeamPublic('team-b'))
+
+    def test_isRegisteredInLaunchpad(self):
+        self.factory.makeTeam(email='me@fndor.dom')
+        self.assertFalse(
+            self.rpc_proxy.isRegisteredInLaunchpad('me@fndor.dom'))
+
+    def test_inGoodStanding(self):
+        self.factory.makePerson(email='no@eg.dom')
+        yes_person = self.factory.makePerson(email='yes@eg.dom')
+        with admin_logged_in():
+            yes_person.personal_standing = PersonalStanding.GOOD
+        self.assertIs(True, self.rpc_proxy.inGoodStanding('yes@eg.dom'))
+        self.assertIs(False, self.rpc_proxy.inGoodStanding('no@eg.dom'))
+
+    def test_updateTeamAddresses(self):
+        staging_config_name = self.factory.getUniqueString()
+        config.push(
+            staging_config_name,
+            '\n[launchpad]\nis_demo: True\n'
+            '\n[mailman]\nbuild_host_name: lists.launchpad.test\n')
+        try:
+            self.rpc_proxy.updateTeamAddresses('lists.launchpad.net')
+        finally:
+            config.pop(staging_config_name)
+
+
+
+class TestMailingListXMLRPCMessage(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestMailingListXMLRPCMessage, self).setUp()
+        self.rpc_proxy = xmlrpc_client.ServerProxy(
+            'http://xmlrpc-private.launchpad.test:8087/mailinglists',
+            transport=XMLRPCTestTransport())
+
+    def makeMailingListAndHeldMessage(self, private=False):
+        if private:
+            visibility = PersonVisibility.PRIVATE
+        else:
+            visibility = PersonVisibility.PUBLIC
+        owner = self.factory.makePerson()
+        team = self.factory.makeTeam(
+            name='team', owner=owner, visibility=visibility,
+            membership_policy=TeamMembershipPolicy.RESTRICTED)
+        with person_logged_in(owner):
+            self.factory.makeMailingList(team, owner)
+        sender = self.factory.makePerson(email='me@eg.dom')
+        with person_logged_in(sender):
+            message = message_from_string(dedent("""\
+                From: me@eg.dom
+                To: team@lists.launchpad.test
+                Subject: A question
+                Message-ID: <first-post>
+                Date: Fri, 01 Aug 2000 01:08:59 -0000\n
+                I have a question about this team.
+                """))
+        return team, sender, message
+
+    def test_holdMessage(self):
+        # Calling holdMessages send a copy of the message text to Lp
+        # and notifies a team admins to moderate it.
+        team, sender, message = self.makeMailingListAndHeldMessage()
+        pop_notifications()
+        info = self.rpc_proxy.holdMessage('team', message.as_string())
+        notifications = pop_notifications()
+        found = getUtility(IMessageApprovalSet).getMessageByMessageID(
+            '<first-post>')
+        self.assertIs(True, info)
+        self.assertIsNot(None, found)
+        self.assertEqual(1, len(notifications))
+        self.assertEqual(
+            'New mailing list message requiring approval for Team',
+            notifications[0]['subject'])
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            '.*http://launchpad.test/~team/\+mailinglist-moderate.*',
+            notifications[0].get_payload())
+        self.assertEqual({}, self.rpc_proxy.getMessageDispositions())
+
+    def test_getMessageDispositions_accept(self):
+        # List moderators can approve messages.
+        team, sender, message = self.makeMailingListAndHeldMessage()
+        pop_notifications()
+        self.rpc_proxy.holdMessage('team', message.as_string())
+        found = getUtility(IMessageApprovalSet).getMessageByMessageID(
+            '<first-post>')
+        found.approve(team.teamowner)
+        self.assertEqual(PostedMessageStatus.APPROVAL_PENDING, found.status)
+        self.assertEqual(
+            {'<first-post>': ['team', 'accept']},
+            self.rpc_proxy.getMessageDispositions())
+        self.assertEqual(PostedMessageStatus.APPROVED, found.status)

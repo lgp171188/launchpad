@@ -20,9 +20,9 @@ from signal import (
     SIGCHLD,
     signal,
     )
-import StringIO
 import sys
 
+import six
 from twisted.internet import (
     defer,
     reactor as default_reactor,
@@ -63,7 +63,7 @@ def suppress_stderr(function):
     @functools.wraps(function)
     def wrapper(*arguments, **keyword_arguments):
         saved_stderr = sys.stderr
-        ignored_stream = StringIO.StringIO()
+        ignored_stream = six.StringIO()
         sys.stderr = ignored_stream
         d = defer.maybeDeferred(function, *arguments, **keyword_arguments)
         return d.addBoth(set_stderr, saved_stderr)

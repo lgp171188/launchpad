@@ -3,6 +3,8 @@
 
 """Validators for attachments."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['attachment_size_constraint']
 

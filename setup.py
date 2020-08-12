@@ -126,6 +126,13 @@ class lp_develop(develop):
             with open(instance_name_path, "w") as instance_name_file:
                 print(os.environ["LPCONFIG"], file=instance_name_file)
 
+            # Write out the build-time Python major/minor version so that
+            # scripts run with /usr/bin/python2 know whether they need to
+            # re-exec.
+            python_version_path = os.path.join(env_top, "python_version")
+            with open(python_version_path, "w") as python_version_file:
+                print("%s.%s" % sys.version_info[:2], file=python_version_file)
+
 
 __version__ = '2.2.3'
 
@@ -147,15 +154,16 @@ setup(
         'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
         'breezy',
-        'bzr',
+        # XXX cjwatson 2020-08-07: This should eventually be removed
+        # entirely, but we need to retain it until codeimport has been
+        # ported to Breezy.
+        'bzr; python_version < "3"',
         'celery',
         'contextlib2; python_version < "3.3"',
         'cssselect',
         'cssutils',
         'defusedxml',
-        'dkimpy',
-        # Required for dkimpy
-        'dnspython',
+        'dkimpy[ed25519]',
         'dulwich',
         'feedparser',
         'feedvalidator',
@@ -196,6 +204,7 @@ setup(
         'oops_twisted',
         'oops_wsgi',
         'paramiko',
+        'psutil',
         'pgbouncer',
         'psycopg2',
         'pyasn1',
@@ -207,7 +216,7 @@ setup(
         'python-keystoneclient',
         'python-memcached',
         'python-mimeparse',
-        'python-openid',
+        'python-openid2',
         'python-subunit',
         'python-swiftclient',
         'pytz',
@@ -224,7 +233,9 @@ setup(
         'soupmatchers',
         'Sphinx',
         'storm',
-        'subvertpy',
+        # XXX cjwatson 2020-08-07: Temporarily dropped on Python 3 until
+        # codeimport can be ported to Breezy.
+        'subvertpy; python_version < "3"',
         'tenacity',
         'testscenarios',
         'testtools',

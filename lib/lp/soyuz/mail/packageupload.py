@@ -111,7 +111,7 @@ def sanitize_string(s):
         'ascii' codec can't decode byte 0xc4 in position 21: ordinal
         not in range(128)
     """
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         return s
     else:
         return guess_encoding(s)

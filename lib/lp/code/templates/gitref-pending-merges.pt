@@ -10,6 +10,11 @@
   <h3>Branch merges</h3>
   <div id="merge-links"
        class="actions">
+    <div
+      tal:define="link context_menu/register_merge"
+      tal:condition="link/enabled"
+      tal:replace="structure link/render"
+      />
     <div id="merge-summary">
 
       <div id="landing-candidates"
@@ -38,11 +43,13 @@
       </div>
 
     </div>
-    <div
-      tal:define="link context_menu/register_merge"
-      tal:condition="link/enabled"
-      tal:replace="structure link/render"
-      />
+    <div tal:condition="python: view.propose_merge_notes and context_menu['register_merge'].enabled">
+      <ul>
+        <li tal:repeat="message view/propose_merge_notes" class="registered">
+           <spam tal:replace="message" />
+        </li>
+      </ul>
+    </div>
   </div>
 
 </div>

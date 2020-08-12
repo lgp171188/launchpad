@@ -221,7 +221,8 @@ def apply_other(con, script, no_commit=False):
     log.info("Applying %s" % script)
     cur = con.cursor()
     path = os.path.join(os.path.dirname(__file__), script)
-    sql = open(path).read()
+    with open(path) as f:
+        sql = f.read()
     if not sql.rstrip().endswith(';'):
         # This is important because patches are concatenated together
         # into a single script when we apply them to a replicated

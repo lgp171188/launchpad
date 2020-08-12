@@ -12,12 +12,12 @@
     sign as commitments to the principles of collaboration, tolerance and
     open communication that drive the open source community.</p>
 
-    <p tal:condition="not: context/signedcocs">
+    <p tal:condition="context/signedcocs/is_empty">
       <tal:name replace="context/fmt:displayname"/> has never signed a code
       of conduct.
     </p>
 
-    <div tal:condition="context/activesignatures">
+    <div tal:condition="not: context/activesignatures/is_empty">
       <form name="coc" action="" method="post">
         <h2>Active signatures</h2>
         <p>If you change your mind about agreeing to a code of conduct,
@@ -52,7 +52,7 @@
       </form>
     </div>
 
-    <div tal:condition="context/inactivesignatures">
+    <div tal:condition="not: context/inactivesignatures/is_empty">
       <h2>Inactive signatures</h2>
       <p>
         Once <dfn>Inactive</dfn>, a signature can only be reactivated by a

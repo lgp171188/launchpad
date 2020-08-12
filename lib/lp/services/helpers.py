@@ -18,6 +18,7 @@ import subprocess
 import tarfile
 import warnings
 
+import six
 from zope.security.interfaces import ForbiddenAttribute
 
 
@@ -54,7 +55,7 @@ def text_replaced(text, replacements, _cache={}):
     cachekey = tuple(replacements.items())
     if cachekey not in _cache:
         L = []
-        if isinstance(text, unicode):
+        if isinstance(text, six.text_type):
             list_item = u'(%s)'
             join_char = u'|'
         else:
@@ -350,9 +351,9 @@ def ensure_unicode(string):
     """
     if string is None:
         return None
-    elif isinstance(string, unicode):
+    elif isinstance(string, six.text_type):
         return string
-    elif isinstance(string, basestring):
+    elif isinstance(string, bytes):
         try:
             return string.decode('US-ASCII')
         except UnicodeDecodeError:

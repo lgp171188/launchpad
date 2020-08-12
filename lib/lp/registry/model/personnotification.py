@@ -1,7 +1,9 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person notifications."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
@@ -12,10 +14,13 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+from storm.locals import (
+    DateTime,
+    Int,
+    Unicode,
     )
+from storm.references import Reference
+from storm.store import Store
 from zope.interface import implementer
 
 from lp.registry.interfaces.personnotification import (
@@ -24,11 +29,8 @@ from lp.registry.interfaces.personnotification import (
     )
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.mail.sendmail import (
     format_address,
     simple_sendmail,
@@ -37,14 +39,26 @@ from lp.services.propertycache import cachedproperty
 
 
 @implementer(IPersonNotification)
-class PersonNotification(SQLBase):
+class PersonNotification(StormBase):
     """See `IPersonNotification`."""
 
-    person = ForeignKey(dbName='person', notNull=True, foreignKey='Person')
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_emailed = UtcDateTimeCol(notNull=False)
-    body = StringCol(notNull=True)
-    subject = StringCol(notNull=True)
+    __storm_table__ = 'PersonNotification'
+    id = Int(primary=True)
+    person_id = Int('person', allow_none=False)
+    person = Reference(person_id, "Person.id")
+
+    date_created = DateTime(tzinfo=pytz.UTC, name='date_created',
+                            allow_none=False, default=UTC_NOW)
+    date_emailed = DateTime(tzinfo=pytz.UTC, name='date_emailed',
+                            allow_none=True)
+
+    body = Unicode(name='body', allow_none=False)
+    subject = Unicode(name='subject', allow_none=False)
+
+    def __init__(self, person, subject, body):
+        self.person = person
+        self.subject = subject
+        self.body = body
 
     @cachedproperty
     def to_addresses(self):
@@ -74,6 +88,10 @@ class PersonNotification(SQLBase):
         simple_sendmail(from_addr, to_addresses, self.subject, self.body)
         self.date_emailed = datetime.now(pytz.timezone('UTC'))
 
+    def destroySelf(self):
+        """See `IPersonNotification`."""
+        Store.of(self).remove(self)
+
 
 @implementer(IPersonNotificationSet)
 class PersonNotificationSet:
@@ -81,8 +99,13 @@ class PersonNotificationSet:
 
     def getNotificationsToSend(self):
         """See `IPersonNotificationSet`."""
-        return PersonNotification.selectBy(
-            date_emailed=None, orderBy=['date_created,id'])
+        store = IStore(PersonNotification)
+        return store.find(
+            PersonNotification,
+            PersonNotification.date_emailed == None
+        ).order_by(
+            PersonNotification.date_created,
+            PersonNotification.id)
 
     def addNotification(self, person, subject, body):
         """See `IPersonNotificationSet`."""
@@ -90,5 +113,7 @@ class PersonNotificationSet:
 
     def getNotificationsOlderThan(self, time_limit):
         """See `IPersonNotificationSet`."""
-        return PersonNotification.select(
-            'date_created < %s' % sqlvalues(time_limit))
+        store = IStore(PersonNotification)
+        return store.find(
+            PersonNotification,
+            PersonNotification.date_created < time_limit)

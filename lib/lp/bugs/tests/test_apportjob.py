@@ -7,11 +7,11 @@ __metaclass__ = type
 
 import os
 
-from sqlobject import SQLObjectNotFound
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.apportjob import (
     ApportJobType,
     IApportJob,
@@ -120,10 +120,6 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
         self.assertEqual(
             filebug_data.comments, data_dict['comments'],
             "Values for comments do not match")
-        self.assertEqual(
-            filebug_data.hwdb_submission_keys,
-            data_dict['hwdb_submission_keys'],
-            "Values for hwdb_submission_keys do not match")
 
         # The attachments list of the data_dict dict will be of
         # the same length as the attachments list in the filebug_data
@@ -221,10 +217,10 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
             "match original BLOB.")
 
         # If the UUID doesn't exist, getByBlobUUID() will raise a
-        # SQLObjectNotFound error.
+        # NotFoundError.
         self.assertRaises(
-            SQLObjectNotFound,
-            getUtility(IProcessApportBlobJobSource).getByBlobUUID, 'foobar')
+            NotFoundError,
+            getUtility(IProcessApportBlobJobSource).getByBlobUUID, u'foobar')
 
     def test_create_job_creates_only_one(self):
         # IProcessApportBlobJobSource.create() will create only one

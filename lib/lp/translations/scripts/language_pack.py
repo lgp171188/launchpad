@@ -154,7 +154,8 @@ def export(distroseries, component, update, force_utf8, logger):
     # started, not when it finished because that notes how old is the
     # information the export contains.
     archive.add_file(
-        'rosetta-%s/timestamp.txt' % distroseries.name, '%s\n' % start_date)
+        'rosetta-%s/timestamp.txt' % distroseries.name,
+        ('%s\n' % start_date).encode('UTF-8'))
 
     logger.info("Adding mapping file")
     mapping_text = ''
@@ -162,7 +163,8 @@ def export(distroseries, component, update, force_utf8, logger):
     for sourcepackagename, translationdomain in mapping:
         mapping_text += "%s %s\n" % (sourcepackagename, translationdomain)
     archive.add_file(
-        'rosetta-%s/mapping.txt' % distroseries.name, mapping_text)
+        'rosetta-%s/mapping.txt' % distroseries.name,
+        mapping_text.encode('UTF-8'))
 
     logger.info("Done.")
 

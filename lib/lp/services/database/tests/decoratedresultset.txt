@@ -19,14 +19,14 @@ ResultSet:
 
     >>> from zope.security.checker import ProxyFactory
     >>> proxied_result_set = ProxyFactory(result_set)
-    >>> print proxied_result_set
+    >>> print(proxied_result_set)
     <security proxied storm.store.ResultSet ...>
 
     >>> def result_decorator(distribution):
     ...     return "Dist name is: %s" % distribution.name
 
     >>> def pre_iter_hook(values):
-    ...     print len(values), "elements in result set"
+    ...     print(len(values), "elements in result set")
 
     >>> from lp.services.database.decoratedresultset import (
     ...     DecoratedResultSet)
@@ -106,8 +106,8 @@ pre_iter_hook is not called from methods like first() or one() which return
 at most one row:
 
     >>> empty_result_set = decorated_result_set.copy()
-    >>> print empty_result_set.config(
-    ...     offset=empty_result_set.count()).first()
+    >>> print(empty_result_set.config(
+    ...     offset=empty_result_set.count()).first())
     None
 
 == last() ==

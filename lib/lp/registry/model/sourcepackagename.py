@@ -8,6 +8,7 @@ __all__ = [
     'getSourcePackageDescriptions',
     ]
 
+import six
 from sqlobject import (
     SQLMultipleJoin,
     SQLObjectNotFound,
@@ -33,6 +34,7 @@ from lp.services.database.sqlbase import (
 from lp.services.helpers import ensure_unicode
 
 
+@six.python_2_unicode_compatible
 @implementer(ISourcePackageName)
 class SourcePackageName(SQLBase):
     _table = 'SourcePackageName'
@@ -45,7 +47,7 @@ class SourcePackageName(SQLBase):
     packagings = SQLMultipleJoin(
         'Packaging', joinColumn='sourcepackagename', orderBy='Packaging.id')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def __repr__(self):

@@ -20,10 +20,6 @@ import fixtures
 from fixtures import MockPatch
 import pytz
 from six.moves.urllib_parse import urlsplit
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
 from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,
@@ -80,6 +76,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
+from lp.snappy.model.snapbuildbehaviour import proxy_pool
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -106,13 +103,14 @@ class MakeOCIBuildMixin:
         build.queueBuild()
         return build
 
-    def makeJob(self, git_ref, recipe=None, build=None):
+    def makeJob(self, git_ref, recipe=None, build=None, **kwargs):
         """Create a sample `IOCIRecipeBuildBehaviour`."""
         if build is None:
             if recipe is None:
-                build = self.factory.makeOCIRecipeBuild()
+                build = self.factory.makeOCIRecipeBuild(**kwargs)
             else:
-                build = self.factory.makeOCIRecipeBuild(recipe=recipe)
+                build = self.factory.makeOCIRecipeBuild(
+                    recipe=recipe, **kwargs)
         build.recipe.git_ref = git_ref
 
         job = IBuildFarmJobBehaviour(build)
@@ -121,6 +119,8 @@ class MakeOCIBuildMixin:
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+        self.addCleanup(proxy_pool(slave.reactor).closeCachedConnections)
+        self.addCleanup(shut_down_default_process_pool)
 
         # Taken from test_archivedependencies.py
         for component_name in ("main", "universe"):
@@ -175,6 +175,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.addCleanup(shut_down_default_process_pool)
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
@@ -329,7 +330,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
     def test_dispatchBuildToSlave_prefers_lxd(self):
         self.pushConfig("snappy", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
-        job = self.makeJob(git_ref=ref)
+        job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
         slave = OkSlave()
@@ -348,7 +349,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):
         self.pushConfig("snappy", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
-        job = self.makeJob(git_ref=ref)
+        job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
         slave = OkSlave()
@@ -400,20 +401,25 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         # for Distro series
         self.assertEqual(distroseries.name, slave.call_log[1][5]['series'])
 
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_disallow_internet(self):
+        # If external network access is not allowed for the OCI Recipe,
+        # extraBuildArgs does not dispatch a proxy token.
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref, allow_internet=False)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertNotIn("proxy_url", args)
+        self.assertNotIn("revocation_endpoint", args)
 
-class TestHandleStatusForOCIRecipeBuild(WithScenarios,
-                                        MakeOCIBuildMixin,
+
+class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                                         TestCaseWithFactory):
     # This is mostly copied from TestHandleStatusMixin, however
     # we can't use all of those tests, due to the way OCIRecipeBuildBehaviour
     # parses the file contents, rather than just retrieving all that are
     # available. There's also some differences in the filemap handling, as
     # we need a much more complex filemap here.
-
-    scenarios = [
-        ('download_in_twisted', {'download_in_subprocess': False}),
-        ('download_in_subprocess', {'download_in_subprocess': True}),
-        ]
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
@@ -428,10 +434,7 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
     def setUp(self):
         super(TestHandleStatusForOCIRecipeBuild, self).setUp()
         self.useFixture(fixtures.FakeLogger())
-        features = {OCI_RECIPE_ALLOW_CREATE: 'on'}
-        if self.download_in_subprocess:
-            features['buildmaster.download_in_subprocess'] = 'on'
-        self.useFixture(FeatureFixture(features))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
         # handleStatus_OK can get a reference to the slave.
@@ -500,7 +503,7 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         }
         self.factory.makeOCIFile(
             build=self.build, layer_file_digest=u'digest_1',
-            content="retrieved from librarian")
+            content=b"retrieved from librarian")
 
     def assertResultCount(self, count, result):
         self.assertEqual(
@@ -543,7 +546,7 @@ class TestHandleStatusForOCIRecipeBuild(WithScenarios,
         """We should be able to reuse a layer file from a separate build."""
         oci_file = self.factory.makeOCIFile(
             layer_file_digest=u'digest_2',
-            content="layer 2 retrieved from librarian")
+            content=b"layer 2 retrieved from librarian")
 
         now = datetime.now(pytz.UTC)
         mock_datetime = self.useFixture(MockPatch(
@@ -705,6 +708,3 @@ class TestGetUploadMethodsForOCIRecipeBuild(
     def setUp(self):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         super(TestGetUploadMethodsForOCIRecipeBuild, self).setUp()
-
-
-load_tests = load_tests_apply_scenarios

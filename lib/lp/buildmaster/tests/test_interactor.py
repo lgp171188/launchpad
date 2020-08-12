@@ -16,29 +16,16 @@ import signal
 import tempfile
 
 from lpbuildd.slave import BuilderStatus
-from lpbuildd.tests.harness import BuilddSlaveTestSetup
 from six.moves import xmlrpc_client
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
-from testtools.matchers import (
-    ContainsAll,
-    HasLength,
-    MatchesDict,
-    )
+from testtools.matchers import ContainsAll
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
-    SynchronousDeferredRunTest,
     )
 import treq
-from twisted.internet import (
-    defer,
-    reactor as default_reactor,
-    )
+from twisted.internet import defer
 from twisted.internet.task import Clock
 from twisted.python.failure import Failure
 
@@ -52,7 +39,6 @@ from lp.buildmaster.interactor import (
     BuilderInteractor,
     BuilderSlave,
     extract_vitals_from_db,
-    LimitedHTTPConnectionPool,
     make_download_process_pool,
     shut_down_default_process_pool,
     )
@@ -61,7 +47,10 @@ from lp.buildmaster.interfaces.builder import (
     CannotFetchFile,
     CannotResumeHost,
     )
-from lp.buildmaster.manager import BaseBuilderFactory
+from lp.buildmaster.manager import (
+    BaseBuilderFactory,
+    PrefetchedBuilderFactory,
+    )
 from lp.buildmaster.tests.mock_slaves import (
     AbortingSlave,
     BuildingSlave,
@@ -73,14 +62,13 @@ from lp.buildmaster.tests.mock_slaves import (
     WaitingSlave,
     )
 from lp.services.config import config
-from lp.services.features.testing import FeatureFixture
 from lp.services.twistedsupport.testing import TReqFixture
 from lp.services.twistedsupport.treq import check_status
+from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
     )
 from lp.testing import (
-    clean_up_reactor,
     TestCase,
     TestCaseWithFactory,
     )
@@ -432,6 +420,37 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
             vitals, builder, OkSlave(), builder_factory)
         return d.addCallback(self.assertEqual, candidate)
 
+    @defer.inlineCallbacks
+    def test_findAndStartJob_supersedes_builds(self):
+        # findAndStartJob checks whether queued jobs are for superseded
+        # source package releases and marks the corresponding build records
+        # as SUPERSEDED.
+        builder, distroseries, distroarchseries = self._setupBuilder()
+        builds = [
+            self.factory.makeBinaryPackageBuild(
+                distroarchseries=distroarchseries)
+            for _ in range(3)]
+        candidates = [build.queueBuild() for build in builds]
+        builder_factory = PrefetchedBuilderFactory()
+        candidates_iter = iter(candidates)
+        builder_factory.findBuildCandidate = lambda _: next(candidates_iter)
+        vitals = extract_vitals_from_db(builder)
+
+        # Supersede some of the builds' source packages.
+        for build in builds[:2]:
+            publication = build.current_source_publication
+            publication.status = PackagePublishingStatus.SUPERSEDED
+
+        # Starting a job selects a non-superseded candidate, and supersedes
+        # the candidates that have superseded source packages.
+        candidate = yield BuilderInteractor.findAndStartJob(
+            vitals, builder, OkSlave(), builder_factory)
+        self.assertEqual(candidates[2], candidate)
+        self.assertEqual(
+            [BuildStatus.SUPERSEDED, BuildStatus.SUPERSEDED,
+             BuildStatus.BUILDING],
+            [build.status for build in builds])
+
     def test_findAndStartJob_starts_job(self):
         # findAndStartJob finds the next queued job using findBuildCandidate
         # and then starts it.
@@ -491,23 +510,25 @@ class TestSlave(TestCase):
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.addCleanup(shut_down_default_process_pool)
 
+    @defer.inlineCallbacks
     def test_abort(self):
         slave = self.slave_helper.getClientSlave()
         # We need to be in a BUILDING state before we can abort.
-        d = self.slave_helper.triggerGoodBuild(slave)
-        d.addCallback(lambda ignored: slave.abort())
-        d.addCallback(self.assertEqual, BuilderStatus.ABORTING)
-        return d
+        build_id = 'some-id'
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
+        response = yield slave.abort()
+        self.assertEqual(BuilderStatus.ABORTING, response)
 
+    @defer.inlineCallbacks
     def test_build(self):
         # Calling 'build' with an expected builder type, a good build id,
         # valid chroot & filemaps works and returns a BuilderStatus of
         # BUILDING.
         build_id = 'some-id'
         slave = self.slave_helper.getClientSlave()
-        d = self.slave_helper.triggerGoodBuild(slave, build_id)
-        return d.addCallback(
-            self.assertEqual, [BuilderStatus.BUILDING, build_id])
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
 
     def test_clean(self):
         slave = self.slave_helper.getClientSlave()
@@ -517,13 +538,14 @@ class TestSlave(TestCase):
         # time being, we'll just assert that a clean attribute exists.
         self.assertNotEqual(getattr(slave, 'clean', None), None)
 
+    @defer.inlineCallbacks
     def test_echo(self):
         # Calling 'echo' contacts the server which returns the arguments we
         # gave it.
         self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
-        d = slave.echo('foo', 'bar', 42)
-        return d.addCallback(self.assertEqual, ['foo', 'bar', 42])
+        response = yield slave.echo('foo', 'bar', 42)
+        self.assertEqual(['foo', 'bar', 42], response)
 
     @defer.inlineCallbacks
     def test_info(self):
@@ -558,28 +580,29 @@ class TestSlave(TestCase):
         # build has been triggered, the status is BUILDING.
         slave = self.slave_helper.getClientSlave()
         build_id = 'status-build-id'
-        yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        self.assertEqual([BuilderStatus.BUILDING, build_id], response)
         status = yield slave.status()
         self.assertEqual(BuilderStatus.BUILDING, status['builder_status'])
         self.assertEqual(build_id, status['build_id'])
         self.assertIsInstance(status['logtail'], xmlrpc_client.Binary)
 
+    @defer.inlineCallbacks
     def test_ensurepresent_not_there(self):
         # ensurepresent checks to see if a file is there.
         self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
-        d = slave.ensurepresent('blahblah', None, None, None)
-        d.addCallback(self.assertEqual, [False, 'No URL'])
-        return d
+        response = yield slave.ensurepresent('blahblah', None, None, None)
+        self.assertEqual([False, 'No URL'], response)
 
+    @defer.inlineCallbacks
     def test_ensurepresent_actually_there(self):
         # ensurepresent checks to see if a file is there.
         tachandler = self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
         self.slave_helper.makeCacheFile(tachandler, 'blahblah')
-        d = slave.ensurepresent('blahblah', None, None, None)
-        d.addCallback(self.assertEqual, [True, 'No URL'])
-        return d
+        response = yield slave.ensurepresent('blahblah', None, None, None)
+        self.assertEqual([True, 'No URL'], response)
 
     def test_sendFileToSlave_not_there(self):
         self.slave_helper.getServerSlave()
@@ -587,22 +610,19 @@ class TestSlave(TestCase):
         d = slave.sendFileToSlave('blahblah', None, None, None)
         return assert_fails_with(d, CannotFetchFile)
 
+    @defer.inlineCallbacks
     def test_sendFileToSlave_actually_there(self):
         tachandler = self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
         self.slave_helper.makeCacheFile(tachandler, 'blahblah')
-        d = slave.sendFileToSlave('blahblah', None, None, None)
+        yield slave.sendFileToSlave('blahblah', None, None, None)
+        response = yield slave.ensurepresent('blahblah', None, None, None)
+        self.assertEqual([True, 'No URL'], response)
 
-        def check_present(ignored):
-            d = slave.ensurepresent('blahblah', None, None, None)
-            return d.addCallback(self.assertEqual, [True, 'No URL'])
-
-        d.addCallback(check_present)
-        return d
-
+    @defer.inlineCallbacks
     def test_resumeHost_success(self):
         # On a successful resume resume() fires the returned deferred
-        # callback with 'None'.
+        # callback with (stdout, stderr, subprocess exit code).
         self.slave_helper.getServerSlave()
         slave = self.slave_helper.getClientSlave()
 
@@ -610,17 +630,12 @@ class TestSlave(TestCase):
         self.assertEqual(
             'echo %(vm_host)s', config.builddmaster.vm_resume_command)
 
-        # On success the response is None.
-        def check_resume_success(response):
-            out, err, code = response
-            self.assertEqual(os.EX_OK, code)
-            # XXX: JonathanLange 2010-09-23: We should instead pass the
-            # expected vm_host into the client slave. Not doing this now,
-            # since the SlaveHelper is being moved around.
-            self.assertEqual("%s\n" % slave._vm_host, out)
-        d = slave.resume()
-        d.addBoth(check_resume_success)
-        return d
+        out, err, code = yield slave.resume()
+        self.assertEqual(os.EX_OK, code)
+        # XXX: JonathanLange 2010-09-23: We should instead pass the
+        # expected vm_host into the client slave. Not doing this now,
+        # since the SlaveHelper is being moved around.
+        self.assertEqual("%s\n" % slave._vm_host, out)
 
     def test_resumeHost_failure(self):
         # On a failed resume, 'resumeHost' fires the returned deferred
@@ -682,7 +697,8 @@ class TestSlaveTimeouts(TestCase):
     # Testing that the methods that call callRemote() all time out
     # as required.
 
-    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=10)
 
     def setUp(self):
         super(TestSlaveTimeouts, self).setUp()
@@ -726,18 +742,16 @@ class TestSlaveConnectionTimeouts(TestCase):
     # Testing that we can override the default 30 second connection
     # timeout.
 
-    run_test = SynchronousDeferredRunTest
+    # The timeouts in test_connection_timeout are relative to the artificial
+    # Clock rather than to true wallclock time, so it's not a problem for
+    # this timeout to be shorter than them.
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
     def setUp(self):
         super(TestSlaveConnectionTimeouts, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
         self.addCleanup(shut_down_default_process_pool)
-
-    def tearDown(self):
-        # We need to remove any DelayedCalls that didn't actually get called.
-        clean_up_reactor()
-        super(TestSlaveConnectionTimeouts, self).tearDown()
 
     def test_connection_timeout(self):
         # The default timeout of 30 seconds should not cause a timeout,
@@ -758,13 +772,8 @@ class TestSlaveConnectionTimeouts(TestCase):
         return assert_fails_with(d, defer.CancelledError)
 
 
-class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
+class TestSlaveWithLibrarian(TestCaseWithFactory):
     """Tests that need more of Launchpad to run."""
-
-    scenarios = [
-        ('download_in_twisted', {'download_in_subprocess': False}),
-        ('download_in_subprocess', {'download_in_subprocess': True}),
-        ]
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
@@ -772,12 +781,8 @@ class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
 
     def setUp(self):
         super(TestSlaveWithLibrarian, self).setUp()
-        if self.download_in_subprocess:
-            self.useFixture(FeatureFixture(
-                {'buildmaster.download_in_subprocess': 'on'}))
         self.slave_helper = self.useFixture(SlaveTestHelpers())
-        if self.download_in_subprocess:
-            self.addCleanup(shut_down_default_process_pool)
+        self.addCleanup(shut_down_default_process_pool)
 
     def test_ensurepresent_librarian(self):
         # ensurepresent, when given an http URL for a file will download the
@@ -831,7 +836,6 @@ class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
             for sha1, local_file in files:
                 with open(local_file) as f:
                     self.assertEqual(content_map[sha1], f.read())
-            return slave.pool.closeCachedConnections()
 
         def finished_uploading(ignored):
             d = slave.getFiles(files)
@@ -861,15 +865,10 @@ class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
         # connections.
         contents = [self.factory.getUniqueString() for _ in range(10)]
         self.slave_helper.getServerSlave()
-        pool = LimitedHTTPConnectionPool(default_reactor, 2)
-        if self.download_in_subprocess:
-            process_pool = make_download_process_pool(min=1, max=2)
-            process_pool.start()
-            self.addCleanup(process_pool.stop)
-        else:
-            process_pool = None
-        slave = self.slave_helper.getClientSlave(
-            pool=pool, process_pool=process_pool)
+        process_pool = make_download_process_pool(min=1, max=2)
+        process_pool.start()
+        self.addCleanup(process_pool.stop)
+        slave = self.slave_helper.getClientSlave(process_pool=process_pool)
         files = []
         content_map = {}
 
@@ -879,16 +878,8 @@ class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
             for sha1, local_file in files:
                 with open(local_file) as f:
                     self.assertEqual(content_map[sha1], f.read())
-            port = BuilddSlaveTestSetup().daemon_port
-            if self.download_in_subprocess:
-                # Only two workers were used.
-                self.assertEqual(2, len(process_pool.processes))
-            else:
-                # Only two connections were used.
-                self.assertThat(
-                    slave.pool._connections,
-                    MatchesDict({("http", "localhost", port): HasLength(2)}))
-            return slave.pool.closeCachedConnections()
+            # Only two workers were used.
+            self.assertEqual(2, len(process_pool.processes))
 
         def finished_uploading(ignored):
             d = slave.getFiles(files)
@@ -921,7 +912,3 @@ class TestSlaveWithLibrarian(WithScenarios, TestCaseWithFactory):
         yield slave.getFiles([(empty_sha1, temp_name)])
         with open(temp_name) as f:
             self.assertEqual(b'', f.read())
-        yield slave.pool.closeCachedConnections()
-
-
-load_tests = load_tests_apply_scenarios

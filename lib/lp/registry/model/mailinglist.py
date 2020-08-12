@@ -19,16 +19,18 @@ from socket import getfqdn
 from string import Template
 
 from lazr.lifecycle.event import ObjectCreatedEvent
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
-from storm.expr import (
+import pytz
+import six
+from storm.expr import Func
+from storm.locals import (
     And,
-    Func,
+    DateTime,
+    Int,
     Join,
     Or,
+    Reference,
     Select,
+    Unicode,
     )
 from storm.info import ClassAlias
 from storm.store import Store
@@ -64,17 +66,13 @@ from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import Concatenate
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
@@ -105,38 +103,46 @@ USABLE_STATUSES = (
 
 
 @implementer(IMessageApproval)
-class MessageApproval(SQLBase):
+class MessageApproval(StormBase):
     """A held message."""
 
-    message = ForeignKey(
-        dbName='message', foreignKey='Message',
-        notNull=True)
+    __storm_table__ = 'MessageApproval'
 
-    posted_by = ForeignKey(
-        dbName='posted_by', foreignKey='Person',
-        storm_validator=validate_public_person,
-        notNull=True)
+    id = Int(primary=True)
 
-    posted_message = ForeignKey(
-        dbName='posted_message', foreignKey='LibraryFileAlias',
-        notNull=True)
+    _message_id = Int(name='message', allow_none=False)
+    message = Reference(_message_id, 'Message.id')
 
-    posted_date = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    posted_by_id = Int(
+        name='posted_by', validator=validate_public_person, allow_none=False)
+    posted_by = Reference(posted_by_id, 'Person.id')
 
-    mailing_list = ForeignKey(
-        dbName='mailing_list', foreignKey='MailingList',
-        notNull=True)
+    posted_message_id = Int(name='posted_message', allow_none=False)
+    posted_message = Reference(posted_message_id, 'LibraryFileAlias.id')
 
-    status = EnumCol(enum=PostedMessageStatus,
-                     default=PostedMessageStatus.NEW,
-                     notNull=True)
+    posted_date = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
 
-    disposed_by = ForeignKey(
-        dbName='disposed_by', foreignKey='Person',
-        storm_validator=validate_public_person,
-        default=None)
+    mailing_list_id = Int(name='mailing_list', allow_none=False)
+    mailing_list = Reference(mailing_list_id, 'MailingList.id')
 
-    disposal_date = UtcDateTimeCol(default=None)
+    status = DBEnum(
+        enum=PostedMessageStatus, default=PostedMessageStatus.NEW,
+        allow_none=False)
+
+    disposed_by_id = Int(
+        name='disposed_by', validator=validate_public_person, default=None)
+    disposed_by = Reference(disposed_by_id, 'Person.id')
+
+    disposal_date = DateTime(tzinfo=pytz.UTC, default=None)
+
+    def __init__(self, message, posted_by, posted_message, posted_date,
+                 mailing_list):
+        super(MessageApproval, self).__init__()
+        self.message = message
+        self.posted_by = posted_by
+        self.posted_message = posted_message
+        self.posted_date = posted_date
+        self.mailing_list = mailing_list
 
     @property
     def message_id(self):
@@ -175,7 +181,7 @@ class MessageApproval(SQLBase):
 
 
 @implementer(IMailingList)
-class MailingList(SQLBase):
+class MailingList(StormBase):
     """The mailing list for a team.
 
     Teams may have at most one mailing list, and a mailing list is associated
@@ -185,31 +191,39 @@ class MailingList(SQLBase):
     XMLRPC).
     """
 
-    team = ForeignKey(
-        dbName='team', foreignKey='Person',
-        notNull=True)
+    __storm_table__ = 'MailingList'
 
-    registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+    id = Int(primary=True)
 
-    date_registered = UtcDateTimeCol(notNull=True, default=DEFAULT)
+    team_id = Int(name='team', allow_none=False)
+    team = Reference(team_id, 'Person.id')
 
-    reviewer = ForeignKey(
-        dbName='reviewer', foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+    registrant_id = Int(
+        name='registrant', validator=validate_public_person, allow_none=False)
+    registrant = Reference(registrant_id, 'Person.id')
 
-    date_reviewed = UtcDateTimeCol(notNull=False, default=None)
+    date_registered = DateTime(
+        tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
 
-    date_activated = UtcDateTimeCol(notNull=False, default=None)
+    reviewer_id = Int(
+        name='reviewer', validator=validate_public_person, default=None)
+    reviewer = Reference(reviewer_id, 'Person.id')
 
-    status = EnumCol(enum=MailingListStatus,
-                     default=MailingListStatus.APPROVED,
-                     notNull=True)
+    date_reviewed = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
 
-    # Use a trailing underscore because SQLObject/importpedant doesn't like
-    # the typical leading underscore.
-    welcome_message_ = StringCol(default=None, dbName='welcome_message')
+    date_activated = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+
+    status = DBEnum(
+        enum=MailingListStatus, default=MailingListStatus.APPROVED,
+        allow_none=False)
+
+    _welcome_message = Unicode(default=None, name='welcome_message')
+
+    def __init__(self, team, registrant, date_registered=DEFAULT):
+        super(MailingList, self).__init__()
+        self.team = team
+        self.registrant = registrant
+        self.date_registered = date_registered
 
     @property
     def address(self):
@@ -295,7 +309,7 @@ class MailingList(SQLBase):
                 # than as a response to a user action.
                 removeSecurityProxy(email).status = (
                     EmailAddressStatus.VALIDATED)
-            assert email.personID == self.teamID, (
+            assert email.personID == self.team_id, (
                 "Email already associated with another team.")
 
     def _setAndNotifyDateActivated(self):
@@ -323,7 +337,7 @@ class MailingList(SQLBase):
         if email is not None and self.team.preferredemail is not None:
             if email.id == self.team.preferredemail.id:
                 self.team.setContactAddress(None)
-        assert email.personID == self.teamID, 'Incorrectly linked email.'
+        assert email.personID == self.team_id, 'Incorrectly linked email.'
         # Anyone with permission to deactivate a list can also set the
         # email address status to NEW.
         removeSecurityProxy(email).status = EmailAddressStatus.NEW
@@ -344,10 +358,12 @@ class MailingList(SQLBase):
         """See `IMailingList`."""
         return self.status in USABLE_STATUSES
 
-    def _get_welcome_message(self):
-        return self.welcome_message_
+    @property
+    def welcome_message(self):
+        return self._welcome_message
 
-    def _set_welcome_message(self, text):
+    @welcome_message.setter
+    def welcome_message(self, text):
         if self.status == MailingListStatus.REGISTERED:
             # Do nothing because the status does not change.  When setting the
             # welcome_message on a newly registered mailing list the XMLRPC
@@ -362,14 +378,12 @@ class MailingList(SQLBase):
             self.status = MailingListStatus.MODIFIED
         else:
             raise AssertionError('Only usable mailing lists may be modified')
-        self.welcome_message_ = text
-
-    welcome_message = property(_get_welcome_message, _set_welcome_message)
+        self._welcome_message = text
 
     def getSubscription(self, person):
         """See `IMailingList`."""
-        return MailingListSubscription.selectOneBy(person=person,
-                                                   mailing_list=self)
+        return Store.of(self).find(
+            MailingListSubscription, person=person, mailing_list=self).one()
 
     def getSubscribers(self):
         """See `IMailingList`."""
@@ -409,7 +423,7 @@ class MailingList(SQLBase):
             raise CannotUnsubscribe(
                 '%s is not a member of the mailing list: %s' %
                 (person.displayname, self.team.displayname))
-        subscription.destroySelf()
+        Store.of(subscription).remove(subscription)
 
     def changeAddress(self, person, address):
         """See `IMailingList`."""
@@ -422,10 +436,7 @@ class MailingList(SQLBase):
             raise CannotChangeSubscription(
                 '%s does not own the email address: %s' %
                 (person.displayname, address.email))
-        if address is None:
-            subscription.email_address = None
-        else:
-            subscription.email_addressID = address.id
+        subscription.email_address = address
 
     def holdMessage(self, message):
         """See `IMailingList`."""
@@ -441,10 +452,10 @@ class MailingList(SQLBase):
         """See `IMailingList`."""
         store = Store.of(self)
         clauses = [
-            MessageApproval.mailing_listID == self.id,
+            MessageApproval.mailing_list == self,
             MessageApproval.status == PostedMessageStatus.NEW,
-            MessageApproval.messageID == Message.id,
-            MessageApproval.posted_byID == Person.id
+            MessageApproval.message == Message.id,
+            MessageApproval.posted_by == Person.id
             ]
         if message_id_filter is not None:
             clauses.append(Message.rfc822msgid.is_in(message_id_filter))
@@ -533,28 +544,27 @@ class MailingListSet:
 
     def get(self, team_name):
         """See `IMailingListSet`."""
-        assert isinstance(team_name, basestring), (
-            'team_name must be a string, not %s' % type(team_name))
-        return MailingList.selectOne("""
-            MailingList.team = Person.id
-            AND Person.name = %s
-            AND Person.teamowner IS NOT NULL
-            """ % sqlvalues(team_name),
-            clauseTables=['Person'])
+        assert isinstance(team_name, six.text_type), (
+            'team_name must be a text string, not %s' % type(team_name))
+        return IStore(MailingList).find(
+            MailingList,
+            MailingList.team == Person.id,
+            Person.name == team_name,
+            Person.teamowner != None).one()
 
     def getSubscriptionsForTeams(self, person, teams):
         """See `IMailingListSet`."""
         store = IStore(MailingList)
         team_ids = set(map(operator.attrgetter("id"), teams))
         lists = dict(store.find(
-            (MailingList.teamID, MailingList.id),
-            MailingList.teamID.is_in(team_ids),
+            (MailingList.team_id, MailingList.id),
+            MailingList.team_id.is_in(team_ids),
             MailingList.status.is_in(USABLE_STATUSES)))
         subscriptions = dict(store.find(
-            (MailingListSubscription.mailing_listID,
+            (MailingListSubscription.mailing_list_id,
              MailingListSubscription.id),
             MailingListSubscription.person == person,
-            MailingListSubscription.mailing_listID.is_in(lists.values())))
+            MailingListSubscription.mailing_list_id.is_in(lists.values())))
         by_team = {}
         for team, mailing_list in lists.items():
             by_team[team] = (mailing_list, subscriptions.get(mailing_list))
@@ -585,25 +595,25 @@ class MailingListSet:
             Join(TeamParticipation, TeamParticipation.personID == Person.id),
             Join(
                 MailingListSubscription,
-                MailingListSubscription.personID == Person.id),
+                MailingListSubscription.person_id == Person.id),
             Join(
                 MailingList,
-                MailingList.id == MailingListSubscription.mailing_listID),
-            Join(Team, Team.id == MailingList.teamID),
+                MailingList.id == MailingListSubscription.mailing_list_id),
+            Join(Team, Team.id == MailingList.team_id),
             )
         team_ids, list_ids = self._getTeamIdsAndMailingListIds(team_names)
         preferred = store.using(*tables).find(
             (EmailAddress.email, Person.display_name, Team.name),
-            And(MailingListSubscription.mailing_listID.is_in(list_ids),
+            And(MailingListSubscription.mailing_list_id.is_in(list_ids),
                 TeamParticipation.teamID.is_in(team_ids),
-                MailingList.teamID == TeamParticipation.teamID,
+                MailingList.team_id == TeamParticipation.teamID,
                 MailingList.status != MailingListStatus.INACTIVE,
                 Account.status == AccountStatus.ACTIVE,
                 Or(
-                    And(MailingListSubscription.email_addressID == None,
+                    And(MailingListSubscription.email_address_id == None,
                         EmailAddress.status == EmailAddressStatus.PREFERRED),
                     EmailAddress.id ==
-                        MailingListSubscription.email_addressID),
+                        MailingListSubscription.email_address_id),
                 ))
         # Sort by team name.
         by_team = collections.defaultdict(set)
@@ -631,8 +641,8 @@ class MailingListSet:
             Join(Account, Account.id == Person.accountID),
             Join(EmailAddress, EmailAddress.personID == Person.id),
             Join(TeamParticipation, TeamParticipation.personID == Person.id),
-            Join(MailingList, MailingList.teamID == TeamParticipation.teamID),
-            Join(Team, Team.id == MailingList.teamID),
+            Join(MailingList, MailingList.team_id == TeamParticipation.teamID),
+            Join(Team, Team.id == MailingList.team_id),
             )
         team_ids, list_ids = self._getTeamIdsAndMailingListIds(team_names)
         team_members = store.using(*tables).find(
@@ -652,14 +662,14 @@ class MailingListSet:
             Person,
             Join(Account, Account.id == Person.accountID),
             Join(EmailAddress, EmailAddress.personID == Person.id),
-            Join(MessageApproval, MessageApproval.posted_byID == Person.id),
+            Join(MessageApproval, MessageApproval.posted_by_id == Person.id),
             Join(MailingList,
-                     MailingList.id == MessageApproval.mailing_listID),
-            Join(Team, Team.id == MailingList.teamID),
+                 MailingList.id == MessageApproval.mailing_list_id),
+            Join(Team, Team.id == MailingList.team_id),
             )
         approved_posters = store.using(*tables).find(
             (Team.name, Person.display_name, EmailAddress.email),
-            And(MessageApproval.mailing_listID.is_in(list_ids),
+            And(MessageApproval.mailing_list_id.is_in(list_ids),
                 MessageApproval.status.is_in(MESSAGE_APPROVAL_STATUSES),
                 EmailAddress.status.is_in(EMAIL_ADDRESS_STATUSES),
                 Account.status == AccountStatus.ACTIVE,
@@ -681,28 +691,34 @@ class MailingListSet:
     @property
     def approved_lists(self):
         """See `IMailingListSet`."""
-        return MailingList.selectBy(status=MailingListStatus.APPROVED)
+        return IStore(MailingList).find(
+            MailingList, status=MailingListStatus.APPROVED)
 
     @property
     def active_lists(self):
         """See `IMailingListSet`."""
-        return MailingList.selectBy(status=MailingListStatus.ACTIVE)
+        return IStore(MailingList).find(
+            MailingList, status=MailingListStatus.ACTIVE)
 
     @property
     def modified_lists(self):
         """See `IMailingListSet`."""
-        return MailingList.selectBy(status=MailingListStatus.MODIFIED)
+        return IStore(MailingList).find(
+            MailingList, status=MailingListStatus.MODIFIED)
 
     @property
     def deactivated_lists(self):
         """See `IMailingListSet`."""
-        return MailingList.selectBy(status=MailingListStatus.DEACTIVATING)
+        return IStore(MailingList).find(
+            MailingList, status=MailingListStatus.DEACTIVATING)
 
     @property
     def unsynchronized_lists(self):
         """See `IMailingListSet`."""
-        return MailingList.select('status IN %s' % sqlvalues(
-            (MailingListStatus.CONSTRUCTING, MailingListStatus.UPDATING)))
+        return IStore(MailingList).find(
+            MailingList,
+            MailingList.status.is_in(
+                (MailingListStatus.CONSTRUCTING, MailingListStatus.UPDATING)))
 
     def updateTeamAddresses(self, old_hostname):
         """See `IMailingListSet`."""
@@ -718,7 +734,7 @@ class MailingListSet:
         clauses = [
             EmailAddress.person == Person.id,
             Person.teamowner != None,
-            Person.id == MailingList.teamID,
+            Person.id == MailingList.team_id,
             EmailAddress.email.endswith(old_suffix),
             ]
         addresses = IMasterStore(EmailAddress).find(
@@ -730,22 +746,30 @@ class MailingListSet:
 
 
 @implementer(IMailingListSubscription)
-class MailingListSubscription(SQLBase):
+class MailingListSubscription(StormBase):
     """A mailing list subscription."""
 
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_public_person,
-        notNull=True)
+    __storm_table__ = 'MailingListSubscription'
 
-    mailing_list = ForeignKey(
-        dbName='mailing_list', foreignKey='MailingList',
-        notNull=True)
+    id = Int(primary=True)
 
-    date_joined = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    person_id = Int(
+        name='person', validator=validate_public_person, allow_none=False)
+    person = Reference(person_id, 'Person.id')
 
-    email_address = ForeignKey(dbName='email_address',
-                               foreignKey='EmailAddress')
+    mailing_list_id = Int(name='mailing_list', allow_none=False)
+    mailing_list = Reference(mailing_list_id, 'MailingList.id')
+
+    date_joined = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+
+    email_address_id = Int(name='email_address')
+    email_address = Reference(email_address_id, 'EmailAddress.id')
+
+    def __init__(self, person, mailing_list, email_address):
+        super(MailingListSubscription, self).__init__()
+        self.person = person
+        self.mailing_list = mailing_list
+        self.email_address = email_address
 
     @property
     def subscribed_address(self):
@@ -764,11 +788,10 @@ class MessageApprovalSet:
 
     def getMessageByMessageID(self, message_id):
         """See `IMessageApprovalSet`."""
-        return MessageApproval.selectOne("""
-            MessageApproval.message = Message.id AND
-            Message.rfc822msgid = %s
-            """ % sqlvalues(message_id),
-            distinct=True, clauseTables=['Message'])
+        return IStore(MessageApproval).find(
+            MessageApproval,
+            MessageApproval.message == Message.id,
+            Message.rfc822msgid == message_id).config(distinct=True).one()
 
     def getHeldMessagesWithStatus(self, status):
         """See `IMessageApprovalSet`."""

@@ -69,7 +69,7 @@ def get_current_view(request=None):
     # Note: The last traversed object may be a view's instance method.
     bare = removeSecurityProxy(view)
     if zope_isinstance(view, types.MethodType):
-        return bare.im_self
+        return bare.__self__
     return bare
 
 

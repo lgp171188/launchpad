@@ -18,7 +18,7 @@ MEGABYTE = 1024 * 1024
 
 def filechunks(file, chunk_size=4 * MEGABYTE):
     """Return an iterator which reads chunks of the given file."""
-    return iter(lambda: file.read(chunk_size), '')
+    return iter(lambda: file.read(chunk_size), b'')
 
 
 def copy_and_close(from_file, to_file):

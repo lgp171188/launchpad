@@ -181,7 +181,7 @@ def get_pending_jobs_clauses(bq):
             (BuildQueue.lastscore = %s AND BuildQueue.id < %s))
         AND buildqueue.virtualized = %s
         """ % sqlvalues(
-            BuildQueueStatus.WAITING, bq.lastscore, bq.lastscore, bq,
+            BuildQueueStatus.WAITING, bq.lastscore, bq.lastscore, bq.id,
             bq.virtualized)
     processor_clause = """
         AND (

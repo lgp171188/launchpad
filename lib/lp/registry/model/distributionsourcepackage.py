@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes to represent source packages in a distribution."""
@@ -497,13 +497,6 @@ class DistributionSourcePackage(BugTargetBase,
         return And(
             CustomLanguageCode.distribution == self.distribution,
             CustomLanguageCode.sourcepackagename == self.sourcepackagename)
-
-    def createCustomLanguageCode(self, language_code, language):
-        """See `IHasCustomLanguageCodes`."""
-        return CustomLanguageCode(
-            distribution=self.distribution,
-            sourcepackagename=self.sourcepackagename,
-            language_code=language_code, language=language)
 
     @classmethod
     def _get(cls, distribution, sourcepackagename):
