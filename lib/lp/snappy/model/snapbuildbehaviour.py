@@ -21,16 +21,12 @@ from six.moves.urllib.parse import (
     urlsplit,
     urlunsplit,
     )
-import treq
-from twisted.internet import (
-    defer,
-    reactor as default_reactor,
-    )
-from twisted.web.client import HTTPConnectionPool
+from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.downloader import RequestProxyTokenCommand
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
@@ -43,7 +39,6 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
 from lp.services.twistedsupport import cancel_on_timeout
-from lp.services.twistedsupport.treq import check_status
 from lp.snappy.interfaces.snap import (
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
     SnapBuildArchiveOwnerMismatch,
@@ -53,18 +48,6 @@ from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
 from lp.soyuz.interfaces.archive import ArchiveDisabled
-
-
-_proxy_pool = None
-
-
-def proxy_pool(reactor=None):
-    global _proxy_pool
-    if reactor is None:
-        reactor = default_reactor
-    if _proxy_pool is None:
-        _proxy_pool = HTTPConnectionPool(reactor)
-    return _proxy_pool
 
 
 def format_as_rfc3339(timestamp):
@@ -117,14 +100,10 @@ class SnapProxyMixin:
         auth_string = '{}:{}'.format(admin_username, secret).strip()
         auth_header = b'Basic ' + base64.b64encode(auth_string)
 
-        response = yield treq.post(
-            url, headers={'Authorization': auth_header},
-            json={'username': proxy_username},
-            pool=proxy_pool(self._slave.reactor),
-            timeout=config.builddmaster.authentication_timeout,
-            reactor=self._slave.reactor)
-        response = yield check_status(response)
-        token = yield treq.json_content(response)
+        token = yield self._slave.process_pool.doWork(
+            RequestProxyTokenCommand,
+            url=url, auth_header=auth_header,
+            proxy_username=proxy_username)
         defer.returnValue(token)
 
 
