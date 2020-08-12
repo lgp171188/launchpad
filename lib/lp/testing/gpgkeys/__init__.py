@@ -24,6 +24,7 @@ import os
 
 import gpgme
 import scandir
+import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.gpg import IGPGKeySet
@@ -126,10 +127,10 @@ def decrypt_content(content, password):
     :content: encrypted data content
     :password: unicode password to unlock the secret key in question
     """
-    if isinstance(password, unicode):
+    if isinstance(password, six.text_type):
         raise TypeError('Password cannot be Unicode.')
 
-    if isinstance(content, unicode):
+    if isinstance(content, six.text_type):
         raise TypeError('Content cannot be Unicode.')
 
     ctx = get_gpgme_context()

@@ -23,6 +23,7 @@ import tempfile
 import gpgme
 from lazr.restful.utils import get_current_browser_request
 import requests
+import six
 from six.moves import http_client
 from six.moves.urllib.parse import urlencode
 from zope.interface import implementer
@@ -212,8 +213,8 @@ class GPGHandler:
     def getVerifiedSignature(self, content, signature=None):
         """See IGPGHandler."""
 
-        assert not isinstance(content, unicode)
-        assert not isinstance(signature, unicode)
+        assert not isinstance(content, six.text_type)
+        assert not isinstance(signature, six.text_type)
 
         ctx = get_gpgme_context()
 
@@ -354,7 +355,7 @@ class GPGHandler:
 
     def encryptContent(self, content, key):
         """See IGPGHandler."""
-        if isinstance(content, unicode):
+        if isinstance(content, six.text_type):
             raise TypeError('Content cannot be Unicode.')
 
         ctx = get_gpgme_context()

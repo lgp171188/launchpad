@@ -185,7 +185,7 @@ class POHeader:
         return header_dictionary
 
     def _decode(self, text):
-        if text is None or isinstance(text, unicode):
+        if text is None or isinstance(text, six.text_type):
             # There is noo need to do anything.
             return text
         charset = self.charset

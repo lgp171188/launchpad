@@ -8,6 +8,7 @@ __metaclass__ = type
 # SKIP this file when reformatting, due to the sys mangling.
 import datetime
 
+import six
 from storm.exceptions import NotOneError as SQLObjectMoreThanOneResultError
 from storm.expr import SQL
 from storm.sqlobject import *
@@ -39,7 +40,7 @@ def sqlrepr(value, dbname=None):
         return value.getquoted()
     elif isinstance(value, SQL):
         return value.expr
-    elif isinstance(value, (str, unicode)):
+    elif isinstance(value, six.string_types):
         for orig, repl in _sqlStringReplace:
             value = value.replace(orig, repl)
         return "E'%s'" % value
