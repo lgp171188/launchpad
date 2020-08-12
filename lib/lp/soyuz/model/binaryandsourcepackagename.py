@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,29 +7,26 @@ __all__ = [
     'BinaryAndSourcePackageNameVocabulary',
 ]
 
-from sqlobject import StringCol
+from storm.locals import Unicode
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 from lp.services.webapp.vocabulary import (
     BatchedCountableIterator,
-    NamedSQLObjectHugeVocabulary,
+    NamedStormHugeVocabulary,
     )
 from lp.soyuz.interfaces.binarypackagename import IBinaryAndSourcePackageName
 
 
 @implementer(IBinaryAndSourcePackageName)
-class BinaryAndSourcePackageName(SQLBase):
+class BinaryAndSourcePackageName(StormBase):
     """See IBinaryAndSourcePackageName"""
 
-    _table = 'BinaryAndSourcePackageNameView'
-    _idName = 'name'
-    _idType = unicode
-    _defaultOrder = 'name'
+    __storm_table__ = 'BinaryAndSourcePackageNameView'
+    __storm_order__ = 'name'
 
-    name = StringCol(dbName='name', notNull=True, unique=True,
-                     alternateID=True)
+    name = Unicode('name', primary=True)
 
 
 class BinaryAndSourcePackageNameIterator(BatchedCountableIterator):
@@ -44,7 +41,7 @@ class BinaryAndSourcePackageNameIterator(BatchedCountableIterator):
                 for obj in results]
 
 
-class BinaryAndSourcePackageNameVocabulary(NamedSQLObjectHugeVocabulary):
+class BinaryAndSourcePackageNameVocabulary(NamedStormHugeVocabulary):
     """A vocabulary for searching for binary and sourcepackage names.
 
     This is useful for, e.g., reporting a bug on a 'package' when a reporter
@@ -56,7 +53,7 @@ class BinaryAndSourcePackageNameVocabulary(NamedSQLObjectHugeVocabulary):
     """
     _table = BinaryAndSourcePackageName
     displayname = 'Select a Package'
-    _orderBy = 'name'
+    _order_by = 'name'
     iterator = BinaryAndSourcePackageNameIterator
 
     def getTermByToken(self, token):
