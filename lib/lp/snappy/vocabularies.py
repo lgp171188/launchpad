@@ -159,10 +159,14 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         if "/" in token:
-            try:
+            bits = token.split("/", 2)
+            if len(bits) == 2:
+                distribution_name, distro_series_name = bits
+                snappy_series_name = None
+            elif len(bits) == 3:
                 distribution_name, distro_series_name, snappy_series_name = (
-                    token.split("/", 2))
-            except ValueError:
+                    bits)
+            else:
                 raise LookupError(token)
         else:
             distribution_name = None
@@ -176,7 +180,10 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
             *self._clauses).one()
 
         if entry is None and ISnap.providedBy(self.context):
-            context_store_series_name = self.context.store_series.name
+            if self.context.store_series is None:
+                context_store_series_name = None
+            else:
+                context_store_series_name = self.context.store_series.name
             if self.context.distro_series is not None:
                 context_distribution_name = (
                     self.context.distro_series.distribution.name)

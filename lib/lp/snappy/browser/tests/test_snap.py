@@ -57,6 +57,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
@@ -77,6 +78,7 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.snappy.model.snappyseries import SnappyDistroSeries
 from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
@@ -128,7 +130,8 @@ class TestSnapNavigation(TestCaseWithFactory):
     def test_snap(self):
         snap = self.factory.makeSnap()
         obj, _, _ = test_traverse(
-            "http://launchpad.test/~%s/+snap/%s" % (snap.owner.name, snap.name))
+            "http://launchpad.test/~%s/+snap/%s" % (
+                snap.owner.name, snap.name))
         self.assertEqual(snap, obj)
 
 
@@ -782,6 +785,7 @@ class TestSnapEditView(BaseTestSnapView):
         distro_series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[distro_series],
                 status=SeriesStatus.SUPPORTED)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person,
@@ -789,23 +793,40 @@ class TestSnapEditView(BaseTestSnapView):
             store_series=snappy_series,
             branch=self.factory.makeAnyBranch())
         browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
-        self.assertIn(
-            "ubuntu/%s/%s" % (distro_series.name, snappy_series.name),
-            browser.getControl(name="field.store_distro_series").options)
+        browser.getControl(name="field.store_distro_series").value = (
+            "ubuntu/%s/%s" % (distro_series.name, snappy_series.name))
+        browser.getControl("Update snap package").click()
+
+        self.assertEqual([], find_tags_by_class(browser.contents, "message"))
+        login_person(self.person)
+        self.assertThat(snap, MatchesStructure.byEquality(
+            distro_series=distro_series,
+            store_series=snappy_series))
 
     def test_edit_snap_built_for_distro_series_None(self):
+        distro_series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries(
-                status=SeriesStatus.SUPPORTED)
+                usable_distro_series=[distro_series],
+                status=SeriesStatus.CURRENT)
+        sdses = list(IStore(SnappyDistroSeries).find(SnappyDistroSeries))
+        sdses[4].distro_series = None
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person,
-            distroseries=None,
-            store_series=snappy_series,
-            branch=self.factory.makeAnyBranch())
-        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
-        self.assertIn(
-            snappy_series.name,
-            browser.getControl(name="field.store_distro_series").options)
+            store_series=snappy_series)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+        browser.getControl(
+            name="field.store_distro_series").value = (
+                        browser.getControl(
+                            name="field.store_distro_series"
+                        ).options[0].strip())
+        browser.getControl("Update snap package").click()
+        self.assertEqual([], find_tags_by_class(browser.contents, "message"))
+        login_person(self.person)
+        self.assertThat(snap, MatchesStructure(
+            distro_series=Is(None),
+            store_series=Equals(snappy_series)))
 
     def test_edit_snap_built_for_snappy_series_None(self):
         distro_series = self.factory.makeUbuntuDistroSeries()
@@ -813,12 +834,21 @@ class TestSnapEditView(BaseTestSnapView):
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person,
             distroseries=distro_series,
-            store_series=None,
-            branch=self.factory.makeAnyBranch())
+            store_series=None)
+
         browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
         self.assertIn(
             "ubuntu/%s" % distro_series.name,
             browser.getControl(name="field.store_distro_series").options)
+        browser.getControl(
+            name="field.store_distro_series").value = (
+                        "ubuntu/%s" % distro_series.name)
+        browser.getControl("Update snap package").click()
+        self.assertEqual([], find_tags_by_class(browser.contents, "message"))
+        login_person(self.person)
+        self.assertThat(snap, MatchesStructure(
+            distro_series=Equals(distro_series),
+            store_series=Is(None)))
 
     def test_edit_snap_sets_date_last_modified(self):
         # Editing a snap package sets the date_last_modified property.
