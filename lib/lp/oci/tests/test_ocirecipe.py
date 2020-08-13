@@ -799,7 +799,8 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             description='a description',
             official=False,
             require_virtualized=False,
-            build_file='build file')
+            build_file='build file',
+            build_path='build path')
         self.assertEqual(target.registrant, registrant)
         self.assertEqual(target.owner, owner)
         self.assertEqual(target.oci_project, oci_project)
@@ -992,7 +993,8 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 git_ref_link=Equals(self.getAbsoluteURL(recipe.git_ref)),
                 description=Equals(recipe.description),
                 build_file=Equals(recipe.build_file),
-                build_daily=Equals(recipe.build_daily)
+                build_daily=Equals(recipe.build_daily),
+                build_path=Equals(recipe.build_path)
                 )))
 
     def test_api_patch_oci_recipe(self):
