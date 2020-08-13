@@ -58,16 +58,16 @@
 
     <tal:logged-in condition="view/user">
       <tal:can-push tal:condition="view/user_can_push">
-      <dl id="push-url">
-        <dt>Update this repository:</dt>
-        <dd>
-          <tt class="command">
-          git push
-          <span class="ssh-url" tal:content="view/git_ssh_url" />
-          <tal:branch condition="branch_name|nothing" replace="branch_name" />
-          </tt>
-        </dd>
-      </dl>
+        <dl id="push-url">
+          <dt>Update this repository:</dt>
+          <dd>
+            <tt class="command">
+            git push
+            <span class="ssh-url" tal:content="view/git_ssh_url" />
+            <em tal:condition="branch_name|nothing">BRANCHNAME</em>
+            </tt>
+          </dd>
+        </dl>
       </tal:can-push>
 
       <tal:cannot-push condition="not:view/user_can_push">
@@ -83,13 +83,13 @@
              tal:content="context/owner/displayname">Team</a>
           can push to this <tal:kind replace="kind" />.
         </tal:team>
-        <dl tal:condition="not:view/personal_project" id="push-url">
+        <dl tal:condition="context/namespace/show_push_url_hints" id="push-url">
           <dt>To fork this repository and propose fixes from there, push to this repository:</dt>
           <dd>
             <tt class="command">
             git push
             <span class="ssh-url" tal:content="view/git_ssh_url_non_owner" />
-            <tal:branch condition="branch_name|nothing" replace="branch_name" />
+            <em tal:condition="branch_name|nothing">BRANCHNAME</em>
             </tt>
           </dd>
         </dl>

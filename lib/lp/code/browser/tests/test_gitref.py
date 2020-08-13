@@ -250,6 +250,26 @@ class TestGitRefView(BrowserTestCase):
             self.assertThat(rendered_view, git_push_url_text_match)
             self.assertThat(rendered_view, git_push_url_hint_match)
 
+    def test_push_directions_logged_in_cannot_push_personal_project(self):
+        repository = self.factory.makeGitRepository(
+            owner=self.user, target=self.user)
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/branch"])
+        other_user = self.factory.makePerson()
+        login_person(other_user)
+        view = create_initialized_view(ref, "+index", principal=self.user)
+        git_push_url_text_match = soupmatchers.Tag(
+                'Push url text', 'a',
+                text=self.user.displayname)
+        with person_logged_in(other_user):
+            rendered_view = view.render()
+            div = soupmatchers.Tag("Push directions", "div",
+                                    attrs={"id": "push-directions"})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    div,
+                    git_push_url_text_match)))
+
     def makeCommitLog(self):
         authors = [self.factory.makePerson() for _ in range(5)]
         with admin_logged_in():

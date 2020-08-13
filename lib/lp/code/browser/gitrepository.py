@@ -389,12 +389,6 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         return urlunsplit(url)
 
     @property
-    def personal_project(self):
-        return (IPerson.providedBy(self.context.owner)
-                and IPerson.providedBy(self.context.target) and
-                (self.context.owner == self.context.target))
-
-    @property
     def git_ssh_url_non_owner(self):
         """The git+ssh:// URL for this repository, adjusted for this user.
         The user is not the owner of the repository."""
@@ -402,8 +396,6 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         contributor = ContributorGitIdentity(
             owner=self.user,
             target=self.context.target,
-            owner_default=True,
-            target_default=False,
             repository=self.context)
         base_url = urlutils.join(
             config.codehosting.git_ssh_root, contributor.shortened_path)

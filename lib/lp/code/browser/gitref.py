@@ -125,23 +125,12 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         return urlunsplit(url)
 
     @property
-    def personal_project(self):
-        """Perform the check for personal repositories here
-         as we don not offer a push URL for personal repositories."""
-        return (IPerson.providedBy(self.context.repository.owner)
-                and IPerson.providedBy(self.context.repository.target) and
-                (self.context.repository.owner ==
-                 self.context.repository.target))
-
-    @property
     def git_ssh_url_non_owner(self):
         """The git+ssh:// URL for this repository, adjusted for this user.
         The user is not the owner of the repository."""
         contributor = ContributorGitIdentity(
             owner=self.user,
             target=self.context.repository.target,
-            owner_default=True,
-            target_default=False,
             repository=self.context.repository)
         base_url = urlutils.join(
             config.codehosting.git_ssh_root, contributor.shortened_path)

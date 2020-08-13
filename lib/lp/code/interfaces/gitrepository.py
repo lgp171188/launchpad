@@ -1234,10 +1234,10 @@ def user_has_special_git_repository_access(user, repository=None):
 
 class ContributorGitIdentity(GitIdentityMixin):
 
-    def __init__(self, target_default, owner_default, owner,
+    def __init__(self, owner,
                  target, repository):
-        self.target_default = target_default
-        self.owner_default = owner_default
+        self.target_default = False
+        self.owner_default = True
         self.owner = owner
         self.target = target
         self.repository = repository
@@ -1246,5 +1246,4 @@ class ContributorGitIdentity(GitIdentityMixin):
         identities = [
             (default.path, default.context)
             for default in self.getRepositoryDefaults()]
-        identities.append(self.repository)
         return identities
