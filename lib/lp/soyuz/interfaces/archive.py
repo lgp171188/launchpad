@@ -1515,6 +1515,12 @@ class IArchiveView(IHasBuildRecords):
                           " should be recommended, or None to publish the"
                           " update for everyone."),
             required=False),
+        move=Bool(
+            title=_("Move"),
+            description=_(
+                "If true, delete the source publication after copying it to "
+                "the destination."),
+            required=False),
         )
     @export_write_operation()
     @operation_for_version('devel')
