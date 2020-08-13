@@ -5,6 +5,6 @@ SET client_min_messages=ERROR;
 
 ALTER TABLE OCIRecipe ADD COLUMN build_path text DEFAULT '.' NOT NULL;
 
-COMMENT ON COLUMN OCIRecipe.build_path IS 'Path to build file with in the repository.';
+COMMENT ON COLUMN OCIRecipe.build_path IS 'Directory to use for build context and OCIRecipe.build_file location.';
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 20, 0);
