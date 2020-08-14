@@ -46,6 +46,27 @@ from lp.testing.layers import (
 from lp.testing.views import create_webservice_error_view
 
 
+class PropagatingThread(threading.Thread):
+    """Thread class that propagates errors to the parent."""
+    # https://stackoverflow.com/a/31614591
+    def run(self):
+        self.exc = None
+        try:
+            if hasattr(self, '_Thread__target'):
+                # Thread uses name mangling prior to Python 3.
+                self.ret = self._Thread__target(
+                    *self._Thread__args, **self._Thread__kwargs)
+            else:
+                self.ret = self._target(*self._args, **self._kwargs)
+        except BaseException as e:
+            self.exc = e
+
+    def join(self):
+        super(PropagatingThread, self).join()
+        if self.exc:
+            raise self.exc
+
+
 class InstrumentedLibrarianClient(LibrarianClient):
 
     def __init__(self, *args, **kwargs):
@@ -256,7 +277,7 @@ class LibrarianClientTestCase(TestCase):
         # The fake server is running in another thread, and we are sure it
         # will (eventually) reply with an error message. So, let's just wait
         # until that message arrives.
-        client.state.s_poll_timeout = 120
+        client.s_poll_timeout = 120
 
         # Please, note the mismatch between file size (7) and its actual size
         # of the content (6). This is intentional, to make sure we are raising
@@ -476,6 +497,15 @@ class LibrarianClientTestCase(TestCase):
             client.getFileByAlias(alias_id), 'This is a fake file object', 3)
 
         client_module._File = _File
+
+    def test_thread_state_FileUploadClient(self):
+        client = InstrumentedLibrarianClient()
+        th = PropagatingThread(
+            target=client.addFile,
+            args=('sample.txt', 6, StringIO('sample'), 'text/plain'))
+        th.start()
+        th.join()
+        self.assertEqual(5, client.check_error_calls)
 
 
 class TestWebServiceErrors(unittest.TestCase):
