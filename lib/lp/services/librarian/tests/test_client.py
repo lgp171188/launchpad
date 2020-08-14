@@ -252,16 +252,6 @@ class LibrarianClientTestCase(TestCase):
             'librarian', upload_host=upload_host, upload_port=upload_port)
 
         client = LibrarianClient()
-        # Artificially increases timeout to avoid race condition.
-        # The fake server is running in another thread, and we are sure it
-        # will (eventually) reply with an error message. So, let's just wait
-        # until that message arrives.
-        client.state.s_poll_timeout = 120
-
-        # Please, note the mismatch between file size (7) and its actual size
-        # of the content (6). This is intentional, to make sure we are raising
-        # the error coming from the fake server (and not the local check
-        # right after, while uploading the file).
         self.assertRaisesRegex(
             UploadFailed, 'Server said early: STORE 7 sample.txt',
             client.addFile, 'sample.txt', 7, StringIO('sample'), 'text/plain')
