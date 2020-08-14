@@ -541,6 +541,7 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
+    show_push_url_hints = False
 
     def __init__(self, person, oci_project):
         self.owner = person

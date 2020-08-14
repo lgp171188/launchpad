@@ -64,7 +64,7 @@
             <tt class="command">
             git push
             <span class="ssh-url" tal:content="view/git_ssh_url" />
-            <em tal:condition="branch_name|nothing">BRANCHNAME</em>
+            <em>BRANCHNAME</em>
             </tt>
           </dd>
         </dl>
@@ -89,7 +89,7 @@
             <tt class="command">
             git push
             <span class="ssh-url" tal:content="view/git_ssh_url_non_owner" />
-            <em tal:condition="branch_name|nothing">BRANCHNAME</em>
+            <em>BRANCHNAME</em>
             </tt>
           </dd>
         </dl>

@@ -127,7 +127,9 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
     @property
     def git_ssh_url_non_owner(self):
         """The git+ssh:// URL for this repository, adjusted for this user.
-        The user is not the owner of the repository."""
+
+        The user is not the owner of the repository.
+        """
         contributor = ContributorGitIdentity(
             owner=self.user,
             target=self.context.repository.target,

@@ -226,6 +226,7 @@ class TestGitRepositoryView(BrowserTestCase):
             Update this repository:
             git push
             git+ssh://{username}@git.launchpad.test/{repository.shortened_path}
+            BRANCHNAME
             """).format(username=username, repository=repository),
             flags=doctest.NORMALIZE_WHITESPACE))
 
