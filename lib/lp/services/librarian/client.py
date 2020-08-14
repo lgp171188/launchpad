@@ -83,6 +83,8 @@ def compose_url(base_url, alias_path):
 class FileUploadClient:
     """Simple blocking client for uploading to the librarian."""
 
+    s_poll_timeout = 0
+
     def __init__(self):
         # This class is registered as a utility, which means an instance of
         # it will be shared between threads. The easiest way of making this
@@ -115,7 +117,7 @@ class FileUploadClient:
         del self.state.f
 
     def _checkError(self):
-        poll_result = self.state.s_poll.poll(0)
+        poll_result = self.state.s_poll.poll(self.s_poll_timeout)
         if poll_result:
             fileno, event = poll_result[0]
             # Accepts any event that contains input data. Even if we
