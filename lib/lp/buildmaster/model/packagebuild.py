@@ -6,8 +6,7 @@ __all__ = [
     'PackageBuildMixin',
     ]
 
-
-from cStringIO import StringIO
+import io
 
 import six
 from zope.component import getUtility
@@ -85,7 +84,7 @@ class PackageBuildMixin(BuildFarmJobMixin):
         contentType = filenameToContentType(filename)
         content = six.ensure_binary(content)
         file_size = len(content)
-        file_content = StringIO(content)
+        file_content = io.BytesIO(content)
         restricted = self.is_private
 
         return getUtility(ILibraryFileAliasSet).create(
