@@ -41,6 +41,7 @@ from psycopg2.extensions import (
     ISOLATION_LEVEL_SERIALIZABLE,
     )
 import pytz
+import six
 from sqlobject.sqlbuilder import sqlrepr
 import storm
 from storm.databases.postgres import compile as postgres_compile
@@ -371,7 +372,7 @@ def quote_like(x):
     TypeError: Not a string (<type 'int'>)
 
     """
-    if not isinstance(x, basestring):
+    if not isinstance(x, six.string_types):
         raise TypeError('Not a string (%s)' % type(x))
     return quote(x.replace('%', r'\%').replace('_', r'\_'))
 

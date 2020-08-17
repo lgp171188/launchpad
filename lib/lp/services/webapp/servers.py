@@ -1224,7 +1224,7 @@ class WebServicePublication(WebServicePublicationMixin,
                 pageid += ':' + collection_identifier
         op = (view.request.get('ws.op')
             or view.request.query_string_params.get('ws.op'))
-        if op and isinstance(op, basestring):
+        if op and isinstance(op, six.string_types):
             pageid += ':' + op
         return pageid
 

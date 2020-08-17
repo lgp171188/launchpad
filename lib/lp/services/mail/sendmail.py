@@ -82,9 +82,11 @@ def do_paranoid_email_content_validation(from_addr, to_addrs, subject, body):
     # XXX StuartBishop 2005-03-19:
     # These checks need to be migrated upstream if this bug
     # still exists in modern Z3.
-    assert zisinstance(from_addr, basestring), 'Invalid From: %r' % from_addr
-    assert zisinstance(subject, basestring), 'Invalid Subject: %r' % subject
-    assert zisinstance(body, basestring), 'Invalid body: %r' % body
+    assert zisinstance(from_addr, six.string_types), \
+        'Invalid From: %r' % from_addr
+    assert zisinstance(subject, six.string_types), \
+        'Invalid Subject: %r' % subject
+    assert zisinstance(body, six.string_types), 'Invalid body: %r' % body
 
 
 def do_paranoid_envelope_to_validation(to_addrs):
@@ -98,7 +100,7 @@ def do_paranoid_envelope_to_validation(to_addrs):
     assert (zisinstance(to_addrs, (list, tuple, set))
             and len(to_addrs) > 0), 'Invalid To: %r' % (to_addrs,)
     for addr in to_addrs:
-        assert zisinstance(addr, basestring) and bool(addr), \
+        assert zisinstance(addr, six.string_types) and bool(addr), \
                 'Invalid recipient: %r in %r' % (addr, to_addrs)
         assert '\n' not in addr, (
             "Address contains carriage returns: %r" % (addr,))
@@ -204,7 +206,7 @@ class MailController(object):
     def __init__(self, from_addr, to_addrs, subject, body, headers=None,
                  envelope_to=None, bulk=True):
         self.from_addr = from_addr
-        if zisinstance(to_addrs, basestring):
+        if zisinstance(to_addrs, six.string_types):
             to_addrs = [to_addrs]
         self.to_addrs = to_addrs
         self.envelope_to = envelope_to
@@ -448,7 +450,7 @@ def sendmail(message, to_addrs=None, bulk=True):
 
     raw_message = message.as_string()
     message_detail = message['Subject']
-    if not isinstance(message_detail, basestring):
+    if not isinstance(message_detail, six.string_types):
         # Might be a Header object; can be squashed.
         message_detail = unicode(message_detail)
     if _immediate_mail_delivery:
@@ -509,7 +511,8 @@ def raw_sendmail(from_addr, to_addrs, raw_message, message_detail):
     :param message_detail: String of detail about the message
         to be recorded to help with debugging, eg the message subject.
     """
-    assert not isinstance(to_addrs, basestring), 'to_addrs must be a sequence'
+    assert not isinstance(to_addrs, six.string_types), \
+        'to_addrs must be a sequence'
     assert isinstance(raw_message, str), 'Not a plain string'
     assert raw_message.decode('ascii'), 'Not ASCII - badly encoded message'
     mailer = getUtility(IMailDelivery, 'Mail')

@@ -14,7 +14,6 @@ import os
 import re
 import tempfile
 
-from cscvs.dircompare import path
 import pytz
 import requests
 from six.moves.urllib.parse import urlsplit
@@ -31,6 +30,7 @@ from lp.registry.model.productrelease import (
     ProductReleaseFile,
     )
 from lp.registry.model.productseries import ProductSeries
+from lp.registry.scripts.productreleasefinder import path
 from lp.registry.scripts.productreleasefinder.filter import FilterPattern
 from lp.registry.scripts.productreleasefinder.hose import Hose
 from lp.services.config import config
@@ -118,7 +118,7 @@ class ProductReleaseFinder:
     def getFilters(self):
         """Build the list of products and filters.
 
-        Returns a list of (product_name, filters) for each product in
+        Returns an iterator of (product_name, filters) for each product in
         the database, where the filter keys are series names.
         """
         found_globs = IStore(Product).find(

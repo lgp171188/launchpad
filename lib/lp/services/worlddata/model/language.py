@@ -8,7 +8,7 @@ __all__ = [
     'LanguageSet',
     ]
 
-
+import six
 from sqlobject import (
     BoolCol,
     IntCol,
@@ -270,7 +270,7 @@ class LanguageSet:
 
     def getLanguageByCode(self, code):
         """See `ILanguageSet`."""
-        assert isinstance(code, basestring), (
+        assert isinstance(code, six.string_types), (
             "%s is not a valid type for 'code'" % type(code))
         try:
             return Language.byCode(code)

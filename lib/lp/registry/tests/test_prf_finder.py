@@ -140,7 +140,7 @@ class GetFiltersTestCase(TestCaseWithFactory):
         ztm.commit()
         logging.basicConfig(level=logging.CRITICAL)
         prf = ProductReleaseFinder(ztm, logging.getLogger())
-        product_filters = prf.getFilters()
+        product_filters = list(prf.getFilters())
         self.assertEqual(1, len(product_filters))
         found_product, filters = product_filters[0]
         self.assertEqual('bunny', found_product)

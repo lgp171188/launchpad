@@ -3,7 +3,7 @@
 
 __metaclass__ = type
 
-from StringIO import StringIO
+from io import BytesIO
 
 from zope.component import getUtility
 from zope.contenttype import guess_content_type
@@ -162,7 +162,7 @@ class ImageChangeWidget(SimpleInputWidget):
                 return existing_alias
 
             self._image_file_alias = getUtility(ILibraryFileAliasSet).create(
-                name=filename, size=len(content), file=StringIO(content),
+                name=filename, size=len(content), file=BytesIO(content),
                 contentType=type)
             return self._image_file_alias
         elif action == "delete":
