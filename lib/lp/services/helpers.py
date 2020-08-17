@@ -327,7 +327,7 @@ def ensure_unicode(string):
     ensure_unicode() should eventually be removed.
 
     This differs from the builtin unicode() function, as a TypeError
-    exception will be raised if the parameter is not a basestring or if
+    exception will be raised if the parameter is not a string type or if
     a raw string is not ASCII.
 
     >>> ensure_unicode(u'hello')
@@ -344,7 +344,7 @@ def ensure_unicode(string):
     >>> ensure_unicode(42)
     Traceback (most recent call last):
     ...
-    TypeError: 42 is not a basestring (<type 'int'>)
+    TypeError: 42 is not a string type (<type 'int'>)
 
     >>> ensure_unicode(None) is None
     True
@@ -360,4 +360,4 @@ def ensure_unicode(string):
             raise TypeError("%s is not US-ASCII" % repr(string))
     else:
         raise TypeError(
-            "%r is not a basestring (%r)" % (string, type(string)))
+            "%r is not a string type (%r)" % (string, type(string)))

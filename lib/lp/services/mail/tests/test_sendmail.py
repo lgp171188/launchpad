@@ -8,6 +8,7 @@ import email.header
 from email.message import Message
 import unittest
 
+import six
 from zope.interface import implementer
 from zope.sendmail.interfaces import IMailDelivery
 
@@ -300,7 +301,7 @@ class TestMailController(TestCase):
         a0 = actions[0]
         self.assertEqual(a0.category, 'sendmail')
         self.assertEqual(a0.detail, subject)
-        self.assertIsInstance(a0.detail, basestring)
+        self.assertIsInstance(a0.detail, six.string_types)
 
 
 @implementer(IMailDelivery)

@@ -110,7 +110,7 @@ class FakeLogger:
         return self.loglevel
 
     def _format_message(self, msg, *args):
-        if not isinstance(msg, basestring):
+        if not isinstance(msg, six.string_types):
             msg = str(msg)
         # To avoid type errors when the msg has % values and args is empty,
         # don't expand the string with empty args.
