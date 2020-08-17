@@ -278,7 +278,9 @@ python-dateutil==2.8.1
 python-debian==0.1.32
 python-keystoneclient==0.7.1
 python-memcached==1.58
-python-openid2==3.2
+# https://github.com/ziima/python-openid/pull/47
+# lp1 Fix normalization of non-ASCII query strings on Python 2.
+python-openid2==3.2+lp1
 python-swiftclient==2.0.3
 PyYAML==3.10
 rabbitfixture==0.4.2
