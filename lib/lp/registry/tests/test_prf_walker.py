@@ -4,9 +4,9 @@
 """Tests for lp.registry.scripts.productreleasefinder.walker."""
 
 import logging
-import StringIO
 
 import responses
+import six
 
 from lp.registry.scripts.productreleasefinder.walker import (
     combine_url,
@@ -164,7 +164,7 @@ class WalkerBase_walk(TestCase):
             def close(self):
                 pass
 
-        log_output = StringIO.StringIO()
+        log_output = six.StringIO()
         logger = logging.getLogger()
         self.addCleanup(logger.setLevel, logger.level)
         logger.setLevel(logging.DEBUG)
@@ -189,7 +189,7 @@ class WalkerBase_walk(TestCase):
             def close(self):
                 pass
 
-        log_output = StringIO.StringIO()
+        log_output = six.StringIO()
         logger = logging.getLogger()
         self.addCleanup(logger.setLevel, logger.level)
         logger.setLevel(logging.DEBUG)
