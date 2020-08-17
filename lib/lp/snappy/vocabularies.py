@@ -28,7 +28,10 @@ from zope.schema.vocabulary import (
     SimpleTerm,
     SimpleVocabulary,
     )
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
@@ -148,7 +151,8 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     def __contains__(self, value):
         """See `IVocabulary`."""
-        return value in self._entries
+        return (value in self._entries
+                or zope_isinstance(value, SyntheticSnappyDistroSeries))
 
     def getTerm(self, value):
         """See `IVocabulary`."""
