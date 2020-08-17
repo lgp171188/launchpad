@@ -12,10 +12,6 @@ __all__ = [
 
 import re
 
-from CVS.protocol import (
-    CVSRoot,
-    CvsRootError,
-    )
 from lazr.restful.declarations import (
     call_with,
     export_write_operation,
@@ -52,6 +48,12 @@ from lp.services.fields import (
 
 
 def validate_cvs_root(cvsroot):
+    # XXX cjwatson 2020-08-12: Move these imports back up to the top level
+    # once they work on Python 3.
+    from CVS.protocol import (
+        CVSRoot,
+        CvsRootError,
+        )
     try:
         root = CVSRoot(cvsroot)
     except CvsRootError as e:
