@@ -272,7 +272,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile = self.createDSCFile(
             "foo.dsc", dsc, "main/net", "extra", "dulwich", "0.42",
             self.createChangesFile("foo.changes", changes))
-        uploadfile.changelog = "DUMMY"
+        uploadfile.changelog = b"DUMMY"
         uploadfile.files = []
         release = uploadfile.storeInDatabase(None)
         self.assertEqual("0.42", release.version)
@@ -288,7 +288,7 @@ class DSCFileTests(PackageUploadFileTestCase):
             "foo.dsc", dsc, "main/net", "extra", "dulwich", "0.42",
             self.createChangesFile("foo.changes", changes))
         uploadfile.files = []
-        uploadfile.changelog = "DUMMY"
+        uploadfile.changelog = b"DUMMY"
         release = uploadfile.storeInDatabase(None)
         self.assertEqual("dpkg, bzr", release.builddepends)
 
@@ -300,7 +300,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile = self.createDSCFile(
             "foo.dsc", dsc, "main/net", "extra", "dulwich", "0.42",
             self.createChangesFile("foo.changes", changes))
-        uploadfile.changelog = "DUMMY"
+        uploadfile.changelog = b"DUMMY"
         uploadfile.files = []
         release = uploadfile.storeInDatabase(None)
         # DSCFile lowercases the field names
@@ -315,7 +315,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile = self.createDSCFile(
             "foo.dsc", dsc, "main/net", "extra", "dulwich", "0.42",
             self.createChangesFile("foo.changes", changes))
-        uploadfile.changelog = "DUMMY"
+        uploadfile.changelog = b"DUMMY"
         uploadfile.files = []
         release = uploadfile.storeInDatabase(None)
         self.assertEqual(u"http://samba.org/~jelmer/bzr", release.homepage)
