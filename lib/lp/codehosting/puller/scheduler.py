@@ -459,10 +459,10 @@ class JobScheduler:
             completed_tuple)
 
 
-class LockError(StandardError):
+class LockError(Exception):
 
     def __init__(self, lockfilename):
-        StandardError.__init__(self)
+        super(LockError, self).__init__()
         self.lockfilename = lockfilename
 
     def __str__(self):
