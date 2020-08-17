@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 
-from cStringIO import StringIO
+from io import BytesIO
 
 from lazr.restful.interfaces import IByteStorage
 from zope.component import (
@@ -79,7 +79,7 @@ class LibraryBackedByteStorage:
             filename = self.filename
         stored = getUtility(ILibraryFileAliasSet).create(
             name=filename, size=len(representation),
-            file=StringIO(representation), contentType=mediaType)
+            file=BytesIO(representation), contentType=mediaType)
         setattr(self.entry, self.field.__name__, stored)
 
     def deleteStored(self):
