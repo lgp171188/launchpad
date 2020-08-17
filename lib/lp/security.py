@@ -1384,8 +1384,9 @@ class AdminDistroSeriesDifference(AuthorizationBase):
         # see if the user has that permission on any components
         # at all.
         archive = self.obj.derived_series.main_archive
-        return bool(
-            archive.getComponentsForQueueAdmin(user.person)) or user.in_admin
+        return (
+            not archive.getComponentsForQueueAdmin(user.person).is_empty() or
+            user.in_admin)
 
 
 class EditDistroSeriesDifference(DelegatedAuthorization):
