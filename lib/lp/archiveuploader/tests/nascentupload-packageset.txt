@@ -20,11 +20,13 @@ Let's modify the current ACL rules for ubuntu, moving the upload
 rights to all components from 'ubuntu-team' to 'mark':
 
     >>> switch_dbuser('launchpad')
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.archivepermission import ArchivePermission
     >>> new_uploader = getUtility(IPersonSet).getByName('mark')
-    >>> for permission in ArchivePermission.select():
+    >>> store = IStore(ArchivePermission)
+    >>> for permission in store.find(ArchivePermission):
     ...     permission.person = new_uploader
-    ...     permission.syncUpdate()
+    >>> store.flush()
     >>> switch_dbuser('uploader')
 
 This time the upload will fail because the ACLs don't let

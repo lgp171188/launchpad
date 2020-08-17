@@ -1233,8 +1233,8 @@ class Archive(SQLBase):
         any_perm_on_archive = Store.of(self).find(
             TeamParticipation,
             ArchivePermission.archive == self.id,
-            TeamParticipation.person == person.id,
-            TeamParticipation.teamID == ArchivePermission.personID,
+            TeamParticipation.person == person,
+            TeamParticipation.team == ArchivePermission.person_id,
             )
         return not any_perm_on_archive.is_empty()
 
@@ -1482,7 +1482,7 @@ class Archive(SQLBase):
             if source_allowed or set_allowed:
                 return None
 
-        if not self.getComponentsForUploader(person):
+        if self.getComponentsForUploader(person).is_empty():
             if self.getPackagesetsForUploader(person).is_empty():
                 return NoRightsForArchive()
             else:
@@ -1522,7 +1522,7 @@ class Archive(SQLBase):
         """Private helper method to check permissions."""
         permissions = self.getPermissions(
             user, item, permission, distroseries=distroseries)
-        return bool(permissions)
+        return not permissions.is_empty()
 
     def newPackageUploader(self, person, source_package_name):
         """See `IArchive`."""
@@ -2792,9 +2792,9 @@ class ArchiveSet:
             Archive.id,
             where=And(
                 Archive.purpose == ArchivePurpose.PPA,
-                ArchivePermission.archiveID == Archive.id,
+                ArchivePermission.archive == Archive.id,
                 TeamParticipation.person == user,
-                TeamParticipation.team == ArchivePermission.personID,
+                TeamParticipation.team == ArchivePermission.person_id,
                 ))
         return Archive.id.is_in(
             Union(direct_membership, third_party_upload_acl))
@@ -3050,10 +3050,10 @@ def get_enabled_archive_filter(user, purpose=None,
     from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
 
     is_allowed = Select(
-        ArchivePermission.archiveID, where=And(
+        ArchivePermission.archive_id, where=And(
             ArchivePermission.permission == ArchivePermissionType.UPLOAD,
             ArchivePermission.component == main,
-            ArchivePermission.personID.is_in(user_teams)),
+            ArchivePermission.person_id.is_in(user_teams)),
         tables=ArchivePermission, distinct=True)
 
     is_subscribed = Select(

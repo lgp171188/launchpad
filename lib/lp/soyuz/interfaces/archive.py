@@ -821,7 +821,7 @@ class IArchiveView(IHasBuildRecords):
         :param person: An `IPerson`
         :param item: An `IComponent`, `ISourcePackageName`
         :param perm_type: An ArchivePermissionType enum,
-        :return: A list of `IArchivePermission` records.
+        :return: An `IResultSet` of `IArchivePermission` records.
         """
 
     def canUploadSuiteSourcePackage(person, suitesourcepackage):
