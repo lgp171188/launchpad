@@ -61,7 +61,7 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.propertycache import get_property_cache
-from lp.services.statsd import getStatsdClient
+from lp.services.statsd import get_statsd_client
 
 
 BUILDD_MANAGER_LOG_NAME = "slave-scanner"
@@ -706,7 +706,7 @@ class BuilddManager(service.Service):
         self.logger = self._setupLogger()
         self.current_builders = []
         self.pending_logtails = {}
-        self.statsd_client = getStatsdClient()
+        self.statsd_client = get_statsd_client()
 
     def _setupLogger(self):
         """Set up a 'slave-scanner' logger that redirects to twisted.
@@ -728,6 +728,7 @@ class BuilddManager(service.Service):
 
     def updateStats(self):
         """Update statsd with the builder statuses."""
+        self.logger.debug("Updating builder stats.")
         counts_by_processor = {}
         for builder in self.builder_factory.iterVitals():
             for processor_name in builder.processor_names:
@@ -746,6 +747,7 @@ class BuilddManager(service.Service):
                 gauge_name = "builders.{}.{}".format(processor, count_name)
                 self.logger.debug("{}: {}".format(gauge_name, count_name))
                 self.statsd_client.gauge(gauge_name, count_value)
+        self.logger.debug("Builder stats update complete.")
 
     def checkForNewBuilders(self):
         """Add and return any new builders."""

@@ -6,7 +6,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
-__all__ = ['getStatsdClient']
+__all__ = ['get_statsd_client']
 
 
 from statsd import StatsClient
@@ -25,8 +25,8 @@ class UnconfiguredStatsdClient:
         return lambda *args, **kwargs: None
 
 
-def getStatsdClient():
-    if getattr(config, 'statsd', None) and config.statsd.host:
+def get_statsd_client():
+    if config.statsd.host:
         return StatsClient(
             host=config.statsd.host,
             port=config.statsd.port,

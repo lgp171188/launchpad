@@ -1212,6 +1212,22 @@ class TestBuilddManager(TestCase):
         clock.advance(advance)
         self.assertNotEqual(0, manager.flushLogTails.call_count)
 
+    def test_startService_adds_updateStats_loop(self):
+        # When startService is called, the manager will start up a
+        # updateStats loop.
+        self._stub_out_scheduleNextScanCycle()
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+
+        # Replace updateStats() with FakeMethod so we can see if it was
+        # called.
+        manager.updateStats = FakeMethod()
+
+        manager.startService()
+        advance = BuilddManager.UPDATE_STATS_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, manager.updateStats.call_count)
+
 
 class TestFailureAssessments(TestCaseWithFactory):
 
@@ -1612,7 +1628,7 @@ class TestStats(TestCaseWithFactory):
         super(TestStats, self).setUp()
         self.stats_client = self.useFixture(
             MockPatch(
-                'lp.buildmaster.manager.getStatsdClient'
+                'lp.buildmaster.manager.get_statsd_client'
             )).mock()
 
     def test_single_processor(self):

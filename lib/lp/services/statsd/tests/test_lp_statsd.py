@@ -1,7 +1,7 @@
 # Copyright 2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Tests for the Launchpad Statsd Client"""
+"""Tests for the Launchpad statsd client"""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -11,7 +11,7 @@ from statsd import StatsClient
 
 from lp.services.config import config
 from lp.services.statsd import (
-    getStatsdClient,
+    get_statsd_client,
     UnconfiguredStatsdClient,
     )
 from lp.testing import TestCase
@@ -27,7 +27,7 @@ class TestClientConfiguration(TestCase):
         config.push(
             'statsd_test',
             "[statsd]\nhost:")
-        client = getStatsdClient()
+        client = get_statsd_client()
         self.assertEqual(
             type(client), UnconfiguredStatsdClient)
 
@@ -35,6 +35,6 @@ class TestClientConfiguration(TestCase):
         config.push(
             'statsd_test',
             "[statsd]\nhost: 127.0.01\nport: 9999\nprefix: test\n")
-        client = getStatsdClient()
+        client = get_statsd_client()
         self.assertEqual(
             type(client), StatsClient)
