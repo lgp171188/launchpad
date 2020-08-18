@@ -745,7 +745,7 @@ class BuilddManager(service.Service):
         for processor, counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
                 gauge_name = "builders.{}.{}".format(processor, count_name)
-                self.logger.debug("{}: {}".format(gauge_name, count_name))
+                self.logger.debug("{}: {}".format(gauge_name, count_value))
                 self.statsd_client.gauge(gauge_name, count_value)
         self.logger.debug("Builder stats update complete.")
 
