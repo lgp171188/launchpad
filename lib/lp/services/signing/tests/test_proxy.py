@@ -30,6 +30,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
 from lp.services.signing.enums import (
+    OpenPGPKeyAlgorithm,
     SigningKeyType,
     SigningMode,
     )
@@ -300,6 +301,78 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
             MatchesDict({
                 "key-type": Equals("UEFI"),
                 "description": Equals("my lp test key"),
+                })))
+
+        self.assertTimeline([
+            ("POST", "/nonce", {}),
+            ("GET", "/service-key", {}),
+            ("POST", "/generate", {
+                "headers": {
+                    "Content-Type": "application/x-boxed-json",
+                    "X-Client-Public-Key": config.signing.client_public_key,
+                    "X-Nonce": self.response_factory.b64_nonce,
+                    "X-Response-Nonce":
+                        self.response_factory.b64_response_nonce,
+                    },
+                }),
+            ])
+
+    @responses.activate
+    def test_generate_key_openpgp_missing_algorithm(self):
+        self.response_factory.addResponses(self)
+
+        signing = getUtility(ISigningServiceClient)
+        self.assertRaises(
+            ValueError, signing.generate,
+            SigningKeyType.OPENPGP, "Missing OpenPGP algorithm")
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_generate_key_openpgp(self):
+        self.response_factory.addResponses(self)
+        # Generate the key, and checks if we got back the correct dict.
+        signing = getUtility(ISigningServiceClient)
+        generated = signing.generate(
+            SigningKeyType.OPENPGP, "my lp test key",
+            openpgp_key_algorithm=OpenPGPKeyAlgorithm.RSA, length=4096)
+
+        self.assertEqual(generated, {
+            'public-key': bytes(self.response_factory.generated_public_key),
+            'fingerprint': self.response_factory.generated_fingerprint,
+            })
+
+        self.assertEqual(3, len(responses.calls))
+
+        # expected order of HTTP calls
+        http_nonce, http_service_key, http_generate = responses.calls
+
+        self.assertEqual("POST", http_nonce.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/nonce"), http_nonce.request.url)
+
+        self.assertEqual("GET", http_service_key.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/service-key"),
+            http_service_key.request.url)
+
+        self.assertEqual("POST", http_generate.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/generate"),
+            http_generate.request.url)
+        self.assertThat(http_generate.request.headers, ContainsDict({
+            "Content-Type": Equals("application/x-boxed-json"),
+            "X-Client-Public-Key": Equals(config.signing.client_public_key),
+            "X-Nonce": Equals(self.response_factory.b64_nonce),
+            "X-Response-Nonce": Equals(
+                self.response_factory.b64_response_nonce),
+            }))
+        self.assertThat(http_generate.request.body, AfterPreprocessing(
+            self.response_factory._decryptPayload,
+            MatchesDict({
+                "key-type": Equals("OPENPGP"),
+                "description": Equals("my lp test key"),
+                "openpgp-key-algorithm": Equals("RSA"),
+                "length": Equals(4096),
                 })))
 
         self.assertTimeline([

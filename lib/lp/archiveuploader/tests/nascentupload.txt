@@ -772,12 +772,14 @@ Both, DSC and changesfile are signed with Name16's second key.
 Let's modify the current ACL rules for ubuntu, moving the upload
 rights to all components from 'ubuntu-team' to 'mark':
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.archivepermission import ArchivePermission
     >>> with lp_dbuser():
     ...     new_uploader = getUtility(IPersonSet).getByName('mark')
-    ...     for permission in ArchivePermission.select():
+    ...     store = IStore(ArchivePermission)
+    ...     for permission in store.find(ArchivePermission):
     ...         permission.person = new_uploader
-    ...         permission.syncUpdate()
+    ...     store.flush()
 
 This time the upload will fail because the ACLs don't let
 "name16", the key owner, upload a package.

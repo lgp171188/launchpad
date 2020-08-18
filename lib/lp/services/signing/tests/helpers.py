@@ -45,7 +45,8 @@ class SigningServiceClientFixture(fixtures.Fixture):
         self.sign_returns = []
         self.inject_returns = []
 
-    def _generate(self, key_type, description):
+    def _generate(self, key_type, description,
+                  openpgp_key_algorithm=None, length=None):
         key = bytes(PrivateKey.generate().public_key)
         data = {
             "fingerprint": self.factory.getUniqueHexString(40),

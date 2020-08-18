@@ -1168,7 +1168,7 @@ it gets listed by `getPPAsForUser`.
     PPA for No Privileges Person
 
     >>> cprov_archive.newComponentUploader(no_priv, "main")
-    <ArchivePermission ...>
+    <lp.soyuz.model.archivepermission.ArchivePermission ...>
 
     >>> for ppa in archive_set.getPPAsForUser(no_priv):
     ...     print(ppa.displayname)
@@ -1181,7 +1181,7 @@ and user and give the team access to cprov's PPA:
     >>> uploader_team = factory.makeTeam(owner=cprov, name='uploader-team')
     >>> indirect_uploader = factory.makePerson(name='indirect-uploader')
     >>> cprov_archive.newComponentUploader(uploader_team, "main")
-    <ArchivePermission ...>
+    <lp.soyuz.model.archivepermission.ArchivePermission ...>
 
 'indirect_uploader' currently can't upload to cprov's PPA:
 
