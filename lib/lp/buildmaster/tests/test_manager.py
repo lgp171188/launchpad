@@ -1641,7 +1641,7 @@ class TestStats(TestCaseWithFactory):
         manager.builder_factory.update()
         manager.updateStats()
 
-        self.assertEqual(3, self.stats_client.gauge.call_count)
+        self.assertEqual(8, self.stats_client.gauge.call_count)
         for call in self.stats_client.mock.gauge.call_args_list:
             self.assertIn('386', call[0][0])
 
@@ -1656,13 +1656,13 @@ class TestStats(TestCaseWithFactory):
         manager.builder_factory.update()
         manager.updateStats()
 
-        self.assertEqual(6, self.stats_client.gauge.call_count)
+        self.assertEqual(12, self.stats_client.gauge.call_count)
         i386_calls = [c for c in self.stats_client.gauge.call_args_list
                       if '386' in c[0][0]]
         amd64_calls = [c for c in self.stats_client.gauge.call_args_list
                        if 'amd64' in c[0][0]]
-        self.assertEqual(3, len(i386_calls))
-        self.assertEqual(3, len(amd64_calls))
+        self.assertEqual(8, len(i386_calls))
+        self.assertEqual(4, len(amd64_calls))
 
     def test_correct_values(self):
         builder = self.factory.makeBuilder(
@@ -1675,11 +1675,13 @@ class TestStats(TestCaseWithFactory):
         manager.builder_factory.update()
         manager.updateStats()
 
-        self.assertEqual(6, self.stats_client.gauge.call_count)
+        self.assertEqual(12, self.stats_client.gauge.call_count)
         calls = [c[0] for c in self.stats_client.gauge.call_args_list
                  if 'amd64' in c[0][0]]
         self.assertThat(
             calls, MatchesListwise(
-                [Equals(('builders.amd64.disabled', 0)),
-                 Equals(('builders.amd64.ok', 0)),
-                 Equals(('builders.amd64.cleaning', 1))]))
+                [Equals(('builders.disabled,arch=amd64,virtualized=True', 0)),
+                 Equals(('builders.building,arch=amd64,virtualized=True', 0)),
+                 Equals(('builders.idle,arch=amd64,virtualized=True', 0)),
+                 Equals(('builders.cleaning,arch=amd64,virtualized=True', 1))
+                 ]))

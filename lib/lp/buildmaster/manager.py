@@ -731,17 +731,23 @@ class BuilddManager(service.Service):
         self.logger.debug("Updating builder stats.")
         counts_by_processor = {}
         for builder in self.builder_factory.iterVitals():
+            if not builder.active:
+                continue
             for processor_name in builder.processor_names:
-                counts = counts_by_processor.get(
-                    processor_name,
-                    {'cleaning': 0, 'ok': 0, 'disabled': 0})
-                if builder.clean_status == BuilderCleanStatus.CLEANING:
-                    counts['cleaning'] += 1
-                elif builder.builderok:
-                    counts['ok'] += 1
-                else:
+                counts = counts_by_processor.setdefault(
+                    "{},virtualized={}".format(
+                        processor_name,
+                        builder.virtualized),
+                    {'cleaning': 0, 'idle': 0, 'disabled': 0, 'building': 0})
+                if not builder.builderok:
                     counts['disabled'] += 1
-                counts_by_processor[processor_name] = counts
+                elif builder.clean_status == BuilderCleanStatus.CLEANING:
+                    counts['cleaning'] += 1
+                elif (builder.build_queue and
+                      builder.build_queue.status == BuildQueueStatus.RUNNING):
+                    counts['building'] += 1
+                elif builder.clean_status == BuilderCleanStatus.CLEAN:
+                    counts['idle'] += 1
         for processor, counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
                 gauge_name = "builders.{},arch={}".format(
