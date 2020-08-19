@@ -3676,16 +3676,19 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
 class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
     """View for Person:+edit-oci-registry-credentials."""
 
-    @cachedproperty
-    def oci_registry_credentials(self):
+    @property
+    def default_owner(self):
         if IPerson.providedBy(self.context):
-            owner = self.context
+            return self.context
         elif IOCIRecipe.providedBy(self.context):
-            owner = self.context.owner
+            return self.context.owner
         else:
             raise ValueError("Invalid context for this view")
 
-        return list(getUtility(IOCIRegistryCredentialsSet).findByOwner(owner))
+    @cachedproperty
+    def oci_registry_credentials(self):
+        return list(getUtility(IOCIRegistryCredentialsSet).findByOwner(
+            self.default_owner))
 
     schema = Interface
 
@@ -3748,6 +3751,12 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             title=u'Registry URL',
             __name__=u'add_url',
             required=False, readonly=False)
+        add_owner = Choice(
+            __name__=u'add_owner',
+            vocabulary=(
+                'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
+            default=self.default_owner,
+            required=False, readonly=False)
         add_username = TextLine(
             title=u'Username',
             __name__=u'add_username',
@@ -3761,7 +3770,9 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             __name__=u'add_confirm_password',
             required=False, readonly=False)
 
-        return add_url, add_username, add_password, add_confirm_password
+        return (
+            add_url, add_owner, add_username,
+            add_password, add_confirm_password)
 
     def _parseFieldName(self, field_name):
         """Parse a combined field name as described in `_getFieldName`.
@@ -3827,6 +3838,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         """Rearrange form data to make it easier to process."""
         parsed_data = {}
         add_url = data["add_url"]
+        add_owner = data["add_owner"]
         add_username = data["add_username"]
         add_password = data["add_password"]
         add_confirm_password = data["add_confirm_password"]
@@ -3836,6 +3848,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 "password": add_password,
                 "confirm_password": add_confirm_password,
                 "url": add_url,
+                "owner": add_owner,
                 "action": "add",
             })
         for field_name in (
@@ -3903,13 +3916,8 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             credentials.destroySelf()
 
     def addCredentials(self, parsed_add_credentials):
-        if IPerson.providedBy(self.context):
-            owner = self.context
-        elif IOCIRecipe.providedBy(self.context):
-            owner = self.context.owner
-        else:
-            raise ValueError("Invalid context for this view")
         url = parsed_add_credentials["url"]
+        owner = parsed_add_credentials["owner"]
         password = parsed_add_credentials["password"]
         confirm_password = parsed_add_credentials["confirm_password"]
         username = parsed_add_credentials["username"]
