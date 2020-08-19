@@ -13,6 +13,7 @@ __all__ = [
 
 import json
 
+from breezy import urlutils
 from lazr.restful.interface import copy_field
 from six.moves.urllib_parse import (
     quote_plus,
@@ -46,8 +47,12 @@ from lp.code.errors import InvalidBranchMergeProposal
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.gitref import IGitRef
-from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.code.interfaces.gitrepository import (
+    ContributorGitIdentity,
+    IGitRepositorySet,
+    )
 from lp.registry.interfaces.person import IPerson
+from lp.services.config import config
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
@@ -117,6 +122,22 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         base_url = urlsplit(self.context.repository.git_ssh_url)
         url = list(base_url)
         url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        return urlunsplit(url)
+
+    @property
+    def git_ssh_url_non_owner(self):
+        """The git+ssh:// URL for this repository, adjusted for this user.
+
+        The user is not the owner of the repository.
+        """
+        contributor = ContributorGitIdentity(
+            owner=self.user,
+            target=self.context.repository.target,
+            repository=self.context.repository)
+        base_url = urlutils.join(
+            config.codehosting.git_ssh_root, contributor.shortened_path)
+        url = list(urlsplit(base_url))
+        url[1] = "{}@{}".format(self.user.name, url[1])
         return urlunsplit(url)
 
     @property

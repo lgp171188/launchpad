@@ -50,6 +50,7 @@ from lp.code.enums import (
     GitRepositoryStatus,
     GitRepositoryType,
     )
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.gitjob import GitRefScanJob
 from lp.code.tests.helpers import GitHostingFixture
@@ -225,6 +226,7 @@ class TestGitRepositoryView(BrowserTestCase):
             Update this repository:
             git push
             git+ssh://{username}@git.launchpad.test/{repository.shortened_path}
+            BRANCHNAME
             """).format(username=username, repository=repository),
             flags=doctest.NORMALIZE_WHITESPACE))
 
@@ -246,30 +248,130 @@ class TestGitRepositoryView(BrowserTestCase):
         # If the user is logged in but cannot push to a repository owned by
         # a person, we explain who can push.
         repository = self.factory.makeGitRepository()
-        browser = self.getViewBrowser(repository)
-        directions = find_tag_by_id(browser.contents, "push-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
-            You cannot push to this repository. Only <a
-            href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
-            can push to this repository.
-            """).format(owner=repository.owner),
-            flags=doctest.NORMALIZE_WHITESPACE))
+        view = create_initialized_view(
+            repository, '+index', principal=self.user)
+        git_push_url_text_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url text', 'dt',
+                text='To fork this repository and propose '
+                     'fixes from there, push to this repository:'))
+        git_push_url_hint_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url hint', 'span',
+                text='git+ssh://%s@git.launchpad.test/~%s/%s' %
+                     (self.user.name, self.user.name, repository.target.name)))
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_push_url_text_match)
+            self.assertThat(rendered_view, git_push_url_hint_match)
+
+    def test_push_directions_logged_in_cannot_push_individual_project(self):
+        # Repository is the default for a project
+        eric = self.factory.makePerson(name="eric")
+        fooix = self.factory.makeProduct(name="fooix", owner=eric)
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=fooix, name="fooix-repo")
+        self.repository_set = getUtility(IGitRepositorySet)
+        with person_logged_in(fooix.owner) as user:
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, fooix, repository, user)
+            self.repository_set.setDefaultRepository(fooix, repository)
+        login_person(self.user)
+        view = create_initialized_view(
+            repository, '+index', principal=self.user)
+        git_push_url_text_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url text', 'dt',
+                text='To fork this repository and propose '
+                     'fixes from there, push to this repository:'))
+        git_push_url_hint_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url hint', 'span',
+                text='git+ssh://%s@git.launchpad.test/~%s/%s' %
+                     (self.user.name, self.user.name,
+                      repository.target.name)))
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_push_url_text_match)
+            self.assertThat(rendered_view, git_push_url_hint_match)
+
+    def test_push_directions_logged_in_cannot_push_individual_package(self):
+        # Repository is the default for a package
+        mint = self.factory.makeDistribution(name="mint")
+        eric = self.factory.makePerson(name="eric")
+        mint_choc = self.factory.makeDistributionSourcePackage(
+            distribution=mint, sourcepackagename="choc")
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=mint_choc, name="choc-repo")
+        dsp = repository.target
+        self.repository_set = getUtility(IGitRepositorySet)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, dsp, repository, repository.owner)
+            self.repository_set.setDefaultRepository(dsp, repository)
+        login_person(self.user)
+        view = create_initialized_view(
+            repository, '+index', principal=self.user)
+        git_push_url_text_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url text', 'dt',
+                text='To fork this repository and propose '
+                     'fixes from there, push to this repository:'))
+        git_push_url_hint_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url hint', 'span',
+                text='git+ssh://%s@git.launchpad.test/~%s/%s/+source/%s' %
+                     (self.user.name, self.user.name,
+                      mint.name, mint_choc.name)))
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_push_url_text_match)
+            self.assertThat(rendered_view, git_push_url_hint_match)
+
+    def test_push_directions_logged_in_cannot_push_personal_project(self):
+        # If the user is logged in but cannot push to a repository owned by
+        # a person, we explain who can push.
+        repository = self.factory.makeGitRepository(
+            owner=self.user, target=self.user)
+        other_user = self.factory.makePerson()
+        login_person(other_user)
+        view = create_initialized_view(
+            repository, '+index', principal=other_user)
+        git_push_url_text_match = soupmatchers.Tag(
+                'Push url text', 'a',
+                text=self.user.displayname)
+        with person_logged_in(other_user):
+            rendered_view = view.render()
+            div = soupmatchers.Tag("Push directions", "div",
+                                    attrs={"id": "push-directions"})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    div,
+                    git_push_url_text_match)))
 
     def test_push_directions_logged_in_cannot_push_team(self):
         # If the user is logged in but cannot push to a repository owned by
         # a team, we explain who can push.
         team = self.factory.makeTeam()
         repository = self.factory.makeGitRepository(owner=team)
-        browser = self.getViewBrowser(repository)
-        directions = find_tag_by_id(browser.contents, "push-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
-            You cannot push to this repository. Members of <a
-            href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
-            can push to this repository.
-            """).format(owner=repository.owner),
-            flags=doctest.NORMALIZE_WHITESPACE))
+        view = create_initialized_view(
+            repository, '+index', principal=self.user)
+        git_push_url_text_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url text', 'dt',
+                text='To fork this repository and propose '
+                     'fixes from there, push to this repository:'))
+        git_push_url_hint_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url hint', 'span',
+                text='git+ssh://%s@git.launchpad.test/~%s/%s' %
+                     (self.user.name, self.user.name, repository.target.name)))
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_push_url_text_match)
+            self.assertThat(rendered_view, git_push_url_hint_match)
 
     def test_no_push_directions_for_imported_repository(self):
         # Imported repositories never show push directions.
