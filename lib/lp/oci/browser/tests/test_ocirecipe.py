@@ -871,7 +871,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.setConfig()
 
     def test_edit_oci_push_rules(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             owner=self.person,
@@ -936,7 +936,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                           browser.getControl("Save").click)
 
     def test_delete_oci_push_rules(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             owner=self.person,
@@ -974,7 +974,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getControl(
             name="field.add_image_name").value = "imagename1"
         browser.getControl(
-            name="field.add_new_creds").value = True
+            name="field.add_new_credentials").value = True
         browser.getControl("Save").click()
         self.assertIn("Registry URL must be set", browser.contents)
 
@@ -990,7 +990,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         # Image name and Registry URL will create an empty Credentials object
         # and a valid push rule based on the empty creds
 
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
         browser.getControl(
@@ -998,7 +998,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getControl(
             name="field.add_url").value = url
         browser.getControl(
-            name="field.add_new_creds").value = True
+            name="field.add_new_credentials").value = True
         browser.getControl("Save").click()
         with person_logged_in(self.person):
             rules = list(removeSecurityProxy(
@@ -1006,13 +1006,14 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.assertEqual(len(rules), 1)
         rule = rules[0]
         self.assertIsNotNone(rule.registry_credentials)
-        self.assertEqual(u'imagename1', rule.image_name)
-        self.assertEqual(url, rule.registry_url)
+        self.assertThat(rule, MatchesStructure(
+            image_name=Equals(u'imagename1'),
+            registry_url=Equals(url)))
+
         self.assertEqual(url,
                          rule.registry_credentials.url)
-        self.assertEqual(
-            None,
-            rule.registry_credentials.username)
+        self.assertIsNone(rule.registry_credentials.username)
+
         with person_logged_in(self.person):
             self.assertThat(
                 rule.registry_credentials.getCredentials(),
@@ -1024,7 +1025,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getLink("Edit push rules").click()
 
         browser.getControl(
-            name="field.use_existing_creds").value = True
+            name="field.use_existing_credentials").value = True
         browser.getControl(
             name="field.add_image_name").value = "imagename1"
         browser.getControl(
@@ -1040,7 +1041,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         # username is empty in registry credentials and
         # allow correctly adding new rule based on it
         browser.getControl(
-            name="field.use_existing_creds").value = True
+            name="field.use_existing_credentials").value = True
         browser.getControl(
             name="field.add_image_name").value = "imagename2"
         browser.getControl("Save").click()
@@ -1050,14 +1051,13 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.assertEqual(len(rules), 2)
         rule = rules[1]
         self.assertIsNotNone(rule.registry_credentials)
-        self.assertEqual(u'imagename2', rule.image_name)
-        self.assertEqual(url, rule.registry_url)
+        self.assertThat(rule, MatchesStructure(
+            image_name=Equals(u'imagename2'),
+            registry_url=Equals(url)))
         self.assertEqual(
             url,
             rule.registry_credentials.url)
-        self.assertEqual(
-            None,
-            rule.registry_credentials.username)
+        self.assertIsNone(rule.registry_credentials.username)
         with person_logged_in(self.person):
             self.assertThat(
                 rule.registry_credentials.getCredentials(),
@@ -1066,7 +1066,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
 
         browser.getLink("Edit push rules").click()
         browser.getControl(
-            name="field.add_new_creds").value = True
+            name="field.add_new_credentials").value = True
         browser.getControl(
             name="field.add_image_name").value = "imagename3"
         browser.getControl(
@@ -1084,8 +1084,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.assertEqual(len(rules), 3)
         rule = rules[2]
         self.assertIsNotNone(rule.registry_credentials)
-        self.assertEqual("imagename3", rule.image_name)
-        self.assertEqual(url, rule.registry_url)
+        self.assertThat(rule, MatchesStructure(
+            image_name=Equals(u'imagename3'),
+            registry_url=Equals(url)))
         self.assertEqual(url,
                          rule.registry_credentials.url)
         self.assertEqual(
@@ -1098,8 +1099,50 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                     {"username": Equals("username"),
                      "password": Equals("password")}))
 
+    def test_add_oci_push_rules_team_owner(self):
+        member = self.factory.makePerson()
+
+        team = self.factory.makeTeam(members=[self.user])
+        # view = create_initialized_view(team, '+index', principal=member)
+        # with person_logged_in(member):
+        #     markup = self.get_markup(view, team)
+        url = self.factory.getUniqueURL()
+
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        browser.getControl(
+            name="field.add_image_name").value = "imagename1"
+        browser.getControl(
+            name="field.add_url").value = url
+        browser.getControl(
+            name="field.add_new_credentials").value = True
+        browser.getControl("Save").click()
+
+        with person_logged_in(self.person):
+            rules = list(removeSecurityProxy(
+                getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
+        self.assertEqual(len(rules), 1)
+        rule = rules[0]
+        self.assertIsNotNone(rule.registry_credentials)
+        self.assertThat(rule, MatchesStructure(
+            image_name=Equals(u'imagename1'),
+            registry_url=Equals(url)))
+
+        self.assertEqual(url,
+                         rule.registry_credentials.url)
+        self.assertIsNone(rule.registry_credentials.username)
+
+        with person_logged_in(self.person):
+            self.assertThat(
+                rule.registry_credentials.getCredentials(),
+                MatchesDict(
+                    {"password": Equals(None)}))
+
+        browser = self.getViewBrowser(self.recipe, user=member)
+        browser.getLink("Edit push rules").click()
+
     def test_edit_oci_registry_creds(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         image_name = self.factory.getUniqueUnicode()
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(

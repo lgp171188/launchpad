@@ -304,9 +304,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         return field_type, rule_id
 
     def setUpFields(self):
-        """See `LaunchpadEditFormView`."""
-        LaunchpadFormView.setUpFields(self)
-
+        super(OCIRecipeEditPushRulesView, self).setUpFields()
         image_fields = []
         username_fields = []
         password_fields = []
@@ -371,25 +369,25 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                 required=False,
                 __name__=u'existing_credentials'))
 
-        use_existing_creds = Bool(
-                    title=u'Use existing credentials',
-                    __name__='use_existing_creds',
-                    default=False,
-                    required=True, readonly=False)
+        use_existing_credentials = Bool(
+            title=u'Use existing credentials',
+            __name__='use_existing_credentials',
+            default=False,
+            required=True, readonly=False)
 
-        add_new_creds = Bool(
-                    title=u'Enter new credentials',
-                    __name__='add_new_creds',
-                    default=False,
-                    required=True, readonly=False)
+        add_new_credentials = Bool(
+            title=u'Enter new credentials',
+            __name__='add_new_credentials',
+            default=False,
+            required=True, readonly=False)
 
         self.form_fields += FormFields(*image_fields)
         self.form_fields += FormFields(*creds)
         self.form_fields += FormFields(*delete_fields)
 
         self.form_fields += FormFields(*url_fields)
-        self.form_fields += FormFields(use_existing_creds)
-        self.form_fields += FormFields(add_new_creds)
+        self.form_fields += FormFields(use_existing_credentials)
+        self.form_fields += FormFields(add_new_credentials)
         self.form_fields += FormFields(*username_fields)
         self.form_fields += FormFields(*password_fields)
         self.form_fields += FormFields(*existing_credentials)
@@ -443,8 +441,8 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                 "password": add_password,
                 "confirm_password": add_confirm_password,
                 "existing_credentials": data["existing_credentials"],
-                "add_new_creds": data["add_new_creds"],
-                "use_existing_creds": data["use_existing_creds"],
+                "add_new_credentials": data["add_new_credentials"],
+                "use_existing_credentials": data["use_existing_credentials"],
                 "action": "add",
             })
         # parse data from the Edit existing rule section of the form
@@ -472,69 +470,67 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         confirm_password = add_data.get("confirm_password")
         username = add_data.get("username")
         existing_credentials = add_data.get("existing_credentials")
-        checked_use_existing_credentials = add_data.get("use_existing_creds")
-        checked_add_new_credentials = add_data.get("add_new_creds")
+        checked_use_existing_credentials = add_data.get(
+            "use_existing_credentials")
+        checked_add_new_credentials = add_data.get("add_new_credentials")
 
-        if image_name:
+        if not image_name:
+            self.setFieldError(
+                "add_image_name",
+                "Image name must be set.")
+        else:
             if checked_use_existing_credentials:
-                if existing_credentials:
-                    try:
-                        getUtility(IOCIPushRuleSet).new(
-                            self.context,
-                            existing_credentials,
-                            image_name)
-                    except OCIPushRuleAlreadyExists:
-                        self.setFieldError("add_image_name",
-                                           "A push rule already exists"
-                                           " with the same URL, image "
-                                           "name and credentials.")
-                        return
+                if not existing_credentials:
+                    return
+                try:
+                    getUtility(IOCIPushRuleSet).new(
+                        self.context,
+                        existing_credentials,
+                        image_name)
+                except OCIPushRuleAlreadyExists:
+                    self.setFieldError("add_image_name",
+                                       "A push rule already exists"
+                                       " with the same URL, image"
+                                       " name and credentials.")
+
             if checked_add_new_credentials:
-                if url:
-                    if password == confirm_password:
-                        credentials = {
-                            'username': username,
-                            'password': password}
-                        try:
-                            creds = getUtility(
-                                IOCIRegistryCredentialsSet
-                            ).getOrCreate(
-                                owner=self.context.owner,
-                                url=url,
-                                credentials=credentials)
-                        except OCIRegistryCredentialsAlreadyExist:
-                            self.setFieldError(
-                                "add_url",
-                                "Credentials already exist with"
-                                " the same URL and username.")
-                            return
-                        except ValidationError:
-                            self.setFieldError(
-                                "add_url", "Not a valid URL.")
-                            return
-                        try:
-                            getUtility(IOCIPushRuleSet).new(
-                                self.context, creds, image_name)
-                        except OCIPushRuleAlreadyExists:
-                            self.setFieldError(
-                                "add_image_name",
-                                "A push rule already exists with the "
-                                "same URL, image name, and "
-                                "credentials.")
-                            return
-                    else:
+                if not url:
+                    self.setFieldError(
+                        "add_url",
+                        "Registry URL must be set.")
+                else:
+                    if password != confirm_password:
                         self.setFieldError(
                             "password",
                             "Please make sure the new password matches"
                             " the confirm password field.")
-                else:
-                    self.setFieldError(
-                        "add_url",
-                        "Registry URL must be set.")
-        else:
-            self.setFieldError(
-                "add_image_name",
-                "Image name must be set.")
+                        return
+                    try:
+                        credentials = getUtility(
+                            IOCIRegistryCredentialsSet).getOrCreate(
+                            owner=self.context.owner,
+                            url=url,
+                            credentials={
+                                'username': username,
+                                'password': password})
+                    except OCIRegistryCredentialsAlreadyExist:
+                        self.setFieldError(
+                            "add_url",
+                            "Credentials already exist with"
+                            " the same URL and username.")
+
+                    except ValidationError:
+                        self.setFieldError(
+                            "add_url", "Not a valid URL.")
+                    try:
+                        getUtility(IOCIPushRuleSet).new(
+                            self.context, credentials, image_name)
+                    except OCIPushRuleAlreadyExists:
+                        self.setFieldError(
+                            "add_image_name",
+                            "A push rule already exists with the "
+                            "same URL, image name, and "
+                            "credentials.")
 
     def updatePushRulesFromData(self, parsed_data):
         rules_map = {
