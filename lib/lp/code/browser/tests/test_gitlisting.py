@@ -125,7 +125,7 @@ class TestTargetGitListingView:
                 repository=other_repo, user=other_repo.owner)
 
         self.assertThat(
-            self.target, BrowsesWithQueryLimit(36, self.owner, '+git'))
+            self.target, BrowsesWithQueryLimit(38, self.owner, '+git'))
 
     def test_copes_with_no_default(self):
         self.factory.makeGitRepository(
