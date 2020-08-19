@@ -232,6 +232,7 @@ setup(
         'six',
         'soupmatchers',
         'Sphinx',
+        'statsd',
         'storm',
         # XXX cjwatson 2020-08-07: Temporarily dropped on Python 3 until
         # codeimport can be ported to Breezy.
