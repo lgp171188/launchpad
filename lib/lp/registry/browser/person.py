@@ -3708,38 +3708,32 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
     def getEditFieldsRow(self, credentials=None):
         id = getattr(credentials, 'id', None)
         owner = Choice(
-            title=u'Owner',
             vocabulary=(
                 'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
             default=credentials.owner,
             __name__=self._getFieldName('owner', id))
 
         username = TextLine(
-            title=u'Username',
             __name__=self._getFieldName('username', id),
             default=credentials.username,
             required=False, readonly=False)
 
         password = Password(
-            title=u'Password',
             __name__=self._getFieldName('password', id),
             default=None,
             required=False, readonly=False)
 
         confirm_password = Password(
-            title=u'Confirm password',
             __name__=self._getFieldName('confirm_password', id),
             default=None,
             required=False, readonly=False)
 
         url = TextLine(
-            title=u'Registry URL',
             __name__=self._getFieldName('url', id),
             default=credentials.url,
             required=True, readonly=False)
 
         delete = Bool(
-            title=u'Delete',
             __name__=self._getFieldName('delete', id),
             default=False,
             required=True, readonly=False)
@@ -3748,7 +3742,6 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     def getAddFieldsRow(self):
         add_url = TextLine(
-            title=u'Registry URL',
             __name__=u'add_url',
             required=False, readonly=False)
         add_owner = Choice(
@@ -3758,15 +3751,12 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             default=self.default_owner,
             required=False, readonly=False)
         add_username = TextLine(
-            title=u'Username',
             __name__=u'add_username',
             required=False, readonly=False)
         add_password = Password(
-            title=u'Password',
             __name__=u'add_password',
             required=False, readonly=False)
         add_confirm_password = Password(
-            title=u'Confirm password',
             __name__=u'add_confirm_password',
             required=False, readonly=False)
 
@@ -3802,6 +3792,13 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
         add_fields = self.getAddFieldsRow()
         self.form_fields += FormFields(*add_fields)
+
+    def setUpWidgets(self, context=None):
+        super(PersonEditOCIRegistryCredentialsView, self).setUpWidgets(
+            context=context)
+        for widget in self.widgets:
+            widget.display_label = False
+            widget.hint = None
 
     @property
     def label(self):

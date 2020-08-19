@@ -1535,9 +1535,8 @@ class TestPersonOCIRegistryCredentialsView(
             name="field.username.%d" % registry_credentials_id).value)
 
         # mark one line of credentials for delete
-        delete_control = browser.getControl(
-            name="field.delete.%d" % registry_credentials_id)
-        delete_control.getControl('Delete').selected = True
+        browser.getControl(
+            name="field.delete.%d" % registry_credentials_id).value = True
         browser.getControl("Save").click()
         self.assertIn("These credentials cannot be deleted as there are "
                       "push rules defined that still use them.",
@@ -1548,9 +1547,8 @@ class TestPersonOCIRegistryCredentialsView(
         with person_logged_in(self.user):
             removeSecurityProxy(push_rule).destroySelf()
 
-        delete_control = browser.getControl(
-            name="field.delete.%d" % registry_credentials_id)
-        delete_control.getControl('Delete').selected = True
+        browser.getControl(
+            name="field.delete.%d" % registry_credentials_id).value = True
         browser.getControl("Save").click()
         credentials_set = getUtility(IOCIRegistryCredentialsSet)
         with person_logged_in(self.user):
