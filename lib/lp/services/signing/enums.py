@@ -1,12 +1,12 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Enums for signing keys management
-"""
+"""Enums for signing keys management."""
 
 __metaclass__ = type
 
 __all__ = [
+    'OpenPGPKeyAlgorithm',
     'SigningKeyType',
     'SigningMode',
     ]
@@ -54,6 +54,21 @@ class SigningKeyType(DBEnumeratedType):
         FIT
 
         A signing key for U-Boot Flat Image Tree images.
+        """)
+
+    OPENPGP = DBItem(6, """
+        OpenPGP
+
+        An OpenPGP signing key.
+        """)
+
+
+class OpenPGPKeyAlgorithm(EnumeratedType):
+
+    RSA = Item("""
+        RSA
+
+        A Rivest-Shamir-Adleman key.
         """)
 
 

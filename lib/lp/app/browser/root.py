@@ -15,6 +15,7 @@ import time
 import feedparser
 from lazr.batchnavigator.z3batching import batch
 import requests
+import six
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError
 from zope.interface import Interface
@@ -427,7 +428,7 @@ class LaunchpadSearchView(LaunchpadFormView):
             if isinstance(error, ConversionError):
                 self.setFieldError(
                     'text', 'Can not convert your search term.')
-            elif isinstance(error, unicode):
+            elif isinstance(error, six.text_type):
                 continue
             elif (error.field_name == 'text'
                 and isinstance(error.errors, TooLong)):

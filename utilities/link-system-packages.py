@@ -13,6 +13,11 @@ import importlib
 import os.path
 import re
 
+# Importing this from the vendored version in pkg_resources is a bit dodgy
+# (using packaging.markers directly would be better), but we want to
+# minimise our dependencies on packages outside the virtualenv.
+from pkg_resources.extern.packaging.markers import Marker
+
 
 def link_module(name, virtualenv_libdir, optional=False):
     try:
@@ -47,12 +52,16 @@ def main():
         line = re.sub(r"#.*", "", line).strip()
         if not line:
             continue
-        if line.endswith("?"):
-            line = line[:-1]
-            optional = True
-        else:
-            optional = False
-        link_module(line, args.virtualenv_libdir, optional=optional)
+        match = re.match(
+            r"^(\[optional\])?\s*([A-Za-z_][A-Za-z0-9_]*)(?:\s*;\s*(.*))?",
+            line)
+        if not match:
+            raise ValueError("Parse error: %s" % line)
+        optional = bool(match.group(1))
+        name = match.group(2)
+        if match.group(3) and not Marker(match.group(3)).evaluate():
+            continue
+        link_module(name, args.virtualenv_libdir, optional=optional)
 
 
 if __name__ == "__main__":

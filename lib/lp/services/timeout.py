@@ -37,6 +37,7 @@ from requests.adapters import (
     )
 from requests_file import FileAdapter
 from requests_toolbelt.downloadutils import stream
+import six
 from six import reraise
 from six.moves.xmlrpc_client import (
     SafeTransport,
@@ -190,7 +191,7 @@ class with_timeout:
         """
         # If the cleanup function is specified by name, the function but be a
         # method, so defined in a class definition context.
-        if isinstance(cleanup, basestring):
+        if isinstance(cleanup, six.string_types):
             frame = sys._getframe(1)
             f_locals = frame.f_locals
 
@@ -206,7 +207,7 @@ class with_timeout:
         """Wraps the method."""
         def cleanup(t, args):
             if self.cleanup is not None:
-                if isinstance(self.cleanup, basestring):
+                if isinstance(self.cleanup, six.string_types):
                     # 'self' will be first positional argument.
                     getattr(args[0], self.cleanup)()
                 else:

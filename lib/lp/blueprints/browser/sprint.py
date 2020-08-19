@@ -458,7 +458,7 @@ class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
                 action = 'Declined'
 
         selected_specs = form['speclink']
-        if isinstance(selected_specs, unicode):
+        if isinstance(selected_specs, six.text_type):
             # only a single item was selected, but we want to deal with a
             # list for the general case, so convert it to a list
             selected_specs = [selected_specs]

@@ -9,11 +9,15 @@ import tempfile
 
 from zope.testing.cleanup import cleanUp
 
-from lp.testing.systemdocs import LayeredDocFileSuite
+from lp.testing.systemdocs import (
+    LayeredDocFileSuite,
+    setGlobs,
+    )
 
 
 def setup(testobj):
     """Set up for doc test"""
+    setGlobs(testobj, future=True)
     fd, mbox_filename = tempfile.mkstemp()
     os.close(fd)
     testobj.globs['mbox_filename'] = mbox_filename

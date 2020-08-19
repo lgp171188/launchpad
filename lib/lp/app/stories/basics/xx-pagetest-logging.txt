@@ -5,7 +5,7 @@ pagetests-access.log file.
 
     >>> browser.open('http://launchpad.test/')
 
-    >>> log = open('logs/pagetests-access.log').read()
+    >>> log = open(page_log_location).read()
     >>> print(log.strip().split('\n')[-1])
     127.0.0.88 - ... "launchpad.test" [...] "GET / HTTP/1.1" 200 ...
     "Anonymous" "RootObject:index.html" "" "Python-urllib/..."

@@ -8,6 +8,8 @@ The configuration section used is specified using the LPCONFIG
 environment variable, and defaults to 'development'
 '''
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 
@@ -282,13 +284,13 @@ class LaunchpadConfig:
         loader_file = os.path.join(self.root, 'zcml/+config-overrides.zcml')
         loader = open_for_writing(loader_file, 'w')
 
-        print >> loader, """
+        print("""
             <configure xmlns="http://namespaces.zope.org/zope">
                 <!-- This file automatically generated using
                      lp.services.config.LaunchpadConfig.generate_overrides.
                      DO NOT EDIT. -->
                 <include files="%s/*.zcml" />
-                </configure>""" % self.config_dir
+                </configure>""" % self.config_dir, file=loader)
         loader.close()
 
     def appserver_root_url(self, facet='mainsite', ensureSlash=False):

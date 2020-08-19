@@ -12,6 +12,8 @@ __metaclass__ = type
 
 import re
 
+import six
+
 from lp.services.database.sqlbase import (
     quote,
     quoteIdentifier,
@@ -406,7 +408,7 @@ def drop_tables(cur, tables):
     """
     if tables is None or len(tables) == 0:
         return
-    if isinstance(tables, basestring):
+    if isinstance(tables, six.string_types):
         tables = [tables]
 
     # This syntax requires postgres 8.2 or better

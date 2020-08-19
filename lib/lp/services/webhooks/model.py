@@ -175,7 +175,7 @@ class Webhook(StormBase):
         # The correctness of the values is also checked by zope.schema,
         # but best to be safe.
         assert isinstance(event_types, (list, tuple))
-        assert all(isinstance(v, basestring) for v in event_types)
+        assert all(isinstance(v, six.string_types) for v in event_types)
         updated_data['event_types'] = event_types
         self.json_data = updated_data
 

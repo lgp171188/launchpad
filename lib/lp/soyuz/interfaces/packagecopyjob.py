@@ -1,4 +1,4 @@
-# Copyright 2010-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -130,7 +130,7 @@ class IPlainPackageCopyJobSource(IJobSource):
                copy_policy=PackageCopyPolicy.INSECURE, requester=None,
                sponsored=None, unembargo=False, auto_approve=False,
                silent=False, source_distroseries=None, source_pocket=None,
-               phased_update_percentage=None):
+               phased_update_percentage=None, move=False):
         """Create a new `IPlainPackageCopyJob`.
 
         :param package_name: The name of the source package to copy.
@@ -162,6 +162,8 @@ class IPlainPackageCopyJobSource(IJobSource):
             from any pocket with a matching version.
         :param phased_update_percentage: The phased update percentage to
             apply to the copied publication.
+        :param move: If True, delete the source publication after copying it
+            to the destination.
         """
 
     def createMultiple(target_distroseries, copy_tasks, requester,
@@ -253,6 +255,9 @@ class IPlainPackageCopyJob(IRunnableJob):
 
     phased_update_percentage = Int(
         title=_("Phased update percentage"), required=False, readonly=True)
+
+    move = Bool(
+        title=_("Delete source after copy"), required=False, readonly=True)
 
     def addSourceOverride(override):
         """Add an `ISourceOverride` to the metadata."""

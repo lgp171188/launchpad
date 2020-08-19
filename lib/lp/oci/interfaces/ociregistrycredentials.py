@@ -10,6 +10,7 @@ __all__ = [
     'IOCIRegistryCredentials',
     'IOCIRegistryCredentialsSet',
     'OCIRegistryCredentialsAlreadyExist',
+    'user_can_edit_credentials_for_owner',
     ]
 
 from lazr.restful.declarations import error_status
@@ -21,7 +22,10 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.registry.interfaces.role import IHasOwner
+from lp.registry.interfaces.role import (
+    IHasOwner,
+    IPersonRoles,
+    )
 from lp.services.fields import (
     PersonChoice,
     URIField,
@@ -102,3 +106,15 @@ class IOCIRegistryCredentialsSet(Interface):
 
     def findByOwner(owner):
         """Find matching `IOCIRegistryCredentials` by owner."""
+
+
+def user_can_edit_credentials_for_owner(owner, user):
+    """Can `user` edit OCI registry credentials belonging to `owner`?"""
+    if user is None:
+        return False
+    # This must follow the same rules as
+    # ViewOCIRegistryCredentials.checkAuthenticated would apply if we were
+    # asking about a hypothetical OCIRegistryCredentials object owned by the
+    # context person or team.
+    roles = IPersonRoles(user)
+    return roles.inTeam(owner) or roles.in_admin

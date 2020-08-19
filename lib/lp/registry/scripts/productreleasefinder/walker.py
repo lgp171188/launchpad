@@ -15,10 +15,6 @@ __all__ = [
 import ftplib
 import socket
 
-from cscvs.dircompare.path import (
-    as_dir,
-    subdir,
-    )
 from lazr.uri import (
     InvalidURIError,
     URI,
@@ -32,6 +28,10 @@ from six.moves.urllib.parse import (
     )
 
 from lp.registry.scripts.productreleasefinder import log
+from lp.registry.scripts.productreleasefinder.path import (
+    as_dir,
+    subdir,
+    )
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.timeout import (

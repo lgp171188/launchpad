@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Source Package Recipe vocabularies used in the lp/code modules."""
@@ -22,8 +22,8 @@ from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
     SQLObjectVocabularyBase,
     )
-from lp.soyuz.browser.archive import make_archive_vocabulary
 from lp.soyuz.interfaces.archive import IArchiveSet
+from lp.soyuz.vocabularies import make_archive_vocabulary
 
 
 @implementer(IHugeVocabulary)

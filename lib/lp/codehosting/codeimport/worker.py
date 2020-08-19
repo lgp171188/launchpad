@@ -19,10 +19,10 @@ __all__ = [
     'get_default_bazaar_branch_store',
     ]
 
-
 import io
 import os
 import shutil
+import signal
 import subprocess
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
@@ -962,14 +962,94 @@ class BzrImportWorker(PullingImportWorker):
 class GitToGitImportWorker(ImportWorker):
     """An import worker for imports from Git to Git."""
 
+    def _throttleProgress(self, file_obj, timeout=15.0):
+        """Throttle progress messages from a file object.
+
+        git can produce progress output on stderr, but it produces rather a
+        lot of it and we don't want it all to end up in logs.  Throttle this
+        so that we only produce output every `timeout` seconds, or when we
+        see a line terminated with a newline rather than a carriage return.
+
+        :param file_obj: a file-like object opened in binary mode.
+        :param timeout: emit progress output only after this many seconds
+            have elapsed.
+        :return: an iterator of interesting text lines read from the file.
+        """
+        # newline="" requests universal newlines mode, but without
+        # translation.
+        if six.PY2 and isinstance(file_obj, file):
+            # A Python 2 file object can't be used directly to construct an
+            # io.TextIOWrapper.
+            class _ReadableFileWrapper:
+                def __init__(self, raw):
+                    self._raw = raw
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, exc_type, exc_value, exc_tb):
+                    pass
+
+                def readable(self):
+                    return True
+
+                def writable(self):
+                    return False
+
+                def seekable(self):
+                    return True
+
+                def __getattr__(self, name):
+                    return getattr(self._raw, name)
+
+            with _ReadableFileWrapper(file_obj) as readable:
+                with io.BufferedReader(readable) as buffered:
+                    for line in self._throttleProgress(
+                            buffered, timeout=timeout):
+                        yield line
+                    return
+
+        class ReceivedAlarm(Exception):
+            pass
+
+        def alarm_handler(signum, frame):
+            raise ReceivedAlarm()
+
+        old_alarm = signal.signal(signal.SIGALRM, alarm_handler)
+        try:
+            progress_buffer = None
+            with io.TextIOWrapper(
+                    file_obj, encoding="UTF-8", errors="replace",
+                    newline="") as wrapped_file:
+                while True:
+                    try:
+                        signal.setitimer(signal.ITIMER_REAL, timeout)
+                        line = next(wrapped_file)
+                        signal.setitimer(signal.ITIMER_REAL, 0)
+                        if line.endswith(u"\r"):
+                            progress_buffer = line
+                        else:
+                            if progress_buffer is not None:
+                                yield progress_buffer
+                                progress_buffer = None
+                            yield line
+                    except ReceivedAlarm:
+                        if progress_buffer is not None:
+                            yield progress_buffer
+                            progress_buffer = None
+                    except StopIteration:
+                        break
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, old_alarm)
+
     def _runGit(self, *args, **kwargs):
         """Run git with arguments, sending output to the logger."""
         cmd = ["git"] + list(args)
         git_process = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
-        for line in git_process.stdout:
-            line = line.decode("UTF-8", "replace").rstrip("\n")
-            self._logger.info(sanitise_urls(line))
+        for line in self._throttleProgress(git_process.stdout):
+            self._logger.info(sanitise_urls(line.rstrip("\r\n")))
         retcode = git_process.wait()
         if retcode:
             raise subprocess.CalledProcessError(retcode, cmd)
@@ -1104,13 +1184,14 @@ class GitToGitImportWorker(ImportWorker):
                 # Push the target of HEAD first to ensure that it is always
                 # available.
                 self._runGit(
-                    "push", target_url, "+%s:%s" % (new_head, new_head),
-                    cwd="repository")
+                    "push", "--progress", target_url,
+                    "+%s:%s" % (new_head, new_head), cwd="repository")
                 try:
                     self._setHead(target_url, new_head)
                 except GitProtocolError as e:
                     self._logger.info("Unable to set default branch: %s" % e)
-            self._runGit("push", "--mirror", target_url, cwd="repository")
+            self._runGit(
+                "push", "--progress", "--mirror", target_url, cwd="repository")
         except subprocess.CalledProcessError as e:
             self._logger.info(
                 "Unable to push to hosting service: git push exited %s" %

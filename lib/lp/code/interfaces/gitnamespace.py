@@ -99,6 +99,9 @@ class IGitNamespacePolicy(Interface):
         "True iff this namespace permits automatically setting a default "
         "repository on push.")
 
+    show_push_url_hints = Attribute(
+        "True if this namespace permits display of the push URL hint.")
+
     supports_merge_proposals = Attribute(
         "Does this namespace support merge proposals at all?")
 

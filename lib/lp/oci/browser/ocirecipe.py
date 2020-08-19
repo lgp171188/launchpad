@@ -63,6 +63,7 @@ from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
+    user_can_edit_credentials_for_owner,
     )
 from lp.services.features import getFeatureFlag
 from lp.services.helpers import english_list
@@ -205,6 +206,14 @@ class OCIRecipeView(LaunchpadView):
 
     @cachedproperty
     def push_rules(self):
+        # XXX: We need to think about rearranging the permissions on
+        # OCIRegistryCredentials so that only the actual secrets are
+        # secret; the registry URL and probably the username could
+        # arguably be public and displayed in the table with the push rules
+        # on lib/lp/oci/templates/ocirecipe-index.pt.
+        # We're still not sure how this plays into
+        # plans for internal registry announcements and such, so we
+        # land redaction first and think about this later.
         return list(
             getUtility(IOCIPushRuleSet).findByRecipe(self.context))
 
@@ -276,6 +285,11 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
     @property
     def has_push_rules(self):
         return len(self.push_rules) > 0
+
+    @cachedproperty
+    def can_edit_credentials(self):
+        return user_can_edit_credentials_for_owner(
+            self.context.owner, self.user)
 
     def _getFieldName(self, name, rule_id):
         """Get the combined field name for an `OCIPushRule` ID.
@@ -646,7 +660,7 @@ class IOCIRecipeEditSchema(Interface):
         "build_file",
         "build_daily",
         "require_virtualized",
-        "push_rules",
+        "allow_internet",
         ])
 
 
@@ -759,7 +773,7 @@ class OCIRecipeAdminView(BaseOCIRecipeEditView):
 
     page_title = "Administer"
 
-    field_names = ("require_virtualized",)
+    field_names = ("require_virtualized", "allow_internet")
 
 
 class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
@@ -778,7 +792,6 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
         "git_ref",
         "build_file",
         "build_daily",
-        "push_rules",
         )
     custom_widget_git_ref = GitRefWidget
 

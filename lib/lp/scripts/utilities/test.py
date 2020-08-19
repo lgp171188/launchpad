@@ -106,24 +106,6 @@ def filter_warnings():
     warnings.filterwarnings(
         'ignore', 'bzrlib.*was deprecated', DeprecationWarning,
         )
-    # The next one is caused by an infelicity in python-openid.  The
-    # following change to openid/server/server.py would make the warning
-    # filter unnecessary:
-    # 978c974,974
-    # >         try:
-    # >             namespace = request.message.getOpenIDNamespace()
-    # >         except AttributeError:
-    # >             namespace = request.namespace
-    # >         self.fields = Message(namespace)
-    # ---
-    # <         self.fields = Message(request.namespace)
-    warnings.filterwarnings(
-        'ignore',
-        (r'The \"namespace\" attribute of CheckIDRequest objects is '
-         r'deprecated.\s+'
-         r'Use \"message.getOpenIDNamespace\(\)\" instead'),
-        DeprecationWarning
-    )
     # XXX cjwatson 2019-10-18: This can be dropped once the port to Breezy
     # is complete.
     warnings.filterwarnings(

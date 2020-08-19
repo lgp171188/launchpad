@@ -27,6 +27,7 @@ __all__ = [
 from collections import namedtuple
 
 from lazr.restful.utils import safe_hasattr
+import six
 from sqlobject import (
     AND,
     CONTAINSSTRING,
@@ -263,7 +264,7 @@ class FilteredVocabularyBase:
                     or func.__name__ == 'search')):
             def do_search(
                     query=None, vocab_filter=None, *args, **kwargs):
-                if isinstance(vocab_filter, basestring):
+                if isinstance(vocab_filter, six.string_types):
                     for filter in self.supportedFilters():
                         if filter.name == vocab_filter:
                             vocab_filter = filter

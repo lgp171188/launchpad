@@ -72,7 +72,7 @@ class StubCursor:
         # most types, but we can't use psycopg2's mogrify without a real
         # connection.
         mangled_params = tuple(
-            repr(p) if isinstance(p, basestring) else p for p in params)
+            repr(p) if isinstance(p, six.string_types) else p for p in params)
         return statement % tuple(mangled_params)
 
 

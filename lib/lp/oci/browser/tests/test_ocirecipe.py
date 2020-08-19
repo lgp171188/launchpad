@@ -51,12 +51,15 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    anonymous_logged_in,
     BrowserTestCase,
     login,
     login_person,
@@ -79,7 +82,10 @@ from lp.testing.pages import (
     find_tags_by_class,
     )
 from lp.testing.publication import test_traverse
-from lp.testing.views import create_view
+from lp.testing.views import (
+    create_initialized_view,
+    create_view,
+    )
 
 
 class TestOCIRecipeNavigation(TestCaseWithFactory):
@@ -291,14 +297,17 @@ class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
         login_person(self.person)
         recipe = self.factory.makeOCIRecipe(registrant=self.person)
         self.assertTrue(recipe.require_virtualized)
+        self.assertTrue(recipe.allow_internet)
 
         browser = self.getViewBrowser(recipe, user=commercial_admin)
         browser.getLink("Administer OCI recipe").click()
         browser.getControl("Require virtualized builders").selected = False
+        browser.getControl("Allow external network access").selected = False
         browser.getControl("Update OCI recipe").click()
 
         login_person(self.person)
         self.assertFalse(recipe.require_virtualized)
+        self.assertFalse(recipe.allow_internet)
 
     def test_admin_recipe_sets_date_last_modified(self):
         # Administering an OCI recipe sets the date_last_modified property.
@@ -317,7 +326,7 @@ class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
             recipe, "date_last_modified", UTC_NOW)
 
 
-class TestOCIRecipeEditView(BaseTestOCIRecipeView):
+class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def setUp(self):
         super(TestOCIRecipeEditView, self).setUp()
@@ -328,6 +337,7 @@ class TestOCIRecipeEditView(BaseTestOCIRecipeView):
             "oci.build_series.%s" % self.distribution.name:
                 self.distroseries.name,
             }))
+        self.setConfig()
 
     def setUpDistroSeries(self):
         """Set up self.distroseries with some available processors."""
@@ -361,6 +371,7 @@ class TestOCIRecipeEditView(BaseTestOCIRecipeView):
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         [new_git_ref] = self.factory.makeGitRefs()
+        self.factory.makeOCIPushRule(recipe=recipe)
 
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit OCI recipe").click()
@@ -572,9 +583,14 @@ class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
         # An OCI recipe with builds can be deleted.
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person)
-        self.factory.makeOCIRecipeBuild(recipe=recipe)
-        # XXX cjwatson 2020-02-19: This should also add a file to the build
-        # once that works.
+        ocibuild = self.factory.makeOCIRecipeBuild(recipe=recipe)
+        job = self.factory.makeOCIRecipeBuildJob(build=ocibuild)
+        ocifile = self.factory.makeOCIFile(build=ocibuild)
+
+        unrelated_build = self.factory.makeOCIRecipeBuild()
+        unrelated_job = self.factory.makeOCIRecipeBuildJob()
+        unrelated_file = self.factory.makeOCIFile(build=unrelated_build)
+
         recipe_url = canonical_url(recipe)
         oci_project_url = canonical_url(recipe.oci_project)
         browser = self.getViewBrowser(recipe, user=self.person)
@@ -582,6 +598,22 @@ class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
         browser.getControl("Delete OCI recipe").click()
         self.assertEqual(oci_project_url, browser.url)
         self.assertRaises(NotFound, browser.open, recipe_url)
+
+        # Checks that only the related artifacts were deleted too.
+        def obj_exists(obj, search_key='id'):
+            obj = removeSecurityProxy(obj)
+            store = IStore(obj)
+            cls = obj.__class__
+            cls_attribute = getattr(cls, search_key)
+            identifier = getattr(obj, search_key)
+            return not store.find(cls, cls_attribute == identifier).is_empty()
+        self.assertFalse(obj_exists(ocibuild))
+        self.assertFalse(obj_exists(ocifile))
+        self.assertFalse(obj_exists(job, 'job_id'))
+
+        self.assertTrue(obj_exists(unrelated_build))
+        self.assertTrue(obj_exists(unrelated_file))
+        self.assertTrue(obj_exists(unrelated_job, 'job_id'))
 
 
 class TestOCIRecipeView(BaseTestOCIRecipeView):
@@ -849,13 +881,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
-        self.architectures = []
-        for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
-            das = self.factory.makeDistroArchSeries(
-                distroseries=self.distroseries, architecturetag=architecture,
-                processor=getUtility(IProcessorSet).getByName(processor))
-            das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-            self.architectures.append(das)
+
         self.useFixture(FeatureFixture({
             OCI_RECIPE_ALLOW_CREATE: "on",
             "oci.build_series.%s" % self.distroseries.distribution.name:
@@ -869,6 +895,122 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             oci_project=oci_project)
 
         self.setConfig()
+
+    def test_view_oci_push_rules_owner(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        push_rule = getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        view = create_initialized_view(
+                self.recipe, "+index", principal=self.person)
+
+        # Display the Registry URL and the Username
+        # for the credentials owner
+        with person_logged_in(self.person):
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=registry_credentials.url)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=registry_credentials.username)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
+
+    def test_view_oci_push_rules_non_owner(self):
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_name = self.factory.getUniqueUnicode()
+        push_rule = getUtility(IOCIPushRuleSet).new(
+            recipe=self.recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+        non_owner = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName('admins')])
+        view = create_initialized_view(
+                self.recipe, "+index", principal=non_owner)
+
+        # Display only the image name for users
+        # who are not the registry credentials owner
+        with person_logged_in(non_owner):
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
+
+        # Anonymous users can't see registry credentials
+        # even though they can see the push rule
+        with anonymous_logged_in():
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
+
+        # Although not the owner of the registry credentials
+        # the admin user has launchpad.View permission on
+        # OCI registry credentials and should be able to see
+        # the registry URL and username of the owner.
+        # see ViewOCIRegistryCredentials
+        with person_logged_in(admin):
+            rendered_view = view.render()
+            row = soupmatchers.Tag("push rule row", "tr",
+                                   attrs={"id": "rule-%d" % push_rule.id})
+            self.assertThat(rendered_view, soupmatchers.HTMLContains(
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Registry URL", "td",
+                                     text=registry_credentials.url)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag("Username", "td",
+                                     text=registry_credentials.username)),
+                soupmatchers.Within(
+                    row,
+                    soupmatchers.Tag(
+                        "Image name", "td", text=image_name))))
 
     def test_edit_oci_push_rules(self):
         url = self.factory.getUniqueURL()

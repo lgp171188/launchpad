@@ -821,7 +821,7 @@ class IArchiveView(IHasBuildRecords):
         :param person: An `IPerson`
         :param item: An `IComponent`, `ISourcePackageName`
         :param perm_type: An ArchivePermissionType enum,
-        :return: A list of `IArchivePermission` records.
+        :return: An `IResultSet` of `IArchivePermission` records.
         """
 
     def canUploadSuiteSourcePackage(person, suitesourcepackage):
@@ -1515,6 +1515,12 @@ class IArchiveView(IHasBuildRecords):
                           " should be recommended, or None to publish the"
                           " update for everyone."),
             required=False),
+        move=Bool(
+            title=_("Move"),
+            description=_(
+                "If true, delete the source publication after copying it to "
+                "the destination."),
+            required=False),
         )
     @export_write_operation()
     @operation_for_version('devel')
@@ -1522,7 +1528,7 @@ class IArchiveView(IHasBuildRecords):
                     person, to_series=None, include_binaries=False,
                     sponsored=None, unembargo=False, auto_approve=False,
                     silent=False, from_pocket=None, from_series=None,
-                    phased_update_percentage=None):
+                    phased_update_percentage=None, move=False):
         """Copy a single named source into this archive.
 
         Asynchronously copy a specific version of a named source to the
@@ -1563,6 +1569,8 @@ class IArchiveView(IHasBuildRecords):
             omitted, copy from any series with a matching version.
         :param phased_update_percentage: the phased update percentage to
             apply to the copied publication.
+        :param move: if True, delete the source publication after copying it
+            to the destination.
 
         :raises NoSuchSourcePackageName: if the source name is invalid
         :raises PocketNotFound: if the pocket name is invalid

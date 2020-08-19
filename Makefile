@@ -289,8 +289,10 @@ $(subst $(PY),,$(PIP_BIN)): $(PY)
 # a prerequisite, to make sure it's up to date when doing deployments.
 compile: $(PY)
 	${SHHH} utilities/relocate-virtualenv env
-	${SHHH} $(MAKE) -C sourcecode build PYTHON=${PYTHON} \
-	    LPCONFIG=${LPCONFIG}
+	if grep -q '^2\.' env/python_version; then \
+		${SHHH} $(MAKE) -C sourcecode build \
+			PYTHON=${PYTHON} LPCONFIG=${LPCONFIG}; \
+	fi
 	$(PYTHON) utilities/link-system-packages.py \
 		"$(SITE_PACKAGES)" system-packages.txt
 	${SHHH} bin/build-twisted-plugin-cache
@@ -327,7 +329,7 @@ start-gdb: build inplace stop support_files run.gdb
 
 run_all: build inplace stop
 	bin/run \
-	 -r librarian,sftp,forker,codebrowse,bing-webservice,\
+	 -r librarian,sftp,codebrowse,bing-webservice,\
 	memcached,rabbitmq -i $(LPCONFIG)
 
 run_codebrowse: compile
@@ -340,7 +342,7 @@ stop_codebrowse:
 	$(PY) scripts/stop-loggerhead.py
 
 run_codehosting: build inplace stop
-	bin/run -r librarian,sftp,forker,codebrowse,rabbitmq -i $(LPCONFIG)
+	bin/run -r librarian,sftp,codebrowse,rabbitmq -i $(LPCONFIG)
 
 start_librarian: compile
 	bin/start_librarian

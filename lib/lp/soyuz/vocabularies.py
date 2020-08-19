@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the GNU
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the GNU
 # Affero General Public License version 3 (see the file LICENSE).
 
 """Soyuz vocabularies."""
@@ -8,6 +8,7 @@ __metaclass__ = type
 __all__ = [
     'ComponentVocabulary',
     'FilteredDistroArchSeriesVocabulary',
+    'make_archive_vocabulary',
     'PackageReleaseVocabulary',
     'PPAVocabulary',
     ]
@@ -18,7 +19,10 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.schema.vocabulary import SimpleTerm
+from zope.schema.vocabulary import (
+    SimpleTerm,
+    SimpleVocabulary,
+    )
 from zope.security.interfaces import Unauthorized
 
 from lp.registry.model.distroseries import DistroSeries
@@ -150,3 +154,12 @@ class PPAVocabulary(SQLObjectVocabularyBase):
             search_clause)
         return self._table.select(
             clause, orderBy=self._orderBy, clauseTables=self._clauseTables)
+
+
+def make_archive_vocabulary(archives):
+    terms = []
+    for archive in archives:
+        label = '%s [%s]' % (archive.displayname, archive.reference)
+        terms.append(SimpleTerm(archive, archive.reference, label))
+    terms.sort(key=lambda x: x.value.reference)
+    return SimpleVocabulary(terms)

@@ -16,8 +16,7 @@ from storm.exceptions import (
     DisconnectionError,
     OperationalError,
     )
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 from testtools.matchers import (
     Equals,
     MatchesAny,
@@ -93,12 +92,13 @@ class TestDatabaseErrorViews(TestCase):
         # supposed to be listening on.  connect_ex returns 0 on success or an
         # errno otherwise.
         pg_port_status = str(socket.socket().connect_ex(('localhost', 5432)))
-        self.addDetail('postgres socket.connect_ex result',
-            Content(UTF8_TEXT, lambda: pg_port_status))
+        self.addDetail(
+            'postgres socket.connect_ex result', text_content(pg_port_status))
         bouncer_port_status = str(
             socket.socket().connect_ex(('localhost', bouncer.port)))
-        self.addDetail('pgbouncer socket.connect_ex result',
-            Content(UTF8_TEXT, lambda: bouncer_port_status))
+        self.addDetail(
+            'pgbouncer socket.connect_ex result',
+            text_content(bouncer_port_status))
 
     def retryConnection(self, url, bouncer, retries=60):
         """Retry to connect to *url* for *retries* times.

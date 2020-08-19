@@ -18,6 +18,7 @@ import subprocess
 import tarfile
 import warnings
 
+import six
 from zope.security.interfaces import ForbiddenAttribute
 
 
@@ -54,7 +55,7 @@ def text_replaced(text, replacements, _cache={}):
     cachekey = tuple(replacements.items())
     if cachekey not in _cache:
         L = []
-        if isinstance(text, unicode):
+        if isinstance(text, six.text_type):
             list_item = u'(%s)'
             join_char = u'|'
         else:
@@ -326,7 +327,7 @@ def ensure_unicode(string):
     ensure_unicode() should eventually be removed.
 
     This differs from the builtin unicode() function, as a TypeError
-    exception will be raised if the parameter is not a basestring or if
+    exception will be raised if the parameter is not a string type or if
     a raw string is not ASCII.
 
     >>> ensure_unicode(u'hello')
@@ -343,20 +344,20 @@ def ensure_unicode(string):
     >>> ensure_unicode(42)
     Traceback (most recent call last):
     ...
-    TypeError: 42 is not a basestring (<type 'int'>)
+    TypeError: 42 is not a string type (<type 'int'>)
 
     >>> ensure_unicode(None) is None
     True
     """
     if string is None:
         return None
-    elif isinstance(string, unicode):
+    elif isinstance(string, six.text_type):
         return string
-    elif isinstance(string, basestring):
+    elif isinstance(string, bytes):
         try:
             return string.decode('US-ASCII')
         except UnicodeDecodeError:
             raise TypeError("%s is not US-ASCII" % repr(string))
     else:
         raise TypeError(
-            "%r is not a basestring (%r)" % (string, type(string)))
+            "%r is not a string type (%r)" % (string, type(string)))

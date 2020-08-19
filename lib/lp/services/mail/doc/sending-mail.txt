@@ -182,7 +182,7 @@ surrounded by quotes and quoted if necessary:
 
     >>> from_addr, to_addr, raw_message = stub.test_emails.pop()
     >>> msg = email.message_from_string(raw_message)
-    >>> print msg['From']
+    >>> print(msg['From'])
     "Foo \[Baz\] \" Bar" <foo.bar@canonical.com>
 
 
@@ -191,14 +191,14 @@ non-ASCII str object is passed, it will throw a UnicodeDecodeError.
 
     >>> simple_sendmail(
     ...     from_addr=u'foo.bar@canonical.com',
-    ...     to_addrs='test@canonical.com',
+    ...     to_addrs=b'test@canonical.com',
     ...     subject=u'Subject',
     ...     body=u'Content')
     '...launchpad@...'
 
     >>> simple_sendmail(
-    ...     from_addr='F\xf4\xf4 Bar <foo.bar@canonical.com>',
-    ...     to_addrs='test@canonical.com',
+    ...     from_addr=b'F\xf4\xf4 Bar <foo.bar@canonical.com>',
+    ...     to_addrs=b'test@canonical.com',
     ...     subject=u'Subject',
     ...     body=u'Content')
     Traceback (most recent call last):
@@ -207,15 +207,15 @@ non-ASCII str object is passed, it will throw a UnicodeDecodeError.
     ordinal not in range(128)
 
     >>> simple_sendmail(
-    ...     from_addr='foo.bar@canonical.com',
+    ...     from_addr=b'foo.bar@canonical.com',
     ...     to_addrs=u'test@canonical.com',
     ...     subject=u'Subject',
     ...     body=u'Content')
     '...launchpad@...'
 
     >>> simple_sendmail(
-    ...     from_addr='Foo Bar <foo.bar@canonical.com>',
-    ...     to_addrs=['S\xc4\x85mple Person <test@canonical.com>'],
+    ...     from_addr=b'Foo Bar <foo.bar@canonical.com>',
+    ...     to_addrs=[b'S\xc4\x85mple Person <test@canonical.com>'],
     ...     subject=u'Subject',
     ...     body=u'Content')
     Traceback (most recent call last):
@@ -249,7 +249,7 @@ that the precedence header was not added.
     'Forgot password'
     >>> msg.get_payload(decode=True)
     'Content'
-    >>> print msg['Precedence']
+    >>> print(msg['Precedence'])
     None
 
 
@@ -313,8 +313,9 @@ are ignored.
     >>> transaction.commit()
 
     >>> from_addr, to_addrs, raw_message = stub.test_emails.pop()
-    >>> to_addrs
-    ['no-priv@canonical.com']
+    >>> for to_addr in to_addrs:
+    ...     print(to_addr)
+    no-priv@canonical.com
 
     >>> sent_msg = email.message_from_string(raw_message)
     >>> sent_msg['To']

@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the lp.soyuz.browser.builder module."""
@@ -7,11 +7,21 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from zope.component import getUtility
+from datetime import timedelta
 
+from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
+
+from lp.app.browser.tales import DurationFormatterAPI
 from lp.buildmaster.browser.tests.test_builder_views import BuildCreationMixin
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.enums import (
+    BuilderCleanStatus,
+    BuildStatus,
+    )
 from lp.buildmaster.interfaces.builder import IBuilderSet
+from lp.buildmaster.model.builder import Builder
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.job.model.job import Job
 from lp.testing import (
     admin_logged_in,
@@ -20,6 +30,10 @@ from lp.testing import (
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import (
+    extract_text,
+    find_tags_by_class,
+    )
 from lp.testing.views import create_initialized_view
 
 
@@ -117,3 +131,33 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
         content = builders_homepage_render()
         self.assertNotIn("Virtual build status", content)
         self.assertNotIn("Non-virtual build status", content)
+
+    def test_clean_status_duration(self):
+        now = get_transaction_timestamp(IStore(Builder))
+        durations = [
+            timedelta(minutes=5),
+            timedelta(minutes=11), timedelta(hours=1), timedelta(hours=2)]
+        with admin_logged_in():
+            for builder in getUtility(IBuilderSet):
+                builder.active = False
+            builders = [
+                self.factory.makeBuilder() for _ in range(len(durations))]
+            for builder, duration in zip(builders, durations):
+                naked_builder = removeSecurityProxy(builder)
+                naked_builder.clean_status = BuilderCleanStatus.CLEANING
+                naked_builder.date_clean_status_changed = now - duration
+        content = builders_homepage_render()
+        # We don't show a duration for a builder that has only been cleaning
+        # for a short time.
+        expected_text = ["{}\nCleaning".format(builders[0].name)]
+        # We show durations for builders that have been cleaning for more
+        # than ten minutes.
+        expected_text.extend([
+            "{}\nCleaning for {}".format(
+                builder.name,
+                DurationFormatterAPI(duration).approximateduration())
+            for builder, duration in zip(builders[1:], durations[1:])])
+        self.assertEqual(
+            expected_text,
+            [extract_text(row)
+             for row in find_tags_by_class(content, "builder-row")])

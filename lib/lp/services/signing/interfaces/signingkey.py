@@ -59,12 +59,17 @@ class ISigningKeySet(Interface):
     """Interface to deal with the collection of signing keys
     """
 
-    def generate(key_type, description):
+    def generate(key_type, description,
+                 openpgp_key_algorithm=None, length=None):
         """Generates a new signing key on lp-signing and stores it in LP's
         database.
 
         :param key_type: One of the SigningKeyType enum's value
         :param description: The description associated with this key
+        :param openpgp_key_algorithm: One of `OpenPGPKeyAlgorithm` (required
+            if key_type is SigningKeyType.OPENPGP)
+        :param length: The key length (required if key_type is
+            SigningKeyType.OPENPGP)
         :return: The SigningKey object associated with the newly created
                  key at lp-signing
         """

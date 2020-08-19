@@ -39,7 +39,8 @@ __all__ = [
     'MacaroonResponse',
     ]
 
-from openid import oidutil
+import logging
+
 from openid.extension import Extension
 from openid.message import (
     NamespaceAliasRegistrationError,
@@ -50,10 +51,13 @@ from openid.message import (
 MACAROON_NS = 'http://ns.login.ubuntu.com/2016/openid-macaroon'
 
 
+logger = logging.getLogger(__name__)
+
+
 try:
     registerNamespaceAlias(MACAROON_NS, 'macaroon')
 except NamespaceAliasRegistrationError as e:
-    oidutil.log(
+    logger.exception(
         'registerNamespaceAlias(%r, %r) failed: %s' % (
             MACAROON_NS, 'macaroon', e))
 

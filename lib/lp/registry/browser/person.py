@@ -65,6 +65,7 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
+import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
@@ -102,10 +103,7 @@ from zope.schema.vocabulary import (
     SimpleVocabulary,
     )
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import removeSecurityProxy
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -145,8 +143,8 @@ from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
+    user_can_edit_credentials_for_owner,
     )
-from lp.oci.model.ocirecipe import OCIRecipe
 from lp.registry.browser import BaseRdfView
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.menu import (
@@ -194,6 +192,7 @@ from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     )
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,
@@ -204,10 +203,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.interfaces.wikiname import IWikiNameSet
 from lp.registry.mail.notification import send_direct_contact_email
-from lp.registry.model.person import (
-    get_recipients,
-    Person,
-    )
+from lp.registry.model.person import get_recipients
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.sqlbase import flush_database_updates
@@ -764,6 +760,12 @@ class CommonMenuLinks:
         text = 'Structural subscriptions'
         return Link(target, text, icon='info')
 
+    def oci_registry_credentials(self):
+        target = '+oci-registry-credentials'
+        text = 'OCI registry credentials'
+        enabled = user_can_edit_credentials_for_owner(self.context, self.user)
+        return Link(target, text, enabled=enabled, icon='info')
+
 
 class PersonMenuMixin(CommonMenuLinks):
 
@@ -848,12 +850,6 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         request_tokens = self.context.oauth_request_tokens
         enabled = bool(access_tokens or request_tokens)
         return Link(target, text, enabled=enabled, icon='info')
-
-    @enabled_with_permission('launchpad.Edit')
-    def oci_registry_credentials(self):
-        target = '+oci-registry-credentials'
-        text = 'OCI registry credentials'
-        return Link(target, text, icon='info')
 
     @enabled_with_permission('launchpad.Edit')
     def editlanguages(self):
@@ -2773,7 +2769,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         """
         terms = []
         for term in self.unvalidated_addresses:
-            if isinstance(term, unicode):
+            if isinstance(term, six.text_type):
                 term = SimpleTerm(term)
             else:
                 term = SimpleTerm(term, term.email)
@@ -2814,7 +2810,7 @@ class PersonEditEmailsView(LaunchpadFormView):
                 "self.context.id(%s,%d) (%s)"
                 % (person.name, person.id, self.context.name, self.context.id,
                    email.email))
-        elif isinstance(email, unicode):
+        elif isinstance(email, six.text_type):
             tokenset = getUtility(ILoginTokenSet)
             email = tokenset.searchByEmailRequesterAndType(
                 email, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -2940,7 +2936,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         if IEmailAddress.providedBy(emailaddress):
             emailaddress.destroySelf()
             email = emailaddress.email
-        elif isinstance(emailaddress, unicode):
+        elif isinstance(emailaddress, six.text_type):
             logintokenset = getUtility(ILoginTokenSet)
             logintokenset.deleteByEmailRequesterAndType(
                 emailaddress, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -3663,6 +3659,11 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
 
     page_title = "OCI registry credentials"
 
+    def initialize(self):
+        if not user_can_edit_credentials_for_owner(self.context, self.user):
+            raise Unauthorized
+        super(PersonOCIRegistryCredentialsView, self).initialize()
+
     @property
     def label(self):
         return "OCI registry credentials for %s" % self.context.display_name
@@ -3688,6 +3689,11 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     schema = Interface
 
+    def initialize(self):
+        if not user_can_edit_credentials_for_owner(self.context, self.user):
+            raise Unauthorized
+        super(PersonEditOCIRegistryCredentialsView, self).initialize()
+
     def _getFieldName(self, name, credentials_id):
         """Get the combined field name for an `OCIRegistryCredentials` ID.
 
@@ -3702,7 +3708,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             title=u'Owner',
             vocabulary=(
                 'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
-            default=credentials.owner.name,
+            default=credentials.owner,
             __name__=self._getFieldName('owner', id))
 
         username = TextLine(

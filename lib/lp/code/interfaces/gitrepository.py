@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
+    'ContributorGitIdentity',
     'GitIdentityMixin',
     'GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE',
     'git_repository_name_validator',
@@ -1033,7 +1034,8 @@ class IGitRepositorySet(Interface):
                     "checked."),
             schema=IPerson),
         repository_names=List(value_type=Text(),
-            title=_('List of repository unique names'), required=True),
+                              title=_('List of repository unique names'),
+                              required=True),
     )
     @export_read_operation()
     @operation_for_version("devel")
@@ -1228,3 +1230,20 @@ def user_has_special_git_repository_access(user, repository=None):
     if code_import is None:
         return False
     return roles.in_vcs_imports
+
+
+class ContributorGitIdentity(GitIdentityMixin):
+
+    def __init__(self, owner,
+                 target, repository):
+        self.target_default = False
+        self.owner_default = True
+        self.owner = owner
+        self.target = target
+        self.repository = repository
+
+    def getRepositoryIdentities(self):
+        identities = [
+            (default.path, default.context)
+            for default in self.getRepositoryDefaults()]
+        return identities

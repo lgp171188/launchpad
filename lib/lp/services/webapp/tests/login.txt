@@ -49,3 +49,36 @@ logged in and ask us to log out if we're somebody else.
     >>> browser.open('%s/+login' % root_url)
     >>> print extract_text(find_main_content(browser.contents))
     You are already logged in...
+
+The same thing works if the user has non-ASCII characters in their display
+name.
+
+    >>> from lp.testing import (
+    ...     ANONYMOUS,
+    ...     login,
+    ...     )
+    >>> from lp.testing.factory import LaunchpadObjectFactory
+
+    >>> login(ANONYMOUS)
+    >>> factory = LaunchpadObjectFactory()
+    >>> person = factory.makePerson(
+    ...     email='unicode@example.com', name='unicode',
+    ...     displayname=u'Un\xedc\xf6de Person')
+    >>> browser = Browser()
+    >>> browser.handleErrors = True
+    >>> browser.open(
+    ...     '%s/people/?name=foo&searchfor=all' % root_url)
+    >>> browser.getLink('Log in / Register').click()
+    >>> print browser.contents
+    <html>...<body onload="document.forms[0].submit();"...
+    >>> browser.getControl('Continue').click()
+    >>> print browser.title
+    Login
+    >>> fill_login_form_and_submit(browser, 'unicode@example.com')
+    >>> browser.vhost
+    'http://launchpad.test'
+    >>> browser.urlpath
+    '/people'
+    >>> import re
+    >>> print sorted(re.sub('.*\?', '', browser.url).split('&'))
+    ['name=foo', 'searchfor=all']

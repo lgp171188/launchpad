@@ -87,9 +87,12 @@ class SigningKey(StormBase):
         self.date_created = date_created
 
     @classmethod
-    def generate(cls, key_type, description):
+    def generate(cls, key_type, description,
+                 openpgp_key_algorithm=None, length=None):
         signing_service = getUtility(ISigningServiceClient)
-        generated_key = signing_service.generate(key_type, description)
+        generated_key = signing_service.generate(
+            key_type, description,
+            openpgp_key_algorithm=openpgp_key_algorithm, length=length)
         signing_key = SigningKey(
             key_type=key_type, fingerprint=generated_key['fingerprint'],
             public_key=generated_key['public-key'],
