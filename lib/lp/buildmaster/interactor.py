@@ -321,7 +321,7 @@ BuilderVitals = namedtuple(
     'BuilderVitals',
     ('name', 'url', 'processor_names', 'virtualized', 'vm_host',
      'vm_reset_protocol', 'builderok', 'manual', 'build_queue', 'version',
-     'clean_status'))
+     'clean_status', 'active'))
 
 _BQ_UNSPECIFIED = object()
 
@@ -334,7 +334,7 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
         [processor.name for processor in builder.processors],
         builder.virtualized, builder.vm_host, builder.vm_reset_protocol,
         builder.builderok, builder.manual, build_queue, builder.version,
-        builder.clean_status)
+        builder.clean_status, builder.active)
 
 
 class BuilderInteractor(object):

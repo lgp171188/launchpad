@@ -58,7 +58,8 @@ class MockBuilder:
                  processors=None, virtualized=True, vm_host=None,
                  url='http://fake:0000', version=None,
                  clean_status=BuilderCleanStatus.DIRTY,
-                 vm_reset_protocol=BuilderResetProtocol.PROTO_1_1):
+                 vm_reset_protocol=BuilderResetProtocol.PROTO_1_1,
+                 active=True):
         self.currentjob = None
         self.builderok = builderok
         self.manual = manual
@@ -71,6 +72,7 @@ class MockBuilder:
         self.failnotes = None
         self.version = version
         self.clean_status = clean_status
+        self.active = active
 
     def setCleanStatus(self, clean_status):
         self.clean_status = clean_status
