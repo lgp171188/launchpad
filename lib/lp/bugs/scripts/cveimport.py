@@ -1,9 +1,11 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A set of functions related to the ability to parse the XML CVE database,
 extract details of known CVE entries, and ensure that all of the known
 CVE's are fully registered in Launchpad."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -13,6 +15,7 @@ import time
 
 import defusedxml.cElementTree as cElementTree
 import requests
+import six
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -42,11 +45,11 @@ CVEDB_NS = '{http://cve.mitre.org/cve/downloads/1.0}'
 
 def getText(elem):
     """Get the text content of the given element"""
-    text = elem.text or ""
+    text = six.ensure_text(elem.text or "")
     for e in elem:
         text += getText(e)
         if e.tail:
-            text += e.tail
+            text += six.ensure_text(e.tail)
     return text.strip()
 
 
@@ -71,8 +74,10 @@ def handle_references(cve_node, cve, log):
 
     # work through the refs in the xml dump
     for ref_node in cve_node.findall('.//%sref' % CVEDB_NS):
-        refsrc = ref_node.get("source")
+        refsrc = six.ensure_text(ref_node.get("source"))
         refurl = ref_node.get("url")
+        if refurl is not None:
+            refurl = six.ensure_text(refurl)
         reftxt = getText(ref_node)
         # compare it to each of the known references
         was_there_previously = False
@@ -105,9 +110,9 @@ def handle_references(cve_node, cve, log):
 def update_one_cve(cve_node, log):
     """Update the state of a single CVE item."""
     # get the sequence number
-    sequence = cve_node.get('seq')
+    sequence = six.ensure_text(cve_node.get('seq'))
     # establish its status
-    status = cve_node.get('type')
+    status = six.ensure_text(cve_node.get('type'))
     # get the description
     description = getText(cve_node.find(CVEDB_NS + 'desc'))
     if not description:
