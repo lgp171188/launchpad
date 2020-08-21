@@ -28,10 +28,7 @@ from zope.schema.vocabulary import (
     SimpleTerm,
     SimpleVocabulary,
     )
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
@@ -82,6 +79,15 @@ class SyntheticSnappyDistroSeries(SnappyDistroSeriesMixin):
         self.distro_series = distro_series
 
     preferred = False
+
+    def __eq__(self, other):
+        return (
+            ISnappyDistroSeries.providedBy(other) and
+            self.snappy_series == other.snappy_series and
+            self.distro_series == other.distro_series)
+
+    def __ne__(self, other):
+        return not (self == other)
 
 
 def sorting_tuple_date_created(element):
@@ -151,8 +157,7 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     def __contains__(self, value):
         """See `IVocabulary`."""
-        return (value in self._entries
-                or zope_isinstance(value, SyntheticSnappyDistroSeries))
+        return value in self._entries
 
     def getTerm(self, value):
         """See `IVocabulary`."""
