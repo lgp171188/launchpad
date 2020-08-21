@@ -17,6 +17,7 @@ from lazr.lifecycle.interfaces import (
     IObjectModifiedEvent,
     )
 from lazr.lifecycle.snapshot import Snapshot
+import six
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import (
@@ -452,7 +453,7 @@ class CVEEmailCommand(EmailCommand):
     def execute(self, bug, current_event):
         """See IEmailCommand."""
         [cve_sequence] = self.string_args
-        cve = getUtility(ICveSet)[cve_sequence]
+        cve = getUtility(ICveSet)[six.ensure_text(cve_sequence)]
         if cve is None:
             raise EmailProcessingError(
                 'Launchpad can\'t find the CVE "%s".' % cve_sequence)
