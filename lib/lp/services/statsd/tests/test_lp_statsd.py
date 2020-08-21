@@ -31,7 +31,7 @@ class TestClientConfiguration(TestCase):
             'statsd_test',
             "[statsd]\nhost: 127.0.01\nport: 9999\nprefix: test\n")
         client = getUtility(ILPStatsdClient).getClient()
-        self.assertEqual(type(client), StatsClient)
+        self.assertIsInstance(client, StatsClient)
 
     def test_get_correct_instance_unconfigured(self):
         """Test that we get the correct client, depending on config values."""
@@ -39,11 +39,11 @@ class TestClientConfiguration(TestCase):
             'statsd_test',
             "[statsd]\nhost:")
         client = LPStatsdClient().getClient()
-        self.assertEqual(type(client), UnconfiguredStatsdClient)
+        self.assertIsInstance(client, UnconfiguredStatsdClient)
 
     def test_get_correct_instance_configured(self):
         config.push(
             'statsd_test',
             "[statsd]\nhost: 127.0.01\nport: 9999\nprefix: test\n")
         client = LPStatsdClient().getClient()
-        self.assertEqual(type(client), StatsClient)
+        self.assertIsInstance(client, StatsClient)

@@ -13,7 +13,6 @@ import os
 import signal
 import time
 
-import mock
 from six.moves import xmlrpc_client
 from testtools.matchers import (
     Equals,
@@ -76,6 +75,7 @@ from lp.buildmaster.tests.test_interactor import (
     MockBuilderFactory,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.interfaces.lp_statsd_client import ILPStatsdClient
