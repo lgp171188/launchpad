@@ -887,12 +887,20 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             "oci.build_series.%s" % self.distroseries.distribution.name:
                 self.distroseries.name,
         }))
-        oci_project = self.factory.makeOCIProject(
+        self.oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution,
             ociprojectname="oci-project-name")
+
+        self.member = self.factory.makePerson()
+        self.team = self.factory.makeTeam(members=[self.person, self.member])
+
         self.recipe = self.factory.makeOCIRecipe(
             name="recipe-name", registrant=self.person, owner=self.person,
-            oci_project=oci_project)
+            oci_project=self.oci_project)
+
+        self.team_owned_recipe = self.factory.makeOCIRecipe(
+            name="recipe-name", registrant=self.person, owner=self.team,
+            oci_project=self.oci_project)
 
         self.setConfig()
 
@@ -1241,16 +1249,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                     {"username": Equals("username"),
                      "password": Equals("password")}))
 
-    def test_add_oci_push_rules_team_owner(self):
-        member = self.factory.makePerson()
-
-        team = self.factory.makeTeam(members=[self.user])
-        # view = create_initialized_view(team, '+index', principal=member)
-        # with person_logged_in(member):
-        #     markup = self.get_markup(view, team)
+    def test_add_oci_push_rules_team_owned(self):
         url = self.factory.getUniqueURL()
-
-        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser = self.getViewBrowser(self.team_owned_recipe, user=self.member)
         browser.getLink("Edit push rules").click()
         browser.getControl(
             name="field.add_image_name").value = "imagename1"
@@ -1260,9 +1261,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             name="field.add_new_credentials").value = True
         browser.getControl("Save").click()
 
-        with person_logged_in(self.person):
+        with person_logged_in(self.member):
             rules = list(removeSecurityProxy(
-                getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
+                getUtility(IOCIPushRuleSet).findByRecipe(
+                    self.team_owned_recipe)))
         self.assertEqual(len(rules), 1)
         rule = rules[0]
         self.assertIsNotNone(rule.registry_credentials)
@@ -1274,14 +1276,54 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                          rule.registry_credentials.url)
         self.assertIsNone(rule.registry_credentials.username)
 
-        with person_logged_in(self.person):
+        with person_logged_in(self.member):
             self.assertThat(
                 rule.registry_credentials.getCredentials(),
                 MatchesDict(
                     {"password": Equals(None)}))
 
-        browser = self.getViewBrowser(self.recipe, user=member)
+    def test_edit_oci_push_rules_team_owned(self):
+        url = self.factory.getUniqueURL()
+        browser = self.getViewBrowser(self.team_owned_recipe, user=self.member)
         browser.getLink("Edit push rules").click()
+        browser.getControl(
+            name="field.add_image_name").value = "imagename1"
+        browser.getControl(
+            name="field.add_url").value = url
+        browser.getControl(
+            name="field.add_new_credentials").value = True
+        browser.getControl("Save").click()
+
+        # push rules created by another team member (self.member)
+        # can be edited by self.person
+        browser = self.getViewBrowser(self.team_owned_recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        with person_logged_in(self.person):
+            rules = list(removeSecurityProxy(
+                getUtility(IOCIPushRuleSet).findByRecipe(
+                    self.team_owned_recipe)))
+        self.assertEqual(len(rules), 1)
+        rule = rules[0]
+        self.assertEqual("imagename1", browser.getControl(
+            name="field.image_name.%d" % rule.id).value)
+
+        # set image name to valid string
+        with person_logged_in(self.person):
+            browser.getControl(
+                name="field.image_name.%d" % rule.id).value = "image1"
+        browser.getControl("Save").click()
+
+        # and assert model changed
+        with person_logged_in(self.member):
+            self.assertEqual(
+                rule.image_name, "image1")
+
+        # self.member will see the new image name
+        browser = self.getViewBrowser(self.team_owned_recipe, user=self.member)
+        browser.getLink("Edit push rules").click()
+        with person_logged_in(self.member):
+            self.assertEqual("image1", browser.getControl(
+                name="field.image_name.%d" % rule.id).value)
 
     def test_edit_oci_registry_creds(self):
         url = self.factory.getUniqueURL()

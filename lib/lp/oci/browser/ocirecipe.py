@@ -527,6 +527,15 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                             credentials={
                                 'username': username,
                                 'password': password})
+                        try:
+                            getUtility(IOCIPushRuleSet).new(
+                                self.context, credentials, image_name)
+                        except OCIPushRuleAlreadyExists:
+                            self.setFieldError(
+                                "add_image_name",
+                                "A push rule already exists with the "
+                                "same URL, image name, and "
+                                "credentials.")
                     except OCIRegistryCredentialsAlreadyExist:
                         self.setFieldError(
                             "add_url",
@@ -536,15 +545,6 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                     except ValidationError:
                         self.setFieldError(
                             "add_url", "Not a valid URL.")
-                    try:
-                        getUtility(IOCIPushRuleSet).new(
-                            self.context, credentials, image_name)
-                    except OCIPushRuleAlreadyExists:
-                        self.setFieldError(
-                            "add_image_name",
-                            "A push rule already exists with the "
-                            "same URL, image name, and "
-                            "credentials.")
 
     def updatePushRulesFromData(self, parsed_data):
         rules_map = {

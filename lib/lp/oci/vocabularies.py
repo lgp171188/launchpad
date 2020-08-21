@@ -8,11 +8,18 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = []
 
+from six.moves.urllib_parse import (
+    quote,
+    urlsplit,
+    urlunsplit,
+    )
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
-from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
 from lp.oci.model.ocirecipe import OCIRecipe
 from lp.oci.model.ociregistrycredentials import OCIRegistryCredentials
 from lp.services.webapp.vocabulary import (
@@ -42,13 +49,23 @@ class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
 
     _table = OCIRegistryCredentials
 
+    def validate_for_spaces(self, url):
+        (scheme, netloc, path, query, fragment) = urlsplit(url)
+        if scheme in ("http", "https"):
+            # Without this, URLs with space in them break
+            path = quote(path)
+        while "//" in path:
+            path = path.replace("//", "/")
+        return urlunsplit((scheme, netloc, path, query, fragment))
+
     def toTerm(self, obj):
         if obj.username:
+
             token = "%s %s" % (
-                obj.url,
-                obj.username)
+                self.validate_for_spaces(obj.url),
+                quote(obj.username))
         else:
-            token = obj.url
+            token = self.validate_for_spaces(obj.url)
 
         return SimpleTerm(obj, token)
 
@@ -61,10 +78,6 @@ class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
         """See `IVocabulary`."""
         return value in self._entries
 
-    def __iter__(self):
-        for obj in self._entries:
-            yield self.toTerm(obj)
-
     def __len__(self):
         return len(self._entries)
 
@@ -72,7 +85,7 @@ class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
         """See `IVocabularyTokenized`."""
         try:
             if ' ' in token:
-                url, username = token.split(' ')
+                url, username = token.split(' ', 1)
             else:
                 username = None
                 url = token
