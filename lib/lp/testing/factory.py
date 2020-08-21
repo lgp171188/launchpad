@@ -4578,7 +4578,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 cvestate=CveStatus.CANDIDATE):
         """Create a new CVE record."""
         if description is None:
-            description = self.getUniqueString()
+            description = self.getUniqueUnicode()
         return getUtility(ICveSet).new(sequence, description, cvestate)
 
     def makePublisherConfig(self, distribution=None, root_dir=None,

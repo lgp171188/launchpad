@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test harness for running the buglinktarget.txt interface test
@@ -6,6 +6,8 @@
 This module will run the interface test against the CVE, Specification,
 Question, and BranchMergeProposal implementations of that interface.
 """
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 

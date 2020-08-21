@@ -1,5 +1,7 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -10,13 +12,16 @@ __all__ = [
 
 import operator
 
-from sqlobject import (
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
+import pytz
+import six
+from storm.locals import (
+    DateTime,
+    Desc,
+    Int,
+    ReferenceSet,
+    Store,
+    Unicode,
     )
-from storm.expr import In
-from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -35,29 +40,36 @@ from lp.bugs.model.buglinktarget import BugLinkTargetMixin
 from lp.bugs.model.cvereference import CveReference
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
 from lp.services.xref.interfaces import IXRefSet
 from lp.services.xref.model import XRef
 
 
 @implementer(ICve, IBugLinkTarget)
-class Cve(SQLBase, BugLinkTargetMixin):
+class Cve(StormBase, BugLinkTargetMixin):
     """A CVE database record."""
 
-    _table = 'Cve'
+    __storm_table__ = 'Cve'
 
-    sequence = StringCol(notNull=True, alternateID=True)
-    status = EnumCol(dbName='status', schema=CveStatus, notNull=True)
-    description = StringCol(notNull=True)
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    datemodified = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    id = Int(primary=True)
 
-    references = SQLMultipleJoin(
-        'CveReference', joinColumn='cve', orderBy='id')
+    sequence = Unicode(allow_none=False)
+    status = DBEnum(name='status', enum=CveStatus, allow_none=False)
+    description = Unicode(allow_none=False)
+    datecreated = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    datemodified = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+
+    references = ReferenceSet(
+        id, 'CveReference.cve_id', order_by='CveReference.id')
+
+    def __init__(self, sequence, status, description):
+        super(Cve, self).__init__()
+        self.sequence = sequence
+        self.status = status
+        self.description = description
 
     @property
     def url(self):
@@ -89,7 +101,7 @@ class Cve(SQLBase, BugLinkTargetMixin):
 
     def removeReference(self, ref):
         assert ref.cve == self
-        CveReference.delete(ref.id)
+        Store.of(ref).remove(ref)
 
     def createBugLink(self, bug, props=None):
         """See BugLinkTargetMixin."""
@@ -97,18 +109,18 @@ class Cve(SQLBase, BugLinkTargetMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'cve', self.sequence): {(u'bug', unicode(bug.id)): props}})
+            {(u'cve', self.sequence): {
+                (u'bug', six.text_type(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {(u'cve', self.sequence): [(u'bug', unicode(bug.id))]})
+            {(u'cve', self.sequence): [(u'bug', six.text_type(bug.id))]})
 
 
 @implementer(ICveSet)
 class CveSet:
     """The full set of ICve's."""
-    table = Cve
 
     def __init__(self, bug=None):
         """See ICveSet."""
@@ -120,40 +132,42 @@ class CveSet:
             sequence = sequence[4:]
         if not valid_cve(sequence):
             return None
-        try:
-            return Cve.bySequence(sequence)
-        except SQLObjectNotFound:
-            return None
+        return IStore(Cve).find(Cve, sequence=sequence).one()
 
     def getAll(self):
         """See ICveSet."""
-        return Cve.select(orderBy="-datemodified")
+        return IStore(Cve).find(Cve).order_by(Desc(Cve.datemodified))
 
     def __iter__(self):
         """See ICveSet."""
-        return iter(Cve.select())
+        return iter(IStore(Cve).find(Cve))
 
     def new(self, sequence, description, status=CveStatus.CANDIDATE):
         """See ICveSet."""
-        return Cve(sequence=sequence, status=status,
+        cve = Cve(sequence=sequence, status=status,
             description=description)
+        IStore(Cve).add(cve)
+        return cve
 
     def latest(self, quantity=5):
         """See ICveSet."""
-        return Cve.select(orderBy='-datecreated', limit=quantity)
+        return IStore(Cve).find(Cve).order_by(
+            Desc(Cve.datecreated)).config(limit=quantity)
 
     def latest_modified(self, quantity=5):
         """See ICveSet."""
-        return Cve.select(orderBy='-datemodified', limit=quantity)
+        return IStore(Cve).find(Cve).order_by(
+            Desc(Cve.datemodified)).config(limit=quantity)
 
     def search(self, text):
         """See ICveSet."""
-        return Cve.select(
-            fti_search(Cve, text), distinct=True, orderBy='-datemodified')
+        return IStore(Cve).find(Cve, fti_search(Cve, text)).order_by(
+            Desc(Cve.datemodified)).config(distinct=True)
 
     def inText(self, text):
         """See ICveSet."""
         # let's look for matching entries
+        store = IStore(Cve)
         cves = set()
         for match in CVEREF_PATTERN.finditer(text):
             # let's get the core CVE data
@@ -168,6 +182,7 @@ class CveSet:
                     "are reading this, then this CVE entry is probably "
                     "erroneous, since this text should be replaced by "
                     "the official CVE description automatically.")
+                store.add(cve)
             cves.add(cve)
 
         return sorted(cves, key=lambda a: a.sequence)
@@ -194,7 +209,7 @@ class CveSet:
         store = Store.of(bugtasks[0])
 
         xrefs = getUtility(IXRefSet).findFromMany(
-            [(u'bug', unicode(bug.id)) for bug in bugs], types=[u'cve'])
+            [(u'bug', six.text_type(bug.id)) for bug in bugs], types=[u'cve'])
         bugcve_ids = set()
         for bug_key in xrefs:
             for cve_key in xrefs[bug_key]:
@@ -203,7 +218,7 @@ class CveSet:
         bugcve_ids = list(sorted(bugcve_ids))
 
         cves = store.find(
-            Cve, In(Cve.sequence, [seq for _, seq in bugcve_ids]))
+            Cve, Cve.sequence.is_in([seq for _, seq in bugcve_ids]))
 
         if cve_mapper is None:
             cvemap = dict((cve.sequence, cve) for cve in cves)
