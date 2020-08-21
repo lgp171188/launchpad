@@ -13,7 +13,7 @@ import os
 import signal
 import time
 
-from fixtures import MockPatch
+import mock
 from six.moves import xmlrpc_client
 from testtools.matchers import (
     Equals,
@@ -78,6 +78,7 @@ from lp.buildmaster.tests.test_interactor import (
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
+from lp.services.statsd.interfaces.lp_statsd_client import ILPStatsdClient
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
@@ -92,6 +93,7 @@ from lp.testing import (
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.fakemethod import FakeMethod
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     LaunchpadScriptLayer,
     LaunchpadZopelessLayer,
@@ -101,7 +103,19 @@ from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 
 
-class TestSlaveScannerScan(TestCaseWithFactory):
+class StatsMixin:
+
+    def setUpStats(self):
+        # Mock the utility class, then return a known value
+        # from getClient(), so we can assert against the call counts and args.
+        utility_class = mock.Mock()
+        self.stats_client = mock.Mock()
+        utility_class.getClient.return_value = self.stats_client
+        self.useFixture(
+            ZopeUtilityFixture(utility_class, ILPStatsdClient))
+
+
+class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
     """Tests `SlaveScanner.scan` method.
 
     This method uses the old framework for scanning and dispatching builds.
@@ -123,6 +137,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.test_publisher.setUpDefaultDistroSeries(hoary)
         self.test_publisher.addFakeChroots(db_only=True)
         self.addCleanup(shut_down_default_process_pool)
+        self.setUpStats()
 
     def _resetBuilder(self, builder):
         """Reset the given builder and its job."""
@@ -528,6 +543,20 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.assertFalse(builder.builderok)
 
     @defer.inlineCallbacks
+    def test_scanFailed_increments_counter(self):
+        def failing_scan():
+            return defer.fail(Exception("fake exception"))
+        scanner = self._getScanner()
+        scanner.scan = failing_scan
+        builder = getUtility(IBuilderSet)[scanner.builder_name]
+        builder.failure_count = BUILDER_FAILURE_THRESHOLD
+        builder.currentjob.reset()
+        transaction.commit()
+
+        yield scanner.singleCycle()
+        self.assertEqual(1, self.stats_client.incr.call_count)
+
+    @defer.inlineCallbacks
     def test_fail_to_resume_leaves_it_dirty(self):
         # If an attempt to resume a slave fails, its failure count is
         # incremented and it is left DIRTY.
@@ -893,6 +922,7 @@ class FakeBuilddManager:
 
 class TestSlaveScannerWithoutDB(TestCase):
 
+    layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
@@ -1619,17 +1649,14 @@ class TestBuilddManagerScript(TestCaseWithFactory):
             "Twistd's log file was rotated by twistd.")
 
 
-class TestStats(TestCaseWithFactory):
+class TestStats(StatsMixin, TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
     def setUp(self):
         super(TestStats, self).setUp()
-        self.stats_client = self.useFixture(
-            MockPatch(
-                'lp.buildmaster.manager.get_statsd_client'
-            )).mock()
+        self.setUpStats()
 
     def test_single_processor(self):
         builder = self.factory.makeBuilder()
