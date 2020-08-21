@@ -257,6 +257,12 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
     from cached data updated by `update`.
     """
 
+    def __init__(self, *args, **kwargs):
+        super(PrefetchedBuilderFactory, self).__init__(*args, **kwargs)
+        # This needs to exist to avoid race conditions between
+        # `updateStats` and `update`.
+        self.vitals_map = {}
+
     def update(self):
         """See `BaseBuilderFactory`."""
         transaction.abort()
