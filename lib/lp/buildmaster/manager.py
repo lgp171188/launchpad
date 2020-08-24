@@ -739,7 +739,7 @@ class BuilddManager(service.Service):
         logger.setLevel(level)
         return logger
 
-    def updateStats(self):
+    def _updateBuilderCounts(self):
         """Update statsd with the builder statuses."""
         self.logger.debug("Updating builder stats.")
         counts_by_processor = {}
@@ -768,6 +768,22 @@ class BuilddManager(service.Service):
                 self.logger.debug("{}: {}".format(gauge_name, count_value))
                 self.statsd_client.gauge(gauge_name, count_value)
         self.logger.debug("Builder stats update complete.")
+
+    def _updateBuilderQueues(self):
+        """Update statsd with the build queue lengths."""
+        self.logger.debug("Updating build queue stats.")
+        queue_details = getUtility(IBuilderSet).getBuildQueueSizes()
+        for queue_type, contents in queue_details.items():
+            virt = True if queue_type == 'virt' else False
+            for arch, value in contents.items():
+                gauge_name = "buildqueue,virtualized={},arch={}".format(
+                    virt, arch)
+                self.statsd_client.gauge(gauge_name, value[0])
+        self.logger.debug("Build queue stats update complete.")
+
+    def updateStats(self):
+        self._updateBuilderCounts()
+        self._updateBuilderQueues()
 
     def checkForNewBuilders(self):
         """Add and return any new builders."""
