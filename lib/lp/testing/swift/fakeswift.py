@@ -74,8 +74,8 @@ class FakeKeystone(resource.Resource):
     def getValidToken(self, tenant_name, expected_token=None):
         """Get a valid token for the given tenant name."""
         if expected_token is not None:
-            token = self.tokens[expected_token]
-            if self._isValidToken(token, tenant_name):
+            token = self.tokens.get(expected_token)
+            if token is not None and self._isValidToken(token, tenant_name):
                 return token
         else:
             for id, token in six.iteritems(self.tokens):
@@ -100,10 +100,21 @@ class FakeKeystone(resource.Resource):
         valid_token = self.getValidToken(tenant_name, token)
         return valid_token is not None
 
-    def getChild(self, path, request):
+    def getChild(self, name, request):
         """See `twisted.web.resource.Resource.getChild`."""
-        if path in (b"v2.0", b"tokens"):
+        if name in (b"v2.0", b"tokens"):
             return self
+
+        token = self.tokens.get(name, None)
+
+        if request.method == b"DELETE":
+            if not self.validateToken(request, token["tenant"]["name"]):
+                return EmptyPage(http.UNAUTHORIZED)
+            if token is None:  # delete unknown token
+                return EmptyPage(http.NOT_FOUND)
+            del self.tokens[name]
+            return EmptyPage(http.NO_CONTENT)
+
         return resource.NoResource("Not a valid keystone URL.")
 
     def render_POST(self, request):
@@ -531,7 +542,7 @@ class FakeSwift(resource.Resource):
             return resource
 
         if not self.root.keystone.validateToken(request, tenant_name):
-            return EmptyPage(http.FORBIDDEN)
+            return EmptyPage(http.UNAUTHORIZED)
 
         return resource
 
