@@ -22,11 +22,9 @@ from testscenarios import (
     WithScenarios,
     )
 from testtools.matchers import (
-    AfterPreprocessing,
     DocTestMatches,
     Equals,
     LessThan,
-    MatchesAll,
     MatchesDict,
     MatchesSetwise,
     MatchesStructure,
@@ -50,7 +48,10 @@ from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
-from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.oci.tests.helpers import (
+    MatchesOCIRegistryCredentials,
+    OCIConfigHelperMixin,
+    )
 from lp.registry.browser.person import PersonView
 from lp.registry.browser.team import TeamInvitationView
 from lp.registry.enums import PersonVisibility
@@ -1320,21 +1321,6 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
                     '?batch=5&memo=5&start=5'))},
                 text='Next'))
         self.assertThat(view(), next_match)
-
-
-class MatchesOCIRegistryCredentials(MatchesAll):
-    """Matches an `OCIRegistryCredentials` object.
-
-    `main_matcher` matches the `OCIRegistryCredentials` object itself, while
-    `credentials_matcher` matches the result of its `getCredentials` method.
-    """
-
-    def __init__(self, main_matcher, credentials_matcher):
-        super(MatchesOCIRegistryCredentials, self).__init__(
-            main_matcher,
-            AfterPreprocessing(
-                lambda matchee: removeSecurityProxy(matchee).getCredentials(),
-                credentials_matcher))
 
 
 class TestPersonOCIRegistryCredentialsView(

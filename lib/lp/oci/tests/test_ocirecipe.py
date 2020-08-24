@@ -8,10 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import json
 
 from fixtures import FakeLogger
-from six import (
-    ensure_text,
-    string_types,
-    )
+from six import string_types
 from storm.exceptions import LostObjectError
 from storm.store import Store
 from testtools.matchers import (
@@ -51,7 +48,10 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
-from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.oci.tests.helpers import (
+    MatchesOCIRegistryCredentials,
+    OCIConfigHelperMixin,
+    )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import (
@@ -453,39 +453,53 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
         url = self.factory.getUniqueURL()
-        image_name = ensure_text(self.factory.getUniqueString())
+        image_name = self.factory.getUniqueUnicode()
         credentials = {
             "username": "test-username", "password": "test-password"}
 
-        with person_logged_in(recipe.owner):
+        with person_logged_in(recipe.registrant):
             push_rule = recipe.newPushRule(
-                recipe.owner, url, image_name, credentials)
-            self.assertEqual(
-                image_name,
-                push_rule.image_name)
-            self.assertEqual(
-                url,
-                push_rule.registry_credentials.url)
-            self.assertEqual(
-                credentials,
-                push_rule.registry_credentials.getCredentials())
+                url, image_name, credentials,
+                credentials_owner=recipe.registrant)
+            self.assertThat(push_rule, MatchesStructure(
+                image_name=Equals(image_name),
+                registry_credentials=MatchesOCIRegistryCredentials(
+                    MatchesStructure.byEquality(
+                        owner=recipe.registrant, url=url),
+                    Equals(credentials))))
+            self.assertEqual(push_rule, recipe.push_rules[0])
 
-            self.assertEqual(
-                push_rule,
-                recipe.push_rules[0])
+    def test_newPushRule_default_owner(self):
+        # The registry credentials for a new push rule default to being
+        # owned by the recipe owner.
+        self.setConfig()
+        recipe = self.factory.makeOCIRecipe()
+        url = self.factory.getUniqueURL()
+        image_name = self.factory.getUniqueUnicode()
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+
+        with person_logged_in(recipe.registrant):
+            push_rule = recipe.newPushRule(url, image_name, credentials)
+            self.assertThat(push_rule, MatchesStructure(
+                image_name=Equals(image_name),
+                registry_credentials=MatchesOCIRegistryCredentials(
+                    MatchesStructure.byEquality(owner=recipe.owner, url=url),
+                    Equals(credentials))))
+            self.assertEqual(push_rule, recipe.push_rules[0])
 
     def test_newPushRule_invalid_url(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
         url = 'asdf://foo.com'
-        image_name = ensure_text(self.factory.getUniqueString())
+        image_name = self.factory.getUniqueUnicode()
         credentials = {
             "username": "test-username", "password": "test-password"}
 
         with person_logged_in(recipe.owner):
             self.assertRaises(
                 ValidationError, recipe.newPushRule,
-                recipe.owner, url, image_name, credentials)
+                url, image_name, credentials, credentials_owner=recipe.owner)
             # Avoid trying to flush the incomplete object on cleanUp.
             Store.of(recipe).rollback()
 
@@ -493,17 +507,17 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
         url = self.factory.getUniqueURL()
-        image_name = ensure_text(self.factory.getUniqueString())
+        image_name = self.factory.getUniqueUnicode()
         credentials = {
             "username": "test-username", "password": "test-password"}
 
         with person_logged_in(recipe.owner):
             recipe.newPushRule(
-                recipe.owner, url, image_name, credentials)
+                url, image_name, credentials, credentials_owner=recipe.owner)
             self.assertRaises(
                 OCIPushRuleAlreadyExists,
                 recipe.newPushRule,
-                recipe.owner, url, image_name, credentials)
+                url, image_name, credentials, credentials_owner=recipe.owner)
 
     def test_set_official_directly_is_forbidden(self):
         recipe = self.factory.makeOCIRecipe()
@@ -1151,7 +1165,11 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
 
         new_obj_url = resp.getHeader("Location")
         ws_push_rule = self.load_from_api(new_obj_url)
-        self.assertEqual(obj["image_name"], ws_push_rule["image_name"])
+        self.assertThat(ws_push_rule, ContainsDict({
+            "image_name": Equals(obj["image_name"]),
+            "registry_url": Equals(obj["registry_url"]),
+            "username": Equals("foo"),
+            }))
 
     def test_api_push_rules_exported(self):
         """Are push rules exported for a recipe?"""
