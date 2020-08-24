@@ -29,6 +29,7 @@ from storm.locals import (
     Storm,
     Unicode,
     )
+from storm.properties import JSON
 from zope.component import (
     getAdapter,
     getUtility,
@@ -146,6 +147,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
 
+    _build_args = JSON(name="build_args", allow_none=False)
+
     require_virtualized = Bool(name="require_virtualized", default=True,
                                allow_none=False)
 
@@ -156,7 +159,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
-                 allow_internet=True):
+                 allow_internet=True, build_args=None):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
@@ -173,6 +176,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.date_last_modified = date_created
         self.git_ref = git_ref
         self.allow_internet = allow_internet
+        self.build_args = build_args or {}
 
     def __repr__(self):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
@@ -187,6 +191,15 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def official(self):
         """See `IOCIProject.setOfficialRecipe` method."""
         return self._official
+
+    @property
+    def build_args(self):
+        return self._build_args or {}
+
+    @build_args.setter
+    def build_args(self, value):
+        assert isinstance(value, dict)
+        self._build_args = {k: str(v) for k, v in value.items()}
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -532,7 +545,7 @@ class OCIRecipeSet:
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True):
+            allow_internet=True, build_args=None):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -554,7 +567,7 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created, allow_internet)
+            date_created, allow_internet, build_args)
         store.add(oci_recipe)
 
         if processors is None:

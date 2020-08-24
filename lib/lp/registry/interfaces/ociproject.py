@@ -33,6 +33,7 @@ from zope.interface import Interface
 from zope.schema import (
     Bool,
     Datetime,
+    Dict,
     Int,
     Text,
     TextLine,
@@ -164,6 +165,13 @@ class IOCIProjectLegitimate(Interface):
                 "branch that defines how to build the recipe."),
             constraint=path_does_not_escape,
             required=True),
+        build_args=Dict(
+            title=_("Build ARGs to be used when building the recipe"),
+            description=_(
+                "A dict of VARIABLE=VALUE to be used as ARG when building "
+                "the recipe."
+            ),
+            required=False),
         description=Text(
             title=_("Description for this recipe."),
             description=_("A short description of this recipe."),
@@ -174,7 +182,7 @@ class IOCIProjectLegitimate(Interface):
     @operation_for_version("devel")
     def newRecipe(name, registrant, owner, git_ref, build_file,
                   description=None, build_daily=False,
-                  require_virtualized=True):
+                  require_virtualized=True, build_args=None):
         """Create an IOCIRecipe for this project."""
 
 
