@@ -24,12 +24,12 @@ from storm.locals import (
     Bool,
     DateTime,
     Int,
+    JSON,
     Reference,
     Store,
     Storm,
     Unicode,
     )
-from storm.properties import JSON
 from zope.component import (
     getAdapter,
     getUtility,

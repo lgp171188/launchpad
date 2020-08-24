@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An `IBuildFarmJobBehaviour` for `OCIRecipeBuild`.
@@ -96,6 +96,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
                 logger=logger))
 
         args['build_file'] = build.recipe.build_file
+        args['build_args'] = build.recipe.build_args
 
         if build.recipe.git_ref is not None:
             args["git_repository"] = (
