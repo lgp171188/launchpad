@@ -11,6 +11,11 @@ __all__ = []
 import base64
 
 from nacl.public import PrivateKey
+from testtools.matchers import (
+    AfterPreprocessing,
+    MatchesAll,
+    )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.services.features.testing import FeatureFixture
@@ -30,3 +35,18 @@ class OCIConfigHelperMixin:
                 bytes(self.private_key)).decode("UTF-8"))
         # Default feature flags for our tests
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
+
+class MatchesOCIRegistryCredentials(MatchesAll):
+    """Matches an `OCIRegistryCredentials` object.
+
+    `main_matcher` matches the `OCIRegistryCredentials` object itself, while
+    `credentials_matcher` matches the result of its `getCredentials` method.
+    """
+
+    def __init__(self, main_matcher, credentials_matcher):
+        super(MatchesOCIRegistryCredentials, self).__init__(
+            main_matcher,
+            AfterPreprocessing(
+                lambda matchee: removeSecurityProxy(matchee).getCredentials(),
+                credentials_matcher))
