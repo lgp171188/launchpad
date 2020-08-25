@@ -139,6 +139,7 @@ from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.adapters.buildarch import determine_architectures_to_build
 from lp.snappy.interfaces.snap import (
+    BadMacaroon,
     BadSnapSearchContext,
     BadSnapSource,
     CannotAuthorizeStoreUploads,
@@ -154,7 +155,7 @@ from lp.snappy.interfaces.snap import (
     NoSourceForSnap,
     NoSuchSnap,
     SNAP_PRIVATE_FEATURE_FLAG,
-    SnapAuthorizationBadMacaroon,
+    SnapAuthorizationBadGeneratedMacaroon,
     SnapBuildAlreadyPending,
     SnapBuildArchiveOwnerMismatch,
     SnapBuildDisallowedArchitecture,
@@ -588,9 +589,10 @@ class Snap(Storm, WebhookTargetMixin):
         # in some other service, since the user can't do anything about it
         # and it should show up in our OOPS reports.
         if not sso_caveats:
-            raise SnapAuthorizationBadMacaroon("Macaroon has no SSO caveats")
+            raise SnapAuthorizationBadGeneratedMacaroon(
+                "Macaroon has no SSO caveats")
         elif len(sso_caveats) > 1:
-            raise SnapAuthorizationBadMacaroon(
+            raise SnapAuthorizationBadGeneratedMacaroon(
                 "Macaroon has multiple SSO caveats")
         self.store_secrets = {'root': root_macaroon_raw}
         return sso_caveats[0].caveat_id
@@ -599,6 +601,10 @@ class Snap(Storm, WebhookTargetMixin):
                               discharge_macaroon=None):
         """See `ISnap`."""
         if root_macaroon is not None:
+            try:
+                Macaroon.deserialize(root_macaroon)
+            except Exception:
+                raise BadMacaroon("root_macaroon is invalid.")
             self.store_secrets = {"root": root_macaroon}
         else:
             if self.store_secrets is None or "root" not in self.store_secrets:
@@ -606,6 +612,10 @@ class Snap(Storm, WebhookTargetMixin):
                     "beginAuthorization must be called before "
                     "completeAuthorization.")
         if discharge_macaroon is not None:
+            try:
+                Macaroon.deserialize(discharge_macaroon)
+            except Exception:
+                raise BadMacaroon("discharge_macaroon is invalid.")
             container = getUtility(IEncryptedContainer, "snap-store-secrets")
             if container.can_encrypt:
                 self.store_secrets["discharge_encrypted"] = (
