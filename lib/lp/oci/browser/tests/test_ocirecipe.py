@@ -18,6 +18,7 @@ import re
 from fixtures import FakeLogger
 import pytz
 import soupmatchers
+from storm.locals import Store
 from testtools.matchers import (
     Equals,
     MatchesDict,
@@ -1084,6 +1085,50 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                 name="field.image_name.%d" % second_rule.id).value = "image2"
         self.assertRaises(OCIPushRuleAlreadyExists,
                           browser.getControl("Save").click)
+
+    def test_edit_oci_push_rules_non_owner_of_credentials(self):
+        url = self.factory.getUniqueURL()
+        credentials = {'username': 'foo', 'password': 'bar'}
+        registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=self.person,
+            url=url,
+            credentials=credentials)
+        image_names = [self.factory.getUniqueUnicode() for _ in range(2)]
+        push_rules = [
+            getUtility(IOCIPushRuleSet).new(
+                recipe=self.team_owned_recipe,
+                registry_credentials=registry_credentials,
+                image_name=image_name)
+            for image_name in image_names]
+        Store.of(push_rules[-1]).flush()
+        push_rule_ids = [push_rule.id for push_rule in push_rules]
+        browser = self.getViewBrowser(self.team_owned_recipe, user=self.member)
+        browser.getLink("Edit push rules").click()
+        row = soupmatchers.Tag(
+            "push rule row", "tr", attrs={"id": "rule-%d" % push_rule_ids[0]})
+        self.assertThat(browser.contents, soupmatchers.HTMLContains(
+            soupmatchers.Within(
+                row,
+                soupmatchers.Tag(
+                    "username widget", "span",
+                    attrs={
+                        "id": "field.username.%d" % push_rule_ids[0],
+                        "class": "sprite private",
+                        })),
+            soupmatchers.Within(
+                row,
+                soupmatchers.Tag(
+                    "url widget", "span",
+                    attrs={
+                        "id": "field.url.%d" % push_rule_ids[0],
+                        "class": "sprite private",
+                        }))))
+        browser.getControl(
+            name="field.image_name.%d" % push_rule_ids[0]).value = "image1"
+        browser.getControl("Save").click()
+        with person_logged_in(self.member):
+            self.assertEqual("image1", push_rules[0].image_name)
+            self.assertEqual(image_names[1], push_rules[1].image_name)
 
     def test_delete_oci_push_rules(self):
         url = self.factory.getUniqueURL()

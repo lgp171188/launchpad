@@ -22,7 +22,8 @@
         <a class="sprite edit" tal:attributes="href context/owner/fmt:url/+edit-oci-registry-credentials">Edit OCI registry credentials</a>
       </p>
       <table class="form">
-        <tr tal:repeat="rule context/push_rules">
+        <tr tal:repeat="rule context/push_rules"
+            tal:attributes="id string:rule-${rule/id}">
           <tal:rules_widgets
             define="rules_widgets python:view.getRulesWidgets(rule);
                     parity python:'even' if repeat['rule'].even() else 'odd'">

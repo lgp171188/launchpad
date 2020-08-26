@@ -25,6 +25,10 @@ from lazr.restful.interface import (
     )
 from zope.component import getUtility
 from zope.formlib.form import FormFields
+from zope.formlib.widget import (
+    DisplayWidget,
+    renderElement,
+    )
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -79,6 +83,7 @@ from lp.services.webapp import (
     stepthrough,
     structured,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import NameBreadcrumb
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
@@ -271,6 +276,16 @@ def new_builds_notification_text(builds, already_pending=None):
         return builds_text
 
 
+class InvisibleCredentialsWidget(DisplayWidget):
+    """A widget that just displays a private icon.
+
+    This indicates invisible credentials.
+    """
+
+    def __call__(self):
+        return renderElement("span", id=self.name, cssClass="sprite private")
+
+
 class OCIRecipeEditPushRulesView(LaunchpadFormView):
     """View for +ocirecipe-edit-push-rules.pt."""
 
@@ -321,8 +336,10 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         super(OCIRecipeEditPushRulesView, self).setUpFields()
         image_fields = []
         username_fields = []
+        private_username_fields = []
         password_fields = []
         url_fields = []
+        private_url_fields = []
         delete_fields = []
         existing_credentials = []
         creds = []
@@ -339,18 +356,30 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                     __name__=self._getFieldName('delete', elem.id),
                     default=False,
                     required=True, readonly=False))
-            creds.append(
-                TextLine(
-                    title=u'Username',
-                    __name__=self._getFieldName('username', elem.id),
-                    default=elem.registry_credentials.username,
-                    required=True, readonly=True))
-            creds.append(
-                TextLine(
-                    title=u'Registry URL',
-                    __name__=self._getFieldName('url', elem.id),
-                    default=elem.registry_credentials.url,
-                    required=True, readonly=True))
+            if check_permission('launchpad.View', elem.registry_credentials):
+                username_fields.append(
+                    TextLine(
+                        title=u'Username',
+                        __name__=self._getFieldName('username', elem.id),
+                        default=elem.registry_credentials.username,
+                        required=True, readonly=True))
+                url_fields.append(
+                    TextLine(
+                        title=u'Registry URL',
+                        __name__=self._getFieldName('url', elem.id),
+                        default=elem.registry_credentials.url,
+                        required=True, readonly=True))
+            else:
+                private_username_fields.append(
+                    TextLine(
+                        title=u'Username',
+                        __name__=self._getFieldName('username', elem.id),
+                        default='', required=True, readonly=True))
+                private_url_fields.append(
+                    TextLine(
+                        title=u'Registry URL',
+                        __name__=self._getFieldName('url', elem.id),
+                        default='', required=True, readonly=True))
         url_fields.append(
             TextLine(
                 title=u'Registry URL',
@@ -400,9 +429,13 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         self.form_fields += FormFields(*delete_fields)
 
         self.form_fields += FormFields(*url_fields)
+        self.form_fields += FormFields(
+            *private_url_fields, custom_widget=InvisibleCredentialsWidget)
         self.form_fields += FormFields(use_existing_credentials)
         self.form_fields += FormFields(add_new_credentials)
         self.form_fields += FormFields(*username_fields)
+        self.form_fields += FormFields(
+            *private_username_fields, custom_widget=InvisibleCredentialsWidget)
         self.form_fields += FormFields(*password_fields)
         self.form_fields += FormFields(*existing_credentials)
 
