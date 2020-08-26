@@ -30,6 +30,7 @@ from sqlobject import (
     )
 from storm.expr import (
     And,
+    Cast,
     Desc,
     Join,
     LeftJoin,
@@ -1061,7 +1062,7 @@ class PublishingSet:
                 BinaryPackagePublishingHistory.distroarchseriesID == das.id,
                 BinaryPackagePublishingHistory.binarypackagenameID ==
                     bpr.binarypackagenameID,
-                BinaryPackageRelease.version == bpr.version,
+                Cast(BinaryPackageRelease.version, "text") == bpr.version,
                 )
 
         candidates = (

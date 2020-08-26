@@ -26,6 +26,7 @@ from sqlobject import (
 from storm.base import Storm
 from storm.expr import (
     And,
+    Cast,
     Count,
     Desc,
     Join,
@@ -656,7 +657,8 @@ class Archive(SQLBase):
                 raise VersionRequiresName(
                     "The 'version' parameter can be used only together with"
                     " the 'name' parameter.")
-            clauses.append(SourcePackageRelease.version == version)
+            clauses.append(
+                Cast(SourcePackageRelease.version, "text") == version)
         elif not order_by_date:
             order_by.insert(1, Desc(SourcePackageRelease.version))
 
@@ -854,7 +856,8 @@ class Archive(SQLBase):
                     "The 'version' parameter can be used only together with"
                     " the 'name' parameter.")
 
-            clauses.append(BinaryPackageRelease.version == version)
+            clauses.append(
+                Cast(BinaryPackageRelease.version, "text") == version)
         elif ordered:
             order_by.insert(1, Desc(BinaryPackageRelease.version))
 
@@ -1726,7 +1729,7 @@ class Archive(SQLBase):
                 SourcePackageRelease.id,
             SourcePackageRelease.sourcepackagename == SourcePackageName.id,
             SourcePackageName.name == name,
-            SourcePackageRelease.version == version,
+            Cast(SourcePackageRelease.version, "text") == version,
             SourcePackageRelease.id ==
                 SourcePackageReleaseFile.sourcepackagereleaseID,
             SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
@@ -1750,7 +1753,7 @@ class Archive(SQLBase):
             BinaryPackagePublishingHistory.binarypackagename == name,
             BinaryPackagePublishingHistory.binarypackagereleaseID ==
                 BinaryPackageRelease.id,
-            BinaryPackageRelease.version == version,
+            Cast(BinaryPackageRelease.version, "text") == version,
             BinaryPackageBuild.id == BinaryPackageRelease.buildID,
             DistroArchSeries.id == BinaryPackageBuild.distro_arch_series_id,
             DistroArchSeries.architecturetag == archtag,

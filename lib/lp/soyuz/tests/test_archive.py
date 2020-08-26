@@ -1565,6 +1565,23 @@ class TestGetBinaryPackageRelease(TestCaseWithFactory):
             self.factory.makeArchive().getBinaryPackageRelease(
                 self.bpns['foo-bin'], '1.2.3-4', 'i386'))
 
+    def test_matches_version_as_text(self):
+        # Versions such as 1.2.3-4 and 1.02.003-4 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        other_i386_pub, other_hppa_pub = self.publisher.getPubBinaries(
+            version='1.02.003-4', archive=self.archive, binaryname='foo-bin',
+            status=PackagePublishingStatus.PUBLISHED,
+            architecturespecific=True)
+        self.assertEqual(
+            self.i386_pub.binarypackagerelease,
+            self.archive.getBinaryPackageRelease(
+                self.bpns['foo-bin'], '1.2.3-4', 'i386'))
+        self.assertEqual(
+            other_i386_pub.binarypackagerelease,
+            self.archive.getBinaryPackageRelease(
+                self.bpns['foo-bin'], '1.02.003-4', 'i386'))
+
 
 class TestGetBinaryPackageReleaseByFileName(TestCaseWithFactory):
     """Ensure that getBinaryPackageReleaseByFileName works as expected."""
@@ -2594,6 +2611,28 @@ class TestGetSourceFileByName(TestCaseWithFactory):
                 pub2.source_package_name, pub2.source_package_version,
                 dsc2.filename))
 
+    def test_matches_version_as_text(self):
+        # Versions such as 0.7-4 and 0.7-04 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        pub = self.factory.makeSourcePackagePublishingHistory(
+            archive=self.archive, version='0.7-4')
+        orig = self.factory.makeLibraryFileAlias(
+            filename='foo_0.7.orig.tar.gz')
+        pub.sourcepackagerelease.addFile(orig)
+        pub2 = self.factory.makeSourcePackagePublishingHistory(
+            archive=self.archive, sourcepackagename=pub.sourcepackagename.name,
+            version='0.7-04')
+        orig2 = self.factory.makeLibraryFileAlias(
+            filename='foo_0.7.orig.tar.gz')
+        pub2.sourcepackagerelease.addFile(orig2)
+        self.assertEqual(
+            orig, self.archive.getSourceFileByName(
+                pub.sourcepackagename.name, '0.7-4', orig.filename))
+        self.assertEqual(
+            orig2, self.archive.getSourceFileByName(
+                pub.sourcepackagename.name, '0.7-04', orig2.filename))
+
 
 class TestGetPublishedSources(TestCaseWithFactory):
 
@@ -2743,6 +2782,22 @@ class TestGetPublishedSources(TestCaseWithFactory):
         self.assertEqual(
             [pubs[i] for i in (3, 2, 1, 0, 4)],
             list(archive.getPublishedSources(order_by_date=True)))
+
+    def test_matches_version_as_text(self):
+        # Versions such as 0.7-4 and 0.07-4 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        archive = self.factory.makeArchive()
+        pub = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive, version='0.7-4')
+        self.assertEqual(
+            [pub], list(archive.getPublishedSources(
+                name=pub.sourcepackagename.name, version='0.7-4',
+                exact_match=True)))
+        self.assertEqual(
+            [], list(archive.getPublishedSources(
+                name=pub.sourcepackagename.name, version='0.07-4',
+                exact_match=True)))
 
 
 class TestGetPublishedSourcesWebService(TestCaseWithFactory):
@@ -3498,6 +3553,24 @@ class TestgetAllPublishedBinaries(TestCaseWithFactory):
         self.assertEqual(
             [pubs[i] for i in (3, 2, 1, 0, 4)],
             list(archive.getAllPublishedBinaries(order_by_date=True)))
+
+    def test_matches_version_as_text(self):
+        # Versions such as 0.7-4 and 0.07-4 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        archive = self.factory.makeArchive()
+        pub = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive, version='0.7-4')
+        self.assertEqual(
+            [pub],
+            list(archive.getAllPublishedBinaries(
+                name=pub.binarypackagename.name, version='0.7-4',
+                exact_match=True)))
+        self.assertEqual(
+            [],
+            list(archive.getAllPublishedBinaries(
+                name=pub.binarypackagename.name, version='0.07-4',
+                exact_match=True)))
 
 
 class TestRemovingPermissions(TestCaseWithFactory):

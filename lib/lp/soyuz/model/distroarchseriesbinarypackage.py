@@ -9,6 +9,7 @@ __all__ = [
     'DistroArchSeriesBinaryPackage',
     ]
 
+from storm.expr import Cast
 from storm.locals import Desc
 from zope.interface import implementer
 
@@ -120,7 +121,7 @@ class DistroArchSeriesBinaryPackage:
         """See IDistroArchSeriesBinaryPackage."""
         bpph = IStore(BinaryPackagePublishingHistory).find(
             BinaryPackagePublishingHistory,
-            BinaryPackageRelease.version == version,
+            Cast(BinaryPackageRelease.version, "text") == version,
             *self._getPublicationJoins()
             ).order_by(Desc(BinaryPackagePublishingHistory.datecreated)
             ).first()
