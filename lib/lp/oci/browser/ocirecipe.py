@@ -359,6 +359,15 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                         default=elem.registry_credentials.username,
                         required=True, readonly=True))
             else:
+                # XXX cjwatson 2020-08-27: Ideally we'd be able to just show
+                # the URL, and maybe the username too, but the
+                # launchpad.View security adapter for OCIRegistryCredentials
+                # doesn't currently allow that in some cases (e.g. a
+                # team-owned recipe with a push rule using credentials owned
+                # by another team member).  In future it might make sense to
+                # add a launchpad.LimitedView adapter that grants access if
+                # the credentials are used by a push rule on one of the
+                # viewer's recipes.
                 private_url_fields.append(
                     TextLine(
                         __name__=self._getFieldName('url', elem.id),
