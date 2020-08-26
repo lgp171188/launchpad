@@ -1105,7 +1105,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser = self.getViewBrowser(self.team_owned_recipe, user=self.member)
         browser.getLink("Edit push rules").click()
         row = soupmatchers.Tag(
-            "push rule row", "tr", attrs={"id": "rule-%d" % push_rule_ids[0]})
+            "push rule row", "tr", attrs={"class": "push-rule"})
         self.assertThat(browser.contents, soupmatchers.HTMLContains(
             soupmatchers.Within(
                 row,
@@ -1168,8 +1168,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getLink("Edit push rules").click()
         browser.getControl(
             name="field.add_image_name").value = "imagename1"
-        browser.getControl(
-            name="field.add_new_credentials").value = True
+        browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl("Save").click()
         self.assertIn("Registry URL must be set", browser.contents)
 
@@ -1192,8 +1191,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             name="field.add_image_name").value = "imagename1"
         browser.getControl(
             name="field.add_url").value = url
-        browser.getControl(
-            name="field.add_new_credentials").value = True
+        browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl("Save").click()
         with person_logged_in(self.person):
             rules = list(removeSecurityProxy(
@@ -1219,8 +1217,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         # from the radio widget when adding a new rule
         browser.getLink("Edit push rules").click()
 
-        browser.getControl(
-            name="field.use_existing_credentials").value = True
+        browser.getControl(name="field.add_credentials").value = "existing"
         browser.getControl(
             name="field.add_image_name").value = "imagename1"
         browser.getControl(
@@ -1235,8 +1232,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         # We display correctly the radio buttons widget when
         # username is empty in registry credentials and
         # allow correctly adding new rule based on it
-        browser.getControl(
-            name="field.use_existing_credentials").value = True
+        browser.getControl(name="field.add_credentials").value = "existing"
         browser.getControl(
             name="field.add_image_name").value = "imagename2"
         browser.getControl("Save").click()
@@ -1260,8 +1256,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                     "password": Equals(None)}))
 
         browser.getLink("Edit push rules").click()
-        browser.getControl(
-            name="field.add_new_credentials").value = True
+        browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl(
             name="field.add_image_name").value = "imagename3"
         browser.getControl(
@@ -1302,8 +1297,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             name="field.add_image_name").value = "imagename1"
         browser.getControl(
             name="field.add_url").value = url
-        browser.getControl(
-            name="field.add_new_credentials").value = True
+        browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl("Save").click()
 
         with person_logged_in(self.member):
@@ -1335,8 +1329,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             name="field.add_image_name").value = "imagename1"
         browser.getControl(
             name="field.add_url").value = url
-        browser.getControl(
-            name="field.add_new_credentials").value = True
+        browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl("Save").click()
 
         # push rules created by another team member (self.member)

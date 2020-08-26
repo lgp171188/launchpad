@@ -9,8 +9,28 @@
 
 <metal:block fill-slot="head_epilogue">
   <style type="text/css">
-    .subordinate {
-      margin: 0.5em 0 0.5em 4em;
+    table.push-rules-table {
+      max-width: 60%;
+      margin-bottom: 1em;
+    }
+    table.push-rules-table tr.even {
+      background-color: #eee;
+    }
+    /* These add up to 100%. */
+    tr .push-rule-url {
+      width: 35%;
+    }
+    tr .push-rule-image-name {
+      width: 20%;
+    }
+    tr .push-rule-username {
+      width: 10%;
+    }
+    tr .push-rule-password, tr .push-rule-confirm-password {
+      width: 15%;
+    }
+    tr .push-rule-delete {
+      width: 5%;
     }
   </style>
 </metal:block>
@@ -21,77 +41,96 @@
       <p condition="view/can_edit_credentials">
         <a class="sprite edit" tal:attributes="href context/owner/fmt:url/+edit-oci-registry-credentials">Edit OCI registry credentials</a>
       </p>
-      <table class="form">
-        <tr tal:repeat="rule context/push_rules"
-            tal:attributes="id string:rule-${rule/id}">
-          <tal:rules_widgets
-            define="rules_widgets python:view.getRulesWidgets(rule);
-                    parity python:'even' if repeat['rule'].even() else 'odd'">
-            <td tal:define="widget nocall:rules_widgets/image_name">
-              <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-            </td>
-            <td tal:define="widget nocall:rules_widgets/username">
-              <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-            </td>
-            <td tal:define="widget nocall:rules_widgets/url">
-              <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-            </td>
-            <td tal:define="widget nocall:rules_widgets/delete">
-              <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-            </td>
-          </tal:rules_widgets>
-        </tr>
-        <tr>
-          <td>
-            <h2>Add new push rule</h2>
-          </td>
-        </tr>
-        <tr>
-          <td tal:define="widget nocall:view/widgets/add_image_name">
-            <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <tal:widget define="widget nocall:view/widgets/use_existing_credentials">
-              <metal:block use-macro="context/@@launchpad_form/widget_div" />
-            </tal:widget>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <table class="subordinate">
-              <tal:widget define="widget nocall:view/widgets/existing_credentials">
-                <metal:row use-macro="context/@@launchpad_form/widget_row" />
-              </tal:widget>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <tal:widget define="widget nocall:view/widgets/add_new_credentials">
-              <metal:block use-macro="context/@@launchpad_form/widget_row" />
-            </tal:widget>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <table class="subordinate">
-              <tal:widget define="widget nocall:view/widgets/add_url">
-                <metal:row use-macro="context/@@launchpad_form/widget_row" />
-              </tal:widget>
-              <tal:widget define="widget nocall:view/widgets/add_username">
-                <metal:row use-macro="context/@@launchpad_form/widget_row" />
-              </tal:widget>
-              <tal:widget define="widget nocall:view/widgets/add_password">
-                <metal:row use-macro="context/@@launchpad_form/widget_row" />
-              </tal:widget>
-              <tal:widget define="widget nocall:view/widgets/add_confirm_password">
-                <metal:row use-macro="context/@@launchpad_form/widget_row" />
-              </tal:widget>
-            </table>
-          </td>
-        </tr>
+      <table class="listing push-rules-table">
+        <thead>
+          <tr>
+            <th class="push-rule-image-name">Image name</th>
+            <th class="push-rule-url">Registry URL</th>
+            <th class="push-rule-username">Username</th>
+            <th class="push-rule-password">Password</th>
+            <th class="push-rule-confirm-password">Confirm password</th>
+            <th class="push-rule-delete">Delete?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tal:rule repeat="rule view/push_rules">
+            <tal:rule_widgets
+                define="rule_widgets python:view.getRuleWidgets(rule);
+                        parity python:'even' if repeat['rule'].even() else 'odd'">
+              <tr tal:attributes="class string:push-rule ${parity}">
+                <td class="push-rule-image-name"
+                    tal:define="widget nocall:rule_widgets/image_name">
+                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+                </td>
+                <td class="push-rule-url"
+                    tal:define="widget nocall:rule_widgets/url">
+                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+                </td>
+                <td class="push-rule-username"
+                    tal:define="widget nocall:rule_widgets/username">
+                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+                </td>
+                <td colspan="2" />
+                <td class="push-rule-delete"
+                    tal:define="widget nocall:rule_widgets/delete">
+                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+                </td>
+              </tr>
+            </tal:rule_widgets>
+          </tal:rule>
+          <tal:new-rule
+              define="new_rule_widgets python:view.getNewRuleWidgets();
+                      parity python:'odd' if len(view.push_rules) % 2
+                                          else 'even'">
+            <tr tal:attributes="class parity">
+              <td class="push-rule-image-name"
+                  tal:define="widget nocall:new_rule_widgets/image_name">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+              </td>
+              <td colspan="5" />
+            </tr>
+            <tr tal:attributes="class parity">
+              <td>
+                <label>
+                  <input type="radio" name="field.add_credentials"
+                         value="existing" checked="checked" />
+                  Use existing credentials:
+                </label>
+              </td>
+              <td colspan="4"
+                  tal:define="widget nocall:new_rule_widgets/existing_credentials">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+              </td>
+              <td />
+            </tr>
+            <tr tal:attributes="class parity">
+              <td>
+                <label>
+                  <input type="radio" name="field.add_credentials"
+                         value="new" />
+                  Add new credentials:
+                </label>
+              </td>
+              <td class="push-rule-url"
+                  tal:define="widget nocall:new_rule_widgets/url">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+              </td>
+              <td class="push-rule-username"
+                  tal:define="widget nocall:new_rule_widgets/username">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+              </td>
+              <td class="push-rule-password"
+                  tal:define="widget nocall:new_rule_widgets/password">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+              </td>
+              <td class="push-rule-confirm-password"
+                  tal:define="widget nocall:new_rule_widgets/confirm_password">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+              </td>
+              <td />
+            </tr>
+          </tal:new-rule>
+        </tbody>
       </table>
     </metal:formbody>
 </div>
