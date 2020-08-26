@@ -21,6 +21,7 @@ import soupmatchers
 from storm.locals import Store
 from testtools.matchers import (
     Equals,
+    Is,
     MatchesDict,
     MatchesSetwise,
     MatchesStructure,
@@ -1187,10 +1188,8 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         url = self.factory.getUniqueURL()
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
-        browser.getControl(
-            name="field.add_image_name").value = "imagename1"
-        browser.getControl(
-            name="field.add_url").value = url
+        browser.getControl(name="field.add_image_name").value = "imagename1"
+        browser.getControl(name="field.add_url").value = url
         browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl("Save").click()
         with person_logged_in(self.person):
@@ -1198,30 +1197,25 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                 getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
         self.assertEqual(len(rules), 1)
         rule = rules[0]
-        self.assertIsNotNone(rule.registry_credentials)
         self.assertThat(rule, MatchesStructure(
             image_name=Equals(u'imagename1'),
-            registry_url=Equals(url)))
-
-        self.assertEqual(url,
-                         rule.registry_credentials.url)
-        self.assertIsNone(rule.registry_credentials.username)
+            registry_url=Equals(url),
+            registry_credentials=MatchesStructure(
+                url=Equals(url),
+                username=Is(None))))
 
         with person_logged_in(self.person):
             self.assertThat(
                 rule.registry_credentials.getCredentials(),
-                MatchesDict(
-                    {"password": Equals(None)}))
+                MatchesDict({"password": Equals(None)}))
 
         # Previously added registry credentials can now be chosen
         # from the radio widget when adding a new rule
         browser.getLink("Edit push rules").click()
 
         browser.getControl(name="field.add_credentials").value = "existing"
-        browser.getControl(
-            name="field.add_image_name").value = "imagename1"
-        browser.getControl(
-            name="field.existing_credentials").value = (
+        browser.getControl(name="field.add_image_name").value = "imagename1"
+        browser.getControl(name="field.existing_credentials").value = (
             browser.getControl(
                 name="field.existing_credentials").options[1].strip())
         browser.getControl("Save").click()
@@ -1233,38 +1227,30 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         # username is empty in registry credentials and
         # allow correctly adding new rule based on it
         browser.getControl(name="field.add_credentials").value = "existing"
-        browser.getControl(
-            name="field.add_image_name").value = "imagename2"
+        browser.getControl(name="field.add_image_name").value = "imagename2"
         browser.getControl("Save").click()
         with person_logged_in(self.person):
             rules = list(removeSecurityProxy(
                 getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
         self.assertEqual(len(rules), 2)
         rule = rules[1]
-        self.assertIsNotNone(rule.registry_credentials)
         self.assertThat(rule, MatchesStructure(
             image_name=Equals(u'imagename2'),
-            registry_url=Equals(url)))
-        self.assertEqual(
-            url,
-            rule.registry_credentials.url)
-        self.assertIsNone(rule.registry_credentials.username)
+            registry_url=Equals(url),
+            registry_credentials=MatchesStructure(
+                url=Equals(url),
+                username=Is(None))))
         with person_logged_in(self.person):
             self.assertThat(
                 rule.registry_credentials.getCredentials(),
-                MatchesDict({
-                    "password": Equals(None)}))
+                MatchesDict({"password": Equals(None)}))
 
         browser.getLink("Edit push rules").click()
         browser.getControl(name="field.add_credentials").value = "new"
-        browser.getControl(
-            name="field.add_image_name").value = "imagename3"
-        browser.getControl(
-            name="field.add_url").value = url
-        browser.getControl(
-            name="field.add_username").value = "username"
-        browser.getControl(
-            name="field.add_password").value = "password"
+        browser.getControl(name="field.add_image_name").value = "imagename3"
+        browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_username").value = "username"
+        browser.getControl(name="field.add_password").value = "password"
         browser.getControl(
             name="field.add_confirm_password").value = "password"
         browser.getControl("Save").click()
@@ -1273,15 +1259,12 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                 getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
         self.assertEqual(len(rules), 3)
         rule = rules[2]
-        self.assertIsNotNone(rule.registry_credentials)
         self.assertThat(rule, MatchesStructure(
             image_name=Equals(u'imagename3'),
-            registry_url=Equals(url)))
-        self.assertEqual(url,
-                         rule.registry_credentials.url)
-        self.assertEqual(
-            "username",
-            rule.registry_credentials.username)
+            registry_url=Equals(url),
+            registry_credentials=MatchesStructure.byEquality(
+                url=url,
+                username="username")))
         with person_logged_in(self.person):
             self.assertThat(
                 rule.registry_credentials.getCredentials(),
@@ -1306,14 +1289,12 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                     self.team_owned_recipe)))
         self.assertEqual(len(rules), 1)
         rule = rules[0]
-        self.assertIsNotNone(rule.registry_credentials)
         self.assertThat(rule, MatchesStructure(
             image_name=Equals(u'imagename1'),
-            registry_url=Equals(url)))
-
-        self.assertEqual(url,
-                         rule.registry_credentials.url)
-        self.assertIsNone(rule.registry_credentials.username)
+            registry_url=Equals(url),
+            registry_credentials=MatchesStructure(
+                url=Equals(url),
+                username=Is(None))))
 
         with person_logged_in(self.member):
             self.assertThat(
