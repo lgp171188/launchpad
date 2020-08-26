@@ -1256,7 +1256,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getControl("Save").click()
         self.assertIn(
             "A push rule already exists with the same URL, "
-            "image name and credentials.", browser.contents)
+            "image name, and credentials.", browser.contents)
 
     def test_add_oci_push_rules_existing_credentials(self):
         # Previously added registry credentials can be chosen from the radio
