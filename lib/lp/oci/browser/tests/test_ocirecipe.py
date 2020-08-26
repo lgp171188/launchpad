@@ -17,6 +17,7 @@ import re
 
 from fixtures import FakeLogger
 import pytz
+from six.moves.urllib.parse import quote
 import soupmatchers
 from storm.locals import Store
 from testtools.matchers import (
@@ -1155,42 +1156,38 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                 getUtility(IOCIPushRuleSet).getByID(push_rule.id))
 
     def test_add_oci_push_rules_validations(self):
-        # Test add new rule works when there are
-        # no rules in the DB
+        # Add new rule works when there are no rules in the DB.
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
 
-        # Save does not error if there are no changes
-        # on the form
+        # Save does not error if there are no changes on the form.
         browser.getControl("Save").click()
         self.assertIn("Saved push rules", browser.contents)
 
-        # Only with image name we fail with Registry URL must be set
+        # If only an image name is given but no registry URL, we fail with
+        # "Registry URL must be set".
         browser.getLink("Edit push rules").click()
-        browser.getControl(
-            name="field.add_image_name").value = "imagename1"
+        browser.getControl(name="field.add_image_name").value = "imagename1"
         browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl("Save").click()
         self.assertIn("Registry URL must be set", browser.contents)
 
-        # No image name entered on the form
-        # we assume user is only editing and we allow
-        # Save on the form
-        browser.getControl(
-            name="field.add_image_name").value = ""
+        # No image name entered on the form.  We assume user is only editing
+        # and we allow saving the form.
+        browser.getControl(name="field.add_image_name").value = ""
         browser.getControl("Save").click()
         self.assertIn("Saved push rules", browser.contents)
 
-    def test_add_oci_push_rules(self):
-        # Image name and Registry URL will create an empty Credentials object
-        # and a valid push rule based on the empty creds
-
+    def test_add_oci_push_rules_new_empty_credentials(self):
+        # Supplying an image name and registry URL creates a credentials
+        # object without username or password, and a valid push rule based
+        # on that credentials object.
         url = self.factory.getUniqueURL()
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
+        browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl(name="field.add_image_name").value = "imagename1"
         browser.getControl(name="field.add_url").value = url
-        browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl("Save").click()
         with person_logged_in(self.person):
             rules = list(removeSecurityProxy(
@@ -1198,53 +1195,22 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.assertEqual(len(rules), 1)
         rule = rules[0]
         self.assertThat(rule, MatchesStructure(
-            image_name=Equals(u'imagename1'),
+            image_name=Equals("imagename1"),
             registry_url=Equals(url),
             registry_credentials=MatchesStructure(
                 url=Equals(url),
                 username=Is(None))))
 
         with person_logged_in(self.person):
-            self.assertThat(
-                rule.registry_credentials.getCredentials(),
-                MatchesDict({"password": Equals(None)}))
+            self.assertEqual(
+                {"password": None}, rule.registry_credentials.getCredentials())
 
-        # Previously added registry credentials can now be chosen
-        # from the radio widget when adding a new rule
-        browser.getLink("Edit push rules").click()
-
-        browser.getControl(name="field.add_credentials").value = "existing"
-        browser.getControl(name="field.add_image_name").value = "imagename1"
-        browser.getControl(name="field.existing_credentials").value = (
-            browser.getControl(
-                name="field.existing_credentials").options[1].strip())
-        browser.getControl("Save").click()
-        self.assertIn(
-            "A push rule already exists with the same URL, "
-            "image name and credentials.", browser.contents)
-
-        # We display correctly the radio buttons widget when
-        # username is empty in registry credentials and
-        # allow correctly adding new rule based on it
-        browser.getControl(name="field.add_credentials").value = "existing"
-        browser.getControl(name="field.add_image_name").value = "imagename2"
-        browser.getControl("Save").click()
-        with person_logged_in(self.person):
-            rules = list(removeSecurityProxy(
-                getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
-        self.assertEqual(len(rules), 2)
-        rule = rules[1]
-        self.assertThat(rule, MatchesStructure(
-            image_name=Equals(u'imagename2'),
-            registry_url=Equals(url),
-            registry_credentials=MatchesStructure(
-                url=Equals(url),
-                username=Is(None))))
-        with person_logged_in(self.person):
-            self.assertThat(
-                rule.registry_credentials.getCredentials(),
-                MatchesDict({"password": Equals(None)}))
-
+    def test_add_oci_push_rules_new_username_password(self):
+        # Supplying an image name, registry URL, username, and password
+        # creates a credentials object with the given username or password,
+        # and a valid push rule based on that credentials object.
+        url = self.factory.getUniqueURL()
+        browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
         browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl(name="field.add_image_name").value = "imagename3"
@@ -1257,20 +1223,72 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         with person_logged_in(self.person):
             rules = list(removeSecurityProxy(
                 getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
-        self.assertEqual(len(rules), 3)
-        rule = rules[2]
+        self.assertEqual(len(rules), 1)
+        rule = rules[0]
         self.assertThat(rule, MatchesStructure(
-            image_name=Equals(u'imagename3'),
+            image_name=Equals("imagename3"),
             registry_url=Equals(url),
             registry_credentials=MatchesStructure.byEquality(
                 url=url,
                 username="username")))
         with person_logged_in(self.person):
-            self.assertThat(
-                rule.registry_credentials.getCredentials(),
-                MatchesDict(
-                    {"username": Equals("username"),
-                     "password": Equals("password")}))
+            self.assertEqual(
+                {"username": "username", "password": "password"},
+                rule.registry_credentials.getCredentials())
+
+    def test_add_oci_push_rules_existing_credentials_duplicate(self):
+        # Adding a new push rule using existing credentials fails if a rule
+        # with the same image name already exists.
+        existing_rule = self.factory.makeOCIPushRule(
+            recipe=self.recipe,
+            registry_credentials=self.factory.makeOCIRegistryCredentials(
+                owner=self.recipe.owner))
+        existing_image_name = existing_rule.image_name
+        existing_registry_url = existing_rule.registry_url
+        existing_username = existing_rule.username
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        browser.getControl(name="field.add_credentials").value = "existing"
+        browser.getControl(name="field.add_image_name").value = (
+            existing_image_name)
+        browser.getControl(name="field.existing_credentials").value = (
+            "%s %s" % (quote(existing_registry_url), quote(existing_username)))
+        browser.getControl("Save").click()
+        self.assertIn(
+            "A push rule already exists with the same URL, "
+            "image name and credentials.", browser.contents)
+
+    def test_add_oci_push_rules_existing_credentials(self):
+        # Previously added registry credentials can be chosen from the radio
+        # widget when adding a new rule.
+        # We correctly display the radio buttons widget when the
+        # username is empty in registry credentials and
+        # allow correctly adding new rule based on it
+        existing_rule = self.factory.makeOCIPushRule(
+            recipe=self.recipe,
+            registry_credentials=self.factory.makeOCIRegistryCredentials(
+                owner=self.recipe.owner, credentials={}))
+        existing_registry_url = existing_rule.registry_url
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        browser.getLink("Edit push rules").click()
+        browser.getControl(name="field.add_credentials").value = "existing"
+        browser.getControl(name="field.add_image_name").value = "imagename2"
+        browser.getControl(name="field.existing_credentials").value = (
+            quote(existing_registry_url))
+        browser.getControl("Save").click()
+        with person_logged_in(self.person):
+            rules = list(removeSecurityProxy(
+                getUtility(IOCIPushRuleSet).findByRecipe(self.recipe)))
+        self.assertEqual(len(rules), 2)
+        rule = rules[1]
+        self.assertThat(rule, MatchesStructure(
+            image_name=Equals("imagename2"),
+            registry_url=Equals(existing_registry_url),
+            registry_credentials=MatchesStructure(
+                url=Equals(existing_registry_url),
+                username=Is(None))))
+        with person_logged_in(self.person):
+            self.assertEqual({}, rule.registry_credentials.getCredentials())
 
     def test_add_oci_push_rules_team_owned(self):
         url = self.factory.getUniqueURL()
