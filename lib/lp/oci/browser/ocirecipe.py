@@ -334,53 +334,59 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
 
     def setUpFields(self):
         super(OCIRecipeEditPushRulesView, self).setUpFields()
-        image_fields = []
+        image_name_fields = []
+        url_fields = []
+        private_url_fields = []
         username_fields = []
         private_username_fields = []
         password_fields = []
-        url_fields = []
-        private_url_fields = []
         delete_fields = []
-        existing_credentials = []
-        creds = []
         for elem in list(self.context.push_rules):
-            image_fields.append(
+            image_name_fields.append(
                 TextLine(
                     __name__=self._getFieldName('image_name', elem.id),
                     default=elem.image_name,
                     required=True, readonly=False))
-            delete_fields.append(
-                Bool(
-                    __name__=self._getFieldName('delete', elem.id),
-                    default=False,
-                    required=True, readonly=False))
             if check_permission('launchpad.View', elem.registry_credentials):
-                username_fields.append(
-                    TextLine(
-                        __name__=self._getFieldName('username', elem.id),
-                        default=elem.registry_credentials.username,
-                        required=True, readonly=True))
                 url_fields.append(
                     TextLine(
                         __name__=self._getFieldName('url', elem.id),
                         default=elem.registry_credentials.url,
                         required=True, readonly=True))
-            else:
-                private_username_fields.append(
+                username_fields.append(
                     TextLine(
                         __name__=self._getFieldName('username', elem.id),
-                        default='', required=True, readonly=True))
+                        default=elem.registry_credentials.username,
+                        required=True, readonly=True))
+            else:
                 private_url_fields.append(
                     TextLine(
                         __name__=self._getFieldName('url', elem.id),
                         default='', required=True, readonly=True))
+                private_username_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('username', elem.id),
+                        default='', required=True, readonly=True))
+            delete_fields.append(
+                Bool(
+                    __name__=self._getFieldName('delete', elem.id),
+                    default=False,
+                    required=True, readonly=False))
+        image_name_fields.append(
+            TextLine(
+                __name__=u'add_image_name',
+                required=False, readonly=False))
+        add_credentials = Choice(
+            __name__='add_credentials',
+            default='existing', values=('existing', 'new'),
+            required=False, readonly=False)
+        existing_credentials = Choice(
+            vocabulary='OCIRegistryCredentials',
+            required=False,
+            __name__=u'existing_credentials')
         url_fields.append(
             TextLine(
                 __name__=u'add_url',
-                required=False, readonly=False))
-        image_fields.append(
-            TextLine(
-                __name__=u'add_image_name',
                 required=False, readonly=False))
         username_fields.append(
             TextLine(
@@ -394,30 +400,20 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             Password(
                 __name__=u'add_confirm_password',
                 required=False, readonly=False))
-        existing_credentials.append(
-            Choice(
-                vocabulary='OCIRegistryCredentials',
-                required=False,
-                __name__=u'existing_credentials'))
 
-        add_credentials = Choice(
-            __name__='add_credentials',
-            default='existing', values=('existing', 'new'),
-            required=False, readonly=False)
-
-        self.form_fields += FormFields(*image_fields)
-        self.form_fields += FormFields(*creds)
-        self.form_fields += FormFields(*delete_fields)
-
-        self.form_fields += FormFields(*url_fields)
-        self.form_fields += FormFields(
-            *private_url_fields, custom_widget=InvisibleCredentialsWidget)
-        self.form_fields += FormFields(add_credentials)
-        self.form_fields += FormFields(*username_fields)
-        self.form_fields += FormFields(
-            *private_username_fields, custom_widget=InvisibleCredentialsWidget)
-        self.form_fields += FormFields(*password_fields)
-        self.form_fields += FormFields(*existing_credentials)
+        self.form_fields = (
+            FormFields(*image_name_fields) +
+            FormFields(*url_fields) +
+            FormFields(
+                *private_url_fields,
+                custom_widget=InvisibleCredentialsWidget) +
+            FormFields(*username_fields) +
+            FormFields(
+                *private_username_fields,
+                custom_widget=InvisibleCredentialsWidget) +
+            FormFields(*password_fields) +
+            FormFields(*delete_fields) +
+            FormFields(add_credentials, existing_credentials))
 
     def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
