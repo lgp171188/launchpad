@@ -537,9 +537,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                 return
             if password != confirm_password:
                 self.setFieldError(
-                    "add_password",
-                    "Please make sure the new password matches the confirm "
-                    "password field.")
+                    "add_confirm_password", "Passwords do not match.")
                 return
 
             credentials_set = getUtility(IOCIRegistryCredentialsSet)
