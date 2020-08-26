@@ -8,10 +8,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = []
 
-from six.moves.urllib_parse import (
+from six.moves.urllib.parse import (
     quote,
-    urlsplit,
-    urlunsplit,
+    unquote,
     )
 from zope.component import getUtility
 from zope.interface import implementer
@@ -49,25 +48,15 @@ class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
 
     _table = OCIRegistryCredentials
 
-    def validate_for_spaces(self, url):
-        (scheme, netloc, path, query, fragment) = urlsplit(url)
-        if scheme in ("http", "https"):
-            # Without this, URLs with space in them break
-            path = quote(path)
-        while "//" in path:
-            path = path.replace("//", "/")
-        return urlunsplit((scheme, netloc, path, query, fragment))
-
     def toTerm(self, obj):
         if obj.username:
-
-            token = "%s %s" % (
-                self.validate_for_spaces(obj.url),
-                quote(obj.username))
+            token = "%s %s" % (quote(obj.url), quote(obj.username))
+            title = "%s (%s)" % (obj.url, obj.username)
         else:
-            token = self.validate_for_spaces(obj.url)
+            token = quote(obj.url)
+            title = obj.url
 
-        return SimpleTerm(obj, token)
+        return SimpleTerm(obj, token, title)
 
     @property
     def _entries(self):
@@ -86,9 +75,11 @@ class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
         try:
             if ' ' in token:
                 url, username = token.split(' ', 1)
+                url = unquote(url)
+                username = unquote(username)
             else:
                 username = None
-                url = token
+                url = unquote(token)
             for obj in self._entries:
                 if obj.url == url and obj.username == username:
                     return self.toTerm(obj)
