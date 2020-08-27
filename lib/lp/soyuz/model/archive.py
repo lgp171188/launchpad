@@ -17,6 +17,7 @@ from operator import attrgetter
 import re
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -658,7 +659,8 @@ class Archive(SQLBase):
                     "The 'version' parameter can be used only together with"
                     " the 'name' parameter.")
             clauses.append(
-                Cast(SourcePackageRelease.version, "text") == version)
+                Cast(SourcePackageRelease.version, "text") ==
+                six.ensure_text(version))
         elif not order_by_date:
             order_by.insert(1, Desc(SourcePackageRelease.version))
 
@@ -857,7 +859,8 @@ class Archive(SQLBase):
                     " the 'name' parameter.")
 
             clauses.append(
-                Cast(BinaryPackageRelease.version, "text") == version)
+                Cast(BinaryPackageRelease.version, "text") ==
+                six.ensure_text(version))
         elif ordered:
             order_by.insert(1, Desc(BinaryPackageRelease.version))
 
