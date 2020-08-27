@@ -300,6 +300,7 @@ class IOCIRecipeEdit(IWebhookTarget):
     def destroySelf():
         """Delete this OCI recipe, provided that it has no builds."""
 
+    @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         registry_url=TextLine(
             title=_("Registry URL"),
@@ -321,7 +322,7 @@ class IOCIRecipeEdit(IWebhookTarget):
     # Really IOCIPushRule, patched in lp.oci.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def newPushRule(registry_url, image_name, credentials,
+    def newPushRule(registrant, registry_url, image_name, credentials,
                     credentials_owner=None):
         """Add a new rule for pushing builds of this recipe to a registry."""
 

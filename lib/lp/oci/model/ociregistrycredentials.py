@@ -31,6 +31,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
+    OCIRegistryCredentialsNotOwner,
     )
 from lp.services.config import config
 from lp.services.crypto.interfaces import (
@@ -134,6 +135,17 @@ class OCIRegistryCredentials(Storm):
 @implementer(IOCIRegistryCredentialsSet)
 class OCIRegistryCredentialsSet:
 
+    def _checkOwner(self, registrant, owner):
+        if not registrant.inTeam(owner):
+            if owner.is_team:
+                raise OCIRegistryCredentialsNotOwner(
+                    "%s is not a member of %s." %
+                    (registrant.display_name, owner.display_name))
+            else:
+                raise OCIRegistryCredentialsNotOwner(
+                    "%s cannot create credentials owned by %s." %
+                    (registrant.display_name, owner.display_name))
+
     def _checkForExisting(self, owner, url, credentials):
         for existing in self.findByOwner(owner):
             url_match = existing.url == url
@@ -142,18 +154,20 @@ class OCIRegistryCredentialsSet:
                 return existing
         return None
 
-    def new(self, owner, url,  credentials):
+    def new(self, registrant, owner, url, credentials):
         """See `IOCIRegistryCredentialsSet`."""
+        self._checkOwner(registrant, owner)
         if self._checkForExisting(owner, url, credentials):
             raise OCIRegistryCredentialsAlreadyExist()
         return OCIRegistryCredentials(owner, url, credentials)
 
-    def getOrCreate(self, owner, url, credentials):
+    def getOrCreate(self, registrant, owner, url, credentials):
         """See `IOCIRegistryCredentialsSet`."""
+        self._checkOwner(registrant, owner)
         existing = self._checkForExisting(owner, url, credentials)
         if existing:
             return existing
-        return self.new(owner, url, credentials)
+        return self.new(registrant, owner, url, credentials)
 
     def findByOwner(self, owner):
         """See `IOCIRegistryCredentialsSet`."""

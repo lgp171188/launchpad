@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 
+from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,
     Equals,
@@ -20,6 +21,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
+    OCIRegistryCredentialsNotOwner,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.crypto.interfaces import IEncryptedContainer
@@ -39,9 +41,9 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         self.setConfig()
 
     def test_implements_interface(self):
+        owner = self.factory.makePerson()
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.factory.makePerson(),
-            url='http://example.org',
+            registrant=owner, owner=owner, url='http://example.org',
             credentials={'username': 'foo', 'password': 'bar'})
         self.assertProvides(oci_credentials, IOCIRegistryCredentials)
 
@@ -61,7 +63,7 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_credentials_set(self):
         owner = self.factory.makePerson()
         oci_credentials = self.factory.makeOCIRegistryCredentials(
-            owner=owner,
+            registrant=owner, owner=owner,
             url='http://example.org',
             credentials={'username': 'foo', 'password': 'bar'})
 
@@ -73,7 +75,7 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_credentials_set_empty(self):
         owner = self.factory.makePerson()
         oci_credentials = self.factory.makeOCIRegistryCredentials(
-            owner=owner,
+            registrant=owner, owner=owner,
             url='http://example.org',
             credentials={})
         with person_logged_in(owner):
@@ -83,7 +85,7 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         owner = self.factory.makePerson()
         oci_credentials = removeSecurityProxy(
             self.factory.makeOCIRegistryCredentials(
-                owner=owner,
+                registrant=owner, owner=owner,
                 url='http://example.org',
                 credentials={"username": "test"}))
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
@@ -99,7 +101,7 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         owner = self.factory.makePerson()
         oci_credentials = removeSecurityProxy(
             self.factory.makeOCIRegistryCredentials(
-                owner=owner,
+                registrant=owner, owner=owner,
                 url='http://example.org',
                 credentials={"password": "bar"}))
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
@@ -113,7 +115,7 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         owner = self.factory.makePerson()
         oci_credentials = removeSecurityProxy(
             self.factory.makeOCIRegistryCredentials(
-                owner=owner,
+                registrant=owner, owner=owner,
                 url='http://example.org',
                 credentials={
                     "username": "foo", "password": "bar", "other": "baz"}))
@@ -143,9 +145,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
         url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=owner,
-            url=url,
-            credentials=credentials)
+            registrant=owner, owner=owner, url=url, credentials=credentials)
         self.assertEqual(oci_credentials.owner, owner)
         self.assertEqual(oci_credentials.url, url)
         self.assertEqual(oci_credentials.getCredentials(), credentials)
@@ -155,27 +155,46 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
         url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         getUtility(IOCIRegistryCredentialsSet).new(
-            owner=owner,
-            url=url,
-            credentials=credentials)
+            registrant=owner, owner=owner, url=url, credentials=credentials)
         self.assertRaises(
             OCIRegistryCredentialsAlreadyExist,
             getUtility(IOCIRegistryCredentialsSet).new,
-            owner, url, credentials)
+            registrant=owner, owner=owner, url=url, credentials=credentials)
+
+    def test_new_not_owner(self):
+        registrant = self.factory.makePerson()
+        other_person = self.factory.makePerson()
+        other_team = self.factory.makeTeam(owner=other_person)
+        url = self.factory.getUniqueURL()
+        credentials = {'username': 'foo', 'password': 'bar'}
+        expected_message = "%s cannot create credentials owned by %s." % (
+            registrant.display_name, other_person.display_name)
+        with ExpectedException(
+                OCIRegistryCredentialsNotOwner, expected_message):
+            getUtility(IOCIRegistryCredentialsSet).new(
+                registrant=registrant,
+                owner=other_person,
+                url=url,
+                credentials=credentials)
+        expected_message = "%s is not a member of %s." % (
+            registrant.display_name, other_team.display_name)
+        with ExpectedException(
+                OCIRegistryCredentialsNotOwner, expected_message):
+            getUtility(IOCIRegistryCredentialsSet).new(
+                registrant=registrant,
+                owner=other_team,
+                url=url,
+                credentials=credentials)
 
     def test_getOrCreate_existing(self):
         owner = self.factory.makePerson()
         url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         new = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=owner,
-            url=url,
-            credentials=credentials)
+            registrant=owner, owner=owner, url=url, credentials=credentials)
 
         existing = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
-            owner=owner,
-            url=url,
-            credentials=credentials)
+            registrant=owner, owner=owner, url=url, credentials=credentials)
 
         self.assertEqual(new.id, existing.id)
 
@@ -184,18 +203,42 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
         url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         new = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
-            owner=owner,
-            url=url,
-            credentials=credentials)
+            registrant=owner, owner=owner, url=url, credentials=credentials)
 
         self.assertEqual(new.owner, owner)
         self.assertEqual(new.url, url)
         self.assertEqual(new.getCredentials(), credentials)
 
+    def test_getOrCreate_not_owner(self):
+        registrant = self.factory.makePerson()
+        other_person = self.factory.makePerson()
+        other_team = self.factory.makeTeam(owner=other_person)
+        url = self.factory.getUniqueURL()
+        credentials = {'username': 'foo', 'password': 'bar'}
+        expected_message = "%s cannot create credentials owned by %s." % (
+            registrant.display_name, other_person.display_name)
+        with ExpectedException(
+                OCIRegistryCredentialsNotOwner, expected_message):
+            getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+                registrant=registrant,
+                owner=other_person,
+                url=url,
+                credentials=credentials)
+        expected_message = "%s is not a member of %s." % (
+            registrant.display_name, other_team.display_name)
+        with ExpectedException(
+                OCIRegistryCredentialsNotOwner, expected_message):
+            getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+                registrant=registrant,
+                owner=other_team,
+                url=url,
+                credentials=credentials)
+
     def test_findByOwner(self):
         owner = self.factory.makePerson()
         for _ in range(3):
-            self.factory.makeOCIRegistryCredentials(owner=owner)
+            self.factory.makeOCIRegistryCredentials(
+                registrant=owner, owner=owner)
         # make some that have a different owner
         for _ in range(5):
             self.factory.makeOCIRegistryCredentials()

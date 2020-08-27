@@ -5096,11 +5096,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         store.add(job)
         return job
 
-    def makeOCIRegistryCredentials(self, owner=None, url=None,
+    def makeOCIRegistryCredentials(self, registrant=None, owner=None, url=None,
                                    credentials=None):
         """Make a new OCIRegistryCredentials."""
+        if registrant is None:
+            registrant = self.makePerson()
         if owner is None:
-            owner = self.makePerson()
+            owner = self.makeTeam(registrant)
         if url is None:
             url = self.getUniqueURL()
         if credentials is None:
@@ -5108,8 +5110,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 'username': self.getUniqueUnicode(),
                 'password': self.getUniqueUnicode()}
         return getUtility(IOCIRegistryCredentialsSet).new(
-            owner=owner,
-            url=url,
+            registrant=registrant, owner=owner, url=url,
             credentials=credentials)
 
     def makeOCIPushRule(self, recipe=None, registry_credentials=None,
