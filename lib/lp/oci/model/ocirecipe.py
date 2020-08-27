@@ -14,6 +14,7 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+from storm.databases.postgres import JSON
 from storm.expr import (
     And,
     Desc,
@@ -24,7 +25,6 @@ from storm.locals import (
     Bool,
     DateTime,
     Int,
-    JSON,
     Reference,
     Store,
     Storm,
