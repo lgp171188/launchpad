@@ -23,6 +23,7 @@ from sqlobject import (
     SQLObjectNotFound,
     StringCol,
     )
+from storm.expr import Cast
 from storm.locals import (
     And,
     Desc,
@@ -1487,7 +1488,7 @@ class PackageUploadSet:
             PackageUpload.status.is_in(approved_status),
             PackageUpload.archive == archive,
             DistroSeries.distribution == distribution,
-            SourcePackageRelease.version == version,
+            Cast(SourcePackageRelease.version, "text") == version,
             SourcePackageName.name == name)
 
         return conflicts.one()

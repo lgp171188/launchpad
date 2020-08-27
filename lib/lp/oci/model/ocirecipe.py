@@ -498,11 +498,17 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def can_upload_to_registry(self):
         return not self.push_rules.is_empty()
 
-    def newPushRule(self, owner, registry_url, image_name, credentials):
+    def newPushRule(self, registry_url, image_name, credentials,
+                    credentials_owner=None):
         """See `IOCIRecipe`."""
-
+        if credentials_owner is None:
+            # Ideally this should probably be a required parameter, but
+            # earlier versions of this method didn't allow passing the
+            # credentials owner via the webservice API, so for compatibility
+            # we give it a default.
+            credentials_owner = self.owner
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
-            owner, registry_url, credentials)
+            credentials_owner, registry_url, credentials)
         push_rule = getUtility(IOCIPushRuleSet).new(
             self, oci_credentials, image_name)
         Store.of(push_rule).flush()

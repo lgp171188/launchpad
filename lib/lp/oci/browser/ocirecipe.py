@@ -25,12 +25,18 @@ from lazr.restful.interface import (
     )
 from zope.component import getUtility
 from zope.formlib.form import FormFields
+from zope.formlib.widget import (
+    DisplayWidget,
+    renderElement,
+    )
 from zope.interface import Interface
 from zope.schema import (
     Bool,
     Choice,
     List,
+    Password,
     TextLine,
+    ValidationError,
     )
 
 from lp.app.browser.launchpadform import (
@@ -44,7 +50,10 @@ from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
-from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocipushrule import (
+    IOCIPushRuleSet,
+    OCIPushRuleAlreadyExists,
+    )
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
@@ -56,6 +65,8 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    OCIRegistryCredentialsAlreadyExist,
     user_can_edit_credentials_for_owner,
     )
 from lp.services.features import getFeatureFlag
@@ -72,6 +83,7 @@ from lp.services.webapp import (
     stepthrough,
     structured,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import NameBreadcrumb
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
@@ -264,7 +276,17 @@ def new_builds_notification_text(builds, already_pending=None):
         return builds_text
 
 
-class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
+class InvisibleCredentialsWidget(DisplayWidget):
+    """A widget that just displays a private icon.
+
+    This indicates invisible credentials.
+    """
+
+    def __call__(self):
+        return renderElement("span", id=self.name, cssClass="sprite private")
+
+
+class OCIRecipeEditPushRulesView(LaunchpadFormView):
     """View for +ocirecipe-edit-push-rules.pt."""
 
     class schema(Interface):
@@ -311,41 +333,103 @@ class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
         return field_type, rule_id
 
     def setUpFields(self):
-        """See `LaunchpadEditFormView`."""
-        LaunchpadEditFormView.setUpFields(self)
-
-        image_fields = []
+        super(OCIRecipeEditPushRulesView, self).setUpFields()
+        image_name_fields = []
+        url_fields = []
+        private_url_fields = []
+        username_fields = []
+        private_username_fields = []
+        password_fields = []
         delete_fields = []
-        creds = []
         for elem in list(self.context.push_rules):
-            image_fields.append(
+            image_name_fields.append(
                 TextLine(
-                    title=u'Image name',
                     __name__=self._getFieldName('image_name', elem.id),
                     default=elem.image_name,
                     required=True, readonly=False))
+            if check_permission('launchpad.View', elem.registry_credentials):
+                url_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('url', elem.id),
+                        default=elem.registry_credentials.url,
+                        required=True, readonly=True))
+                username_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('username', elem.id),
+                        default=elem.registry_credentials.username,
+                        required=True, readonly=True))
+            else:
+                # XXX cjwatson 2020-08-27: Ideally we'd be able to just show
+                # the URL, and maybe the username too, but the
+                # launchpad.View security adapter for OCIRegistryCredentials
+                # doesn't currently allow that in some cases (e.g. a
+                # team-owned recipe with a push rule using credentials owned
+                # by another team member).  In future it might make sense to
+                # add a launchpad.LimitedView adapter that grants access if
+                # the credentials are used by a push rule on one of the
+                # viewer's recipes.
+                private_url_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('url', elem.id),
+                        default='', required=True, readonly=True))
+                private_username_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('username', elem.id),
+                        default='', required=True, readonly=True))
             delete_fields.append(
                 Bool(
-                    title=u'Delete',
                     __name__=self._getFieldName('delete', elem.id),
                     default=False,
                     required=True, readonly=False))
-            creds.append(
-                TextLine(
-                    title=u'Username',
-                    __name__=self._getFieldName('username', elem.id),
-                    default=elem.registry_credentials.username,
-                    required=True, readonly=True))
-            creds.append(
-                TextLine(
-                    title=u'Registry URL',
-                    __name__=self._getFieldName('url', elem.id),
-                    default=elem.registry_credentials.url,
-                    required=True, readonly=True))
+        image_name_fields.append(
+            TextLine(
+                __name__=u'add_image_name',
+                required=False, readonly=False))
+        add_credentials = Choice(
+            __name__='add_credentials',
+            default='existing', values=('existing', 'new'),
+            required=False, readonly=False)
+        existing_credentials = Choice(
+            vocabulary='OCIRegistryCredentials',
+            required=False,
+            __name__=u'existing_credentials')
+        url_fields.append(
+            TextLine(
+                __name__=u'add_url',
+                required=False, readonly=False))
+        username_fields.append(
+            TextLine(
+                __name__=u'add_username',
+                required=False, readonly=False))
+        password_fields.append(
+            Password(
+                __name__=u'add_password',
+                required=False, readonly=False))
+        password_fields.append(
+            Password(
+                __name__=u'add_confirm_password',
+                required=False, readonly=False))
 
-        self.form_fields += FormFields(*image_fields)
-        self.form_fields += FormFields(*creds)
-        self.form_fields += FormFields(*delete_fields)
+        self.form_fields = (
+            FormFields(*image_name_fields) +
+            FormFields(*url_fields) +
+            FormFields(
+                *private_url_fields,
+                custom_widget=InvisibleCredentialsWidget) +
+            FormFields(*username_fields) +
+            FormFields(
+                *private_username_fields,
+                custom_widget=InvisibleCredentialsWidget) +
+            FormFields(*password_fields) +
+            FormFields(*delete_fields) +
+            FormFields(add_credentials, existing_credentials))
+
+    def setUpWidgets(self, context=None):
+        """See `LaunchpadFormView`."""
+        super(OCIRecipeEditPushRulesView, self).setUpWidgets(context=context)
+        for widget in self.widgets:
+            widget.display_label = False
+            widget.hint = None
 
     @property
     def label(self):
@@ -357,28 +441,60 @@ class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
     def cancel_url(self):
         return canonical_url(self.context)
 
-    def getRulesWidgets(self, rule):
-
+    def getRuleWidgets(self, rule):
         widgets_by_name = {widget.name: widget for widget in self.widgets}
+        url_field_name = (
+                "field." + self._getFieldName("url", rule.id))
         image_field_name = (
                 "field." + self._getFieldName("image_name", rule.id))
         username_field_name = (
                 "field." + self._getFieldName("username", rule.id))
-        url_field_name = (
-                "field." + self._getFieldName("url", rule.id))
         delete_field_name = (
                 "field." + self._getFieldName("delete", rule.id))
         return {
+            "url": widgets_by_name[url_field_name],
             "image_name": widgets_by_name[image_field_name],
             "username": widgets_by_name[username_field_name],
-            "url": widgets_by_name[url_field_name],
             "delete": widgets_by_name[delete_field_name],
         }
+
+    def getNewRuleWidgets(self):
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+        return {
+            "image_name": widgets_by_name["field.add_image_name"],
+            "existing_credentials":
+                widgets_by_name["field.existing_credentials"],
+            "url": widgets_by_name["field.add_url"],
+            "username": widgets_by_name["field.add_username"],
+            "password": widgets_by_name["field.add_password"],
+            "confirm_password": widgets_by_name["field.add_confirm_password"],
+            }
 
     def parseData(self, data):
         """Rearrange form data to make it easier to process."""
         parsed_data = {}
+        add_image_name = data.get("add_image_name")
+        add_url = data.get("add_url")
+        add_username = data.get("add_username")
+        add_password = data.get("add_password")
+        add_confirm_password = data.get("add_confirm_password")
+        add_existing_credentials = data.get("existing_credentials")
 
+        # parse data from the Add new rule section of the form
+        if (add_url or add_username or add_password or
+                add_confirm_password or add_image_name or
+                add_existing_credentials):
+            parsed_data.setdefault(None, {
+                "image_name": add_image_name,
+                "url": add_url,
+                "username": add_username,
+                "password": add_password,
+                "confirm_password": add_confirm_password,
+                "existing_credentials": data["existing_credentials"],
+                "add_credentials": data["add_credentials"],
+                "action": "add",
+            })
+        # parse data from the Edit existing rule section of the form
         for field_name in sorted(
                 name for name in data if name.split(".")[0] == "image_name"):
             _, rule_id = self._parseFieldName(field_name)
@@ -394,6 +510,59 @@ class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
             })
 
         return parsed_data
+
+    def addNewRule(self, parsed_data):
+        add_data = parsed_data[None]
+        image_name = add_data.get("image_name")
+        url = add_data.get("url")
+        password = add_data.get("password")
+        confirm_password = add_data.get("confirm_password")
+        username = add_data.get("username")
+        existing_credentials = add_data.get("existing_credentials")
+        add_credentials = add_data.get("add_credentials")
+
+        if not image_name:
+            self.setFieldError("add_image_name", "Image name must be set.")
+            return
+
+        if add_credentials == "existing":
+            if not existing_credentials:
+                return
+
+            credentials = existing_credentials
+
+        elif add_credentials == "new":
+            if not url:
+                self.setFieldError("add_url", "Registry URL must be set.")
+                return
+            if password != confirm_password:
+                self.setFieldError(
+                    "add_confirm_password", "Passwords do not match.")
+                return
+
+            credentials_set = getUtility(IOCIRegistryCredentialsSet)
+            try:
+                credentials = credentials_set.getOrCreate(
+                    owner=self.context.owner, url=url,
+                    credentials={'username': username, 'password': password})
+            except OCIRegistryCredentialsAlreadyExist:
+                self.setFieldError(
+                    "add_url",
+                    "Credentials already exist with the same URL and "
+                    "username.")
+                return
+            except ValidationError:
+                self.setFieldError("add_url", "Not a valid URL.")
+                return
+
+        try:
+            getUtility(IOCIPushRuleSet).new(
+                self.context, credentials, image_name)
+        except OCIPushRuleAlreadyExists:
+            self.setFieldError(
+                "add_image_name",
+                "A push rule already exists with the same URL, image name, "
+                "and credentials.")
 
     def updatePushRulesFromData(self, parsed_data):
         rules_map = {
@@ -415,6 +584,8 @@ class OCIRecipeEditPushRulesView(LaunchpadEditFormView):
                         rule.setNewImageName(image_name)
             elif action == "delete":
                 rule.destroySelf()
+            elif action == "add":
+                self.addNewRule(parsed_data)
             else:
                 raise AssertionError("unknown action: %s" % action)
 
