@@ -14,6 +14,7 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+from storm.databases.postgres import JSON
 from storm.expr import (
     And,
     Desc,
@@ -24,7 +25,6 @@ from storm.locals import (
     Bool,
     DateTime,
     Int,
-    JSON,
     Reference,
     Store,
     Storm,
@@ -147,7 +147,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
 
-    _build_args = JSON(name="build_args", allow_none=False)
+    _build_args = JSON(name="build_args", allow_none=True)
 
     require_virtualized = Bool(name="require_virtualized", default=True,
                                allow_none=False)
