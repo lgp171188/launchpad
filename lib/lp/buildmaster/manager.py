@@ -8,6 +8,7 @@ __metaclass__ = type
 __all__ = [
     'BuilddManager',
     'BUILDD_MANAGER_LOG_NAME',
+    'PrefetchedBuilderFactory',
     'SlaveScanner',
     ]
 
@@ -705,9 +706,6 @@ class BuilddManager(service.Service):
     # How often to flush logtail updates, in seconds.
     FLUSH_LOGTAILS_INTERVAL = 15
 
-    # How often to update stats, in seconds
-    UPDATE_STATS_INTERVAL = 60
-
     def __init__(self, clock=None, builder_factory=None):
         # Use the clock if provided, it's so that tests can
         # advance it.  Use the reactor by default.
@@ -738,52 +736,6 @@ class BuilddManager(service.Service):
         logger.addHandler(channel)
         logger.setLevel(level)
         return logger
-
-    def _updateBuilderCounts(self):
-        """Update statsd with the builder statuses."""
-        self.logger.debug("Updating builder stats.")
-        counts_by_processor = {}
-        for builder in self.builder_factory.iterVitals():
-            if not builder.active:
-                continue
-            for processor_name in builder.processor_names:
-                counts = counts_by_processor.setdefault(
-                    "{},virtualized={}".format(
-                        processor_name,
-                        builder.virtualized),
-                    {'cleaning': 0, 'idle': 0, 'disabled': 0, 'building': 0})
-                if not builder.builderok:
-                    counts['disabled'] += 1
-                elif builder.clean_status == BuilderCleanStatus.CLEANING:
-                    counts['cleaning'] += 1
-                elif (builder.build_queue and
-                      builder.build_queue.status == BuildQueueStatus.RUNNING):
-                    counts['building'] += 1
-                elif builder.clean_status == BuilderCleanStatus.CLEAN:
-                    counts['idle'] += 1
-        for processor, counts in counts_by_processor.items():
-            for count_name, count_value in counts.items():
-                gauge_name = "builders.{},arch={}".format(
-                    count_name, processor)
-                self.logger.debug("{}: {}".format(gauge_name, count_value))
-                self.statsd_client.gauge(gauge_name, count_value)
-        self.logger.debug("Builder stats update complete.")
-
-    def _updateBuilderQueues(self):
-        """Update statsd with the build queue lengths."""
-        self.logger.debug("Updating build queue stats.")
-        queue_details = getUtility(IBuilderSet).getBuildQueueSizes()
-        for queue_type, contents in queue_details.items():
-            virt = queue_type == 'virt'
-            for arch, value in contents.items():
-                gauge_name = "buildqueue,virtualized={},arch={}".format(
-                    virt, arch)
-                self.statsd_client.gauge(gauge_name, value[0])
-        self.logger.debug("Build queue stats update complete.")
-
-    def updateStats(self):
-        self._updateBuilderCounts()
-        self._updateBuilderQueues()
 
     def checkForNewBuilders(self):
         """Add and return any new builders."""
@@ -854,9 +806,6 @@ class BuilddManager(service.Service):
         # Schedule bulk flushes for build queue logtail updates.
         self.flush_logtails_loop, self.flush_logtails_deferred = (
             self._startLoop(self.FLUSH_LOGTAILS_INTERVAL, self.flushLogTails))
-        # Schedule stats updates.
-        self.stats_update_loop, self.stats_update_deferred = (
-            self._startLoop(self.UPDATE_STATS_INTERVAL, self.updateStats))
 
     def stopService(self):
         """Callback for when we need to shut down."""
@@ -865,11 +814,9 @@ class BuilddManager(service.Service):
         deferreds = [slave.stopping_deferred for slave in self.builder_slaves]
         deferreds.append(self.scan_builders_deferred)
         deferreds.append(self.flush_logtails_deferred)
-        deferreds.append(self.stats_update_deferred)
 
         self.flush_logtails_loop.stop()
         self.scan_builders_loop.stop()
-        self.stats_update_loop.stop()
         for slave in self.builder_slaves:
             slave.stopCycle()
 
