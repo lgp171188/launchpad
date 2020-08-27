@@ -147,7 +147,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
 
-    _build_args = JSON(name="build_args", allow_none=False)
+    _build_args = JSON(name="build_args", allow_none=True)
 
     require_virtualized = Bool(name="require_virtualized", default=True,
                                allow_none=False)
