@@ -44,7 +44,6 @@ __all__ = [
     'MilestoneWithDateExpectedVocabulary',
     'NewPillarGranteeVocabulary',
     'NonMergedPeopleAndTeamsVocabulary',
-    'person_team_participations_vocabulary_factory',
     'PersonAccountToMergeVocabulary',
     'PersonActiveMembershipVocabulary',
     'ProductReleaseVocabulary',
@@ -1054,21 +1053,6 @@ class ActiveMailingListVocabulary(FilteredVocabularyBase):
         """See `IHugeVocabulary`."""
         results = self.search(query)
         return CountableIterator(results.count(), results, self.toTerm)
-
-
-def person_term(person):
-    """Return a SimpleTerm for the `Person`."""
-    return SimpleTerm(person, person.name, title=person.displayname)
-
-
-def person_team_participations_vocabulary_factory(context):
-    """Return a SimpleVocabulary containing the teams a person
-    participate in.
-    """
-    assert context is not None
-    person = IPerson(context)
-    return SimpleVocabulary([
-        person_term(team) for team in person.teams_participated_in])
 
 
 class UserTeamsParticipationPlusSelfVocabulary(
