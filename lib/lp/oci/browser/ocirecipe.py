@@ -19,17 +19,21 @@ __all__ = [
     'OCIRecipeView',
     ]
 
+
 from lazr.restful.interface import (
     copy_field,
     use_template,
     )
 from zope.component import getUtility
 from zope.formlib.form import FormFields
+from zope.formlib.textwidgets import TextAreaWidget
+from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import Interface
 from zope.schema import (
     Bool,
     Choice,
     List,
+    Text,
     TextLine,
     )
 
@@ -641,10 +645,21 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
         "build_daily",
         )
     custom_widget_git_ref = GitRefWidget
+    custom_widget_build_args = CustomWidgetFactory(
+        TextAreaWidget, height=5, width=100)
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpFields()
+        self.form_fields += FormFields(Text(
+            __name__='build_args',
+            title=u'Extra build ARG variables',
+            description=("One per line. Each ARG should be in the format "
+                         "of ARG_KEY=arg_value."),
+            default="\n".join("%s=%s" % (k, v)
+                              for k, v in self.context.build_args.items()),
+            required=False, readonly=False))
+
         self.form_fields += self.createEnabledProcessors(
             self.context.available_processors,
             "The architectures that this OCI recipe builds for. Some "
@@ -684,6 +699,23 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
                         # This processor is restricted and currently
                         # enabled. Leave it untouched.
                         data["processors"].append(processor)
+        try:
+            data["build_args"] = self.validateBuildArgs(data.get("build_args"))
+        except ValueError as e:
+            self.setFieldError("build_args", str(e))
+
+    def validateBuildArgs(self, field_value):
+        if not field_value:
+            return {}
+        build_args = {}
+        for i, line in enumerate(field_value.split("\n")):
+            if '=' not in line:
+                raise ValueError(
+                    "'%s' at line %s is not a valid KEY=value pair." %
+                    (line, i + 1))
+            k, v = line.split('=', 1)
+            build_args[k] = v
+        return build_args
 
 
 class OCIRecipeDeleteView(BaseOCIRecipeEditView):
