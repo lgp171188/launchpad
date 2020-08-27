@@ -64,6 +64,12 @@
           <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
         </dd>
       </dl>
+      <dl id="build-args">
+        <dt>Build ARG:</dt>
+        <dd>
+          <pre><span tal:replace="view/build_args"/></pre>
+        </dd>
+      </dl>
     </div>
 
     <h2>Latest builds</h2>
