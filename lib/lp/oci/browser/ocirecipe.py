@@ -543,7 +543,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             credentials_set = getUtility(IOCIRegistryCredentialsSet)
             try:
                 credentials = credentials_set.getOrCreate(
-                    owner=self.context.owner, url=url,
+                    registrant=self.user, owner=self.context.owner, url=url,
                     credentials={'username': username, 'password': password})
             except OCIRegistryCredentialsAlreadyExist:
                 self.setFieldError(

@@ -3933,8 +3933,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                     'password': password}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=owner,
-                        url=url,
+                        registrant=self.user, owner=owner, url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
                     self.setFieldError(
@@ -3946,8 +3945,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 credentials = {'username': username}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=owner,
-                        url=url,
+                        registrant=self.user, owner=owner, url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
                     self.setFieldError(

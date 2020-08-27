@@ -11,6 +11,7 @@ from fixtures import FakeLogger
 from six import string_types
 from storm.exceptions import LostObjectError
 from storm.store import Store
+from testtools import ExpectedException
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -48,6 +49,9 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
+from lp.oci.interfaces.ociregistrycredentials import (
+    OCIRegistryCredentialsNotOwner,
+    )
 from lp.oci.tests.helpers import (
     MatchesOCIRegistryCredentials,
     OCIConfigHelperMixin,
@@ -459,7 +463,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
         with person_logged_in(recipe.registrant):
             push_rule = recipe.newPushRule(
-                url, image_name, credentials,
+                recipe.registrant, url, image_name, credentials,
                 credentials_owner=recipe.registrant)
             self.assertThat(push_rule, MatchesStructure(
                 image_name=Equals(image_name),
@@ -480,7 +484,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             "username": "test-username", "password": "test-password"}
 
         with person_logged_in(recipe.registrant):
-            push_rule = recipe.newPushRule(url, image_name, credentials)
+            push_rule = recipe.newPushRule(
+                recipe.registrant, url, image_name, credentials)
             self.assertThat(push_rule, MatchesStructure(
                 image_name=Equals(image_name),
                 registry_credentials=MatchesOCIRegistryCredentials(
@@ -499,7 +504,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         with person_logged_in(recipe.owner):
             self.assertRaises(
                 ValidationError, recipe.newPushRule,
-                url, image_name, credentials, credentials_owner=recipe.owner)
+                recipe.owner, url, image_name, credentials,
+                credentials_owner=recipe.owner)
             # Avoid trying to flush the incomplete object on cleanUp.
             Store.of(recipe).rollback()
 
@@ -513,11 +519,41 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
         with person_logged_in(recipe.owner):
             recipe.newPushRule(
-                url, image_name, credentials, credentials_owner=recipe.owner)
+                recipe.owner, url, image_name, credentials,
+                credentials_owner=recipe.owner)
             self.assertRaises(
                 OCIPushRuleAlreadyExists,
                 recipe.newPushRule,
-                url, image_name, credentials, credentials_owner=recipe.owner)
+                recipe.owner, url, image_name, credentials,
+                credentials_owner=recipe.owner)
+
+    def test_newPushRule_not_owner(self):
+        # If the registrant is not the owner or a member of the owner team,
+        # push rule creation fails.
+        self.setConfig()
+        recipe = self.factory.makeOCIRecipe()
+        url = self.factory.getUniqueURL()
+        image_name = self.factory.getUniqueUnicode()
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+        other_person = self.factory.makePerson()
+        other_team = self.factory.makeTeam(owner=other_person)
+
+        with person_logged_in(recipe.registrant):
+            expected_message = "%s cannot create credentials owned by %s." % (
+                recipe.registrant.display_name, other_person.display_name)
+            with ExpectedException(
+                    OCIRegistryCredentialsNotOwner, expected_message):
+                recipe.newPushRule(
+                    recipe.registrant, url, image_name, credentials,
+                    credentials_owner=other_person)
+            expected_message = "%s is not a member of %s." % (
+                recipe.registrant.display_name, other_team.display_name)
+            with ExpectedException(
+                    OCIRegistryCredentialsNotOwner, expected_message):
+                recipe.newPushRule(
+                    recipe.registrant, url, image_name, credentials,
+                    credentials_owner=other_team)
 
     def test_set_official_directly_is_forbidden(self):
         recipe = self.factory.makeOCIRecipe()
