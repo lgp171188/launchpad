@@ -8,10 +8,19 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = []
 
+from six.moves.urllib.parse import (
+    quote,
+    unquote,
+    )
+from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
 from lp.oci.model.ocirecipe import OCIRecipe
+from lp.oci.model.ociregistrycredentials import OCIRegistryCredentials
 from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
     StormVocabularyBase,
@@ -33,6 +42,49 @@ class OCIRecipeDistroArchSeriesVocabulary(StormVocabularyBase):
 
     def __len__(self):
         return len(self.context.getAllowedArchitectures())
+
+
+class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
+
+    _table = OCIRegistryCredentials
+
+    def toTerm(self, obj):
+        if obj.username:
+            token = "%s %s" % (quote(obj.url), quote(obj.username))
+            title = "%s (%s)" % (obj.url, obj.username)
+        else:
+            token = quote(obj.url)
+            title = obj.url
+
+        return SimpleTerm(obj, token, title)
+
+    @property
+    def _entries(self):
+        return list(getUtility(
+            IOCIRegistryCredentialsSet).findByOwner(self.context.owner))
+
+    def __contains__(self, value):
+        """See `IVocabulary`."""
+        return value in self._entries
+
+    def __len__(self):
+        return len(self._entries)
+
+    def getTermByToken(self, token):
+        """See `IVocabularyTokenized`."""
+        try:
+            if ' ' in token:
+                url, username = token.split(' ', 1)
+                url = unquote(url)
+                username = unquote(username)
+            else:
+                username = None
+                url = unquote(token)
+            for obj in self._entries:
+                if obj.url == url and obj.username == username:
+                    return self.toTerm(obj)
+        except ValueError:
+            raise LookupError(token)
 
 
 @implementer(IHugeVocabulary)

@@ -560,7 +560,7 @@ class SourcePackageHandler:
         # the distribution, no matter what status.
         query = """
                 SourcePackageRelease.sourcepackagename = %s AND
-                SourcePackageRelease.version = %s AND
+                SourcePackageRelease.version::text = %s AND
                 SourcePackagePublishingHistory.sourcepackagerelease =
                     SourcePackageRelease.id AND
                 SourcePackagePublishingHistory.distroseries =
@@ -762,7 +762,7 @@ class BinaryPackageHandler:
             "BinaryPackageRelease.id ="
             " BinaryPackagePublishingHistory.binarypackagerelease AND "
             "BinaryPackageRelease.binarypackagename=%s AND "
-            "BinaryPackageRelease.version=%s AND "
+            "BinaryPackageRelease.version::text = %s AND "
             "BinaryPackageRelease.build = BinaryPackageBuild.id AND "
             "BinaryPackageBuild.distro_arch_series = DistroArchSeries.id AND "
             "DistroArchSeries.distroseries = DistroSeries.id AND "

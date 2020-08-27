@@ -6,7 +6,10 @@
 __metaclass__ = type
 
 from storm.store import Store
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -164,6 +167,21 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
             distribution=distribution)
         driver = distribution.drivers[0]
         self.assertTrue(dsp.personHasDriverRights(driver))
+
+    def test_getVersion_matches_version_as_text(self):
+        # Versions such as 0.7-4 and 0.07-4 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        distribution = self.factory.makeDistribution()
+        dsp = self.factory.makeDistributionSourcePackage(
+            distribution=distribution)
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=distribution.main_archive,
+            sourcepackagename=dsp.sourcepackagename, version="0.7-4")
+        self.assertThat(dsp.getVersion("0.7-4"), MatchesStructure.byEquality(
+            distribution=distribution,
+            sourcepackagerelease=spph.sourcepackagerelease))
+        self.assertIsNone(dsp.getVersion("0.07-4"))
 
 
 class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
