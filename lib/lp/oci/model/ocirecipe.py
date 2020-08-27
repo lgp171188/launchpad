@@ -198,8 +198,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @build_args.setter
     def build_args(self, value):
-        assert isinstance(value, dict)
-        self._build_args = {k: str(v) for k, v in value.items()}
+        assert value is None or isinstance(value, dict)
+        self._build_args = {k: str(v) for k, v in (value or {}).items()}
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
