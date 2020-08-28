@@ -70,7 +70,7 @@
         <dt>
           Build-time
           <a href="https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg"
-             target="_blank">ARG variables:</a>
+             target="_blank">ARG variables</a>:
         </dt>
         <dd>
           <pre tal:content="build_args" />
