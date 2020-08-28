@@ -1358,7 +1358,8 @@ class TestPersonOCIRegistryCredentialsView(
         url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
         login_person(self.user)
         view = create_initialized_view(
             self.owner, '+oci-registry-credentials', principal=self.user)
@@ -1374,7 +1375,8 @@ class TestPersonOCIRegistryCredentialsView(
         third_url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
 
         browser = self.getViewBrowser(
             self.owner, view_name='+oci-registry-credentials', user=self.user)
@@ -1453,7 +1455,8 @@ class TestPersonOCIRegistryCredentialsView(
         credentials = {'username': 'foo', 'password': 'bar'}
         image_name = self.factory.getUniqueUnicode()
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
         getUtility(IOCIPushRuleSet).new(
             recipe=self.recipe,
             registry_credentials=registry_credentials,
@@ -1502,7 +1505,8 @@ class TestPersonOCIRegistryCredentialsView(
         url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
         IStore(registry_credentials).flush()
         registry_credentials_id = removeSecurityProxy(registry_credentials).id
         image_name = self.factory.getUniqueUnicode()
