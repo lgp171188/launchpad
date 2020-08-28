@@ -908,7 +908,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.setConfig()
 
     def test_view_oci_push_rules_owner(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             registrant=self.person, owner=self.person, url=url,
@@ -942,7 +942,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                         "Image name", "td", text=image_name))))
 
     def test_view_oci_push_rules_non_owner(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             registrant=self.person, owner=self.person, url=url,
