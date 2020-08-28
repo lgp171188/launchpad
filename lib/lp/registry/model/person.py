@@ -3129,12 +3129,6 @@ class Person(
             return False
 
     @property
-    def hardware_submissions(self):
-        """See `IPerson`."""
-        from lp.hardwaredb.model.hwdb import HWSubmissionSet
-        return HWSubmissionSet().search(owner=self)
-
-    @property
     def recipes(self):
         """See `IHasRecipes`."""
         from lp.code.model.sourcepackagerecipe import SourcePackageRecipe

@@ -1005,11 +1005,6 @@ class IPersonViewRestricted(IHasBranches, IHasSpecifications,
             readonly=True, required=False,
             value_type=Reference(schema=Interface)))
 
-    hardware_submissions = exported(CollectionField(
-            title=_("Hardware submissions"),
-            readonly=True, required=False,
-            value_type=Reference(schema=Interface)))  # HWSubmission
-
     administrated_teams = Attribute(
         u"the teams that this person/team is an administrator of.")
 
