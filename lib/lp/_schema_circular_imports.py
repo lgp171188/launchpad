@@ -85,7 +85,6 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
 from lp.hardwaredb.interfaces.hwdb import (
-    HWBus,
     IHWDBApplication,
     IHWDevice,
     IHWDeviceClass,
@@ -162,7 +161,6 @@ from lp.services.messages.interfaces.message import (
     IUserToUserEmail,
     )
 from lp.services.webservice.apihelpers import (
-    patch_choice_parameter_type,
     patch_collection_property,
     patch_collection_return_type,
     patch_entry_explicit_version,
@@ -292,18 +290,11 @@ patch_plain_parameter_type(IHasCodeImports, 'newCodeImport', 'owner', IPerson)
 # IBugTask
 
 patch_collection_return_type(IBugTask, 'findSimilarBugs', IBug)
-patch_plain_parameter_type(
-    IBug, 'linkHWSubmission', 'submission', IHWSubmission)
-patch_plain_parameter_type(
-    IBug, 'unlinkHWSubmission', 'submission', IHWSubmission)
-patch_collection_return_type(IBug, 'getHWSubmissions', IHWSubmission)
 patch_list_parameter_type(
     IBug, 'getNominations', 'nominations', Reference(schema=IBugNomination))
 patch_entry_return_type(IBug, 'addNomination', IBugNomination)
 patch_entry_return_type(IBug, 'getNominationFor', IBugNomination)
 patch_collection_return_type(IBug, 'getNominations', IBugNomination)
-
-patch_choice_parameter_type(IHasBugs, 'searchTasks', 'hardware_bus', HWBus)
 
 patch_reference_property(
     IPreviewDiff, 'branch_merge_proposal', IBranchMergeProposal)
@@ -778,11 +769,11 @@ patch_operations_explicit_version(
 patch_entry_explicit_version(IBug, 'beta')
 patch_operations_explicit_version(
     IBug, 'beta', "addAttachment", "addNomination", "addTask", "addWatch",
-    "canBeNominatedFor", "getHWSubmissions", "getNominationFor",
+    "canBeNominatedFor", "getNominationFor",
     "getNominations", "isExpirable", "isUserAffected",
-    "linkCVE", "linkHWSubmission", "markAsDuplicate",
+    "linkCVE", "markAsDuplicate",
     "markUserAffected", "newMessage", "setCommentVisibility", "setPrivate",
-    "setSecurityRelated", "subscribe", "unlinkCVE", "unlinkHWSubmission",
+    "setSecurityRelated", "subscribe", "unlinkCVE",
     "unsubscribe", "unsubscribeFromDupes")
 
 # IBugActivity

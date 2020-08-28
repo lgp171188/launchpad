@@ -166,7 +166,6 @@ from lp.bugs.model.structuralsubscription import (
     )
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
-from lp.hardwaredb.interfaces.hwdb import IHWSubmissionBugSet
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
@@ -2070,18 +2069,6 @@ class Bug(SQLBase, InformationTypeMixin):
             return True
         return getUtility(IService, 'sharing').checkPillarAccess(
             self.affected_pillars, InformationType.USERDATA, user)
-
-    def linkHWSubmission(self, submission):
-        """See `IBug`."""
-        getUtility(IHWSubmissionBugSet).create(submission, self)
-
-    def unlinkHWSubmission(self, submission):
-        """See `IBug`."""
-        getUtility(IHWSubmissionBugSet).remove(submission, self)
-
-    def getHWSubmissions(self, user=None):
-        """See `IBug`."""
-        return getUtility(IHWSubmissionBugSet).submissionsForBug(self, user)
 
     def personIsDirectSubscriber(self, person):
         """See `IBug`."""
