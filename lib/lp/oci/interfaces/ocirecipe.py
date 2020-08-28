@@ -391,6 +391,8 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         title=_("Build ARG variables"),
         description=_("The dictionary of ARG variables to be used when "
                       "building this recipe."),
+        key_type=TextLine(title=_("ARG name")),
+        value_type=TextLine(title=_("ARG value")),
         required=False,
         readonly=False))
 
