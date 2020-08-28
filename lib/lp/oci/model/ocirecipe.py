@@ -14,6 +14,7 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+import six
 from storm.databases.postgres import JSON
 from storm.expr import (
     And,
@@ -199,7 +200,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     @build_args.setter
     def build_args(self, value):
         assert value is None or isinstance(value, dict)
-        self._build_args = {k: str(v) for k, v in (value or {}).items()}
+        self._build_args = {k: six.text_type(v)
+                            for k, v in (value or {}).items()}
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
