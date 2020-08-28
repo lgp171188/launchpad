@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package views."""
@@ -1625,6 +1625,28 @@ class TestSnapView(BaseTestSnapView):
         view = create_initialized_view(snap, "+index")
         self.assertEqual(
             "track/stable/fix-123, track/edge/fix-123", view.store_channels)
+
+    def test_authorize_navigation_no_store_secrets(self):
+        # A snap with no store secrets has an "Authorize store uploads"
+        # navigation link.
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(registrant=owner, owner=owner)
+        authorize_url = canonical_url(snap, view_name="+authorize")
+        browser = self.getViewBrowser(snap, user=owner)
+        authorize_link = browser.getLink("Authorize store uploads")
+        self.assertEqual(authorize_url, authorize_link.url)
+
+    def test_authorize_navigation_store_secrets(self):
+        # A snap with store secrets has an "Reauthorize store uploads"
+        # navigation link.
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner,
+            store_secrets={"root": Macaroon().serialize()})
+        authorize_url = canonical_url(snap, view_name="+authorize")
+        browser = self.getViewBrowser(snap, user=owner)
+        authorize_link = browser.getLink("Reauthorize store uploads")
+        self.assertEqual(authorize_url, authorize_link.url)
 
 
 class TestSnapRequestBuildsView(BaseTestSnapView):

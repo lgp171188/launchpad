@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap views."""
@@ -143,7 +143,7 @@ class SnapNavigationMenu(NavigationMenu):
 
     facet = 'overview'
 
-    links = ('admin', 'edit', 'webhooks', 'delete')
+    links = ('admin', 'edit', 'webhooks', 'authorize', 'delete')
 
     @enabled_with_permission('launchpad.Admin')
     def admin(self):
@@ -158,6 +158,14 @@ class SnapNavigationMenu(NavigationMenu):
         return Link(
             '+webhooks', 'Manage webhooks', icon='edit',
             enabled=bool(getFeatureFlag('webhooks.new.enabled')))
+
+    @enabled_with_permission('launchpad.Edit')
+    def authorize(self):
+        if self.context.store_secrets:
+            text = 'Reauthorize store uploads'
+        else:
+            text = 'Authorize store uploads'
+        return Link('+authorize', text, icon='edit')
 
     @enabled_with_permission('launchpad.Edit')
     def delete(self):
