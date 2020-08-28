@@ -225,14 +225,14 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         browser.getControl("Git repository").value = (
             git_ref.repository.identity)
         browser.getControl("Git branch").value = git_ref.path
-        browser.getControl("Extra build ARG variables").value = (
+        browser.getControl("Build-time ARG variables").value = (
             "VAR1=10\nVAR2=20")
         browser.getControl("Create OCI recipe").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual("recipe-name", extract_text(content.h1))
         self.assertThat(
-            "Build ARG:\nVAR1=10\nVAR2=20",
+            "Build-time\nARG variables:\nVAR1=10\nVAR2=20",
             MatchesTagText(content, "build-args"))
 
     def test_create_new_recipe_users_teams_as_owner_options(self):
@@ -790,7 +790,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Source: ~test-person/\\+git/recipe-repository:master
             Build file path: Dockerfile
             Build schedule: Built on request
-            Build ARG: VAR1=123 VAR2=XXX
+            Build-time\nARG variables: VAR1=123 VAR2=XXX
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago 386

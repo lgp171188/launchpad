@@ -19,11 +19,11 @@ __all__ = [
     'OCIRecipeView',
     ]
 
-
 from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+import six
 from zope.component import getUtility
 from zope.formlib.form import FormFields
 from zope.formlib.textwidgets import TextAreaWidget
@@ -249,7 +249,8 @@ class OCIRecipeView(LaunchpadView):
     @property
     def build_args(self):
         return "\n".join(
-            "%s=%s" % (k, v) for k, v in self.context.build_args.items())
+            "%s=%s" % (k, v)
+            for k, v in sorted(self.context.build_args.items()))
 
 
 def builds_for_recipe(recipe):
@@ -701,12 +702,13 @@ class OCIRecipeFormMixin:
         """Create a form field for OCIRecipe.build_args attribute."""
         if IOCIRecipe.providedBy(self.context):
             default = "\n".join(
-                "%s=%s" % (k, v) for k, v in self.context.build_args.items())
+                "%s=%s" % (k, v)
+                for k, v in sorted(self.context.build_args.items()))
         else:
             default = ""
         return FormFields(Text(
             __name__='build_args',
-            title=u'Extra build ARG variables',
+            title=u'Build-time ARG variables',
             description=("One per line. Each ARG should be in the format "
                          "of ARG_KEY=arg_value."),
             default=default,
@@ -721,7 +723,7 @@ class OCIRecipeFormMixin:
             if '=' not in line:
                 msg = ("'%s' at line %s is not a valid KEY=value pair." %
                        (line, i + 1))
-                self.setFieldError("build_args", str(msg))
+                self.setFieldError("build_args", six.text_type(msg))
                 return
             k, v = line.split('=', 1)
             build_args[k] = v

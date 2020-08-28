@@ -67,9 +67,13 @@
       <dl id="build-args"
           tal:define="build_args view/build_args"
           tal:condition="build_args">
-        <dt>Build ARG:</dt>
+        <dt>
+          Build-time
+          <a href="https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg"
+             target="_blank">ARG variables:</a>
+        </dt>
         <dd>
-          <pre><span tal:replace="build_args"/></pre>
+          <pre tal:content="build_args" />
         </dd>
       </dl>
     </div>
