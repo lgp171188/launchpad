@@ -1355,7 +1355,7 @@ class TestPersonOCIRegistryCredentialsView(
 
     def test_view_oci_registry_credentials(self):
         # Verify view helper attributes.
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         getUtility(IOCIRegistryCredentialsSet).new(
             registrant=self.user, owner=self.owner, url=url,
@@ -1370,9 +1370,9 @@ class TestPersonOCIRegistryCredentialsView(
                 Equals(credentials))))
 
     def test_edit_oci_registry_credentials(self):
-        url = unicode(self.factory.getUniqueURL())
-        newurl = unicode(self.factory.getUniqueURL())
-        third_url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
+        newurl = self.factory.getUniqueURL()
+        third_url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             registrant=self.user, owner=self.owner, url=url,
@@ -1451,7 +1451,7 @@ class TestPersonOCIRegistryCredentialsView(
                         })))
 
     def test_add_oci_registry_credentials(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         image_name = self.factory.getUniqueUnicode()
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
@@ -1502,7 +1502,7 @@ class TestPersonOCIRegistryCredentialsView(
     def test_delete_oci_registry_credentials(self):
         # Test that we do not delete credentials when there are
         # push rules defined to use them
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             registrant=self.user, owner=self.owner, url=url,
