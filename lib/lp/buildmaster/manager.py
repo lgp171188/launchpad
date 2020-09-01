@@ -774,7 +774,7 @@ class BuilddManager(service.Service):
         self.logger.debug("Updating build queue stats.")
         queue_details = getUtility(IBuilderSet).getBuildQueueSizes()
         for queue_type, contents in queue_details.items():
-            virt = True if queue_type == 'virt' else False
+            virt = queue_type == 'virt'
             for arch, value in contents.items():
                 gauge_name = "buildqueue,virtualized={},arch={}".format(
                     virt, arch)
