@@ -78,7 +78,7 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
-from lp.services.statsd.interfaces.lp_statsd_client import ILPStatsdClient
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
@@ -112,7 +112,7 @@ class StatsMixin:
         self.stats_client = mock.Mock()
         utility_class.getClient.return_value = self.stats_client
         self.useFixture(
-            ZopeUtilityFixture(utility_class, ILPStatsdClient))
+            ZopeUtilityFixture(utility_class, IStatsdClient))
 
 
 class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):

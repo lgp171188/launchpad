@@ -12,9 +12,9 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
-from lp.services.statsd.interfaces.lp_statsd_client import ILPStatsdClient
-from lp.services.statsd.model.lp_statsd_client import (
-    LPStatsdClient,
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
+from lp.services.statsd.model.statsd_client import (
+    StatsdClient,
     UnconfiguredStatsdClient,
     )
 from lp.testing import TestCase
@@ -30,7 +30,7 @@ class TestClientConfiguration(TestCase):
         config.push(
             'statsd_test',
             "[statsd]\nhost: 127.0.01\nport: 9999\nprefix: test\n")
-        client = getUtility(ILPStatsdClient).getClient()
+        client = getUtility(IStatsdClient).getClient()
         self.assertIsInstance(client, StatsClient)
 
     def test_get_correct_instance_unconfigured(self):
@@ -38,12 +38,12 @@ class TestClientConfiguration(TestCase):
         config.push(
             'statsd_test',
             "[statsd]\nhost:")
-        client = LPStatsdClient().getClient()
+        client = StatsdClient().getClient()
         self.assertIsInstance(client, UnconfiguredStatsdClient)
 
     def test_get_correct_instance_configured(self):
         config.push(
             'statsd_test',
             "[statsd]\nhost: 127.0.01\nport: 9999\nprefix: test\n")
-        client = LPStatsdClient().getClient()
+        client = StatsdClient().getClient()
         self.assertIsInstance(client, StatsClient)

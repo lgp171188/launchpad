@@ -11,7 +11,7 @@
     <!-- utility, rather than securedutility as we don't want the child
     objects (the statsd clients) to be wrapped in the proxy -->
     <utility
-        factory="lp.services.statsd.model.lp_statsd_client.LPStatsdClient"
-        provides="lp.services.statsd.interfaces.lp_statsd_client.ILPStatsdClient">
+        factory="lp.services.statsd.model.statsd_client.StatsdClient"
+        provides="lp.services.statsd.interfaces.statsd_client.IStatsdClient">
     </utility>
 </configure>

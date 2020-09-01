@@ -61,7 +61,7 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.propertycache import get_property_cache
-from lp.services.statsd.interfaces.lp_statsd_client import ILPStatsdClient
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 BUILDD_MANAGER_LOG_NAME = "slave-scanner"
@@ -460,7 +460,7 @@ class SlaveScanner:
         self._cached_build_cookie = None
         self._cached_build_queue = None
 
-        self.statsd_client = getUtility(ILPStatsdClient).getClient()
+        self.statsd_client = getUtility(IStatsdClient).getClient()
 
     def startCycle(self):
         """Scan the builder and dispatch to it or deal with failures."""
@@ -715,7 +715,7 @@ class BuilddManager(service.Service):
         self.logger = self._setupLogger()
         self.current_builders = []
         self.pending_logtails = {}
-        self.statsd_client = getUtility(ILPStatsdClient).getClient()
+        self.statsd_client = getUtility(IStatsdClient).getClient()
 
     def _setupLogger(self):
         """Set up a 'slave-scanner' logger that redirects to twisted.

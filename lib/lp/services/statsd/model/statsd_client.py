@@ -6,14 +6,14 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
-__all__ = ['LPStatsdClient']
+__all__ = ['StatsdClient']
 
 
 from statsd import StatsClient
 from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.statsd.interfaces.lp_statsd_client import ILPStatsdClient
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 client = None
@@ -30,9 +30,9 @@ class UnconfiguredStatsdClient:
         return lambda *args, **kwargs: None
 
 
-@implementer(ILPStatsdClient)
-class LPStatsdClient:
-    """See `ILPStatsdClient`."""
+@implementer(IStatsdClient)
+class StatsdClient:
+    """See `IStatsdClient`."""
 
     client = None
 

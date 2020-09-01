@@ -6,13 +6,13 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
-__all__ = ['ILPStatsdClient']
+__all__ = ['IStatsdClient']
 
 
 from zope.interface import Interface
 
 
-class ILPStatsdClient(Interface):
+class IStatsdClient(Interface):
     """Methods for retrieving a statsd client using Launchpad config."""
 
     def getClient():
