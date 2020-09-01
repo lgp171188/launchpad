@@ -342,8 +342,6 @@ patch_collection_return_type(IPerson, 'getOwnedProjects', IProduct)
 # IHasRecipe
 patch_collection_property(IHasRecipes, 'recipes', ISourcePackageRecipe)
 
-patch_collection_property(IPerson, 'hardware_submissions', IHWSubmission)
-
 # publishing.py
 patch_collection_return_type(
     ISourcePackagePublishingHistoryPublic, 'getBuilds', IBinaryPackageBuild)
