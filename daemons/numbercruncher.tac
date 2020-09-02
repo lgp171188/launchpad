@@ -27,7 +27,7 @@ application.addComponent(
 readyservice.ReadyService().setServiceParent(application)
 
 
-# Service for scanning buildd slaves.
+# Service for updating statsd receivers.
 service = NumberCruncher()
 service.setServiceParent(application)
 
