@@ -3287,20 +3287,23 @@ class TestSnapWebservice(TestCaseWithFactory):
     def test_completeAuthorization(self):
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries()
+        root_macaroon = Macaroon()
+        discharge_macaroon = Macaroon()
         snap = self.factory.makeSnap(
             registrant=self.person, store_upload=True,
             store_series=snappy_series,
             store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": "dummy-root"})
+            store_secrets={"root": root_macaroon.serialize()})
         snap_url = api_url(snap)
         logout()
         response = self.webservice.named_post(
             snap_url, "completeAuthorization",
-            discharge_macaroon="dummy-discharge")
+            discharge_macaroon=discharge_macaroon.serialize())
         self.assertEqual(200, response.status)
         with person_logged_in(self.person):
             self.assertEqual(
-                {"root": "dummy-root", "discharge": "dummy-discharge"},
+                {"root": root_macaroon.serialize(),
+                 "discharge": discharge_macaroon.serialize()},
                 snap.store_secrets)
 
     def test_completeAuthorization_without_beginAuthorization(self):
@@ -3312,22 +3315,26 @@ class TestSnapWebservice(TestCaseWithFactory):
             store_name=self.factory.getUniqueUnicode())
         snap_url = api_url(snap)
         logout()
+        discharge_macaroon = Macaroon()
         response = self.webservice.named_post(
             snap_url, "completeAuthorization",
-            discharge_macaroon="dummy-discharge")
-        self.assertEqual(400, response.status)
-        self.assertEqual(
-            "beginAuthorization must be called before completeAuthorization.",
-            response.body)
+            discharge_macaroon=discharge_macaroon.serialize())
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400,
+            body=(
+                b"beginAuthorization must be called before "
+                b"completeAuthorization.")))
 
     def test_completeAuthorization_unauthorized(self):
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries()
+        root_macaroon = Macaroon()
+        discharge_macaroon = Macaroon()
         snap = self.factory.makeSnap(
             registrant=self.person, store_upload=True,
             store_series=snappy_series,
             store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": "dummy-root"})
+            store_secrets={"root": root_macaroon.serialize()})
         snap_url = api_url(snap)
         other_person = self.factory.makePerson()
         other_webservice = webservice_for_person(
@@ -3335,7 +3342,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         other_webservice.default_api_version = "devel"
         response = other_webservice.named_post(
             snap_url, "completeAuthorization",
-            discharge_macaroon="dummy-discharge")
+            discharge_macaroon=discharge_macaroon.serialize())
         self.assertEqual(401, response.status)
 
     def test_completeAuthorization_both_macaroons(self):
@@ -3349,13 +3356,17 @@ class TestSnapWebservice(TestCaseWithFactory):
             store_name=self.factory.getUniqueUnicode())
         snap_url = api_url(snap)
         logout()
+        root_macaroon = Macaroon()
+        discharge_macaroon = Macaroon()
         response = self.webservice.named_post(
             snap_url, "completeAuthorization",
-            root_macaroon="dummy-root", discharge_macaroon="dummy-discharge")
+            root_macaroon=root_macaroon.serialize(),
+            discharge_macaroon=discharge_macaroon.serialize())
         self.assertEqual(200, response.status)
         with person_logged_in(self.person):
             self.assertEqual(
-                {"root": "dummy-root", "discharge": "dummy-discharge"},
+                {"root": root_macaroon.serialize(),
+                 "discharge": discharge_macaroon.serialize()},
                 snap.store_secrets)
 
     def test_completeAuthorization_only_root_macaroon(self):
@@ -3370,11 +3381,44 @@ class TestSnapWebservice(TestCaseWithFactory):
             store_name=self.factory.getUniqueUnicode())
         snap_url = api_url(snap)
         logout()
+        root_macaroon = Macaroon()
         response = self.webservice.named_post(
-            snap_url, "completeAuthorization", root_macaroon="dummy-root")
+            snap_url, "completeAuthorization",
+            root_macaroon=root_macaroon.serialize())
         self.assertEqual(200, response.status)
         with person_logged_in(self.person):
-            self.assertEqual({"root": "dummy-root"}, snap.store_secrets)
+            self.assertEqual(
+                {"root": root_macaroon.serialize()}, snap.store_secrets)
+
+    def test_completeAuthorization_malformed_root_macaroon(self):
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries()
+        snap = self.factory.makeSnap(
+            registrant=self.person, store_upload=True,
+            store_series=snappy_series,
+            store_name=self.factory.getUniqueUnicode())
+        snap_url = api_url(snap)
+        logout()
+        response = self.webservice.named_post(
+            snap_url, "completeAuthorization", root_macaroon="nonsense")
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400, body=b"root_macaroon is invalid."))
+
+    def test_completeAuthorization_malformed_discharge_macaroon(self):
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries()
+        snap = self.factory.makeSnap(
+            registrant=self.person, store_upload=True,
+            store_series=snappy_series,
+            store_name=self.factory.getUniqueUnicode())
+        snap_url = api_url(snap)
+        logout()
+        response = self.webservice.named_post(
+            snap_url, "completeAuthorization",
+            root_macaroon=Macaroon().serialize(),
+            discharge_macaroon="nonsense")
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400, body=b"discharge_macaroon is invalid."))
 
     def test_completeAuthorization_encrypted(self):
         private_key = PrivateKey.generate()
@@ -3384,16 +3428,18 @@ class TestSnapWebservice(TestCaseWithFactory):
                 bytes(private_key.public_key)).decode("UTF-8"))
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries()
+        root_macaroon = Macaroon()
+        discharge_macaroon = Macaroon()
         snap = self.factory.makeSnap(
             registrant=self.person, store_upload=True,
             store_series=snappy_series,
             store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": "dummy-root"})
+            store_secrets={"root": root_macaroon.serialize()})
         snap_url = api_url(snap)
         logout()
         response = self.webservice.named_post(
             snap_url, "completeAuthorization",
-            discharge_macaroon="dummy-discharge")
+            discharge_macaroon=discharge_macaroon.serialize())
         self.assertEqual(200, response.status)
         self.pushConfig(
             "snappy",
@@ -3402,9 +3448,9 @@ class TestSnapWebservice(TestCaseWithFactory):
         container = getUtility(IEncryptedContainer, "snap-store-secrets")
         with person_logged_in(self.person):
             self.assertThat(snap.store_secrets, MatchesDict({
-                "root": Equals("dummy-root"),
+                "root": Equals(root_macaroon.serialize()),
                 "discharge_encrypted": AfterPreprocessing(
-                    container.decrypt, Equals("dummy-discharge")),
+                    container.decrypt, Equals(discharge_macaroon.serialize())),
                 }))
 
     def makeBuildableDistroArchSeries(self, **kwargs):

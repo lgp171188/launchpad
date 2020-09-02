@@ -1187,7 +1187,7 @@ class TestSnapAuthorizeView(BaseTestSnapView):
         # If the form does not include a discharge macaroon, the "complete"
         # action fails.
         with person_logged_in(self.snap.owner):
-            self.snap.store_secrets = {"root": "root"}
+            self.snap.store_secrets = {"root": Macaroon().serialize()}
             transaction.commit()
             form = {"field.actions.complete": "1"}
             view = create_initialized_view(
@@ -1203,12 +1203,14 @@ class TestSnapAuthorizeView(BaseTestSnapView):
     def test_complete_authorization(self):
         # If the form includes a discharge macaroon, the "complete" action
         # succeeds and records the new secrets.
+        root_macaroon = Macaroon()
+        discharge_macaroon = Macaroon()
         with person_logged_in(self.snap.owner):
-            self.snap.store_secrets = {"root": "root"}
+            self.snap.store_secrets = {"root": root_macaroon.serialize()}
             transaction.commit()
             form = {
                 "field.actions.complete": "1",
-                "field.discharge_macaroon": "discharge",
+                "field.discharge_macaroon": discharge_macaroon.serialize(),
                 }
             view = create_initialized_view(
                 self.snap, "+authorize", form=form, method="POST",
@@ -1223,7 +1225,8 @@ class TestSnapAuthorizeView(BaseTestSnapView):
                 self.snap.name,
                 view.request.response.notifications[0].message)
             self.assertEqual(
-                {"root": "root", "discharge": "discharge"},
+                {"root": root_macaroon.serialize(),
+                 "discharge": discharge_macaroon.serialize()},
                 self.snap.store_secrets)
 
 
