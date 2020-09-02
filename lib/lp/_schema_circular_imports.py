@@ -84,17 +84,6 @@ from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
-from lp.hardwaredb.interfaces.hwdb import (
-    IHWDBApplication,
-    IHWDevice,
-    IHWDeviceClass,
-    IHWDriver,
-    IHWDriverName,
-    IHWDriverPackageName,
-    IHWSubmission,
-    IHWSubmissionDevice,
-    IHWVendorID,
-    )
 from lp.registry.interfaces.commercialsubscription import (
     ICommercialSubscription,
     )
@@ -896,44 +885,6 @@ patch_entry_explicit_version(IDistroSeriesDifferenceComment, 'beta')
 
 # IGPGKey
 patch_entry_explicit_version(IGPGKey, 'beta')
-
-# IHWDBApplication
-patch_entry_explicit_version(IHWDBApplication, 'beta')
-patch_operations_explicit_version(
-    IHWDBApplication, 'beta', "deviceDriverOwnersAffectedByBugs", "devices",
-    "drivers", "hwInfoByBugRelatedUsers", "numDevicesInSubmissions",
-    "numOwnersOfDevice", "numSubmissionsWithDevice", "search", "vendorIDs")
-
-# IHWDevice
-patch_entry_explicit_version(IHWDevice, 'beta')
-patch_operations_explicit_version(
-    IHWDevice, 'beta', "getOrCreateDeviceClass", "getSubmissions",
-    "removeDeviceClass")
-
-# IHWDeviceClass
-patch_entry_explicit_version(IHWDeviceClass, 'beta')
-patch_operations_explicit_version(
-    IHWDeviceClass, 'beta', "delete")
-
-# IHWDriver
-patch_entry_explicit_version(IHWDriver, 'beta')
-patch_operations_explicit_version(
-    IHWDriver, 'beta', "getSubmissions")
-
-# IHWDriverName
-patch_entry_explicit_version(IHWDriverName, 'beta')
-
-# IHWDriverPackageName
-patch_entry_explicit_version(IHWDriverPackageName, 'beta')
-
-# IHWSubmission
-patch_entry_explicit_version(IHWSubmission, 'beta')
-
-# IHWSubmissionDevice
-patch_entry_explicit_version(IHWSubmissionDevice, 'beta')
-
-# IHWVendorID
-patch_entry_explicit_version(IHWVendorID, 'beta')
 
 # IHasBugs
 patch_entry_explicit_version(IHasBugs, 'beta')

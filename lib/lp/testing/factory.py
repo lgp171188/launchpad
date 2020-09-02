@@ -150,12 +150,6 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
-from lp.hardwaredb.interfaces.hwdb import (
-    HWSubmissionFormat,
-    IHWDeviceDriverLinkSet,
-    IHWSubmissionDeviceSet,
-    IHWSubmissionSet,
-    )
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -4375,49 +4369,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                     encode_base64(attachment)
                 msg.attach(attachment)
         return msg
-
-    def makeHWSubmission(self, date_created=None, submission_key=None,
-                         emailaddress=u'test@canonical.com',
-                         distroarchseries=None, private=False,
-                         contactable=False, system=None,
-                         submission_data=None, status=None):
-        """Create a new HWSubmission."""
-        if date_created is None:
-            date_created = datetime.now(pytz.UTC)
-        if submission_key is None:
-            submission_key = self.getUniqueString('submission-key')
-        if distroarchseries is None:
-            distroarchseries = self.makeDistroArchSeries()
-        if system is None:
-            system = self.getUniqueString('system-fingerprint')
-        if submission_data is None:
-            sample_data_path = os.path.join(
-                config.root, 'lib', 'lp', 'hardwaredb', 'scripts',
-                'tests', 'simple_valid_hwdb_submission.xml')
-            submission_data = open(sample_data_path).read()
-        filename = self.getUniqueString('submission-file')
-        filesize = len(submission_data)
-        raw_submission = StringIO(submission_data)
-        format = HWSubmissionFormat.VERSION_1
-        submission_set = getUtility(IHWSubmissionSet)
-
-        submission = submission_set.createSubmission(
-            date_created, format, private, contactable,
-            submission_key, emailaddress, distroarchseries,
-            raw_submission, filename, filesize, system)
-
-        if status is not None:
-            removeSecurityProxy(submission).status = status
-        return submission
-
-    def makeHWSubmissionDevice(self, submission, device, driver, parent,
-                               hal_device_id):
-        """Create a new HWSubmissionDevice."""
-        device_driver_link_set = getUtility(IHWDeviceDriverLinkSet)
-        device_driver_link = device_driver_link_set.getOrCreate(
-            device, driver)
-        return getUtility(IHWSubmissionDeviceSet).create(
-            device_driver_link, submission, parent, hal_device_id)
 
     def makeSSHKeyText(self, key_type="ssh-rsa", comment=None):
         """Create new SSH public key text.

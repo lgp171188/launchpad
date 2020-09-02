@@ -101,17 +101,6 @@ from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
-from lp.hardwaredb.interfaces.hwdb import (
-    IHWDBApplication,
-    IHWDevice,
-    IHWDeviceClass,
-    IHWDriver,
-    IHWDriverName,
-    IHWDriverPackageName,
-    IHWSubmission,
-    IHWSubmissionDevice,
-    IHWVendorID,
-    )
 from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
@@ -2678,77 +2667,6 @@ class AdminDistroSeriesLanguagePacks(
 class AdminLanguagePack(OnlyRosettaExpertsAndAdmins):
     permission = 'launchpad.LanguagePacksAdmin'
     usedfor = ILanguagePack
-
-
-class ViewHWSubmission(AuthorizationBase):
-    permission = 'launchpad.View'
-    usedfor = IHWSubmission
-
-    def checkAuthenticated(self, user):
-        """Can the user view the submission details?
-
-        Submissions that are not marked private are publicly visible,
-        private submissions may only be accessed by their owner and by
-        admins.
-        """
-        if not self.obj.private:
-            return True
-
-        return user.inTeam(self.obj.owner) or user.in_admin
-
-    def checkUnauthenticated(self):
-        return not self.obj.private
-
-
-class EditHWSubmission(AdminByAdminsTeam):
-    permission = 'launchpad.Edit'
-    usedfor = IHWSubmission
-
-
-class ViewHWDBBase(AuthorizationBase):
-    """Base class to restrict access to HWDB data to members of the HWDB team.
-    """
-    permission = 'launchpad.View'
-
-    def checkAuthenticated(self, user):
-        """We give for now access only to Canonical employees."""
-        return user.in_hwdb_team
-
-    def checkUnauthenticated(self):
-        """No access for anonymous users."""
-        return False
-
-
-class ViewHWDriver(ViewHWDBBase):
-    usedfor = IHWDriver
-
-
-class ViewHWDriverName(ViewHWDBBase):
-    usedfor = IHWDriverName
-
-
-class ViewHWDriverPackageName(ViewHWDBBase):
-    usedfor = IHWDriverPackageName
-
-
-class ViewHWVendorID(ViewHWDBBase):
-    usedfor = IHWVendorID
-
-
-class ViewHWDevice(ViewHWDBBase):
-    usedfor = IHWDevice
-
-
-class ViewHWSubmissionDevice(ViewHWDBBase):
-    usedfor = IHWSubmissionDevice
-
-
-class ViewHWDBApplication(ViewHWDBBase):
-    usedfor = IHWDBApplication
-
-
-class ViewHWDeviceClass(ViewHWDBBase):
-    usedfor = IHWDeviceClass
 
 
 class ViewArchive(AuthorizationBase):
