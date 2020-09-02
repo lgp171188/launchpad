@@ -10,6 +10,12 @@
         <allow
             interface="lp.services.signing.interfaces.signingkey.ISigningKey"/>
     </class>
+    <securedutility
+        component="lp.services.signing.model.signingkey.SigningKey"
+        provides="lp.services.signing.interfaces.signingkey.ISigningKeySet">
+        <allow
+            interface="lp.services.signing.interfaces.signingkey.ISigningKeySet"/>
+    </securedutility>
 
     <securedutility
         class="lp.services.signing.model.signingkey.ArchiveSigningKeySet"
