@@ -661,7 +661,7 @@ def _build_query(params):
         join_tables.append(
             (BugAffectsPerson, Join(
                 BugAffectsPerson, And(
-                    BugTaskFlat.bug_id == BugAffectsPerson.bugID,
+                    BugTaskFlat.bug_id == BugAffectsPerson.bug_id,
                     BugAffectsPerson.affected,
                     BugAffectsPerson.person == params.affected_user))))
 

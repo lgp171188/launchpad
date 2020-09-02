@@ -481,7 +481,7 @@ class HWSubmissionSet:
 
         if affected_by_bug:
             affected_clauses = [
-                BugAffectsPerson.personID == HWSubmission.ownerID,
+                BugAffectsPerson.person_id == HWSubmission.ownerID,
                 BugAffectsPerson.bug == Bug.id,
                 BugAffectsPerson.affected,
                 ]
@@ -538,7 +538,7 @@ class HWSubmissionSet:
             tables.append(BugSubscription)
         if affected_by_bug:
             person_clauses.append(
-                And(BugAffectsPerson.personID == HWSubmission.ownerID,
+                And(BugAffectsPerson.person_id == HWSubmission.ownerID,
                     BugAffectsPerson.bug == Bug.id,
                     BugAffectsPerson.affected))
             tables.append(BugAffectsPerson)
