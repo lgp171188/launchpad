@@ -695,23 +695,6 @@ We can query for submissions from a particular user.
     >>> print(submissions['total_size'])
     0
 
-=== Getting all submissions for a user ===
-
-We can get all of a user's hardware submissions by retrieving their
-`hardware_submissions` collection.
-
-    >>> name12 = webservice.get(webservice.getAbsoluteUrl('/~name12')).jsonBody()
-    >>> pprint_collection(
-    ...     webservice.get(
-    ...         name12['hardware_submissions_collection_link']).jsonBody())
-    resource_type_link: u'http://.../#h_w_submission-page-resource'
-    start: 0
-    total_size: 2
-    ...
-    submission_key: u'sample-submission'
-    ...
-
-
 === Searching for submissions ===
 
 Alternatively, we can also search for hardware submissions by user:
