@@ -13,7 +13,15 @@ from zope.interface import Interface
 
 
 class IStatsdClient(Interface):
-    """Methods for retrieving a statsd client using Launchpad config."""
+    """Marker interface for retrieving a statsd client for Launchpad."""
 
     def getClient():
-        """Return an appropriately configured statsd client."""
+        """Return an appropriately configured statsd client.
+
+        The returned object is a statsd client as defined at
+        https://statsd.readthedocs.io/en/latest/reference.html#StatsClient; we
+        do not currently define a full Zope interface for it.
+        """
+
+    def reload():
+        """Reload the statsd client configuration."""

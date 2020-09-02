@@ -19,30 +19,33 @@ from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 client = None
 
 
-class UnconfiguredStatsdClient:
-    """Dummy client for if statsd is not configured in the environment.
-
-    This client will be used if the statsd settings are not available to
-    Launchpad. Prevents unnecessary network traffic.
-    """
-
-    def __getattr__(self, name):
-        return lambda *args, **kwargs: None
-
-
 @implementer(IStatsdClient)
 class StatsdClient:
     """See `IStatsdClient`."""
 
-    client = None
+    # We need to explicitly set the component name as otherwise our
+    # __getattr__ may confuse component registration.
+    __component_name__ = ""
 
-    def getClient(self):
-        if not self.client:
-            if config.statsd.host:
-                self.client = StatsClient(
-                    host=config.statsd.host,
-                    port=config.statsd.port,
-                    prefix=config.statsd.prefix)
-            else:
-                self.client = UnconfiguredStatsdClient()
-        return self.client
+    def __init__(self):
+        self._make_client()
+
+    def _make_client(self):
+        if config.statsd.host:
+            self._client = StatsClient(
+                host=config.statsd.host,
+                port=config.statsd.port,
+                prefix=config.statsd.prefix)
+        else:
+            self._client = None
+
+    def reload(self):
+        self._make_client()
+
+    def __getattr__(self, name):
+        if self._client is not None:
+            return getattr(self._client, name)
+        else:
+            # Prevent unnecessary network traffic if this Launchpad instance
+            # has no statsd configuration.
+            return lambda *args, **kwargs: None

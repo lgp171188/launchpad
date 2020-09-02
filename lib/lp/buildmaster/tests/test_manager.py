@@ -106,13 +106,11 @@ from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 class StatsMixin:
 
     def setUpStats(self):
-        # Mock the utility class, then return a known value
-        # from getClient(), so we can assert against the call counts and args.
-        utility_class = mock.Mock()
+        # Install a mock statsd client so we can assert against the call
+        # counts and args.
         self.stats_client = mock.Mock()
-        utility_class.getClient.return_value = self.stats_client
         self.useFixture(
-            ZopeUtilityFixture(utility_class, IStatsdClient))
+            ZopeUtilityFixture(self.stats_client, IStatsdClient))
 
 
 class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
