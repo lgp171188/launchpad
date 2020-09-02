@@ -96,8 +96,9 @@ def silence_swiftclient_logger():
 
     keystoneclient logs credentials at DEBUG.
     """
-    swiftclient_logger = logging.getLogger('swiftclient')
-    swiftclient_logger.setLevel(logging.INFO)
+    if not os.environ.get('LP_SWIFTCLIENT_DEBUG'):
+        swiftclient_logger = logging.getLogger('swiftclient')
+        swiftclient_logger.setLevel(logging.INFO)
     keystoneclient_logger = logging.getLogger('keystoneclient')
     keystoneclient_logger.setLevel(logging.INFO)
 

@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Vocabularies for content objects.
@@ -44,7 +44,6 @@ __all__ = [
     'MilestoneWithDateExpectedVocabulary',
     'NewPillarGranteeVocabulary',
     'NonMergedPeopleAndTeamsVocabulary',
-    'person_team_participations_vocabulary_factory',
     'PersonAccountToMergeVocabulary',
     'PersonActiveMembershipVocabulary',
     'ProductReleaseVocabulary',
@@ -199,7 +198,10 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
-from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.authorization import (
+    check_permission,
+    precache_permission_for_objects,
+    )
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import nearest
 from lp.services.webapp.vocabulary import (
@@ -401,25 +403,38 @@ class UserTeamsParticipationVocabulary(SQLObjectVocabularyBase):
         return SimpleTerm(obj, obj.name, obj.unique_displayname)
 
     def __iter__(self):
-        kw = {}
-        if self._orderBy:
-            kw['orderBy'] = self._orderBy
         launchbag = getUtility(ILaunchBag)
         if launchbag.user:
             user = launchbag.user
-            for team in user.teams_participated_in:
-                if ((team.visibility == PersonVisibility.PUBLIC
-                    or self.INCLUDE_PRIVATE_TEAM) and
-                    (team.membership_policy in EXCLUSIVE_TEAM_POLICY
-                    or not self.EXCLUSIVE_TEAMS_ONLY)):
-                    yield self.toTerm(team)
+            clauses = [
+                Person.id == TeamParticipation.teamID,
+                TeamParticipation.person == user,
+                Person.teamowner != None,
+                ]
+            if not self.INCLUDE_PRIVATE_TEAM:
+                clauses.append(Person.visibility == PersonVisibility.PUBLIC)
+            if self.EXCLUSIVE_TEAMS_ONLY:
+                clauses.append(
+                    Person.membership_policy.is_in(EXCLUSIVE_TEAM_POLICY))
+            teams = list(
+                IStore(Person).find(Person, *clauses).order_by(
+                    Person._storm_sortingColumns))
+            # Users can view all the teams they belong to.
+            precache_permission_for_objects(
+                None, 'launchpad.LimitedView', teams)
+            for team in teams:
+                yield self.toTerm(team)
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         launchbag = getUtility(ILaunchBag)
         if launchbag.user:
             user = launchbag.user
-            for team in user.teams_participated_in:
+            teams = list(user.teams_participated_in)
+            # Users can view all the teams they belong to.
+            precache_permission_for_objects(
+                None, 'launchpad.LimitedView', teams)
+            for team in teams:
                 if team.name == token:
                     return self.getTerm(team)
         raise LookupError(token)
@@ -1054,21 +1069,6 @@ class ActiveMailingListVocabulary(FilteredVocabularyBase):
         """See `IHugeVocabulary`."""
         results = self.search(query)
         return CountableIterator(results.count(), results, self.toTerm)
-
-
-def person_term(person):
-    """Return a SimpleTerm for the `Person`."""
-    return SimpleTerm(person, person.name, title=person.displayname)
-
-
-def person_team_participations_vocabulary_factory(context):
-    """Return a SimpleVocabulary containing the teams a person
-    participate in.
-    """
-    assert context is not None
-    person = IPerson(context)
-    return SimpleVocabulary([
-        person_term(team) for team in person.teams_participated_in])
 
 
 class UserTeamsParticipationPlusSelfVocabulary(

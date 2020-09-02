@@ -25,6 +25,8 @@ import tempfile
 
 from fixtures import MockPatchObject
 import pytz
+import requests
+from six.moves.urllib.parse import urljoin
 from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from swiftclient import client as swiftclient
@@ -852,6 +854,64 @@ class TestSwiftLibrarianGarbageCollection(
         # The first file is removed, but the second is intact.
         with self.librariangc_thinking_it_is_tomorrow():
             librariangc.delete_unwanted_files(self.con)
+        self.assertFalse(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+    def test_delete_unwanted_files_handles_missing(self):
+        # GC tolerates a file being already missing from Swift when it tries
+        # to delete it.  It's not clear why this happens in practice.
+        switch_dbuser('testadmin')
+        content = b'uploading to swift'
+        f1_lfa = LibraryFileAlias.get(self.client.addFile(
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f1_id = f1_lfa.contentID
+
+        f2_lfa = LibraryFileAlias.get(self.client.addFile(
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f2_id = f2_lfa.contentID
+        transaction.commit()
+
+        for lfc_id in (f1_id, f2_id):
+            # Make the files old so they don't look in-progress.
+            os.utime(swift.filesystem_path(lfc_id), (0, 0))
+
+        switch_dbuser(config.librarian_gc.dbuser)
+
+        swift.to_swift(BufferLogger(), remove_func=os.unlink)
+
+        # Both files exist in Swift.
+        self.assertTrue(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+        # Remove the first file from the DB.
+        content = f1_lfa.content
+        Store.of(f1_lfa).remove(f1_lfa)
+        Store.of(content).remove(content)
+        transaction.commit()
+
+        # In production, we see a sequence of DELETE 401 / authenticate /
+        # DELETE 404.  Since it isn't clear why this happens, we don't know
+        # exactly how to simulate it here, but do our best by deleting the
+        # object and forcibly expiring the client's token just before the
+        # first expected DELETE.
+        real_delete_object = swiftclient.Connection.delete_object
+
+        def fake_delete_object(connection, *args, **kwargs):
+            real_delete_object(connection, *args, **kwargs)
+            self.assertIsNotNone(connection.token)
+            requests.delete(urljoin(
+                config.librarian_server.os_auth_url,
+                'tokens/%s' % connection.token))
+            return real_delete_object(connection, *args, **kwargs)
+
+        self.patch(
+            swiftclient.Connection, 'delete_object', fake_delete_object)
+
+        # delete_unwanted_files completes successfully, and the second file
+        # is intact.
+        with self.librariangc_thinking_it_is_tomorrow():
+            swift.quiet_swiftclient(
+                librariangc.delete_unwanted_files, self.con)
         self.assertFalse(self.file_exists(f1_id))
         self.assertTrue(self.file_exists(f2_id))
 
