@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publisher of objects as web pages.
@@ -36,6 +36,7 @@ from lazr.restful import (
     )
 from lazr.restful.declarations import error_status
 from lazr.restful.interfaces import IJSONRequestCache
+from lazr.restful.marshallers import URLDereferencingMixin
 from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
@@ -1081,7 +1082,7 @@ class Navigation:
 
 
 @implementer(IBrowserPublisher)
-class RedirectionView:
+class RedirectionView(URLDereferencingMixin):
 
     def __init__(self, target, request, status=None, cache_view=None):
         self.target = target
@@ -1105,6 +1106,45 @@ class RedirectionView:
 
     def browserDefault(self, request):
         return self, ()
+
+    @property
+    def context(self):
+        """Find the context object corresponding to the redirection target.
+
+        Passing objects as arguments to webservice methods is done by URL,
+        and ObjectLookupFieldMarshaller constructs an internal request to
+        traverse this and find the appropriate object.  If the URL in
+        question results in a redirection, then we must recursively traverse
+        the target URL until we find something that the webservice
+        understands.
+        """
+        # Circular import.
+        from lp.services.webapp.servers import WebServiceClientRequest
+
+        if not isinstance(self.request, WebServiceClientRequest):
+            # Raise AttributeError here (as if the "context" attribute
+            # didn't exist) so that e.g.
+            # lp.testing.publication.test_traverse knows to fall back to
+            # other approaches.
+            raise AttributeError(
+                "RedirectionView.context is only supported for webservice "
+                "requests.")
+        parsed_target = urlparse(self.target)
+        if parsed_target.query:
+            raise AttributeError(
+                "RedirectionView.context is not supported for URLs with "
+                "query strings.")
+        # This only supports the canonical root hostname/port for each site,
+        # not any althostnames, but we assume that internally-generated
+        # redirections always use the canonical hostname/port.
+        supported_roots = {
+            urlparse(section.rooturl)[:2]
+            for section in allvhosts.configs.values()}
+        if parsed_target[:2] not in supported_roots:
+            raise AttributeError(
+                "RedirectionView.context is only supported for URLs served "
+                "by the main Launchpad application.")
+        return self.dereference_url_as_object(self.target)
 
 
 @implementer(IBrowserPublisher)
