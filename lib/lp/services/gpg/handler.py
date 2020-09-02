@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -12,6 +12,7 @@ __all__ = [
 
 import atexit
 from contextlib import contextmanager
+from datetime import datetime
 import os
 import shutil
 import socket
@@ -22,18 +23,22 @@ import tempfile
 
 import gpgme
 from lazr.restful.utils import get_current_browser_request
+import pytz
 import requests
 import six
 from six.moves import http_client
 from six.moves.urllib.parse import urlencode
+from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.validators.email import valid_email
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.gpg.interfaces import (
     get_gpg_path,
     get_gpgme_context,
+    GPG_INJECT,
     GPGKeyAlgorithm,
     GPGKeyDoesNotExistOnServer,
     GPGKeyExpired,
@@ -51,6 +56,8 @@ from lp.services.gpg.interfaces import (
     SecretGPGKeyImportDetected,
     valid_fingerprint,
     )
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import ISigningKeySet
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
     TimeoutError,
@@ -318,6 +325,15 @@ class GPGHandler:
         assert key.exists_in_local_keyring
         return key
 
+    def _injectKeyPair(self, key):
+        """Inject a key pair into the signing service."""
+        secret_key = key.export()
+        public_key = self.retrieveKey(key.fingerprint).export()
+        now = datetime.now().replace(tzinfo=pytz.UTC)
+        getUtility(ISigningKeySet).inject(
+            SigningKeyType.OPENPGP, secret_key, public_key, key.uids[0].name,
+            now)
+
     def generateKey(self, name):
         """See `IGPGHandler`."""
         context = get_gpgme_context()
@@ -350,6 +366,17 @@ class GPGHandler:
             'The key in the local keyring does not match the one generated.')
         assert key.exists_in_local_keyring, (
             'The key does not seem to exist in the local keyring.')
+
+        if getFeatureFlag(GPG_INJECT):
+            try:
+                self._injectKeyPair(key)
+            except Exception:
+                with gpgme_timeline("delete", key.fingerprint):
+                    # For clarity this should be allow_secret=True, but
+                    # pygpgme doesn't allow it to be passed as a keyword
+                    # argument.
+                    context.delete(key.key, True)
+                raise
 
         return key
 
