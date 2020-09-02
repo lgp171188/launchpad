@@ -354,6 +354,7 @@ all milestones. IPerson related pages showing milestone lists retrieve
 the milestones from RelevantMilestonesMixin.getMilestoneWidgetValues()
 but we need the big default vocabulary for form input validation.
 
+    >>> sample_person = person_set.getByName('name12')
     >>> all_milestones = get_naked_vocab(sample_person, 'Milestone')
     >>> len(all_milestones)
     3
