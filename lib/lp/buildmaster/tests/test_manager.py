@@ -1656,13 +1656,14 @@ class TestStats(StatsMixin, TestCaseWithFactory):
         super(TestStats, self).setUp()
         self.setUpStats()
 
-    def test_single_processor(self):
+    def test_single_processor_counts(self):
         builder = self.factory.makeBuilder()
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
         transaction.commit()
         clock = task.Clock()
         manager = BuilddManager(clock=clock)
+        manager._updateBuilderQueues = FakeMethod()
         manager.builder_factory.update()
         manager.updateStats()
 
@@ -1670,7 +1671,7 @@ class TestStats(StatsMixin, TestCaseWithFactory):
         for call in self.stats_client.mock.gauge.call_args_list:
             self.assertIn('386', call[0][0])
 
-    def test_multiple_processor(self):
+    def test_multiple_processor_counts(self):
         builder = self.factory.makeBuilder(
             processors=[getUtility(IProcessorSet).getByName('amd64')])
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
@@ -1678,6 +1679,7 @@ class TestStats(StatsMixin, TestCaseWithFactory):
         transaction.commit()
         clock = task.Clock()
         manager = BuilddManager(clock=clock)
+        manager._updateBuilderQueues = FakeMethod()
         manager.builder_factory.update()
         manager.updateStats()
 
@@ -1689,7 +1691,7 @@ class TestStats(StatsMixin, TestCaseWithFactory):
         self.assertEqual(8, len(i386_calls))
         self.assertEqual(4, len(amd64_calls))
 
-    def test_correct_values(self):
+    def test_correct_values_counts(self):
         builder = self.factory.makeBuilder(
             processors=[getUtility(IProcessorSet).getByName('amd64')])
         builder.setCleanStatus(BuilderCleanStatus.CLEANING)
@@ -1697,6 +1699,7 @@ class TestStats(StatsMixin, TestCaseWithFactory):
         transaction.commit()
         clock = task.Clock()
         manager = BuilddManager(clock=clock)
+        manager._updateBuilderQueues = FakeMethod()
         manager.builder_factory.update()
         manager.updateStats()
 
@@ -1709,4 +1712,27 @@ class TestStats(StatsMixin, TestCaseWithFactory):
                  Equals(('builders.building,arch=amd64,virtualized=True', 0)),
                  Equals(('builders.idle,arch=amd64,virtualized=True', 0)),
                  Equals(('builders.cleaning,arch=amd64,virtualized=True', 1))
+                 ]))
+
+    def test_updateBuilderQueues(self):
+        builder = self.factory.makeBuilder(
+            processors=[getUtility(IProcessorSet).getByName('amd64')])
+        builder.setCleanStatus(BuilderCleanStatus.CLEANING)
+        build = self.factory.makeSnapBuild()
+        build.queueBuild()
+        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
+        transaction.commit()
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+        manager._updateBuilderCounts = FakeMethod()
+        manager.builder_factory.update()
+        manager.updateStats()
+
+        self.assertEqual(2, self.stats_client.gauge.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.gauge.call_args_list],
+            MatchesListwise(
+                [Equals(('buildqueue,virtualized=True,arch={}'.format(
+                    build.processor.name), 1)),
+                 Equals(('buildqueue,virtualized=False,arch=386', 1))
                  ]))
