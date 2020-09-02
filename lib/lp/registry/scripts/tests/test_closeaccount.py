@@ -27,11 +27,6 @@ from lp.archivepublisher.publishing import Publisher
 from lp.bugs.model.bugsummary import BugSummary
 from lp.code.enums import TargetRevisionControlSystems
 from lp.code.tests.helpers import GitHostingFixture
-from lp.hardwaredb.interfaces.hwdb import (
-    HWBus,
-    IHWDeviceSet,
-    IHWSubmissionSet,
-    )
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
@@ -405,36 +400,117 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertIsNotNone(ppa.getAuthToken(person))
 
     def test_handles_hardware_submissions(self):
+        # Launchpad used to support hardware submissions.  This is in the
+        # process of being removed after a long period of relative disuse,
+        # but close-account still needs to cope with old accounts that have
+        # them, so we resort to raw SQL to set things up.
         person = self.factory.makePerson()
-        submission = self.factory.makeHWSubmission(
-            emailaddress=person.preferredemail.email)
-        other_submission = self.factory.makeHWSubmission()
-        device = getUtility(IHWDeviceSet).getByDeviceID(
-            HWBus.PCI, '0x10de', '0x0455')
+        store = Store.of(person)
+        date_created = get_transaction_timestamp(store)
+        keys = [
+            self.factory.getUniqueUnicode('submission-key') for _ in range(2)]
+        raw_submissions = [
+            self.factory.makeLibraryFileAlias(db_only=True) for _ in range(2)]
+        systems = [
+            self.factory.getUniqueUnicode('system-fingerprint')
+            for _ in range(2)]
+        system_fingerprint_ids = [
+            row[0] for row in store.execute("""
+                INSERT INTO HWSystemFingerprint (fingerprint)
+                VALUES (?), (?)
+                RETURNING id
+                """, systems)]
+        submission_ids = [
+            row[0] for row in store.execute("""
+                INSERT INTO HWSubmission
+                    (date_created, format, private, contactable,
+                     submission_key, owner, raw_submission,
+                     system_fingerprint)
+                VALUES
+                    (?, 1, FALSE, FALSE, ?, ?, ?, ?),
+                    (?, 1, FALSE, FALSE, ?, ?, ?, ?)
+                RETURNING id
+                """,
+                (date_created, keys[0], person.id,
+                 raw_submissions[0].id, system_fingerprint_ids[0],
+                 date_created, keys[1], self.factory.makePerson().id,
+                 raw_submissions[1].id, system_fingerprint_ids[1]))]
         with dbuser('hwdb-submission-processor'):
-            parent_submission_device = self.factory.makeHWSubmissionDevice(
-                submission, device, None, None, 1)
-            self.factory.makeHWSubmissionDevice(
-                submission, device, None, parent_submission_device, 2)
-            other_submission_device = self.factory.makeHWSubmissionDevice(
-                other_submission, device, None, None, 1)
-        key = submission.submission_key
-        other_key = other_submission.submission_key
-        hw_submission_set = getUtility(IHWSubmissionSet)
-        self.assertNotEqual([], list(hw_submission_set.getByOwner(person)))
-        self.assertEqual(submission, hw_submission_set.getBySubmissionKey(key))
+            device_driver_link_id = store.execute("""
+                SELECT HWDeviceDriverLink.id
+                FROM HWDeviceDriverLink, HWDevice, HWVendorID
+                WHERE
+                    HWVendorID.bus = 1
+                    AND HWVendorID.vendor_id_for_bus = '0x10de'
+                    AND HWDevice.bus_vendor_id = HWVendorID.id
+                    AND HWDevice.bus_product_id = '0x0455'
+                    AND HWDevice.variant IS NULL
+                    AND HWDeviceDriverLink.device = HWDevice.id
+                    AND HWDeviceDriverLink.driver IS NULL
+                """).get_one()[0]
+            parent_submission_device_id = store.execute("""
+                INSERT INTO HWSubmissionDevice
+                    (device_driver_link, submission, parent, hal_device_id)
+                VALUES (?, ?, NULL, 1)
+                RETURNING id
+                """,
+                (device_driver_link_id, submission_ids[0])).get_one()[0]
+            store.execute("""
+                INSERT INTO HWSubmissionDevice
+                    (device_driver_link, submission, parent, hal_device_id)
+                VALUES (?, ?, ?, 2)
+                """,
+                (device_driver_link_id, submission_ids[0],
+                 parent_submission_device_id))
+            other_submission_device_id = store.execute("""
+                INSERT INTO HWSubmissionDevice
+                    (device_driver_link, submission, hal_device_id)
+                VALUES (?, ?, 1)
+                RETURNING id
+                """,
+                (device_driver_link_id, submission_ids[1])).get_one()[0]
+
+        def get_submissions_by_owner(person):
+            return [
+                row[0] for row in store.execute("""
+                    SELECT HWSubmission.id
+                    FROM HWSubmission, HWSystemFingerprint
+                    WHERE
+                        HWSubmission.owner = ?
+                        AND HWSystemFingerprint.id =
+                            HWSubmission.system_fingerprint
+                    """, (person.id,))]
+
+        def get_submission_by_submission_key(submission_key):
+            result = store.execute("""
+                SELECT id FROM HWSubmission WHERE submission_key = ?
+                """, (submission_key,))
+            row = result.get_one()
+            self.assertIsNone(result.get_one())
+            return row[0] if row else None
+
+        def get_devices_by_submission(submission_id):
+            return [
+                row[0] for row in store.execute("""
+                    SELECT id FROM HWSubmissionDevice WHERE submission = ?
+                    """, (submission_id,))]
+
+        self.assertNotEqual([], get_submissions_by_owner(person))
+        self.assertEqual(
+            submission_ids[0], get_submission_by_submission_key(keys[0]))
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([six.ensure_str(person.name)])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
-        self.assertEqual([], list(hw_submission_set.getByOwner(person)))
-        self.assertIsNone(hw_submission_set.getBySubmissionKey(key))
+        self.assertEqual([], get_submissions_by_owner(person))
+        self.assertIsNone(get_submission_by_submission_key(keys[0]))
         self.assertEqual(
-            other_submission, hw_submission_set.getBySubmissionKey(other_key))
+            submission_ids[1], get_submission_by_submission_key(keys[1]))
         self.assertEqual(
-            [other_submission_device], list(other_submission.devices))
+            [other_submission_device_id],
+            get_devices_by_submission(submission_ids[1]))
 
     def test_skips_bug_summary(self):
         person = self.factory.makePerson()

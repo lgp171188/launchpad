@@ -166,13 +166,6 @@ class BugTaskSearchParams:
                  has_cve=False, bug_supervisor=None, bug_reporter=None,
                  nominated_for=None, bug_commenter=None, omit_targeted=False,
                  date_closed=None, affected_user=None, affects_me=False,
-                 hardware_bus=None, hardware_vendor_id=None,
-                 hardware_product_id=None, hardware_driver_name=None,
-                 hardware_driver_package_name=None,
-                 hardware_owner_is_bug_reporter=None,
-                 hardware_owner_is_affected_by_bug=False,
-                 hardware_owner_is_subscribed_to_bug=False,
-                 hardware_is_linked_to_bug=False,
                  linked_branches=None, linked_merge_proposals=None,
                  linked_blueprints=None,
                  structural_subscriber=None, modified_since=None,
@@ -211,17 +204,6 @@ class BugTaskSearchParams:
         self.date_closed = date_closed
         self.affected_user = affected_user
         self.affects_me = affects_me
-        self.hardware_bus = hardware_bus
-        self.hardware_vendor_id = hardware_vendor_id
-        self.hardware_product_id = hardware_product_id
-        self.hardware_driver_name = hardware_driver_name
-        self.hardware_driver_package_name = hardware_driver_package_name
-        self.hardware_owner_is_bug_reporter = hardware_owner_is_bug_reporter
-        self.hardware_owner_is_affected_by_bug = (
-            hardware_owner_is_affected_by_bug)
-        self.hardware_owner_is_subscribed_to_bug = (
-            hardware_owner_is_subscribed_to_bug)
-        self.hardware_is_linked_to_bug = hardware_is_linked_to_bug
         self.linked_branches = linked_branches
         self.linked_merge_proposals = linked_merge_proposals
         self.linked_blueprints = linked_blueprints
@@ -376,14 +358,7 @@ class BugTaskSearchParams:
                        omit_duplicates=True, omit_targeted=None,
                        status_upstream=None, milestone=None, component=None,
                        nominated_for=None, sourcepackagename=None,
-                       has_no_package=None, hardware_bus=None,
-                       hardware_vendor_id=None, hardware_product_id=None,
-                       hardware_driver_name=None,
-                       hardware_driver_package_name=None,
-                       hardware_owner_is_bug_reporter=None,
-                       hardware_owner_is_affected_by_bug=False,
-                       hardware_owner_is_subscribed_to_bug=False,
-                       hardware_is_linked_to_bug=False, linked_branches=None,
+                       has_no_package=None, linked_branches=None,
                        linked_merge_proposals=None, linked_blueprints=None,
                        structural_subscriber=None,
                        modified_since=None, created_since=None,
@@ -439,20 +414,6 @@ class BugTaskSearchParams:
             search_params.sourcepackagename = NULL
         search_params.nominated_for = nominated_for
 
-        search_params.hardware_bus = hardware_bus
-        search_params.hardware_vendor_id = hardware_vendor_id
-        search_params.hardware_product_id = hardware_product_id
-        search_params.hardware_driver_name = hardware_driver_name
-        search_params.hardware_driver_package_name = (
-            hardware_driver_package_name)
-        search_params.hardware_owner_is_bug_reporter = (
-            hardware_owner_is_bug_reporter)
-        search_params.hardware_owner_is_affected_by_bug = (
-            hardware_owner_is_affected_by_bug)
-        search_params.hardware_owner_is_subscribed_to_bug = (
-            hardware_owner_is_subscribed_to_bug)
-        search_params.hardware_is_linked_to_bug = (
-            hardware_is_linked_to_bug)
         search_params.linked_branches = linked_branches
         search_params.linked_merge_proposals = linked_merge_proposals
         search_params.linked_blueprints = linked_blueprints

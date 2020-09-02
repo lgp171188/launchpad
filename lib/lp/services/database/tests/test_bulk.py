@@ -156,7 +156,9 @@ class TestLoaders(TestCaseWithFactory):
 
     def test_gen_reload_queries_with_compound_primary_keys(self):
         # gen_reload_queries() does not like compound primary keys.
-        db_queries = bulk.gen_reload_queries([BugAffectsPerson()])
+        bap = BugAffectsPerson(
+            bug=self.factory.makeBug(), person=self.factory.makePerson())
+        db_queries = bulk.gen_reload_queries([bap])
         self.assertRaisesWithContent(
             AssertionError,
             'Compound primary keys are not supported: BugAffectsPerson.',

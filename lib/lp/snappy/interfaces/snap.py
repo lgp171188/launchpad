@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package interfaces."""
@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 __all__ = [
+    'BadMacaroon',
     'BadSnapSearchContext',
     'BadSnapSource',
     'CannotAuthorizeStoreUploads',
@@ -28,7 +29,7 @@ __all__ = [
     'SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG',
     'SNAP_TESTING_FLAGS',
     'SNAP_WEBHOOKS_FEATURE_FLAG',
-    'SnapAuthorizationBadMacaroon',
+    'SnapAuthorizationBadGeneratedMacaroon',
     'SnapBuildAlreadyPending',
     'SnapBuildArchiveOwnerMismatch',
     'SnapBuildDisallowedArchitecture',
@@ -237,8 +238,13 @@ class CannotAuthorizeStoreUploads(Exception):
 
 
 @error_status(http_client.INTERNAL_SERVER_ERROR)
-class SnapAuthorizationBadMacaroon(Exception):
+class SnapAuthorizationBadGeneratedMacaroon(Exception):
     """The macaroon generated to authorize store uploads is unusable."""
+
+
+@error_status(http_client.BAD_REQUEST)
+class BadMacaroon(Exception):
+    """A macaroon supplied by the user is invalid."""
 
 
 @error_status(http_client.BAD_REQUEST)
@@ -597,8 +603,8 @@ class ISnapEdit(IWebhookTarget):
         :raises BadRequestPackageUploadResponse: if the store returns an
             error or a response without a macaroon when asked to issue a
             package_upload macaroon.
-        :raises SnapAuthorizationBadMacaroon: if the package_upload macaroon
-            returned by the store has unsuitable SSO caveats.
+        :raises SnapAuthorizationBadGeneratedMacaroon: if the package_upload
+            macaroon returned by the store has unsuitable SSO caveats.
         :return: The SSO caveat ID from the package_upload macaroon returned
             by the store.  The third-party site should acquire a discharge
             macaroon for this caveat using OpenID and then call
