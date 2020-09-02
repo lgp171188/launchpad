@@ -766,7 +766,10 @@ class Person(
     @cachedproperty
     def location(self):
         """See `IObjectWithLocation`."""
-        return PersonLocation.selectOneBy(person=self)
+        location = IStore(PersonLocation).find(
+            PersonLocation,
+            PersonLocation.person == self).one()
+        return location
 
     @property
     def time_zone(self):
@@ -785,7 +788,7 @@ class Person(
             "Cannot set a latitude without longitude (and vice-versa).")
 
         if self.location is not None:
-            self.location.time_zone = time_zone
+            self.location.time_zone = six.ensure_text(time_zone)
             self.location.latitude = latitude
             self.location.longitude = longitude
             self.location.last_modified_by = user
@@ -4091,7 +4094,7 @@ class SSHKey(SQLBase):
         try:
             ssh_keytype = getNS(base64.b64decode(self.keytext))[0].decode(
                 'ascii')
-        except Exception as e:
+        except Exception:
             # We didn't always validate keys, so there might be some that
             # can't be loaded this way.
             if self.keytype == SSHKeyType.RSA:
