@@ -73,6 +73,7 @@ from lp.services.database.policy import LaunchpadDatabasePolicy
 from lp.services.features.flags import NullFeatureController
 from lp.services.oauth.interfaces import IOAuthSignedRequest
 from lp.services.osutils import open_for_writing
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 import lp.services.webapp.adapter as da
 from lp.services.webapp.interfaces import (
     FinishReadOnlyRequestEvent,
@@ -727,6 +728,7 @@ class LaunchpadBrowserPublication(
         da.clear_request_started()
 
         getUtility(IOpenLaunchBag).clear()
+        statsd_client = getUtility(IStatsdClient)
 
         # Maintain operational statistics.
         if getattr(request, '_wants_retry', False):
@@ -744,10 +746,13 @@ class LaunchpadBrowserPublication(
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
                     OpStats.stats['404s'] += 1
+                    statsd_client.incr('errors.404')
                 elif status == 500:  # Unhandled exceptions
                     OpStats.stats['500s'] += 1
+                    statsd_client.incr('errors.500')
                 elif status == 503:  # Timeouts
                     OpStats.stats['503s'] += 1
+                    statsd_client.incr('errors.503')
 
                 # Increment counters for status code groups.
                 status_group = str(status)[0] + 'XXs'
@@ -756,6 +761,7 @@ class LaunchpadBrowserPublication(
                 # Increment counter for 5XXs_b.
                 if is_browser(request) and status_group == '5XXs':
                     OpStats.stats['5XXs_b'] += 1
+                    statsd_client.incr('errors.5XX')
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name
