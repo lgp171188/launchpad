@@ -188,7 +188,7 @@ class ArchiveGPGSigningKey(SignableArchive):
         with open(export_path, 'w') as export_file:
             export_file.write(key.export())
 
-    def generateSigningKey(self):
+    def generateSigningKey(self, log=None):
         """See `IArchiveGPGSigningKey`."""
         assert self.archive.signing_key is None, (
             "Cannot override signing_keys.")
@@ -208,7 +208,8 @@ class ArchiveGPGSigningKey(SignableArchive):
 
         key_displayname = (
             "Launchpad PPA for %s" % self.archive.owner.displayname)
-        secret_key = getUtility(IGPGHandler).generateKey(key_displayname)
+        secret_key = getUtility(IGPGHandler).generateKey(
+            key_displayname, logger=log)
         self._setupSigningKey(secret_key)
 
     def setSigningKey(self, key_path, async_keyserver=False):
