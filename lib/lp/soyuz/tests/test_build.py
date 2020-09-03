@@ -9,7 +9,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-from exceptions import AssertionError
 
 import pytz
 import transaction
