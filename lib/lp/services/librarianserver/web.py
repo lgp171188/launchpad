@@ -38,7 +38,7 @@ from lp.services.librarian.client import url_path_quote
 from lp.services.librarian.utils import guess_librarian_encoding
 
 
-defaultResource = static.Data("""
+defaultResource = static.Data(b"""
         <html>
         <body>
         <h1>Launchpad Librarian</h1>
@@ -316,7 +316,7 @@ class DigestSearchResource(resource.Resource):
         try:
             digest = request.args['digest'][0]
         except LookupError:
-            return static.Data('Bad search', 'text/plain').render(request)
+            return static.Data(b'Bad search', 'text/plain').render(request)
 
         deferred = deferToThread(self._matchingAliases, digest)
         deferred.addCallback(self._cb_matchingAliases, request)
@@ -340,7 +340,7 @@ class DigestSearchResource(resource.Resource):
 
 
 # Ask robots not to index or archive anything in the librarian.
-robotsTxt = static.Data("""
+robotsTxt = static.Data(b"""
 User-agent: *
 Disallow: /
 """, type='text/plain')
