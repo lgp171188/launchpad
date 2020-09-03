@@ -728,7 +728,7 @@ class LaunchpadBrowserPublication(
         da.clear_request_started()
 
         getUtility(IOpenLaunchBag).clear()
-        statsd_client = getUtility(IStatsdClient).getClient()
+        statsd_client = getUtility(IStatsdClient)
 
         # Maintain operational statistics.
         if getattr(request, '_wants_retry', False):
