@@ -568,6 +568,9 @@ class LaunchpadBrowserPublication(
         traversal_duration = time.time() - request._traversal_start
         request.setInWSGIEnvironment(
             'launchpad.traversalduration', traversal_duration)
+        # Update statsd, timing is in milliseconds
+        getUtility(IStatsdClient).timing(
+            'traversal_duration,success=True', traversal_duration * 1000)
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
                 _get_thread_time() - request._traversal_thread_start)
@@ -612,6 +615,9 @@ class LaunchpadBrowserPublication(
             traversal_duration = now - request._traversal_start
             request.setInWSGIEnvironment(
                 'launchpad.traversalduration', traversal_duration)
+            # Update statsd, timing is in milliseconds
+            getUtility(IStatsdClient).timing(
+                'traversal_duration,success=False', traversal_duration * 1000)
             if thread_now is not None:
                 traversal_thread_duration = (
                     thread_now - request._traversal_thread_start)
