@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for communication with the Git hosting service."""
@@ -129,3 +129,10 @@ class IGitHostingClient(Interface):
         :param logger: An optional logger.
         :return: A binary string with the blob content.
         """
+
+    def copyRefs(self, operations):
+        """Executes the copy of refs or commits between different
+        repositories.
+
+        :param operations: A list of RefCopyOperation objects describing
+                           source and target of the copy."""

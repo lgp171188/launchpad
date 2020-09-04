@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for `GitHostingClient`.
@@ -36,13 +36,16 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.code.errors import (
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
+    GitTargetError,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
+from lp.code.model.githosting import RefCopyOperation
 from lp.services.job.interfaces.job import (
     IRunnableJob,
     JobStatus,
@@ -399,6 +402,34 @@ class TestGitHostingClient(TestCase):
                 "Failed to get file from Git repository: Unexpected size"
                 " (256 vs 0)",
                 self.client.getBlob, "123", "dir/path/file/name")
+
+    def getCopyRefOperations(self):
+        return [
+            RefCopyOperation("1a2b3c4", "999", "refs/merge/123"),
+            RefCopyOperation("9a8b7c6", "666", "refs/merge/989"),
+        ]
+
+    def test_copyRefs_refs(self):
+        with self.mockRequests("POST", status=202):
+            self.client.copyRefs("123", self.getCopyRefOperations())
+        self.assertRequest("repo/123/refs-copy", {
+            "operations": [
+                {
+                    "from": "1a2b3c4",
+                    "to": {"repo": "999", "ref": "refs/merge/123"}
+                }, {
+                    "from": "9a8b7c6",
+                    "to": {"repo": "666", "ref": "refs/merge/989"}
+                }
+            ]
+        }, "POST")
+
+    def test_copyRefs_refs_not_found(self):
+        with self.mockRequests("POST", status=404):
+            self.assertRaisesWithContent(
+                GitTargetError,
+                "Could not find repository 123 or one of its refs",
+                self.client.copyRefs, "123", self.getCopyRefOperations())
 
     def test_works_in_job(self):
         # `GitHostingClient` is usable from a running job.
