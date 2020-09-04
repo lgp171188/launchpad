@@ -333,7 +333,7 @@ Then modify the GPGHandler utility to return a sampledata key instead
 of generating a new one, mainly for running the test faster and for
 printing the context the key is generated.
 
-    >>> def mock_key_generator(name):
+    >>> def mock_key_generator(name, logger=None):
     ...     print 'Generating:', name
     ...     key_path = os.path.join(gpgkeysdir, 'sign.only@canonical.com.sec')
     ...     return gpghandler.importSecretKey(open(key_path).read())

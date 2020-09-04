@@ -334,7 +334,7 @@ class GPGHandler:
             SigningKeyType.OPENPGP, secret_key, public_key, key.uids[0].name,
             now)
 
-    def generateKey(self, name):
+    def generateKey(self, name, logger=None):
         """See `IGPGHandler`."""
         context = get_gpgme_context()
 
@@ -368,6 +368,10 @@ class GPGHandler:
             'The key does not seem to exist in the local keyring.')
 
         if getFeatureFlag(GPG_INJECT):
+            if logger is not None:
+                logger.info(
+                    "Injecting key_type %s '%s' into signing service",
+                    SigningKeyType.OPENPGP, name)
             try:
                 self._injectKeyPair(key)
             except Exception:
