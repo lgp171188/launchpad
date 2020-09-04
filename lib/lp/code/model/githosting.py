@@ -26,11 +26,13 @@ from six.moves.urllib.parse import (
 from zope.interface import implementer
 
 from lp.code.errors import (
+    GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
     GitTargetError,
+    NoSuchGitReference,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.services.config import config
@@ -279,3 +281,14 @@ class GitHostingClient:
             else:
                 raise GitRepositoryScanFault(
                     "Could not copy refs: HTTP %s" % e.response.status_code)
+
+    def deleteRef(self, path, ref, logger=None):
+        try:
+            if logger is not None:
+                logger.info("Delete from repo %s the ref %s" % (path, ref))
+            url = "/repo/%s/%s" % (path, ref)
+            self._delete(url)
+        except requests.RequestException as e:
+            raise GitReferenceDeletionFault(
+                "Error deleting %s from repo %s: HTTP %s" %
+                (ref, path, e.response.status_code))

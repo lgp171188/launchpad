@@ -36,13 +36,14 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.errors import NotFoundError
 from lp.code.errors import (
+    GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
     GitTargetError,
+    NoSuchGitReference,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.model.githosting import RefCopyOperation
@@ -409,7 +410,7 @@ class TestGitHostingClient(TestCase):
             RefCopyOperation("9a8b7c6", "666", "refs/merge/989"),
         ]
 
-    def test_copyRefs_refs(self):
+    def test_copyRefs(self):
         with self.mockRequests("POST", status=202):
             self.client.copyRefs("123", self.getCopyRefOperations())
         self.assertRequest("repo/123/refs-copy", {
@@ -430,6 +431,18 @@ class TestGitHostingClient(TestCase):
                 GitTargetError,
                 "Could not find repository 123 or one of its refs",
                 self.client.copyRefs, "123", self.getCopyRefOperations())
+
+    def test_deleteRef(self):
+        with self.mockRequests("DELETE", status=202):
+            self.client.deleteRef("123", "refs/merge/123")
+        self.assertRequest("repo/123/refs/merge/123", method="DELETE")
+
+    def test_deleteRef_refs_request_error(self):
+        with self.mockRequests("DELETE", status=500):
+            self.assertRaisesWithContent(
+                GitReferenceDeletionFault,
+                "Error deleting refs/merge/123 from repo 123: HTTP 500",
+                self.client.deleteRef, "123", "refs/merge/123")
 
     def test_works_in_job(self):
         # `GitHostingClient` is usable from a running job.
