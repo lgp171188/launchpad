@@ -82,7 +82,7 @@ class SignableArchive:
         if self.archive.signing_key is not None:
             secret_key_path = self.getPathForSecretKey(
                 self.archive.signing_key)
-            with open(secret_key_path) as secret_key_file:
+            with open(secret_key_path, "rb") as secret_key_file:
                 secret_key_export = secret_key_file.read()
             gpghandler = getUtility(IGPGHandler)
             secret_key = gpghandler.importSecretKey(secret_key_export)
@@ -92,11 +92,11 @@ class SignableArchive:
             if mode not in {SigningMode.DETACHED, SigningMode.CLEAR}:
                 raise ValueError('Invalid signature mode for GPG: %s' % mode)
             if self.archive.signing_key is not None:
-                with open(input_path) as input_file:
+                with open(input_path, "rb") as input_file:
                     input_content = input_file.read()
                 signature = gpghandler.signContent(
                     input_content, secret_key, mode=self.gpgme_modes[mode])
-                with open(output_path, "w") as output_file:
+                with open(output_path, "wb") as output_file:
                     output_file.write(signature)
                 output_paths.append(output_path)
             elif find_run_parts_dir(
@@ -185,7 +185,7 @@ class ArchiveGPGSigningKey(SignableArchive):
         if not os.path.exists(os.path.dirname(export_path)):
             os.makedirs(os.path.dirname(export_path))
 
-        with open(export_path, 'w') as export_file:
+        with open(export_path, 'wb') as export_file:
             export_file.write(key.export())
 
     def generateSigningKey(self, log=None):
@@ -219,7 +219,7 @@ class ArchiveGPGSigningKey(SignableArchive):
         assert os.path.exists(key_path), (
             "%s does not exist" % key_path)
 
-        with open(key_path) as key_file:
+        with open(key_path, "rb") as key_file:
             secret_key_export = key_file.read()
         secret_key = getUtility(IGPGHandler).importSecretKey(secret_key_export)
         return self._setupSigningKey(
