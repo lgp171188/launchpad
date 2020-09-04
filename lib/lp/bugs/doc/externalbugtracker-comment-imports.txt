@@ -1,5 +1,3 @@
-= ExternalBugTracker comment imports =
-
 Some ExternalBugTrackers support the importing of comments from the
 remote bug tracker into Launchpad.
 
@@ -7,7 +5,6 @@ In order to demonstrate this we need to create example Bug, BugTracker
 and BugWatch instances with which to work.
 
     >>> from zope.interface import implementer
-    >>> from lp.services.config import config
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     new_bugtracker)
     >>> from lp.services.messages.interfaces.message import IMessageSet
@@ -41,7 +38,8 @@ ExternalBugTracker class which implements these three methods.
 
     >>> from lp.bugs.externalbugtracker import (
     ...     ExternalBugTracker)
-    >>> from lp.bugs.interfaces.externalbugtracker import ISupportsCommentImport
+    >>> from lp.bugs.interfaces.externalbugtracker import (
+    ...     ISupportsCommentImport)
     >>> @implementer(ISupportsCommentImport)
     ... class CommentImportingExternalBugTracker(ExternalBugTracker):
     ...
@@ -139,8 +137,6 @@ form which it was imported.
     four: Yet another comment.
 
 
-== Creating Person records ==
-
 In the examples above, joe.bloggs@example.com was used as the poster of
 all the comments. Since Joe didn't have a Launchpad account, it was
 created automatically for him, with the email address marked as
@@ -186,7 +182,7 @@ address. In those cases, the ExternalBugTracker's getPosterForComment()
 method will return a tuple of (displayname, None), which can then be
 used to create a Person based on the displayname alone.
 
-    >>> external_bugtracker.poster_tuple = ('noemail', None)
+    >>> external_bugtracker.poster_tuple = (u'noemail', None)
     >>> external_bugtracker.remote_comments['no-email-comment'] = (
     ...     "Yet another comment.")
 
@@ -204,8 +200,8 @@ used to create a Person based on the displayname alone.
 A BugTrackerPerson record will have been created to map the new Person
 to the name 'noemail' on our example bugtracker.
 
-    >>> bug_watch.bugtracker.getLinkedPersonByName('noemail')
-    <BugTrackerPerson at ...>
+    >>> bug_watch.bugtracker.getLinkedPersonByName(u'noemail')
+    <lp.bugs.model.bugtrackerperson.BugTrackerPerson ...>
 
 If the remote person is invalid (i.e. a Launchpad Person can't be
 created for them) an error will be logged and the comment will not be
@@ -231,8 +227,6 @@ Let's delete that comment now so that it doesn't break later tests.
     >>> external_bugtracker.poster_tuple = (
     ...     'No Priv', 'no-priv@canonical.com')
 
-
-== BugWatch comment importing functionality ==
 
 The IBugWatch interface provides methods for linking imported comments
 to bug watches and for checking whether an imported comment is already
@@ -308,8 +302,6 @@ remote tracker and will not be returned by getImportedBugMessages()
     >>> transaction.commit()
 
 
-== Importing two messages with the same ID ==
-
 It is possible for two Messages with the same ID to coexist within
 Launchpad, for example if a comment on a bug was sent to both Launchpad
 and to DebBugs and the subsequently imported into Launchpad from the
@@ -366,8 +358,6 @@ examining the BugMessages which link the messages to the bug.
     True
 
 
-== Importing comments with CVE references ==
-
 If a comment contains a CVE reference, that CVE reference will be
 imported and linked to the bug.  However, the user who authored the
 comment containing the CVE reference doesn't get any karma from this
@@ -422,8 +412,6 @@ Once again, CVE links are created but no karma is assigned.
 
     >>> karma_helper.unregister_listener()
 
-
-== Email notifications ==
 
 When bug comments are imported, notifications are sent to inform the bug
 subscribers about it. The first time we import comments from a bug
