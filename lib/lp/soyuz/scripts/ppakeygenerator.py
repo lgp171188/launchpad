@@ -33,7 +33,7 @@ class PPAKeyGenerator(LaunchpadCronScript):
             "Generating signing key for %s (%s)" %
             (archive.reference, archive.displayname))
         archive_signing_key = IArchiveGPGSigningKey(archive)
-        archive_signing_key.generateSigningKey()
+        archive_signing_key.generateSigningKey(log=self.logger)
         self.logger.info("Key %s" % archive.signing_key.fingerprint)
 
     def main(self):
