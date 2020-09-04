@@ -713,37 +713,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser('testadmin')
         self.assertEqual(rev2.revision_author.person, person2)
 
-    def test_HWSubmissionEmailLinker(self):
-        switch_dbuser('testadmin')
-        sub1 = self.factory.makeHWSubmission(
-            emailaddress='author-1@Example.Org')
-        sub2 = self.factory.makeHWSubmission(
-            emailaddress='author-2@Example.Org')
-
-        person1 = self.factory.makePerson(email='Author-1@example.org')
-        person2 = self.factory.makePerson(
-            email='Author-2@example.org',
-            email_address_status=EmailAddressStatus.NEW)
-
-        self.assertEqual(sub1.owner, None)
-        self.assertEqual(sub2.owner, None)
-
-        self.runDaily()
-
-        # Only the validated email address associated with a Person
-        # causes a linkage.
-        switch_dbuser('testadmin')
-        self.assertEqual(sub1.owner, person1)
-        self.assertEqual(sub2.owner, None)
-
-        # Validating an email address creates a linkage.
-        person2.validateAndEnsurePreferredEmail(person2.guessedemails[0])
-        self.assertEqual(sub2.owner, None)
-
-        self.runDaily()
-        switch_dbuser('testadmin')
-        self.assertEqual(sub2.owner, person2)
-
     def test_PersonPruner(self):
         personset = getUtility(IPersonSet)
         # Switch the DB user because the garbo_daily user isn't allowed to

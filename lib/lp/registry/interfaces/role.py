@@ -85,9 +85,6 @@ class IPersonRoles(Interface):
     in_commercial_admin = Bool(
         title=_("True if this person is a commercial admin."),
         required=True, readonly=True)
-    in_hwdb_team = Bool(
-        title=_("True if this person is on the hwdb team."),
-        required=True, readonly=True)
     in_janitor = Bool(
         title=_("True if this person is the janitor."),
         required=True, readonly=True)
