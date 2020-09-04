@@ -1,10 +1,11 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from doctest import (
     DocTestSuite,
     ELLIPSIS,
     )
+import io
 from unittest import (
     TestLoader,
     TestSuite,
@@ -24,11 +25,15 @@ from lp.services.webapp.publisher import (
     LaunchpadView,
     RedirectionView,
     )
-from lp.services.webapp.servers import LaunchpadTestRequest
+from lp.services.webapp.servers import (
+    LaunchpadTestRequest,
+    WebServiceClientRequest,
+    )
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.testing import (
     login_as,
     person_logged_in,
+    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -408,6 +413,19 @@ class TestLaunchpadView(TestCaseWithFactory):
             'url': 'http://wiki.lp.dev/LEP/sample', 'is_beta': True,
             'value': u'on', 'title': 'title'}]
         self.assertEqual(expected_beta_features, view.beta_features)
+
+
+class TestRedirectionView(TestCase):
+    layer = DatabaseFunctionalLayer
+
+    def test_redirect_to_non_launchpad_objects(self):
+        request = WebServiceClientRequest(io.BytesIO(b""), {})
+        view = RedirectionView("http://canonical.com", request)
+        expected_msg = (
+            "RedirectionView.context is only supported for URLs served by the "
+            "main Launchpad application.")
+        self.assertRaisesWithContent(
+            AttributeError, expected_msg, getattr, view, "context")
 
 
 def test_suite():

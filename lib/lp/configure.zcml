@@ -29,7 +29,6 @@
     <include package="lp.buildmaster" />
     <include package="lp.code" />
     <include package="lp.coop.answersbugs" />
-    <include package="lp.hardwaredb" />
     <include package="lp.oci" />
     <include package="lp.snappy" />
     <include package="lp.soyuz" />

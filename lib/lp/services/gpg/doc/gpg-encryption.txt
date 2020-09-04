@@ -77,7 +77,7 @@ Let's try to pass unicode and see if it fails
     >>> cipher = gpghandler.encryptContent(content, key)
     Traceback (most recent call last):
     ...
-    TypeError: Content cannot be Unicode.
+    TypeError: Content must be bytes.
 
 Decrypt a unicode content:
 
@@ -87,7 +87,7 @@ Decrypt a unicode content:
     >>> plain = decrypt_content(cipher, 'test')    
     Traceback (most recent call last):
     ...
-    TypeError: Content cannot be Unicode.
+    TypeError: Content must be bytes.
 
 What about a message encrypted for an unknown key.
 

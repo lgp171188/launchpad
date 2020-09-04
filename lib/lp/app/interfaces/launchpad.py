@@ -48,7 +48,6 @@ class ILaunchpadCelebrities(Interface):
     debian = Attribute("The Debian Distribution.")
     english = Attribute("The English language.")
     gnome_bugzilla = Attribute("The Gnome Bugzilla.")
-    hwdb_team = Attribute("The HWDB team.")
     janitor = Attribute("The Launchpad Janitor.")
     katie = Attribute("The Debian Auto-sync user.")
     launchpad = Attribute("The Launchpad project.")

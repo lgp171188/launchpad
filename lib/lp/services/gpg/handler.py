@@ -13,10 +13,10 @@ __all__ = [
 import atexit
 from contextlib import contextmanager
 from datetime import datetime
+from io import BytesIO
 import os
 import shutil
 import socket
-from StringIO import StringIO
 import subprocess
 import sys
 import tempfile
@@ -173,16 +173,16 @@ class GPGHandler:
 
         if signature:
             # store detach-sig
-            sig = StringIO(signature)
+            sig = BytesIO(signature)
             # store the content
-            plain = StringIO(content)
+            plain = BytesIO(content)
             args = (sig, plain, None)
             timeline_detail = "detached signature"
         else:
             # store clearsigned signature
-            sig = StringIO(content)
+            sig = BytesIO(content)
             # writeable content
-            plain = StringIO()
+            plain = BytesIO()
             args = (sig, None, plain)
             timeline_detail = "clear signature"
 
@@ -220,8 +220,8 @@ class GPGHandler:
     def getVerifiedSignature(self, content, signature=None):
         """See IGPGHandler."""
 
-        assert not isinstance(content, six.text_type)
-        assert not isinstance(signature, six.text_type)
+        assert isinstance(content, bytes)
+        assert signature is None or isinstance(signature, bytes)
 
         ctx = get_gpgme_context()
 
@@ -265,10 +265,10 @@ class GPGHandler:
 
     def importPublicKey(self, content):
         """See IGPGHandler."""
-        assert isinstance(content, str)
+        assert isinstance(content, bytes)
         context = get_gpgme_context()
 
-        newkey = StringIO(content)
+        newkey = BytesIO(content)
         with gpgme_timeline("import", "new public key"):
             result = context.import_(newkey)
 
@@ -295,14 +295,14 @@ class GPGHandler:
 
     def importSecretKey(self, content):
         """See `IGPGHandler`."""
-        assert isinstance(content, str)
+        assert isinstance(content, bytes)
 
         # Make sure that gpg-agent doesn't interfere.
         if 'GPG_AGENT_INFO' in os.environ:
             del os.environ['GPG_AGENT_INFO']
 
         context = get_gpgme_context()
-        newkey = StringIO(content)
+        newkey = BytesIO(content)
         with gpgme_timeline("import", "new secret key"):
             import_result = context.import_(newkey)
 
@@ -386,14 +386,14 @@ class GPGHandler:
 
     def encryptContent(self, content, key):
         """See IGPGHandler."""
-        if isinstance(content, six.text_type):
-            raise TypeError('Content cannot be Unicode.')
+        if not isinstance(content, bytes):
+            raise TypeError('Content must be bytes.')
 
         ctx = get_gpgme_context()
 
         # setup containers
-        plain = StringIO(content)
-        cipher = StringIO()
+        plain = BytesIO(content)
+        cipher = BytesIO()
 
         if key.key is None:
             return None
@@ -412,8 +412,8 @@ class GPGHandler:
 
     def signContent(self, content, key, password='', mode=None):
         """See IGPGHandler."""
-        if not isinstance(content, str):
-            raise TypeError('Content should be a string.')
+        if not isinstance(content, bytes):
+            raise TypeError('Content must be bytes.')
 
         if mode is None:
             mode = gpgme.SIG_MODE_CLEAR
@@ -424,8 +424,8 @@ class GPGHandler:
         context.signers = [removeSecurityProxy(key.key)]
 
         # Set up containers.
-        plaintext = StringIO(content)
-        signature = StringIO()
+        plaintext = BytesIO(content)
+        signature = BytesIO()
 
         # Make sure that gpg-agent doesn't interfere.
         if 'GPG_AGENT_INFO' in os.environ:
@@ -453,7 +453,7 @@ class GPGHandler:
         # XXX michaeln 2010-05-07 bug=576405
         # Currently gpgme.Context().keylist fails if passed a unicode
         # string even though that's what is returned for fingerprints.
-        if type(filter) == unicode:
+        if isinstance(filter, six.text_type):
             filter = filter.encode('utf-8')
 
         with gpgme_timeline(
@@ -671,7 +671,7 @@ class PymeKey:
             return p.stdout.read()
 
         context = get_gpgme_context()
-        keydata = StringIO()
+        keydata = BytesIO()
         with gpgme_timeline("export", self.fingerprint):
             context.export(self.fingerprint.encode('ascii'), keydata)
 
