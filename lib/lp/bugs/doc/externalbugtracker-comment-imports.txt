@@ -1,3 +1,6 @@
+ExternalBugTracker comment imports
+**********************************
+
 Some ExternalBugTrackers support the importing of comments from the
 remote bug tracker into Launchpad.
 
@@ -137,6 +140,9 @@ form which it was imported.
     four: Yet another comment.
 
 
+Creating Person records
+***********************
+
 In the examples above, joe.bloggs@example.com was used as the poster of
 all the comments. Since Joe didn't have a Launchpad account, it was
 created automatically for him, with the email address marked as
@@ -228,6 +234,9 @@ Let's delete that comment now so that it doesn't break later tests.
     ...     'No Priv', 'no-priv@canonical.com')
 
 
+BugWatch comment importing functionality
+****************************************
+
 The IBugWatch interface provides methods for linking imported comments
 to bug watches and for checking whether an imported comment is already
 linked to a bug watch.
@@ -302,6 +311,9 @@ remote tracker and will not be returned by getImportedBugMessages()
     >>> transaction.commit()
 
 
+Importing two messages with the same ID
+***************************************
+
 It is possible for two Messages with the same ID to coexist within
 Launchpad, for example if a comment on a bug was sent to both Launchpad
 and to DebBugs and the subsequently imported into Launchpad from the
@@ -358,6 +370,9 @@ examining the BugMessages which link the messages to the bug.
     True
 
 
+Importing comments with CVE references
+**************************************
+
 If a comment contains a CVE reference, that CVE reference will be
 imported and linked to the bug.  However, the user who authored the
 comment containing the CVE reference doesn't get any karma from this
@@ -412,6 +427,8 @@ Once again, CVE links are created but no karma is assigned.
 
     >>> karma_helper.unregister_listener()
 
+Email notifications
+*******************
 
 When bug comments are imported, notifications are sent to inform the bug
 subscribers about it. The first time we import comments from a bug
