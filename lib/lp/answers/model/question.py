@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Question models."""
@@ -1367,9 +1367,9 @@ class QuestionTargetMixin:
             AnswerContact,
             LeftJoin(Person, AnswerContact.person == Person.id),
             LeftJoin(PersonLanguage,
-                     AnswerContact.personID == PersonLanguage.personID),
+                     AnswerContact.personID == PersonLanguage.person_id),
             LeftJoin(Language,
-                     PersonLanguage.language == Language.id)]
+                     PersonLanguage.language_id == Language.id)]
         columns = [Person, Language]
         conditions = self._getConditionsToQueryAnswerContacts()
         results = self._store.using(*origin).find(tuple(columns), conditions)

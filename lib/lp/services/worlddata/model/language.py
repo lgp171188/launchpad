@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under
 # the GNU Affero General Public License version 3 (see the file
 # LICENSE).
 
@@ -165,7 +165,7 @@ class Language(SQLBase):
             Join(
                 Person,
                 LanguageSet._getTranslatorJoins(),
-                Person.id == PersonLanguage.personID),
+                Person.id == PersonLanguage.person_id),
             ).find(
                 Person,
                 PersonLanguage.language == self,
@@ -200,7 +200,7 @@ class LanguageSet:
                     KarmaCache.projectgroupID == None,
                     KarmaCache.sourcepackagenameID == None,
                     KarmaCache.distributionID == None)),
-            PersonLanguage.personID ==
+            PersonLanguage.person_id ==
                 KarmaCache.personID)
 
     @property
@@ -237,7 +237,7 @@ class LanguageSet:
                     LeftJoin(
                         Language,
                         self._getTranslatorJoins(),
-                        PersonLanguage.languageID == Language.id),
+                        PersonLanguage.language_id == Language.id),
                     ).find(
                         (Language, Count(PersonLanguage)),
                         Language.id.is_in(ids),
