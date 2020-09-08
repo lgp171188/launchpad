@@ -485,6 +485,11 @@ class LaunchpadBrowserPublication(
             publication_thread_duration = None
         request.setInWSGIEnvironment(
             'launchpad.publicationduration', publication_duration)
+        # Update statsd, timing is in milliseconds
+        getUtility(IStatsdClient).timing(
+            'publication_duration,success=True,pageid={}'.format(
+                request._orig_env.get('launchpad.pageid')),
+            publication_duration * 1000)
 
         # Calculate SQL statement statistics.
         sql_statements = da.get_request_statements()
@@ -603,6 +608,11 @@ class LaunchpadBrowserPublication(
             publication_duration = now - request._publication_start
             request.setInWSGIEnvironment(
                 'launchpad.publicationduration', publication_duration)
+            # Update statsd, timing is in milliseconds
+            getUtility(IStatsdClient).timing(
+                'publication_duration,success=False,pageid={}'.format(
+                    request._orig_env.get('launchpad.pageid')),
+                publication_duration * 1000)
             if thread_now is not None:
                 publication_thread_duration = (
                     thread_now - request._publication_thread_start)
