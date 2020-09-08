@@ -190,7 +190,7 @@ class SnappyDistroSeriesMixin:
                 else:
                     return self.snappy_series.title
             else:
-                return None
+                return "(unset)"
 
 
 @implementer(ISnappyDistroSeries)

@@ -150,9 +150,12 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
                     obj.distro_series.name,
                     obj.snappy_series.name)
         else:
-            token = "%s/%s" % (
-                    obj.distro_series.distribution.name,
-                    obj.distro_series.name)
+            if obj.distro_series is None:
+                token = "(unset)"
+            else:
+                token = "%s/%s" % (
+                        obj.distro_series.distribution.name,
+                        obj.distro_series.name)
         return SimpleTerm(obj, token, obj.title)
 
     def __contains__(self, value):
@@ -167,6 +170,8 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
+        if token == "(unset)":
+            return self.toTerm(SyntheticSnappyDistroSeries(None, None))
         if "/" in token:
             bits = token.split("/", 2)
             if len(bits) == 2:

@@ -6,8 +6,6 @@
 __metaclass__ = type
 
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.database.interfaces import IStore
-from lp.snappy.model.snappyseries import SnappyDistroSeries
 from lp.snappy.vocabularies import SnappyDistroSeriesVocabulary
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -66,25 +64,15 @@ class TestSnappyDistroSeriesVocabulary(TestCaseWithFactory):
             snappy_series.title))
 
     def test_term_structure_for_distro_series_None(self):
-        distro_series = self.factory.makeUbuntuDistroSeries()
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[distro_series])
-        sdses = list(IStore(SnappyDistroSeries).find(SnappyDistroSeries))
-        sdses[3].distro_series = None
-
+            can_infer_distro_series=True)
         term = self.vocab.getTermByToken(snappy_series.name)
-
         self.assertEqual(term.title, snappy_series.title)
 
     def test_term_structure_for_infer_from_snapcraft(self):
-        distro_series = self.factory.makeUbuntuDistroSeries()
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[distro_series],
+            can_infer_distro_series=True,
             status=SeriesStatus.CURRENT)
-
-        sdses = list(IStore(SnappyDistroSeries).find(SnappyDistroSeries))
-        sdses[3].distro_series = None
-
         term = self.vocab.getTermByToken(snappy_series.name)
 
         self.assertEqual(term.title, "Infer from snapcraft.yaml (recommended)")
@@ -96,12 +84,8 @@ class TestSnappyDistroSeriesVocabulary(TestCaseWithFactory):
         # in this instance it will also be the most recent one
         # which should also be a the top
 
-        distro_series = self.factory.makeUbuntuDistroSeries()
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[distro_series])
-        sdses = list(IStore(SnappyDistroSeries).find(SnappyDistroSeries))
-        sdses[3].distro_series = None
-
+            can_infer_distro_series=True)
         entries = self.vocab._entries
 
         self.assertIsNone(entries[0].distro_series)
