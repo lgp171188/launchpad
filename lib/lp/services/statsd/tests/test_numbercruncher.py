@@ -113,3 +113,25 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
                     build.processor.name), 1)),
                  Equals(('buildqueue,virtualized=False,arch=386', 1))
                  ]))
+
+    def test_startService_starts_update_queues_loop(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+
+        cruncher.updateBuilderQueues = FakeMethod()
+
+        cruncher.startService()
+        advance = NumberCruncher.QUEUE_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, cruncher.updateBuilderQueues.call_count)
+
+    def test_startService_starts_update_builders_loop(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+
+        cruncher.updateBuilderStats = FakeMethod()
+
+        cruncher.startService()
+        advance = NumberCruncher.BUILDER_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, cruncher.updateBuilderStats.call_count)
