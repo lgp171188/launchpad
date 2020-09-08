@@ -57,8 +57,10 @@ from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
-from lp.services.signing.enums import SigningMode
-from lp.services.signing.proxy import SigningKeyType
+from lp.services.signing.enums import (
+    SigningKeyType,
+    SigningMode,
+    )
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
@@ -1918,8 +1920,16 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         key_types = (
             SigningKeyType.UEFI, SigningKeyType.KMOD, SigningKeyType.OPAL,
             SigningKeyType.SIPL, SigningKeyType.FIT)
+        modes = {
+            SigningKeyType.UEFI: SigningMode.ATTACHED,
+            SigningKeyType.KMOD: SigningMode.DETACHED,
+            SigningKeyType.OPAL: SigningMode.DETACHED,
+            SigningKeyType.SIPL: SigningMode.DETACHED,
+            SigningKeyType.FIT: SigningMode.ATTACHED,
+            }
         expected_signed_contents = [
-            b"signed with key_type=%s" % k.name for k in key_types]
+            b"signed with key_type=%s mode=%s" % (k.name, modes[k].name)
+            for k in key_types]
         self.assertItemsEqual(expected_signed_contents, contents)
 
         # Checks that all public keys ended up in the 1.0/control/xxx files

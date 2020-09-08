@@ -47,17 +47,28 @@ class ISigningKey(Interface):
     date_created = Datetime(
         title=_('When this key was created'), required=True, readonly=True)
 
-    def sign(message, message_name):
+    def sign(message, message_name, mode=None):
         """Sign the given message using this key
 
         :param message: The message to be signed.
         :param message_name: A name for the message being signed.
+        :param mode: A `SigningMode` specifying how the message is to be
+            signed.  Defaults to `SigningMode.ATTACHED` for UEFI and FIT
+            keys, and `SigningMode.DETACHED` for other key types.
         """
 
 
 class ISigningKeySet(Interface):
     """Interface to deal with the collection of signing keys
     """
+
+    def get(key_type, fingerprint):
+        """Get a signing key by key type and fingerprint.
+
+        :param key_type: A `SigningKeyType`.
+        :param fingerprint: The key's fingerprint.
+        :return: A `SigningKey`, or None.
+        """
 
     def generate(key_type, description,
                  openpgp_key_algorithm=None, length=None):
