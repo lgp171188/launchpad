@@ -72,7 +72,7 @@ class SignableArchive:
     def can_sign(self):
         """See `ISignableArchive`."""
         return (
-            self.archive.signing_key is not None or
+            self.archive.signing_key_fingerprint is not None or
             self._run_parts_dir is not None)
 
     @cachedproperty
@@ -239,7 +239,7 @@ class ArchiveGPGSigningKey(SignableArchive):
 
     def generateSigningKey(self, log=None):
         """See `IArchiveGPGSigningKey`."""
-        assert self.archive.signing_key is None, (
+        assert self.archive.signing_key_fingerprint is None, (
             "Cannot override signing_keys.")
 
         # Always generate signing keys for the default PPA, even if it
@@ -263,7 +263,7 @@ class ArchiveGPGSigningKey(SignableArchive):
 
     def setSigningKey(self, key_path, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""
-        assert self.archive.signing_key is None, (
+        assert self.archive.signing_key_fingerprint is None, (
             "Cannot override signing_keys.")
         assert os.path.exists(key_path), (
             "%s does not exist" % key_path)
