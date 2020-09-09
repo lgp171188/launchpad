@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test ArchiveGPGSigningKey."""
@@ -10,7 +10,10 @@ __metaclass__ = type
 import os
 from textwrap import dedent
 
-from testtools.matchers import FileContains
+from testtools.matchers import (
+    FileContains,
+    StartsWith,
+    )
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from zope.component import getUtility
@@ -19,10 +22,19 @@ from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
     ISignableArchive,
+    PUBLISHER_GPG_USES_SIGNING_SERVICE,
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
+from lp.services.compat import mock
+from lp.services.features.testing import FeatureFixture
+from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
+from lp.services.signing.enums import (
+    SigningKeyType,
+    SigningMode,
+    )
+from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
 from lp.testing.gpgkeys import gpgkeysdir
@@ -93,6 +105,80 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         self.assertTrue(signer.can_sign)
         self.assertRaises(
             AssertionError, signer.signFile, self.suite, filename_relative)
+
+    def test_signRepository_uses_signing_service(self):
+        # If the appropriate feature rule is true, then we use the signing
+        # service to sign files.
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+        self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=self.archive.signing_key_fingerprint)
+        logger = BufferLogger()
+
+        suite_dir = os.path.join(self.archive_root, "dists", self.suite)
+        release_path = os.path.join(suite_dir, "Release")
+        write_file(release_path, b"Release contents")
+
+        signer = ISignableArchive(self.archive)
+        self.assertTrue(signer.can_sign)
+        self.assertContentEqual(
+            ["Release.gpg", "InRelease"],
+            signer.signRepository(self.suite, log=logger))
+        self.assertEqual("", logger.getLogBuffer())
+        signing_service_client.sign.assert_has_calls([
+            mock.call(
+                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint,
+                "Release", b"Release contents", SigningMode.DETACHED),
+            mock.call(
+                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint,
+                "Release", b"Release contents", SigningMode.CLEAR),
+            ])
+        self.assertThat(
+            os.path.join(suite_dir, "Release.gpg"),
+            FileContains("signed with key_type=OPENPGP mode=DETACHED"))
+        self.assertThat(
+            os.path.join(suite_dir, "InRelease"),
+            FileContains("signed with key_type=OPENPGP mode=CLEAR"))
+
+    def test_signRepository_falls_back_from_signing_service(self):
+        # If the signing service fails to sign a file, we fall back to
+        # making local signatures if possible.
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+        self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=self.archive.signing_key_fingerprint)
+        logger = BufferLogger()
+
+        suite_dir = os.path.join(self.archive_root, "dists", self.suite)
+        release_path = os.path.join(suite_dir, "Release")
+        write_file(release_path, b"Release contents")
+
+        signer = ISignableArchive(self.archive)
+        self.assertTrue(signer.can_sign)
+        signing_service_client.sign.side_effect = Exception("boom")
+        self.assertContentEqual(
+            ["Release.gpg", "InRelease"],
+            signer.signRepository(self.suite, log=logger))
+        self.assertEqual(
+            "ERROR Failed to sign archive using signing service; falling back "
+            "to local key\n", logger.getLogBuffer())
+        signing_service_client.sign.assert_called_once_with(
+            SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint,
+            "Release", b"Release contents", SigningMode.DETACHED)
+        self.assertThat(
+            os.path.join(suite_dir, "Release.gpg"),
+            FileContains(
+                matcher=StartsWith("-----BEGIN PGP SIGNATURE-----\n")))
+        self.assertThat(
+            os.path.join(suite_dir, "InRelease"),
+            FileContains(
+                matcher=StartsWith("-----BEGIN PGP SIGNED MESSAGE-----\n")))
 
 
 class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
