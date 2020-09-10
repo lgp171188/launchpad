@@ -6,7 +6,7 @@ the milestone page lists one feature targeted already, and no bugs:
 
     >>> admin_browser.open('http://launchpad.test/firefox/+milestone/1.0')
     >>> tag = find_tag_by_id(admin_browser.contents, 'specification-count')
-    >>> print extract_text(tag)
+    >>> print(extract_text(tag))
     1 blueprint
 
 We'll target the "canvas" blueprint. Each blueprint has a separate page for
@@ -15,7 +15,7 @@ milestone targeting.
   >>> admin_browser.open(
   ...     'http://blueprints.launchpad.test/firefox/+spec/canvas')
   >>> admin_browser.getLink('Target milestone').click()
-  >>> print admin_browser.title
+  >>> print(admin_browser.title)
   Target to a milestone : Support <canvas> Objects :
   Blueprints : Mozilla Firefox
   >>> back_link = admin_browser.getLink('Support <canvas> Objects')
@@ -42,16 +42,16 @@ milestone.
   <...Milestone target:...
   <.../firefox/+milestone/1.0...
 
-  >>> print admin_browser.getLink('1.0').url
+  >>> print(admin_browser.getLink('1.0').url)
   http://launchpad.test/firefox/+milestone/1.0
 
   >>> admin_browser.getLink('1.0').click()
-  >>> print admin_browser.getLink('Support <canvas> Objects').url
+  >>> print(admin_browser.getLink('Support <canvas> Objects').url)
   http://blueprints.launchpad.test/firefox/+spec/canvas
 
 The count of targeted features has also updated.
 
     >>> content = find_main_content(admin_browser.contents)
     >>> tag = find_tag_by_id(admin_browser.contents, 'specification-count')
-    >>> print extract_text(tag)
+    >>> print(extract_text(tag))
     2 blueprints
