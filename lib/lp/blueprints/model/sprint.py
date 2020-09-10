@@ -8,17 +8,17 @@ __all__ = [
     'HasSprintsMixin',
     ]
 
-
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
-    )
+import pytz
 from storm.locals import (
+    Bool,
+    DateTime,
     Desc,
+    Int,
     Join,
     Or,
+    Reference,
     Store,
+    Unicode,
     )
 from zope.component import getUtility
 from zope.interface import implementer
@@ -38,7 +38,10 @@ from lp.blueprints.interfaces.sprint import (
     ISprint,
     ISprintSet,
     )
-from lp.blueprints.model.specification import HasSpecificationsMixin
+from lp.blueprints.model.specification import (
+    HasSpecificationsMixin,
+    Specification,
+    )
 from lp.blueprints.model.specificationsearch import (
     get_specification_active_product_filter,
     get_specification_filters,
@@ -51,46 +54,66 @@ from lp.registry.interfaces.person import (
     validate_public_person,
     )
 from lp.registry.model.hasdrivers import HasDriversMixin
-from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    quote,
-    SQLBase,
+from lp.services.database.constants import (
+    DEFAULT,
+    UTC_NOW,
     )
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import flush_database_updates
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty
 
 
 @implementer(ISprint, IHasLogo, IHasMugshot, IHasIcon)
-class Sprint(SQLBase, HasDriversMixin, HasSpecificationsMixin):
+class Sprint(StormBase, HasDriversMixin, HasSpecificationsMixin):
     """See `ISprint`."""
 
-    _defaultOrder = ['name']
+    __storm_table__ = 'Sprint'
+    __storm_order__ = ['name']
 
     # db field names
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    name = StringCol(notNull=True, alternateID=True)
-    title = StringCol(notNull=True)
-    summary = StringCol(notNull=True)
-    driver = ForeignKey(
-        dbName='driver', foreignKey='Person',
-        storm_validator=validate_public_person)
-    home_page = StringCol(notNull=False, default=None)
-    homepage_content = StringCol(default=None)
-    icon = ForeignKey(
-        dbName='icon', foreignKey='LibraryFileAlias', default=None)
-    logo = ForeignKey(
-        dbName='logo', foreignKey='LibraryFileAlias', default=None)
-    mugshot = ForeignKey(
-        dbName='mugshot', foreignKey='LibraryFileAlias', default=None)
-    address = StringCol(notNull=False, default=None)
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    time_zone = StringCol(notNull=True)
-    time_starts = UtcDateTimeCol(notNull=True)
-    time_ends = UtcDateTimeCol(notNull=True)
-    is_physical = BoolCol(notNull=True, default=True)
+    id = Int(primary=True)
+    owner_id = Int(
+        name='owner', validator=validate_public_person, allow_none=False)
+    owner = Reference(owner_id, 'Person.id')
+    name = Unicode(allow_none=False)
+    title = Unicode(allow_none=False)
+    summary = Unicode(allow_none=False)
+    driver_id = Int(name='driver', validator=validate_public_person)
+    driver = Reference(driver_id, 'Person.id')
+    home_page = Unicode(allow_none=True, default=None)
+    homepage_content = Unicode(default=None)
+    icon_id = Int(name='icon', default=None)
+    icon = Reference(icon_id, 'LibraryFileAlias.id')
+    logo_id = Int(name='logo', default=None)
+    logo = Reference(logo_id, 'LibraryFileAlias.id')
+    mugshot_id = Int(name='mugshot', default=None)
+    mugshot = Reference(mugshot_id, 'LibraryFileAlias.id')
+    address = Unicode(allow_none=True, default=None)
+    datecreated = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    time_zone = Unicode(allow_none=False)
+    time_starts = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    time_ends = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    is_physical = Bool(allow_none=False, default=True)
+
+    def __init__(self, owner, name, title, time_zone, time_starts, time_ends,
+                 summary, address=None, driver=None, home_page=None,
+                 mugshot=None, logo=None, icon=None, is_physical=True):
+        super(Sprint, self).__init__()
+        self.owner = owner
+        self.name = name
+        self.title = title
+        self.time_zone = time_zone
+        self.time_starts = time_starts
+        self.time_ends = time_ends
+        self.summary = summary
+        self.address = address
+        self.driver = driver
+        self.home_page = home_page
+        self.mugshot = mugshot
+        self.logo = logo
+        self.icon = icon
+        self.is_physical = is_physical
 
     # attributes
 
@@ -303,15 +326,16 @@ class SprintSet:
 
     def __getitem__(self, name):
         """See `ISprintSet`."""
-        return Sprint.selectOneBy(name=name)
+        return IStore(Sprint).find(Sprint, name=name).one()
 
     def __iter__(self):
         """See `ISprintSet`."""
-        return iter(Sprint.select("time_ends > 'NOW'", orderBy='time_starts'))
+        return iter(IStore(Sprint).find(
+            Sprint, Sprint.time_ends > UTC_NOW).order_by(Sprint.time_starts))
 
     @property
     def all(self):
-        return Sprint.select(orderBy='-time_starts')
+        return IStore(Sprint).find(Sprint).order_by(Sprint.time_starts)
 
     def new(self, owner, name, title, time_zone, time_starts, time_ends,
             summary, address=None, driver=None, home_page=None,
@@ -329,48 +353,50 @@ class HasSprintsMixin:
     implementing IHasSprints.
     """
 
-    def _getBaseQueryAndClauseTablesForQueryingSprints(self):
-        """Return the base SQL query and the clauseTables to be used when
-        querying sprints related to this object.
+    def _getBaseClausesForQueryingSprints(self):
+        """Return the base Storm clauses to be used when querying sprints
+        related to this object.
 
         Subclasses must overwrite this method if it doesn't suit them.
         """
-        query = """
-            Specification.%s = %s
-            AND Specification.id = SprintSpecification.specification
-            AND SprintSpecification.sprint = Sprint.id
-            AND SprintSpecification.status = %s
-            """ % (self._table, self.id,
-                   quote(SprintSpecificationStatus.ACCEPTED))
-        return query, ['Specification', 'SprintSpecification']
+        try:
+            table = getattr(self, "__storm_table__")
+        except AttributeError:
+            # XXX cjwatson 2020-09-10: Remove this once all inheritors have
+            # been converted from SQLObject to Storm.
+            table = getattr(self, "_table")
+        return [
+            getattr(Specification, table.lower()) == self,
+            Specification.id == SprintSpecification.specification_id,
+            SprintSpecification.sprint == Sprint.id,
+            SprintSpecification.status == SprintSpecificationStatus.ACCEPTED,
+            ]
 
     def getSprints(self):
-        query, tables = self._getBaseQueryAndClauseTablesForQueryingSprints()
-        return Sprint.select(
-            query, clauseTables=tables, orderBy='-time_starts', distinct=True)
+        clauses = self._getBaseClausesForQueryingSprints()
+        return IStore(Sprint).find(Sprint, *clauses).order_by(
+            Desc(Sprint.time_starts)).config(distinct=True)
 
     @cachedproperty
     def sprints(self):
         """See IHasSprints."""
         return list(self.getSprints())
 
-    def getComingSprings(self):
-        query, tables = self._getBaseQueryAndClauseTablesForQueryingSprints()
-        query += " AND Sprint.time_ends > 'NOW'"
-        return Sprint.select(
-            query, clauseTables=tables, orderBy='time_starts',
-            distinct=True, limit=5)
+    def getComingSprints(self):
+        clauses = self._getBaseClausesForQueryingSprints()
+        clauses.append(Sprint.time_ends > UTC_NOW)
+        return IStore(Sprint).find(Sprint, *clauses).order_by(
+            Sprint.time_starts).config(distinct=True, limit=5)
 
     @cachedproperty
     def coming_sprints(self):
         """See IHasSprints."""
-        return list(self.getComingSprings())
+        return list(self.getComingSprints())
 
     @property
     def past_sprints(self):
         """See IHasSprints."""
-        query, tables = self._getBaseQueryAndClauseTablesForQueryingSprints()
-        query += " AND Sprint.time_ends <= 'NOW'"
-        return Sprint.select(
-            query, clauseTables=tables, orderBy='-time_starts',
-            distinct=True)
+        clauses = self._getBaseClausesForQueryingSprints()
+        clauses.append(Sprint.time_ends <= UTC_NOW)
+        return IStore(Sprint).find(Sprint, *clauses).order_by(
+            Desc(Sprint.time_starts)).config(distinct=True)

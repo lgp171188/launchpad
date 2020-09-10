@@ -243,7 +243,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         order_by='SprintSpecification.id')
     sprints = ReferenceSet(
         '<primary key>', 'SprintSpecification.specification_id',
-        'SprintSpecification.sprint_id', 'Sprint.<primary key>',
+        'SprintSpecification.sprint_id', 'Sprint.id',
         order_by='Sprint.name')
     spec_dependency_links = SQLMultipleJoin('SpecificationDependency',
         joinColumn='specification', orderBy='id')
@@ -1061,8 +1061,8 @@ class SpecificationSet(HasSpecificationsMixin):
     def coming_sprints(self):
         """See ISpecificationSet."""
         from lp.blueprints.model.sprint import Sprint
-        return Sprint.select("time_ends > 'NOW'", orderBy='time_starts',
-            limit=5)
+        rows = IStore(Sprint).find(Sprint, Sprint.time_ends > UTC_NOW)
+        return rows.order_by(Sprint.time_starts).config(limit=5)
 
     def new(self, name, title, specurl, summary, definition_status,
             owner, target, approver=None, assignee=None, drafter=None,
