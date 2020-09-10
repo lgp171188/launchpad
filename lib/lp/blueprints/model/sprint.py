@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -128,7 +128,7 @@ class Sprint(SQLBase, HasDriversMixin, HasSpecificationsMixin):
         tables.append(Join(
             SprintSpecification,
             SprintSpecification.specification == Specification.id))
-        query.append(SprintSpecification.sprintID == self.id)
+        query.append(SprintSpecification.sprint == self)
 
         if not filter:
             # filter could be None or [] then we decide the default
@@ -209,7 +209,7 @@ class Sprint(SQLBase, HasDriversMixin, HasSpecificationsMixin):
         context. Here we are a sprint that could cover many products and/or
         distros.
         """
-        speclink = SprintSpecification.get(speclink_id)
+        speclink = Store.of(self).get(SprintSpecification, speclink_id)
         assert (speclink.sprint.id == self.id)
         return speclink
 

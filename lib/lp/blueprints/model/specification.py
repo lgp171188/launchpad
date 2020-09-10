@@ -23,14 +23,15 @@ from sqlobject import (
     SQLRelatedJoin,
     StringCol,
     )
-from storm.expr import (
+from storm.locals import (
     Count,
     Desc,
     Join,
     Or,
+    ReferenceSet,
     SQL,
+    Store,
     )
-from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -237,11 +238,13 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         joinColumn='specification', otherColumn='person',
         intermediateTable='SpecificationSubscription',
         orderBy=['display_name', 'name'])
-    sprint_links = SQLMultipleJoin('SprintSpecification', orderBy='id',
-        joinColumn='specification')
-    sprints = SQLRelatedJoin('Sprint', orderBy='name',
-        joinColumn='specification', otherColumn='sprint',
-        intermediateTable='SprintSpecification')
+    sprint_links = ReferenceSet(
+        '<primary key>', 'SprintSpecification.specification_id',
+        order_by='SprintSpecification.id')
+    sprints = ReferenceSet(
+        '<primary key>', 'SprintSpecification.specification_id',
+        'SprintSpecification.sprint_id', 'Sprint.<primary key>',
+        order_by='Sprint.name')
     spec_dependency_links = SQLMultipleJoin('SpecificationDependency',
         joinColumn='specification', orderBy='id')
 
@@ -827,13 +830,11 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
 
     def unlinkSprint(self, sprint):
         """See ISpecification."""
-        from lp.blueprints.model.sprintspecification import (
-            SprintSpecification)
         for sprint_link in self.sprint_links:
             # sprints have unique names
             if sprint_link.sprint.name == sprint.name:
-                SprintSpecification.delete(sprint_link.id)
-                return sprint_link
+                sprint_link.destroySelf()
+                return
 
     # dependencies
     def createDependency(self, specification):
