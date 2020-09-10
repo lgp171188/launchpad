@@ -22,7 +22,7 @@ a single Launchpad project or across all projects.
 Users can see the latest blueprints available for the whole system:
 
     >>> user_browser.open('http://blueprints.launchpad.test/')
-    >>> print extract_text(find_main_content(user_browser.contents))
+    >>> print(extract_text(find_main_content(user_browser.contents)))
     Blueprints
     All projects...
     Recently registered
@@ -43,13 +43,13 @@ name and title, across all projects:
     >>> browser.getControl(name='field.search_text').value = 'svg'
     >>> browser.getControl(name='field.scope').value = ['all']
     >>> browser.getControl(name='field.actions.search').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://blueprints.launchpad.test/?searchtext=svg
 
 There is one such blueprint for the Firefox project, and it is listed
 among the results:
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'specs-table'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'specs-table')))
     Support Native SVG Objects
     ...
 
@@ -61,9 +61,9 @@ find the same result:
     >>> browser.getControl(name='field.scope').value = ['project']
     >>> browser.getControl(name='field.scope.target').value = 'firefox'
     >>> browser.getControl(name='field.actions.search').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://blueprints.launchpad.test/firefox?searchtext=svg
-    >>> print browser.getLink('svg-support').attrs['title']
+    >>> print(browser.getLink('svg-support').attrs['title'])
     Support Native SVG Objects
 
 The search form forces us to choose either searching within all projects
@@ -80,8 +80,8 @@ selecting the `all` scope:
     >>> browser.open('http://blueprints.launchpad.test/specs?'
     ...     'field.actions.search=Find+Blueprints&field.scope.target='
     ...     '&field.search_text=svg')
-    >>> print browser.url
+    >>> print(browser.url)
     http://blueprints.launchpad.test/?searchtext=svg
-    >>> print extract_text(find_tag_by_id(browser.contents, 'specs-table'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'specs-table')))
     Support Native SVG Objects
     ...
