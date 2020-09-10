@@ -28,6 +28,7 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     CannotSignArchive,
     IArchiveGPGSigningKey,
     ISignableArchive,
+    PUBLISHER_GPG_USES_SIGNING_SERVICE,
     )
 from lp.archivepublisher.run_parts import (
     find_run_parts_dir,
@@ -35,10 +36,18 @@ from lp.archivepublisher.run_parts import (
     )
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.osutils import remove_if_exists
-from lp.services.propertycache import get_property_cache
-from lp.services.signing.enums import SigningMode
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
+from lp.services.signing.enums import (
+    SigningKeyType,
+    SigningMode,
+    )
+from lp.services.signing.interfaces.signingkey import ISigningKeySet
 
 
 @implementer(ISignableArchive)
@@ -54,13 +63,41 @@ class SignableArchive:
         self.archive = archive
         self.pubconf = getPubConfig(self.archive)
 
+    @cachedproperty
+    def _run_parts_dir(self):
+        """This distribution's sign.d run-parts directory, if any."""
+        return find_run_parts_dir(self.archive.distribution.name, "sign.d")
+
     @property
     def can_sign(self):
         """See `ISignableArchive`."""
         return (
             self.archive.signing_key is not None or
-            find_run_parts_dir(
-                self.archive.distribution.name, "sign.d") is not None)
+            self._run_parts_dir is not None)
+
+    @cachedproperty
+    def _signing_key(self):
+        """This archive's signing key on the signing service, if any."""
+        if not getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
+            return None
+        elif self.archive.signing_key_fingerprint is not None:
+            return getUtility(ISigningKeySet).get(
+                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint)
+        else:
+            return None
+
+    @cachedproperty
+    def _secret_key(self):
+        """This archive's signing key as a local GPG key."""
+        if self.archive.signing_key is not None:
+            secret_key_path = self.getPathForSecretKey(
+                self.archive.signing_key)
+            with open(secret_key_path, "rb") as secret_key_file:
+                secret_key_export = secret_key_file.read()
+            gpghandler = getUtility(IGPGHandler)
+            return gpghandler.importSecretKey(secret_key_export)
+        else:
+            return None
 
     def _makeSignatures(self, signatures, log=None):
         """Make a sequence of signatures.
@@ -79,28 +116,38 @@ class SignableArchive:
             raise CannotSignArchive(
                 "No signing key available for %s" % self.archive.displayname)
 
-        if self.archive.signing_key is not None:
-            secret_key_path = self.getPathForSecretKey(
-                self.archive.signing_key)
-            with open(secret_key_path, "rb") as secret_key_file:
-                secret_key_export = secret_key_file.read()
-            gpghandler = getUtility(IGPGHandler)
-            secret_key = gpghandler.importSecretKey(secret_key_export)
-
         output_paths = []
         for input_path, output_path, mode, suite in signatures:
             if mode not in {SigningMode.DETACHED, SigningMode.CLEAR}:
                 raise ValueError('Invalid signature mode for GPG: %s' % mode)
-            if self.archive.signing_key is not None:
+            signed = False
+
+            if self._signing_key is not None or self._secret_key is not None:
                 with open(input_path, "rb") as input_file:
                     input_content = input_file.read()
-                signature = gpghandler.signContent(
-                    input_content, secret_key, mode=self.gpgme_modes[mode])
-                with open(output_path, "wb") as output_file:
-                    output_file.write(signature)
-                output_paths.append(output_path)
-            elif find_run_parts_dir(
-                    self.archive.distribution.name, "sign.d") is not None:
+                if self._signing_key is not None:
+                    try:
+                        signature = self._signing_key.sign(
+                            input_content, os.path.basename(input_path),
+                            mode=mode)
+                        signed = True
+                    except Exception:
+                        if log is not None:
+                            log.exception(
+                                "Failed to sign archive using signing "
+                                "service; falling back to local key")
+                        get_property_cache(self)._signing_key = None
+                if not signed and self._secret_key is not None:
+                    signature = getUtility(IGPGHandler).signContent(
+                        input_content, self._secret_key,
+                        mode=self.gpgme_modes[mode])
+                    signed = True
+                if signed:
+                    with open(output_path, "wb") as output_file:
+                        output_file.write(signature)
+                    output_paths.append(output_path)
+
+            if not signed and self._run_parts_dir is not None:
                 remove_if_exists(output_path)
                 env = {
                     "ARCHIVEROOT": self.pubconf.archiveroot,
@@ -113,9 +160,11 @@ class SignableArchive:
                 run_parts(
                     self.archive.distribution.name, "sign.d",
                     log=log, env=env)
+                signed = True
                 if os.path.exists(output_path):
                     output_paths.append(output_path)
-            else:
+
+            if not signed:
                 raise AssertionError(
                     "No signing key available for %s" %
                     self.archive.displayname)

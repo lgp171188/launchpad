@@ -605,7 +605,11 @@ class BugTracker(SQLBase):
 
     def getLinkedPersonByName(self, name):
         """Return the Person with a given name on this bugtracker."""
-        return BugTrackerPerson.selectOneBy(name=name, bugtracker=self)
+        person = IStore(BugTrackerPerson).find(
+            BugTrackerPerson,
+            BugTrackerPerson.name == name,
+            BugTrackerPerson.bugtracker == self).one()
+        return person
 
     def linkPersonToSelf(self, name, person):
         """See `IBugTrackerSet`."""

@@ -11,13 +11,24 @@ from nacl.public import PrivateKey
 from pytz import utc
 import responses
 from storm.store import Store
-from testtools.matchers import MatchesStructure
+from testtools.matchers import (
+    AfterPreprocessing,
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.database.interfaces import IMasterStore
-from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.enums import (
+    SigningKeyType,
+    SigningMode,
+    )
+from lp.services.signing.interfaces.signingkey import (
+    IArchiveSigningKeySet,
+    ISigningKeySet,
+    )
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
     )
@@ -40,6 +51,24 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
 
         client = removeSecurityProxy(getUtility(ISigningServiceClient))
         self.addCleanup(client._cleanCaches)
+
+    def test_get(self):
+        signing_keys = [
+            self.factory.makeSigningKey(key_type=key_type)
+            for key_type in (SigningKeyType.UEFI, SigningKeyType.OPENPGP)]
+        fingerprints = [
+            signing_key.fingerprint for signing_key in signing_keys]
+        signing_key_set = getUtility(ISigningKeySet)
+        self.assertEqual(
+            signing_keys[0],
+            signing_key_set.get(SigningKeyType.UEFI, fingerprints[0]))
+        self.assertEqual(
+            signing_keys[1],
+            signing_key_set.get(SigningKeyType.OPENPGP, fingerprints[1]))
+        self.assertIsNone(
+            signing_key_set.get(SigningKeyType.UEFI, fingerprints[1]))
+        self.assertIsNone(
+            signing_key_set.get(SigningKeyType.OPENPGP, fingerprints[0]))
 
     @responses.activate
     def test_generate_signing_key_saves_correctly(self):
@@ -116,19 +145,77 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.assertEqual(5, len(responses.calls))
 
     @responses.activate
-    def test_sign_some_data(self):
+    def test_sign(self):
         self.signing_service.addResponses(self)
 
         s = SigningKey(
             SigningKeyType.UEFI, u"a fingerprint",
             bytes(self.signing_service.generated_public_key),
             description=u"This is my key!")
-        signed = s.sign("secure message", "message_name")
+        signed = s.sign(b"secure message", "message_name")
 
         # Checks if the returned value is actually the returning value from
         # HTTP POST /sign call to lp-signing service
         self.assertEqual(3, len(responses.calls))
+        self.assertThat(
+            responses.calls[2].request,
+            MatchesStructure(
+                url=Equals(self.signing_service.getUrl("/sign")),
+                body=AfterPreprocessing(
+                    self.signing_service._decryptPayload,
+                    MatchesDict({
+                        "key-type": Equals("UEFI"),
+                        "fingerprint": Equals(u"a fingerprint"),
+                        "message-name": Equals("message_name"),
+                        "message": Equals(
+                            base64.b64encode(
+                                b"secure message").decode("UTF-8")),
+                        "mode": Equals("ATTACHED"),
+                        }))))
         self.assertEqual(self.signing_service.getAPISignedContent(), signed)
+
+    @responses.activate
+    def test_sign_openpgp_modes(self):
+        self.signing_service.addResponses(self)
+
+        s = SigningKey(
+            SigningKeyType.OPENPGP, u"a fingerprint",
+            bytes(self.signing_service.generated_public_key),
+            description=u"This is my key!")
+        s.sign(b"secure message", "message_name")
+        s.sign(b"another message", "another_name", mode=SigningMode.CLEAR)
+
+        self.assertEqual(5, len(responses.calls))
+        self.assertThat(
+            responses.calls[2].request,
+            MatchesStructure(
+                url=Equals(self.signing_service.getUrl("/sign")),
+                body=AfterPreprocessing(
+                    self.signing_service._decryptPayload,
+                    MatchesDict({
+                        "key-type": Equals("OPENPGP"),
+                        "fingerprint": Equals(u"a fingerprint"),
+                        "message-name": Equals("message_name"),
+                        "message": Equals(
+                            base64.b64encode(
+                                b"secure message").decode("UTF-8")),
+                        "mode": Equals("DETACHED"),
+                        }))))
+        self.assertThat(
+            responses.calls[4].request,
+            MatchesStructure(
+                url=Equals(self.signing_service.getUrl("/sign")),
+                body=AfterPreprocessing(
+                    self.signing_service._decryptPayload,
+                    MatchesDict({
+                        "key-type": Equals("OPENPGP"),
+                        "fingerprint": Equals(u"a fingerprint"),
+                        "message-name": Equals("another_name"),
+                        "message": Equals(
+                            base64.b64encode(
+                                b"another message").decode("UTF-8")),
+                        "mode": Equals("CLEAR"),
+                        }))))
 
 
 class TestArchiveSigningKey(TestCaseWithFactory):

@@ -176,7 +176,10 @@ class SigningServiceClient:
             "public-key": base64.b64decode(ret["public-key"])}
 
     def sign(self, key_type, fingerprint, message_name, message, mode):
-        if mode not in {SigningMode.ATTACHED, SigningMode.DETACHED}:
+        valid_modes = {SigningMode.ATTACHED, SigningMode.DETACHED}
+        if key_type == SigningKeyType.OPENPGP:
+            valid_modes.add(SigningMode.CLEAR)
+        if mode not in valid_modes:
             raise ValueError("%s is not a valid mode" % mode)
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)

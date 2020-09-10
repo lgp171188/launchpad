@@ -58,7 +58,8 @@ class SigningServiceClientFixture(fixtures.Fixture):
     def _sign(self, key_type, fingerprint, message_name, message, mode):
         key = bytes(PrivateKey.generate().public_key)
         signed_msg = (
-            "signed with key_type={}".format(key_type.name).encode("UTF-8"))
+            "signed with key_type={} mode={}".format(
+                key_type.name, mode.name).encode("UTF-8"))
         data = {
             'public-key': key,
             'signed-message': signed_msg,
