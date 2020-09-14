@@ -489,12 +489,8 @@ class GPGHandler:
             raise GPGKeyExpired(key)
         return key
 
-    def _submitKey(self, content):
-        """Submit an ASCII-armored public key export to the keyserver.
-
-        It issues a POST at /pks/add on the keyserver specified in the
-        configuration.
-        """
+    def submitKey(self, content):
+        """See `IGPGHandler`."""
         keyserver_http_url = '%s:%s' % (
             config.gpghandler.host, config.gpghandler.port)
 
@@ -527,7 +523,7 @@ class GPGHandler:
             return
 
         pub_key = self.retrieveKey(fingerprint)
-        self._submitKey(pub_key.export())
+        self.submitKey(pub_key.export())
 
     def getURLForKeyInServer(self, fingerprint, action='index', public=False):
         """See IGPGHandler"""
