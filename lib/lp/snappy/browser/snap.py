@@ -351,7 +351,7 @@ class ISnapEditSchema(Interface):
         'store_upload',
         ])
     store_distro_series = Choice(
-        vocabulary='BuildableSnappyDistroSeries', required=True,
+        vocabulary='SnappyDistroSeries', required=True,
         title='Series')
     vcs = Choice(vocabulary=VCSType, required=True, title='VCS')
 

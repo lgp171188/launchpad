@@ -1,14 +1,14 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the GNU
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the GNU
 # Affero General Public License version 3 (see the file LICENSE).
 
 """Snappy vocabularies."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+
 __metaclass__ = type
 
 __all__ = [
-    'BuildableSnappyDistroSeriesVocabulary',
     'SnapDistroArchSeriesVocabulary',
     'SnappyDistroSeriesVocabulary',
     'SnappySeriesVocabulary',
@@ -34,15 +34,15 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.services.database.interfaces import IStore
-from lp.services.database.stormexpr import (
-    IsDistinctFrom,
-    NullsFirst,
-    )
+from lp.services.database.stormexpr import IsDistinctFrom
+from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.vocabulary import StormVocabularyBase
 from lp.snappy.interfaces.snap import ISnap
+from lp.snappy.interfaces.snappyseries import ISnappyDistroSeries
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snappyseries import (
     SnappyDistroSeries,
+    SnappyDistroSeriesMixin,
     SnappySeries,
     )
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -72,6 +72,45 @@ class SnappySeriesVocabulary(StormVocabularyBase):
     _order_by = Desc(SnappySeries.date_created)
 
 
+@implementer(ISnappyDistroSeries)
+class SyntheticSnappyDistroSeries(SnappyDistroSeriesMixin):
+    def __init__(self, snappy_series, distro_series):
+        self.snappy_series = snappy_series
+        self.distro_series = distro_series
+
+    preferred = False
+
+    def __eq__(self, other):
+        return (
+            ISnappyDistroSeries.providedBy(other) and
+            self.snappy_series == other.snappy_series and
+            self.distro_series == other.distro_series)
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+def sorting_tuple_date_created(element):
+    # we negate the conversion to epoch here of
+    # the two date_created in order to achieve
+    # descending order
+    if element.distro_series is not None:
+        if element.snappy_series is not None:
+            return (1, element.distro_series.distribution.display_name,
+                    (-seconds_since_epoch(element.distro_series.date_created)),
+                    (-seconds_since_epoch(element.snappy_series.date_created)))
+        else:
+            return (1, element.distro_series.distribution.display_name,
+                    (-seconds_since_epoch(element.distro_series.date_created)),
+                    None)
+    else:
+        if element.snappy_series is not None:
+            return (0, None, None,
+                    (-seconds_since_epoch(element.snappy_series.date_created)))
+        else:
+            return 0, None, None, None
+
+
 class SnappyDistroSeriesVocabulary(StormVocabularyBase):
     """A vocabulary for searching snappy/distro series combinations."""
 
@@ -84,25 +123,39 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
         SnappySeries,
         ]
-    _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id]
+    _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id,
+                SnappySeries.status.is_in(ACTIVE_STATUSES)]
 
     @property
     def _entries(self):
-        entries = IStore(self._table).using(*self._origin).find(
-            self._table, *self._clauses)
-        return entries.order_by(
-            NullsFirst(Distribution.display_name),
-            Desc(DistroSeries.date_created),
-            Desc(SnappySeries.date_created))
+        entries = list(IStore(self._table).using(*self._origin).find(
+            self._table, *self._clauses))
+
+        if (ISnap.providedBy(self.context) and not
+                any(entry.snappy_series == self.context.store_series
+                    and entry.distro_series == self.context.distro_series
+                    for entry in entries)):
+            entries.append(SyntheticSnappyDistroSeries(
+                self.context.store_series, self.context.distro_series))
+        return sorted(entries, key=sorting_tuple_date_created)
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
-        if obj.distro_series is None:
-            token = obj.snappy_series.name
+        if obj.snappy_series is not None:
+            if obj.distro_series is None:
+                token = obj.snappy_series.name
+            else:
+                token = "%s/%s/%s" % (
+                    obj.distro_series.distribution.name,
+                    obj.distro_series.name,
+                    obj.snappy_series.name)
         else:
-            token = "%s/%s/%s" % (
-                obj.distro_series.distribution.name, obj.distro_series.name,
-                obj.snappy_series.name)
+            if obj.distro_series is None:
+                token = "(unset)"
+            else:
+                token = "%s/%s" % (
+                        obj.distro_series.distribution.name,
+                        obj.distro_series.name)
         return SimpleTerm(obj, token, obj.title)
 
     def __contains__(self, value):
@@ -117,11 +170,17 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
+        if token == "(unset)":
+            return self.toTerm(SyntheticSnappyDistroSeries(None, None))
         if "/" in token:
-            try:
+            bits = token.split("/", 2)
+            if len(bits) == 2:
+                distribution_name, distro_series_name = bits
+                snappy_series_name = None
+            elif len(bits) == 3:
                 distribution_name, distro_series_name, snappy_series_name = (
-                    token.split("/", 2))
-            except ValueError:
+                    bits)
+            else:
                 raise LookupError(token)
         else:
             distribution_name = None
@@ -133,17 +192,28 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
             Not(IsDistinctFrom(DistroSeries.name, distro_series_name)),
             SnappySeries.name == snappy_series_name,
             *self._clauses).one()
+
+        if entry is None and ISnap.providedBy(self.context):
+            if self.context.store_series is None:
+                context_store_series_name = None
+            else:
+                context_store_series_name = self.context.store_series.name
+            if self.context.distro_series is not None:
+                context_distribution_name = (
+                    self.context.distro_series.distribution.name)
+                context_distro_series_name = self.context.distro_series.name
+            else:
+                context_distribution_name = None
+                context_distro_series_name = None
+            if (context_distribution_name == distribution_name and
+                    context_distro_series_name == distro_series_name and
+                    context_store_series_name == snappy_series_name):
+                entry = SyntheticSnappyDistroSeries(
+                    self.context.store_series, self.context.distro_series)
         if entry is None:
             raise LookupError(token)
+
         return self.toTerm(entry)
-
-
-class BuildableSnappyDistroSeriesVocabulary(SnappyDistroSeriesVocabulary):
-    """A vocabulary for searching active snappy/distro series combinations."""
-
-    _clauses = SnappyDistroSeriesVocabulary._clauses + [
-        SnappySeries.status.is_in(ACTIVE_STATUSES),
-        ]
 
 
 @implementer(IJSONPublishable)
