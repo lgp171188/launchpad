@@ -881,7 +881,7 @@ class BugTrackerAlias(StormBase):
 
     def __init__(self, bugtracker, base_url):
         self.bugtracker = bugtracker
-        self.base_url = six.ensure_text(base_url)
+        self.base_url = base_url
 
     def delete(self):
         Store.of(self).remove(self)
@@ -897,4 +897,4 @@ class BugTrackerAliasSet:
         """See IBugTrackerSet."""
         return IStore(BugTrackerAlias).find(
             BugTrackerAlias,
-            bugtracker=bugtracker.id)
+            bugtracker=bugtracker)
