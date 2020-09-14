@@ -434,7 +434,11 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.log_buffer = io.StringIO()
         handler = logging.StreamHandler(self.log_buffer)
         self.log.addHandler(handler)
-        self.addDetail("garbo-log", text_content(self.log_buffer.getvalue()))
+        self.addCleanup(
+            lambda: self.addDetail(
+                "garbo-log", text_content(self.log_buffer.getvalue())
+            )
+        )
 
     def runFrequently(self, maximum_chunk_size=2, test_args=()):
         switch_dbuser("garbo_daily")
