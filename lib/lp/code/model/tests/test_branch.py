@@ -1566,8 +1566,8 @@ class TestBranchDeletionConsequences(TestCase):
         comment_id = comment.id
         branch = comment.branch_merge_proposal.source_branch
         branch.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, CodeReviewComment.get, comment_id)
+        self.assertIsNone(
+            IStore(CodeReviewComment).get(CodeReviewComment, comment_id))
 
     def test_deleteTargetCodeReviewComment(self):
         """Deletion of branches that have CodeReviewComments works."""
@@ -1575,8 +1575,8 @@ class TestBranchDeletionConsequences(TestCase):
         comment_id = comment.id
         branch = comment.branch_merge_proposal.target_branch
         branch.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, CodeReviewComment.get, comment_id)
+        self.assertIsNone(
+            IStore(CodeReviewComment).get(CodeReviewComment, comment_id))
 
     def test_branchWithBugRequirements(self):
         """Deletion requirements for a branch with a bug are right."""
