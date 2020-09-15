@@ -469,7 +469,7 @@ Person's displayname will be escaped; averting a XSS vulnerability.
     ...     "Sample Person<br/><script>alert('XSS')</script>")
     >>> test_tales("person/fmt:link", person=sample_person)
     u'<a href=".../~name12"...>Sample
-      Person&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;...</a>'
+      Person&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>'
 
 The fmt:link formatter takes an additional view_name component to extend
 the link:
@@ -543,7 +543,7 @@ For Git references, fmt:link links to the reference page.
 
     >>> [ref] = factory.makeGitRefs(repository=repository, paths=[u"master"])
     >>> print(test_tales("ref/fmt:link", ref=ref))
-    <a href="...git/bar/+ref/master">~eric/fooix/+git/bar:master</a>
+    <a href=".../~eric/fooix/+git/bar/+ref/master">~eric/fooix/+git/bar:master</a>
 
 
 Bugs
@@ -782,7 +782,7 @@ Bug Trackers
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
     >>> bugtracker = getUtility(IBugTrackerSet).getByName('email')
     >>> bugtracker.title = 'an@email.address bug tracker'
-    >>> bugtracker.aliases = ['mailto:eatme@wundrlnd.com',
+    >>> bugtracker.aliases = [u'mailto:eatme@wundrlnd.com',
     ...                       u'http://bugs.vikingsrool.no/']
 
 The "standard" 'url' name is supported:
