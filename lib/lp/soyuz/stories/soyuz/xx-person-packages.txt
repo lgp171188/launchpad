@@ -400,7 +400,7 @@ Then delete the 'source2' package.
     ...         print(extract_text(empty_section))
     >>> print_ppa_packages(admin_browser.contents)
     Source             Published   Status     Series   Section  Build Status
-    source2 - 666...   a moment ago Deleted   ...
+    source2 - 666...               Deleted    ...
     >>> update_cached_records()
 
 Now re-list the PPA's packages, 'source2' was deleted but still
