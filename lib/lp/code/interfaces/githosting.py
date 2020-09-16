@@ -130,7 +130,7 @@ class IGitHostingClient(Interface):
         :return: A binary string with the blob content.
         """
 
-    def copyRefs(self, path, operations, logger=None):
+    def copyRefs(path, operations, logger=None):
         """Executes the copy of refs or commits between different
         repositories.
 
@@ -140,7 +140,7 @@ class IGitHostingClient(Interface):
         :param logger: An optional logger.
         """
 
-    def deleteRef(self, path, ref, logger=None):
+    def deleteRef(path, ref, logger=None):
         """Deletes a reference on the given git repository.
 
         :param path: Physical path of the repository on the hosting service.
