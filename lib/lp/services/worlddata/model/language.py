@@ -48,12 +48,6 @@ from lp.services.worlddata.interfaces.language import (
     ILanguageSet,
     TextDirection,
     )
-# XXX: JonathanLange 2010-11-10 bug=673796: It turns out this module is
-# unusable without spokenin being imported first. So, import spokenin.
-from lp.services.worlddata.model.spokenin import SpokenIn
-
-
-SpokenIn
 
 
 @implementer(ILanguage)
