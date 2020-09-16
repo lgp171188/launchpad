@@ -1168,15 +1168,14 @@ class Publisher:
             return self.distro.displayname
         return "LP-PPA-%s" % get_ppa_reference(self.archive)
 
-    def _updateByHash(self, suite, release_file_name, extra_files):
-        """Update by-hash files for a suite.
+    def _getCurrentFiles(self, suite, release_file_name, extra_files):
+        # Gather information on entries in the current Release file.
+        release_path = os.path.join(
+            self._config.distsroot, suite, release_file_name
+        )
+        with open(release_path) as release_file:
+            release_data = Release(release_file)
 
-        This takes Release file data which references a set of on-disk
-        files, injects any newly-modified files from that set into the
-        librarian and the ArchiveFile table, and updates the on-disk by-hash
-        directories to be in sync with ArchiveFile.  Any on-disk by-hash
-        entries that ceased to be current sufficiently long ago are removed.
-        """
         extra_data = {}
         for filename, real_filename in extra_files.items():
             hashes = self._readIndexFileHashes(
@@ -1189,24 +1188,9 @@ class Publisher:
                     hashes[archive_hash.deb822_name]
                 )
 
-        release_path = os.path.join(
-            self._config.distsroot, suite, release_file_name
-        )
-        with open(release_path) as release_file:
-            release_data = Release(release_file)
-        archive_file_set = getUtility(IArchiveFileSet)
-        by_hashes = ByHashes(self._config.distsroot, self.log)
         suite_dir = os.path.relpath(
             os.path.join(self._config.distsroot, suite), self._config.distsroot
         )
-        container = "release:%s" % suite
-
-        def strip_dists(path):
-            assert path.startswith("dists/")
-            return path[len("dists/") :]
-
-        # Gather information on entries in the current Release file, and
-        # make sure nothing there is condemned.
         current_files = {}
         for current_entry in release_data["SHA256"] + extra_data.get(
             "SHA256", []
@@ -1219,6 +1203,30 @@ class Publisher:
                 current_entry["sha256"],
                 real_path,
             )
+        return current_files
+
+    def _updateByHash(self, suite, release_file_name, extra_files):
+        """Update by-hash files for a suite.
+
+        This takes Release file data which references a set of on-disk
+        files, injects any newly-modified files from that set into the
+        librarian and the ArchiveFile table, and updates the on-disk by-hash
+        directories to be in sync with ArchiveFile.  Any on-disk by-hash
+        entries that ceased to be current sufficiently long ago are removed.
+        """
+
+        archive_file_set = getUtility(IArchiveFileSet)
+        by_hashes = ByHashes(self._config.distsroot, self.log)
+        container = "release:%s" % suite
+        current_files = self._getCurrentFiles(
+            suite, release_file_name, extra_files
+        )
+
+        def strip_dists(path):
+            assert path.startswith("dists/")
+            return path[len("dists/") :]
+
+        # Make sure nothing in the current Release file is condemned.
         uncondemned_files = set()
         for db_file in archive_file_set.getByArchive(
             self.archive, container=container, condemned=True, eager_load=True
