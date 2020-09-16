@@ -110,7 +110,8 @@ def test_suite():
     for filename in filenames:
         path = filename
         one_test = LayeredDocFileSuite(
-            path, setUp=setUp, tearDown=tearDown,
+            path,
+            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
             layer=DatabaseFunctionalLayer,
             stdout_logging_level=logging.WARNING)
         suite.addTest(one_test)

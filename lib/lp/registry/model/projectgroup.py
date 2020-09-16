@@ -50,7 +50,11 @@ from lp.blueprints.model.specification import (
     Specification,
     )
 from lp.blueprints.model.specificationsearch import search_specifications
-from lp.blueprints.model.sprint import HasSprintsMixin
+from lp.blueprints.model.sprint import (
+    HasSprintsMixin,
+    Sprint,
+    )
+from lp.blueprints.model.sprintspecification import SprintSpecification
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
 from lp.bugs.model.bugtarget import (
     BugTargetBase,
@@ -239,15 +243,14 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
         """ See `IProjectGroup`."""
         return not self.getBranches().is_empty()
 
-    def _getBaseQueryAndClauseTablesForQueryingSprints(self):
-        query = """
-            Product.project = %s
-            AND Specification.product = Product.id
-            AND Specification.id = SprintSpecification.specification
-            AND SprintSpecification.sprint = Sprint.id
-            AND SprintSpecification.status = %s
-            """ % sqlvalues(self, SprintSpecificationStatus.ACCEPTED)
-        return query, ['Product', 'Specification', 'SprintSpecification']
+    def _getBaseClausesForQueryingSprints(self):
+        return [
+            Product.projectgroup == self,
+            Specification.product == Product.id,
+            Specification.id == SprintSpecification.specification_id,
+            SprintSpecification.sprint == Sprint.id,
+            SprintSpecification.status == SprintSpecificationStatus.ACCEPTED,
+            ]
 
     def specifications(self, user, sort=None, quantity=None, filter=None,
                        series=None, need_people=True, need_branches=True,
