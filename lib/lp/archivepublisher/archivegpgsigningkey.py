@@ -37,17 +37,24 @@ from lp.archivepublisher.run_parts import (
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
-from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.gpg.interfaces import (
+    IGPGHandler,
+    IPymeKey,
+    )
 from lp.services.osutils import remove_if_exists
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
 from lp.services.signing.enums import (
+    OpenPGPKeyAlgorithm,
     SigningKeyType,
     SigningMode,
     )
-from lp.services.signing.interfaces.signingkey import ISigningKeySet
+from lp.services.signing.interfaces.signingkey import (
+    ISigningKey,
+    ISigningKeySet,
+    )
 
 
 @implementer(ISignableArchive)
@@ -72,7 +79,7 @@ class SignableArchive:
     def can_sign(self):
         """See `ISignableArchive`."""
         return (
-            self.archive.signing_key is not None or
+            self.archive.signing_key_fingerprint is not None or
             self._run_parts_dir is not None)
 
     @cachedproperty
@@ -237,9 +244,9 @@ class ArchiveGPGSigningKey(SignableArchive):
         with open(export_path, 'wb') as export_file:
             export_file.write(key.export())
 
-    def generateSigningKey(self, log=None):
+    def generateSigningKey(self, log=None, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""
-        assert self.archive.signing_key is None, (
+        assert self.archive.signing_key_fingerprint is None, (
             "Cannot override signing_keys.")
 
         # Always generate signing keys for the default PPA, even if it
@@ -257,13 +264,26 @@ class ArchiveGPGSigningKey(SignableArchive):
 
         key_displayname = (
             "Launchpad PPA for %s" % self.archive.owner.displayname)
-        secret_key = getUtility(IGPGHandler).generateKey(
-            key_displayname, logger=log)
-        self._setupSigningKey(secret_key)
+        if getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
+            try:
+                signing_key = getUtility(ISigningKeySet).generate(
+                    SigningKeyType.OPENPGP, key_displayname,
+                    openpgp_key_algorithm=OpenPGPKeyAlgorithm.RSA, length=4096)
+            except Exception as e:
+                if log is not None:
+                    log.exception(
+                        "Error generating signing key for %s: %s %s" %
+                        (self.archive.reference, e.__class__.__name__, e))
+                raise
+        else:
+            signing_key = getUtility(IGPGHandler).generateKey(
+                key_displayname, logger=log)
+        return self._setupSigningKey(
+            signing_key, async_keyserver=async_keyserver)
 
     def setSigningKey(self, key_path, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""
-        assert self.archive.signing_key is None, (
+        assert self.archive.signing_key_fingerprint is None, (
             "Cannot override signing_keys.")
         assert os.path.exists(key_path), (
             "%s does not exist" % key_path)
@@ -274,34 +294,46 @@ class ArchiveGPGSigningKey(SignableArchive):
         return self._setupSigningKey(
             secret_key, async_keyserver=async_keyserver)
 
-    def _uploadPublicSigningKey(self, secret_key):
+    def _uploadPublicSigningKey(self, signing_key):
         """Upload the public half of a signing key to the keyserver."""
         # The handler's security proxying doesn't protect anything useful
         # here, and when we're running in a thread we don't have an
         # interaction.
         gpghandler = removeSecurityProxy(getUtility(IGPGHandler))
-        pub_key = gpghandler.retrieveKey(secret_key.fingerprint)
-        gpghandler.uploadPublicKey(pub_key.fingerprint)
-        return pub_key
+        if IPymeKey.providedBy(signing_key):
+            pub_key = gpghandler.retrieveKey(signing_key.fingerprint)
+            gpghandler.uploadPublicKey(pub_key.fingerprint)
+            return pub_key
+        else:
+            assert ISigningKey.providedBy(signing_key)
+            gpghandler.submitKey(removeSecurityProxy(signing_key).public_key)
+            return signing_key
 
     def _storeSigningKey(self, pub_key):
         """Store signing key reference in the database."""
         key_owner = getUtility(ILaunchpadCelebrities).ppa_key_guard
-        key, _ = getUtility(IGPGKeySet).activate(
-            key_owner, pub_key, pub_key.can_encrypt)
-        self.archive.signing_key_owner = key.owner
+        if IPymeKey.providedBy(pub_key):
+            key, _ = getUtility(IGPGKeySet).activate(
+                key_owner, pub_key, pub_key.can_encrypt)
+        else:
+            assert ISigningKey.providedBy(pub_key)
+            key = pub_key
+        self.archive.signing_key_owner = key_owner
         self.archive.signing_key_fingerprint = key.fingerprint
         del get_property_cache(self.archive).signing_key
 
-    def _setupSigningKey(self, secret_key, async_keyserver=False):
+    def _setupSigningKey(self, signing_key, async_keyserver=False):
         """Mandatory setup for signing keys.
 
-        * Export the secret key into the protected disk location.
+        * Export the secret key into the protected disk location (for
+          locally-generated keys).
         * Upload public key to the keyserver.
-        * Store the public GPGKey reference in the database and update
-          the context archive.signing_key.
+        * Store the public GPGKey reference in the database (for
+          locally-generated keys) and update the context
+          archive.signing_key.
         """
-        self.exportSecretKey(secret_key)
+        if IPymeKey.providedBy(signing_key):
+            self.exportSecretKey(signing_key)
         if async_keyserver:
             # If we have an asynchronous keyserver running in the current
             # thread using Twisted, then we need some contortions to ensure
@@ -310,10 +342,10 @@ class ArchiveGPGSigningKey(SignableArchive):
             # Since that thread won't have a Zope interaction, we need to
             # unwrap the security proxy for it.
             d = deferToThread(
-                self._uploadPublicSigningKey, removeSecurityProxy(secret_key))
+                self._uploadPublicSigningKey, removeSecurityProxy(signing_key))
             d.addCallback(ProxyFactory)
             d.addCallback(self._storeSigningKey)
             return d
         else:
-            pub_key = self._uploadPublicSigningKey(secret_key)
+            pub_key = self._uploadPublicSigningKey(signing_key)
             self._storeSigningKey(pub_key)
