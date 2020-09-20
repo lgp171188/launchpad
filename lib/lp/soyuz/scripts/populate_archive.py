@@ -9,7 +9,7 @@ __all__ = [
     'ArchivePopulator',
     ]
 
-
+import six
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -38,7 +38,7 @@ def specified(option):
     """
     if option is None:
         return False
-    if isinstance(option, basestring) and option.strip() == '':
+    if isinstance(option, six.string_types) and option.strip() == '':
         return False
     return True
 

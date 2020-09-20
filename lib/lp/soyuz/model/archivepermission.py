@@ -14,6 +14,7 @@ from operator import attrgetter
 
 from lazr.enum import DBItem
 import pytz
+import six
 from storm.expr import Exists
 from storm.locals import (
     And,
@@ -203,7 +204,7 @@ class ArchivePermissionSet:
     def _nameToComponent(self, component):
         """Helper to convert a possible string component to IComponent"""
         try:
-            if isinstance(component, basestring):
+            if isinstance(component, six.string_types):
                 component = getUtility(IComponentSet)[component]
             return component
         except NotFoundError:
@@ -211,7 +212,7 @@ class ArchivePermissionSet:
 
     def _nameToSourcePackageName(self, sourcepackagename):
         """Helper to convert a possible string name to ISourcePackageName."""
-        if isinstance(sourcepackagename, basestring):
+        if isinstance(sourcepackagename, six.string_types):
             sourcepackagename = getUtility(
                 ISourcePackageNameSet)[sourcepackagename]
         return sourcepackagename

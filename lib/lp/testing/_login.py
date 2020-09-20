@@ -23,6 +23,7 @@ __all__ = [
 
 from contextlib import contextmanager
 
+import six
 from zope.component import getUtility
 from zope.security.management import (
     endInteraction,
@@ -70,7 +71,7 @@ def login(email, participation=None):
     setPrincipal(), otherwise it must allow setting its principal attribute.
     """
 
-    if not isinstance(email, basestring):
+    if not isinstance(email, six.string_types):
         raise ValueError("Expected email parameter to be a string.")
     participation = _test_login_impl(participation)
     setupInteractionByEmail(email, participation)

@@ -831,7 +831,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if owner is None:
             owner = self.makePerson()
-        elif isinstance(owner, basestring):
+        elif isinstance(owner, six.string_types):
             owner = getUtility(IPersonSet).getByName(owner)
         else:
             pass
@@ -2132,7 +2132,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (six.integer_types, basestring)):
+        elif isinstance(bug, (six.integer_types, six.string_types)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2167,7 +2167,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (six.integer_types, basestring)):
+        elif isinstance(bug, (six.integer_types, six.string_types)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2919,7 +2919,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if purpose is None:
             purpose = ArchivePurpose.PPA
-        elif isinstance(purpose, basestring):
+        elif isinstance(purpose, six.string_types):
             purpose = ArchivePurpose.items[purpose.upper()]
 
         if distribution is None:
@@ -3602,7 +3602,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         if distroseries is None:
@@ -3762,16 +3762,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             archive = distroseries.main_archive
 
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
 
-        if (component is None or isinstance(component, basestring)):
+        if (component is None or isinstance(component, six.string_types)):
             component = self.makeComponent(component)
 
         if urgency is None:
             urgency = self.getAnySourcePackageUrgency()
-        elif isinstance(urgency, basestring):
+        elif isinstance(urgency, six.string_types):
             urgency = SourcePackageUrgency.items[urgency.upper()]
 
         section = self.makeSection(name=section_name)
@@ -3878,7 +3878,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 archive = source_package_release.upload_archive
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
-        elif isinstance(pocket, basestring):
+        elif isinstance(pocket, six.string_types):
             pocket = PackagePublishingPocket.items[pocket.upper()]
 
         if source_package_release is None:
@@ -3958,12 +3958,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         if pocket is None:
             pocket = self.getAnyPocket()
-        elif isinstance(pocket, basestring):
+        elif isinstance(pocket, six.string_types):
             pocket = PackagePublishingPocket.items[pocket.upper()]
 
         if status is None:
             status = PackagePublishingStatus.PENDING
-        elif isinstance(status, basestring):
+        elif isinstance(status, six.string_types):
             status = PackagePublishingStatus.items[status.upper()]
 
         if sourcepackagerelease is None:
@@ -4163,7 +4163,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if build is None:
             build = self.makeBinaryPackageBuild()
         if (binarypackagename is None or
-            isinstance(binarypackagename, basestring)):
+            isinstance(binarypackagename, six.string_types)):
             binarypackagename = self.getOrMakeBinaryPackageName(
                 binarypackagename)
         if version is None:
@@ -4174,7 +4174,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             component = build.source_package_release.component
         elif isinstance(component, six.text_type):
             component = getUtility(IComponentSet)[component]
-        if isinstance(section_name, basestring):
+        if isinstance(section_name, six.string_types):
             section_name = self.makeSection(section_name)
         section = section_name or build.source_package_release.section
         if priority is None:
@@ -4287,7 +4287,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             pocket = self.getAnyPocket()
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         return ProxyFactory(
@@ -4297,7 +4297,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                       distribution=None, with_db=False):
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         if distribution is None:
