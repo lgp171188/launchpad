@@ -13,6 +13,7 @@ from collections import defaultdict
 import itertools
 from operator import itemgetter
 
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -1140,7 +1141,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def guessPublishedSourcePackageName(self, pkgname):
         """See `IDistribution`"""
-        assert isinstance(pkgname, basestring), (
+        assert isinstance(pkgname, six.string_types), (
             "Expected string. Got: %r" % pkgname)
 
         pkgname = pkgname.strip().lower()

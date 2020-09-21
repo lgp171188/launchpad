@@ -889,7 +889,7 @@ class TestCaseWithFactory(TestCase):
         :param branch_url: The URL to create the branch at.
         :param format: The format of branch to create.
         """
-        if format is not None and isinstance(format, basestring):
+        if format is not None and isinstance(format, six.string_types):
             format = format_registry.get(format)()
         return ControlDir.create_branch_convenience(branch_url, format=format)
 

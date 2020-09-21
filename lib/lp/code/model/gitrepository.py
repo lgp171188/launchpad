@@ -652,7 +652,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             raise ValueError('ref info object does not contain "sha1" key')
         if "type" not in obj:
             raise ValueError('ref info object does not contain "type" key')
-        if not isinstance(obj["sha1"], basestring) or len(obj["sha1"]) != 40:
+        if (not isinstance(obj["sha1"], six.string_types) or
+                len(obj["sha1"]) != 40):
             raise ValueError('ref info sha1 is not a 40-character string')
         if obj["type"] not in object_type_map:
             raise ValueError('ref info type is not a recognised object type')

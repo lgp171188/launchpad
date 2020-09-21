@@ -1136,7 +1136,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
     def removeBranchRevisions(self, revision_ids):
         """See `IBranch`."""
-        if isinstance(revision_ids, basestring):
+        if isinstance(revision_ids, six.string_types):
             revision_ids = [revision_ids]
         IMasterStore(BranchRevision).find(
             BranchRevision,

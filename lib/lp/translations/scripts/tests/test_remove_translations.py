@@ -14,6 +14,7 @@ from optparse import (
     )
 from unittest import TestLoader
 
+import six
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
@@ -45,7 +46,7 @@ from lp.translations.scripts.remove_translations import (
 
 def make_script(args=None):
     """Create a `RemoveTranslations` script with given options."""
-    if isinstance(args, basestring):
+    if isinstance(args, six.string_types):
         args = [args]
     script = RemoveTranslations(
         'remove-translations-test', test_args=args, logger=DevNullLogger())
@@ -157,7 +158,7 @@ class OptionChecker(OptionParser):
 
 def parse_opts(opts):
     """Simulate options being parsed by `LaunchpadScript`."""
-    if isinstance(opts, basestring):
+    if isinstance(opts, six.string_types):
         opts = [opts]
 
     parser = OptionChecker()

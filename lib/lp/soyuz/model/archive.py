@@ -1175,7 +1175,7 @@ class Archive(SQLBase):
 
     def _addArchiveDependency(self, dependency, pocket, component=None):
         """See `IArchive`."""
-        if isinstance(component, basestring):
+        if isinstance(component, six.string_types):
             try:
                 component = getUtility(IComponentSet)[component]
             except NotFoundError as e:
@@ -1430,9 +1430,9 @@ class Archive(SQLBase):
     def _checkUpload(self, person, distroseries, sourcepackagename, component,
                     pocket, strict_component=True):
         """See `IArchive`."""
-        if isinstance(component, basestring):
+        if isinstance(component, six.string_types):
             component = getUtility(IComponentSet)[component]
-        if isinstance(sourcepackagename, basestring):
+        if isinstance(sourcepackagename, six.string_types):
             sourcepackagename = getUtility(
                 ISourcePackageNameSet)[sourcepackagename]
         reason = self.checkUpload(person, distroseries, sourcepackagename,
@@ -1547,7 +1547,7 @@ class Archive(SQLBase):
         if self.is_ppa:
             if IComponent.providedBy(component_name):
                 name = component_name.name
-            elif isinstance(component_name, basestring):
+            elif isinstance(component_name, six.string_types):
                 name = component_name
             else:
                 name = None
