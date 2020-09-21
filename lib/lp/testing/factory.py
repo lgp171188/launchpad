@@ -1121,14 +1121,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeSprint(self, title=None, name=None):
         """Make a sprint."""
         if title is None:
-            title = self.getUniqueString('title')
+            title = self.getUniqueUnicode('title')
         owner = self.makePerson()
         if name is None:
-            name = self.getUniqueString('name')
+            name = self.getUniqueUnicode('name')
         time_starts = datetime(2009, 1, 1, tzinfo=pytz.UTC)
         time_ends = datetime(2009, 1, 2, tzinfo=pytz.UTC)
-        time_zone = 'UTC'
-        summary = self.getUniqueString('summary')
+        time_zone = u'UTC'
+        summary = self.getUniqueUnicode('summary')
         return getUtility(ISprintSet).new(
             owner=owner, name=name, title=title, time_zone=time_zone,
             time_starts=time_starts, time_ends=time_ends, summary=summary)

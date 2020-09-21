@@ -46,6 +46,7 @@ from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
+from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtaskfilter import filter_bugtasks_by_context
@@ -565,11 +566,14 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
     @property
     def all_comments(self):
         """See `IBranchMergeProposal`."""
-        return CodeReviewComment.selectBy(branch_merge_proposal=self.id)
+        return IStore(CodeReviewComment).find(
+            CodeReviewComment, branch_merge_proposal=self)
 
     def getComment(self, id):
         """See `IBranchMergeProposal`."""
-        comment = CodeReviewComment.get(id)
+        comment = IStore(CodeReviewComment).get(CodeReviewComment, id)
+        if comment is None:
+            raise NotFoundError(id)
         if comment.branch_merge_proposal != self:
             raise WrongBranchMergeProposal
         return comment
@@ -583,7 +587,10 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
 
     def setCommentVisibility(self, user, comment_number, visible):
         """See `IBranchMergeProposal`."""
-        comment = CodeReviewComment.get(comment_number)
+        comment = IStore(CodeReviewComment).get(
+            CodeReviewComment, comment_number)
+        if comment is None:
+            raise NotFoundError(comment_number)
         if comment.branch_merge_proposal != self:
             raise WrongBranchMergeProposal
         if not comment.userCanSetCommentVisibility(user):
@@ -596,7 +603,9 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         """See `IBranchMergeProposal`.
 
         This function can raise WrongBranchMergeProposal."""
-        vote = CodeReviewVoteReference.get(id)
+        vote = IStore(CodeReviewVoteReference).get(CodeReviewVoteReference, id)
+        if vote is None:
+            raise NotFoundError(id)
         if vote.branch_merge_proposal != self:
             raise WrongBranchMergeProposal
         return vote
@@ -932,6 +941,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
                 date_created=_date_created)
             self._ensureAssociatedBranchesVisibleToReviewer(reviewer)
         vote_reference.review_type = review_type
+        Store.of(vote_reference).flush()
         if _notify_listeners:
             notify(ReviewerNominatedEvent(vote_reference))
         return vote_reference
@@ -1098,11 +1108,13 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             if team_ref is not None:
                 return team_ref
         # Create a new reference.
-        return CodeReviewVoteReference(
+        vote_reference = CodeReviewVoteReference(
             branch_merge_proposal=self,
             registrant=user,
             reviewer=user,
             review_type=review_type)
+        Store.of(vote_reference).flush()
+        return vote_reference
 
     def createCommentFromMessage(self, message, vote, review_type,
                                  original_email, _notify_listeners=True,
@@ -1126,6 +1138,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             vote_reference.reviewer = message.owner
             vote_reference.review_type = review_type
             vote_reference.comment = code_review_message
+        Store.of(code_review_message).flush()
         if _notify_listeners:
             notify(ObjectCreatedEvent(code_review_message))
         return code_review_message
@@ -1389,15 +1402,15 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         if include_votes:
             votes = load_referencing(
                 CodeReviewVoteReference, branch_merge_proposals,
-                ['branch_merge_proposalID'])
+                ['branch_merge_proposal_id'])
             votes_map = defaultdict(list)
             for vote in votes:
-                votes_map[vote.branch_merge_proposalID].append(vote)
+                votes_map[vote.branch_merge_proposal_id].append(vote)
             for mp in branch_merge_proposals:
                 get_property_cache(mp).votes = votes_map[mp.id]
-            comments = load_related(CodeReviewComment, votes, ['commentID'])
-            load_related(Message, comments, ['messageID'])
-            person_ids.update(vote.reviewerID for vote in votes)
+            comments = load_related(CodeReviewComment, votes, ['comment_id'])
+            load_related(Message, comments, ['message_id'])
+            person_ids.update(vote.reviewer_id for vote in votes)
 
             # we also provide a summary of diffs, so load them
             load_related(LibraryFileAlias, diffs, ['diff_textID'])
@@ -1439,8 +1452,8 @@ class BranchMergeProposalGetter:
             BranchMergeProposal.registrantID == participant.id)
 
         review_select = Select(
-                [CodeReviewVoteReference.branch_merge_proposalID],
-                [CodeReviewVoteReference.reviewerID == participant.id])
+                [CodeReviewVoteReference.branch_merge_proposal_id],
+                [CodeReviewVoteReference.reviewer == participant])
 
         query = Store.of(participant).find(
             BranchMergeProposal,
@@ -1463,13 +1476,13 @@ class BranchMergeProposalGetter:
         # the actual vote for that person.
         tables = [
             CodeReviewVoteReference,
-            Join(Person, CodeReviewVoteReference.reviewerID == Person.id),
+            Join(Person, CodeReviewVoteReference.reviewer == Person.id),
             LeftJoin(
                 CodeReviewComment,
-                CodeReviewVoteReference.commentID == CodeReviewComment.id)]
+                CodeReviewVoteReference.comment == CodeReviewComment.id)]
         results = store.using(*tables).find(
             (CodeReviewVoteReference, Person, CodeReviewComment),
-            CodeReviewVoteReference.branch_merge_proposalID.is_in(ids))
+            CodeReviewVoteReference.branch_merge_proposal_id.is_in(ids))
         for reference, person, comment in results:
             result[reference.branch_merge_proposal].append(reference)
         return result

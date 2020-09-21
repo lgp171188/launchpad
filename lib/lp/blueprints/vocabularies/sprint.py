@@ -9,21 +9,17 @@ __all__ = [
     'SprintVocabulary',
     ]
 
-
 from lp.blueprints.model.sprint import Sprint
-from lp.services.webapp.vocabulary import NamedSQLObjectVocabulary
+from lp.services.database.constants import UTC_NOW
+from lp.services.webapp.vocabulary import NamedStormVocabulary
 
 
-class FutureSprintVocabulary(NamedSQLObjectVocabulary):
+class FutureSprintVocabulary(NamedStormVocabulary):
     """A vocab of all sprints that have not yet finished."""
 
     _table = Sprint
-
-    def __iter__(self):
-        future_sprints = Sprint.select("time_ends > 'NOW'")
-        for sprint in future_sprints:
-            yield(self.toTerm(sprint))
+    _clauses = [Sprint.time_ends > UTC_NOW]
 
 
-class SprintVocabulary(NamedSQLObjectVocabulary):
+class SprintVocabulary(NamedStormVocabulary):
     _table = Sprint

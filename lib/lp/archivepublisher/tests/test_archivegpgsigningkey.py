@@ -14,8 +14,15 @@ from testtools.matchers import (
     FileContains,
     StartsWith,
     )
-from testtools.twistedsupport import AsynchronousDeferredRunTest
-from twisted.internet import defer
+from testtools.twistedsupport import (
+    AsynchronousDeferredRunTest,
+    AsynchronousDeferredRunTestForBrokenTwisted,
+    )
+import treq
+from twisted.internet import (
+    defer,
+    reactor,
+    )
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -26,18 +33,27 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
+from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
+from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.gpg.tests.test_gpghandler import FakeGenerateKey
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
 from lp.services.signing.enums import (
     SigningKeyType,
     SigningMode,
     )
+from lp.services.signing.interfaces.signingkey import ISigningKeySet
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
+from lp.services.twistedsupport.testing import TReqFixture
+from lp.services.twistedsupport.treq import check_status
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
-from lp.testing.gpgkeys import gpgkeysdir
+from lp.testing.gpgkeys import (
+    gpgkeysdir,
+    test_pubkey_from_email,
+    )
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import ZopelessDatabaseLayer
 
@@ -271,3 +287,89 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
             FileContains(
                 "detached signature of %s (%s, %s/%s)\n" %
                 (filename, self.archive_root, self.distro.name, self.suite)))
+
+
+class TestArchiveGPGSigningKey(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+    # treq.content doesn't close the connection before yielding control back
+    # to the test, so we need to spin the reactor at the end to finish
+    # things off.
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=10000)
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        super(TestArchiveGPGSigningKey, self).setUp()
+        self.temp_dir = self.makeTemporaryDirectory()
+        self.pushConfig("personalpackagearchive", root=self.temp_dir)
+        self.keyserver = self.useFixture(InProcessKeyServerFixture())
+        yield self.keyserver.start()
+
+    @defer.inlineCallbacks
+    def test_generateSigningKey_local(self):
+        # Generating a signing key locally using GPGHandler stores it in the
+        # database and pushes it to the keyserver.
+        self.useFixture(FakeGenerateKey("ppa-sample@canonical.com.sec"))
+        logger = BufferLogger()
+        # Use a display name that matches the pregenerated sample key.
+        owner = self.factory.makePerson(
+            displayname="Celso \xe1\xe9\xed\xf3\xfa Providelo")
+        archive = self.factory.makeArchive(owner=owner)
+        yield IArchiveGPGSigningKey(archive).generateSigningKey(
+            log=logger, async_keyserver=True)
+        # The key is stored in the database.
+        self.assertIsNotNone(archive.signing_key_owner)
+        self.assertIsNotNone(archive.signing_key_fingerprint)
+        # The key is stored as a GPGKey, not a SigningKey.
+        self.assertIsNotNone(
+            getUtility(IGPGKeySet).getByFingerprint(
+                archive.signing_key_fingerprint))
+        self.assertIsNone(
+            getUtility(ISigningKeySet).get(
+                SigningKeyType.OPENPGP, archive.signing_key_fingerprint))
+        # The key is uploaded to the keyserver.
+        client = self.useFixture(TReqFixture(reactor)).client
+        response = yield client.get(
+            getUtility(IGPGHandler).getURLForKeyInServer(
+                archive.signing_key_fingerprint, "get"))
+        yield check_status(response)
+        content = yield treq.content(response)
+        self.assertIn(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n", content)
+
+    @defer.inlineCallbacks
+    def test_generateSigningKey_signing_service(self):
+        # Generating a signing key on the signing service stores it in the
+        # database and pushes it to the keyserver.
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+        signing_service_client.generate.side_effect = None
+        test_key = test_pubkey_from_email("ftpmaster@canonical.com")
+        signing_service_client.generate.return_value = {
+            "fingerprint": "33C0A61893A5DC5EB325B29E415A12CAC2F30234",
+            "public-key": test_key,
+            }
+        logger = BufferLogger()
+        archive = self.factory.makeArchive()
+        yield IArchiveGPGSigningKey(archive).generateSigningKey(
+            log=logger, async_keyserver=True)
+        # The key is stored in the database.
+        self.assertIsNotNone(archive.signing_key_owner)
+        self.assertIsNotNone(archive.signing_key_fingerprint)
+        # The key is stored as a SigningKey, not a GPGKey.
+        self.assertIsNone(
+            getUtility(IGPGKeySet).getByFingerprint(
+                archive.signing_key_fingerprint))
+        signing_key = getUtility(ISigningKeySet).get(
+            SigningKeyType.OPENPGP, archive.signing_key_fingerprint)
+        self.assertEqual(test_key, signing_key.public_key)
+        # The key is uploaded to the keyserver.
+        client = self.useFixture(TReqFixture(reactor)).client
+        response = yield client.get(
+            getUtility(IGPGHandler).getURLForKeyInServer(
+                archive.signing_key_fingerprint, "get"))
+        yield check_status(response)
+        content = yield treq.content(response)
+        self.assertIn(test_key, content)
