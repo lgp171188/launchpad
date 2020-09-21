@@ -6,10 +6,10 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
+import io
 import operator
 import os
 import shutil
-from StringIO import StringIO
 import tempfile
 
 import pytz
@@ -167,7 +167,7 @@ class SoyuzTestPublisher:
         Returns a ILibraryFileAlias corresponding to the file uploaded.
         """
         library_file = getUtility(ILibraryFileAliasSet).create(
-            filename, len(filecontent), StringIO(filecontent),
+            filename, len(filecontent), io.BytesIO(filecontent),
             'application/text', restricted=restricted)
         return library_file
 

@@ -93,7 +93,7 @@ class TestPublishDistro(TestNativePublishingBase):
 
         This method also ensures the publish-distro.py script is runnable.
         """
-        pub_source = self.getPubSource(filecontent='foo')
+        pub_source = self.getPubSource(filecontent=b'foo')
         self.layer.txn.commit()
 
         rc, out, err = self.runPublishDistroScript()
@@ -111,7 +111,7 @@ class TestPublishDistro(TestNativePublishingBase):
         Make a DELETED source to see if the dirty pocket processing
         works for deletions.
         """
-        pub_source = self.getPubSource(filecontent='foo')
+        pub_source = self.getPubSource(filecontent=b'foo')
         self.layer.txn.commit()
         self.runPublishDistro()
         pub_source.sync()
@@ -141,9 +141,9 @@ class TestPublishDistro(TestNativePublishingBase):
         targeted to the specified suite, other records should be untouched
         and not present in disk.
         """
-        pub_source = self.getPubSource(filecontent='foo')
+        pub_source = self.getPubSource(filecontent=b'foo')
         pub_source2 = self.getPubSource(
-            sourcename='baz', filecontent='baz',
+            sourcename='baz', filecontent=b'baz',
             distroseries=self.ubuntutest['hoary-test'])
         self.layer.txn.commit()
 
@@ -168,7 +168,7 @@ class TestPublishDistro(TestNativePublishingBase):
         :return: A tuple of the path to the overridden distsroot and the
                  configured distsroot, in that order.
         """
-        self.getPubSource(filecontent="flangetrousers", archive=archive)
+        self.getPubSource(filecontent=b"flangetrousers", archive=archive)
         self.layer.txn.commit()
         pubconf = getPubConfig(archive)
         tmp_path = os.path.join(pubconf.archiveroot, "tmpdistroot")
@@ -234,18 +234,18 @@ class TestPublishDistro(TestNativePublishingBase):
 
         It should deal only with PPA publications.
         """
-        pub_source = self.getPubSource(filecontent='foo')
+        pub_source = self.getPubSource(filecontent=b'foo')
 
         cprov = getUtility(IPersonSet).getByName('cprov')
         pub_source2 = self.getPubSource(
-            sourcename='baz', filecontent='baz', archive=cprov.archive)
+            sourcename='baz', filecontent=b'baz', archive=cprov.archive)
 
         ubuntutest = getUtility(IDistributionSet)['ubuntutest']
         name16 = getUtility(IPersonSet).getByName('name16')
         getUtility(IArchiveSet).new(purpose=ArchivePurpose.PPA, owner=name16,
             distribution=ubuntutest)
         pub_source3 = self.getPubSource(
-            sourcename='bar', filecontent='bar', archive=name16.archive)
+            sourcename='bar', filecontent=b'bar', archive=name16.archive)
 
         # Override PPAs distributions
         naked_archive = removeSecurityProxy(cprov.archive)
@@ -302,7 +302,7 @@ class TestPublishDistro(TestNativePublishingBase):
 
         # Publish something to the private PPA:
         pub_source = self.getPubSource(
-            sourcename='baz', filecontent='baz', archive=private_ppa)
+            sourcename='baz', filecontent=b'baz', archive=private_ppa)
         self.layer.txn.commit()
 
         self.setUpRequireSigningKeys()
@@ -351,7 +351,7 @@ class TestPublishDistro(TestNativePublishingBase):
 
         # Publish something.
         pub_source = self.getPubSource(
-            sourcename='baz', filecontent='baz', archive=copy_archive)
+            sourcename='baz', filecontent=b'baz', archive=copy_archive)
 
         # Try a plain PPA run, to ensure the copy archive is not published.
         self.runPublishDistro(['--ppa'])
@@ -408,7 +408,7 @@ class TestPublishDistro(TestNativePublishingBase):
     def testCarefulRelease(self):
         """publish-distro can be asked to just rewrite Release files."""
         archive = self.factory.makeArchive(distribution=self.ubuntutest)
-        pub_source = self.getPubSource(filecontent='foo', archive=archive)
+        pub_source = self.getPubSource(filecontent=b'foo', archive=archive)
 
         self.setUpRequireSigningKeys()
         yield self.useFixture(InProcessKeyServerFixture()).start()
