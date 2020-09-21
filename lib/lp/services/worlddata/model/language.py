@@ -61,8 +61,7 @@ class Language(SQLBase):
 
     _table = 'Language'
 
-    code = StringCol(
-        dbName='code', notNull=True, unique=True, alternateID=True)
+    code = StringCol(dbName='code', notNull=True, unique=True)
     uuid = StringCol(dbName='uuid', notNull=False, default=None)
     nativename = StringCol(dbName='nativename')
     englishname = StringCol(dbName='englishname')
@@ -127,13 +126,13 @@ class Language(SQLBase):
         if self.code == 'pt_BR':
             return None
         elif self.code == 'nn':
-            return Language.byCode('nb')
+            return IStore(Language).find(Language, code='nb').one()
         elif self.code == 'nb':
-            return Language.byCode('nn')
+            return IStore(Language).find(Language, code='nn').one()
         codes = self.code.split('_')
         if len(codes) == 2 and codes[0] != 'en':
-            language = Language.byCode(codes[0])
-            if language.visible == True:
+            language = IStore(Language).find(Language, code=codes[0]).one()
+            if language.visible:
                 return language
             else:
                 return None
@@ -272,10 +271,7 @@ class LanguageSet:
         """See `ILanguageSet`."""
         assert isinstance(code, six.string_types), (
             "%s is not a valid type for 'code'" % type(code))
-        try:
-            return Language.byCode(code)
-        except SQLObjectNotFound:
-            return None
+        return IStore(Language).find(Language, code=code).one()
 
     def keys(self):
         """See `ILanguageSet`."""

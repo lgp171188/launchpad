@@ -13,7 +13,7 @@ __metaclass__ = type
 
 import pytz
 import six
-from sqlobject import SQLObjectNotFound
+from zope.component import getUtility
 from zope.interface import alsoProvides
 from zope.schema.vocabulary import (
     SimpleTerm,
@@ -21,7 +21,10 @@ from zope.schema.vocabulary import (
     )
 
 from lp.services.webapp.vocabulary import SQLObjectVocabularyBase
-from lp.services.worlddata.interfaces.language import ILanguage
+from lp.services.worlddata.interfaces.language import (
+    ILanguage,
+    ILanguageSet,
+    )
 from lp.services.worlddata.interfaces.timezone import ITimezoneNameVocabulary
 from lp.services.worlddata.model.country import Country
 from lp.services.worlddata.model.language import Language
@@ -78,8 +81,7 @@ class LanguageVocabulary(SQLObjectVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabulary`."""
-        try:
-            found_language = Language.byCode(token)
-        except SQLObjectNotFound:
+        found_language = getUtility(ILanguageSet).getLanguageByCode(token)
+        if found_language is None:
             raise LookupError(token)
         return self.getTerm(found_language)
