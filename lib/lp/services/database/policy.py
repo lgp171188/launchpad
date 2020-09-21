@@ -358,7 +358,7 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
         slave_store = self.getStore(MAIN_STORE, SLAVE_FLAVOR)
         hot_standby, streaming_lag = slave_store.execute("""
             SELECT
-                current_setting('hot_standby') = 'on',
+                pg_is_in_recovery(),
                 now() - pg_last_xact_replay_timestamp()
             """).get_one()
         if hot_standby and streaming_lag is not None:
