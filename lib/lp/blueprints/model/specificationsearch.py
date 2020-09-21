@@ -14,6 +14,7 @@ __all__ = [
 from collections import defaultdict
 from functools import reduce
 
+import six
 from storm.expr import (
     And,
     Coalesce,
@@ -264,7 +265,7 @@ def get_specification_filters(filter, goalstatus=True):
             SpecificationDefinitionStatus.SUPERSEDED])))
     # Filter for specification text.
     for constraint in filter:
-        if isinstance(constraint, basestring):
+        if isinstance(constraint, six.string_types):
             # A string in the filter is a text search filter.
             clauses.append(fti_search(Specification, constraint))
     return clauses
