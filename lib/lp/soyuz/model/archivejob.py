@@ -3,8 +3,8 @@
 
 __metaclass__ = type
 
+import io
 import logging
-import StringIO
 
 from lazr.delegates import delegate_to
 import six
@@ -165,8 +165,7 @@ class PackageUploadNotificationJob(ArchiveJobDerived):
         if packageupload.changesfile is None:
             changes_file_object = None
         else:
-            changes_file_object = StringIO.StringIO(
-                packageupload.changesfile.read())
+            changes_file_object = io.BytesIO(packageupload.changesfile.read())
         logger = logging.getLogger()
         packageupload.notify(
             status=self.packageupload_status, summary_text=self.summary_text,
