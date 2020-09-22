@@ -10,19 +10,19 @@ The language information from Launchpad can be queried using
     >>> es = anon_webservice.get('/+languages/es').jsonBody()
     >>> es['resource_type_link']
     u'http.../#language'
-    >>> print es['text_direction']
+    >>> print(es['text_direction'])
     Left to Right
-    >>> print es['code']
+    >>> print(es['code'])
     es
-    >>> print es['english_name']
+    >>> print(es['english_name'])
     Spanish
-    >>> print es['plural_expression']
+    >>> print(es['plural_expression'])
     n != 1
-    >>> print es['plural_forms']
+    >>> print(es['plural_forms'])
     2
-    >>> print es['translators_count']
+    >>> print(es['translators_count'])
     1
-    >>> print es['visible']
+    >>> print(es['visible'])
     True
 
 
@@ -45,7 +45,7 @@ at '/+languages'.
     >>> default_languages['resource_type_link']
         u'http.../#languages'
     >>> languages = get_languages_entries(default_languages)
-    >>> print languages
+    >>> print(languages)
     Abkhazian
     ...
     >>> '(hidden)' in languages
@@ -60,7 +60,7 @@ default.
     ...     '/+languages?'
     ...     'ws.op=getAllLanguages&ws.start=0&ws.size=10'
     ...     ).jsonBody()
-    >>> print get_languages_entries(all_languages)
+    >>> print(get_languages_entries(all_languages))
     Abkhazian
     ...
     Afar (Djibouti)(hidden)
