@@ -427,13 +427,8 @@ class LaunchpadBrowserPublication(
         request.setInWSGIEnvironment(
             'launchpad.userid', request.principal.id)
 
-        # The view may be security proxied
-        view = removeSecurityProxy(ob)
-        # It's possible that the view is a bound method.
-        view = getattr(view, '__self__', view)
-        context = removeSecurityProxy(getattr(view, 'context', None))
-        pageid = self.constructPageID(view, context)
-        request.setInWSGIEnvironment('launchpad.pageid', pageid)
+        # pageid is calculated at `afterTraversal`
+        pageid = request._orig_env['launchpad.pageid']
         # And spit the pageid out to our tracelog.
         tracelog(request, 'p', pageid)
 
@@ -567,6 +562,14 @@ class LaunchpadBrowserPublication(
         # Log the URL including vhost information to the ZServer tracelog.
         tracelog(request, 'u', request.getURL())
 
+        # The view may be security proxied
+        view = removeSecurityProxy(ob)
+        # It's possible that the view is a bound method.
+        view = getattr(view, '__self__', view)
+        context = removeSecurityProxy(getattr(view, 'context', None))
+        pageid = self.constructPageID(view, context)
+        request.setInWSGIEnvironment('launchpad.pageid', pageid)
+
         assert hasattr(request, '_traversal_start'), (
             'request._traversal_start, which should have been set by '
             'beforeTraversal(), was not found.')
@@ -575,7 +578,8 @@ class LaunchpadBrowserPublication(
             'launchpad.traversalduration', traversal_duration)
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'traversal_duration,success=True', traversal_duration * 1000)
+            'traversal_duration,success=True,pageid={}'.format(pageid),
+            traversal_duration * 1000)
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
                 _get_thread_time() - request._traversal_thread_start)
