@@ -84,8 +84,8 @@ This marshaller also appends '_link' to the representation name of
 this field, so that clients can know this is a link to another
 resource and not a random string.
 
-    >>> marshaller.representation_name
-    'some_person_link'
+    >>> print(marshaller.representation_name)
+    some_person_link
 
 If you export a Choice that uses an SQLObjectVocabularyBase then you
 get an error, as you should be using a ReferenceChoice instead to

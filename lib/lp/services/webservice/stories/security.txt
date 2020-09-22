@@ -21,7 +21,7 @@ Jokosher project.
 
 But the 'no-priv' user can't see bug number 14, which is private.
 
-  >>> print user_webservice.get("/bugs/14")
+  >>> print(user_webservice.get("/bugs/14"))
   HTTP/1.1 404 Not Found
   ...
 
@@ -35,7 +35,7 @@ Things are a little different for a user who has permission to see
 private data, but is using an OAuth key that restricts the client to
 operating on public data.
 
-  >>> print public_webservice.get("/bugs/14")
+  >>> print(public_webservice.get("/bugs/14"))
   HTTP/1.1 404 Not Found
   ...
 
