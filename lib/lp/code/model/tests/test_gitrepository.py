@@ -2729,6 +2729,38 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
         self.assertFalse(snap.is_stale)
 
 
+class TestGitRepositoryFork(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestGitRepositoryFork, self).setUp()
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+
+    def test_fork(self):
+        repo = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+        another_team = self.factory.makeTeam(members=[another_person])
+
+        forked_repo = getUtility(IGitRepositorySet).fork(
+            repo, another_person, another_team)
+        self.assertEqual(another_team, forked_repo.owner)
+        self.assertEqual(another_person, forked_repo.registrant)
+        self.assertEqual(1, self.hosting_fixture.create.call_count)
+
+    def test_fork_same_name(self):
+        repo = self.factory.makeGitRepository()
+
+        person = self.factory.makePerson()
+        same_name_repo = self.factory.makeGitRepository(
+            owner=person, registrant=person,
+            name=repo.name, target=repo.target)
+
+        forked_repo = getUtility(IGitRepositorySet).fork(repo, person, person)
+        self.assertEqual(forked_repo.target, repo.target)
+        self.assertEqual(forked_repo.name, "%s-1" % same_name_repo.name)
+
+
 class TestGitRepositoryDetectMerges(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer

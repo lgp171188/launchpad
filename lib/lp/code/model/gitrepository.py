@@ -1742,11 +1742,12 @@ class GitRepositorySet:
             async_hosting=async_hosting, status=status)
 
     def fork(self, origin, requester, new_owner):
+        namespace = get_git_namespace(origin.target, new_owner)
+        name = namespace.findUnusedName(origin.name)
         repository = self.new(
             repository_type=GitRepositoryType.HOSTED,
             registrant=requester, owner=new_owner, target=origin.target,
-            name=origin.name,
-            information_type=origin.information_type,
+            name=name, information_type=origin.information_type,
             date_created=UTC_NOW, description=origin.description,
             with_hosting=True, async_hosting=True,
             status=GitRepositoryStatus.CREATING)
