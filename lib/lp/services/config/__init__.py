@@ -8,6 +8,8 @@ The configuration section used is specified using the LPCONFIG
 environment variable, and defaults to 'development'
 '''
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 
@@ -112,8 +114,8 @@ class LaunchpadConfig:
         :param process_name: the process configuration name to use. Defaults
             to the basename of sys.argv[0] without any extension, or None if
             sys.argv is not available.
-       """
-        self._config = None
+        """
+        self._invalidateConfig()
         if instance_name is None:
             instance_name = find_instance_name()
 
@@ -162,6 +164,8 @@ class LaunchpadConfig:
     def _invalidateConfig(self):
         """Invalidate the config, causing the config to be regenerated."""
         self._config = None
+        self._devmode = None
+        self._servers = None
 
     def reloadConfig(self):
         """Reload the config."""
@@ -224,7 +228,6 @@ class LaunchpadConfig:
         except ConfigErrors as error:
             message = '\n'.join([str(e) for e in error.errors])
             raise ConfigErrors(message)
-        self._setZConfig()
 
     def _loadConfigOverlays(self, config_file):
         """Apply config overlays from the launchpad.config_overlay_dir."""
@@ -243,22 +246,35 @@ class LaunchpadConfig:
         """Return the path to the ZConfig file for this instance."""
         return os.path.join(self.config_dir, 'launchpad.conf')
 
-    def _setZConfig(self):
+    def _getZConfig(self):
         """Modify the config, adding automatically generated settings"""
         with resources.path('zope.app.server', 'schema.xml') as schemafile:
             schema = ZConfig.loadSchema(str(schemafile))
         root_options, handlers = ZConfig.loadConfig(
             schema, self.zope_config_file)
+        self._devmode = root_options.devmode
+        self._servers = root_options.servers
 
-        # Devmode from the zope.app.server.main config, copied here for
-        # ease of access.
-        self.devmode = root_options.devmode
+    @property
+    def devmode(self):
+        """Devmode from the zope.app.server.main config.
 
-        # The defined servers.
-        self.servers = root_options.servers
+        Copied here for ease of access.
+        """
+        if self._devmode is None:
+            self._getZConfig()
+        return self._devmode
 
-        # The number of configured threads.
-        self.threads = root_options.threads
+    @devmode.setter
+    def devmode(self, value):
+        self._devmode = value
+
+    @property
+    def servers(self):
+        """The defined servers."""
+        if self._servers is None:
+            self._getZConfig()
+        return self._servers
 
     def generate_overrides(self):
         """Ensure correct config.zcml overrides will be called.
@@ -268,13 +284,13 @@ class LaunchpadConfig:
         loader_file = os.path.join(self.root, 'zcml/+config-overrides.zcml')
         loader = open_for_writing(loader_file, 'w')
 
-        print >> loader, """
+        print("""
             <configure xmlns="http://namespaces.zope.org/zope">
                 <!-- This file automatically generated using
                      lp.services.config.LaunchpadConfig.generate_overrides.
                      DO NOT EDIT. -->
                 <include files="%s/*.zcml" />
-                </configure>""" % self.config_dir
+                </configure>""" % self.config_dir, file=loader)
         loader.close()
 
     def appserver_root_url(self, facet='mainsite', ensureSlash=False):

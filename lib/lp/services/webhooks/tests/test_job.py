@@ -11,7 +11,10 @@ from datetime import (
     )
 import re
 
-from fixtures import FakeLogger
+from fixtures import (
+    FakeLogger,
+    MockPatch,
+    )
 from pytz import utc
 import requests
 import requests.exceptions
@@ -41,6 +44,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
+from lp.services.compat import mock
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
@@ -186,7 +190,7 @@ class TestWebhookClient(TestCase):
                 'response': MatchesDict({
                     'status_code': Equals(200),
                     'headers': Equals({'Content-Type': 'text/plain'}),
-                    'body': Equals('Content'),
+                    'body': Equals(b'Content'),
                     }),
                 }))
 
@@ -199,7 +203,7 @@ class TestWebhookClient(TestCase):
                 'response': MatchesDict({
                     'status_code': Equals(404),
                     'headers': Equals({'Content-Type': 'text/plain'}),
-                    'body': Equals('Content'),
+                    'body': Equals(b'Content'),
                     }),
                 }))
 
@@ -716,6 +720,56 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         job.retry(reset=True)
         self.assertEqual(JobStatus.WAITING, job.status)
         self.assertIs(None, job.date_first_sent)
+
+    def assertRetriesWithLimitedEffort(self, url):
+        client = MockWebhookClient(response_status=503)
+        self.useFixture(ZopeUtilityFixture(client, IWebhookClient))
+
+        hook = self.factory.makeWebhook(delivery_url=url)
+        job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
+        self.assertTrue(job.is_limited_effort_delivery())
+
+        # Running it will fail because the server returns 503 error,
+        # but set the job status to WAITING, so it can be retried.
+        self.assertEqual(False, self.runJob(job))
+        self.assertEqual(JobStatus.WAITING, job.status)
+
+        # Force the next attempt to fail hard by pretending it was more
+        # than job.limited_effort_retry_period later.
+        self.assertTrue(job.retry_automatically)
+        a_while_ago = timedelta(minutes=5, seconds=1)
+        job.json_data['date_first_sent'] = (
+            job.date_first_sent - a_while_ago).isoformat()
+        self.assertFalse(job.retry_automatically)
+
+        self.assertEqual(False, self.runJob(job))
+        self.assertEqual(JobStatus.FAILED, job.status)
+
+    def test_retries_matching_url_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(u"http://foo.lxd/path")
+
+    def test_retries_localhost_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(u"http://localhost/")
+        self.assertRetriesWithLimitedEffort(u"http://127.0.0.1/")
+
+    def test_broadcast_address_with_limited_effort(self):
+        """Checks if we limit the delivery effort for broadcast addresses."""
+        # Pretend to be connected to a 192.168.1.0/24 network.
+        networks = {'eth0': [mock.Mock(broadcast='192.168.1.255')]}
+        self.useFixture(
+            MockPatch("psutil.net_if_addrs", return_value=networks))
+        WebhookDeliveryJob._get_broadcast_addresses.clean_memo()
+        self.addCleanup(WebhookDeliveryJob._get_broadcast_addresses.clean_memo)
+
+        self.assertRetriesWithLimitedEffort(u"http://192.168.1.255/")
+
+    def test_multicast_address_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(u"http://224.0.18.255/")
+        self.assertRetriesWithLimitedEffort(u"http://224.0.0.255/")
+
+    def test_not_resolvable_address_with_limited_effort(self):
+        self.assertRetriesWithLimitedEffort(
+            u"http://could.not.resolve.name.invalid/")
 
 
 class TestViaCronscript(TestCaseWithFactory):

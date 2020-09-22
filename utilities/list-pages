@@ -121,7 +121,8 @@ def has_page_title(a):
 
 
 def has_html_element(template):
-    return '</html>' in open(template).read()
+    with open(template) as f:
+        return '</html>' in f.read()
 
 
 def iter_page_adapters():

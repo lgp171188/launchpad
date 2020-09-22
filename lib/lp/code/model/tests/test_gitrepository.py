@@ -1086,8 +1086,8 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         comment_id = comment.id
         repository = comment.branch_merge_proposal.source_git_repository
         repository.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, CodeReviewComment.get, comment_id)
+        self.assertIsNone(
+            IStore(CodeReviewComment).get(CodeReviewComment, comment_id))
 
     def test_delete_target_CodeReviewComment(self):
         # Deletion of target repositories that have CodeReviewComments works.
@@ -1095,8 +1095,8 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         comment_id = comment.id
         repository = comment.branch_merge_proposal.target_git_repository
         repository.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, CodeReviewComment.get, comment_id)
+        self.assertIsNone(
+            IStore(CodeReviewComment).get(CodeReviewComment, comment_id))
 
     def test_sourceBranchWithCodeReviewVoteReference(self):
         # break_references handles CodeReviewVoteReference source repository.

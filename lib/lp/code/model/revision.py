@@ -85,7 +85,6 @@ class Revision(SQLBase):
 
     date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
     log_body = StringCol(notNull=True)
-    gpgkey = ForeignKey(dbName='gpgkey', foreignKey='GPGKey', default=None)
 
     revision_author_id = Int(name='revision_author', allow_none=False)
     revision_author = Reference(revision_author_id, 'RevisionAuthor.id')

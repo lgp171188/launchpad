@@ -28,7 +28,7 @@ Carlos.
     >>> browser.addHeader('Authorization', 'Basic carlos@canonical.com:test')
     >>> browser.open(
     ...     "http://blueprints.launchpad.test/firefox/+spec/e4x/+subscribe")
-    >>> print browser.title
+    >>> print(browser.title)
     Subscribe to blueprint : Support E4X in EcmaScript :
     Blueprints : Mozilla Firefox
 
@@ -52,10 +52,11 @@ Now, we'll POST the form. We should see a message that we have just
 subscribed.
 
     >>> browser.getControl('Subscribe').click()
-    >>> 'You have subscribed to this blueprint' in browser.contents
+    >>> six.ensure_str('You have subscribed to this blueprint') in (
+    ...     browser.contents)
     True
 
-    >>> 'subscriber-essential' in browser.contents
+    >>> six.ensure_str('subscriber-essential') in browser.contents
     True
 
 Now the link should say "Update subscription" in the actions menu.
@@ -76,10 +77,11 @@ We will unset the essential flag and resubmit:
 
     >>> essential.selected = False
     >>> browser.getControl('Change').click()
-    >>> 'Your subscription has been updated' in browser.contents
+    >>> six.ensure_str('Your subscription has been updated') in (
+    ...     browser.contents)
     True
 
-    >>> 'subscriber-inessential' in browser.contents
+    >>> six.ensure_str('subscriber-inessential') in browser.contents
     True
 
 It's also possible to change the essential flag clicking on the star
@@ -91,7 +93,7 @@ icon in the Subscribers portlet.
     >>> browser.url
     'http://blueprints.launchpad.test/firefox/+spec/e4x'
 
-    >>> 'subscriber-essential' in browser.contents
+    >>> six.ensure_str('subscriber-essential') in browser.contents
     True
 
 We don't really want to be subscribed, so lets unsubscribe from that
@@ -102,13 +104,14 @@ unsubscribe confirmation page loads.
     >>> unsubit.click()
     >>> confirm = browser.getControl('Unsubscribe')
     >>> confirm.click()
-    >>> 'You have unsubscribed from this blueprint.' in browser.contents
+    >>> six.ensure_str('You have unsubscribed from this blueprint.') in (
+    ...     browser.contents)
     True
 
-    >>> 'subscriber-inessential' in browser.contents
+    >>> six.ensure_str('subscriber-inessential') in browser.contents
     False
 
-    >>> 'subscriber-essential' in browser.contents
+    >>> six.ensure_str('subscriber-essential') in browser.contents
     False
 
 
@@ -125,7 +128,8 @@ When we want other users to track a specification we can subscribe them.
 
     >>> browser.getControl('Subscriber').value = 'stub'
     >>> browser.getControl('Subscribe').click()
-    >>> msg = "Stuart Bishop has been subscribed to this blueprint."
+    >>> msg = six.ensure_str(
+    ...     "Stuart Bishop has been subscribed to this blueprint.")
     >>> msg in browser.contents
     True
 
@@ -163,8 +167,8 @@ based on the subscription change we have made above.
     >>> for subscriber in subscribers:
     ...     a_tags = subscriber.findAll('a')
     ...     img = a_tags[0].find('img')
-    ...     print img['src'],
-    ...     print a_tags[1].string
+    ...     print(img['src'], end=' ')
+    ...     print(a_tags[1].string)
     /@@/subscriber-essential Stuart Bishop
 
 When we change a user's subscription, they get notified by email. Teams
@@ -188,8 +192,8 @@ based on the subscription change we have made above.
     >>> for subscriber in subscribers:
     ...     a_tags = subscriber.findAll('a')
     ...     img = a_tags[0].find('img')
-    ...     print img['src'],
-    ...     print a_tags[1].string
+    ...     print(img['src'], end=' ')
+    ...     print(a_tags[1].string)
     /@@/subscriber-inessential Stuart Bishop
 
 And check the email notification too.
@@ -235,7 +239,7 @@ does not have a preferred email address, an email is sent to each active
 member who has a preferred email registered.
 
     >>> login('admin@canonical.com')
-    >>> print admins.preferredemail
+    >>> print(admins.preferredemail)
     None
 
     >>> admins_contact_email_addresses == sorted(
@@ -259,7 +263,7 @@ is sent to each active member.
 
 The Ubuntu Team does have a preferred email address.
 
-    >>> print ubuntu_team.preferredemail
+    >>> print(ubuntu_team.preferredemail)
     <...EmailAddress...>
 
     >>> logout()
@@ -276,7 +280,7 @@ list, and now the unsubscribe confirmation page loads.
     >>> unsubit.click()
     >>> confirm = browser.getControl('Unsubscribe')
     >>> confirm.click()
-    >>> msg = (
+    >>> msg = six.ensure_str(
     ...     "Launchpad Administrators has been unsubscribed from this "
     ...     "blueprint.")
     >>> msg in browser.contents
@@ -321,8 +325,8 @@ not.
     >>> for subscriber in subscribers:
     ...     a_tags = subscriber.findAll('a')
     ...     img = a_tags[0].find('img')
-    ...     print img['src'],
-    ...     print a_tags[1].string
+    ...     print(img['src'], end=' ')
+    ...     print(a_tags[1].string)
     /@@/subscriber-essential Andrew Bennetts
     /@@/subscriber-inessential Dafydd Harries
     /@@/subscriber-inessential Foo Bar

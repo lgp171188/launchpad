@@ -285,6 +285,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = False
     allow_recipe_name_from_target = False
+    show_push_url_hints = False
 
     def __init__(self, person):
         self.owner = person
@@ -342,7 +343,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
         if this.namespace != self:
             raise AssertionError(
                 "Namespace of %s is not %s." % (this.unique_name, self.name))
-        return this == other
+        return this.name == other.name
 
     @property
     def collection(self):
@@ -368,6 +369,7 @@ class ProjectGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
+    show_push_url_hints = True
 
     def __init__(self, person, project):
         self.owner = person
@@ -459,6 +461,7 @@ class PackageGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
+    show_push_url_hints = True
 
     def __init__(self, person, distro_source_package):
         self.owner = person
@@ -550,6 +553,7 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
+    show_push_url_hints = False
 
     def __init__(self, person, oci_project):
         self.owner = person

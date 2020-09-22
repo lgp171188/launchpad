@@ -9,7 +9,11 @@ __all__ = ['make_product_form']
 
 import re
 
-from lazr.restful.interfaces import IJSONRequestCache
+from lazr.restful.fields import Reference
+from lazr.restful.interfaces import (
+    IFieldMarshaller,
+    IJSONRequestCache,
+    )
 from six.moves.urllib.parse import (
     urlencode,
     urlsplit,
@@ -24,7 +28,10 @@ from testtools.matchers import (
     Not,
     )
 import transaction
-from zope.component import getUtility
+from zope.component import (
+    getMultiAdapter,
+    getUtility,
+    )
 from zope.schema.vocabulary import SimpleVocabulary
 from zope.security.proxy import removeSecurityProxy
 
@@ -49,6 +56,7 @@ from lp.registry.interfaces.product import (
     IProductSet,
     License,
     )
+from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
@@ -56,6 +64,7 @@ from lp.services.webapp.publisher import (
     canonical_url,
     RedirectionView,
     )
+from lp.services.webapp.servers import WebServiceTestRequest
 from lp.services.webapp.vhosts import allvhosts
 from lp.testing import (
     BrowserTestCase,
@@ -107,6 +116,79 @@ class TestProductNavigation(TestCaseWithFactory):
                 productseries.product.name, productseries.name),
             "http://launchpad.test/%s/%s" % (
                 productseries.product.name, productseries.name))
+
+    def assertNewSeriesURLsDereference(self, environ=None):
+        field = Reference(schema=IProductSeries)
+        request = WebServiceTestRequest()
+        request.setVirtualHostRoot(names=["devel"])
+        marshaller = getMultiAdapter((field, request), IFieldMarshaller)
+        productseries = self.factory.makeProductSeries()
+        productseries_url = "/%s/+series/%s" % (
+            productseries.product.name, productseries.name)
+        resource = marshaller.dereference_url(productseries_url)
+        self.assertIsInstance(resource, RedirectionView)
+        self.assertEqual(
+            productseries,
+            marshaller.marshall_from_json_data(productseries_url))
+
+        # Objects subordinate to the redirected series work too.
+        productrelease = self.factory.makeProductRelease(
+            productseries=productseries)
+        productrelease_url = "/%s/+series/%s/%s" % (
+            productrelease.product.name, productrelease.productseries.name,
+            productrelease.version)
+        self.assertEqual(
+            productrelease,
+            marshaller.marshall_from_json_data(productrelease_url))
+
+    def assertDereferences(self, url, expected_obj, environ=None):
+        field = Reference(schema=IProductSeries)
+        request = WebServiceTestRequest(environ=environ)
+        request.setVirtualHostRoot(names=["devel"])
+        marshaller = getMultiAdapter((field, request), IFieldMarshaller)
+        self.assertIsInstance(marshaller.dereference_url(url), RedirectionView)
+        self.assertEqual(expected_obj, marshaller.marshall_from_json_data(url))
+
+    def test_new_series_url_supports_object_lookup(self):
+        # New-style +series URLs are compatible with webservice object
+        # lookup.
+        productseries = self.factory.makeProductSeries()
+        productseries_url = "/%s/+series/%s" % (
+            productseries.product.name, productseries.name)
+        self.assertDereferences(productseries_url, productseries)
+
+        # Objects subordinate to the redirected series work too.
+        productrelease = self.factory.makeProductRelease(
+            productseries=productseries)
+        productrelease_url = "/%s/+series/%s/%s" % (
+            productrelease.product.name, productrelease.productseries.name,
+            productrelease.version)
+        self.assertDereferences(productrelease_url, productrelease)
+
+    def test_new_series_url_supports_object_lookup_https(self):
+        # New-style +series URLs are compatible with webservice object
+        # lookup, even if the vhost is configured to use HTTPS.
+        # "SERVER_URL": None exposes a bug in lazr.restful < 0.22.2.
+        self.addCleanup(allvhosts.reload)
+        self.pushConfig("vhosts", use_https=True)
+        allvhosts.reload()
+
+        productseries = self.factory.makeProductSeries()
+        productseries_url = "/%s/+series/%s" % (
+            productseries.product.name, productseries.name)
+        self.assertDereferences(
+            productseries_url, productseries,
+            environ={"HTTPS": "on", "SERVER_URL": None})
+
+        # Objects subordinate to the redirected series work too.
+        productrelease = self.factory.makeProductRelease(
+            productseries=productseries)
+        productrelease_url = "/%s/+series/%s/%s" % (
+            productrelease.product.name, productrelease.productseries.name,
+            productrelease.version)
+        self.assertDereferences(
+            productrelease_url, productrelease,
+            environ={"HTTPS": "on", "SERVER_URL": None})
 
 
 class TestProductConfiguration(BrowserTestCase):

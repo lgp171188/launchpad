@@ -9,6 +9,7 @@ __all__ = [
     'ITestOpenIDPersistentIdentity',
     ]
 
+import six
 from zope.interface import Interface
 from zope.schema import TextLine
 
@@ -36,4 +37,5 @@ def get_server_url():
     This is wrapped in a function (instead of a constant) to make sure the
     vhost.testopenid section is not required in production configs.
     """
-    return urlappend(allvhosts.configs['testopenid'].rooturl, '+openid')
+    return six.ensure_text(
+        urlappend(allvhosts.configs['testopenid'].rooturl, '+openid'))

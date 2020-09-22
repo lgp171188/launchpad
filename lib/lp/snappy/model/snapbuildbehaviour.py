@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An `IBuildFarmJobBehaviour` for `SnapBuild`.
@@ -21,12 +21,12 @@ from six.moves.urllib.parse import (
     urlsplit,
     urlunsplit,
     )
-import treq
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.downloader import RequestProxyTokenCommand
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
@@ -39,7 +39,6 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
 from lp.services.twistedsupport import cancel_on_timeout
-from lp.services.twistedsupport.treq import check_status
 from lp.snappy.interfaces.snap import (
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
     SnapBuildArchiveOwnerMismatch,
@@ -101,13 +100,10 @@ class SnapProxyMixin:
         auth_string = '{}:{}'.format(admin_username, secret).strip()
         auth_header = b'Basic ' + base64.b64encode(auth_string)
 
-        response = yield treq.post(
-            url, headers={'Authorization': auth_header},
-            json={'username': proxy_username},
-            reactor=self._slave.reactor,
-            pool=self._slave.pool)
-        response = yield check_status(response)
-        token = yield treq.json_content(response)
+        token = yield self._slave.process_pool.doWork(
+            RequestProxyTokenCommand,
+            url=url, auth_header=auth_header,
+            proxy_username=proxy_username)
         defer.returnValue(token)
 
 

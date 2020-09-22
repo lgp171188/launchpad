@@ -105,7 +105,6 @@ from lp.code.interfaces.codehosting import IBazaarApplication
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitrepository import IGitRepositorySet
-from lp.hardwaredb.interfaces.hwdb import IHWDBApplication
 from lp.layers import WebServiceLayer
 from lp.registry.enums import VCSType
 from lp.registry.interfaces.announcement import IAnnouncementSet
@@ -856,7 +855,6 @@ class LaunchpadRootNavigation(Navigation):
         '+countries': ICountrySet,
         'distros': IDistributionSet,
         '+git': IGitRepositorySet,
-        '+hwdb': IHWDBApplication,
         'karmaaction': IKarmaActionSet,
         '+imports': ITranslationImportQueue,
         '+languages': ILanguageSet,

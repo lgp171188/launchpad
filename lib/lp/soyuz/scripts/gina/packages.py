@@ -123,12 +123,14 @@ def read_dsc(package, version, component, distro_name, archive_root):
                                       distro_name, archive_root)
 
     try:
-        dsc = open(dsc_path).read().strip()
+        with open(dsc_path) as f:
+            dsc = f.read().strip()
 
         fullpath = os.path.join(source_dir, "debian", "changelog")
         changelog = None
         if os.path.exists(fullpath):
-            changelog = open(fullpath).read().strip()
+            with open(fullpath) as f:
+                changelog = f.read().strip()
         else:
             log.warn("No changelog file found for %s in %s" %
                      (package, source_dir))
@@ -139,7 +141,8 @@ def read_dsc(package, version, component, distro_name, archive_root):
         for fullpath in glob.glob(globpath):
             if not os.path.exists(fullpath):
                 continue
-            copyright = open(fullpath).read().strip()
+            with open(fullpath) as f:
+                copyright = f.read().strip()
 
         if copyright is None:
             log.warn(
@@ -559,5 +562,6 @@ class BinaryPackageData(AbstractPackageData):
         call("dpkg -e %s" % fullpath)
         shlibfile = os.path.join("DEBIAN", "shlibs")
         if os.path.exists(shlibfile):
-            self.shlibs = open(shlibfile).read().strip()
+            with open(shlibfile) as f:
+                self.shlibs = f.read().strip()
             log.debug("Grabbing shared library info from %s" % shlibfile)

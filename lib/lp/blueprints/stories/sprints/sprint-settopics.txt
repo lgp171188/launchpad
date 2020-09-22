@@ -55,7 +55,7 @@ First choose a driver for the UDS Guacamole sprint.
   'http://launchpad.test/sprints/uds-guacamole'
 
   >>> meeting_drivers = find_tag_by_id(browser.contents, 'meeting-drivers')
-  >>> print extract_text(meeting_drivers.findNext('a'))
+  >>> print(extract_text(meeting_drivers.findNext('a')))
   Ubuntu Team
 
 Any member of the Ubuntu-Team can now approve and/or decline items to the UDS 
@@ -68,7 +68,7 @@ Guacamole agenda.
   'http://blueprints.launchpad.test/sprints/uds-guacamole'
   >>> cprov_browser.getLink('Set agenda').click()
 
-  >>> print cprov_browser.title
+  >>> print(cprov_browser.title)
   Review discussion topics for “Ubuntu DevSummit Guacamole” sprint :
   Blueprints :
   Ubuntu DevSummit Guacamole :

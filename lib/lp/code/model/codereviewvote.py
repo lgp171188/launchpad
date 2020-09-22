@@ -8,12 +8,15 @@ __all__ = [
     'CodeReviewVoteReference',
     ]
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Store,
+    Unicode,
     )
 from zope.interface import implementer
-from zope.schema import Int
 
 from lp.code.errors import (
     ClaimReviewFailed,
@@ -22,27 +25,36 @@ from lp.code.errors import (
     )
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ICodeReviewVoteReference)
-class CodeReviewVoteReference(SQLBase):
+class CodeReviewVoteReference(StormBase):
     """See `ICodeReviewVote`"""
 
-    _table = 'CodeReviewVote'
-    id = Int()
-    branch_merge_proposal = ForeignKey(
-        dbName='branch_merge_proposal', foreignKey='BranchMergeProposal',
-        notNull=True)
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person', notNull=True)
-    reviewer = ForeignKey(
-        dbName='reviewer', foreignKey='Person', notNull=True)
-    review_type = StringCol(default=None)
-    comment = ForeignKey(
-        dbName='vote_message', foreignKey='CodeReviewComment', default=None)
+    __storm_table__ = 'CodeReviewVote'
+
+    id = Int(primary=True)
+    branch_merge_proposal_id = Int(
+        name='branch_merge_proposal', allow_none=False)
+    branch_merge_proposal = Reference(
+        branch_merge_proposal_id, 'BranchMergeProposal.id')
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    registrant_id = Int(name='registrant', allow_none=False)
+    registrant = Reference(registrant_id, 'Person.id')
+    reviewer_id = Int(name='reviewer', allow_none=False)
+    reviewer = Reference(reviewer_id, 'Person.id')
+    review_type = Unicode(default=None)
+    comment_id = Int(name='vote_message', default=None)
+    comment = Reference(comment_id, 'CodeReviewComment.id')
+
+    def __init__(self, branch_merge_proposal, registrant, reviewer,
+                 review_type=None, date_created=DEFAULT):
+        self.branch_merge_proposal = branch_merge_proposal
+        self.registrant = registrant
+        self.reviewer = reviewer
+        self.review_type = review_type
+        self.date_created = date_created
 
     @property
     def is_pending(self):
@@ -95,6 +107,10 @@ class CodeReviewVoteReference(SQLBase):
         """See `ICodeReviewVote`"""
         self.validateReasignReview(reviewer)
         self.reviewer = reviewer
+
+    def destroySelf(self):
+        """Delete this vote."""
+        Store.of(self).remove(self)
 
     def delete(self):
         """See `ICodeReviewVote`"""

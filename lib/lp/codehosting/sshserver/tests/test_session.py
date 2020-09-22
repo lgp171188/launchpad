@@ -5,8 +5,6 @@
 
 __metaclass__ = type
 
-import socket
-
 from twisted.conch.interfaces import ISession
 from twisted.conch.ssh import connection
 from twisted.internet.process import ProcessExitedAlready
@@ -18,10 +16,8 @@ from lp.codehosting import (
     )
 from lp.codehosting.sshserver.daemon import CodehostingAvatar
 from lp.codehosting.sshserver.session import (
-    _WaitForExit,
     ExecOnlySession,
     ForbiddenCommand,
-    ForkingRestrictedExecOnlySession,
     lookup_command_template,
     RestrictedExecOnlySession,
     )
@@ -90,36 +86,6 @@ class MockProcessTransport:
 
     def processEnded(self, status):
         self.log.append(('processEnded', status))
-
-
-class Test_WaitForExit(TestCase):
-
-    def setUp(self):
-        TestCase.setUp(self)
-        self.reactor = MockReactor()
-        self.proc = MockProcessTransport('executable')
-        sock = socket.socket()
-        self.exiter = _WaitForExit(self.reactor, self.proc, sock)
-
-    def test__init__starts_reading(self):
-        self.assertEqual([('addReader', self.exiter)], self.reactor.log)
-
-    def test_dataReceived_ends_cleanly(self):
-        self.exiter.dataReceived('exited\n0\n')
-        self.assertEqual([('processEnded', 0)], self.proc.log)
-
-    def test_dataReceived_ends_with_errno(self):
-        self.exiter.dataReceived('exited\n256\n')
-        self.assertEqual([('processEnded', 256)], self.proc.log)
-
-    def test_dataReceived_bad_data(self):
-        # Note: The dataReceived code calls 'log.err' which ends up getting
-        #      printed during the test run. How do I suppress that or even
-        #      better, check that it does so?
-        #      flush_logged_errors() doesn't seem to do anything.
-        self.exiter.dataReceived('bogus\n')
-        self.assertEqual([('childConnectionLost', 'exit', 'invalid data'),
-                          ('processEnded', (255 << 8))], self.proc.log)
 
 
 class TestExecOnlySession(AvatarTestCase):
@@ -398,35 +364,6 @@ class TestSessionIntegration(AvatarTestCase):
             list(arguments))
         self.assertRaises(
             ForbiddenCommand, session.getCommandToRun, 'rm -rf /')
-
-    def test_avatarAdaptsToOnlyRestrictedSession(self):
-        config.push('codehosting-no-forking',
-            "[codehosting]\nuse_forking_daemon: False\n")
-        self.addCleanup(config.pop, 'codehosting-no-forking')
-        session = ISession(self.avatar)
-        self.assertFalse(isinstance(session, ForkingRestrictedExecOnlySession),
-            "ISession(avatar) shouldn't adapt to "
-            " ForkingRestrictedExecOnlySession when forking is disabled. ")
-
-    def test_avatarAdaptsToForkingRestrictedExecOnlySession(self):
-        config.push('codehosting-forking',
-            "[codehosting]\nuse_forking_daemon: True\n")
-        self.addCleanup(config.pop, 'codehosting-forking')
-        session = ISession(self.avatar)
-        self.assertTrue(
-            isinstance(session, ForkingRestrictedExecOnlySession),
-            "ISession(avatar) doesn't adapt to "
-            " ForkingRestrictedExecOnlySession. "
-            "Got %r instead." % (session,))
-        executable, arguments = session.getCommandToRun(
-            'bzr serve --inet --directory=/ --allow-writes')
-        executable, arguments, env = session.getCommandToFork(
-            executable, arguments, session.environment)
-        self.assertEqual('brz', executable)
-        self.assertEqual(
-             ['brz', 'lp-serve',
-              '--inet', str(self.avatar.user_id)],
-             list(arguments))
 
 
 class TestLookupCommand(TestCase):

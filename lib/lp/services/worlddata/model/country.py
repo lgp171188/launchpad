@@ -1,9 +1,12 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = ['Country', 'CountrySet', 'Continent']
 
+import six
 from sqlobject import (
     ForeignKey,
     SQLRelatedJoin,
@@ -42,8 +45,8 @@ class Country(SQLBase):
     continent = ForeignKey(
         dbName='continent', foreignKey='Continent', default=None)
     languages = SQLRelatedJoin(
-        'Language', joinColumn='country', otherColumn='language',
-        intermediateTable='SpokenIn')
+        six.ensure_str('Language'), joinColumn='country',
+        otherColumn='language', intermediateTable='SpokenIn')
 
 
 @implementer(ICountrySet)

@@ -6,9 +6,13 @@ PostgreSQL specific helper functions, such as database introspection
 and table manipulation
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import re
+
+import six
 
 from lp.services.database.sqlbase import (
     quote,
@@ -39,7 +43,7 @@ def listReferences(cur, table, column, indirect=True, _state=None):
     to change keys.
 
     >>> for r in listReferences(cur, 'a', 'aid'):
-    ...     print repr(r)
+    ...     print(repr(r))
     (u'a', u'selfref', u'a', u'aid', u'a', u'a')
     (u'b', u'aid', u'a', u'aid', u'c', u'c')
     (u'c', u'aid', u'b', u'aid', u'a', u'a')
@@ -192,7 +196,7 @@ def listSequences(cur):
     standalone.
 
     >>> for r in listSequences(cur):
-    ...     print repr(r)
+    ...     print(repr(r))
     (u'public', u'a_aid_seq', u'a', u'aid')
     (u'public', u'standalone', None, None)
 
@@ -404,7 +408,7 @@ def drop_tables(cur, tables):
     """
     if tables is None or len(tables) == 0:
         return
-    if isinstance(tables, basestring):
+    if isinstance(tables, six.string_types):
         tables = [tables]
 
     # This syntax requires postgres 8.2 or better
@@ -434,12 +438,12 @@ def allow_sequential_scans(cur, permission):
 
     >>> allow_sequential_scans(cur, True)
     >>> cur.execute("SHOW enable_seqscan")
-    >>> print cur.fetchall()[0][0]
+    >>> print(cur.fetchall()[0][0])
     on
 
     >>> allow_sequential_scans(cur, False)
     >>> cur.execute("SHOW enable_seqscan")
-    >>> print cur.fetchall()[0][0]
+    >>> print(cur.fetchall()[0][0])
     off
     """
     permission_value = 'false'
@@ -490,9 +494,9 @@ def fqn(namespace, name):
 
     Quoting is done for the non trivial cases.
 
-    >>> print fqn('public', 'foo')
+    >>> print(fqn('public', 'foo'))
     public.foo
-    >>> print fqn(' foo ', '$bar')
+    >>> print(fqn(' foo ', '$bar'))
     " foo "."$bar"
     """
     if re.search(r"[^a-z_]", namespace) is not None:
@@ -612,4 +616,4 @@ if __name__ == '__main__':
     cur = con.cursor()
 
     for table, column in listReferences(cur, 'person', 'id'):
-        print '%32s %32s' % (table, column)
+        print('%32s %32s' % (table, column))

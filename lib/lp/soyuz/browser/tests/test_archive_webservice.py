@@ -627,6 +627,32 @@ class TestCopyPackage(TestCaseWithFactory):
         job_source = getUtility(IPlainPackageCopyJobSource)
         copy_job = job_source.getActiveJobs(target_archive).one()
         self.assertEqual(target_archive, copy_job.target_archive)
+        self.assertFalse(copy_job.move)
+
+    def test_copyPackage_move(self):
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, uploader, _, version) = self.setup_data()
+        with person_logged_in(source_archive.owner):
+            source_archive.newComponentUploader(uploader, "main")
+
+        target_archive_url = api_url(target_archive)
+        source_archive_url = api_url(source_archive)
+        ws = webservice_for_person(
+            uploader, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+        response = ws.named_post(
+            target_archive_url, "copyPackage",
+            source_name=source_name, version=version,
+            from_archive=source_archive_url, to_pocket=to_pocket.name,
+            to_series=to_series.name, include_binaries=False, move=True)
+        self.assertEqual(200, response.status)
+
+        login(ANONYMOUS)
+        job_source = getUtility(IPlainPackageCopyJobSource)
+        copy_job = job_source.getActiveJobs(target_archive).one()
+        self.assertEqual(target_archive, copy_job.target_archive)
+        self.assertTrue(copy_job.move)
 
     def test_copyPackages(self):
         """Basic smoke test"""
@@ -654,6 +680,7 @@ class TestCopyPackage(TestCaseWithFactory):
         job_source = getUtility(IPlainPackageCopyJobSource)
         copy_job = job_source.getActiveJobs(target_archive).one()
         self.assertEqual(target_archive, copy_job.target_archive)
+        self.assertFalse(copy_job.move)
 
 
 class TestGetPublishedBinaries(TestCaseWithFactory):

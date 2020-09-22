@@ -8,6 +8,7 @@ __metaclass__ = type
 __all__ = [
     'BuilddManager',
     'BUILDD_MANAGER_LOG_NAME',
+    'PrefetchedBuilderFactory',
     'SlaveScanner',
     ]
 
@@ -61,6 +62,7 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.propertycache import get_property_cache
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 BUILDD_MANAGER_LOG_NAME = "slave-scanner"
@@ -255,6 +257,12 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
     `getVitals` and `iterVitals` don't touch the DB directly. They work
     from cached data updated by `update`.
     """
+
+    def __init__(self, *args, **kwargs):
+        super(PrefetchedBuilderFactory, self).__init__(*args, **kwargs)
+        # This needs to exist to avoid race conditions between
+        # `updateStats` and `update`.
+        self.vitals_map = {}
 
     def update(self):
         """See `BaseBuilderFactory`."""
@@ -453,6 +461,8 @@ class SlaveScanner:
         self._cached_build_cookie = None
         self._cached_build_queue = None
 
+        self.statsd_client = getUtility(IStatsdClient)
+
     def startCycle(self):
         """Scan the builder and dispatch to it or deal with failures."""
         self.loop = LoopingCall(self.singleCycle)
@@ -521,6 +531,11 @@ class SlaveScanner:
             builder.gotFailure()
             if builder.current_build is not None:
                 builder.current_build.gotFailure()
+                self.statsd_client.incr(
+                    'builders.judged_failed,build=True,arch={}'.format(
+                        builder.current_build.processor.name))
+            else:
+                self.statsd_client.incr('builders.judged_failed,build=False')
             recover_failure(self.logger, vitals, builder, retry, failure.value)
             transaction.commit()
         except Exception:
@@ -702,6 +717,7 @@ class BuilddManager(service.Service):
         self.logger = self._setupLogger()
         self.current_builders = []
         self.pending_logtails = {}
+        self.statsd_client = getUtility(IStatsdClient)
 
     def _setupLogger(self):
         """Set up a 'slave-scanner' logger that redirects to twisted.

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Sprint views."""
@@ -27,8 +27,8 @@ from collections import defaultdict
 import csv
 
 from lazr.restful.utils import smartquote
-import six
 import pytz
+import six
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
@@ -458,10 +458,11 @@ class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
                 action = 'Declined'
 
         selected_specs = form['speclink']
-        if isinstance(selected_specs, unicode):
+        if isinstance(selected_specs, six.text_type):
             # only a single item was selected, but we want to deal with a
             # list for the general case, so convert it to a list
             selected_specs = [selected_specs]
+        selected_specs = [int(speclink) for speclink in selected_specs]
 
         if action == 'Accepted':
             action_fn = self.context.acceptSpecificationLinks

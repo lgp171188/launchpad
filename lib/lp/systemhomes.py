@@ -20,7 +20,6 @@ import codecs
 import os
 
 from lazr.restful import ServiceRootResource
-from lazr.restful.interfaces import ITopLevelEntryLink
 from storm.expr import Max
 from zope.component import getUtility
 from zope.interface import implementer
@@ -49,15 +48,6 @@ from lp.code.interfaces.codeimportscheduler import (
     ICodeImportSchedulerApplication,
     )
 from lp.code.interfaces.gitapi import IGitApplication
-from lp.hardwaredb.interfaces.hwdb import (
-    IHWDBApplication,
-    IHWDeviceSet,
-    IHWDriverSet,
-    IHWSubmissionDeviceSet,
-    IHWSubmissionSet,
-    IHWVendorIDSet,
-    ParameterError,
-    )
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.mailinglist import IMailingListApplication
 from lp.registry.interfaces.product import IProductSet
@@ -281,119 +271,6 @@ class RosettaApplication:
         """See `IRosettaApplication`."""
         stats = getUtility(ILaunchpadStatisticSet)
         return stats.value('translator_count')
-
-
-@implementer(IHWDBApplication, ITopLevelEntryLink)
-class HWDBApplication:
-    """See `IHWDBApplication`."""
-
-    link_name = 'hwdb'
-    entry_type = IHWDBApplication
-
-    def devices(self, bus, vendor_id, product_id=None):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWDeviceSet).search(bus, vendor_id, product_id)
-
-    def drivers(self, package_name=None, name=None):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWDriverSet).search(package_name, name)
-
-    def vendorIDs(self, bus):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWVendorIDSet).idsForBus(bus)
-
-    @property
-    def driver_names(self):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWDriverSet).all_driver_names()
-
-    @property
-    def package_names(self):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWDriverSet).all_package_names()
-
-    def search(self, user=None, device=None, driver=None, distribution=None,
-               distroseries=None, architecture=None, owner=None,
-               created_before=None, created_after=None,
-               submitted_before=None, submitted_after=None):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWSubmissionSet).search(
-            user=user, device=device, driver=driver,
-            distribution=distribution, distroseries=distroseries,
-            architecture=architecture, owner=owner,
-            created_before=created_before, created_after=created_after,
-            submitted_before=submitted_before,
-            submitted_after=submitted_after)
-
-    def getDistroTarget(self, distribution, distroseries, distroarchseries):
-        distro_targets = [
-            target for target in (
-                distribution, distroseries, distroarchseries)
-            if target is not None]
-        if len(distro_targets) == 0:
-            return None
-        elif len(distro_targets) == 1:
-            return distro_targets[0]
-        else:
-            raise ParameterError(
-                'Only one of `distribution`, `distroseries` or '
-                '`distroarchseries` can be present.')
-
-    def numSubmissionsWithDevice(
-        self, bus=None, vendor_id=None, product_id=None, driver_name=None,
-        package_name=None, distribution=None, distroseries=None,
-        distroarchseries=None):
-        """See `IHWDBApplication`."""
-        submissions_with_device, all_submissions = (
-            getUtility(IHWSubmissionSet).numSubmissionsWithDevice(
-                bus, vendor_id, product_id, driver_name, package_name,
-                distro_target=self.getDistroTarget(
-                    distribution, distroseries, distroarchseries)))
-        return {
-            'submissions_with_device': submissions_with_device,
-            'all_submissions': all_submissions,
-            }
-
-    def numOwnersOfDevice(
-        self, bus=None, vendor_id=None, product_id=None, driver_name=None,
-        package_name=None, distribution=None, distroseries=None,
-        distroarchseries=None):
-        """See `IHWDBApplication`."""
-        owners, all_submitters = (
-            getUtility(IHWSubmissionSet).numOwnersOfDevice(
-                bus, vendor_id, product_id, driver_name, package_name,
-                distro_target=self.getDistroTarget(
-                    distribution, distroseries, distroarchseries)))
-        return {
-            'owners': owners,
-            'all_submitters': all_submitters,
-            }
-
-    def numDevicesInSubmissions(
-        self, bus=None, vendor_id=None, product_id=None, driver_name=None,
-        package_name=None, distribution=None, distroseries=None,
-        distroarchseries=None):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWSubmissionDeviceSet).numDevicesInSubmissions(
-                bus, vendor_id, product_id, driver_name, package_name,
-                distro_target=self.getDistroTarget(
-                    distribution, distroseries, distroarchseries))
-
-    def deviceDriverOwnersAffectedByBugs(
-        self, bus=None, vendor_id=None, product_id=None, driver_name=None,
-        package_name=None, bug_ids=None, bug_tags=None, affected_by_bug=False,
-        subscribed_to_bug=False, user=None):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWSubmissionSet).deviceDriverOwnersAffectedByBugs(
-            bus, vendor_id, product_id, driver_name, package_name, bug_ids,
-            bug_tags, affected_by_bug, subscribed_to_bug, user)
-
-    def hwInfoByBugRelatedUsers(
-        self, bug_ids=None, bug_tags=None, affected_by_bug=False,
-        subscribed_to_bug=False, user=None):
-        """See `IHWDBApplication`."""
-        return getUtility(IHWSubmissionSet).hwInfoByBugRelatedUsers(
-            bug_ids, bug_tags, affected_by_bug, subscribed_to_bug, user)
 
 
 @implementer(IWebServiceApplication, ICanonicalUrlData)

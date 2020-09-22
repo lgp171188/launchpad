@@ -227,7 +227,8 @@ class LibrarianServerFixture(TacTestSetup):
 
     def getLogChunks(self):
         """Get a list with the contents of the librarian log in it."""
-        return open(self.logfile, 'rb').readlines()
+        with open(self.logfile, 'rb') as f:
+            return f.readlines()
 
     def reset(self):
         """Reset the librarian to a consistent initial state."""
@@ -238,7 +239,7 @@ class LibrarianServerFixture(TacTestSetup):
 def fillLibrarianFile(fileid, content=None):
     """Write contents in disk for a librarian sampledata."""
     if content is None:
-        content = 'x' * LibraryFileContent.get(fileid).filesize
+        content = b'x' * LibraryFileContent.get(fileid).filesize
 
     filepath = os.path.join(
         config.librarian_server.root, _relFileLocation(fileid))

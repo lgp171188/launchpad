@@ -26,7 +26,7 @@ Let's start by viewing the list of sprints registered.
     >>> user_browser.title
     'Meetings and sprints registered in Launchpad'
 
-    >>> print find_tag_by_id(user_browser.contents, 'application-summary')
+    >>> print(find_tag_by_id(user_browser.contents, 'application-summary'))
     <p ...
       Launchpad can help you organize your developer sprints, summits and
       gatherings. Register the meeting here, then you can invite people to
@@ -52,7 +52,7 @@ Sprints +new page.
     >>> user_browser.open('http://launchpad.test/sprints')
     >>> user_browser.getLink('Register a meeting').click()
 
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Register a meeting...
 
 First we'll test the name field validator.
@@ -71,7 +71,7 @@ First we'll test the name field validator.
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     There is 1 error.
     <BLANKLINE>
     Invalid name 'ltsp_on_steroids!'. Names must be at least two characte...
@@ -83,7 +83,7 @@ nice error message
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     There is 1 error.
     <BLANKLINE>
     ubz is already in use by another sprint.
@@ -99,7 +99,7 @@ a error message.
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     There is 1 error.
     <BLANKLINE>
     This event can't start after it ends
@@ -131,7 +131,7 @@ the new sprint.
 Since the sprint's time zone was set to UTC, the dates are displayed in
 that time zone:
 
-    >>> print extract_text(find_tag_by_id(user_browser.contents, 'start-end'))
+    >>> print(extract_text(find_tag_by_id(user_browser.contents, 'start-end')))
     Starts: 09:15 UTC on Tuesday, 2006-10-10
     Ends: 16:00 UTC on Friday, 2006-10-13
 
@@ -160,7 +160,7 @@ Add a new sprint with a different time zone is also handled correctly.
     >>> user_browser.url
     'http://launchpad.test/sprints/africa-sprint'
 
-    >>> print extract_text(find_tag_by_id(user_browser.contents, 'start-end'))
+    >>> print(extract_text(find_tag_by_id(user_browser.contents, 'start-end')))
     Starts: 09:15 SAST on Monday, 2006-07-10
     Ends: 16:00 SAST on Thursday, 2006-07-13
 
@@ -170,7 +170,7 @@ We should be able to edit the details on a sprint but the menus are only
 available to those who have permissions to edit that sprint.
 
     >>> anon_browser.open('http://launchpad.test/sprints/ubz')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Ubuntu Below Zero : Meetings
 
     >>> anon_browser.getLink('Change details')
@@ -183,7 +183,7 @@ We will log in as Sample Person and edit the ubz sprint.
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
 
     >>> browser.open('http://launchpad.test/sprints/ubz')
-    >>> print browser.title
+    >>> print(browser.title)
     Ubuntu Below Zero : Meetings
 
     >>> address = 'Holiday Inn Select, Downtown Montreal, Canada'
@@ -213,7 +213,7 @@ should receive a nice error message.
     >>> browser.getControl('Change').click()
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     There is 1 error.
     This event can't start after it ends
 
@@ -234,10 +234,10 @@ sprint home page.
 
 The address of the sprint is now visible.
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'sprint-address'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'sprint-address')))
     Address: Holiday Inn Select, Downtown Montreal, Canada
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'start-end'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'start-end')))
     Starts: 08:30 EST on Tuesday, 2006-01-10
     Ends: 17:00 EST on Sunday, 2006-02-12
 
@@ -248,10 +248,10 @@ dates will be changed too, since they follow local time:
     >>> browser.open('http://launchpad.test/sprints/ubz/+edit')
     >>> browser.getControl('Timezone').value = ['Australia/Darwin']
     >>> browser.getControl('Change').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/sprints/ubz
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'start-end'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'start-end')))
     Starts: 08:30 ACST on Tuesday, 2006-01-10
     Ends: 17:00 ACST on Sunday, 2006-02-12
 
@@ -259,14 +259,14 @@ dates will be changed too, since they follow local time:
 We should be able to see the workload of a sprint:
 
     >>> anon_browser.open('http://launchpad.test/sprints/ubz/+assignments')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Assignments : Blueprints : Ubuntu Below Zero : Meetings
 
 We should be able to see the spec assignment table of a sprint:
 
     >>> mainarea = find_main_content(anon_browser.contents)
     >>> for header in mainarea.findAll('th'):
-    ...     print header.renderContents()
+    ...     print(header.renderContents())
     Priority
     Name
     Definition
@@ -281,7 +281,7 @@ no spec assigned to people.
     >>> anon_browser.open(
     ...     'http://launchpad.test/sprints/ltsponsteroids/+assignments')
     >>> notice = find_tag_by_id(anon_browser.contents, 'no-blueprints')
-    >>> print extract_text(notice)
+    >>> print(extract_text(notice))
     There are no open blueprints.
 
 
@@ -298,7 +298,7 @@ It should be possible to register yourself to attend the sprint:
     >>> browser.url
     'http://launchpad.test/sprints/ubz/+attend'
 
-    >>> print browser.title
+    >>> print(browser.title)
     Register your attendance : Ubuntu Below Zero : Meetings
 
 Invalid dates, for instance entering a starting date after the ending
@@ -326,11 +326,11 @@ date up to one day after the sprint ends.
     >>> browser.getControl('To').value = '2005-02-04 20:11:00'
     >>> browser.getControl('Register').click()
 
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     There is 1 error.
     Please pick a date after 2006-01-10 08:30
 
@@ -340,11 +340,11 @@ An attendance that starts after the end of the sprint is also an error:
     >>> browser.getControl('To').value = '2010-07-10 22:11:00'
     >>> browser.getControl('Register').click()
 
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     There are 2 errors.
     Please pick a date before 2006-02-12 17:00
     Please pick a date before 2006-02-13 17:00
@@ -356,11 +356,11 @@ error:
     >>> browser.getControl('To').value = '1990-07-10 22:11:00'
     >>> browser.getControl('Register').click()
 
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     There are 2 errors.
     Please pick a date after 2006-01-09 08:30
     Please pick a date after 2006-01-10 08:30
@@ -381,7 +381,7 @@ Now, Sample Person should be listed as an attendee.
     ...     """Print the attendees listed in the attendees portlet."""
     ...     attendees_portlet = find_portlet(sprint_page, 'Attendees')
     ...     for li in attendees_portlet.findAll('ul')[0].findAll('li'):
-    ...         print li.a.string.encode('ascii', 'xmlcharrefreplace')
+    ...         print(li.a.string.encode('ascii', 'xmlcharrefreplace'))
 
     >>> print_attendees(browser.contents)
     Sample Person
@@ -390,10 +390,10 @@ If we return to the "Register Yourself" form, the previously entered
 dates are prefilled (they have been clamped to the sprint duration):
 
     >>> browser.getLink('Register yourself').click()
-    >>> print browser.getControl('From').value
+    >>> print(browser.getControl('From').value)
     2006-01-10 10:30
 
-    >>> print browser.getControl('To').value
+    >>> print(browser.getControl('To').value)
     2006-02-12 17:00
 
 Also, it is possible to register someone else. Let's register Carlos.
@@ -468,18 +468,18 @@ First, we add a couple of IRC nicknames for Carlos.
     >>> logout()
 
     >>> browser.getLink('Export attendees to CSV').click()
-    >>> print browser.headers['content-type']
+    >>> print(browser.headers['content-type'])
     text/csv
 
     >>> carlos_browser = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> carlos_browser.open('http://launchpad.test/sprints/ubz')
     >>> carlos_browser.getLink('Export attendees to CSV').click()
-    >>> print carlos_browser.headers['content-type']
+    >>> print(carlos_browser.headers['content-type'])
     text/csv
 
     >>> admin_browser.open('http://launchpad.test/sprints/ubz')
     >>> admin_browser.getLink('Export attendees to CSV').click()
-    >>> print admin_browser.headers['content-type']
+    >>> print(admin_browser.headers['content-type'])
     text/csv
 
 The resulting CSV file lists physical attendance correctly.

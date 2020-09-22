@@ -1650,6 +1650,7 @@ class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
         'subscriptions',
         'structural_subscriptions',
         'upcomingwork',
+        'oci_registry_credentials',
         ]
 
 

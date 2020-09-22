@@ -150,13 +150,6 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
-from lp.codehosting.codeimport.worker import CodeImportSourceDetails
-from lp.hardwaredb.interfaces.hwdb import (
-    HWSubmissionFormat,
-    IHWDeviceDriverLinkSet,
-    IHWSubmissionDeviceSet,
-    IHWSubmissionSet,
-    )
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -165,6 +158,10 @@ from lp.oci.interfaces.ociregistrycredentials import (
     )
 from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
+from lp.oci.model.ocirecipebuildjob import (
+    OCIRecipeBuildJob,
+    OCIRecipeBuildJobType,
+    )
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -519,6 +516,14 @@ class ObjectFactory(
                                     target_rcstype=None, url=None,
                                     cvs_root=None, cvs_module=None,
                                     stacked_on_url=None, macaroon=None):
+        if not six.PY2:
+            raise NotImplementedError(
+                "Code imports do not yet work on Python 3.")
+
+        # XXX cjwatson 2020-08-07: Move this back up to module level once
+        # codeimport has been ported to Breezy.
+        from lp.codehosting.codeimport.worker import CodeImportSourceDetails
+
         if target_id is None:
             target_id = self.getUniqueInteger()
         if rcstype is None:
@@ -826,7 +831,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if owner is None:
             owner = self.makePerson()
-        elif isinstance(owner, basestring):
+        elif isinstance(owner, six.string_types):
             owner = getUtility(IPersonSet).getByName(owner)
         else:
             pass
@@ -970,7 +975,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         signature_content = None
         if signed:
             signature_filename = '%s.asc' % filename
-            signature_content = '123'
+            signature_content = b'123'
         if release is None:
             release = self.makeProductRelease(product=product,
                                               productseries=productseries,
@@ -1116,14 +1121,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeSprint(self, title=None, name=None):
         """Make a sprint."""
         if title is None:
-            title = self.getUniqueString('title')
+            title = self.getUniqueUnicode('title')
         owner = self.makePerson()
         if name is None:
-            name = self.getUniqueString('name')
+            name = self.getUniqueUnicode('name')
         time_starts = datetime(2009, 1, 1, tzinfo=pytz.UTC)
         time_ends = datetime(2009, 1, 2, tzinfo=pytz.UTC)
-        time_zone = 'UTC'
-        summary = self.getUniqueString('summary')
+        time_zone = u'UTC'
+        summary = self.getUniqueUnicode('summary')
         return getUtility(ISprintSet).new(
             owner=owner, name=name, title=title, time_zone=time_zone,
             time_starts=time_starts, time_ends=time_ends, summary=summary)
@@ -2127,7 +2132,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (six.integer_types, basestring)):
+        elif isinstance(bug, (six.integer_types, six.string_types)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2162,7 +2167,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (six.integer_types, basestring)):
+        elif isinstance(bug, (six.integer_types, six.string_types)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2914,7 +2919,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if purpose is None:
             purpose = ArchivePurpose.PPA
-        elif isinstance(purpose, basestring):
+        elif isinstance(purpose, six.string_types):
             purpose = ArchivePurpose.items[purpose.upper()]
 
         if distribution is None:
@@ -3597,7 +3602,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         if distroseries is None:
@@ -3757,16 +3762,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             archive = distroseries.main_archive
 
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
 
-        if (component is None or isinstance(component, basestring)):
+        if (component is None or isinstance(component, six.string_types)):
             component = self.makeComponent(component)
 
         if urgency is None:
             urgency = self.getAnySourcePackageUrgency()
-        elif isinstance(urgency, basestring):
+        elif isinstance(urgency, six.string_types):
             urgency = SourcePackageUrgency.items[urgency.upper()]
 
         section = self.makeSection(name=section_name)
@@ -3873,7 +3878,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 archive = source_package_release.upload_archive
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
-        elif isinstance(pocket, basestring):
+        elif isinstance(pocket, six.string_types):
             pocket = PackagePublishingPocket.items[pocket.upper()]
 
         if source_package_release is None:
@@ -3953,12 +3958,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         if pocket is None:
             pocket = self.getAnyPocket()
-        elif isinstance(pocket, basestring):
+        elif isinstance(pocket, six.string_types):
             pocket = PackagePublishingPocket.items[pocket.upper()]
 
         if status is None:
             status = PackagePublishingStatus.PENDING
-        elif isinstance(status, basestring):
+        elif isinstance(status, six.string_types):
             status = PackagePublishingStatus.items[status.upper()]
 
         if sourcepackagerelease is None:
@@ -4158,7 +4163,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if build is None:
             build = self.makeBinaryPackageBuild()
         if (binarypackagename is None or
-            isinstance(binarypackagename, basestring)):
+            isinstance(binarypackagename, six.string_types)):
             binarypackagename = self.getOrMakeBinaryPackageName(
                 binarypackagename)
         if version is None:
@@ -4167,9 +4172,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             binpackageformat = BinaryPackageFormat.DEB
         if component is None:
             component = build.source_package_release.component
-        elif isinstance(component, unicode):
+        elif isinstance(component, six.text_type):
             component = getUtility(IComponentSet)[component]
-        if isinstance(section_name, basestring):
+        if isinstance(section_name, six.string_types):
             section_name = self.makeSection(section_name)
         section = section_name or build.source_package_release.section
         if priority is None:
@@ -4282,7 +4287,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             pocket = self.getAnyPocket()
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         return ProxyFactory(
@@ -4292,7 +4297,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                       distribution=None, with_db=False):
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         if distribution is None:
@@ -4364,49 +4369,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                     encode_base64(attachment)
                 msg.attach(attachment)
         return msg
-
-    def makeHWSubmission(self, date_created=None, submission_key=None,
-                         emailaddress=u'test@canonical.com',
-                         distroarchseries=None, private=False,
-                         contactable=False, system=None,
-                         submission_data=None, status=None):
-        """Create a new HWSubmission."""
-        if date_created is None:
-            date_created = datetime.now(pytz.UTC)
-        if submission_key is None:
-            submission_key = self.getUniqueString('submission-key')
-        if distroarchseries is None:
-            distroarchseries = self.makeDistroArchSeries()
-        if system is None:
-            system = self.getUniqueString('system-fingerprint')
-        if submission_data is None:
-            sample_data_path = os.path.join(
-                config.root, 'lib', 'lp', 'hardwaredb', 'scripts',
-                'tests', 'simple_valid_hwdb_submission.xml')
-            submission_data = open(sample_data_path).read()
-        filename = self.getUniqueString('submission-file')
-        filesize = len(submission_data)
-        raw_submission = StringIO(submission_data)
-        format = HWSubmissionFormat.VERSION_1
-        submission_set = getUtility(IHWSubmissionSet)
-
-        submission = submission_set.createSubmission(
-            date_created, format, private, contactable,
-            submission_key, emailaddress, distroarchseries,
-            raw_submission, filename, filesize, system)
-
-        if status is not None:
-            removeSecurityProxy(submission).status = status
-        return submission
-
-    def makeHWSubmissionDevice(self, submission, device, driver, parent,
-                               hal_device_id):
-        """Create a new HWSubmissionDevice."""
-        device_driver_link_set = getUtility(IHWDeviceDriverLinkSet)
-        device_driver_link = device_driver_link_set.getOrCreate(
-            device, driver)
-        return getUtility(IHWSubmissionDeviceSet).create(
-            device_driver_link, submission, parent, hal_device_id)
 
     def makeSSHKeyText(self, key_type="ssh-rsa", comment=None):
         """Create new SSH public key text.
@@ -4567,7 +4529,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 cvestate=CveStatus.CANDIDATE):
         """Create a new CVE record."""
         if description is None:
-            description = self.getUniqueString()
+            description = self.getUniqueUnicode()
         return getUtility(ICveSet).new(sequence, description, cvestate)
 
     def makePublisherConfig(self, distribution=None, root_dir=None,
@@ -4987,7 +4949,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipe(self, name=None, registrant=None, owner=None,
                       oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
-                      build_file=None, date_created=DEFAULT):
+                      build_file=None, date_created=DEFAULT,
+                      allow_internet=True):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -5013,7 +4976,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             description=description,
             official=official,
             require_virtualized=require_virtualized,
-            date_created=date_created)
+            date_created=date_created,
+            allow_internet=allow_internet)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""
@@ -5026,7 +4990,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipeBuild(self, requester=None, registrant=None, recipe=None,
                            distro_arch_series=None, date_created=DEFAULT,
                            status=BuildStatus.NEEDSBUILD, builder=None,
-                           duration=None):
+                           duration=None, **kwargs):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -5047,7 +5011,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             if registrant is None:
                 registrant = requester
             recipe = self.makeOCIRecipe(
-                registrant=registrant, oci_project=oci_project)
+                registrant=registrant, oci_project=oci_project, **kwargs)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
         if duration is not None:
@@ -5074,11 +5038,22 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return OCIFile(build=build, library_file=library_file,
                        layer_file_digest=layer_file_digest)
 
-    def makeOCIRegistryCredentials(self, owner=None, url=None,
+    def makeOCIRecipeBuildJob(self, build=None):
+        store = IStore(OCIRecipeBuildJob)
+        if build is None:
+            build = self.makeOCIRecipeBuild()
+        job = OCIRecipeBuildJob(
+            build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
+        store.add(job)
+        return job
+
+    def makeOCIRegistryCredentials(self, registrant=None, owner=None, url=None,
                                    credentials=None):
         """Make a new OCIRegistryCredentials."""
+        if registrant is None:
+            registrant = self.makePerson()
         if owner is None:
-            owner = self.makePerson()
+            owner = self.makeTeam(registrant)
         if url is None:
             url = self.getUniqueURL()
         if credentials is None:
@@ -5086,8 +5061,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 'username': self.getUniqueUnicode(),
                 'password': self.getUniqueUnicode()}
         return getUtility(IOCIRegistryCredentialsSet).new(
-            owner=owner,
-            url=url,
+            registrant=registrant, owner=owner, url=url,
             credentials=credentials)
 
     def makeOCIPushRule(self, recipe=None, registry_credentials=None,

@@ -30,6 +30,7 @@ from sqlobject import (
     )
 from storm.expr import (
     And,
+    Cast,
     Desc,
     Join,
     LeftJoin,
@@ -488,11 +489,11 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         # Check there is a change to make
         if new_component is None:
             new_component = self.component
-        elif isinstance(new_component, basestring):
+        elif isinstance(new_component, six.string_types):
             new_component = getUtility(IComponentSet)[new_component]
         if new_section is None:
             new_section = self.section
-        elif isinstance(new_section, basestring):
+        elif isinstance(new_section, six.string_types):
             new_section = getUtility(ISectionSet)[new_section]
 
         if new_component == self.component and new_section == self.section:
@@ -827,15 +828,15 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         # Check there is a change to make
         if new_component is None:
             new_component = self.component
-        elif isinstance(new_component, basestring):
+        elif isinstance(new_component, six.string_types):
             new_component = getUtility(IComponentSet)[new_component]
         if new_section is None:
             new_section = self.section
-        elif isinstance(new_section, basestring):
+        elif isinstance(new_section, six.string_types):
             new_section = getUtility(ISectionSet)[new_section]
         if new_priority is None:
             new_priority = self.priority
-        elif isinstance(new_priority, basestring):
+        elif isinstance(new_priority, six.string_types):
             new_priority = name_priority_map[new_priority]
         if new_phased_update_percentage is None:
             new_phased_update_percentage = self.phased_update_percentage
@@ -1061,7 +1062,7 @@ class PublishingSet:
                 BinaryPackagePublishingHistory.distroarchseriesID == das.id,
                 BinaryPackagePublishingHistory.binarypackagenameID ==
                     bpr.binarypackagenameID,
-                BinaryPackageRelease.version == bpr.version,
+                Cast(BinaryPackageRelease.version, "text") == bpr.version,
                 )
 
         candidates = (

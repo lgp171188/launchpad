@@ -13,10 +13,10 @@ from datetime import (
 import logging
 import re
 from smtplib import SMTPException
-import StringIO
 import unittest
 
 import pytz
+import six
 from testtools.matchers import (
     MatchesRegex,
     Not,
@@ -402,7 +402,7 @@ class TestGetEmailNotifications(TestCase):
         # in place.
 
         # Set up logging so we can later assert that no exceptions are logged.
-        log_output = StringIO.StringIO()
+        log_output = six.StringIO()
         logger = logging.getLogger()
         log_handler = logging.StreamHandler(log_output)
         logger.addHandler(logging.StreamHandler(log_output))

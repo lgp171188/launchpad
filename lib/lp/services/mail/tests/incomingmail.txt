@@ -122,7 +122,7 @@ wasn't a handler registered for that domain, an OOPS was recorded with
 a link to the original message.
 
     >>> from lp.testing.mail_helpers import pop_notifications
-    >>> print str(pop_notifications()[-1])
+    >>> print(str(pop_notifications()[-1]))
     From ...
     Content-Type: multipart/mixed...
     ...
@@ -184,7 +184,7 @@ silently rejected.
     >>> person_set = getUtility(IPersonSet)
     >>> bigjools = person_set.getByEmail('launchpad@julian-edwards.com',
     ...                                  filter_status=False)
-    >>> print bigjools.account_status.name
+    >>> print(bigjools.account_status.name)
     NOACCOUNT
 
     >>> msg = read_test_message('unsigned_inactive.txt')
@@ -259,7 +259,7 @@ And submit an email to the handler.
 An exception is raised, an OOPS is recorded, and an email is sent back
 to the user, citing the OOPS ID, with the original message attached.
 
-    >>> print str(pop_notifications()[-1])
+    >>> print(str(pop_notifications()[-1]))
     From ...
     Content-Type: multipart/mixed...
     ...
@@ -303,7 +303,7 @@ reporting in the web interface, are not ignored in the email interface.
     ...
     Unauthorized
 
-    >>> print str(pop_notifications()[-1])
+    >>> print(str(pop_notifications()[-1]))
     From ...
     Content-Type: multipart/mixed...
     ...

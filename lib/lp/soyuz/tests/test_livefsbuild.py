@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test live filesystem build features."""
@@ -14,13 +14,14 @@ from datetime import (
 
 from fixtures import FakeLogger
 import pytz
+from six.moves.urllib.parse import urlsplit
+from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
     Equals,
     MatchesDict,
     MatchesStructure,
     )
-from six.moves.urllib.request import urlopen
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -554,3 +555,28 @@ class TestLiveFSBuildWebservice(TestCaseWithFactory):
         browser.raiseHttpErrors = False
         for file_url in file_urls:
             self.assertCanOpenRedirectedUrl(browser, file_url)
+
+    def test_read_file_urls_from_webservice(self):
+        # API clients can fetch files attached to builds.
+        db_build = self.factory.makeLiveFSBuild(requester=self.person)
+        db_files = [
+            self.factory.makeLiveFSFile(livefsbuild=db_build)
+            for i in range(2)]
+        build_url = api_url(db_build)
+        file_urls = [
+            ProxiedLibraryFileAlias(file.libraryfile, db_build).http_url
+            for file in db_files]
+        logout()
+        response = self.webservice.named_get(build_url, "getFileUrls")
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(file_urls, response.jsonBody())
+        browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
+
+        for file_url in file_urls:
+            # Make sure we can read the files from the API, following the
+            # redirects.
+            _, _, path, _, _ = urlsplit(file_url)
+            resp = self.webservice.get(path)
+            self.assertEqual(303, resp.status)
+            urlopen(resp.getheader('Location')).close()

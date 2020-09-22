@@ -1,4 +1,4 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the Launchpad object factory."""
@@ -630,20 +630,20 @@ class TestFactory(TestCaseWithFactory):
 
     # makeCVE
     def test_makeCVE_returns_cve(self):
-        cve = self.factory.makeCVE(sequence='2000-1234')
+        cve = self.factory.makeCVE(sequence=u'2000-1234')
         self.assertThat(cve, ProvidesAndIsProxied(ICve))
 
     def test_makeCVE_uses_sequence(self):
-        cve = self.factory.makeCVE(sequence='2000-1234')
-        self.assertEqual('2000-1234', cve.sequence)
+        cve = self.factory.makeCVE(sequence=u'2000-1234')
+        self.assertEqual(u'2000-1234', cve.sequence)
 
     def test_makeCVE_uses_description(self):
-        cve = self.factory.makeCVE(sequence='2000-1234', description='foo')
-        self.assertEqual('foo', cve.description)
+        cve = self.factory.makeCVE(sequence=u'2000-1234', description=u'foo')
+        self.assertEqual(u'foo', cve.description)
 
     def test_makeCVE_uses_cve_status(self):
         cve = self.factory.makeCVE(
-            sequence='2000-1234', cvestate=CveStatus.DEPRECATED)
+            sequence=u'2000-1234', cvestate=CveStatus.DEPRECATED)
         self.assertEqual(CveStatus.DEPRECATED, cve.status)
 
     # dir() support.

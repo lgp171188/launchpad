@@ -17,12 +17,14 @@ from itertools import chain
 from operator import attrgetter
 
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
     )
+from storm.expr import Cast
 from storm.locals import (
     And,
     Desc,
@@ -971,7 +973,7 @@ class PackageUpload(SQLBase):
     def _nameToComponent(self, component):
         """Helper to convert a possible string component to IComponent."""
         try:
-            if isinstance(component, basestring):
+            if isinstance(component, six.string_types):
                 component = getUtility(IComponentSet)[component]
             return component
         except NotFoundError:
@@ -980,7 +982,7 @@ class PackageUpload(SQLBase):
     def _nameToSection(self, section):
         """Helper to convert a possible string section to ISection."""
         try:
-            if isinstance(section, basestring):
+            if isinstance(section, six.string_types):
                 section = getUtility(ISectionSet)[section]
             return section
         except NotFoundError:
@@ -989,7 +991,7 @@ class PackageUpload(SQLBase):
     def _nameToPriority(self, priority):
         """Helper to convert a possible string priority to its enum."""
         try:
-            if isinstance(priority, basestring):
+            if isinstance(priority, six.string_types):
                 priority = name_priority_map[priority]
             return priority
         except KeyError:
@@ -1487,7 +1489,7 @@ class PackageUploadSet:
             PackageUpload.status.is_in(approved_status),
             PackageUpload.archive == archive,
             DistroSeries.distribution == distribution,
-            SourcePackageRelease.version == version,
+            Cast(SourcePackageRelease.version, "text") == version,
             SourcePackageName.name == name)
 
         return conflicts.one()

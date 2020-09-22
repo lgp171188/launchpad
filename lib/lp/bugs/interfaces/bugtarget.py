@@ -20,7 +20,6 @@ __all__ = [
     ]
 
 
-from lazr.enum import DBEnumeratedType
 from lazr.restful.declarations import (
     call_with,
     export_read_operation,
@@ -46,7 +45,6 @@ from zope.schema import (
     List,
     Object,
     Text,
-    TextLine,
     )
 
 from lp import _
@@ -98,74 +96,6 @@ search_tasks_params_common = {
     "component": copy_field(IBugTaskSearch['component']),
     "nominated_for": Reference(schema=Interface),
     "has_no_package": copy_field(IBugTaskSearch['has_no_package']),
-    "hardware_bus": Choice(
-        title=_(u"The bus of a hardware device related to a bug"),
-        # The vocabulary should be HWBus; this is fixed in
-        # _schema_circular_imports to avoid circular imports.
-        vocabulary=DBEnumeratedType, required=False),
-    "hardware_vendor_id": TextLine(
-        title=_(
-            u"The vendor ID of a hardware device related to a bug."),
-        description=_(
-            u"Allowed values of the vendor ID depend on the bus of the "
-            "device.\n\n"
-            "Vendor IDs of PCI, PCCard and USB devices are hexadecimal "
-            "string representations of 16 bit integers in the format "
-            "'0x01ab': The prefix '0x', followed by exactly 4 digits; "
-            "where a digit is one of the characters 0..9, a..f. The "
-            "characters A..F are not allowed.\n\n"
-            "SCSI vendor IDs are strings with exactly 8 characters. "
-            "Shorter names are right-padded with space (0x20) characters."
-            "\n\n"
-            "IDs for other buses may be arbitrary strings."),
-        required=False),
-    "hardware_product_id": TextLine(
-        title=_(
-            u"The product ID of a hardware device related to a bug."),
-        description=_(
-            u"Allowed values of the product ID depend on the bus of the "
-            "device.\n\n"
-            "Product IDs of PCI, PCCard and USB devices are hexadecimal "
-            "string representations of 16 bit integers in the format "
-            "'0x01ab': The prefix '0x', followed by exactly 4 digits; "
-            "where a digit is one of the characters 0..9, a..f. The "
-            "characters A..F are not allowed.\n\n"
-            "SCSI product IDs are strings with exactly 16 characters. "
-            "Shorter names are right-padded with space (0x20) characters."
-            "\n\n"
-            "IDs for other buses may be arbitrary strings."),
-        required=False),
-    "hardware_driver_name": TextLine(
-        title=_(
-            u"The driver controlling a hardware device related to a "
-            "bug."),
-        required=False),
-    "hardware_driver_package_name": TextLine(
-        title=_(
-            u"The package of the driver which controls a hardware "
-            "device related to a bug."),
-        required=False),
-    "hardware_owner_is_bug_reporter": Bool(
-        title=_(
-            u"Search for bugs reported by people who own the given "
-            "device or who use the given hardware driver."),
-        required=False),
-    "hardware_owner_is_affected_by_bug": Bool(
-        title=_(
-            u"Search for bugs where people affected by a bug own the "
-            "given device or use the given hardware driver."),
-        required=False),
-    "hardware_owner_is_subscribed_to_bug": Bool(
-        title=_(
-            u"Search for bugs where a bug subscriber owns the "
-            "given device or uses the given hardware driver."),
-        required=False),
-    "hardware_is_linked_to_bug": Bool(
-        title=_(
-            u"Search for bugs which are linked to hardware reports "
-            "which contain the given device or whcih contain a device"
-            "controlled by the given driver."),
-        required=False),
     "linked_branches": Choice(
         title=_(
             u"Search for bugs that are linked to branches or for bugs "
@@ -253,14 +183,7 @@ class IHasBugs(Interface):
                     omit_duplicates=True, omit_targeted=None,
                     status_upstream=None, milestone=None, component=None,
                     nominated_for=None, sourcepackagename=None,
-                    has_no_package=None, hardware_bus=None,
-                    hardware_vendor_id=None, hardware_product_id=None,
-                    hardware_driver_name=None,
-                    hardware_driver_package_name=None,
-                    hardware_owner_is_bug_reporter=None,
-                    hardware_owner_is_affected_by_bug=False,
-                    hardware_owner_is_subscribed_to_bug=False,
-                    hardware_is_linked_to_bug=False, linked_branches=None,
+                    has_no_package=None, linked_branches=None,
                     linked_blueprints=None, structural_subscriber=None,
                     modified_since=None, created_since=None,
                     created_before=None, information_type=None):
@@ -272,14 +195,6 @@ class IHasBugs(Interface):
 
         Note: milestone is currently ignored for all IBugTargets
         except IProduct.
-
-        In order to search bugs that are related to a given hardware
-        device, you must specify the bus, the vendor ID, the product
-        ID of the device and set at least one of
-        hardware_owner_is_bug_reporter,
-        hardware_owner_is_affected_by_bug,
-        hardware_owner_is_subscribed_to_bug,
-        hardware_is_linked_to_bug to True.
         """
 
     def getBugTaskWeightFunction():

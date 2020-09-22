@@ -8,9 +8,9 @@ __all__ = [
     'nuke_codeimport_sample_data',
     ]
 
+import io
 import os
 import shutil
-import StringIO
 import subprocess
 import tempfile
 
@@ -106,7 +106,7 @@ class TestWorkerMonitorProtocol(ProcessTestsMixin, TestCase):
 
     def setUp(self):
         self.worker_monitor = self.StubWorkerMonitor()
-        self.log_file = StringIO.StringIO()
+        self.log_file = io.BytesIO()
         super(TestWorkerMonitorProtocol, self).setUp()
 
     def makeProtocol(self):
@@ -152,7 +152,7 @@ class TestWorkerMonitorProtocol(ProcessTestsMixin, TestCase):
 
     def test_outReceivedWritesToLogFile(self):
         # outReceived writes the data it is passed into the log file.
-        output = ['some data\n', 'some more data\n']
+        output = [b'some data\n', b'some more data\n']
         self.protocol.outReceived(output[0])
         self.assertEqual(self.log_file.getvalue(), output[0])
         self.protocol.outReceived(output[1])
@@ -362,15 +362,15 @@ class TestWorkerMonitorUnit(TestCase):
         # finishJob method uploads the log file to the librarian and calls the
         # finishJobID XML-RPC method with the url of that file.
         self.layer.force_dirty_database()
-        log_text = self.factory.getUniqueString()
+        log_bytes = self.factory.getUniqueBytes()
         worker_monitor = self.makeWorkerMonitorWithJob()
-        worker_monitor._log_file.write(log_text)
+        worker_monitor._log_file.write(log_bytes)
 
         def check_file_uploaded(result):
             transaction.abort()
             url = worker_monitor.codeimport_endpoint.calls[0][3]
-            text = urlopen(url).read()
-            self.assertEqual(log_text, text)
+            got_log_bytes = urlopen(url).read()
+            self.assertEqual(log_bytes, got_log_bytes)
 
         return worker_monitor.finishJob(
             CodeImportResultStatus.SUCCESS).addCallback(
@@ -387,7 +387,7 @@ class TestWorkerMonitorUnit(TestCase):
         # Write some text so that we try to upload the log.
         job_id = self.factory.getUniqueInteger()
         worker_monitor = self.makeWorkerMonitorWithJob(job_id)
-        worker_monitor._log_file.write('some text')
+        worker_monitor._log_file.write(b'some text')
 
         # Make _createLibrarianFileAlias fail in a distinctive way.
         worker_monitor._createLibrarianFileAlias = FakeMethod(failure=Fail())
@@ -543,9 +543,9 @@ class TestWorkerMonitorUnit(TestCase):
 
         def check_log_file(ignored):
             worker_monitor._log_file.seek(0)
-            log_text = worker_monitor._log_file.read()
-            self.assertIn('Traceback (most recent call last)', log_text)
-            self.assertIn('RuntimeError', log_text)
+            log_bytes = worker_monitor._log_file.read()
+            self.assertIn(b'Traceback (most recent call last)', log_bytes)
+            self.assertIn(b'RuntimeError', log_bytes)
         return ret.addCallback(check_log_file)
 
     def test_callFinishJobRespects_call_finish_job(self):
@@ -652,17 +652,17 @@ class TestWorkerMonitorRunNoProcess(TestCase):
             publisher_adapter=oops_twisted.defer_publisher,
             publisher_helpers=oops_twisted.publishers)
         self.addCleanup(errorlog.globalErrorUtility.configure)
-        failure_msg = "test_callFinishJob_logs_failure expected failure"
+        failure_msg = b"test_callFinishJob_logs_failure expected failure"
         worker_monitor = self.WorkerMonitor(
             defer.fail(RuntimeError(failure_msg)))
         d = worker_monitor.run()
 
         def check_log_file(ignored):
             worker_monitor._log_file.seek(0)
-            log_text = worker_monitor._log_file.read()
+            log_bytes = worker_monitor._log_file.read()
             self.assertIn(
-                "Failure: exceptions.RuntimeError: " + failure_msg,
-                log_text)
+                b"Failure: exceptions.RuntimeError: " + failure_msg,
+                log_bytes)
 
         d.addCallback(check_log_file)
         return d
@@ -744,7 +744,7 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
         self.subversion_server.start_server()
         self.addCleanup(self.subversion_server.stop_server)
         url = self.subversion_server.makeBranch(
-            'trunk', [('README', 'contents')])
+            'trunk', [('README', b'contents')])
         self.foreign_commit_count = 2
 
         return self.factory.makeCodeImport(svn_branch_url=url)
@@ -756,7 +756,7 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
         self.subversion_server.start_server()
         self.addCleanup(self.subversion_server.stop_server)
         url = self.subversion_server.makeBranch(
-            'trunk', [('README', 'contents')])
+            'trunk', [('README', b'contents')])
         self.foreign_commit_count = 2
 
         return self.factory.makeCodeImport(

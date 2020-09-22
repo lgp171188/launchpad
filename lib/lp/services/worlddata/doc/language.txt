@@ -24,12 +24,12 @@ canonicalise_language_code
 
 We can convert language codes to standard form.
 
-  >>> language_set.canonicalise_language_code('pt')
-  'pt'
-  >>> language_set.canonicalise_language_code('pt_BR')
-  'pt_BR'
-  >>> language_set.canonicalise_language_code('pt-br')
-  'pt_BR'
+  >>> print(language_set.canonicalise_language_code('pt'))
+  pt
+  >>> print(language_set.canonicalise_language_code('pt_BR'))
+  pt_BR
+  >>> print(language_set.canonicalise_language_code('pt-br'))
+  pt_BR
 
 codes_to_languages
 ==================
@@ -50,9 +50,9 @@ createLanguage
 This method creates a new language.
 
   >>> foos = language_set.createLanguage('foos', 'Foo language')
-  >>> print foos.code
+  >>> print(foos.code)
   foos
-  >>> print foos.englishname
+  >>> print(foos.englishname)
   Foo language
 
 search
@@ -62,7 +62,7 @@ We are able to search languages with this method.
 
   >>> languages = language_set.search('Spanish')
   >>> for language in languages:
-  ...     print language.code, language.englishname
+  ...     print(language.code, language.englishname)
   es Spanish
   es_AR Spanish (Argentina)
   es_BO Spanish (Bolivia)
@@ -90,7 +90,7 @@ It's case insensitive:
 
   >>> languages = language_set.search('spanish')
   >>> for language in languages:
-  ...     print language.code, language.englishname
+  ...     print(language.code, language.englishname)
   es Spanish
   es_AR Spanish (Argentina)
   es_BO Spanish (Bolivia)
@@ -118,7 +118,7 @@ And it even does substring searching!
 
   >>> languages = language_set.search('panis')
   >>> for language in languages:
-  ...     print language.code, language.englishname
+  ...     print(language.code, language.englishname)
   es Spanish
   es_AR Spanish (Argentina)
   es_BO Spanish (Bolivia)
@@ -147,14 +147,14 @@ matching any string:
 
   >>> languages = language_set.search('%')
   >>> for language in languages:
-  ...     print language.code, language.englishname
+  ...     print(language.code, language.englishname)
 
 Or '_', which means any character match, but we only get strings
 that contain the 'e_' substring:
 
   >>> languages = language_set.search('e_')
   >>> for language in languages:
-  ...     print language.code, language.englishname
+  ...     print(language.code, language.englishname)
   de_AT German (Austria)
   de_BE German (Belgium)
   de_DE German (Germany)
@@ -177,23 +177,23 @@ second language. They might not be perfect but they are useful nonetheless.
 pt_BR is not a descendent of pt:
 
     >>> pt_BR = language_set.getLanguageByCode('pt_BR')
-    >>> print pt_BR.alt_suggestion_language
+    >>> print(pt_BR.alt_suggestion_language)
     None
 
 However, es_MX would find es useful:
 
     >>> language = language_set.getLanguageByCode('es_MX')
-    >>> print language.alt_suggestion_language.code
+    >>> print(language.alt_suggestion_language.code)
     es
 
 And Nynorsk and Bokmal have a special relationship:
 
     >>> language = language_set.getLanguageByCode('nn')
-    >>> print language.alt_suggestion_language.code
+    >>> print(language.alt_suggestion_language.code)
     nb
 
     >>> language = language_set.getLanguageByCode('nb')
-    >>> print language.alt_suggestion_language.code
+    >>> print(language.alt_suggestion_language.code)
     nn
 
 English and non-visible languages are not translatable, so there
@@ -224,7 +224,7 @@ represent, for instance pt_BR, when used on web pages, it should use
 instead a dash char. This method does it automatically:
 
   >>> pt_BR = language_set.getLanguageByCode('pt_BR')
-  >>> print pt_BR.dashedcode
+  >>> print(pt_BR.dashedcode)
   pt-BR
 
 
@@ -271,7 +271,7 @@ have the language among their preferred languages.
   ...                    karmavalue=40)
   >>> switch_dbuser('launchpad')
   >>> for translator in sr.translators:
-  ...   print translator.name
+  ...   print(translator.name)
   serbian-translator-karma-40
   serbian-translator-karma-30
   serbian-translator-karma-20
@@ -286,7 +286,7 @@ Property holding a list of countries a language is spoken in, and allowing
 reading and setting them.
 
   >>> es = language_set.getLanguageByCode('es')
-  >>> print [country.name for country in es.countries]
+  >>> print([country.name for country in es.countries])
   [u'Argentina', u'Bolivia', u'Chile', u'Colombia', u'Costa Rica',
    u'Dominican Republic', u'Ecuador', u'El Salvador', u'Guatemala',
    u'Honduras', u'Mexico', u'Nicaragua', u'Panama', u'Paraguay', u'Peru',
@@ -298,7 +298,7 @@ We can add countries using `ILanguage.addCountry` method.
   >>> country_set = getUtility(ICountrySet)
   >>> germany = country_set['DE']
   >>> es.addCountry(germany)
-  >>> print [country.name for country in es.countries]
+  >>> print([country.name for country in es.countries])
   [u'Argentina', u'Bolivia', u'Chile', u'Colombia', u'Costa Rica',
    u'Dominican Republic', u'Ecuador', u'El Salvador', u'Germany', u'Guatemala',
    u'Honduras', u'Mexico', u'Nicaragua', u'Panama', u'Paraguay', u'Peru',
@@ -308,7 +308,7 @@ Or, we can remove countries using `ILanguage.removeCountry` method.
 
   >>> argentina = country_set['AR']
   >>> es.removeCountry(argentina)
-  >>> print [country.name for country in es.countries]
+  >>> print([country.name for country in es.countries])
   [u'Bolivia', u'Chile', u'Colombia', u'Costa Rica', u'Dominican Republic',
    u'Ecuador', u'El Salvador', u'Germany', u'Guatemala', u'Honduras',
    u'Mexico', u'Nicaragua', u'Panama', u'Paraguay', u'Peru', u'Puerto Rico',
@@ -319,5 +319,5 @@ but we need to log in as a translations administrator first.
 
   >>> login('carlos@canonical.com')
   >>> es.countries = set([argentina, germany])
-  >>> print [country.name for country in es.countries]
+  >>> print([country.name for country in es.countries])
   [u'Argentina', u'Germany']

@@ -300,7 +300,7 @@ class IOCIRecipeEdit(IWebhookTarget):
     def destroySelf():
         """Delete this OCI recipe, provided that it has no builds."""
 
-    @call_with(owner=REQUEST_USER)
+    @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         registry_url=TextLine(
             title=_("Registry URL"),
@@ -314,11 +314,16 @@ class IOCIRecipeEdit(IWebhookTarget):
             title=_("Registry credentials"),
             description=_(
                 "The credentials to use in pushing the image to the registry"),
-            required=True))
+            required=True),
+        credentials_owner=PersonChoice(
+            title=_("Registry credentials owner"),
+            required=False,
+            vocabulary="AllUserTeamsParticipationPlusSelf"))
     # Really IOCIPushRule, patched in lp.oci.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def newPushRule(owner, registry_url, image_name, credentials):
+    def newPushRule(registrant, registry_url, image_name, credentials,
+                    credentials_owner=None):
         """Add a new rule for pushing builds of this recipe to a registry."""
 
 
@@ -408,6 +413,13 @@ class IOCIRecipeAdminAttributes(Interface):
         value_type=Reference(schema=IProcessor),
         readonly=False))
 
+    allow_internet = exported(Bool(
+        title=_("Allow external network access"),
+        required=True, readonly=False,
+        description=_(
+            "Allow access to external network resources via a proxy.  "
+            "Resources hosted on Launchpad itself are always allowed.")))
+
 
 @exported_as_webservice_entry(
     publish_web_link=True, as_of="devel", singular_name="oci_recipe")
@@ -421,7 +433,8 @@ class IOCIRecipeSet(Interface):
 
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            build_daily=False, processors=None, date_created=DEFAULT):
+            build_daily=False, processors=None, date_created=DEFAULT,
+            allow_internet=True):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):

@@ -21,6 +21,7 @@ from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
     Equals,
+    MatchesDict,
     MatchesListwise,
     MatchesStructure,
     )
@@ -29,6 +30,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
 from lp.services.signing.enums import (
+    OpenPGPKeyAlgorithm,
     SigningKeyType,
     SigningMode,
     )
@@ -86,6 +88,15 @@ class SigningServiceResponseFactory:
         box = Box(self.service_private_key, self.client_public_key)
         return box.encrypt(
             json.dumps(data), nonce, encoder=Base64Encoder).ciphertext
+
+    def _decryptPayload(self, value):
+        """Decrypt a payload we encrypted.
+
+        This is intended for use with `AfterPreprocessing` matchers.
+        """
+        box = Box(self.service_private_key, self.client_public_key)
+        decrypted = box.decrypt(value, self.nonce, encoder=Base64Encoder)
+        return json.loads(decrypted.decode("UTF-8"))
 
     def getAPISignedContent(self, call_index=0):
         """Returns the signed message returned by the API.
@@ -285,7 +296,84 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
             "X-Response-Nonce": Equals(
                 self.response_factory.b64_response_nonce),
             }))
-        self.assertIsNotNone(http_generate.request.body)
+        self.assertThat(http_generate.request.body, AfterPreprocessing(
+            self.response_factory._decryptPayload,
+            MatchesDict({
+                "key-type": Equals("UEFI"),
+                "description": Equals("my lp test key"),
+                })))
+
+        self.assertTimeline([
+            ("POST", "/nonce", {}),
+            ("GET", "/service-key", {}),
+            ("POST", "/generate", {
+                "headers": {
+                    "Content-Type": "application/x-boxed-json",
+                    "X-Client-Public-Key": config.signing.client_public_key,
+                    "X-Nonce": self.response_factory.b64_nonce,
+                    "X-Response-Nonce":
+                        self.response_factory.b64_response_nonce,
+                    },
+                }),
+            ])
+
+    @responses.activate
+    def test_generate_key_openpgp_missing_algorithm(self):
+        self.response_factory.addResponses(self)
+
+        signing = getUtility(ISigningServiceClient)
+        self.assertRaises(
+            ValueError, signing.generate,
+            SigningKeyType.OPENPGP, "Missing OpenPGP algorithm")
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_generate_key_openpgp(self):
+        self.response_factory.addResponses(self)
+        # Generate the key, and checks if we got back the correct dict.
+        signing = getUtility(ISigningServiceClient)
+        generated = signing.generate(
+            SigningKeyType.OPENPGP, "my lp test key",
+            openpgp_key_algorithm=OpenPGPKeyAlgorithm.RSA, length=4096)
+
+        self.assertEqual(generated, {
+            'public-key': bytes(self.response_factory.generated_public_key),
+            'fingerprint': self.response_factory.generated_fingerprint,
+            })
+
+        self.assertEqual(3, len(responses.calls))
+
+        # expected order of HTTP calls
+        http_nonce, http_service_key, http_generate = responses.calls
+
+        self.assertEqual("POST", http_nonce.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/nonce"), http_nonce.request.url)
+
+        self.assertEqual("GET", http_service_key.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/service-key"),
+            http_service_key.request.url)
+
+        self.assertEqual("POST", http_generate.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/generate"),
+            http_generate.request.url)
+        self.assertThat(http_generate.request.headers, ContainsDict({
+            "Content-Type": Equals("application/x-boxed-json"),
+            "X-Client-Public-Key": Equals(config.signing.client_public_key),
+            "X-Nonce": Equals(self.response_factory.b64_nonce),
+            "X-Response-Nonce": Equals(
+                self.response_factory.b64_response_nonce),
+            }))
+        self.assertThat(http_generate.request.body, AfterPreprocessing(
+            self.response_factory._decryptPayload,
+            MatchesDict({
+                "key-type": Equals("OPENPGP"),
+                "description": Equals("my lp test key"),
+                "openpgp-key-algorithm": Equals("RSA"),
+                "length": Equals(4096),
+                })))
 
         self.assertTimeline([
             ("POST", "/nonce", {}),
@@ -360,7 +448,15 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
             "X-Response-Nonce": Equals(
                 self.response_factory.b64_response_nonce),
             }))
-        self.assertIsNotNone(http_sign.request.body)
+        self.assertThat(http_sign.request.body, AfterPreprocessing(
+            self.response_factory._decryptPayload,
+            MatchesDict({
+                "key-type": Equals("KMOD"),
+                "fingerprint": Equals(fingerprint),
+                "message-name": Equals(message_name),
+                "message": Equals(base64.b64encode(message).decode("UTF-8")),
+                "mode": Equals("DETACHED"),
+                })))
 
         self.assertTimeline([
             ("POST", "/nonce", {}),
@@ -394,12 +490,13 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         self.response_factory.addResponses(self)
         private_key = PrivateKey.generate()
         public_key = private_key.public_key
+        now = datetime.now()
 
         # Generate the key, and checks if we got back the correct dict.
         signing = getUtility(ISigningServiceClient)
         response_data = signing.inject(
             SigningKeyType.UEFI, bytes(private_key), bytes(public_key),
-            "This is a test key injected.", datetime.now())
+            "This is a test key injected.", now)
 
         self.assertEqual(response_data, {
             'fingerprint': self.response_factory.generated_fingerprint})
@@ -429,7 +526,17 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
             "X-Response-Nonce": Equals(
                 self.response_factory.b64_response_nonce),
             }))
-        self.assertIsNotNone(http_inject.request.body)
+        self.assertThat(http_inject.request.body, AfterPreprocessing(
+            self.response_factory._decryptPayload,
+            MatchesDict({
+                "key-type": Equals("UEFI"),
+                "private-key": Equals(
+                    base64.b64encode(bytes(private_key)).decode("UTF-8")),
+                "public-key": Equals(
+                    base64.b64encode(bytes(public_key)).decode("UTF-8")),
+                "created-at": Equals(now.isoformat()),
+                "description": Equals("This is a test key injected."),
+                })))
 
         self.assertTimeline([
             ("POST", "/nonce", {}),

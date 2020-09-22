@@ -8,6 +8,7 @@ import contextlib
 from lazr.restful.interfaces import IJSONRequestCache
 import simplejson
 import soupmatchers
+from testtools.matchers import Not
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -38,8 +39,11 @@ from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.enums import ArchiveStatus
 from lp.testing import (
+    ANONYMOUS,
+    login,
     login_celebrity,
     login_person,
+    monkey_patch,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -873,6 +877,40 @@ class TestTeamIndexView(TestCaseWithFactory):
                 self.assertEndsWith(
                     extract_text(document.find(True, id='maincontent')),
                     'The information in this page is not shared with you.')
+
+    @staticmethod
+    def get_markup(view, team):
+        def fake_method():
+            return canonical_url(team)
+        with monkey_patch(view, _getURL=fake_method):
+            markup = view.render()
+        return markup
+
+    def test_show_oci_registry_credentials_link(self):
+        member = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[member])
+        view = create_initialized_view(team, '+index', principal=member)
+        with person_logged_in(member):
+            markup = self.get_markup(view, team)
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCIRegistryCredentials link', 'a',
+                attrs={
+                    'href':
+                        'http://launchpad.test/~%s/+oci-registry-credentials'
+                        % team.name},
+                text='OCI registry credentials'))
+        self.assertThat(markup, link_match)
+
+        login_person(self.factory.makePerson())
+        markup = self.get_markup(view, team)
+        self.assertNotEqual('', markup)
+        self.assertThat(markup, Not(link_match))
+
+        login(ANONYMOUS)
+        markup = self.get_markup(view, team)
+        self.assertNotEqual('', markup)
+        self.assertThat(markup, Not(link_match))
 
 
 class TestPersonIndexVisibilityView(TestCaseWithFactory):

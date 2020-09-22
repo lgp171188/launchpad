@@ -21,6 +21,7 @@ from lp.services.log import loglevels
 from lp.services.log.logger import LaunchpadLogger
 from lp.services.log.mappingfilter import MappingFilter
 from lp.services.mime import customizeMimetypes
+from lp.services.openid.fetcher import set_default_openid_fetcher
 
 
 def add_custom_loglevels():
@@ -95,8 +96,9 @@ def silence_swiftclient_logger():
 
     keystoneclient logs credentials at DEBUG.
     """
-    swiftclient_logger = logging.getLogger('swiftclient')
-    swiftclient_logger.setLevel(logging.INFO)
+    if not os.environ.get('LP_SWIFTCLIENT_DEBUG'):
+        swiftclient_logger = logging.getLogger('swiftclient')
+        swiftclient_logger.setLevel(logging.INFO)
     keystoneclient_logger = logging.getLogger('keystoneclient')
     keystoneclient_logger.setLevel(logging.INFO)
 
@@ -178,6 +180,7 @@ def main(instance_name=None):
     customizeMimetypes()
     silence_warnings()
     customize_logger()
+    set_default_openid_fetcher()
     checker.BasicTypes.update({defaultdict: checker.NoProxy})
     checker.BasicTypes.update({Deferred: checker.NoProxy})
     checker.BasicTypes.update({DeferredList: checker.NoProxy})

@@ -60,7 +60,8 @@ class SigningServiceFixture(TacTestFixture):
         self.addCleanup(lambda: os.path.exists(logfile) and os.unlink(logfile))
 
         content.attach_file(
-            self, logfile, "signing-log", content_type.UTF8_TEXT)
+            self, logfile, "signing-log", content_type.UTF8_TEXT,
+            buffer_now=False)
 
         factory = ObjectFactory()
         config_name = factory.getUniqueString()

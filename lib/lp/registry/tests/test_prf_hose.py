@@ -165,7 +165,7 @@ class Hose_LimitWalk(unittest.TestCase):
                             'foo/1.5/source/foo-1.5.tar.gz',
                             'foo/2.0/source/foo-2.0.tar.gz']:
             fp = open(os.path.join(self.release_root, releasefile), 'wb')
-            fp.write('data')
+            fp.write(b'data')
             fp.close()
 
         # Run the hose over the test data

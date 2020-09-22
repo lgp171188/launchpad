@@ -58,6 +58,10 @@ import six
 import subvertpy
 import subvertpy.client
 import subvertpy.ra
+from testtools.matchers import (
+    ContainsAll,
+    LessThan,
+    )
 
 import lp.codehosting
 from lp.codehosting.codeimport.tarball import (
@@ -81,6 +85,7 @@ from lp.codehosting.codeimport.worker import (
     ForeignTreeStore,
     get_default_bazaar_branch_store,
     GitImportWorker,
+    GitToGitImportWorker,
     ImportDataStore,
     ToBzrImportWorker,
     )
@@ -848,7 +853,7 @@ class TestActualImportMixin:
         # Running the worker on a branch that hasn't been imported yet imports
         # the branch.
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         worker.run()
         branch = self.getStoredBazaarBranch(worker)
@@ -857,7 +862,7 @@ class TestActualImportMixin:
     def test_sync(self):
         # Do an import.
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         worker.run()
         branch = self.getStoredBazaarBranch(worker)
@@ -878,7 +883,7 @@ class TestActualImportMixin:
         # Like test_import, but using the code-import-worker.py script
         # to perform the import.
         arguments = self.makeWorkerArguments(
-            'trunk', [('README', 'Original contents')])
+            'trunk', [('README', b'Original contents')])
         source_details = CodeImportSourceDetails.fromArguments(arguments)
 
         clean_up_default_stores_for_import(source_details)
@@ -916,7 +921,7 @@ class TestActualImportMixin:
         # import that does not import revisions, the worker exits with a code
         # of CodeImportWorkerExitCode.SUCCESS_NOCHANGE.
         arguments = self.makeWorkerArguments(
-            'trunk', [('README', 'Original contents')])
+            'trunk', [('README', b'Original contents')])
         source_details = CodeImportSourceDetails.fromArguments(arguments)
 
         clean_up_default_stores_for_import(source_details)
@@ -1079,7 +1084,7 @@ class PullingImportWorkerTests:
     def test_unsupported_feature(self):
         # If there is no branch in the target URL, exit with FAILURE_INVALID
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('bzr\\doesnt\\support\\this', 'Original contents')]),
+            'trunk', [('bzr\\doesnt\\support\\this', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         self.assertEqual(
             CodeImportWorkerExitCode.FAILURE_UNSUPPORTED_FEATURE,
@@ -1089,7 +1094,7 @@ class PullingImportWorkerTests:
         # Only config.codeimport.revisions_import_limit will be imported
         # in a given run.
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         self.makeForeignCommit(worker.source_details)
         self.assertTrue(self.foreign_commit_count > 1)
@@ -1107,7 +1112,7 @@ class PullingImportWorkerTests:
     def test_stacked(self):
         stacked_on = self.make_branch('stacked-on')
         source_details = self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')],
+            'trunk', [('README', b'Original contents')],
             stacked_on_url=stacked_on.base)
         stacked_on.fetch(Branch.open(source_details.url))
         base_rev_count = self.foreign_commit_count
@@ -1196,7 +1201,7 @@ class TestGitImport(WorkerTest, TestActualImportMixin,
     def test_non_master(self):
         # non-master branches can be specified in the import URL.
         source_details = self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')])
+            'trunk', [('README', b'Original contents')])
         self.makeForeignCommit(source_details, ref="refs/heads/other",
             message="Message for other")
         self.makeForeignCommit(source_details, ref="refs/heads/master",
@@ -1238,7 +1243,7 @@ class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
         # cache in the worker's ImportDataStore.
         from bzrlib.plugins.svn.cache import get_cache
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         uuid = subvertpy.ra.RemoteAccess(worker.source_details.url).get_uuid()
         cache_dir = get_cache(uuid).create_cache_dir()
@@ -1258,7 +1263,7 @@ class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
         # into the appropriate cache directory.
         from bzrlib.plugins.svn.cache import get_cache
         worker = self.makeImportWorker(self.makeSourceDetails(
-            'trunk', [('README', 'Original contents')]),
+            'trunk', [('README', b'Original contents')]),
             opener_policy=AcceptAnythingPolicy())
         # Store a tarred-up cache in the store.
         content = self.factory.getUniqueString()
@@ -1356,6 +1361,53 @@ class TestBzrImport(WorkerTest, TestActualImportMixin,
         self.assertEqual(
             "Some Random Hacker <jane@example.com>",
             branch.repository.get_revision(branch.last_revision()).committer)
+
+
+class TestGitToGitImportWorker(TestCase):
+
+    def test_throttleProgress(self):
+        source_details = self.factory.makeCodeImportSourceDetails(
+            rcstype="git", target_rcstype="git")
+        logger = BufferLogger()
+        worker = GitToGitImportWorker(
+            source_details, logger, AcceptAnythingPolicy())
+        read_fd, write_fd = os.pipe()
+        pid = os.fork()
+        if pid == 0:  # child
+            os.close(read_fd)
+            with os.fdopen(write_fd, "wb") as write:
+                write.write(b"Starting\n")
+                for i in range(50):
+                    time.sleep(0.1)
+                    write.write(("%d ...\r" % i).encode("UTF-8"))
+                    if (i % 10) == 9:
+                        write.write(
+                            ("Interval %d\n" % (i // 10)).encode("UTF-8"))
+                write.write(b"Finishing\n")
+            os._exit(0)
+        else:  # parent
+            os.close(write_fd)
+            with os.fdopen(read_fd, "rb") as read:
+                lines = list(worker._throttleProgress(read, timeout=0.5))
+            os.waitpid(pid, 0)
+            # Matching the exact sequence of lines would be too brittle, but
+            # we require some things to be true:
+            # All the non-progress lines must be present, in the right
+            # order.
+            self.assertEqual(
+                [u"Starting\n", u"Interval 0\n", u"Interval 1\n",
+                 u"Interval 2\n", u"Interval 3\n", u"Interval 4\n",
+                 u"Finishing\n"],
+                [line for line in lines if not line.endswith(u"\r")])
+            # No more than 15 progress lines may be present (allowing some
+            # slack for the child process being slow).
+            progress_lines = [line for line in lines if line.endswith(u"\r")]
+            self.assertThat(len(progress_lines), LessThan(16))
+            # All the progress lines immediately before interval markers
+            # must be present.
+            self.assertThat(
+                progress_lines,
+                ContainsAll([u"%d ...\r" % i for i in (9, 19, 29, 39, 49)]))
 
 
 class CodeImportBranchOpenPolicyTests(TestCase):

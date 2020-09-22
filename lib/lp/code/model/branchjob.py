@@ -13,10 +13,10 @@ __all__ = [
     'RosettaUploadJob',
 ]
 
+import io
 import operator
 import os
 import shutil
-from StringIO import StringIO
 import tempfile
 
 from breezy.branch import Branch as BzrBranch
@@ -567,7 +567,11 @@ class RevisionsAddedJob(BranchJobDerived):
                     mailer.sendAll()
 
     def getDiffForRevisions(self, from_revision_id, to_revision_id):
-        """Generate the diff between from_revision_id and to_revision_id."""
+        """Generate the diff between from_revision_id and to_revision_id.
+
+        This always returns Unicode text, decoding as UTF-8 with replacement
+        characters where necessary.
+        """
         # Try to reuse a tree from the last time through.
         repository = self.bzr_branch.repository
         from_tree = self._tree_cache.get(from_revision_id)
@@ -580,10 +584,10 @@ class RevisionsAddedJob(BranchJobDerived):
         self._tree_cache = {
             from_revision_id: from_tree, to_revision_id: to_tree}
         # Now generate the diff.
-        diff_content = StringIO()
+        diff_content = io.BytesIO()
         show_diff_trees(
             from_tree, to_tree, diff_content, old_label='', new_label='')
-        return diff_content.getvalue()
+        return six.ensure_text(diff_content.getvalue(), errors='replace')
 
     def getMailerForRevision(self, revision, revno, generate_diff):
         """Return a BranchMailer for a revision.
@@ -701,7 +705,7 @@ class RevisionsAddedJob(BranchJobDerived):
             authors = self.getAuthors(merged_revisions, graph)
             revision_set = RevisionSet()
             rev_authors = revision_set.acquireRevisionAuthors(authors)
-            outf = StringIO()
+            outf = six.StringIO()
             pretty_authors = []
             for rev_author in rev_authors.values():
                 if rev_author.person is None:

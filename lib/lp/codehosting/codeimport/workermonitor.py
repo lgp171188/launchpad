@@ -305,8 +305,8 @@ class CodeImportWorkerMonitor:
             return reason
         status = self._reasonToStatus(reason)
         if status == CodeImportResultStatus.FAILURE:
-            self._log_file.write("Import failed:\n")
-            reason.printTraceback(self._log_file)
+            self._log_file.write(b"Import failed:\n")
+            self._log_file.write(reason.getTraceback().encode("UTF-8"))
             self._logger.info(
                 "Import failed: %s: %s" % (reason.type, reason.value))
         else:

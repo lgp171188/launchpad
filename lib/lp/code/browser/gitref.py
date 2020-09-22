@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git reference views."""
@@ -13,6 +13,7 @@ __all__ = [
 
 import json
 
+from breezy import urlutils
 from lazr.restful.interface import copy_field
 from six.moves.urllib_parse import (
     quote_plus,
@@ -46,7 +47,12 @@ from lp.code.errors import InvalidBranchMergeProposal
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.gitref import IGitRef
-from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.code.interfaces.gitrepository import (
+    ContributorGitIdentity,
+    IGitRepositorySet,
+    )
+from lp.registry.interfaces.person import IPerson
+from lp.services.config import config
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
@@ -119,6 +125,22 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         return urlunsplit(url)
 
     @property
+    def git_ssh_url_non_owner(self):
+        """The git+ssh:// URL for this repository, adjusted for this user.
+
+        The user is not the owner of the repository.
+        """
+        contributor = ContributorGitIdentity(
+            owner=self.user,
+            target=self.context.repository.target,
+            repository=self.context.repository)
+        base_url = urlutils.join(
+            config.codehosting.git_ssh_root, contributor.shortened_path)
+        url = list(urlsplit(base_url))
+        url[1] = "{}@{}".format(self.user.name, url[1])
+        return urlunsplit(url)
+
+    @property
     def user_can_push(self):
         """Whether the user can push to this branch."""
         return (
@@ -135,6 +157,16 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         """
         if not self.context.namespace.supports_merge_proposals:
             return False
+        if IPerson.providedBy(self.context.namespace.target):
+            # XXX pappacena 2020-07-21: For personal repositories, we enable
+            # the link even if the user will only be allowed to merge
+            # their personal repositories' branch into another personal repo
+            # with the same name. But checking if there is another
+            # repository with the same name might be a bit expensive query for
+            # such a simple operation. Currently, we only have db index for
+            # repo's name when searching together with owner.
+            return True
+
         repositories = self.context.namespace.collection.getRepositories()
         if repositories.count() > 1:
             return True
@@ -142,6 +174,15 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         if repository is None:
             return False
         return repository.refs.count() > 1
+
+    @property
+    def propose_merge_notes(self):
+        messages = []
+        if IPerson.providedBy(self.context.namespace.target):
+            messages.append(
+                "You will only be able to propose a merge to another personal "
+                "repository with the same name.")
+        return messages
 
     @cachedproperty
     def landing_targets(self):

@@ -419,7 +419,8 @@ def favicon(_context, for_, file):
     @implementer(IFavicon)
     class Favicon(FaviconRendererBase):
         path = file
-        data = open(file, 'rb').read()
+        with open(file, 'rb') as f:
+            data = f.read()
 
     name = "favicon.ico"
     permission = CheckerPublic

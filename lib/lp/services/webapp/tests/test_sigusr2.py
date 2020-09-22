@@ -63,9 +63,10 @@ class SIGUSR2TestCase(unittest.TestCase):
 
         # Confirm content in the main log and the cycled log are what we
         # expect.
-        self.assertEqual(
-            open(cycled_log, 'r').read(), 'Message 1\nMessage 2\n')
-        self.assertEqual(open(main_log, 'r').read(), 'Message 3\n')
+        with open(cycled_log) as f:
+            self.assertEqual(f.read(), 'Message 1\nMessage 2\n')
+        with open(main_log) as f:
+            self.assertEqual(f.read(), 'Message 3\n')
 
     def sync(self, step):
         retries = 200

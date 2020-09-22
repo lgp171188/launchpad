@@ -84,18 +84,6 @@ from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
-from lp.hardwaredb.interfaces.hwdb import (
-    HWBus,
-    IHWDBApplication,
-    IHWDevice,
-    IHWDeviceClass,
-    IHWDriver,
-    IHWDriverName,
-    IHWDriverPackageName,
-    IHWSubmission,
-    IHWSubmissionDevice,
-    IHWVendorID,
-    )
 from lp.registry.interfaces.commercialsubscription import (
     ICommercialSubscription,
     )
@@ -162,7 +150,6 @@ from lp.services.messages.interfaces.message import (
     IUserToUserEmail,
     )
 from lp.services.webservice.apihelpers import (
-    patch_choice_parameter_type,
     patch_collection_property,
     patch_collection_return_type,
     patch_entry_explicit_version,
@@ -292,18 +279,11 @@ patch_plain_parameter_type(IHasCodeImports, 'newCodeImport', 'owner', IPerson)
 # IBugTask
 
 patch_collection_return_type(IBugTask, 'findSimilarBugs', IBug)
-patch_plain_parameter_type(
-    IBug, 'linkHWSubmission', 'submission', IHWSubmission)
-patch_plain_parameter_type(
-    IBug, 'unlinkHWSubmission', 'submission', IHWSubmission)
-patch_collection_return_type(IBug, 'getHWSubmissions', IHWSubmission)
 patch_list_parameter_type(
     IBug, 'getNominations', 'nominations', Reference(schema=IBugNomination))
 patch_entry_return_type(IBug, 'addNomination', IBugNomination)
 patch_entry_return_type(IBug, 'getNominationFor', IBugNomination)
 patch_collection_return_type(IBug, 'getNominations', IBugNomination)
-
-patch_choice_parameter_type(IHasBugs, 'searchTasks', 'hardware_bus', HWBus)
 
 patch_reference_property(
     IPreviewDiff, 'branch_merge_proposal', IBranchMergeProposal)
@@ -341,8 +321,6 @@ patch_collection_return_type(IPerson, 'getOwnedProjects', IProduct)
 
 # IHasRecipe
 patch_collection_property(IHasRecipes, 'recipes', ISourcePackageRecipe)
-
-patch_collection_property(IPerson, 'hardware_submissions', IHWSubmission)
 
 # publishing.py
 patch_collection_return_type(
@@ -778,11 +756,11 @@ patch_operations_explicit_version(
 patch_entry_explicit_version(IBug, 'beta')
 patch_operations_explicit_version(
     IBug, 'beta', "addAttachment", "addNomination", "addTask", "addWatch",
-    "canBeNominatedFor", "getHWSubmissions", "getNominationFor",
+    "canBeNominatedFor", "getNominationFor",
     "getNominations", "isExpirable", "isUserAffected",
-    "linkCVE", "linkHWSubmission", "markAsDuplicate",
+    "linkCVE", "markAsDuplicate",
     "markUserAffected", "newMessage", "setCommentVisibility", "setPrivate",
-    "setSecurityRelated", "subscribe", "unlinkCVE", "unlinkHWSubmission",
+    "setSecurityRelated", "subscribe", "unlinkCVE",
     "unsubscribe", "unsubscribeFromDupes")
 
 # IBugActivity
@@ -907,44 +885,6 @@ patch_entry_explicit_version(IDistroSeriesDifferenceComment, 'beta')
 
 # IGPGKey
 patch_entry_explicit_version(IGPGKey, 'beta')
-
-# IHWDBApplication
-patch_entry_explicit_version(IHWDBApplication, 'beta')
-patch_operations_explicit_version(
-    IHWDBApplication, 'beta', "deviceDriverOwnersAffectedByBugs", "devices",
-    "drivers", "hwInfoByBugRelatedUsers", "numDevicesInSubmissions",
-    "numOwnersOfDevice", "numSubmissionsWithDevice", "search", "vendorIDs")
-
-# IHWDevice
-patch_entry_explicit_version(IHWDevice, 'beta')
-patch_operations_explicit_version(
-    IHWDevice, 'beta', "getOrCreateDeviceClass", "getSubmissions",
-    "removeDeviceClass")
-
-# IHWDeviceClass
-patch_entry_explicit_version(IHWDeviceClass, 'beta')
-patch_operations_explicit_version(
-    IHWDeviceClass, 'beta', "delete")
-
-# IHWDriver
-patch_entry_explicit_version(IHWDriver, 'beta')
-patch_operations_explicit_version(
-    IHWDriver, 'beta', "getSubmissions")
-
-# IHWDriverName
-patch_entry_explicit_version(IHWDriverName, 'beta')
-
-# IHWDriverPackageName
-patch_entry_explicit_version(IHWDriverPackageName, 'beta')
-
-# IHWSubmission
-patch_entry_explicit_version(IHWSubmission, 'beta')
-
-# IHWSubmissionDevice
-patch_entry_explicit_version(IHWSubmissionDevice, 'beta')
-
-# IHWVendorID
-patch_entry_explicit_version(IHWVendorID, 'beta')
 
 # IHasBugs
 patch_entry_explicit_version(IHasBugs, 'beta')

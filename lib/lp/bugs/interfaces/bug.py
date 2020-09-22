@@ -613,20 +613,6 @@ class IBugView(Interface):
 
         """
 
-    @call_with(user=REQUEST_USER)
-    @operation_returns_collection_of(Interface)
-    @export_read_operation()
-    def getHWSubmissions(user=None):
-        """Return HWDB submissions linked to this bug.
-
-        :return: A sequence of HWDB submissions linked to this bug.
-        :param user: The user making the request.
-
-        Only those submissions are returned which the user can access.
-        Public submissions are always included; private submisisons only
-        if the user is the owner or an admin.
-        """
-
     @operation_parameters(
         days_old=Int(
             title=_('Number of days of inactivity for which to check.'),
@@ -882,20 +868,6 @@ class IBugAppend(Interface):
         :information_type: The `InformationType` to transition to.
         :who: The `IPerson` who is making the change.
         """
-
-    @operation_parameters(
-        submission=Reference(
-            Interface, title=_('A HWDB submission'), required=True))
-    @export_write_operation()
-    def linkHWSubmission(submission):
-        """Link a `HWSubmission` to this bug."""
-
-    @operation_parameters(
-        submission=Reference(
-            Interface, title=_('A HWDB submission'), required=True))
-    @export_write_operation()
-    def unlinkHWSubmission(submission):
-        """Remove a link to a `HWSubmission`."""
 
     def linkMessage(message, bugwatch=None, user=None,
                     remote_comment_id=None):

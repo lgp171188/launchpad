@@ -73,6 +73,7 @@ from lp.buildmaster.tests.test_interactor import (
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
+from lp.services.statsd.tests import StatsMixin
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
@@ -96,7 +97,7 @@ from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 
 
-class TestSlaveScannerScan(TestCaseWithFactory):
+class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
     """Tests `SlaveScanner.scan` method.
 
     This method uses the old framework for scanning and dispatching builds.
@@ -118,6 +119,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.test_publisher.setUpDefaultDistroSeries(hoary)
         self.test_publisher.addFakeChroots(db_only=True)
         self.addCleanup(shut_down_default_process_pool)
+        self.setUpStats()
 
     def _resetBuilder(self, builder):
         """Reset the given builder and its job."""
@@ -523,6 +525,20 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.assertFalse(builder.builderok)
 
     @defer.inlineCallbacks
+    def test_scanFailed_increments_counter(self):
+        def failing_scan():
+            return defer.fail(Exception("fake exception"))
+        scanner = self._getScanner()
+        scanner.scan = failing_scan
+        builder = getUtility(IBuilderSet)[scanner.builder_name]
+        builder.failure_count = BUILDER_FAILURE_THRESHOLD
+        builder.currentjob.reset()
+        transaction.commit()
+
+        yield scanner.singleCycle()
+        self.assertEqual(1, self.stats_client.incr.call_count)
+
+    @defer.inlineCallbacks
     def test_fail_to_resume_leaves_it_dirty(self):
         # If an attempt to resume a slave fails, its failure count is
         # incremented and it is left DIRTY.
@@ -888,6 +904,7 @@ class FakeBuilddManager:
 
 class TestSlaveScannerWithoutDB(TestCase):
 
+    layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):

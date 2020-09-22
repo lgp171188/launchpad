@@ -412,10 +412,10 @@ class GenericGitCollection:
         tables = [
             BranchMergeProposal,
             Join(CodeReviewVoteReference,
-                 CodeReviewVoteReference.branch_merge_proposalID == \
+                 CodeReviewVoteReference.branch_merge_proposal ==
                  BranchMergeProposal.id),
             LeftJoin(CodeReviewComment,
-                 CodeReviewVoteReference.commentID == CodeReviewComment.id)]
+                 CodeReviewVoteReference.comment == CodeReviewComment.id)]
 
         expressions = [
             CodeReviewVoteReference.reviewer == reviewer,

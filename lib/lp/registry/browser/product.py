@@ -287,7 +287,8 @@ class ProductNavigation(
     @stepthrough('+series')
     def traverse_series(self, name):
         series = self.context.getSeries(name)
-        return self.redirectSubTree(canonical_url(series), status=303)
+        return self.redirectSubTree(
+            canonical_url(series, request=self.request), status=303)
 
     def traverse(self, name):
         return self.context.getSeries(name)

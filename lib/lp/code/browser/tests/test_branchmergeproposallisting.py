@@ -10,8 +10,7 @@ __metaclass__ = type
 from datetime import datetime
 
 import pytz
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 from testtools.matchers import LessThan
 import transaction
 from zope.component import getUtility
@@ -937,7 +936,7 @@ class ActiveReviewsPerformanceMixin:
         added_bmps = 4
         recorder1, view1 = self.createUserBMPsAndRecordQueries(base_bmps)
         self.assertEqual(base_bmps, view1.proposal_count)
-        self.addDetail("r1tb", Content(UTF8_TEXT, lambda: [str(recorder1)]))
+        self.addDetail("r1tb", text_content(str(recorder1)))
         recorder2, view2 = self.createUserBMPsAndRecordQueries(
             base_bmps + added_bmps)
         self.assertEqual(base_bmps + added_bmps, view2.proposal_count)
@@ -973,7 +972,7 @@ class ActiveReviewsPerformanceMixin:
         added_bmps = 4
         recorder1, view1 = self.createProductBMPsAndRecordQueries(base_bmps)
         self.assertEqual(base_bmps, view1.proposal_count)
-        self.addDetail("r1tb", Content(UTF8_TEXT, lambda: [str(recorder1)]))
+        self.addDetail("r1tb", text_content(str(recorder1)))
         recorder2, view2 = self.createProductBMPsAndRecordQueries(
             base_bmps + added_bmps)
         self.assertEqual(base_bmps + added_bmps, view2.proposal_count)

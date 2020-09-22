@@ -74,7 +74,7 @@ class LibrarianStorageTestCase(unittest.TestCase):
         # correctly -- i.e that creating a file works both if the directory
         # already exists, and if the directory doesn't already exist.
         self.storage.library = StubLibrary()
-        data = 'data ' * 50
+        data = b'data ' * 50
         newfile = self.storage.startAddFile('file', len(data))
         newfile.contentID = 0x11111111
         newfile.append(data)
@@ -82,7 +82,7 @@ class LibrarianStorageTestCase(unittest.TestCase):
         # First id from stub library should be 0x11111111
         self.assertEqual(0x11111111, fileid1)
 
-        data += 'more data'
+        data += b'more data'
         newfile = self.storage.startAddFile('file', len(data))
         newfile.contentID = 0x11111112
         newfile.append(data)
@@ -96,7 +96,7 @@ class LibrarianStorageTestCase(unittest.TestCase):
 
     def test_hashes(self):
         # Check that the MD5, SHA1 and SHA256 hashes are correct.
-        data = 'i am some data'
+        data = b'i am some data'
         md5 = hashlib.md5(data).hexdigest()
         sha1 = hashlib.sha1(data).hexdigest()
         sha256 = hashlib.sha256(data).hexdigest()

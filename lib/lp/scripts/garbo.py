@@ -72,7 +72,6 @@ from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
     )
-from lp.hardwaredb.model.hwdb import HWSubmission
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
@@ -900,67 +899,6 @@ class RevisionAuthorEmailLinker(TunableLoop):
                 author.personID = personID
 
         self.next_author_id = authors[-1].id + 1
-        transaction.commit()
-
-
-class HWSubmissionEmailLinker(TunableLoop):
-    """A TunableLoop that links `HWSubmission` objects to `Person` objects.
-
-    `EmailAddress` objects are looked up for `HWSubmission` objects
-    that have not yet been linked to a `Person`.  If the
-    `EmailAddress` is linked to a person, then the `HWSubmission` is
-    linked to the same.
-    """
-    maximum_chunk_size = 50000
-
-    def __init__(self, log, abort_time=None):
-        super(HWSubmissionEmailLinker, self).__init__(log, abort_time)
-        self.submission_store = IMasterStore(HWSubmission)
-        self.submission_store.execute(
-            "DROP TABLE IF EXISTS NewlyMatchedSubmission")
-        # The join with the Person table is to avoid any replication
-        # lag issues - EmailAddress.person might reference a Person
-        # that does not yet exist.
-        self.submission_store.execute("""
-            CREATE TEMPORARY TABLE NewlyMatchedSubmission AS
-            SELECT
-                HWSubmission.id AS submission,
-                EmailAddress.person AS owner
-            FROM HWSubmission, EmailAddress, Person
-            WHERE HWSubmission.owner IS NULL
-                AND EmailAddress.person = Person.id
-                AND EmailAddress.status IN %s
-                AND lower(HWSubmission.raw_emailaddress)
-                    = lower(EmailAddress.email)
-            """ % sqlvalues(
-                [EmailAddressStatus.VALIDATED, EmailAddressStatus.PREFERRED]),
-            noresult=True)
-        self.submission_store.execute("""
-            CREATE INDEX newlymatchsubmission__submission__idx
-            ON NewlyMatchedSubmission(submission)
-            """, noresult=True)
-        self.matched_submission_count = self.submission_store.execute("""
-            SELECT COUNT(*) FROM NewlyMatchedSubmission
-            """).get_one()[0]
-        self.offset = 0
-
-    def isDone(self):
-        return self.offset >= self.matched_submission_count
-
-    def __call__(self, chunk_size):
-        self.submission_store.execute("""
-            UPDATE HWSubmission
-            SET owner=NewlyMatchedSubmission.owner
-            FROM (
-                SELECT submission, owner
-                FROM NewlyMatchedSubmission
-                ORDER BY submission
-                OFFSET %d
-                LIMIT %d
-                ) AS NewlyMatchedSubmission
-            WHERE HWSubmission.id = NewlyMatchedSubmission.submission
-            """ % (self.offset, chunk_size), noresult=True)
-        self.offset += chunk_size
         transaction.commit()
 
 
@@ -1894,7 +1832,6 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         CodeImportResultPruner,
         DiffPruner,
         GitJobPruner,
-        HWSubmissionEmailLinker,
         LiveFSFilePruner,
         LoginTokenPruner,
         OCIFilePruner,

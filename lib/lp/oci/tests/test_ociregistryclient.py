@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from functools import partial
+import io
 import json
 import os
 import tarfile
@@ -19,7 +20,6 @@ from requests.exceptions import (
     HTTPError,
     )
 import responses
-from six import StringIO
 from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
@@ -38,6 +38,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     ManifestUploadFailed,
+    MultipleOCIRegistryError,
     )
 from lp.oci.model.ociregistryclient import (
     BearerTokenRegistryClient,
@@ -101,17 +102,17 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
     def _makeFiles(self):
         self.factory.makeOCIFile(
             build=self.build,
-            content=json.dumps(self.manifest),
+            content=json.dumps(self.manifest).encode('UTF-8'),
             filename='manifest.json',
         )
         self.factory.makeOCIFile(
             build=self.build,
-            content=json.dumps(self.digests),
+            content=json.dumps(self.digests).encode('UTF-8'),
             filename='digests.json',
         )
         self.factory.makeOCIFile(
             build=self.build,
-            content=json.dumps(self.config),
+            content=json.dumps(self.config).encode('UTF-8'),
             filename='config_file_1.json'
         )
 
@@ -125,7 +126,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             with open(file_path, 'w') as fd:
                 fd.write(digest)
 
-            fileout = StringIO()
+            fileout = io.BytesIO()
             tar = tarfile.open(mode="w:gz", fileobj=fileout)
             tar.add(file_path, 'layer.tar')
             tar.close()
@@ -215,6 +216,59 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         http_client = _upload_fixture.mock.call_args_list[0][0][-1]
         self.assertEqual(
             http_client.credentials, ('test-username', 'test-password'))
+
+    @responses.activate
+    def test_upload_skip_failed_push_rule(self):
+        self._makeFiles()
+        upload_fixture = self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+
+        push_rules = [
+            self.push_rule,
+            self.factory.makeOCIPushRule(recipe=self.build.recipe),
+            self.factory.makeOCIPushRule(recipe=self.build.recipe)]
+        # Set the first 2 rules to fail with 400 at the PUT operation.
+        for i, push_rule in enumerate(push_rules):
+            push_rule.registry_credentials.setCredentials({
+                "username": "test-username-%s" % i,
+                "password": "test-password-%s" % i
+            })
+            responses.add(
+                "GET", "%s/v2/" % push_rule.registry_url, status=200)
+
+            manifests_url = "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_credentials.url, push_rule.image_name)
+            status = 400 if i < 2 else 201
+            responses.add("PUT", manifests_url, status=status)
+
+        error = self.assertRaises(
+            MultipleOCIRegistryError, self.client.upload, self.build)
+
+        # Check that it tried to call the upload for each one of the push rules
+        self.assertEqual(3, upload_fixture.mock.call_count)
+        used_credentials = {
+            args[0][-1].credentials
+            for args in upload_fixture.mock.call_args_list}
+        self.assertSetEqual(
+            {('test-username-0', 'test-password-0'),
+             ('test-username-1', 'test-password-1'),
+             ('test-username-2', 'test-password-2')},
+            used_credentials)
+
+        # Check that we received back an exception of the correct type.
+        self.assertIsInstance(error, MultipleOCIRegistryError)
+        self.assertEqual(2, len(error.errors))
+        self.assertEqual(2, len(error.exceptions))
+
+        expected_error_msg = (
+            "Failed to upload manifest for {recipe} ({url1}) in {build} / "
+            "Failed to upload manifest for {recipe} ({url2}) in {build}"
+        ).format(
+            recipe=self.build.recipe.name, build=self.build.id,
+            url1=push_rules[0].registry_url, url2=push_rules[1].registry_url)
+        self.assertEqual(expected_error_msg, str(error))
 
     def test_preloadFiles(self):
         self._makeFiles()
@@ -433,6 +487,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         responses.add(
             "PUT", manifests_url, status=400, json={"errors": put_errors})
 
+        expected_msg = "Failed to upload manifest for {} ({}) in {}".format(
+            self.build.recipe.name, self.push_rule.registry_url, self.build.id)
         self.assertThat(
             partial(self.client.upload, self.build),
             Raises(MatchesException(
@@ -440,9 +496,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 MatchesAll(
                     AfterPreprocessing(
                         str,
-                        Equals(
-                            "Failed to upload manifest for {} in {}".format(
-                                self.build.recipe.name, self.build.id))),
+                        Equals(expected_msg)),
                     MatchesStructure.byEquality(errors=put_errors)))))
 
     @responses.activate
@@ -462,6 +516,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             push_rule.image_name)
         responses.add("PUT", manifests_url, status=200)
 
+        expected_msg = "Failed to upload manifest for {} ({}) in {}".format(
+            self.build.recipe.name, self.push_rule.registry_url, self.build.id)
         self.assertThat(
             partial(self.client.upload, self.build),
             Raises(MatchesException(
@@ -469,9 +525,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 MatchesAll(
                     AfterPreprocessing(
                         str,
-                        Equals(
-                            "Failed to upload manifest for {} in {}".format(
-                                self.build.recipe.name, self.build.id))),
+                        Equals(expected_msg)),
                     MatchesStructure(errors=Is(None))))))
 
 

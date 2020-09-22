@@ -1,9 +1,10 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
     'get_gpg_path',
     'get_gpgme_context',
+    'GPG_INJECT',
     'GPGKeyAlgorithm',
     'GPGKeyDoesNotExistOnServer',
     'GPGKeyExpired',
@@ -36,6 +37,9 @@ from zope.interface import (
     Attribute,
     Interface,
     )
+
+
+GPG_INJECT = 'gpg.signing_service.injection.enabled'
 
 
 def valid_fingerprint(fingerprint):
@@ -353,6 +357,17 @@ class IGPGHandler(Interface):
         :return: a `PymeKey`object containing the key information.
         """
 
+    def submitKey(content):
+        """Submit an ASCII-armored public key export to the keyserver.
+
+        It issues a POST at /pks/add on the keyserver specified in the
+        configuration.
+
+        :param content: The exported public key, as a byte string.
+        :raise GPGUploadFailure: if the keyserver could not be reached.
+        :raise AssertionError: if the POST request failed.
+        """
+
     def uploadPublicKey(fingerprint):
         """Upload the specified public key to a keyserver.
 
@@ -361,8 +376,8 @@ class IGPGHandler(Interface):
 
         :param fingerprint: The key fingerprint, which must be an hexadecimal
             string.
-        :raise GPGUploadFailure: if the keyserver could not be reaches.
-        :raise AssertionError: if the POST request doesn't succeed.
+        :raise GPGUploadFailure: if the keyserver could not be reached.
+        :raise AssertionError: if the POST request failed.
         """
 
     def localKeys(filter=None, secret=False):

@@ -9,7 +9,7 @@ __all__ = [
     'ApportJobDerived',
     ]
 
-from cStringIO import StringIO
+from io import BytesIO
 
 from lazr.delegates import delegate_to
 import simplejson
@@ -237,7 +237,7 @@ class ProcessApportBlobJob(ApportJobDerived):
                 file_content = attachment['content'].read()
                 file_alias = getUtility(ILibraryFileAliasSet).create(
                     name=attachment['filename'], size=len(file_content),
-                    file=StringIO(file_content),
+                    file=BytesIO(file_content),
                     contentType=attachment['content_type'])
                 attachments_to_store.append({
                     'file_alias_id': file_alias.id,

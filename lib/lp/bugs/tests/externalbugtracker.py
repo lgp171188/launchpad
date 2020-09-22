@@ -3,6 +3,8 @@
 
 """Helper classes for testing ExternalSystem."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from contextlib import contextmanager
@@ -124,7 +126,7 @@ def print_bugwatches(bug_watches, convert_remote_status=None):
         if callable(convert_remote_status):
             status = convert_remote_status(status)
 
-        print 'Remote bug %d: %s' % (remote_bug_id, status)
+        print('Remote bug %d: %s' % (remote_bug_id, status))
 
 
 def convert_python_status(status, resolution):
@@ -180,7 +182,7 @@ class BugTrackerResponsesMixin:
             yield requests_mock
             if trace_calls:
                 for call in requests_mock.calls:
-                    print call.request.method, call.request.url
+                    print(call.request.method, call.request.url)
 
 
 class TestExternalBugTracker(ExternalBugTracker):
@@ -588,7 +590,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
             else:
                 arguments = ''
 
-            print "CALLED %s.%s(%s)" % (method_prefix, method_name, arguments)
+            print("CALLED %s.%s(%s)" % (method_prefix, method_name, arguments))
 
         method = getattr(self, method_name)
         return method(*args)
@@ -624,7 +626,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
         token.consume()
 
         if self.print_method_calls:
-            print "Successfully validated the token."
+            print("Successfully validated the token.")
 
     def _handleLoginToken(self, token_text):
         """A wrapper around _consumeLoginToken().
@@ -1277,7 +1279,7 @@ class TestInternalXMLRPCTransport:
         token_api = ExternalBugTrackerTokenAPI(None, None)
 
         if not self.quiet:
-            print "Using XML-RPC to generate token."
+            print("Using XML-RPC to generate token.")
 
         return token_api.newBugTrackerToken()
 
@@ -1666,7 +1668,8 @@ class TestDebBugsDB:
             raise debbugs.LogParseFailed(
                 'debbugs-log.pl exited with code 512')
 
-        comment_data = open(self.data_file).read()
+        with open(self.data_file) as f:
+            comment_data = f.read()
         bug._emails = []
         bug.comments = [comment.strip() for comment in
             comment_data.split('--\n')]

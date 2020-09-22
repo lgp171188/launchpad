@@ -6,10 +6,10 @@
 __metaclass__ = type
 
 import logging
-from StringIO import StringIO
 
 import dkim
 import dkim.dnsplug
+import six
 
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
@@ -69,7 +69,7 @@ class TestDKIM(TestCaseWithFactory):
     def setUp(self):
         # Login with admin roles as we aren't testing access here.
         TestCaseWithFactory.setUp(self, 'admin@canonical.com')
-        self._log_output = StringIO()
+        self._log_output = six.StringIO()
         handler = logging.StreamHandler(self._log_output)
         self.logger = logging.getLogger('mail-authenticate-dkim')
         self.logger.addHandler(handler)

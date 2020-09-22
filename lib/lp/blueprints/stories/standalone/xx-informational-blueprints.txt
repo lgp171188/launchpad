@@ -47,8 +47,8 @@ project's documentation page.
     >>> user_browser.getControl('Definition Status').value = ['APPROVED']
     >>> user_browser.getControl('Change').click()
     >>> browser.open('http://blueprints.launchpad.test/jokosher/+documentation')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'documentation-listing-table'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'documentation-listing-table')))
     ...
     Informational blueprint
     for Jokosher

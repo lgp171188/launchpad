@@ -61,6 +61,13 @@
             template="../../app/templates/generic-edit.pt" />
         <browser:page
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeEditPushRulesView"
+            permission="launchpad.Edit"
+            name="+edit-push-rules"
+            template="../templates/ocirecipe-edit-push-rules.pt" />
+
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             class="lp.oci.browser.ocirecipe.OCIRecipeDeleteView"
             permission="launchpad.Edit"
             name="+delete"

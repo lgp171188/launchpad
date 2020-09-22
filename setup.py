@@ -154,7 +154,10 @@ setup(
         'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
         'breezy',
-        'bzr',
+        # XXX cjwatson 2020-08-07: This should eventually be removed
+        # entirely, but we need to retain it until codeimport has been
+        # ported to Breezy.
+        'bzr; python_version < "3"',
         'celery',
         'contextlib2; python_version < "3.3"',
         'cssselect',
@@ -201,6 +204,7 @@ setup(
         'oops_twisted',
         'oops_wsgi',
         'paramiko',
+        'psutil',
         'pgbouncer',
         'psycopg2',
         'pyasn1',
@@ -212,7 +216,7 @@ setup(
         'python-keystoneclient',
         'python-memcached',
         'python-mimeparse',
-        'python-openid',
+        'python-openid2',
         'python-subunit',
         'python-swiftclient',
         'pytz',
@@ -228,8 +232,11 @@ setup(
         'six',
         'soupmatchers',
         'Sphinx',
+        'statsd',
         'storm',
-        'subvertpy',
+        # XXX cjwatson 2020-08-07: Temporarily dropped on Python 3 until
+        # codeimport can be ported to Breezy.
+        'subvertpy; python_version < "3"',
         'tenacity',
         'testscenarios',
         'testtools',

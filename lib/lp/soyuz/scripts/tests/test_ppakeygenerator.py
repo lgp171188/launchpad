@@ -83,7 +83,7 @@ class TestPPAKeyGenerator(TestCase):
             LaunchpadScriptFailure,
             ("~cprov/ubuntu/ppa (PPA for Celso Providelo) already has a "
              "signing_key (%s)" %
-             cprov.archive.signing_key.fingerprint),
+             cprov.archive.signing_key_fingerprint),
             key_generator.main)
 
     def testGenerateKeyForASinglePPA(self):
@@ -95,14 +95,14 @@ class TestPPAKeyGenerator(TestCase):
         cprov = getUtility(IPersonSet).getByName('cprov')
         self._fixArchiveForKeyGeneration(cprov.archive)
 
-        self.assertTrue(cprov.archive.signing_key is None)
+        self.assertIsNone(cprov.archive.signing_key_fingerprint)
 
         txn = FakeTransaction()
         key_generator = self._getKeyGenerator(
             archive_reference='~cprov/ubuntutest/ppa', txn=txn)
         key_generator.main()
 
-        self.assertTrue(cprov.archive.signing_key is not None)
+        self.assertIsNotNone(cprov.archive.signing_key_fingerprint)
         self.assertEqual(txn.commit_count, 1)
 
     def testGenerateKeyForAllPPA(self):
@@ -115,13 +115,13 @@ class TestPPAKeyGenerator(TestCase):
 
         for archive in archives:
             self._fixArchiveForKeyGeneration(archive)
-            self.assertTrue(archive.signing_key is None)
+            self.assertIsNone(archive.signing_key_fingerprint)
 
         txn = FakeTransaction()
         key_generator = self._getKeyGenerator(txn=txn)
         key_generator.main()
 
         for archive in archives:
-            self.assertTrue(archive.signing_key is not None)
+            self.assertIsNotNone(archive.signing_key_fingerprint)
 
         self.assertEqual(txn.commit_count, len(archives))

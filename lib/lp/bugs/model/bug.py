@@ -29,8 +29,11 @@ import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+from six.moves.collections_abc import (
+    Iterable,
+    Set,
+    )
 from sqlobject import (
-    BoolCol,
     ForeignKey,
     IntCol,
     SQLMultipleJoin,
@@ -56,6 +59,7 @@ from storm.expr import (
     )
 from storm.info import ClassAlias
 from storm.locals import (
+    Bool,
     DateTime,
     Int,
     Reference,
@@ -162,7 +166,6 @@ from lp.bugs.model.structuralsubscription import (
     )
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
-from lp.hardwaredb.interfaces.hwdb import IHWSubmissionBugSet
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
@@ -1932,7 +1935,7 @@ class Bug(SQLBase, InformationTypeMixin):
         if dupe_bug_ids:
             Store.of(self).find(
                 BugAffectsPerson, BugAffectsPerson.person == user,
-                BugAffectsPerson.bugID.is_in(dupe_bug_ids),
+                BugAffectsPerson.bug_id.is_in(dupe_bug_ids),
             ).set(affected=affected)
             for dupe in self.duplicates:
                 dupe._flushAndInvalidate()
@@ -2066,18 +2069,6 @@ class Bug(SQLBase, InformationTypeMixin):
             return True
         return getUtility(IService, 'sharing').checkPillarAccess(
             self.affected_pillars, InformationType.USERDATA, user)
-
-    def linkHWSubmission(self, submission):
-        """See `IBug`."""
-        getUtility(IHWSubmissionBugSet).create(submission, self)
-
-    def unlinkHWSubmission(self, submission):
-        """See `IBug`."""
-        getUtility(IHWSubmissionBugSet).remove(submission, self)
-
-    def getHWSubmissions(self, user=None):
-        """See `IBug`."""
-        return getUtility(IHWSubmissionBugSet).submissionsForBug(self, user)
 
     def personIsDirectSubscriber(self, person):
         """See `IBug`."""
@@ -2259,8 +2250,61 @@ def load_people(*where):
         need_preferred_email=True)
 
 
-class BugSubscriberSet(frozenset):
-    """A set of bug subscribers
+class FrozenSetBasedSet(Set):
+    """A subclassable immutable set.
+
+    On Python 3, we can't simply subclass `frozenset`: set operations such
+    as union will create a new set, but it will be a plain `frozenset` and
+    will lack the appropriate custom properties.  However, the `Set` ABC
+    (which is in fact an immutable set; `MutableSet` is a separate ABC)
+    knows to create new sets using the same class.  Take advantage of this
+    with a trivial implementation of `Set` that backs straight onto a
+    `frozenset`.
+
+    The ABC doesn't implement the non-operator versions of set methods such
+    as `union`, so do that here, at least for those methods we actually use.
+    """
+
+    def __init__(self, iterable=None):
+        self._frozenset = (
+            frozenset() if iterable is None else frozenset(iterable))
+
+    def __iter__(self):
+        return iter(self._frozenset)
+
+    def __contains__(self, value):
+        return value in self._frozenset
+
+    def __len__(self):
+        return len(self._frozenset)
+
+    def issubset(self, other):
+        return self <= self._from_iterable(other)
+
+    def issuperset(self, other):
+        return self >= self._from_iterable(other)
+
+    def union(self, *others):
+        for other in others:
+            if not isinstance(other, Iterable):
+                raise NotImplementedError
+        return self._from_iterable(value for value in chain(self, *others))
+
+    def intersection(self, *others):
+        for other in others:
+            if not isinstance(other, Iterable):
+                raise NotImplementedError
+        return self._from_iterable(
+            value for value in chain(*others) if value in self)
+
+    def difference(self, *others):
+        other = self._from_iterable([]).union(*others)
+        return self._from_iterable(
+            value for value in self if value not in other)
+
+
+class BugSubscriberSet(FrozenSetBasedSet):
+    """An immutable set of bug subscribers.
 
     Every member should provide `IPerson`.
     """
@@ -2274,8 +2318,8 @@ class BugSubscriberSet(frozenset):
         return tuple(sorted(self, key=person_sort_key))
 
 
-class BugSubscriptionSet(frozenset):
-    """A set of bug subscriptions."""
+class BugSubscriptionSet(FrozenSetBasedSet):
+    """An immutable set of bug subscriptions."""
 
     @cachedproperty
     def sorted(self):
@@ -2299,7 +2343,7 @@ class BugSubscriptionSet(frozenset):
             return BugSubscriberSet(load_people(condition))
 
 
-class StructuralSubscriptionSet(frozenset):
+class StructuralSubscriptionSet(FrozenSetBasedSet):
     """A set of structural subscriptions."""
 
     @cachedproperty
@@ -2782,12 +2826,25 @@ class BugSet:
             Bug.heat_last_updated)
 
 
-class BugAffectsPerson(SQLBase):
+class BugAffectsPerson(StormBase):
     """A bug is marked as affecting a user."""
-    bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=True)
-    affected = BoolCol(notNull=True, default=True)
-    __storm_primary__ = "bugID", "personID"
+
+    __storm_table__ = 'BugAffectsPerson'
+    __storm_primary__ = 'bug_id', 'person_id'
+
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    person_id = Int(name='person', allow_none=False)
+    person = Reference(person_id, 'Person.id')
+
+    affected = Bool(allow_none=False, default=True)
+
+    def __init__(self, bug, person, affected=True):
+        super(BugAffectsPerson, self).__init__()
+        self.bug = bug
+        self.person = person
+        self.affected = affected
 
 
 @implementer(IFileBugData)

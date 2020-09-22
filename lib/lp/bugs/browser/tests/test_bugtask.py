@@ -1,5 +1,7 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -309,7 +311,7 @@ class TestBugTaskView(TestCaseWithFactory):
         browser = self.getUserBrowser(canonical_url(bug), bug.owner)
         self.assertIn(
             'href="/foobar/+bugs?field.tag=depends-on%2B987"',
-            browser.contents)
+            six.ensure_text(browser.contents))
 
     def test_information_type(self):
         owner = self.factory.makePerson()
@@ -329,7 +331,7 @@ class TestBugTaskView(TestCaseWithFactory):
             bug.markAsDuplicate(inactive_bug)
         removeSecurityProxy(inactive_project).active = False
         browser = self.getUserBrowser(canonical_url(bug))
-        contents = browser.contents
+        contents = six.ensure_text(browser.contents)
         self.assertIn(
             "This bug report is a duplicate of a bug on an inactive project.",
             contents)
@@ -344,7 +346,8 @@ class TestBugTaskView(TestCaseWithFactory):
         # portlet is hidden.
         bug = self.factory.makeBug()
         browser = self.getUserBrowser(canonical_url(bug))
-        self.assertNotIn('Related blueprints', browser.contents)
+        contents = six.ensure_text(browser.contents)
+        self.assertNotIn('Related blueprints', contents)
 
     def test_related_blueprints_is_shown(self):
         # When a bug has specifications linked, the Related blueprints portlet
@@ -354,8 +357,9 @@ class TestBugTaskView(TestCaseWithFactory):
         with person_logged_in(spec.owner):
             spec.linkBug(bug)
         browser = self.getUserBrowser(canonical_url(bug))
-        self.assertIn('Related blueprints', browser.contents)
-        self.assertIn('My brilliant spec', browser.contents)
+        contents = six.ensure_text(browser.contents)
+        self.assertIn('Related blueprints', contents)
+        self.assertIn('My brilliant spec', contents)
 
 
 class TestBugTasksNominationsView(TestCaseWithFactory):
@@ -1778,8 +1782,8 @@ class TestCommentCollapseVisibility(TestCaseWithFactory):
         bug = self.makeBugWithComments(20)
         url = canonical_url(bug.default_bugtask)
         browser = self.getUserBrowser(url=url)
-        contents = browser.contents
-        self.assertTrue("10 comments hidden" in contents)
+        contents = six.ensure_text(browser.contents)
+        self.assertIn("10 comments hidden", contents)
         self.assertEqual(1, contents.count('comments hidden'))
 
     def test_comments_hidden_message_truncation_and_hidden(self):
@@ -1791,9 +1795,9 @@ class TestCommentCollapseVisibility(TestCaseWithFactory):
         removeSecurityProxy(comments[-5]).visible = False
 
         browser = self.getUserBrowser(url=url)
-        contents = browser.contents
-        self.assertTrue("10 comments hidden" in browser.contents)
-        self.assertTrue("1 comments hidden" in browser.contents)
+        contents = six.ensure_text(browser.contents)
+        self.assertIn("10 comments hidden", contents)
+        self.assertIn("1 comments hidden", contents)
         self.assertEqual(2, contents.count('comments hidden'))
 
     def test_comments_hidden_message_truncation_and_hidden_out_of_order(self):
@@ -1813,9 +1817,9 @@ class TestCommentCollapseVisibility(TestCaseWithFactory):
         transaction.commit()
 
         browser = self.getUserBrowser(url=url)
-        contents = browser.contents
-        self.assertTrue("10 comments hidden" in browser.contents)
-        self.assertTrue("1 comments hidden" in browser.contents)
+        contents = six.ensure_text(browser.contents)
+        self.assertIn("10 comments hidden", contents)
+        self.assertIn("1 comments hidden", contents)
         self.assertEqual(2, contents.count('comments hidden'))
 
 

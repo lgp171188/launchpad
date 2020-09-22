@@ -665,11 +665,11 @@ class LaunchpadBrowserRequest(BasicLaunchpadRequest, BrowserRequest,
 
     def _decode(self, text):
         text = super(LaunchpadBrowserRequest, self)._decode(text)
-        if isinstance(text, str):
+        if isinstance(text, bytes):
             # BrowserRequest._decode failed to do so with the user-specified
             # charsets, so decode as UTF-8 with replacements, since we always
             # want unicode.
-            text = unicode(text, 'utf-8', 'replace')
+            text = text.decode('utf-8', 'replace')
         return text
 
     @cachedproperty
@@ -1224,7 +1224,7 @@ class WebServicePublication(WebServicePublicationMixin,
                 pageid += ':' + collection_identifier
         op = (view.request.get('ws.op')
             or view.request.query_string_params.get('ws.op'))
-        if op and isinstance(op, basestring):
+        if op and isinstance(op, six.string_types):
             pageid += ':' + op
         return pageid
 
