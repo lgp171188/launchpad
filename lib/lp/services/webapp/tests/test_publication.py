@@ -19,6 +19,11 @@ from storm.database import (
     STATE_RECONNECT,
     )
 from storm.exceptions import DisconnectionError
+from testtools.matchers import (
+    Equals,
+    GreaterThan,
+    MatchesListwise,
+    )
 from zope.component import getUtility
 from zope.interface import directlyProvides
 from zope.publisher.interfaces import (
@@ -32,6 +37,7 @@ from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
     IOAuthSignedRequest,
     )
+from lp.services.statsd.tests import StatsMixin
 import lp.services.webapp.adapter as dbadapter
 from lp.services.webapp.interfaces import (
     NoReferrerError,
@@ -299,3 +305,29 @@ class TestUnicodePath(TestCaseWithFactory):
             browser.open,
             'http://launchpad.test/%ED%B4%B5')
         self.assertEqual(0, len(self.oopses))
+
+
+class TestPublisherStats(StatsMixin, TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPublisherStats, self).setUp()
+        self.setUpStats()
+
+    def test_traversal_stats(self):
+        self.useFixture(FakeLogger())
+        browser = self.getUserBrowser()
+        browser.open('http://launchpad.test')
+        self.assertEqual(2, self.stats_client.timing.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.timing.call_args_list],
+            MatchesListwise(
+                [MatchesListwise(
+                    (Equals('traversal_duration,success=True,'
+                     'pageid=RootObject:index.html'),
+                     GreaterThan(0))),
+                 MatchesListwise(
+                     (Equals('publication_duration,success=True,'
+                      'pageid=RootObject:index.html'),
+                      GreaterThan(0)))]))
