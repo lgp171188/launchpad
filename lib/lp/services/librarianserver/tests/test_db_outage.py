@@ -7,7 +7,7 @@ Database outages happen by accident and during fastdowntime deployments."""
 
 __metaclass__ = type
 
-from cStringIO import StringIO
+import io
 
 from fixtures import Fixture
 from six.moves.urllib.error import HTTPError
@@ -74,9 +74,9 @@ class TestLibrarianDBOutage(TestCase):
         self.url = self._makeLibraryFileUrl()
 
     def _makeLibraryFileUrl(self):
-        data = 'whatever'
+        data = b'whatever'
         return self.client.remoteAddFile(
-            'foo.txt', len(data), StringIO(data), 'text/plain')
+            'foo.txt', len(data), io.BytesIO(data), 'text/plain')
 
     def getErrorCode(self):
         # We need to talk to every Librarian thread to ensure all the

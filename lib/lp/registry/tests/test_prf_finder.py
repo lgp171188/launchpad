@@ -4,10 +4,10 @@
 import logging
 import os
 import shutil
-from StringIO import StringIO
 import tempfile
 
 import responses
+import six
 from testtools import ExpectedException
 import transaction
 from zope.component import getUtility
@@ -140,7 +140,7 @@ class GetFiltersTestCase(TestCaseWithFactory):
         ztm.commit()
         logging.basicConfig(level=logging.CRITICAL)
         prf = ProductReleaseFinder(ztm, logging.getLogger())
-        product_filters = prf.getFilters()
+        product_filters = list(prf.getFilters())
         self.assertEqual(1, len(product_filters))
         found_product, filters = product_filters[0]
         self.assertEqual('bunny', found_product)
@@ -389,7 +389,7 @@ class HandleReleaseTestCase(TestCase):
         # Test that handleRelease() handles the case where a version can't be
         # parsed from the url given.
         ztm = self.layer.txn
-        output = StringIO()
+        output = six.StringIO()
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
         logger.addHandler(logging.StreamHandler(output))

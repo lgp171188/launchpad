@@ -125,8 +125,6 @@ class TestInstanceConfigDirLookup(ConfigTestCase):
         config_file.write('[launchpad]\ndefault_batch_size=2323')
         config_file.close()
 
-        # We don't care about ZConfig...
-        cfg._setZConfig = lambda: None
         self.assertEqual(2323, cfg.launchpad.default_batch_size)
 
 

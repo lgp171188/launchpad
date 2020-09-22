@@ -8,7 +8,7 @@ The Features link shows an overview of all the specifications
 involving that person.
 
     >>> browser.open('http://blueprints.launchpad.test/~name16')
-    >>> print browser.title
+    >>> print(browser.title)
     Blueprints : Foo Bar
     >>> soup = find_main_content(browser.contents)
     >>> soup('h1')
@@ -66,7 +66,7 @@ in the workload of that person.
     >>> browser.getLink('Workload').click()
     >>> browser.url
     '.../~name16/+specworkload'
-    >>> print browser.title
+    >>> print(browser.title)
     Blueprint workload...
 
 For a team, the 'Workload' link first shows the specifications that
@@ -75,14 +75,14 @@ for each member of the team, using batching.
 
     >>> from lp.services.helpers import backslashreplace
     >>> browser.open('http://blueprints.launchpad.test/~admins')
-    >>> print backslashreplace(browser.title)
+    >>> print(backslashreplace(browser.title))
     Blueprints : \u201cLaunchpad Administrators\u201d team
     >>> browser.getLink('Workload').click()
     >>> browser.url
     '.../~admins/+specworkload'
-    >>> print browser.title
+    >>> print(browser.title)
     Blueprint workload...
-    >>> print extract_text(find_main_content(browser.contents))
+    >>> print(extract_text(find_main_content(browser.contents)))
     Blueprint workload...
     Team member workload...
     Andrew Bennetts's specifications:...

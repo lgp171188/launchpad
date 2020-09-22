@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection tests"""
@@ -7,12 +7,12 @@ __metaclass__ = type
 
 import calendar
 from contextlib import contextmanager
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
     )
 import hashlib
+import io
 import os
 import shutil
 from subprocess import (
@@ -23,7 +23,10 @@ from subprocess import (
 import sys
 import tempfile
 
+from fixtures import MockPatchObject
 import pytz
+import requests
+from six.moves.urllib.parse import urljoin
 from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from swiftclient import client as swiftclient
@@ -95,13 +98,15 @@ class TestLibrarianGarbageCollectionBase:
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                content_text = '{0} content'.format(content.id)
-                open(path, 'w').write(content_text)
+                content_bytes = '{0} content'.format(content.id).encode(
+                    'UTF-8')
+                with open(path, 'wb') as f:
+                    f.write(content_bytes)
                 os.utime(path, (0, 0))  # Ancient past, never considered new.
-                content.md5 = hashlib.md5(content_text).hexdigest()
-                content.sha1 = hashlib.sha1(content_text).hexdigest()
-                content.sha256 = hashlib.sha256(content_text).hexdigest()
-                content.filesize = len(content_text)
+                content.md5 = hashlib.md5(content_bytes).hexdigest()
+                content.sha1 = hashlib.sha1(content_bytes).hexdigest()
+                content.sha256 = hashlib.sha256(content_bytes).hexdigest()
+                content.filesize = len(content_bytes)
         transaction.commit()
 
         self.con = connect(
@@ -127,13 +132,13 @@ class TestLibrarianGarbageCollectionBase:
 
         ztm.begin()
         # Add some duplicate files
-        content = 'This is some content'
+        content = b'This is some content'
         f1_id = self.client.addFile(
-                'foo.txt', len(content), StringIO(content), 'text/plain',
+                'foo.txt', len(content), io.BytesIO(content), 'text/plain',
                 )
         f1 = LibraryFileAlias.get(f1_id)
         f2_id = self.client.addFile(
-                'foo.txt', len(content), StringIO(content), 'text/plain',
+                'foo.txt', len(content), io.BytesIO(content), 'text/plain',
                 )
         f2 = LibraryFileAlias.get(f2_id)
 
@@ -516,9 +521,9 @@ class TestLibrarianGarbageCollectionBase:
         # There was a bug where delete_unwanted_files() would die
         # if the last file found on disk was unwanted.
         switch_dbuser('testadmin')
-        content = 'foo'
+        content = b'foo'
         self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain')
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain')
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
@@ -532,9 +537,9 @@ class TestLibrarianGarbageCollectionBase:
         # to cope.
         # First, let's make sure we have some trash.
         switch_dbuser('testadmin')
-        content = 'foo'
+        content = b'foo'
         self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain')
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain')
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
@@ -611,15 +616,15 @@ class TestDiskLibrarianGarbageCollection(
         # appended to their names. These are treated just like the
         # original file, ignoring the extension.
         switch_dbuser('testadmin')
-        content = 'foo'
+        content = b'foo'
         lfa = LibraryFileAlias.get(self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain'))
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
         id_aborted = lfa.contentID
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
         lfa = LibraryFileAlias.get(self.client.addFile(
-            'bar.txt', len(content), StringIO(content), 'text/plain'))
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
         transaction.commit()
         id_committed = lfa.contentID
 
@@ -746,13 +751,13 @@ class TestSwiftLibrarianGarbageCollection(
         # Large files are handled by Swift as multiple segments joined
         # by a manifest. GC treats the segments like the original file.
         switch_dbuser('testadmin')
-        content = 'uploading to swift bigly'
+        content = b'uploading to swift bigly'
         big1_lfa = LibraryFileAlias.get(self.client.addFile(
-            'foo.txt', len(content), StringIO(content), 'text/plain'))
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
         big1_id = big1_lfa.contentID
 
         big2_lfa = LibraryFileAlias.get(self.client.addFile(
-            'bar.txt', len(content), StringIO(content), 'text/plain'))
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
         big2_id = big2_lfa.contentID
         transaction.commit()
 
@@ -793,6 +798,122 @@ class TestSwiftLibrarianGarbageCollection(
             librariangc.delete_unwanted_files(self.con)
         self.assertEqual([False, False, False], segment_existence(big1_id))
         self.assertEqual([True, True, True], segment_existence(big2_id))
+
+    def test_delete_unwanted_files_handles_duplicates(self):
+        # GC tolerates swift_connection.get_container returning duplicate
+        # names (perhaps across multiple batches).  It's not clear whether
+        # this happens in practice, but some strange deletion failures
+        # suggest that it might happen.
+        switch_dbuser('testadmin')
+        content = b'uploading to swift'
+        f1_lfa = LibraryFileAlias.get(self.client.addFile(
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f1_id = f1_lfa.contentID
+
+        f2_lfa = LibraryFileAlias.get(self.client.addFile(
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f2_id = f2_lfa.contentID
+        transaction.commit()
+
+        for lfc_id in (f1_id, f2_id):
+            # Make the files old so they don't look in-progress.
+            os.utime(swift.filesystem_path(lfc_id), (0, 0))
+
+        switch_dbuser(config.librarian_gc.dbuser)
+
+        # Force swift_connection.get_container to return duplicate results.
+        orig_get_container = swiftclient.get_container
+
+        def duplicating_get_container(*args, **kwargs):
+            rv = orig_get_container(*args, **kwargs)
+            if not kwargs.get('full_listing', False):
+                rv = (rv[0], rv[1] * 2)
+            return rv
+
+        self.useFixture(MockPatchObject(
+            swiftclient, 'get_container', duplicating_get_container))
+
+        swift.to_swift(BufferLogger(), remove_func=os.unlink)
+
+        # Both files exist in Swift.
+        self.assertTrue(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+        # Both files survive the first purge.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        self.assertTrue(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+        # Remove the first file from the DB.
+        content = f1_lfa.content
+        Store.of(f1_lfa).remove(f1_lfa)
+        Store.of(content).remove(content)
+        transaction.commit()
+
+        # The first file is removed, but the second is intact.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        self.assertFalse(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+    def test_delete_unwanted_files_handles_missing(self):
+        # GC tolerates a file being already missing from Swift when it tries
+        # to delete it.  It's not clear why this happens in practice.
+        switch_dbuser('testadmin')
+        content = b'uploading to swift'
+        f1_lfa = LibraryFileAlias.get(self.client.addFile(
+            'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f1_id = f1_lfa.contentID
+
+        f2_lfa = LibraryFileAlias.get(self.client.addFile(
+            'bar.txt', len(content), io.BytesIO(content), 'text/plain'))
+        f2_id = f2_lfa.contentID
+        transaction.commit()
+
+        for lfc_id in (f1_id, f2_id):
+            # Make the files old so they don't look in-progress.
+            os.utime(swift.filesystem_path(lfc_id), (0, 0))
+
+        switch_dbuser(config.librarian_gc.dbuser)
+
+        swift.to_swift(BufferLogger(), remove_func=os.unlink)
+
+        # Both files exist in Swift.
+        self.assertTrue(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
+
+        # Remove the first file from the DB.
+        content = f1_lfa.content
+        Store.of(f1_lfa).remove(f1_lfa)
+        Store.of(content).remove(content)
+        transaction.commit()
+
+        # In production, we see a sequence of DELETE 401 / authenticate /
+        # DELETE 404.  Since it isn't clear why this happens, we don't know
+        # exactly how to simulate it here, but do our best by deleting the
+        # object and forcibly expiring the client's token just before the
+        # first expected DELETE.
+        real_delete_object = swiftclient.Connection.delete_object
+
+        def fake_delete_object(connection, *args, **kwargs):
+            real_delete_object(connection, *args, **kwargs)
+            self.assertIsNotNone(connection.token)
+            requests.delete(urljoin(
+                config.librarian_server.os_auth_url,
+                'tokens/%s' % connection.token))
+            return real_delete_object(connection, *args, **kwargs)
+
+        self.patch(
+            swiftclient.Connection, 'delete_object', fake_delete_object)
+
+        # delete_unwanted_files completes successfully, and the second file
+        # is intact.
+        with self.librariangc_thinking_it_is_tomorrow():
+            swift.quiet_swiftclient(
+                librariangc.delete_unwanted_files, self.con)
+        self.assertFalse(self.file_exists(f1_id))
+        self.assertTrue(self.file_exists(f2_id))
 
 
 class TestBlobCollection(TestCase):
@@ -917,8 +1038,9 @@ class TestBlobCollection(TestCase):
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                data = sha1
-                open(path, 'w').write(data)
+                data = sha1.encode('UTF-8')
+                with open(path, 'wb') as f:
+                    f.write(data)
                 cur.execute(
                     "UPDATE LibraryFileContent "
                     "SET md5 = %s, sha1 = %s, sha256 = %s, filesize = %s "

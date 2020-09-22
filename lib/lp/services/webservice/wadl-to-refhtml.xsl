@@ -382,41 +382,6 @@
                 <xsl:text>/+gpg-keys/</xsl:text>
                 <var>&lt;fingerprint&gt;</var>
             </xsl:when>
-            <xsl:when test="@id = 'hwdb'">
-                <xsl:text>/+hwdb</xsl:text>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_device'">
-                <xsl:text>/+hwdb/+device/</xsl:text>
-                <var>&lt;id&gt;</var>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_device_class'">
-                <xsl:text>/+hwdb/+deviceclass/</xsl:text>
-                <var>&lt;id&gt;</var>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_driver'">
-                <xsl:text>/+hwdb/+driver/</xsl:text>
-                <var>&lt;id&gt;</var>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_submission'">
-                <xsl:text>/+hwdb/+submission/</xsl:text>
-                <var>&lt;submission-key&gt;</var>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_submission_device'">
-                <xsl:text>/+hwdb/+submissiondevice/</xsl:text>
-                <var>&lt;id&gt;</var>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_vendor_i_d'">
-                <xsl:text>/+hwdb/+hwvendorid/</xsl:text>
-                <var>&lt;id&gt;</var>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_driver_name'">
-                <xsl:text>/+hwdb/+drivername/</xsl:text>
-                <var>&lt;name&gt;</var>
-            </xsl:when>
-            <xsl:when test="@id = 'h_w_driver_package_name'">
-                <xsl:text>/+hwdb/+driverpackagename/</xsl:text>
-                <var>&lt;package_name&gt;</var>
-            </xsl:when>
             <xsl:when test="@id = 'jabber_id'">
                 <xsl:text>/</xsl:text>
                 <var>&lt;person.name&gt;</var>
@@ -767,9 +732,6 @@
     <xsl:template name="find-root-object-uri">
         <xsl:value-of select="$base"/>
         <xsl:choose>
-            <xsl:when test="@id = 'hwdb'">
-                <xsl:text>/+hwdb</xsl:text>
-            </xsl:when>
             <xsl:when test="@id = 'snap_bases'">
                 <xsl:text>/+snap-bases</xsl:text>
             </xsl:when>
@@ -802,14 +764,13 @@
 
                              https://api.launchpad.net/beta/bugs
 
-                         while the HWDB application root's URL is
+                         while some objects have URLs more like
 
-                            https://api.launchpad.net/beta/+hwdb
+                            https://api.launchpad.net/beta/+snaps
 
-                         In other words, the URL for the HWDB application
-                         root needs to be mangled in a form similar to
-                         that used for non-root objects in the template
-                         "find-entry-uri".
+                         In other words, some root object URLs need to be
+                         mangled in a form similar to that used for non-root
+                         objects in the template "find-entry-uri".
                     -->
 
                     <xsl:call-template name="find-root-object-uri"/>

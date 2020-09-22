@@ -10,6 +10,8 @@ __all__ = [
     'IOCIRegistryCredentials',
     'IOCIRegistryCredentialsSet',
     'OCIRegistryCredentialsAlreadyExist',
+    'OCIRegistryCredentialsNotOwner',
+    'user_can_edit_credentials_for_owner',
     ]
 
 from lazr.restful.declarations import error_status
@@ -19,9 +21,13 @@ from zope.schema import (
     Int,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
-from lp.registry.interfaces.role import IHasOwner
+from lp.registry.interfaces.role import (
+    IHasOwner,
+    IPersonRoles,
+    )
 from lp.services.fields import (
     PersonChoice,
     URIField,
@@ -37,6 +43,11 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
     def __init__(self):
         super(OCIRegistryCredentialsAlreadyExist, self).__init__(
             "Credentials already exist with the same URL and username.")
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIRegistryCredentialsNotOwner(Unauthorized):
+    """The registrant is not the owner or a member of its team."""
 
 
 class IOCIRegistryCredentialsView(Interface):
@@ -93,12 +104,24 @@ class IOCIRegistryCredentials(IOCIRegistryCredentialsEdit,
 class IOCIRegistryCredentialsSet(Interface):
     """A utility to create and access OCI Registry Credentials."""
 
-    def new(owner, url, credentials):
+    def new(registrant, owner, url, credentials):
         """Create an `IOCIRegistryCredentials`."""
 
-    def getOrCreate(owner, url, credentials):
+    def getOrCreate(registrant, owner, url, credentials):
         """Get an `IOCIRegistryCredentials` that match the url and username
         or create a new object."""
 
     def findByOwner(owner):
         """Find matching `IOCIRegistryCredentials` by owner."""
+
+
+def user_can_edit_credentials_for_owner(owner, user):
+    """Can `user` edit OCI registry credentials belonging to `owner`?"""
+    if user is None:
+        return False
+    # This must follow the same rules as
+    # ViewOCIRegistryCredentials.checkAuthenticated would apply if we were
+    # asking about a hypothetical OCIRegistryCredentials object owned by the
+    # context person or team.
+    roles = IPersonRoles(user)
+    return roles.inTeam(owner) or roles.in_admin

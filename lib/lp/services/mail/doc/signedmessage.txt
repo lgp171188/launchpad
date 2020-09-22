@@ -14,8 +14,10 @@ the attributes are correctly set.
     True
     >>> msg['To']
     'someone'
-    >>> msg.parsed_string
-    'To: someone\n\nHello.'
+    >>> print(msg.parsed_string)
+    To: someone
+    <BLANKLINE>
+    Hello.
 
 
 We have some test messages that can be easily accessed by
@@ -27,12 +29,12 @@ signature is inline with the signed content:
 
 You can access the headers of the message:
 
-    >>> print msg['From']
+    >>> print(msg['From'])
     Sample Person <test@canonical.com>
 
 The raw text that was signed is available as msg.signedContent:
 
-    >>> print msg.signedContent
+    >>> print(msg.signedContent)
     Some signed content.
     <BLANKLINE>
     With multiple paragraphs.
@@ -41,14 +43,14 @@ And to make it easier to work with, it's available as an email.message
 object as well:
 
     >>> signed_msg = msg.signedMessage
-    >>> print signed_msg.get_payload()
+    >>> print(signed_msg.get_payload())
     Some signed content.
     <BLANKLINE>
     With multiple paragraphs.
 
 Finally the signature can be accessed via msg.signature:
 
-    >>> print msg.signature
+    >>> print(msg.signature)
     -----BEGIN PGP SIGNATURE-----
     Version: GnuPG v1.2.5 (GNU/Linux)
     <BLANKLINE>
@@ -63,14 +65,14 @@ after the content has been signed, so the signed content should be
 unescaped.
 
     >>> msg = read_test_message('signed_dash_escaped.txt')
-    >>> print msg.get_payload()
+    >>> print(msg.get_payload())
     -----BEGIN PGP SIGNED MESSAGE-----
     ...
     - --
     Sample Person
     ...
 
-    >>> print msg.signedContent
+    >>> print(msg.signedContent)
     Some signed content.
     <BLANKLINE>
     --
@@ -84,7 +86,7 @@ contains of two MIME parts, the signed text, and the signature:
 
 The signed content includes the MIME headers as well:
 
-    >>> print msg.signedContent
+    >>> print(msg.signedContent)
     Content-Type: text/plain; charset=us-ascii
     Content-Disposition: inline
     <BLANKLINE>
@@ -93,15 +95,15 @@ The signed content includes the MIME headers as well:
 In signedMessage you can access the headers and the content
 separately:
 
-    >>> print msg.signedMessage['Content-Type']
+    >>> print(msg.signedMessage['Content-Type'])
     text/plain; charset=us-ascii
-    >>> print msg.signedMessage.get_payload()
+    >>> print(msg.signedMessage.get_payload())
     Some signed content.
 
 
 And of course the signature is accessible as well:
 
-    >>> print msg.signature
+    >>> print(msg.signature)
     -----BEGIN PGP SIGNATURE-----
     Version: GnuPG v1.2.5 (GNU/Linux)
     <BLANKLINE>
@@ -124,14 +126,14 @@ It handles signed multipart messages as well:
 
     >>> msg = read_test_message('signed_multipart.txt')
     >>> content, attachment = msg.signedMessage.get_payload()
-    >>> print content.get_payload()
+    >>> print(content.get_payload())
     Some signed content.
     <BLANKLINE>
-    >>> print attachment.get_payload()
+    >>> print(attachment.get_payload())
     A signed attachment.
     <BLANKLINE>
 
-    >>> print msg.signature
+    >>> print(msg.signature)
     -----BEGIN PGP SIGNATURE-----
     Version: GnuPG v1.2.5 (GNU/Linux)
     <BLANKLINE>
@@ -141,7 +143,7 @@ It handles signed multipart messages as well:
     -----END PGP SIGNATURE-----
 
     >>> msg = read_test_message('signed_folded_header.txt')
-    >>> print msg.signedContent #doctest: -NORMALIZE_WHITESPACE
+    >>> print(msg.signedContent) #doctest: -NORMALIZE_WHITESPACE
     Content-Type: multipart/mixed;
      boundary="--------------------EuxKj2iCbKjpUGkD"
     ...

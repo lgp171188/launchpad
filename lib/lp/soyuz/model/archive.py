@@ -17,6 +17,7 @@ from operator import attrgetter
 import re
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -26,6 +27,7 @@ from sqlobject import (
 from storm.base import Storm
 from storm.expr import (
     And,
+    Cast,
     Count,
     Desc,
     Join,
@@ -464,7 +466,7 @@ class Archive(SQLBase):
         return (
             not config.personalpackagearchive.require_signing_keys or
             not self.is_ppa or
-            self.signing_key is not None)
+            self.signing_key_fingerprint is not None)
 
     @property
     def reference(self):
@@ -656,7 +658,9 @@ class Archive(SQLBase):
                 raise VersionRequiresName(
                     "The 'version' parameter can be used only together with"
                     " the 'name' parameter.")
-            clauses.append(SourcePackageRelease.version == version)
+            clauses.append(
+                Cast(SourcePackageRelease.version, "text") ==
+                six.ensure_text(version))
         elif not order_by_date:
             order_by.insert(1, Desc(SourcePackageRelease.version))
 
@@ -854,7 +858,9 @@ class Archive(SQLBase):
                     "The 'version' parameter can be used only together with"
                     " the 'name' parameter.")
 
-            clauses.append(BinaryPackageRelease.version == version)
+            clauses.append(
+                Cast(BinaryPackageRelease.version, "text") ==
+                six.ensure_text(version))
         elif ordered:
             order_by.insert(1, Desc(BinaryPackageRelease.version))
 
@@ -1169,7 +1175,7 @@ class Archive(SQLBase):
 
     def _addArchiveDependency(self, dependency, pocket, component=None):
         """See `IArchive`."""
-        if isinstance(component, basestring):
+        if isinstance(component, six.string_types):
             try:
                 component = getUtility(IComponentSet)[component]
             except NotFoundError as e:
@@ -1233,8 +1239,8 @@ class Archive(SQLBase):
         any_perm_on_archive = Store.of(self).find(
             TeamParticipation,
             ArchivePermission.archive == self.id,
-            TeamParticipation.person == person.id,
-            TeamParticipation.teamID == ArchivePermission.personID,
+            TeamParticipation.person == person,
+            TeamParticipation.team == ArchivePermission.person_id,
             )
         return not any_perm_on_archive.is_empty()
 
@@ -1424,9 +1430,9 @@ class Archive(SQLBase):
     def _checkUpload(self, person, distroseries, sourcepackagename, component,
                     pocket, strict_component=True):
         """See `IArchive`."""
-        if isinstance(component, basestring):
+        if isinstance(component, six.string_types):
             component = getUtility(IComponentSet)[component]
-        if isinstance(sourcepackagename, basestring):
+        if isinstance(sourcepackagename, six.string_types):
             sourcepackagename = getUtility(
                 ISourcePackageNameSet)[sourcepackagename]
         reason = self.checkUpload(person, distroseries, sourcepackagename,
@@ -1482,7 +1488,7 @@ class Archive(SQLBase):
             if source_allowed or set_allowed:
                 return None
 
-        if not self.getComponentsForUploader(person):
+        if self.getComponentsForUploader(person).is_empty():
             if self.getPackagesetsForUploader(person).is_empty():
                 return NoRightsForArchive()
             else:
@@ -1522,7 +1528,7 @@ class Archive(SQLBase):
         """Private helper method to check permissions."""
         permissions = self.getPermissions(
             user, item, permission, distroseries=distroseries)
-        return bool(permissions)
+        return not permissions.is_empty()
 
     def newPackageUploader(self, person, source_package_name):
         """See `IArchive`."""
@@ -1541,7 +1547,7 @@ class Archive(SQLBase):
         if self.is_ppa:
             if IComponent.providedBy(component_name):
                 name = component_name.name
-            elif isinstance(component_name, basestring):
+            elif isinstance(component_name, six.string_types):
                 name = component_name
             else:
                 name = None
@@ -1726,7 +1732,7 @@ class Archive(SQLBase):
                 SourcePackageRelease.id,
             SourcePackageRelease.sourcepackagename == SourcePackageName.id,
             SourcePackageName.name == name,
-            SourcePackageRelease.version == version,
+            Cast(SourcePackageRelease.version, "text") == version,
             SourcePackageRelease.id ==
                 SourcePackageReleaseFile.sourcepackagereleaseID,
             SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
@@ -1750,7 +1756,7 @@ class Archive(SQLBase):
             BinaryPackagePublishingHistory.binarypackagename == name,
             BinaryPackagePublishingHistory.binarypackagereleaseID ==
                 BinaryPackageRelease.id,
-            BinaryPackageRelease.version == version,
+            Cast(BinaryPackageRelease.version, "text") == version,
             BinaryPackageBuild.id == BinaryPackageRelease.buildID,
             DistroArchSeries.id == BinaryPackageBuild.distro_arch_series_id,
             DistroArchSeries.architecturetag == archtag,
@@ -1829,7 +1835,7 @@ class Archive(SQLBase):
                     person, to_series=None, include_binaries=False,
                     sponsored=None, unembargo=False, auto_approve=False,
                     silent=False, from_pocket=None, from_series=None,
-                    phased_update_percentage=None):
+                    phased_update_percentage=None, move=False):
         """See `IArchive`."""
         # Asynchronously copy a package using the job system.
         from lp.soyuz.scripts.packagecopier import check_copy_permissions
@@ -1854,7 +1860,8 @@ class Archive(SQLBase):
             from_pocket=from_pocket)
         if series is None:
             series = source.distroseries
-        check_copy_permissions(person, self, series, pocket, [source])
+        check_copy_permissions(
+            person, self, series, pocket, [source], move=move)
 
         job_source = getUtility(IPlainPackageCopyJobSource)
         job_source.create(
@@ -1866,12 +1873,12 @@ class Archive(SQLBase):
             sponsored=sponsored, unembargo=unembargo,
             auto_approve=auto_approve, silent=silent,
             source_distroseries=from_series, source_pocket=from_pocket,
-            phased_update_percentage=phased_update_percentage)
+            phased_update_percentage=phased_update_percentage, move=move)
 
     def copyPackages(self, source_names, from_archive, to_pocket,
                      person, to_series=None, from_series=None,
                      include_binaries=None, sponsored=None, unembargo=False,
-                     auto_approve=False, silent=False):
+                     auto_approve=False, silent=False, move=False):
         """See `IArchive`."""
         from lp.soyuz.scripts.packagecopier import check_copy_permissions
         sources = self._collectLatestPublishedSources(
@@ -1880,7 +1887,8 @@ class Archive(SQLBase):
         # Now do a mass check of permissions.
         pocket = self._text_to_pocket(to_pocket)
         series = self._text_to_series(to_series)
-        check_copy_permissions(person, self, series, pocket, sources)
+        check_copy_permissions(
+            person, self, series, pocket, sources, move=move)
 
         # If we get this far then we can create the PackageCopyJob.
         copy_tasks = []
@@ -1899,7 +1907,8 @@ class Archive(SQLBase):
         job_source.createMultiple(
             copy_tasks, person, copy_policy=PackageCopyPolicy.MASS_SYNC,
             include_binaries=include_binaries, sponsored=sponsored,
-            unembargo=unembargo, auto_approve=auto_approve, silent=silent)
+            unembargo=unembargo, auto_approve=auto_approve, silent=silent,
+            move=move)
 
     def _collectLatestPublishedSources(self, from_archive, from_series,
                                        source_names):
@@ -2708,10 +2717,12 @@ class ArchiveSet:
                     (owner.name, distribution.name, name))
 
         # Signing-key for the default PPA is reused when it's already present.
-        signing_key = None
+        signing_key_owner = None
+        signing_key_fingerprint = None
         if purpose == ArchivePurpose.PPA:
             if owner.archive is not None:
-                signing_key = owner.archive.signing_key
+                signing_key_owner = owner.archive.signing_key_owner
+                signing_key_fingerprint = owner.archive.signing_key_fingerprint
             else:
                 # owner.archive is a cached property and we've just cached it.
                 del get_property_cache(owner).archive
@@ -2720,9 +2731,8 @@ class ArchiveSet:
             owner=owner, distribution=distribution, name=name,
             displayname=displayname, description=description,
             purpose=purpose, publish=publish,
-            signing_key_owner=signing_key.owner if signing_key else None,
-            signing_key_fingerprint=(
-                signing_key.fingerprint if signing_key else None),
+            signing_key_owner=signing_key_owner,
+            signing_key_fingerprint=signing_key_fingerprint,
             require_virtualized=require_virtualized)
 
         # Upon creation archives are enabled by default.
@@ -2789,9 +2799,9 @@ class ArchiveSet:
             Archive.id,
             where=And(
                 Archive.purpose == ArchivePurpose.PPA,
-                ArchivePermission.archiveID == Archive.id,
+                ArchivePermission.archive == Archive.id,
                 TeamParticipation.person == user,
-                TeamParticipation.team == ArchivePermission.personID,
+                TeamParticipation.team == ArchivePermission.person_id,
                 ))
         return Archive.id.is_in(
             Union(direct_membership, third_party_upload_acl))
@@ -3047,10 +3057,10 @@ def get_enabled_archive_filter(user, purpose=None,
     from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
 
     is_allowed = Select(
-        ArchivePermission.archiveID, where=And(
+        ArchivePermission.archive_id, where=And(
             ArchivePermission.permission == ArchivePermissionType.UPLOAD,
             ArchivePermission.component == main,
-            ArchivePermission.personID.is_in(user_teams)),
+            ArchivePermission.person_id.is_in(user_teams)),
         tables=ArchivePermission, distinct=True)
 
     is_subscribed = Select(

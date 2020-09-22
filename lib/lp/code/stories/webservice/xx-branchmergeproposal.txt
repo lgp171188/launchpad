@@ -463,7 +463,7 @@ which is the one we want the method to return.
     ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
     ...     registrant=branch_owner, source_branch=source_branch)
     >>> proposal.nominateReviewer(target_owner, branch_owner)
-    <CodeReviewVoteReference at ...>
+    <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
 
 And then we propose a merge the other way, so that the owner is target,
 but they have not been asked to review, meaning that the method shouldn't
@@ -474,7 +474,7 @@ return this review.
     ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
     ...     registrant=target_owner, source_branch=target_branch)
     >>> proposal.nominateReviewer(branch_owner, target_owner)
-    <CodeReviewVoteReference at ...>
+    <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
     >>> logout()
 
     >>> proposals = webservice.named_get('/~target', 'getRequestedReviews'

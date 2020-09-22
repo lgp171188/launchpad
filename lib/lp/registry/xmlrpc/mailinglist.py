@@ -10,6 +10,7 @@ __all__ = [
 
 import re
 
+from six import ensure_text
 from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.interface import implementer
@@ -106,6 +107,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         """See `IMailingListAPIView`."""
         list_set = getUtility(IMailingListSet)
         for team_name, action_status in statuses.items():
+            team_name = ensure_text(team_name)
             mailing_list = list_set.get(team_name)
             if mailing_list is None:
                 return faults.NoSuchTeamMailingList(team_name)
@@ -136,6 +138,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
 
     def getMembershipInformation(self, teams):
         """See `IMailingListAPIView`."""
+        teams = [ensure_text(team) for team in teams]
         mailing_list_set = getUtility(IMailingListSet)
         response = {}
         # There are two sets of email addresses we need.  The first is the set
@@ -243,6 +246,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         # pass 8-bit strings.
         if isinstance(bytes, xmlrpc_client.Binary):
             bytes = bytes.data
+        team_name = ensure_text(team_name)
         # Although it is illegal for an email header to have unencoded
         # non-ascii characters, it is better to let the list owner
         # process the message than to cause an oops.

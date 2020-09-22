@@ -654,7 +654,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             raise ValueError('ref info object does not contain "sha1" key')
         if "type" not in obj:
             raise ValueError('ref info object does not contain "type" key')
-        if not isinstance(obj["sha1"], basestring) or len(obj["sha1"]) != 40:
+        if (not isinstance(obj["sha1"], six.string_types) or
+                len(obj["sha1"]) != 40):
             raise ValueError('ref info sha1 is not a 40-character string')
         if obj["type"] not in object_type_map:
             raise ValueError('ref info type is not a recognised object type')
@@ -1741,11 +1742,12 @@ class GitRepositorySet:
             async_hosting=async_hosting, status=status)
 
     def fork(self, origin, requester, new_owner):
+        namespace = get_git_namespace(origin.target, new_owner)
+        name = namespace.findUnusedName(origin.name)
         repository = self.new(
             repository_type=GitRepositoryType.HOSTED,
             registrant=requester, owner=new_owner, target=origin.target,
-            name=origin.name,
-            information_type=origin.information_type,
+            name=name, information_type=origin.information_type,
             date_created=UTC_NOW, description=origin.description,
             with_hosting=True, async_hosting=True,
             status=GitRepositoryStatus.CREATING)

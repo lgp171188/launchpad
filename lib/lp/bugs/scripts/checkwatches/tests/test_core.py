@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Checkwatches unit tests."""
 
@@ -43,8 +43,9 @@ from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.testing import (
+    RunIsolatedTest,
+    TestCase,
     TestCaseWithFactory,
-    ZopeTestInSubProcess,
     )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
@@ -388,8 +389,7 @@ class TestSerialScheduler(TestSchedulerBase, unittest.TestCase):
         self.scheduler.run()
 
 
-class TestTwistedThreadScheduler(
-    TestSchedulerBase, ZopeTestInSubProcess, unittest.TestCase):
+class TestTwistedThreadScheduler(TestSchedulerBase, TestCase):
     """Test TwistedThreadScheduler.
 
     By default, updateBugTrackers() runs jobs serially, but a
@@ -397,7 +397,10 @@ class TestTwistedThreadScheduler(
     for running several jobs in parallel, is TwistedThreadScheduler.
     """
 
+    run_tests_with = RunIsolatedTest
+
     def setUp(self):
+        super(TestTwistedThreadScheduler, self).setUp()
         self.scheduler = checkwatches.TwistedThreadScheduler(
             num_threads=5, install_signal_handlers=False)
 
@@ -451,8 +454,7 @@ class CheckwatchesMasterForThreads(CheckwatchesMaster):
         return [(ExternalBugTrackerForThreads(self.output_file), bug_watches)]
 
 
-class TestTwistedThreadSchedulerInPlace(
-    ZopeTestInSubProcess, TestCaseWithFactory):
+class TestTwistedThreadSchedulerInPlace(TestCaseWithFactory):
     """Test TwistedThreadScheduler in place.
 
     As in, driving as much of the bug watch machinery as is possible
@@ -460,6 +462,7 @@ class TestTwistedThreadSchedulerInPlace(
     """
 
     layer = LaunchpadZopelessLayer
+    run_tests_with = RunIsolatedTest
 
     def test(self):
         # Prepare test data.

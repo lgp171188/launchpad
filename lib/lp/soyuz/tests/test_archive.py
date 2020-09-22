@@ -1565,6 +1565,23 @@ class TestGetBinaryPackageRelease(TestCaseWithFactory):
             self.factory.makeArchive().getBinaryPackageRelease(
                 self.bpns['foo-bin'], '1.2.3-4', 'i386'))
 
+    def test_matches_version_as_text(self):
+        # Versions such as 1.2.3-4 and 1.02.003-4 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        other_i386_pub, other_hppa_pub = self.publisher.getPubBinaries(
+            version='1.02.003-4', archive=self.archive, binaryname='foo-bin',
+            status=PackagePublishingStatus.PUBLISHED,
+            architecturespecific=True)
+        self.assertEqual(
+            self.i386_pub.binarypackagerelease,
+            self.archive.getBinaryPackageRelease(
+                self.bpns['foo-bin'], '1.2.3-4', 'i386'))
+        self.assertEqual(
+            other_i386_pub.binarypackagerelease,
+            self.archive.getBinaryPackageRelease(
+                self.bpns['foo-bin'], '1.02.003-4', 'i386'))
+
 
 class TestGetBinaryPackageReleaseByFileName(TestCaseWithFactory):
     """Ensure that getBinaryPackageReleaseByFileName works as expected."""
@@ -2594,6 +2611,28 @@ class TestGetSourceFileByName(TestCaseWithFactory):
                 pub2.source_package_name, pub2.source_package_version,
                 dsc2.filename))
 
+    def test_matches_version_as_text(self):
+        # Versions such as 0.7-4 and 0.7-04 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        pub = self.factory.makeSourcePackagePublishingHistory(
+            archive=self.archive, version='0.7-4')
+        orig = self.factory.makeLibraryFileAlias(
+            filename='foo_0.7.orig.tar.gz')
+        pub.sourcepackagerelease.addFile(orig)
+        pub2 = self.factory.makeSourcePackagePublishingHistory(
+            archive=self.archive, sourcepackagename=pub.sourcepackagename.name,
+            version='0.7-04')
+        orig2 = self.factory.makeLibraryFileAlias(
+            filename='foo_0.7.orig.tar.gz')
+        pub2.sourcepackagerelease.addFile(orig2)
+        self.assertEqual(
+            orig, self.archive.getSourceFileByName(
+                pub.sourcepackagename.name, '0.7-4', orig.filename))
+        self.assertEqual(
+            orig2, self.archive.getSourceFileByName(
+                pub.sourcepackagename.name, '0.7-04', orig2.filename))
+
 
 class TestGetPublishedSources(TestCaseWithFactory):
 
@@ -2744,6 +2783,22 @@ class TestGetPublishedSources(TestCaseWithFactory):
             [pubs[i] for i in (3, 2, 1, 0, 4)],
             list(archive.getPublishedSources(order_by_date=True)))
 
+    def test_matches_version_as_text(self):
+        # Versions such as 0.7-4 and 0.07-4 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        archive = self.factory.makeArchive()
+        pub = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive, version='0.7-4')
+        self.assertEqual(
+            [pub], list(archive.getPublishedSources(
+                name=pub.sourcepackagename.name, version='0.7-4',
+                exact_match=True)))
+        self.assertEqual(
+            [], list(archive.getPublishedSources(
+                name=pub.sourcepackagename.name, version='0.07-4',
+                exact_match=True)))
+
 
 class TestGetPublishedSourcesWebService(TestCaseWithFactory):
 
@@ -2798,20 +2853,23 @@ class TestCopyPackage(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def _setup_copy_data(self, source_distribution=None, source_private=False,
+    def _setup_copy_data(self, source_distribution=None, source_purpose=None,
+                         source_private=False, source_pocket=None,
                          target_purpose=None,
                          target_status=SeriesStatus.DEVELOPMENT,
                          same_distribution=False):
         if target_purpose is None:
             target_purpose = ArchivePurpose.PPA
         source_archive = self.factory.makeArchive(
-            distribution=source_distribution, private=source_private)
+            distribution=source_distribution, purpose=source_purpose,
+            private=source_private)
         target_distribution = (
             source_archive.distribution if same_distribution else None)
         target_archive = self.factory.makeArchive(
             distribution=target_distribution, purpose=target_purpose)
         source = self.factory.makeSourcePackagePublishingHistory(
-            archive=source_archive, status=PackagePublishingStatus.PUBLISHED)
+            archive=source_archive, pocket=source_pocket,
+            status=PackagePublishingStatus.PUBLISHED)
         with person_logged_in(source_archive.owner):
             source_name = source.source_package_name
             version = source.source_package_version
@@ -2854,7 +2912,8 @@ class TestCopyPackage(TestCaseWithFactory):
             include_binaries=False,
             sponsored=sponsored,
             copy_policy=PackageCopyPolicy.INSECURE,
-            phased_update_percentage=30))
+            phased_update_percentage=30,
+            move=False))
 
     def test_copyPackage_disallows_non_primary_archive_uploaders(self):
         # If copying to a primary archive and you're not an uploader for
@@ -3052,6 +3111,63 @@ class TestCopyPackage(TestCaseWithFactory):
         self.assertEqual(source.distroseries, copy_job.source_distroseries)
         self.assertEqual(source.pocket, copy_job.source_pocket)
 
+    def test_copyPackage_move(self):
+        # Passing move=True causes copyPackage to create a copy job that
+        # will delete the source publication after copying.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        with person_logged_in(source_archive.owner):
+            target_archive.copyPackage(
+                source_name, version, source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
+
+        # There should be one copy job, with move=True set.
+        job_source = getUtility(IPlainPackageCopyJobSource)
+        copy_job = job_source.getActiveJobs(target_archive).one()
+        self.assertTrue(copy_job.move)
+
+    def test_copyPackage_move_without_permission(self):
+        # Passing move=True checks that the user is permitted to delete the
+        # source publication.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            expected_error = (
+                "%s is not permitted to delete publications from %s." % (
+                    target_archive.owner.display_name,
+                    source_archive.displayname))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackage,
+                source_name, version, source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=target_archive.owner, move=True)
+
+    def test_copyPackage_move_from_immutable_suite(self):
+        # Passing move=True checks that the source suite can be modified.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution(),
+            source_purpose=ArchivePurpose.PRIMARY,
+            source_pocket=PackagePublishingPocket.RELEASE)
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        removeSecurityProxy(source.distroseries).status = (
+            SeriesStatus.SUPPORTED)
+        with person_logged_in(source_archive.owner):
+            expected_error = (
+                "Cannot delete publications from suite '%s'" % (
+                    source.distroseries.getSuite(source.pocket)))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackage,
+                source_name, version, source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
+
     def test_copyPackages_with_single_package(self):
         (source, source_archive, source_name, target_archive, to_pocket,
          to_series, version) = self._setup_copy_data()
@@ -3080,7 +3196,8 @@ class TestCopyPackage(TestCaseWithFactory):
             target_pocket=to_pocket,
             include_binaries=False,
             sponsored=sponsored,
-            copy_policy=PackageCopyPolicy.MASS_SYNC))
+            copy_policy=PackageCopyPolicy.MASS_SYNC,
+            move=False))
 
     def test_copyPackages_with_multiple_packages(self):
         # PENDING and PUBLISHED packages should both be copied.
@@ -3297,6 +3414,63 @@ class TestCopyPackage(TestCaseWithFactory):
         copy_job = job_source.getActiveJobs(target_archive).one()
         self.assertEqual(to_pocket, copy_job.target_pocket)
 
+    def test_copyPackages_move(self):
+        # Passing move=True causes copyPackages to create copy jobs that
+        # will delete the source publication after copying.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        with person_logged_in(source_archive.owner):
+            target_archive.copyPackages(
+                [source_name], source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
+
+        # There should be one copy job, with move=True set.
+        job_source = getUtility(IPlainPackageCopyJobSource)
+        copy_job = job_source.getActiveJobs(target_archive).one()
+        self.assertTrue(copy_job.move)
+
+    def test_copyPackages_move_without_permission(self):
+        # Passing move=True checks that the user is permitted to delete the
+        # source publication.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution())
+        with person_logged_in(target_archive.owner):
+            expected_error = (
+                "%s is not permitted to delete publications from %s." % (
+                    target_archive.owner.display_name,
+                    source_archive.displayname))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackages,
+                [source_name], source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=target_archive.owner, move=True)
+
+    def test_copyPackages_move_from_immutable_suite(self):
+        # Passing move=True checks that the source suite can be modified.
+        (source, source_archive, source_name, target_archive, to_pocket,
+         to_series, version) = self._setup_copy_data(
+            source_distribution=self.factory.makeDistribution(),
+            source_purpose=ArchivePurpose.PRIMARY,
+            source_pocket=PackagePublishingPocket.RELEASE)
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(source_archive.owner, "main")
+        removeSecurityProxy(source.distroseries).status = (
+            SeriesStatus.SUPPORTED)
+        with person_logged_in(source_archive.owner):
+            expected_error = (
+                "Cannot delete publications from suite '%s'" % (
+                    source.distroseries.getSuite(source.pocket)))
+            self.assertRaisesWithContent(
+                CannotCopy, expected_error, target_archive.copyPackages,
+                [source_name], source_archive, to_pocket.name,
+                to_series=to_series.name, include_binaries=True,
+                person=source_archive.owner, move=True)
+
 
 class TestgetAllPublishedBinaries(TestCaseWithFactory):
 
@@ -3379,6 +3553,24 @@ class TestgetAllPublishedBinaries(TestCaseWithFactory):
         self.assertEqual(
             [pubs[i] for i in (3, 2, 1, 0, 4)],
             list(archive.getAllPublishedBinaries(order_by_date=True)))
+
+    def test_matches_version_as_text(self):
+        # Versions such as 0.7-4 and 0.07-4 are equal according to the
+        # "debversion" type, but for lookup purposes we compare the text of
+        # the version strings exactly.
+        archive = self.factory.makeArchive()
+        pub = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive, version='0.7-4')
+        self.assertEqual(
+            [pub],
+            list(archive.getAllPublishedBinaries(
+                name=pub.binarypackagename.name, version='0.7-4',
+                exact_match=True)))
+        self.assertEqual(
+            [],
+            list(archive.getAllPublishedBinaries(
+                name=pub.binarypackagename.name, version='0.07-4',
+                exact_match=True)))
 
 
 class TestRemovingPermissions(TestCaseWithFactory):
@@ -3854,7 +4046,7 @@ class TestSigningKeyPropagation(TestCaseWithFactory):
 
     def test_ppa_created_with_no_signing_key(self):
         ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
-        self.assertIsNone(ppa.signing_key)
+        self.assertIsNone(ppa.signing_key_fingerprint)
 
     def test_default_signing_key_propagated_to_new_ppa(self):
         person = self.factory.makePerson()

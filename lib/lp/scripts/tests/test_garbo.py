@@ -14,10 +14,10 @@ from datetime import (
     )
 import hashlib
 import logging
-from StringIO import StringIO
 import time
 
 from pytz import UTC
+import six
 from storm.exceptions import LostObjectError
 from storm.expr import (
     In,
@@ -30,8 +30,7 @@ from storm.locals import (
     Storm,
     )
 from storm.store import Store
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 from testtools.matchers import (
     AfterPreprocessing,
     Equals,
@@ -431,12 +430,10 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runFrequently()
 
         # Capture garbo log output to tests can examine it.
-        self.log_buffer = StringIO()
+        self.log_buffer = six.StringIO()
         handler = logging.StreamHandler(self.log_buffer)
         self.log.addHandler(handler)
-        self.addDetail(
-            'garbo-log',
-            Content(UTF8_TEXT, lambda: [self.log_buffer.getvalue()]))
+        self.addDetail('garbo-log', text_content(self.log_buffer.getvalue()))
 
     def runFrequently(self, maximum_chunk_size=2, test_args=()):
         switch_dbuser('garbo_daily')
@@ -715,37 +712,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runDaily()
         switch_dbuser('testadmin')
         self.assertEqual(rev2.revision_author.person, person2)
-
-    def test_HWSubmissionEmailLinker(self):
-        switch_dbuser('testadmin')
-        sub1 = self.factory.makeHWSubmission(
-            emailaddress='author-1@Example.Org')
-        sub2 = self.factory.makeHWSubmission(
-            emailaddress='author-2@Example.Org')
-
-        person1 = self.factory.makePerson(email='Author-1@example.org')
-        person2 = self.factory.makePerson(
-            email='Author-2@example.org',
-            email_address_status=EmailAddressStatus.NEW)
-
-        self.assertEqual(sub1.owner, None)
-        self.assertEqual(sub2.owner, None)
-
-        self.runDaily()
-
-        # Only the validated email address associated with a Person
-        # causes a linkage.
-        switch_dbuser('testadmin')
-        self.assertEqual(sub1.owner, person1)
-        self.assertEqual(sub2.owner, None)
-
-        # Validating an email address creates a linkage.
-        person2.validateAndEnsurePreferredEmail(person2.guessedemails[0])
-        self.assertEqual(sub2.owner, None)
-
-        self.runDaily()
-        switch_dbuser('testadmin')
-        self.assertEqual(sub2.owner, person2)
 
     def test_PersonPruner(self):
         personset = getUtility(IPersonSet)

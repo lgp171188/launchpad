@@ -10,6 +10,8 @@ __all__ = ['expand_numbers',
 
 import re
 
+import six
+
 
 def expand_numbers(unicode_text, fill_digits=4):
     """Return a copy of the string with numbers zero filled.
@@ -24,7 +26,7 @@ def expand_numbers(unicode_text, fill_digits=4):
     u'branch-0002-0003.0012'
 
     """
-    assert(isinstance(unicode_text, unicode))
+    assert(isinstance(unicode_text, six.text_type))
 
     def substitute_filled_numbers(match):
         return match.group(0).zfill(fill_digits)
@@ -53,8 +55,8 @@ def _reversed_number_comparator(lhs_text, rhs_text):
     -1
 
     """
-    assert isinstance(lhs_text, unicode)
-    assert isinstance(rhs_text, unicode)
+    assert isinstance(lhs_text, six.text_type)
+    assert isinstance(rhs_text, six.text_type)
     translated_lhs_text = lhs_text.translate(reversed_numbers_table)
     translated_rhs_text = rhs_text.translate(reversed_numbers_table)
     return cmp(translated_lhs_text, translated_rhs_text)

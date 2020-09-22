@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function
@@ -40,6 +40,7 @@ __all__ = [
     'run_script',
     'run_with_login',
     'run_with_storm_debug',
+    'RunIsolatedTest',
     'StormStatementRecorder',
     'test_tales',
     'TestCase',
@@ -53,11 +54,9 @@ __all__ = [
     'with_person_logged_in',
     'ws_object',
     'YUIUnitTestCase',
-    'ZopeTestInSubProcess',
     ]
 
 from contextlib import contextmanager
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
@@ -87,7 +86,6 @@ from breezy.controldir import (
     format_registry,
     )
 from breezy.transport import get_transport
-from bzrlib import trace as bzr_trace
 import fixtures
 from lazr.restful.testing.tales import test_tales
 from lazr.restful.testing.webservice import FakeRequest
@@ -125,7 +123,6 @@ from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
     )
-from zope.testrunner.runner import TestResult as ZopeTestResult
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
@@ -192,6 +189,9 @@ from lp.testing.fixture import (
     )
 from lp.testing.karma import KarmaRecorder
 from lp.testing.mail_helpers import pop_notifications
+
+if six.PY2:
+    from bzrlib import trace as bzr_trace
 
 # The following names have been imported for the purpose of being
 # exported. They are referred to here to silence lint warnings.
@@ -369,7 +369,7 @@ class StormStatementRecorder:
         stop_sql_logging()
 
     def __str__(self):
-        out = StringIO()
+        out = six.StringIO()
         print_queries(self.query_data, file=out)
         return out.getvalue()
 
@@ -682,7 +682,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
     @contextmanager
     def expectedLog(self, regex):
         """Expect a log to be written that matches the regex."""
-        output = StringIO()
+        output = six.StringIO()
         handler = logging.StreamHandler(output)
         logger = logging.getLogger()
         logger.addHandler(handler)
@@ -853,7 +853,8 @@ class TestCaseWithFactory(TestCase):
         # make it so in order to avoid "No handlers for "brz" logger'
         # messages.
         trace._brz_logger = logging.getLogger('brz')
-        bzr_trace._bzr_logger = logging.getLogger('bzr')
+        if six.PY2:
+            bzr_trace._bzr_logger = logging.getLogger('bzr')
 
     def getUserBrowser(self, url=None, user=None):
         """Return a Browser logged in as a fresh user, maybe opened at `url`.
@@ -888,7 +889,7 @@ class TestCaseWithFactory(TestCase):
         :param branch_url: The URL to create the branch at.
         :param format: The format of branch to create.
         """
-        if format is not None and isinstance(format, basestring):
+        if format is not None and isinstance(format, six.string_types):
             format = format_registry.get(format)()
         return ControlDir.create_branch_convenience(branch_url, format=format)
 
@@ -1197,30 +1198,48 @@ def _harvest_yui_test_files(file_path):
                 yield os.path.join(dirpath, filename)
 
 
-class ZopeTestInSubProcess:
+class _StartedTestResult(testtools.TestResultDecorator):
+    """A TestResult for a test that has already been started.
+
+    The startTest and stopTest methods do nothing.  This is used by
+    RunIsolatedTest, which calls them in the parent process instead.
+    """
+
+    def startTest(self, test):
+        pass
+
+    def stopTest(self, test):
+        pass
+
+
+class RunIsolatedTest(testtools.RunTest):
     """Run tests in a sub-process, respecting Zope idiosyncrasies.
 
-    Use this as a mixin with an interesting `TestCase` to isolate
-    tests with side-effects. Each and every test *method* in the test
-    case is run in a new, forked, sub-process. This will slow down
-    your tests, so use it sparingly. However, when you need to, for
-    example, start the Twisted reactor (which cannot currently be
-    safely stopped and restarted in process) it is invaluable.
+    Set this as `run_tests_with` on an interesting `TestCase` to isolate
+    tests with side-effects.  Each and every test *method* in the test case
+    is run in a new, forked, sub-process.  This will slow down your tests,
+    so use it sparingly.  However, when you need to, for example, start the
+    Twisted reactor (which cannot currently be safely stopped and restarted
+    in process) it is invaluable.
 
-    This is basically a reimplementation of subunit's
-    `IsolatedTestCase` or `IsolatedTestSuite`, but adjusted to work
-    with Zope. In particular, Zope's TestResult object is responsible
-    for calling testSetUp() and testTearDown() on the selected layer.
+    This is basically a reimplementation of subunit's `IsolatedTestCase` or
+    `IsolatedTestSuite`, but adjusted to work with Zope, ensuring that layer
+    methods (testSetUp and testTearDown) are called in the parent process.
     """
 
     def run(self, result):
-        # The result must be an instance of Zope's TestResult because
-        # we construct a super() of it later on. Other result classes
-        # could be supported with a more general approach, but it's
-        # unlikely that any one approach is going to work for every
-        # class. It's better to fail early and draw attention here.
-        assert isinstance(result, ZopeTestResult), (
-            "result must be a Zope result object, not %r." % (result, ))
+        result.startTest(self.case)
+        try:
+            return self._run_started(
+                _StartedTestResult(
+                    testtools.ExtendedToOriginalDecorator(result)))
+        finally:
+            result.stopTest(self.case)
+
+    def _run_started(self, result):
+        # Circular import.
+        from lp.testing.layers import DatabaseLayer
+
         pread, pwrite = os.pipe()
         # We flush __stdout__ and __stderr__ at this point in order to avoid
         # bug 986429; they get copied in full when we fork, which means that
@@ -1238,13 +1257,10 @@ class ZopeTestInSubProcess:
             # Child.
             os.close(pread)
             fdwrite = os.fdopen(pwrite, 'wb', 1)
-            # Send results to both the Zope result object (so that
-            # layer setup and teardown are done properly, etc.) and to
-            # the subunit stream client so that the parent process can
-            # obtain the result.
-            result = testtools.MultiTestResult(
-                result, subunit.TestProtocolClient(fdwrite))
-            super(ZopeTestInSubProcess, self).run(result)
+            # Send results to the subunit stream client so that the parent
+            # process can obtain the result.
+            super(RunIsolatedTest, self).run(
+                subunit.TestProtocolClient(fdwrite))
             fdwrite.flush()
             # See note above about flushing.
             sys.__stdout__.flush()
@@ -1257,20 +1273,16 @@ class ZopeTestInSubProcess:
             # Parent.
             os.close(pwrite)
             fdread = os.fdopen(pread, 'rb')
-            # Skip all the Zope-specific result stuff by using a
-            # super() of the result. This is because the Zope result
-            # object calls testSetUp() and testTearDown() on the
-            # layer, and handles post-mortem debugging. These things
-            # do not make sense in the parent process. More
-            # immediately, it also means that the results are not
-            # reported twice; they are reported on stdout by the child
-            # process, so they need to be suppressed here.
-            result = super(ZopeTestResult, result)
-            # Accept the result from the child process.
-            protocol = subunit.TestProtocolServer(result)
+            # Accept the result from the child process, but don't write a
+            # duplicate copy to stdout.
+            protocol = subunit.TestProtocolServer(
+                result, stream=subunit.DiscardStream())
             protocol.readFrom(fdread)
             fdread.close()
             os.waitpid(pid, 0)
+            layer = getattr(self.case, 'layer', None)
+            if layer is not None and issubclass(layer, DatabaseLayer):
+                layer.force_dirty_database()
 
 
 class EventRecorder:
@@ -1580,7 +1592,7 @@ def nonblocking_readline(instream, timeout):
     Files must provide a valid fileno() method. This is a test helper
     as it is inefficient and unlikely useful for production code.
     """
-    result = StringIO()
+    result = six.StringIO()
     start = now = time.time()
     deadline = start + timeout
     while (now < deadline and not result.getvalue().endswith('\n')):

@@ -21,9 +21,9 @@ __all__ = [
     ]
 
 from lazr.lifecycle.snapshot import Snapshot
+import six
 from testtools import matchers
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 from testtools.matchers import (
     DocTestMatches as OriginalDocTestMatches,
     Equals,
@@ -213,8 +213,7 @@ class _MismatchedQueryCount(Mismatch):
             if backtrace is not None:
                 result.append(backtrace.rstrip())
                 result.append(u'.' * 70)
-        result = [item.encode('UTF-8') for item in result]
-        return Content(UTF8_TEXT, lambda: [b'\n'.join(result)])
+        return text_content('\n'.join(result))
 
     def get_details(self):
         details = {}
@@ -401,8 +400,7 @@ class SoupMismatch(Mismatch):
         self.soup_content = soup_content
 
     def get_details(self):
-        content = unicode(self.soup_content).encode('utf8')
-        return {'content': Content(UTF8_TEXT, lambda: [content])}
+        return {'content': text_content(six.text_type(self.soup_content))}
 
 
 class MissingElement(SoupMismatch):
@@ -474,11 +472,11 @@ class EqualsIgnoringWhitespace(Equals):
     """
 
     def __init__(self, expected):
-        if isinstance(expected, (str, unicode)):
+        if isinstance(expected, six.string_types):
             expected = normalize_whitespace(expected)
         super(EqualsIgnoringWhitespace, self).__init__(expected)
 
     def match(self, observed):
-        if isinstance(observed, (str, unicode)):
+        if isinstance(observed, six.string_types):
             observed = normalize_whitespace(observed)
         return super(EqualsIgnoringWhitespace, self).match(observed)

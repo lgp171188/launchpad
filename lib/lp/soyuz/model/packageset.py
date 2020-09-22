@@ -301,7 +301,7 @@ class Packageset(Storm):
 
     def addSources(self, names):
         """See `IPackageset`."""
-        if isinstance(names, basestring):
+        if isinstance(names, six.string_types):
             names = [ensure_unicode(names)]
         clauses = (SourcePackageName, SourcePackageName.name.is_in(names))
         self._api_add_or_remove(clauses, self._addSourcePackageNames)
@@ -419,7 +419,7 @@ class PackagesetSet:
 
     def _nameToSourcePackageName(self, source_name):
         """Helper to convert a possible string name to ISourcePackageName."""
-        if isinstance(source_name, basestring):
+        if isinstance(source_name, six.string_types):
             source_name = getUtility(ISourcePackageNameSet)[source_name]
         return source_name
 

@@ -11,7 +11,7 @@ itself.
   >>> owner_browser = setupBrowser(auth='Basic test@canonical.com:test')
   >>> owner_browser.open(
   ...   'http://blueprints.launchpad.test/firefox/+spec/canvas')
-  >>> print find_main_content(owner_browser.contents)
+  >>> print(find_main_content(owner_browser.contents))
   <...
   ...Support E4X in EcmaScript...
   >>> 'Blocks' not in (owner_browser.contents)
@@ -202,7 +202,7 @@ implemented. The "dependency tree" page for "canvas" should show exactly
 that.
 
   >>> anon_browser.open('http://launchpad.test/firefox/+spec/canvas/+deptree')
-  >>> print '----'; print anon_browser.contents
+  >>> print('----'); print(anon_browser.contents)
   ----
   ...Blueprints that must be implemented first...
   ...Support E4X in EcmaScript...
@@ -218,7 +218,7 @@ image and map.
 
   >>> anon_browser.open(
   ...   'http://launchpad.test/firefox/+spec/canvas/+deptreeimgtag')
-  >>> print anon_browser.contents
+  >>> print(anon_browser.contents)
   <img src="deptree.png" usemap="#deptree" />
   <map id="deptree" name="deptree">
   <area shape="poly"
@@ -236,7 +236,7 @@ Get the dependency chart, and check that it is a PNG.
 
   >>> anon_browser.open(
   ...   'http://launchpad.test/firefox/+spec/canvas/deptree.png')
-  >>> anon_browser.contents.startswith('\x89PNG')
+  >>> anon_browser.contents.startswith(b'\x89PNG')
   True
   >>> anon_browser.headers['content-type']
   'image/png'
@@ -248,7 +248,7 @@ is useful for experimenting with the dot layout using production data.
   ...   'http://launchpad.test/firefox/+spec/canvas/+deptreedotfile')
   >>> anon_browser.headers['content-type']
   'text/plain;charset=utf-8'
-  >>> print anon_browser.contents
+  >>> print(anon_browser.contents)
   digraph "deptree" {
   ...
 
@@ -263,7 +263,7 @@ We create two blueprints in `ubuntu`.
   >>> owner_browser.getControl('Summary').value = (
   ...     'This is a blueprint for the Ubuntu distribution')
   >>> owner_browser.getControl('Register Blueprint').click()
-  >>> print owner_browser.url
+  >>> print(owner_browser.url)
   http://blueprints.launchpad.test/ubuntu/+spec/distro-blueprint-a
 
   >>> owner_browser.open('http://blueprints.launchpad.test/ubuntu/+addspec')
@@ -273,11 +273,11 @@ We create two blueprints in `ubuntu`.
   >>> owner_browser.getControl('Summary').value = (
   ...     'This is a blueprint for the Ubuntu distribution')
   >>> owner_browser.getControl('Register Blueprint').click()
-  >>> print owner_browser.url
+  >>> print(owner_browser.url)
   http://blueprints.launchpad.test/ubuntu/+spec/distro-blueprint-b
 
   >>> owner_browser.getLink('Add dependency').click()
-  >>> print owner_browser.url
+  >>> print(owner_browser.url)
   http.../ubuntu/+spec/distro-blueprint-b/+linkdependency
   
   >>> owner_browser.getControl('Depends On').value = 'distro-blueprint-a'

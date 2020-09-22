@@ -65,6 +65,7 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
+import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
@@ -138,9 +139,11 @@ from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
+    user_can_edit_credentials_for_owner,
     )
 from lp.registry.browser import BaseRdfView
 from lp.registry.browser.branding import BrandingChangeView
@@ -189,6 +192,7 @@ from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     )
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,
@@ -756,6 +760,12 @@ class CommonMenuLinks:
         text = 'Structural subscriptions'
         return Link(target, text, icon='info')
 
+    def oci_registry_credentials(self):
+        target = '+oci-registry-credentials'
+        text = 'OCI registry credentials'
+        enabled = user_can_edit_credentials_for_owner(self.context, self.user)
+        return Link(target, text, enabled=enabled, icon='info')
+
 
 class PersonMenuMixin(CommonMenuLinks):
 
@@ -840,12 +850,6 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         request_tokens = self.context.oauth_request_tokens
         enabled = bool(access_tokens or request_tokens)
         return Link(target, text, enabled=enabled, icon='info')
-
-    @enabled_with_permission('launchpad.Edit')
-    def oci_registry_credentials(self):
-        target = '+oci-registry-credentials'
-        text = 'OCI registry credentials'
-        return Link(target, text, icon='info')
 
     @enabled_with_permission('launchpad.Edit')
     def editlanguages(self):
@@ -2765,7 +2769,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         """
         terms = []
         for term in self.unvalidated_addresses:
-            if isinstance(term, unicode):
+            if isinstance(term, six.text_type):
                 term = SimpleTerm(term)
             else:
                 term = SimpleTerm(term, term.email)
@@ -2806,7 +2810,7 @@ class PersonEditEmailsView(LaunchpadFormView):
                 "self.context.id(%s,%d) (%s)"
                 % (person.name, person.id, self.context.name, self.context.id,
                    email.email))
-        elif isinstance(email, unicode):
+        elif isinstance(email, six.text_type):
             tokenset = getUtility(ILoginTokenSet)
             email = tokenset.searchByEmailRequesterAndType(
                 email, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -2932,7 +2936,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         if IEmailAddress.providedBy(emailaddress):
             emailaddress.destroySelf()
             email = emailaddress.email
-        elif isinstance(emailaddress, unicode):
+        elif isinstance(emailaddress, six.text_type):
             logintokenset = getUtility(ILoginTokenSet)
             logintokenset.deleteByEmailRequesterAndType(
                 emailaddress, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -3655,6 +3659,11 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
 
     page_title = "OCI registry credentials"
 
+    def initialize(self):
+        if not user_can_edit_credentials_for_owner(self.context, self.user):
+            raise Unauthorized
+        super(PersonOCIRegistryCredentialsView, self).initialize()
+
     @property
     def label(self):
         return "OCI registry credentials for %s" % self.context.display_name
@@ -3667,12 +3676,26 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
 class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
     """View for Person:+edit-oci-registry-credentials."""
 
+    @property
+    def default_owner(self):
+        if IPerson.providedBy(self.context):
+            return self.context
+        elif IOCIRecipe.providedBy(self.context):
+            return self.context.owner
+        else:
+            raise ValueError("Invalid context for this view")
+
     @cachedproperty
     def oci_registry_credentials(self):
-        return list(getUtility(
-            IOCIRegistryCredentialsSet).findByOwner(self.context))
+        return list(getUtility(IOCIRegistryCredentialsSet).findByOwner(
+            self.default_owner))
 
     schema = Interface
+
+    def initialize(self):
+        if not user_can_edit_credentials_for_owner(self.context, self.user):
+            raise Unauthorized
+        super(PersonEditOCIRegistryCredentialsView, self).initialize()
 
     def _getFieldName(self, name, credentials_id):
         """Get the combined field name for an `OCIRegistryCredentials` ID.
@@ -3685,38 +3708,32 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
     def getEditFieldsRow(self, credentials=None):
         id = getattr(credentials, 'id', None)
         owner = Choice(
-            title=u'Owner',
             vocabulary=(
                 'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
-            default=credentials.owner.name,
+            default=credentials.owner,
             __name__=self._getFieldName('owner', id))
 
         username = TextLine(
-            title=u'Username',
             __name__=self._getFieldName('username', id),
             default=credentials.username,
             required=False, readonly=False)
 
         password = Password(
-            title=u'Password',
             __name__=self._getFieldName('password', id),
             default=None,
             required=False, readonly=False)
 
         confirm_password = Password(
-            title=u'Confirm password',
             __name__=self._getFieldName('confirm_password', id),
             default=None,
             required=False, readonly=False)
 
         url = TextLine(
-            title=u'Registry URL',
             __name__=self._getFieldName('url', id),
             default=credentials.url,
             required=True, readonly=False)
 
         delete = Bool(
-            title=u'Delete',
             __name__=self._getFieldName('delete', id),
             default=False,
             required=True, readonly=False)
@@ -3725,23 +3742,27 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     def getAddFieldsRow(self):
         add_url = TextLine(
-            title=u'Registry URL',
             __name__=u'add_url',
             required=False, readonly=False)
+        add_owner = Choice(
+            __name__=u'add_owner',
+            vocabulary=(
+                'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
+            default=self.default_owner,
+            required=False, readonly=False)
         add_username = TextLine(
-            title=u'Username',
             __name__=u'add_username',
             required=False, readonly=False)
         add_password = Password(
-            title=u'Password',
             __name__=u'add_password',
             required=False, readonly=False)
         add_confirm_password = Password(
-            title=u'Confirm password',
             __name__=u'add_confirm_password',
             required=False, readonly=False)
 
-        return add_url, add_username, add_password, add_confirm_password
+        return (
+            add_url, add_owner, add_username,
+            add_password, add_confirm_password)
 
     def _parseFieldName(self, field_name):
         """Parse a combined field name as described in `_getFieldName`.
@@ -3771,6 +3792,13 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
         add_fields = self.getAddFieldsRow()
         self.form_fields += FormFields(*add_fields)
+
+    def setUpWidgets(self, context=None):
+        super(PersonEditOCIRegistryCredentialsView, self).setUpWidgets(
+            context=context)
+        for widget in self.widgets:
+            widget.display_label = False
+            widget.hint = None
 
     @property
     def label(self):
@@ -3807,6 +3835,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         """Rearrange form data to make it easier to process."""
         parsed_data = {}
         add_url = data["add_url"]
+        add_owner = data["add_owner"]
         add_username = data["add_username"]
         add_password = data["add_password"]
         add_confirm_password = data["add_confirm_password"]
@@ -3816,6 +3845,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 "password": add_password,
                 "confirm_password": add_confirm_password,
                 "url": add_url,
+                "owner": add_owner,
                 "action": "add",
             })
         for field_name in (
@@ -3884,6 +3914,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     def addCredentials(self, parsed_add_credentials):
         url = parsed_add_credentials["url"]
+        owner = parsed_add_credentials["owner"]
         password = parsed_add_credentials["password"]
         confirm_password = parsed_add_credentials["confirm_password"]
         username = parsed_add_credentials["username"]
@@ -3902,8 +3933,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                     'password': password}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=self.context,
-                        url=url,
+                        registrant=self.user, owner=owner, url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
                     self.setFieldError(
@@ -3915,8 +3945,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 credentials = {'username': username}
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
-                        owner=self.context,
-                        url=url,
+                        registrant=self.user, owner=owner, url=url,
                         credentials=credentials)
                 except OCIRegistryCredentialsAlreadyExist:
                     self.setFieldError(

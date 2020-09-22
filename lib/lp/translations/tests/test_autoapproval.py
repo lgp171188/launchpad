@@ -31,10 +31,7 @@ from lp.registry.model.sourcepackagename import (
     SourcePackageNameSet,
     )
 from lp.services.database.interfaces import IMasterStore
-from lp.services.worlddata.model.language import (
-    Language,
-    LanguageSet,
-    )
+from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
     TestCaseWithFactory,
     verifyObject,
@@ -96,7 +93,7 @@ class TestCustomLanguageCode(TestCaseWithFactory):
         # Map "pt_PT" to "pt."
         self.product_codes['pt_PT'] = CustomLanguageCode(
             translation_target=self.product, language_code='pt_PT',
-            language=Language.byCode('pt'))
+            language=getUtility(ILanguageSet).getLanguageByCode('pt'))
 
         self.distro = Distribution.byName('ubuntu')
         self.sourcepackagename = SourcePackageName.byName('evolution')
@@ -104,7 +101,7 @@ class TestCustomLanguageCode(TestCaseWithFactory):
             translation_target=self.distro.getSourcePackage(
                 self.sourcepackagename),
             language_code='Brazilian',
-            language=Language.byCode('pt_BR'))
+            language=getUtility(ILanguageSet).getLanguageByCode('pt_BR'))
 
     def test_ICustomLanguageCode(self):
         # Does CustomLanguageCode conform to ICustomLanguageCode?
@@ -159,7 +156,9 @@ class TestCustomLanguageCode(TestCaseWithFactory):
         self.assertEqual(
             Brazilian_code.sourcepackagename, self.sourcepackagename)
         self.assertEqual(Brazilian_code.language_code, 'Brazilian')
-        self.assertEqual(Brazilian_code.language, Language.byCode('pt_BR'))
+        self.assertEqual(
+            Brazilian_code.language,
+            getUtility(ILanguageSet).getLanguageByCode('pt_BR'))
 
 
 class TestGuessPOFileCustomLanguageCode(TestCaseWithFactory,
@@ -200,7 +199,8 @@ class TestGuessPOFileCustomLanguageCode(TestCaseWithFactory,
         if target_language_code is None:
             language = None
         else:
-            language = Language.byCode(target_language_code)
+            language = getUtility(ILanguageSet).getLanguageByCode(
+                target_language_code)
         customcode = CustomLanguageCode(
             translation_target=self.product, language_code=language_code,
             language=language)
@@ -1099,7 +1099,7 @@ class TestAutoApprovalNewPOFile(TestCaseWithFactory, GardenerDbUserMixin):
         super(TestAutoApprovalNewPOFile, self).setUp()
         self.product = self.factory.makeProduct()
         self.queue = TranslationImportQueue()
-        self.language = LanguageSet().getLanguageByCode('nl')
+        self.language = getUtility(ILanguageSet).getLanguageByCode('nl')
 
     def _makeTemplate(self, series):
         """Create a template."""

@@ -93,7 +93,16 @@ class SyncSigningKeysScript(LaunchpadScript):
                     self.options.type)
             key_types = [key_type]
         else:
-            key_types = SigningKeyType.items
+            # While archives do have OpenPGP keys, they work in a rather
+            # different way (and are used for signing the archive itself,
+            # not its contents), so skip them for now.
+            key_types = [
+                SigningKeyType.UEFI,
+                SigningKeyType.KMOD,
+                SigningKeyType.OPAL,
+                SigningKeyType.SIPL,
+                SigningKeyType.FIT,
+                ]
         return key_types
 
     def getKeysPerType(self, dir):

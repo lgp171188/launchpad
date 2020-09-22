@@ -8,9 +8,10 @@ __all__ = [
     ]
 
 from email.utils import parseaddr
-from StringIO import StringIO
+import io
 
 import defusedxml.cElementTree as cElementTree
+import six
 from zope.interface import implementer
 
 from lp.translations.interfaces.translationcommonformat import (
@@ -38,15 +39,15 @@ class XpiHeader:
         self.launchpad_export_date = None
         self.comment = None
 
-        if isinstance(header_content, str):
+        if isinstance(header_content, bytes):
             try:
                 self._text = header_content.decode(self.charset)
             except UnicodeDecodeError:
                 raise TranslationFormatInvalidInputError(
                     "XPI header is not encoded in %s." % self.charset)
         else:
-            assert isinstance(header_content, unicode), (
-                "XPI header text is neither str nor unicode.")
+            assert isinstance(header_content, six.text_type), (
+                "XPI header text is neither bytes nor unicode.")
             self._text = header_content
 
     def getRawContent(self):
@@ -66,7 +67,8 @@ class XpiHeader:
         # proper unicode strings.  Use our raw input instead.
         try:
             parse = cElementTree.iterparse(
-                StringIO(self._raw_content), forbid_dtd=True)
+                io.BytesIO(six.ensure_binary(self._raw_content)),
+                forbid_dtd=True)
             for event, elem in parse:
                 if elem.tag == contributor_tag:
                     # An XPI header can list multiple contributors, but

@@ -101,17 +101,6 @@ from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
-from lp.hardwaredb.interfaces.hwdb import (
-    IHWDBApplication,
-    IHWDevice,
-    IHWDeviceClass,
-    IHWDriver,
-    IHWDriverName,
-    IHWDriverPackageName,
-    IHWSubmission,
-    IHWSubmissionDevice,
-    IHWVendorID,
-    )
 from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
@@ -1384,8 +1373,9 @@ class AdminDistroSeriesDifference(AuthorizationBase):
         # see if the user has that permission on any components
         # at all.
         archive = self.obj.derived_series.main_archive
-        return bool(
-            archive.getComponentsForQueueAdmin(user.person)) or user.in_admin
+        return (
+            not archive.getComponentsForQueueAdmin(user.person).is_empty() or
+            user.in_admin)
 
 
 class EditDistroSeriesDifference(DelegatedAuthorization):
@@ -2679,77 +2669,6 @@ class AdminLanguagePack(OnlyRosettaExpertsAndAdmins):
     usedfor = ILanguagePack
 
 
-class ViewHWSubmission(AuthorizationBase):
-    permission = 'launchpad.View'
-    usedfor = IHWSubmission
-
-    def checkAuthenticated(self, user):
-        """Can the user view the submission details?
-
-        Submissions that are not marked private are publicly visible,
-        private submissions may only be accessed by their owner and by
-        admins.
-        """
-        if not self.obj.private:
-            return True
-
-        return user.inTeam(self.obj.owner) or user.in_admin
-
-    def checkUnauthenticated(self):
-        return not self.obj.private
-
-
-class EditHWSubmission(AdminByAdminsTeam):
-    permission = 'launchpad.Edit'
-    usedfor = IHWSubmission
-
-
-class ViewHWDBBase(AuthorizationBase):
-    """Base class to restrict access to HWDB data to members of the HWDB team.
-    """
-    permission = 'launchpad.View'
-
-    def checkAuthenticated(self, user):
-        """We give for now access only to Canonical employees."""
-        return user.in_hwdb_team
-
-    def checkUnauthenticated(self):
-        """No access for anonymous users."""
-        return False
-
-
-class ViewHWDriver(ViewHWDBBase):
-    usedfor = IHWDriver
-
-
-class ViewHWDriverName(ViewHWDBBase):
-    usedfor = IHWDriverName
-
-
-class ViewHWDriverPackageName(ViewHWDBBase):
-    usedfor = IHWDriverPackageName
-
-
-class ViewHWVendorID(ViewHWDBBase):
-    usedfor = IHWVendorID
-
-
-class ViewHWDevice(ViewHWDBBase):
-    usedfor = IHWDevice
-
-
-class ViewHWSubmissionDevice(ViewHWDBBase):
-    usedfor = IHWSubmissionDevice
-
-
-class ViewHWDBApplication(ViewHWDBBase):
-    usedfor = IHWDBApplication
-
-
-class ViewHWDeviceClass(ViewHWDBBase):
-    usedfor = IHWDeviceClass
-
-
 class ViewArchive(AuthorizationBase):
     """Restrict viewing of private archives.
 
@@ -3563,6 +3482,8 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
     usedfor = IOCIRegistryCredentials
 
     def checkAuthenticated(self, user):
+        # This must be kept in sync with user_can_edit_credentials_for_owner
+        # in lp.oci.interfaces.ociregistrycredentials.
         return (
             user.isOwner(self.obj) or
             user.in_admin)
@@ -3571,3 +3492,13 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
 class ViewOCIPushRule(AnonymousAuthorization):
     """Anyone can view an `IOCIPushRule`."""
     usedfor = IOCIPushRule
+
+
+class OCIPushRuleEdit(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIPushRule
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj.recipe) or
+            user.in_commercial_admin or user.in_admin)

@@ -25,6 +25,7 @@ __all__ = [
 import base64
 from collections import defaultdict
 
+from breezy import urlutils
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.interface import (
@@ -101,6 +102,7 @@ from lp.code.errors import (
 from lp.code.interfaces.gitnamespace import get_git_namespace
 from lp.code.interfaces.gitref import IGitRefBatchNavigator
 from lp.code.interfaces.gitrepository import (
+    ContributorGitIdentity,
     IGitRepository,
     IGitRepositorySet,
     )
@@ -389,6 +391,21 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         base_url = urlsplit(self.context.git_ssh_url)
         url = list(base_url)
         url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        return urlunsplit(url)
+
+    @property
+    def git_ssh_url_non_owner(self):
+        """The git+ssh:// URL for this repository, adjusted for this user.
+        The user is not the owner of the repository."""
+
+        contributor = ContributorGitIdentity(
+            owner=self.user,
+            target=self.context.target,
+            repository=self.context)
+        base_url = urlutils.join(
+            config.codehosting.git_ssh_root, contributor.shortened_path)
+        url = list(urlsplit(base_url))
+        url[1] = "{}@{}".format(self.user.name, url[1])
         return urlunsplit(url)
 
     @property

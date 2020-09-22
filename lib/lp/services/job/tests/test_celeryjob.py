@@ -1,13 +1,12 @@
 # Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from cStringIO import StringIO
 import sys
 from time import sleep
 
 from lazr.jobrunner.bin.clear_queues import clear_queues
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+import six
+from testtools.content import text_content
 
 from lp.code.model.branchjob import BranchScanJob
 from lp.scripts.helpers import TransactionFreeOperation
@@ -71,8 +70,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
                   (expected_len, actual_len))
 
     def addTextDetail(self, name, text):
-        content = Content(UTF8_TEXT, lambda: text)
-        self.addDetail(name, content)
+        self.addDetail(name, text_content(text))
 
     def test_find_missing_ready(self):
         """A job which is ready but not queued is "missing"."""
@@ -150,8 +148,8 @@ class TestRunMissingJobs(TestCaseWithFactory):
         try:
             real_stdout = sys.stdout
             real_stderr = sys.stderr
-            sys.stdout = fake_stdout = StringIO()
-            sys.stderr = fake_stderr = StringIO()
+            sys.stdout = fake_stdout = six.StringIO()
+            sys.stderr = fake_stderr = six.StringIO()
             clear_queues(
                 ['script_name', '-c', 'lp.services.job.celeryconfig',
                  result_queue_name])

@@ -23,6 +23,7 @@ import six
 from sqlobject import StringCol
 from storm.expr import (
     And,
+    Cast,
     Column,
     Desc,
     Or,
@@ -147,7 +148,7 @@ def most_recent_publications(dsds, in_parent, statuses, match_version=False):
             conditions,
             SourcePackageRelease.id ==
                 SourcePackagePublishingHistory.sourcepackagereleaseID,
-            SourcePackageRelease.version == version_col,
+            Cast(SourcePackageRelease.version, "text") == version_col,
             )
     # The sort order is critical so that the DISTINCT ON clause selects the
     # most recent publication (i.e. the one with the highest id).

@@ -5,14 +5,15 @@
 
 __metaclass__ = type
 
-from StringIO import StringIO
 import subprocess
 import tempfile
+from textwrap import dedent
 
 from fixtures import (
     PopenFixture,
     TestWithFixtures,
     )
+import six
 from testtools import (
     TestCase,
     TestResult,
@@ -40,7 +41,7 @@ class TestListTestCase(TestCase, TestWithFixtures):
             with open(load_list, 'rt') as testlist:
                 contents = testlist.readlines()
             self.assertEqual(['foo\n', 'bar\n'], contents)
-            return {'stdout': StringIO(''), 'stdin': StringIO()}
+            return {'stdout': six.StringIO(), 'stdin': six.StringIO()}
         popen = self.useFixture(PopenFixture(check_list_file))
         case = ListTestCase(['foo', 'bar'], ['bin/test'])
         self.assertEqual([], popen.procs)
@@ -102,12 +103,15 @@ class TestUtilities(TestCase, TestWithFixtures):
             self.assertEqual(
                 ['bin/test', '-vt', 'filter', '--list-tests', '--subunit'],
                 args['args'])
-            return {'stdin': StringIO(), 'stdout': StringIO("""\
-test: quux
-successful: quux
-test: glom
-successful: glom
-""")}
+            return {
+                'stdin': six.StringIO(),
+                'stdout': six.StringIO(six.ensure_str(dedent("""\
+                    test: quux
+                    successful: quux
+                    test: glom
+                    successful: glom
+                    """))),
+                }
         self.useFixture(PopenFixture(inject_testlist))
         self.assertEqual(
             ['quux', 'glom'],

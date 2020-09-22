@@ -124,7 +124,14 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
     def test_get_key_types(self):
         script = self.makeScript([])
         key_types = script.getKeyTypes()
-        self.assertEqual(SigningKeyType.items, key_types)
+        expected_key_types = [
+            SigningKeyType.UEFI,
+            SigningKeyType.KMOD,
+            SigningKeyType.OPAL,
+            SigningKeyType.SIPL,
+            SigningKeyType.FIT,
+            ]
+        self.assertEqual(expected_key_types, key_types)
 
     def test_get_key_types_with_selection(self):
         script = self.makeScript(["--type", "UEFI"])

@@ -21,6 +21,7 @@ import itertools
 import operator
 
 from lazr.delegates import delegate_to
+import six
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -264,7 +265,7 @@ class DistributionSourcePackageBaseView(LaunchpadView):
 
         def not_empty(text):
             return (
-                text is not None and isinstance(text, basestring)
+                text is not None and isinstance(text, six.string_types)
                 and len(text.strip()) > 0)
 
         def decorate(dspr_pubs):

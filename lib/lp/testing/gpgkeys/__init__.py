@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OpenPGP keys used for testing.
@@ -19,7 +19,7 @@ decrypt data in pagetests.
 
 __metaclass__ = type
 
-from cStringIO import StringIO
+from io import BytesIO
 import os
 
 import gpgme
@@ -94,7 +94,8 @@ def import_secret_test_key(keyfile='test@canonical.com.sec'):
     :param keyfile: The name of the file to be imported.
     """
     gpghandler = getUtility(IGPGHandler)
-    seckey = open(os.path.join(gpgkeysdir, keyfile)).read()
+    with open(os.path.join(gpgkeysdir, keyfile), 'rb') as f:
+        seckey = f.read()
     return gpghandler.importSecretKey(seckey)
 
 
@@ -105,7 +106,8 @@ def test_pubkey_file_from_email(email_addr):
 
 def test_pubkey_from_email(email_addr):
     """Get the on disk content for a test pubkey by email address."""
-    return open(test_pubkey_file_from_email(email_addr)).read()
+    with open(test_pubkey_file_from_email(email_addr), 'rb') as f:
+        return f.read()
 
 
 def test_keyrings():
@@ -118,23 +120,23 @@ def test_keyrings():
 def decrypt_content(content, password):
     """Return the decrypted content or None if failed
 
-    content and password must be traditional strings. It's up to
-    the caller to encode or decode properly.
+    content must be a byte string, and password must be a native string.
+    It's up to the caller to encode or decode properly.
 
     :content: encrypted data content
-    :password: unicode password to unlock the secret key in question
+    :password: password to unlock the secret key in question
     """
-    if isinstance(password, unicode):
-        raise TypeError('Password cannot be Unicode.')
+    if not isinstance(password, str):
+        raise TypeError('Password must be a str.')
 
-    if isinstance(content, unicode):
-        raise TypeError('Content cannot be Unicode.')
+    if not isinstance(content, bytes):
+        raise TypeError('Content must be bytes.')
 
     ctx = get_gpgme_context()
 
     # setup containers
-    cipher = StringIO(content)
-    plain = StringIO()
+    cipher = BytesIO(content)
+    plain = BytesIO()
 
     def passphrase_cb(uid_hint, passphrase_info, prev_was_bad, fd):
         os.write(fd, '%s\n' % password)

@@ -13,16 +13,20 @@ __all__ = [
 from operator import attrgetter
 
 from lazr.enum import DBItem
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    )
-from storm.expr import SQL
+import pytz
+import six
+from storm.expr import Exists
 from storm.locals import (
+    And,
+    Bool,
+    DateTime,
     Int,
+    Or,
     Reference,
+    Select,
+    SQL,
+    Store,
     )
-from storm.store import Store
 from zope.component import getUtility
 from zope.interface import (
     alsoProvides,
@@ -37,17 +41,15 @@ from lp.registry.interfaces.sourcepackagename import (
     ISourcePackageName,
     ISourcePackageNameSet,
     )
+from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.enums import ArchivePermissionType
 from lp.soyuz.interfaces.archive import (
     ComponentNotFound,
@@ -67,43 +69,58 @@ from lp.soyuz.interfaces.packageset import IPackageset
 
 
 @implementer(IArchivePermission)
-class ArchivePermission(SQLBase):
+class ArchivePermission(StormBase):
     """See `IArchivePermission`."""
-    _table = 'ArchivePermission'
-    _defaultOrder = 'id'
+    __storm_table__ = 'ArchivePermission'
+    __storm_order__ = 'id'
 
-    date_created = UtcDateTimeCol(
-        dbName='date_created', notNull=True, default=UTC_NOW)
+    id = Int(primary=True)
 
-    archive = ForeignKey(foreignKey='Archive', dbName='archive', notNull=True)
+    date_created = DateTime(
+        tzinfo=pytz.UTC, name='date_created', allow_none=False,
+        default=UTC_NOW)
 
-    permission = EnumCol(
-        dbName='permission', unique=False, notNull=True,
-        schema=ArchivePermissionType)
+    archive_id = Int(name='archive', allow_none=False)
+    archive = Reference(archive_id, 'Archive.id')
 
-    person = ForeignKey(foreignKey='Person', dbName='person', notNull=True)
+    permission = DBEnum(
+        name='permission', allow_none=False, enum=ArchivePermissionType)
 
-    component = ForeignKey(
-        foreignKey='Component', dbName='component', notNull=False)
+    person_id = Int(name='person', allow_none=False)
+    person = Reference(person_id, 'Person.id')
 
-    sourcepackagename = ForeignKey(
-        foreignKey='SourcePackageName', dbName='sourcepackagename',
-        notNull=False)
+    component_id = Int(name='component', allow_none=True)
+    component = Reference(component_id, 'Component.id')
+
+    sourcepackagename_id = Int(name='sourcepackagename', allow_none=True)
+    sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
 
     packageset_id = Int(name='packageset', allow_none=True)
     packageset = Reference(packageset_id, 'Packageset.id')
 
-    explicit = BoolCol(dbName='explicit', notNull=True, default=False)
+    explicit = Bool(name='explicit', allow_none=False, default=False)
 
-    pocket = EnumCol(dbName="pocket", schema=PackagePublishingPocket)
+    pocket = DBEnum(name='pocket', enum=PackagePublishingPocket)
 
-    distroseries = ForeignKey(
-        foreignKey='DistroSeries', dbName='distroseries', notNull=False)
+    distroseries_id = Int(name='distroseries', allow_none=True)
+    distroseries = Reference(distroseries_id, 'DistroSeries.id')
 
-    def _init(self, *args, **kw):
-        """Provide the right interface for URL traversal."""
-        SQLBase._init(self, *args, **kw)
+    def __init__(self, archive, permission, person, component=None,
+                 sourcepackagename=None, packageset=None, explicit=False,
+                 distroseries=None, pocket=None):
+        super(ArchivePermission, self).__init__()
+        self.archive = archive
+        self.permission = permission
+        self.person = person
+        self.component = component
+        self.sourcepackagename = sourcepackagename
+        self.packageset = packageset
+        self.explicit = explicit
+        self.distroseries = distroseries
+        self.pocket = pocket
+        self.__storm_loaded__()
 
+    def __storm_loaded__(self):
         # Provide the additional marker interface depending on what type
         # of archive this is.  See also the browser:url declarations in
         # zcml/archivepermission.zcml.
@@ -157,52 +174,37 @@ class ArchivePermissionSet:
     def checkAuthenticated(self, person, archive, permission, item,
                            distroseries=None):
         """See `IArchivePermissionSet`."""
-        clauses = ["""
-            ArchivePermission.archive = %s AND
-            ArchivePermission.permission = %s AND
-            ArchivePermission.person = TeamParticipation.team AND
-            TeamParticipation.person = %s
-            """ % sqlvalues(archive, permission, person)]
-
-        prejoins = []
+        clauses = [
+            ArchivePermission.archive == archive,
+            ArchivePermission.permission == permission,
+            ArchivePermission.person == TeamParticipation.teamID,
+            TeamParticipation.person == person,
+            ]
 
         if IComponent.providedBy(item):
-            clauses.append(
-                "ArchivePermission.component = %s" % sqlvalues(item))
-            prejoins.append("component")
+            clauses.append(ArchivePermission.component == item)
         elif ISourcePackageName.providedBy(item):
-            clauses.append(
-                "ArchivePermission.sourcepackagename = %s" % sqlvalues(item))
-            prejoins.append("sourcepackagename")
+            clauses.append(ArchivePermission.sourcepackagename == item)
         elif IPackageset.providedBy(item):
-            clauses.append(
-                "ArchivePermission.packageset = %s" % sqlvalues(item.id))
-            prejoins.append("packageset")
+            clauses.append(ArchivePermission.packageset == item)
         elif (zope_isinstance(item, DBItem) and
               item.enum.name == "PackagePublishingPocket"):
-            clauses.append("ArchivePermission.pocket = %s" % sqlvalues(item))
+            clauses.append(ArchivePermission.pocket == item)
             if distroseries is not None:
-                clauses.append(
-                    "(ArchivePermission.distroseries IS NULL OR "
-                     "ArchivePermission.distroseries = %s)" %
-                    sqlvalues(distroseries))
-                prejoins.append("distroseries")
+                clauses.append(Or(
+                    ArchivePermission.distroseries == None,
+                    ArchivePermission.distroseries == distroseries))
         else:
             raise AssertionError(
                 "'item' %r is not an IComponent, IPackageset, "
                 "ISourcePackageName or PackagePublishingPocket" % item)
 
-        query = " AND ".join(clauses)
-        auth = ArchivePermission.select(
-            query, clauseTables=["TeamParticipation"],
-            prejoins=prejoins)
-
-        return auth
+        return IStore(ArchivePermission).find(ArchivePermission, *clauses)
 
     def _nameToComponent(self, component):
         """Helper to convert a possible string component to IComponent"""
         try:
-            if isinstance(component, basestring):
+            if isinstance(component, six.string_types):
                 component = getUtility(IComponentSet)[component]
             return component
         except NotFoundError:
@@ -210,31 +212,31 @@ class ArchivePermissionSet:
 
     def _nameToSourcePackageName(self, sourcepackagename):
         """Helper to convert a possible string name to ISourcePackageName."""
-        if isinstance(sourcepackagename, basestring):
+        if isinstance(sourcepackagename, six.string_types):
             sourcepackagename = getUtility(
                 ISourcePackageNameSet)[sourcepackagename]
         return sourcepackagename
 
     def _precachePersonsForPermissions(self, permissions):
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            set(map(attrgetter("personID"), permissions))))
+            set(map(attrgetter("person_id"), permissions))))
         return permissions
 
     def permissionsForArchive(self, archive):
         """See `IArchivePermissionSet`."""
         return self._precachePersonsForPermissions(
-            ArchivePermission.selectBy(archive=archive))
+            IStore(ArchivePermission).find(ArchivePermission, archive=archive))
 
     def permissionsForPerson(self, archive, person):
         """See `IArchivePermissionSet`."""
         return IStore(ArchivePermission).find(
-            ArchivePermission, """
-            ArchivePermission.archive = %s AND
-            EXISTS (SELECT TeamParticipation.person
-                    FROM TeamParticipation
-                    WHERE TeamParticipation.person = %s AND
-                          TeamParticipation.team = ArchivePermission.person)
-            """ % sqlvalues(archive, person))
+            ArchivePermission,
+            ArchivePermission.archive == archive,
+            Exists(Select(
+                1, tables=[TeamParticipation],
+                where=And(
+                    TeamParticipation.person == person,
+                    TeamParticipation.team == ArchivePermission.person_id))))
 
     def _componentsFor(self, archives, person, permission_type):
         """Helper function to get ArchivePermission objects."""
@@ -243,16 +245,16 @@ class ArchivePermissionSet:
         else:
             archive_ids = [archive.id for archive in archives]
 
-        return ArchivePermission.select("""
-            ArchivePermission.archive IN %s AND
-            ArchivePermission.permission = %s AND
-            ArchivePermission.component IS NOT NULL AND
-            EXISTS (SELECT TeamParticipation.person
-                    FROM TeamParticipation
-                    WHERE TeamParticipation.person = %s AND
-                          TeamParticipation.team = ArchivePermission.person)
-            """ % sqlvalues(archive_ids, permission_type, person),
-            prejoins=["component"])
+        return IStore(ArchivePermission).find(
+            ArchivePermission,
+            ArchivePermission.archive_id.is_in(archive_ids),
+            ArchivePermission.permission == permission_type,
+            ArchivePermission.component != None,
+            Exists(Select(
+                1, tables=[TeamParticipation],
+                where=And(
+                    TeamParticipation.person == person,
+                    TeamParticipation.team == ArchivePermission.person_id))))
 
     def componentsForUploader(self, archive, person):
         """See `IArchivePermissionSet`."""
@@ -261,41 +263,39 @@ class ArchivePermissionSet:
 
     def uploadersForComponent(self, archive, component=None):
         """See `IArchivePermissionSet`."""
-        clauses = ["""
-            ArchivePermission.archive = %s AND
-            ArchivePermission.permission = %s
-            """ % sqlvalues(archive, ArchivePermissionType.UPLOAD)]
+        clauses = [
+            ArchivePermission.archive == archive,
+            ArchivePermission.permission == ArchivePermissionType.UPLOAD,
+            ]
 
         if component is not None:
             component = self._nameToComponent(component)
-            clauses.append(
-                "ArchivePermission.component = %s" % sqlvalues(component))
+            clauses.append(ArchivePermission.component == component)
         else:
-            clauses.append("ArchivePermission.component IS NOT NULL")
+            clauses.append(ArchivePermission.component != None)
 
-        query = " AND ".join(clauses)
-        return ArchivePermission.select(query, prejoins=["component"])
+        return IStore(ArchivePermission).find(ArchivePermission, *clauses)
 
     def packagesForUploader(self, archive, person):
         """See `IArchive`."""
-        return ArchivePermission.select("""
-            ArchivePermission.archive = %s AND
-            ArchivePermission.permission = %s AND
-            ArchivePermission.sourcepackagename IS NOT NULL AND
-            EXISTS (SELECT TeamParticipation.person
-                    FROM TeamParticipation
-                    WHERE TeamParticipation.person = %s AND
-                    TeamParticipation.team = ArchivePermission.person)
-            """ % sqlvalues(archive, ArchivePermissionType.UPLOAD, person),
-            prejoins=["sourcepackagename"])
+        return IStore(ArchivePermission).find(
+            ArchivePermission,
+            ArchivePermission.archive == archive,
+            ArchivePermission.permission == ArchivePermissionType.UPLOAD,
+            ArchivePermission.sourcepackagename != None,
+            Exists(Select(
+                1, tables=[TeamParticipation],
+                where=And(
+                    TeamParticipation.person == person,
+                    TeamParticipation.team == ArchivePermission.person_id))))
 
     def uploadersForPackage(self, archive, sourcepackagename):
         """See `IArchivePermissionSet`."""
         sourcepackagename = self._nameToSourcePackageName(sourcepackagename)
-        results = ArchivePermission.selectBy(
+        return IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, permission=ArchivePermissionType.UPLOAD,
             sourcepackagename=sourcepackagename)
-        return results.prejoin(["sourcepackagename"])
 
     def _pocketsFor(self, archives, person, permission_type):
         """Helper function to get ArchivePermission objects."""
@@ -304,15 +304,16 @@ class ArchivePermissionSet:
         else:
             archive_ids = [archive.id for archive in archives]
 
-        return ArchivePermission.select("""
-            ArchivePermission.archive IN %s AND
-            ArchivePermission.permission = %s AND
-            ArchivePermission.pocket IS NOT NULL AND
-            EXISTS (SELECT TeamParticipation.person
-                    FROM TeamParticipation
-                    WHERE TeamParticipation.person = %s AND
-                          TeamParticipation.team = ArchivePermission.person)
-            """ % sqlvalues(archive_ids, permission_type, person))
+        return IStore(ArchivePermission).find(
+            ArchivePermission,
+            ArchivePermission.archive_id.is_in(archive_ids),
+            ArchivePermission.permission == permission_type,
+            ArchivePermission.pocket != None,
+            Exists(Select(
+                1, tables=[TeamParticipation],
+                where=And(
+                    TeamParticipation.person == person,
+                    TeamParticipation.team == ArchivePermission.person_id))))
 
     def pocketsForUploader(self, archive, person):
         """See `IArchivePermissionSet`."""
@@ -320,17 +321,18 @@ class ArchivePermissionSet:
 
     def uploadersForPocket(self, archive, pocket):
         """See `IArchivePermissionSet`."""
-        return ArchivePermission.selectBy(
+        return IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, permission=ArchivePermissionType.UPLOAD,
             pocket=pocket)
 
     def queueAdminsForComponent(self, archive, component):
         """See `IArchivePermissionSet`."""
         component = self._nameToComponent(component)
-        results = ArchivePermission.selectBy(
+        return IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, permission=ArchivePermissionType.QUEUE_ADMIN,
             component=component)
-        return results.prejoin(["component"])
 
     def componentsForQueueAdmin(self, archive, person):
         """See `IArchivePermissionSet`."""
@@ -342,7 +344,8 @@ class ArchivePermissionSet:
         kwargs = {}
         if distroseries is not None:
             kwargs["distroseries"] = distroseries
-        return ArchivePermission.selectBy(
+        return IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, permission=ArchivePermissionType.QUEUE_ADMIN,
             pocket=pocket, **kwargs)
 
@@ -424,32 +427,36 @@ class ArchivePermissionSet:
     def deletePackageUploader(self, archive, person, sourcepackagename):
         """See `IArchivePermissionSet`."""
         sourcepackagename = self._nameToSourcePackageName(sourcepackagename)
-        permission = ArchivePermission.selectOneBy(
+        permission = IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, person=person,
             sourcepackagename=sourcepackagename,
-            permission=ArchivePermissionType.UPLOAD)
+            permission=ArchivePermissionType.UPLOAD).one()
         self._remove_permission(permission)
 
     def deleteComponentUploader(self, archive, person, component):
         """See `IArchivePermissionSet`."""
         component = self._nameToComponent(component)
-        permission = ArchivePermission.selectOneBy(
+        permission = IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, person=person, component=component,
-            permission=ArchivePermissionType.UPLOAD)
+            permission=ArchivePermissionType.UPLOAD).one()
         self._remove_permission(permission)
 
     def deletePocketUploader(self, archive, person, pocket):
-        permission = ArchivePermission.selectOneBy(
+        permission = IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, person=person, pocket=pocket,
-            permission=ArchivePermissionType.UPLOAD)
+            permission=ArchivePermissionType.UPLOAD).one()
         self._remove_permission(permission)
 
     def deleteQueueAdmin(self, archive, person, component):
         """See `IArchivePermissionSet`."""
         component = self._nameToComponent(component)
-        permission = ArchivePermission.selectOneBy(
+        permission = IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, person=person, component=component,
-            permission=ArchivePermissionType.QUEUE_ADMIN)
+            permission=ArchivePermissionType.QUEUE_ADMIN).one()
         self._remove_permission(permission)
 
     def deletePocketQueueAdmin(self, archive, person, pocket,
@@ -458,9 +465,10 @@ class ArchivePermissionSet:
         kwargs = {}
         if distroseries is not None:
             kwargs["distroseries"] = distroseries
-        permission = ArchivePermission.selectOneBy(
+        permission = IStore(ArchivePermission).find(
+            ArchivePermission,
             archive=archive, person=person, pocket=pocket,
-            permission=ArchivePermissionType.QUEUE_ADMIN, **kwargs)
+            permission=ArchivePermissionType.QUEUE_ADMIN, **kwargs).one()
         self._remove_permission(permission)
 
     def packagesetsForUploader(self, archive, person):

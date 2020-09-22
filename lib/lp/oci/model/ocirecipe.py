@@ -15,8 +15,10 @@ __all__ = [
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.expr import (
+    And,
     Desc,
     Not,
+    Select,
     )
 from storm.locals import (
     Bool,
@@ -69,6 +71,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     )
 from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.oci.model.ocirecipejob import OCIRecipeJob
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
@@ -92,6 +95,7 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -145,11 +149,14 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     require_virtualized = Bool(name="require_virtualized", default=True,
                                allow_none=False)
 
+    allow_internet = Bool(name='allow_internet', allow_none=False)
+
     build_daily = Bool(name="build_daily", default=False)
 
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
-                 build_file=None, build_daily=False, date_created=DEFAULT):
+                 build_file=None, build_daily=False, date_created=DEFAULT,
+                 allow_internet=True):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
@@ -165,6 +172,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.date_created = date_created
         self.date_last_modified = date_created
         self.git_ref = git_ref
+        self.allow_internet = allow_internet
 
     def __repr__(self):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
@@ -194,7 +202,28 @@ class OCIRecipe(Storm, WebhookTargetMixin):
             buildqueue_record.destroySelf()
         build_farm_job_ids = list(store.find(
             OCIRecipeBuild.build_farm_job_id, OCIRecipeBuild.recipe == self))
-        store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
+
+        store.execute("""
+            DELETE FROM OCIFile
+            USING OCIRecipeBuild
+            WHERE
+                OCIFile.build = OCIRecipeBuild.id AND
+                OCIRecipeBuild.recipe = ?
+            """, (self.id,))
+        store.execute("""
+            DELETE FROM OCIRecipeBuildJob
+            USING OCIRecipeBuild
+            WHERE
+                OCIRecipeBuildJob.build = OCIRecipeBuild.id AND
+                OCIRecipeBuild.recipe = ?
+            """, (self.id,))
+
+        affected_jobs = Select(
+            [OCIRecipeJob.job_id],
+            And(OCIRecipeJob.job == Job.id, OCIRecipeJob.recipe == self))
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        builds = store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self)
+        builds.remove()
         getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
@@ -469,11 +498,17 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def can_upload_to_registry(self):
         return not self.push_rules.is_empty()
 
-    def newPushRule(self, owner, registry_url, image_name, credentials):
+    def newPushRule(self, registrant, registry_url, image_name, credentials,
+                    credentials_owner=None):
         """See `IOCIRecipe`."""
-
+        if credentials_owner is None:
+            # Ideally this should probably be a required parameter, but
+            # earlier versions of this method didn't allow passing the
+            # credentials owner via the webservice API, so for compatibility
+            # we give it a default.
+            credentials_owner = self.owner
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
-            owner, registry_url, credentials)
+            registrant, credentials_owner, registry_url, credentials)
         push_rule = getUtility(IOCIPushRuleSet).new(
             self, oci_credentials, image_name)
         Store.of(push_rule).flush()
@@ -502,7 +537,8 @@ class OCIRecipeSet:
 
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            build_daily=False, processors=None, date_created=DEFAULT):
+            build_daily=False, processors=None, date_created=DEFAULT,
+            allow_internet=True):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -524,7 +560,7 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created)
+            date_created, allow_internet)
         store.add(oci_recipe)
 
         if processors is None:

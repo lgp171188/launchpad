@@ -19,6 +19,7 @@ import oops_amqp
 from oops_datedir_repo import DateDirRepo
 import oops_timeline
 import pytz
+import six
 from six.moves.urllib.parse import urlparse
 from zope.component.interfaces import ObjectEvent
 from zope.error.interfaces import IErrorReportingUtility
@@ -112,7 +113,7 @@ def attach_exc_info(report, context):
         return
     report['type'] = getattr(info[0], '__name__', info[0])
     report['value'] = oops.createhooks.safe_unicode(info[1])
-    if not isinstance(info[2], basestring):
+    if not isinstance(info[2], six.string_types):
         tb_text = ''.join(format_exception(*info,
                                            **{'as_html': False}))
     else:
@@ -204,7 +205,7 @@ def attach_http_request(report, context):
     for key, value in request.items():
         if _is_sensitive(request, key):
             value = '<hidden>'
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             value = oops.createhooks.safe_unicode(value)
         # keys need to be unicode objects. The form items (a subset of
         # request.items) are generally just the url query_string url decoded,

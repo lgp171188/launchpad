@@ -1,5 +1,7 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -11,6 +13,7 @@ from operator import attrgetter
 import unittest
 
 import pytz
+import six
 from storm.expr import Or
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
@@ -45,15 +48,8 @@ from lp.bugs.model.bugtasksearch import (
     get_bug_bulk_privacy_filter_terms,
     get_bug_privacy_filter_terms,
     )
-from lp.hardwaredb.interfaces.hwdb import (
-    HWBus,
-    IHWDeviceSet,
-    )
 from lp.registry.enums import SharingPermission
-from lp.registry.interfaces.distribution import (
-    IDistribution,
-    IDistributionSet,
-    )
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
@@ -87,7 +83,6 @@ from lp.testing import (
     TestCase,
     TestCaseWithFactory,
     )
-from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -2188,31 +2183,6 @@ class TestBugTaskTagSearchClauses(TestCase):
             self.searchClause(all(u'*', u'-*')))
 
 
-class TestBugTaskHardwareSearch(TestCaseWithFactory):
-
-    layer = LaunchpadFunctionalLayer
-
-    def test_search_results_without_duplicates(self):
-        # Searching for hardware related bugtasks returns each
-        # matching task exactly once, even if devices from more than
-        # one HWDB submission match the given criteria.
-        new_submission = self.factory.makeHWSubmission(
-            emailaddress=u'test@canonical.com')
-        device = getUtility(IHWDeviceSet).getByDeviceID(
-            HWBus.PCI, '0x10de', '0x0455')
-        with dbuser('hwdb-submission-processor'):
-            self.factory.makeHWSubmissionDevice(
-                new_submission, device, None, None, 1)
-        search_params = BugTaskSearchParams(
-            user=None, hardware_bus=HWBus.PCI, hardware_vendor_id='0x10de',
-            hardware_product_id='0x0455', hardware_owner_is_bug_reporter=True)
-        ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-        bugtasks = ubuntu.searchTasks(search_params)
-        self.assertEqual(
-            [1, 2],
-            [bugtask.bug.id for bugtask in bugtasks])
-
-
 class TestBugTaskSearch(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
@@ -2494,7 +2464,8 @@ def test_suite():
     loader = unittest.TestLoader()
     for bug_target_search_type_class in (
         PreloadBugtaskTargets, NoPreloadBugtaskTargets, QueryBugIDs):
-        class_name = 'Test%s' % bug_target_search_type_class.__name__
+        class_name = six.ensure_str(
+            'Test%s' % bug_target_search_type_class.__name__)
         class_bases = (
             bug_target_search_type_class, ProductTarget, OnceTests,
             SearchTestBase, TestCaseWithFactory)
@@ -2502,9 +2473,10 @@ def test_suite():
         suite.addTest(loader.loadTestsFromTestCase(test_class))
 
         for target_mixin in bug_targets_mixins:
-            class_name = 'Test%s%s' % (
-                bug_target_search_type_class.__name__,
-                target_mixin.__name__)
+            class_name = six.ensure_str(
+                'Test%s%s' % (
+                    bug_target_search_type_class.__name__,
+                    target_mixin.__name__))
             mixins = [
                 target_mixin, bug_target_search_type_class]
             class_bases = (

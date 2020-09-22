@@ -553,7 +553,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
     """Tests for the puller master that launch sub-processes."""
 
     layer = ZopelessAppServerLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestPullerMasterIntegration, self).setUp()

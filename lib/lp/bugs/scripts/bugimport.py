@@ -22,6 +22,7 @@ import time
 
 from defusedxml import cElementTree
 import pytz
+import six
 from six.moves import cPickle as pickle
 from storm.store import Store
 from zope.component import getUtility
@@ -86,8 +87,8 @@ def get_text(node):
         raise BugXMLSyntaxError('No child nodes are expected for <%s>'
                                 % node.tag)
     if node.text is None:
-        return ''
-    return node.text.strip()
+        return u''
+    return six.ensure_text(node.text.strip())
 
 
 def get_enum_value(enumtype, name):

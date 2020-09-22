@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the user vocabularies."""
@@ -19,9 +19,11 @@ from lp.testing import (
     ANONYMOUS,
     login,
     login_person,
+    record_two_runs,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.matchers import HasQueryCount
 
 
 class TestUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
@@ -67,6 +69,26 @@ class TestUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
         login_person(user)
         self.assertEqual([user], self._vocabTermValues())
 
+    def test_user_no_private_teams_query_count(self):
+        # Checking membership of private teams doesn't inflate the
+        # vocabulary's query count.
+        user = self.factory.makePerson()
+        team_owner = self.factory.makePerson()
+
+        def make_private_team():
+            team = self.factory.makeTeam(
+                owner=team_owner, visibility=PersonVisibility.PRIVATE)
+            team.addMember(person=user, reviewer=team_owner)
+
+        def expand_vocabulary():
+            login_person(user)
+            self.assertEqual([user], self._vocabTermValues())
+
+        recorder1, recorder2 = record_two_runs(
+            expand_vocabulary, make_private_team, 5,
+            login_method=lambda: login_person(team_owner))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
     def test_indirect_team_membership(self):
         # Indirect team membership is shown.
         user = self.factory.makePerson()
@@ -100,6 +122,28 @@ class TestAllUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
             owner=team_owner, visibility=PersonVisibility.PRIVATE)
         login_person(team_owner)
         self.assertEqual([team_owner, team], self._vocabTermValues())
+
+    def test_user_no_private_teams_query_count(self):
+        # Checking membership of private teams doesn't inflate the
+        # vocabulary's query count.
+        user = self.factory.makePerson()
+        team_owner = self.factory.makePerson()
+        teams = []
+
+        def make_private_team():
+            team = self.factory.makeTeam(
+                owner=team_owner, visibility=PersonVisibility.PRIVATE)
+            team.addMember(person=user, reviewer=team_owner)
+            teams.append(team)
+
+        def expand_vocabulary():
+            login_person(user)
+            self.assertContentEqual([user] + teams, self._vocabTermValues())
+
+        recorder1, recorder2 = record_two_runs(
+            expand_vocabulary, make_private_team, 5,
+            login_method=lambda: login_person(team_owner))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_only_exclusive_teams_for_series_branches(self):
         # For series branches, only exclusive teams are permitted in the vocab.

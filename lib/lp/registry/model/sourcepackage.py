@@ -217,12 +217,11 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
         return '<%s %r %r %r>' % (self.__class__.__name__,
             self.distribution, self.distroseries, self.sourcepackagename)
 
-    def _getPublishingHistory(self, version=None, include_status=None,
-                              exclude_status=None, order_by=None):
+    def _getPublishingHistory(self, include_status=None, order_by=None):
         """Build a query and return a list of SourcePackagePublishingHistory.
 
         This is mainly a helper function for this class so that code is
-        not duplicated. include_status and exclude_status must be a sequence.
+        not duplicated. include_status must be a sequence.
         """
         clauses = []
         clauses.append(
@@ -235,21 +234,12 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
                         self.sourcepackagename,
                         self.distroseries,
                         self.distribution.all_distro_archive_ids))
-        if version:
-            clauses.append(
-                "SourcePackageRelease.version = %s" % sqlvalues(version))
 
         if include_status:
             if not isinstance(include_status, list):
                 include_status = list(include_status)
             clauses.append("SourcePackagePublishingHistory.status IN %s"
                        % sqlvalues(include_status))
-
-        if exclude_status:
-            if not isinstance(exclude_status, list):
-                exclude_status = list(exclude_status)
-            clauses.append("SourcePackagePublishingHistory.status NOT IN %s"
-                       % sqlvalues(exclude_status))
 
         query = " AND ".join(clauses)
 
@@ -260,12 +250,10 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
             query, orderBy=order_by, clauseTables=['SourcePackageRelease'],
             prejoinClauseTables=['SourcePackageRelease'])
 
-    def _getFirstPublishingHistory(self, version=None, include_status=None,
-                                   exclude_status=None, order_by=None):
+    def _getFirstPublishingHistory(self, include_status=None, order_by=None):
         """As _getPublishingHistory, but just returns the first item."""
         try:
-            package = self._getPublishingHistory(
-                version, include_status, exclude_status, order_by)[0]
+            package = self._getPublishingHistory(include_status, order_by)[0]
         except IndexError:
             return None
         else:

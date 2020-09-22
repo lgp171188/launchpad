@@ -1,6 +1,8 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __all__ = [
     'CountryNameVocabulary',
     'LanguageVocabulary',
@@ -10,7 +12,8 @@ __all__ = [
 __metaclass__ = type
 
 import pytz
-from sqlobject import SQLObjectNotFound
+import six
+from zope.component import getUtility
 from zope.interface import alsoProvides
 from zope.schema.vocabulary import (
     SimpleTerm,
@@ -18,13 +21,16 @@ from zope.schema.vocabulary import (
     )
 
 from lp.services.webapp.vocabulary import SQLObjectVocabularyBase
-from lp.services.worlddata.interfaces.language import ILanguage
+from lp.services.worlddata.interfaces.language import (
+    ILanguage,
+    ILanguageSet,
+    )
 from lp.services.worlddata.interfaces.timezone import ITimezoneNameVocabulary
 from lp.services.worlddata.model.country import Country
 from lp.services.worlddata.model.language import Language
 
 # create a sorted list of the common time zone names, with UTC at the start
-_values = sorted(pytz.common_timezones)
+_values = sorted(six.ensure_text(tz) for tz in pytz.common_timezones)
 _values.remove('UTC')
 _values.insert(0, 'UTC')
 
@@ -75,8 +81,7 @@ class LanguageVocabulary(SQLObjectVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabulary`."""
-        try:
-            found_language = Language.byCode(token)
-        except SQLObjectNotFound:
+        found_language = getUtility(ILanguageSet).getLanguageByCode(token)
+        if found_language is None:
             raise LookupError(token)
         return self.getTerm(found_language)

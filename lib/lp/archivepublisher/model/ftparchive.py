@@ -4,7 +4,6 @@
 from collections import defaultdict
 import os
 import re
-from StringIO import StringIO
 import time
 
 import scandir
@@ -754,7 +753,7 @@ class FTPArchiveHandler:
         explicitly marked as dirty. dirty_pockets must be a nested
         dictionary of booleans, keyed by distroseries.name then pocket.
         """
-        apt_config = StringIO()
+        apt_config = six.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
                                           self._config.overrideroot,
                                           self._config.cacheroot,
@@ -875,7 +874,7 @@ class FTPArchiveHandler:
         except OSError:
             pass
 
-        apt_config = StringIO()
+        apt_config = six.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
                                           self._config.overrideroot,
                                           self._config.cacheroot,

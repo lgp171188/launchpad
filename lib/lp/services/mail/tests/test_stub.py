@@ -1,5 +1,7 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
@@ -64,7 +66,7 @@ def test_simple_sendmail():
 
     >>> sorted_test_emails = sorted(list(stub.test_emails))
     >>> for from_addr, to_addrs, raw_message in sorted_test_emails:
-    ...     print from_addr, to_addrs, 'nobody@example.com' in raw_message
+    ...     print(from_addr, to_addrs, 'nobody@example.com' in raw_message)
     bounces@canonical.com ['nobody2@example.com'] True
     bounces@canonical.com ['nobody2@example.com'] False
 
@@ -104,10 +106,10 @@ def test_simple_sendmail():
     shows the git revision and instance name.
 
     >>> message.get_params(header='X-Generated-By')
-    ... # doctest: +NORMALIZE_WHITESPACE
+    ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
     [('Launchpad (canonical.com)', ''),
      ('revision', '0000000000000000000000000000000000000000'),
-     ('instance', 'launchpad-lazr.conf')]
+     ('instance', 'testrunner_...')]
     """
 
 
