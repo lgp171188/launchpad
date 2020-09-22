@@ -589,44 +589,64 @@ class TestGitRepositoryView(BrowserTestCase):
         result = view.show_rescan_link
         self.assertTrue(result)
 
+    def assertContainsForkLink(self, browser, repository, text):
+        """Asserts that browser contains the fork link with the given text"""
+        with admin_logged_in():
+            url = canonical_url(repository, view_name='+fork')
+        fork_link = Tag(
+            "fork link", "a",
+            text=re.compile(re.escape(text)),
+            attrs={"class": "sprite add subscribe-self", "href": url})
+        self.assertThat(browser.contents, HTMLContains(fork_link))
+
+    def assertDoesntContainForkLink(self, browser, repository, texts):
+        """Asserts that there is no fork button with any of the given texts."""
+        with admin_logged_in():
+            url = canonical_url(repository, view_name='+fork')
+        for text in texts:
+            fork_link = Tag(
+                "fork link", "a",
+                text=re.compile(re.escape(text)),
+                attrs={"class": "sprite add subscribe-self", "href": url})
+            self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
+
     def test_hide_fork_link_for_repos_targeting_person(self):
         person = self.factory.makePerson()
         another_person = self.factory.makePerson()
         repository = self.factory.makeGitRepository(target=person)
         browser = self.getViewBrowser(
             repository, '+index', user=another_person)
-        fork_link = Tag(
-            "fork link", "a",
-            text="Fork it to your account",
-            attrs={"class": "sprite add subscribe-self",
-                   "href": "+fork"})
-        self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
+        self.assertDoesntContainForkLink(browser, repository, [
+            "Fork it to your account",
+            "Or click here to fork it to your account.",
+        ])
 
     def test_show_fork_link_for_the_right_users(self):
         another_person = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
         repo_owner = repository.owner
 
-        fork_link = Tag(
-            "fork link", "a",
-            text=re.compile(re.escape("Fork it to your account")),
-            attrs={"class": "sprite add subscribe-self",
-                   "href": canonical_url(repository, view_name="+fork")})
-
         # Do not show the link for the repository owner.
         browser = self.getViewBrowser(repository, '+index', user=repo_owner)
-        self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
+        self.assertDoesntContainForkLink(browser, repository, [
+            "Fork it to your account",
+            "Or click here to fork it to your account.",
+        ])
 
         # Shows for another person.
         browser = self.getViewBrowser(
             repository, '+index', user=another_person)
-        self.assertThat(browser.contents, HTMLContains(fork_link))
+        self.assertContainsForkLink(
+            browser, repository, "Or click here to fork it to your account.")
 
         # Even for another person, do not show it if the feature flag is off.
         self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: ''}))
         browser = self.getViewBrowser(
             repository, '+index', user=another_person)
-        self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
+        self.assertDoesntContainForkLink(browser, repository, [
+            "Fork it to your account",
+            "Or click here to fork it to your account.",
+        ])
 
 
 class TestGitRepositoryViewPrivateArtifacts(BrowserTestCase):

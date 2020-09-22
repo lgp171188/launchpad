@@ -9,12 +9,11 @@
     <div metal:fill-slot="main">
       <p>
         This will create a copy of
-        lp:<tal:repository replace="context/name"/> repository in your
-        account.
+        <a tal:replace="structure context/fmt:link" /> in your account.
       </p>
       <p>
         After the fork process, you will be able to git clone the
-        repository, push to it and create Merge Proposals to the original
+        repository, push to it and create merge proposals to the original
         repository.
       </p>
       <div metal:use-macro="context/@@launchpad_form/form" />

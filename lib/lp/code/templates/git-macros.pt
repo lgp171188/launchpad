@@ -34,12 +34,6 @@
         </tt>
       </tal:ssh>
     </dd>
-
-    <dt tal:condition="python: getattr(view, 'allow_fork', False) and view.user">
-      <a tal:attributes="href view/fork_url" class="sprite add subscribe-self">
-        Fork it to your account
-      </a>
-    </dt>
   </dl>
 
   <div id="push-directions"
@@ -74,6 +68,11 @@
             </tt>
           </dd>
         </dl>
+        <dt tal:condition="python: getattr(view, 'allow_fork', False)">
+          <a tal:attributes="href view/fork_url" class="sprite add subscribe-self">
+            Fork it to your account
+          </a>
+        </dt>
       </tal:can-push>
 
       <tal:cannot-push condition="not:view/user_can_push">
@@ -97,6 +96,11 @@
             <span class="ssh-url" tal:content="view/git_ssh_url_non_owner" />
             <em>BRANCHNAME</em>
             </tt>
+          </dd>
+          <dd tal:condition="python: getattr(view, 'allow_fork', False)">
+            <a tal:attributes="href view/fork_url" class="sprite add subscribe-self">
+              Or click here to fork it to your account.
+            </a>
           </dd>
         </dl>
       </tal:cannot-push>
