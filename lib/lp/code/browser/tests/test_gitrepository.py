@@ -18,6 +18,7 @@ from textwrap import dedent
 from fixtures import FakeLogger
 import pytz
 import soupmatchers
+from lp.code.interfaces.gitcollection import IGitCollection
 from soupmatchers import (
     Tag,
     HTMLContains,
@@ -57,8 +58,8 @@ from lp.code.enums import (
     GitGranteeType,
     GitPermissionType,
     GitRepositoryStatus,
-    GitRepositoryType,
-    )
+    GitRepositoryType, GitListingSort,
+)
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.gitjob import GitRefScanJob
@@ -2136,19 +2137,17 @@ class TestGitRepositoryForkView(BrowserTestCase):
         self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: 'on'}))
 
     def getReposOwnedBy(self, user):
-        rs = IStore(GitRepository).find(GitRepository)
-        return rs.find(GitRepository.owner == user).order_by(
-            Desc(GitRepository.date_created))
+        return IGitCollection(user).getRepositories(
+            sort_by=GitListingSort.NEWEST_FIRST)
 
     def test_fork_page_redirects_with_disabled_feature(self):
         self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: ''}))
         with admin_logged_in():
             repository = self.factory.makeGitRepository()
             owner = repository.owner
-            repository_url = canonical_url(repository)
-        browser = self.getViewBrowser(
+        self.assertRaises(
+            Unauthorized, self.getViewBrowser,
             repository, "+fork", rootsite="code", user=owner)
-        self.assertEqual(browser.url, repository_url)
 
     def test_fork_page_shows_input(self):
         with admin_logged_in():
@@ -2233,11 +2232,9 @@ class TestGitRepositoryForkView(BrowserTestCase):
 
             # No repository should have been created.
             self.assertEqual(0, self.getReposOwnedBy(another_person).count())
-            notifications = view.request.response.notifications
-            self.assertEqual(1, len(notifications))
             self.assertEqual(
-                "You should select a valid user to fork the repository.",
-                notifications[0].message)
+                ['You should select a valid user to fork the repository.'],
+                view.errors)
 
             self.assertEqual(None, view.next_url)
 
