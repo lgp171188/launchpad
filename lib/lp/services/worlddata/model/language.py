@@ -2,6 +2,8 @@
 # the GNU Affero General Public License version 3 (see the file
 # LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'Language',
@@ -67,12 +69,12 @@ class Language(SQLBase):
         default=TextDirection.LTR)
 
     translation_teams = SQLRelatedJoin(
-        'Person', joinColumn="language",
+        six.ensure_str('Person'), joinColumn="language",
         intermediateTable='Translator', otherColumn='translator')
 
     _countries = SQLRelatedJoin(
-        'Country', joinColumn='language', otherColumn='country',
-        intermediateTable='SpokenIn')
+        six.ensure_str('Country'), joinColumn='language',
+        otherColumn='country', intermediateTable='SpokenIn')
 
     # Define a read/write property `countries` so it can be passed
     # to language administration `LaunchpadFormView`.
