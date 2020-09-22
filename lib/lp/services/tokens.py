@@ -11,6 +11,8 @@ __all__ = [
 
 import random
 
+import six
+
 
 def create_token(token_length):
     """Create a random token string.
@@ -23,4 +25,4 @@ def create_token(token_length):
     token = ''.join(
         random.SystemRandom().choice(characters)
         for count in range(token_length))
-    return unicode(token)
+    return six.ensure_text(token)

@@ -12,6 +12,7 @@ __metaclass__ = type
 from datetime import datetime
 
 import pytz
+import six
 from storm.locals import (
     DateTime,
     Int,
@@ -58,9 +59,9 @@ class FeatureFlagChangelogEntry(Storm):
 
     def __init__(self, diff, comment, person):
         super(FeatureFlagChangelogEntry, self).__init__()
-        self.diff = unicode(diff)
+        self.diff = six.ensure_text(diff)
         self.date_changed = datetime.now(pytz.timezone('UTC'))
-        self.comment = unicode(comment)
+        self.comment = six.ensure_text(comment)
         self.person = person
 
 
