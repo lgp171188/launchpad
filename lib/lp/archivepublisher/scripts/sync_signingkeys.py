@@ -138,7 +138,7 @@ class SyncSigningKeysScript(LaunchpadScript):
         series_paths = {}
         pubconf = getPubConfig(archive)
         if pubconf is None or pubconf.signingroot is None:
-            self.logger.info(
+            self.logger.debug(
                 "Skipping %s: no pubconfig or no signing root." %
                 archive.reference)
             return {}
@@ -201,7 +201,7 @@ class SyncSigningKeysScript(LaunchpadScript):
 
     def main(self):
         for i, archive in enumerate(self.getArchives()):
-            self.logger.info(
+            self.logger.debug(
                 "#%s - Processing keys for archive %s.", i, archive.reference)
             self.processArchive(archive)
         if self.options.dry_run:

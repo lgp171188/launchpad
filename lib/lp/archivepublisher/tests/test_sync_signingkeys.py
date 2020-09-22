@@ -232,7 +232,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         # Check the log messages.
         content = script.logger.content.as_text()
         self.assertIn(
-            "INFO #0 - Processing keys for archive %s." % archive.reference,
+            "DEBUG #0 - Processing keys for archive %s." % archive.reference,
             content)
 
         tpl = "INFO Found key files %s / %s (type=%s, series=%s)."
@@ -329,7 +329,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.assertThat(
             script.logger.content.as_text().splitlines(),
             ContainsAll([
-                "INFO #0 - Processing keys for archive %s." %
+                "DEBUG #0 - Processing keys for archive %s." %
                     archive.reference,
                 found_tpl % (
                     os.path.join(archive_root, "uefi.key"),
