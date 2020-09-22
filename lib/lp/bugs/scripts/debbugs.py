@@ -3,12 +3,18 @@
 
 from __future__ import absolute_import, print_function
 
-import cStringIO
 from datetime import datetime
 import email
+import io
 import os
 import re
 import subprocess
+import sys
+
+if sys.version_info[:2] >= (3, 5):
+    from email import message_from_bytes
+else:
+    from email import message_from_string as message_from_bytes
 
 import six
 
@@ -58,7 +64,7 @@ class Bug:
         if self._emails:
             return self._emails
         for comment in self.comments:
-            message = email.message_from_string(comment)
+            message = message_from_bytes(comment)
             self._emails.append(message)
         return self._emails
 
@@ -197,7 +203,7 @@ class Database:
             self.root, 'db-h', self._hash(bug), '%d.report' % bug.id)
 
         try:
-            fd = open(report)
+            fd = open(report, 'rb')
         except IOError as e:
             if e.errno == 2:
                 raise ReportMissing(report)
@@ -206,7 +212,7 @@ class Database:
         bug.report = fd.read()
         fd.close()
 
-        report_msg = email.message_from_string(bug.report)
+        report_msg = message_from_bytes(bug.report)
         charset = report_msg.get_content_charset('ascii')
         description = report_msg.get_payload(decode=True)
         bug.description = description.decode(charset)
@@ -226,11 +232,11 @@ class Database:
                 stdout=subprocess.PIPE, stdin=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             logreader = process.stdout
-            comment = cStringIO.StringIO()
+            comment = io.BytesIO()
             for line in logreader:
                 if line == '.\n':
                     comments.append(comment.getvalue())
-                    comment = cStringIO.StringIO()
+                    comment = io.BytesIO()
                 elif line.startswith('.'):
                     comment.write(line[1:])
                 else:
@@ -243,7 +249,8 @@ class Database:
 
             process.wait()
             err = process.stderr
-            errors = "\n".join(err.readlines())
+            errors = b"\n".join(err.readlines()).decode(
+                "UTF-8", errors="replace")
             if process.returncode != 0:
                 raise LogParseFailed(errors)
 

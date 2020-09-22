@@ -6,6 +6,7 @@
 import email.message
 import errno
 import os
+import sys
 
 from testtools.matchers import (
     Equals,
@@ -56,7 +57,10 @@ class TestDebBugs(TestCase):
             for h in headers:
                 m[h] = headers[h]
         with open(os.path.join(bucket, "%s.summary" % (bug_id,)), "wb") as f:
-            f.write(m.as_string())
+            if sys.version_info[:2] >= (3, 5):
+                f.write(m.as_bytes())
+            else:
+                f.write(m.as_string())
 
     def test_no_db_dir(self):
         err = self.assertRaises(DebBugsDatabaseNotFound, self.get_tracker)
