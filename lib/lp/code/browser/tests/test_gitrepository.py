@@ -18,12 +18,10 @@ from textwrap import dedent
 from fixtures import FakeLogger
 import pytz
 import soupmatchers
-from lp.code.interfaces.gitcollection import IGitCollection
 from soupmatchers import (
     Tag,
     HTMLContains,
     )
-from storm.expr import Desc
 from storm.store import Store
 from testtools.matchers import (
     AfterPreprocessing,
@@ -56,14 +54,15 @@ from lp.code.enums import (
     CodeReviewVote,
     GitActivityType,
     GitGranteeType,
+    GitListingSort,
     GitPermissionType,
     GitRepositoryStatus,
-    GitRepositoryType, GitListingSort,
-)
+    GitRepositoryType,
+    )
+from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.gitjob import GitRefScanJob
-from lp.code.model.gitrepository import GitRepository
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.enums import (
     BranchSharingPolicy,
@@ -76,7 +75,6 @@ from lp.registry.interfaces.person import (
     )
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp.publisher import canonical_url
@@ -596,7 +594,7 @@ class TestGitRepositoryView(BrowserTestCase):
         fork_link = Tag(
             "fork link", "a",
             text=re.compile(re.escape(text)),
-            attrs={"class": "sprite add subscribe-self", "href": url})
+            attrs={"class": "sprite add", "href": url})
         self.assertThat(browser.contents, HTMLContains(fork_link))
 
     def assertDoesntContainForkLink(self, browser, repository, texts):
@@ -607,7 +605,7 @@ class TestGitRepositoryView(BrowserTestCase):
             fork_link = Tag(
                 "fork link", "a",
                 text=re.compile(re.escape(text)),
-                attrs={"class": "sprite add subscribe-self", "href": url})
+                attrs={"class": "sprite add", "href": url})
             self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
 
     def test_hide_fork_link_for_repos_targeting_person(self):
@@ -630,14 +628,14 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository, '+index', user=repo_owner)
         self.assertDoesntContainForkLink(browser, repository, [
             "Fork it to your account",
-            "Or click here to fork it to your account.",
+            "fork it directly to your account",
         ])
 
         # Shows for another person.
         browser = self.getViewBrowser(
             repository, '+index', user=another_person)
         self.assertContainsForkLink(
-            browser, repository, "Or click here to fork it to your account.")
+            browser, repository, "fork it directly to your account")
 
         # Even for another person, do not show it if the feature flag is off.
         self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: ''}))
@@ -645,7 +643,7 @@ class TestGitRepositoryView(BrowserTestCase):
             repository, '+index', user=another_person)
         self.assertDoesntContainForkLink(browser, repository, [
             "Fork it to your account",
-            "Or click here to fork it to your account.",
+            "fork it directly to your account",
         ])
 
 

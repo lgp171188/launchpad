@@ -59,6 +59,7 @@ from zope.schema.vocabulary import (
     SimpleTerm,
     SimpleVocabulary,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.browser.informationtype import InformationTypePortletMixin
@@ -141,7 +142,7 @@ from lp.services.webapp.publisher import DataDownloadView
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.hassnaps import HasSnapsViewMixin
-from zope.security.interfaces import Unauthorized
+
 
 GIT_REPOSITORY_FORK_ENABLED = 'gitrepository.fork.enabled'
 
@@ -478,6 +479,7 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
             return False
         return scan_job.job.status == JobStatus.FAILED
 
+    @property
     def warning_message(self):
         if self.context.status == GitRepositoryStatus.CREATING:
             return "This repository is being created."

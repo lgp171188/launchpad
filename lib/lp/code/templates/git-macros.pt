@@ -69,7 +69,7 @@
           </dd>
         </dl>
         <dt tal:condition="python: getattr(view, 'allow_fork', False)">
-          <a tal:attributes="href view/fork_url" class="sprite add subscribe-self">
+          <a tal:attributes="href view/fork_url" class="sprite add">
             Fork it to your account
           </a>
         </dt>
@@ -98,9 +98,10 @@
             </tt>
           </dd>
           <dd tal:condition="python: getattr(view, 'allow_fork', False)">
-            <a tal:attributes="href view/fork_url" class="sprite add subscribe-self">
-              Or click here to fork it to your account.
-            </a>
+            or
+            <a tal:attributes="href view/fork_url" class="sprite add">
+              fork it directly to your account
+            </a>.
           </dd>
         </dl>
       </tal:cannot-push>
