@@ -141,7 +141,7 @@ from lp.services.webapp.publisher import DataDownloadView
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.hassnaps import HasSnapsViewMixin
-
+from zope.security.interfaces import Unauthorized
 
 GIT_REPOSITORY_FORK_ENABLED = 'gitrepository.fork.enabled'
 
@@ -487,14 +487,11 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
     def allow_fork(self):
         if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
             return False
-        # Users cannot fork repositories that targets a user.
-        if IPerson.providedBy(self.context.target):
-            return False
         # User cannot fork repositories they already own (note that forking a
         # repository owned by a team the user is in is still fine).
         if self.context.owner == self.user:
             return False
-        return True
+        return self.context.namespace.supports_repository_forking
 
     @property
     def fork_url(self):
@@ -509,8 +506,7 @@ class GitRepositoryForkView(LaunchpadEditFormView):
 
     def initialize(self):
         if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
-            self.request.response.redirect(canonical_url(self.context))
-            return
+            raise Unauthorized()
         super(GitRepositoryForkView, self).initialize()
 
     def setUpFields(self):
@@ -521,15 +517,21 @@ class GitRepositoryForkView(LaunchpadEditFormView):
             __name__=u'owner')
         self.form_fields += FormFields(owner_field)
 
-    @action('Fork it', name='fork')
-    def fork(self, action, data):
+    @property
+    def initial_values(self):
+        return {'owner': self.user}
+
+    def validate(self, data):
         new_owner = data.get("owner")
         if not new_owner or not self.user.inTeam(new_owner):
-            self.request.response.addNotification(
+            self.setFieldError(
+                "owner",
                 "You should select a valid user to fork the repository.")
-            return
+
+    @action('Fork it', name='fork')
+    def fork(self, action, data):
         forked = getUtility(IGitRepositorySet).fork(
-            self.context, self.user, new_owner)
+            self.context, self.user, data.get("owner"))
         self.request.response.addNotification("Repository forked.")
         self.next_url = canonical_url(forked)
 

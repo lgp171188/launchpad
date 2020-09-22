@@ -89,7 +89,7 @@
              tal:content="context/owner/displayname">Team</a>
           can push to this <tal:kind replace="kind" />.
         </tal:team>
-        <dl tal:condition="context/namespace/show_push_url_hints" id="push-url">
+        <dl tal:condition="context/namespace/supports_repository_forking" id="push-url">
           <dt>To fork this repository and propose fixes from there, push to this repository:</dt>
           <dd>
             <tt class="command">

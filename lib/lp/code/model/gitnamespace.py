@@ -285,7 +285,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = False
     allow_recipe_name_from_target = False
-    show_push_url_hints = False
+    supports_repository_forking = False
 
     def __init__(self, person):
         self.owner = person
@@ -369,7 +369,7 @@ class ProjectGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
-    show_push_url_hints = True
+    supports_repository_forking = True
 
     def __init__(self, person, project):
         self.owner = person
@@ -461,7 +461,7 @@ class PackageGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
-    show_push_url_hints = True
+    supports_repository_forking = True
 
     def __init__(self, person, distro_source_package):
         self.owner = person
@@ -553,7 +553,7 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
-    show_push_url_hints = False
+    supports_repository_forking = False
 
     def __init__(self, person, oci_project):
         self.owner = person
