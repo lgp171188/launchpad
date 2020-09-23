@@ -382,7 +382,7 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
         publication = LaunchpadBrowserPublication(None)
         self.assertIsNone(publication._prepPageIDForMetrics(None))
 
-    def test_prepPageIDForMetrics_pagid(self):
+    def test_prepPageIDForMetrics_pageid(self):
         # Pageids have characters that are invalid in statsd protocol
         publication = LaunchpadBrowserPublication(None)
         self.assertEqual(
