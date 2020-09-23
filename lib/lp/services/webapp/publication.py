@@ -430,9 +430,9 @@ class LaunchpadBrowserPublication(
         # pageid is calculated at `afterTraversal`, but can be missing
         # if callObject is used directly, so either use the one we've got
         # or work it out.
-        pageid = request._orig_env.get(
-            'launchpad.pageid',
-            self._setPageIDInEnvironment(request, ob))
+        pageid = request._orig_env.get('launchpad.pageid')
+        if not pageid:
+            self._setPageIDInEnvironment(request, ob)
         # And spit the pageid out to our tracelog.
         tracelog(request, 'p', pageid)
 
@@ -487,7 +487,8 @@ class LaunchpadBrowserPublication(
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
             'publication_duration,success=True,pageid={}'.format(
-                request._orig_env.get('launchpad.pageid')),
+                self._prepPageIDForMetrics(
+                    request._orig_env.get('launchpad.pageid'))),
             publication_duration * 1000)
 
         # Calculate SQL statement statistics.
@@ -557,6 +558,7 @@ class LaunchpadBrowserPublication(
         notify(BeforeTraverseEvent(ob, request))
 
     def _setPageIDInEnvironment(self, request, view):
+        """Set the page ID in the WSGI environment."""
         # The view may be security proxied
         view = removeSecurityProxy(view)
         # It's possible that the view is a bound method.
@@ -565,6 +567,10 @@ class LaunchpadBrowserPublication(
         pageid = self.constructPageID(view, context)
         request.setInWSGIEnvironment('launchpad.pageid', pageid)
         return pageid
+
+    def _prepPageIDForMetrics(self, pageid):
+        """Remove characters from PageID that can't be used in statsd."""
+        return re.sub('[^0-9a-zA-Z]+', '-', pageid)
 
     def afterTraversal(self, request, ob):
         """See zope.publisher.interfaces.IPublication.
@@ -586,7 +592,8 @@ class LaunchpadBrowserPublication(
             'launchpad.traversalduration', traversal_duration)
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'traversal_duration,success=True,pageid={}'.format(pageid),
+            'traversal_duration,success=True,pageid={}'.format(
+                self._prepPageIDForMetrics(pageid)),
             traversal_duration * 1000)
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
@@ -623,7 +630,8 @@ class LaunchpadBrowserPublication(
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
                 'publication_duration,success=False,pageid={}'.format(
-                    request._orig_env.get('launchpad.pageid')),
+                    self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid'))),
                 publication_duration * 1000)
             if thread_now is not None:
                 publication_thread_duration = (
@@ -640,7 +648,8 @@ class LaunchpadBrowserPublication(
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
                 'traversal_duration,success=False,pageid={}'.format(
-                    request._orig_env.get('launchpad.pageid')
+                    self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid'))
                 ), traversal_duration * 1000)
             if thread_now is not None:
                 traversal_thread_duration = (
