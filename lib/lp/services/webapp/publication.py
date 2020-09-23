@@ -432,7 +432,7 @@ class LaunchpadBrowserPublication(
         # or work it out.
         pageid = request._orig_env.get('launchpad.pageid')
         if not pageid:
-            self._setPageIDInEnvironment(request, ob)
+            pageid = self._setPageIDInEnvironment(request, ob)
         # And spit the pageid out to our tracelog.
         tracelog(request, 'p', pageid)
 
@@ -570,6 +570,8 @@ class LaunchpadBrowserPublication(
 
     def _prepPageIDForMetrics(self, pageid):
         """Remove characters from PageID that can't be used in statsd."""
+        if not pageid:
+            return pageid
         return re.sub('[^0-9a-zA-Z]+', '-', pageid)
 
     def afterTraversal(self, request, ob):

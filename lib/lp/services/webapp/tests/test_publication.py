@@ -326,11 +326,11 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             MatchesListwise(
                 [MatchesListwise(
                     (Equals('traversal_duration,success=True,'
-                     'pageid=RootObject:index.html'),
+                     'pageid=RootObject-index-html'),
                      GreaterThan(0))),
                  MatchesListwise(
                      (Equals('publication_duration,success=True,'
-                      'pageid=RootObject:index.html'),
+                      'pageid=RootObject-index-html'),
                       GreaterThan(0)))]))
 
     def test_traversal_failure_stats(self):
@@ -370,9 +370,21 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             MatchesListwise(
                 [MatchesListwise(
                     (Equals('traversal_duration,success=True,'
-                     'pageid=RootObject:index.html'),
+                     'pageid=RootObject-index-html'),
                      GreaterThan(0))),
                  MatchesListwise(
                      (Equals('publication_duration,success=False,'
-                      'pageid=RootObject:index.html'),
+                      'pageid=RootObject-index-html'),
                       GreaterThan(0)))]))
+
+    def test_prepPageIDForMetrics_none(self):
+        # Sometimes we have no pageid
+        publication = LaunchpadBrowserPublication(None)
+        self.assertIsNone(publication._prepPageIDForMetrics(None))
+
+    def test_prepPageIDForMetrics_pagid(self):
+        # Pageids have characters that are invalid in statsd protocol
+        publication = LaunchpadBrowserPublication(None)
+        self.assertEqual(
+            'RootObject-index-html',
+            publication._prepPageIDForMetrics("RootObject:index.html"))
