@@ -631,7 +631,9 @@ class LaunchpadBrowserPublication(
                 'launchpad.traversalduration', traversal_duration)
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
-                'traversal_duration,success=False', traversal_duration * 1000)
+                'traversal_duration,success=False,pageid={}'.format(
+                    request._orig_env.get('launchpad.pageid')
+                ), traversal_duration * 1000)
             if thread_now is not None:
                 traversal_thread_duration = (
                     thread_now - request._traversal_thread_start)

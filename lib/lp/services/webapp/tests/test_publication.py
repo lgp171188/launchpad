@@ -61,6 +61,7 @@ from lp.testing import (
     TestCase,
     TestCaseWithFactory,
     )
+from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -329,5 +330,49 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
                      GreaterThan(0))),
                  MatchesListwise(
                      (Equals('publication_duration,success=True,'
+                      'pageid=RootObject:index.html'),
+                      GreaterThan(0)))]))
+
+    def test_traversal_failure_stats(self):
+        self.useFixture(FakeLogger())
+        browser = self.getUserBrowser()
+        self.patch(
+            LaunchpadBrowserPublication,
+            'afterTraversal',
+            FakeMethod(failure=Exception))
+        self.assertRaises(
+            Exception,
+            browser.open,
+            'http://launchpad.test/')
+        self.assertEqual(1, self.stats_client.timing.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.timing.call_args_list],
+            MatchesListwise(
+                [MatchesListwise(
+                    (Equals('traversal_duration,success=False,'
+                     'pageid=None'),
+                     GreaterThan(0)))]))
+
+    def test_publication_failure_stats(self):
+        self.useFixture(FakeLogger())
+        browser = self.getUserBrowser()
+        self.patch(
+            dbadapter,
+            'set_permit_timeout_from_features',
+            FakeMethod(failure=Exception))
+        self.assertRaises(
+            Exception,
+            browser.open,
+            'http://launchpad.test/')
+        self.assertEqual(2, self.stats_client.timing.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.timing.call_args_list],
+            MatchesListwise(
+                [MatchesListwise(
+                    (Equals('traversal_duration,success=True,'
+                     'pageid=RootObject:index.html'),
+                     GreaterThan(0))),
+                 MatchesListwise(
+                     (Equals('publication_duration,success=False,'
                       'pageid=RootObject:index.html'),
                       GreaterThan(0)))]))
