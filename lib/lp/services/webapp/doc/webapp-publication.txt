@@ -686,8 +686,6 @@ some calls to prepare that code to what handleException expects.)
 If the exception is raised before we even start the traversal, then
 there's nothing to store.
 
-    >>> from lp.services.webapp.adapter import (
-    ...     clear_request_started, set_request_started)
     >>> logger.setLevel(logging.CRITICAL)
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
