@@ -861,7 +861,8 @@ class LaunchpadBrowserResponse(NotificationResponse, BrowserResponse):
             else:
                 status = 303
         super(LaunchpadBrowserResponse, self).redirect(
-            unicode(location).encode('UTF-8'), status=status, trusted=trusted)
+            six.ensure_str(six.text_type(location)),
+            status=status, trusted=trusted)
 
 
 def adaptResponseToSession(response):

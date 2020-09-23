@@ -19,6 +19,7 @@ from lazr.uri import (
     URI,
     )
 from psycopg2.extensions import TransactionRollbackError
+import six
 from six.moves.urllib.parse import quote
 from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
@@ -248,7 +249,7 @@ class LaunchpadBrowserPublication(
         threadrequestfile = open_for_writing(
             'logs/thread-%s.request' % threadid, 'w')
         try:
-            request_txt = unicode(request).encode('UTF-8')
+            request_txt = six.text_type(request).encode('UTF-8')
         except Exception:
             request_txt = 'Exception converting request to string\n\n'
             try:

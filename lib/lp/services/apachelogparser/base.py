@@ -11,6 +11,7 @@ from lazr.uri import (
     URI,
     )
 import pytz
+import six
 from zope.component import getUtility
 
 from lp.services.apachelogparser.model.parsedapachelog import ParsedApacheLog
@@ -34,7 +35,7 @@ def get_files_to_parse(file_paths):
     file_paths = sorted(file_paths, key=lambda path: os.stat(path).st_mtime)
     for file_path in file_paths:
         fd, file_size = get_fd_and_file_size(file_path)
-        first_line = unicode(fd.readline())
+        first_line = six.ensure_text(fd.readline())
         parsed_file = store.find(ParsedApacheLog, first_line=first_line).one()
         position = 0
         if parsed_file is not None:
@@ -169,7 +170,7 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
 
 def create_or_update_parsedlog_entry(first_line, parsed_bytes):
     """Create or update the ParsedApacheLog with the given first_line."""
-    first_line = unicode(first_line)
+    first_line = six.ensure_text(first_line)
     parsed_file = IStore(ParsedApacheLog).find(
         ParsedApacheLog, first_line=first_line).one()
     if parsed_file is None:

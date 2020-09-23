@@ -84,7 +84,7 @@ def sorted_version_numbers(sequence, key=_identity):
 
     >>> class series:
     ...   def __init__(self, name):
-    ...     self.name = unicode(name)
+    ...     self.name = six.ensure_text(name)
     >>> bzr_versions = [series('0.9'), series('0.10'), series('0.11'),
     ...                 series('bzr-0.9'), series('bzr-0.10'),
     ...                 series('bzr-0.11'), series('foo')]
@@ -130,7 +130,7 @@ def sorted_dotted_numbers(sequence, key=_identity):
 
     >>> class series:
     ...   def __init__(self, name):
-    ...     self.name = unicode(name)
+    ...     self.name = six.ensure_text(name)
     >>> bzr_versions = [series('0.9'), series('0.10'), series('0.11'),
     ...                 series('bzr-0.9'), series('bzr-0.10'),
     ...                 series('bzr-0.11'), series('foo')]

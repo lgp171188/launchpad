@@ -5,6 +5,7 @@ This document describes the current procedure to encrypt and
 decrypt contents in Launchpad, and demonstrates that the methods
 can support Unicode contents.
 
+    >>> import six
     >>> from lp.testing.gpgkeys import (
     ...     import_public_test_keys, import_secret_test_key, decrypt_content)
     >>> import transaction
@@ -83,7 +84,7 @@ Decrypt a unicode content:
 
     >>> content = u'a\xe7ucar'
     >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)
-    >>> cipher = unicode(cipher)
+    >>> cipher = six.ensure_text(cipher)
     >>> plain = decrypt_content(cipher, 'test')    
     Traceback (most recent call last):
     ...
