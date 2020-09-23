@@ -34,7 +34,7 @@ packaging links.
     >>> user_browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> user_browser.open('http://launchpad.test/ubuntu/+source/alsa-utils')
     >>> link = user_browser.getLink(
-    ...     url='/ubuntu/warty/+source/alsa-utils/+remove-packaging')
+    ...     url='/ubuntu/+series/warty/+source/alsa-utils/+remove-packaging')
     >>> print(link)
     <Link text='Remove upstream link'...
 
@@ -49,7 +49,7 @@ This button is not displayed to anonymous users.
 Clicking this button deletes the corresponding packaging association.
 
     >>> link = user_browser.getLink(
-    ...     url='/ubuntu/warty/+source/alsa-utils/+remove-packaging')
+    ...     url='/ubuntu/+series/warty/+source/alsa-utils/+remove-packaging')
     >>> link.click()
     >>> user_browser.getControl('Unlink').click()
     >>> content = user_browser.contents

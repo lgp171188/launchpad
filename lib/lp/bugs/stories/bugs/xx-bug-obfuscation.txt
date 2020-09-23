@@ -11,7 +11,7 @@ description in the bug page.
 
     >>> user_browser.open(
     ...     'http://bugs.launchpad.test'
-    ...     '/debian/sarge/+source/mozilla-firefox/+bug/3')
+    ...     '/debian/+series/sarge/+source/mozilla-firefox/+bug/3')
     >>> user_browser.title
     'Bug #3 ...'
 
@@ -24,7 +24,7 @@ An anonymous cannot see the email address anywhere in the page.
 
     >>> anon_browser.open(
     ...     'http://bugs.launchpad.test'
-    ...     '/debian/sarge/+source/mozilla-firefox/+bug/3')
+    ...     '/debian/+series/sarge/+source/mozilla-firefox/+bug/3')
     >>> print(anon_browser.title)
     Bug #3 ...
 

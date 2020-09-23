@@ -61,7 +61,7 @@ Let's just check if the page is presented without errors (see bug
 
   >>> browser.getLink('mozilla-firefox 0.9').click()
   >>> browser.url
-  'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox/0.9'
+  'http://launchpad.test/ubuntu/+series/warty/i386/mozilla-firefox/0.9'
 
 When rendering package relationships only existent packages contain
 links to within LP application, not found packages are rendered as
@@ -75,26 +75,27 @@ links to a binary in the context in question.
   ...     parse_relationship_section(str(section))
 
   >>> print_relation('provides')
-  LINK: "mozilla-firefox" -> http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
+  LINK: "mozilla-firefox" ->
+        http://launchpad.test/ubuntu/+series/warty/i386/mozilla-firefox
 
   >>> print_relation('predepends')
   TEXT: "foo"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/+series/warty/i386/pmount
 
   >>> print_relation('enhances')
   TEXT: "bar"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/+series/warty/i386/pmount
 
   >>> print_relation('breaks')
   TEXT: "baz"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/+series/warty/i386/pmount
 
 The 'Built-Using' section contains a link to a source in the context in
 question.
 
   >>> print_relation('builtusing')
   LINK: "iceweasel (= 1.0)" ->
-  http://launchpad.test/ubuntu/warty/+source/iceweasel
+  http://launchpad.test/ubuntu/+series/warty/+source/iceweasel
 
 
 'Depends', 'Conflicts', 'Replaces', 'Suggests' and 'Recommends'
@@ -131,7 +132,8 @@ Even when there is no information to present and the package control
 files don't contain the field, we still present the  corresponding
 relationship section.
 
-  >>> browser.open('http://launchpad.test/ubuntu/warty/i386/pmount/0.1-1')
+  >>> browser.open(
+  ...     'http://launchpad.test/ubuntu/+series/warty/i386/pmount/0.1-1')
   >>> print_relation('predepends')
   EMPTY SECTION
 

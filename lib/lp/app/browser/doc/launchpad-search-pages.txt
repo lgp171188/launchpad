@@ -519,7 +519,7 @@ showing the matching terms in context of the page text.
     >>> page.title
     u'...Bug... #2 in Ubuntu Hoary: \u201cBlackhole Trash folder\u201d'
     >>> page.url
-    'http://bugs.launchpad.test/ubuntu/hoary/+bug/2'
+    'http://bugs.launchpad.test/ubuntu/+series/hoary/+bug/2'
     >>> page.summary
     u'...Launchpad\u2019s ...bug... tracker allows collaboration...'
 

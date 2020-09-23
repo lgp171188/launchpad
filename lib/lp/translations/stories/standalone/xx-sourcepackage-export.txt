@@ -16,12 +16,13 @@ Mark is a qualified user.
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/mozilla/')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+    ...     'mozilla/')
     >>> download = browser.getLink('download a full tarball')
     >>> download_url = download.url
     >>> download.click()
     >>> print(browser.url)
-    http://translations.launchpad.test/ubuntu/hoary/+source/mozilla/+export
+    http://translations.launchpad.test/ubuntu/+series/hoary/+source/mozilla/+export
 
 
 Authorization
@@ -43,7 +44,7 @@ reasonable level.
     ...     """
     ...     browser.open(
     ...         'http://translations.launchpad.test/'
-    ...         'ubuntu/hoary/+source/mozilla/')
+    ...         'ubuntu/+series/hoary/+source/mozilla/')
     ...     try:
     ...         browser.getLink('download a full tarball').click()
     ...     except LinkNotFoundError:
@@ -164,14 +165,14 @@ format, and request the download.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/hoary/+source/mozilla/+export')
+    ...     'ubuntu/+series/hoary/+source/mozilla/+export')
     >>> browser.title
     'Download : Hoary (5.04) : Translations : mozilla package : Ubuntu'
 
     >>> browser.getControl('Request Download').click()
 
     >>> print(browser.url)
-    http://translations.launchpad.test/ubuntu/hoary/+source/mozilla
+    http://translations.launchpad.test/ubuntu/+series/hoary/+source/mozilla
 
     >>> print_feedback_messages(browser.contents)
     Your request has been received. Expect to receive an email shortly.
@@ -202,7 +203,7 @@ there before.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/hoary/+source/evolution/+export')
+    ...     'ubuntu/+series/hoary/+source/evolution/+export')
     >>> print_feedback_messages(browser.contents)
 
     >>> an_evolution_template.source_file_format = TranslationFileFormat.MO
@@ -210,7 +211,7 @@ there before.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/hoary/+source/evolution/+export')
+    ...     'ubuntu/+series/hoary/+source/evolution/+export')
     >>> print_feedback_messages(browser.contents)
     This package has templates with different native file formats.  If you
     proceed, all translations will be exported in the single format you

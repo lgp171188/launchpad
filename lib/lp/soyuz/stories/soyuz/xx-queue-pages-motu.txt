@@ -37,7 +37,7 @@ component:
     ...         print(extract_text(row))
 
     >>> motu_browser.open(
-    ...     "http://launchpad.test/ubuntu/breezy-autotest/")
+    ...     "http://launchpad.test/ubuntu/+series/breezy-autotest/")
     >>> motu_browser.getLink("All uploads").click()
     >>> print_queue(motu_browser.contents)
     Package             Version     Component Section Priority Sets Pocket  When

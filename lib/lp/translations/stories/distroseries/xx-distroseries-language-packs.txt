@@ -16,7 +16,7 @@ To reach that page we go to the distro series page and follow the link to
 the language pack admin page.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary')
     >>> admin_browser.getLink('See all language packs').click()
 
 Initially, there is no package selected and there are options for choosing a
@@ -39,7 +39,7 @@ Let's select a base one:
     >>> base.displayValue = ['2007-09-10 19:14:26 UTC']
     >>> admin_browser.getControl('Change').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.test/ubuntu/hoary/+language-packs
+    http://translations.launchpad.test/ubuntu/+series/hoary/+language-packs
 
 Now the admin page will show us that language pack selected and a list of
 available update packages.
@@ -56,7 +56,7 @@ available update packages.
 
 Those changes are shown in the public language pack listing web page:
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary')
+    >>> browser.open('http://translations.launchpad.test/ubuntu/+series/hoary')
     >>> browser.getLink('See all language packs').click()
     >>> print(extract_text(
     ...     find_tag_by_id(browser.contents, "language_packs")))
@@ -90,7 +90,7 @@ URL uses '+latest-full-language-pack'.
     >>> print(browser.getLink('2007-09-10 19:14:26 UTC').url)
     http.../71/ubuntu-hoary-translations.tar.gz
     >>> print(browser.getLink('2007-09-10 19:16:01 UTC').url)
-    http://translations.launchpad.test/ubuntu/hoary/+latest-full-language-pack
+    http://translations.launchpad.test/ubuntu/+series/hoary/+latest-full-language-pack
 
 An administrator can choose the current update pack and there is also an
 option to set/unset whether next language pack generation is a full export:
@@ -104,7 +104,7 @@ option to set/unset whether next language pack generation is a full export:
     ...     'Request a full language pack export').selected = True
     >>> admin_browser.getControl('Change').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.test/ubuntu/hoary/+language-packs
+    http://translations.launchpad.test/ubuntu/+series/hoary/+language-packs
     >>> print_feedback_messages(admin_browser.contents)
     Your request has been noted. Next language pack export will include
     all available translations...
@@ -122,7 +122,7 @@ cron, it will do a full export of translations for this distro series.
 The language pack changes are visible on the public language pack page:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+language-packs')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+language-packs')
     >>> print(extract_text(
     ...     find_tag_by_id(browser.contents, "language_packs")))
     A language pack...
@@ -154,4 +154,4 @@ URL uses '+latest-full-language-pack'.
     >>> print(browser.getLink('2007-09-10 19:15:01 UTC').url)
     http.../72/ubuntu-hoary-translations-update.tar.gz
     >>> print(browser.getLink('2007-09-10 19:15:19 UTC').url)
-    http://translations.launchpad.test/ubuntu/hoary/+latest-delta-language-pack
+    http://translations.launchpad.test/ubuntu/+series/hoary/+latest-delta-language-pack

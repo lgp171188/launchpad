@@ -115,10 +115,10 @@ to all the relevant entities involved in this build.
     http://launchpad.test/ubuntutest
 
     >>> print(anon_browser.getLink('Breezy Badger Autotest').url)
-    http://launchpad.test/ubuntutest/breezy-autotest
+    http://launchpad.test/ubuntutest/+series/breezy-autotest
 
     >>> print(anon_browser.getLink('i386').url)
-    http://launchpad.test/ubuntutest/breezy-autotest/i386
+    http://launchpad.test/ubuntutest/+series/breezy-autotest/i386
 
 Pending build records can be 'rescored', which will directly affect
 the time they will get started. A link to the corresponding help text
@@ -429,7 +429,7 @@ binary reference finally becomes a link to its corresponding page.
     testing-bin 1.0
 
     >>> print(anon_browser.getLink('testing-bin 1.0').url)
-    http://launchpad.test/ubuntutest/breezy-autotest/i386/testing-bin/1.0
+    http://launchpad.test/ubuntutest/+series/breezy-autotest/i386/testing-bin/1.0
 
 
 PPA builds
@@ -501,10 +501,10 @@ packages, since they do not exist.
     http://launchpad.test/~cprov/+archive/ubuntu/ppa
 
     >>> print(anon_browser.getLink('Breezy Badger Autotest').url)
-    http://launchpad.test/ubuntutest/breezy-autotest
+    http://launchpad.test/ubuntutest/+series/breezy-autotest
 
     >>> print(anon_browser.getLink('i386', index=1).url)
-    http://launchpad.test/ubuntutest/breezy-autotest/i386
+    http://launchpad.test/ubuntutest/+series/breezy-autotest/i386
 
 Similarly, binary packages are not linkified in 'Binary packages'
 section for PPA builds.
@@ -591,4 +591,4 @@ record always link to its binaries.
     imported-bin 666
 
     >>> print(anon_browser.getLink('imported-bin 666').url)
-    http://launchpad.test/ubuntutest/breezy-autotest/i386/imported-bin/666
+    http://launchpad.test/ubuntutest/+series/breezy-autotest/i386/imported-bin/666

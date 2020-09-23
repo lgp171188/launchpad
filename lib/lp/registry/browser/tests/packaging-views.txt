@@ -276,9 +276,9 @@ instead.)
     >>> for link in table.findAll('a'):
     ...     if '+remove-packaging' in link['href']:
     ...         print link['href']
-    http://launchpad.test/ubuntu/grumpy/+source/hot/+remove-packaging
-    http://launchpad.test/ubuntu/hoary/+source/thunderbird/+remove-packaging
-    http://launchpad.test/ubuntu/hoary/+source/hot/+remove-packaging
+    http://launchpad.test/ubuntu/+series/grumpy/+source/hot/+remove-packaging
+    http://launchpad.test/ubuntu/+series/hoary/+source/thunderbird/+remove-packaging
+    http://launchpad.test/ubuntu/+series/hoary/+source/hot/+remove-packaging
 
     >>> [hoary_package] = [
     ...     package for series in view.series_batch.batch

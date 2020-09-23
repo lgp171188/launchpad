@@ -57,28 +57,28 @@ class TestDistributionNavigation(TestCaseWithFactory):
         self.assertIsInstance(view, RedirectionView)
         self.assertEqual(expected_url, removeSecurityProxy(view).target)
 
-    def test_classic_series_url(self):
+    def test_classic_series_url_redirects(self):
         distroseries = self.factory.makeDistroSeries()
-        obj, _, _ = test_traverse(
+        self.assertRedirects(
             "http://launchpad.test/%s/%s" % (
+                distroseries.distribution.name, distroseries.name),
+            "http://launchpad.test/%s/+series/%s" % (
                 distroseries.distribution.name, distroseries.name))
-        self.assertEqual(distroseries, obj)
 
-    def test_classic_series_url_with_alias(self):
+    def test_classic_series_url_with_alias_redirects(self):
         distroseries = self.factory.makeDistroSeries()
         distroseries.distribution.development_series_alias = "devel"
         self.assertRedirects(
             "http://launchpad.test/%s/devel" % distroseries.distribution.name,
-            "http://launchpad.test/%s/%s" % (
+            "http://launchpad.test/%s/+series/%s" % (
                 distroseries.distribution.name, distroseries.name))
 
-    def test_new_series_url_redirects(self):
+    def test_new_series_url(self):
         distroseries = self.factory.makeDistroSeries()
-        self.assertRedirects(
+        obj, _, _ = test_traverse(
             "http://launchpad.test/%s/+series/%s" % (
-                distroseries.distribution.name, distroseries.name),
-            "http://launchpad.test/%s/%s" % (
                 distroseries.distribution.name, distroseries.name))
+        self.assertEqual(distroseries, obj)
 
     def test_new_series_url_with_alias_redirects(self):
         distroseries = self.factory.makeDistroSeries()
@@ -86,7 +86,7 @@ class TestDistributionNavigation(TestCaseWithFactory):
         self.assertRedirects(
             "http://launchpad.test/%s/+series/devel" % (
                 distroseries.distribution.name),
-            "http://launchpad.test/%s/%s" % (
+            "http://launchpad.test/%s/+series/%s" % (
                 distroseries.distribution.name, distroseries.name))
 
     def assertDereferences(self, url, expected_obj, environ=None):
@@ -97,33 +97,33 @@ class TestDistributionNavigation(TestCaseWithFactory):
         self.assertIsInstance(marshaller.dereference_url(url), RedirectionView)
         self.assertEqual(expected_obj, marshaller.marshall_from_json_data(url))
 
-    def test_new_series_url_supports_object_lookup(self):
-        # New-style +series URLs are compatible with webservice object
-        # lookup.
+    def test_classic_series_url_supports_object_lookup(self):
+        # Classic series URLs (without +series) are compatible with
+        # webservice object lookup, despite redirecting.
         distroseries = self.factory.makeDistroSeries()
-        distroseries_url = "/%s/+series/%s" % (
+        distroseries_url = "/%s/%s" % (
             distroseries.distribution.name, distroseries.name)
         self.assertDereferences(distroseries_url, distroseries)
 
         # Objects subordinate to the redirected series work too.
         distroarchseries = self.factory.makeDistroArchSeries(
             distroseries=distroseries)
-        distroarchseries_url = "/%s/+series/%s/%s" % (
+        distroarchseries_url = "/%s/%s/%s" % (
             distroarchseries.distroseries.distribution.name,
             distroarchseries.distroseries.name,
             distroarchseries.architecturetag)
         self.assertDereferences(distroarchseries_url, distroarchseries)
 
-    def test_new_series_url_supports_object_lookup_https(self):
-        # New-style +series URLs are compatible with webservice object
-        # lookup, even if the vhost is configured to use HTTPS.
-        # "SERVER_URL": None exposes a bug in lazr.restful < 0.22.2.
+    def test_classic_series_url_supports_object_lookup_https(self):
+        # Classic series URLs (without +series) are compatible with
+        # webservice object lookup, even if the vhost is configured to use
+        # HTTPS.  "SERVER_URL": None exposes a bug in lazr.restful < 0.22.2.
         self.addCleanup(allvhosts.reload)
         self.pushConfig("vhosts", use_https=True)
         allvhosts.reload()
 
         distroseries = self.factory.makeDistroSeries()
-        distroseries_url = "/%s/+series/%s" % (
+        distroseries_url = "/%s/%s" % (
             distroseries.distribution.name, distroseries.name)
         self.assertDereferences(
             distroseries_url, distroseries,
@@ -132,7 +132,7 @@ class TestDistributionNavigation(TestCaseWithFactory):
         # Objects subordinate to the redirected series work too.
         distroarchseries = self.factory.makeDistroArchSeries(
             distroseries=distroseries)
-        distroarchseries_url = "/%s/+series/%s/%s" % (
+        distroarchseries_url = "/%s/%s/%s" % (
             distroarchseries.distroseries.distribution.name,
             distroarchseries.distroseries.name,
             distroarchseries.architecturetag)

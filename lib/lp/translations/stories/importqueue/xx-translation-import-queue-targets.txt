@@ -29,7 +29,8 @@ There is no content for Ubuntu.
 
 The import queue is linked from the translations page for distribution series.
 
-    >>> user_browser.open('http://translations.launchpad.test/ubuntu/hoary')
+    >>> user_browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary')
     >>> user_browser.getLink('Hoary import queue').click()
 
 And obviously, given that the ubuntu distribution had no content, Hoary, an

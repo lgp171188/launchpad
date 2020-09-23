@@ -13,7 +13,8 @@ each.
     Distribution series  Source package        Version  Project series
     Warty (4.10)         evolution  Evolution           trunk series ...
 
-    >>> anon_browser.getLink(url='/ubuntu/warty/+source/evolution').click()
+    >>> anon_browser.getLink(
+    ...     url='/ubuntu/+series/warty/+source/evolution').click()
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'maincontent').h1))
     evolution source package in Warty
@@ -33,7 +34,8 @@ Evolution.
     Ubuntu        Warty (4.10)         evolution                Remove...
     Ubuntu        Hoary (5.04)         evolution       1.0      Remove...
 
-    >>> evo_owner.getLink(url='/ubuntu/hoary/+source/evolution') is not None
+    >>> evo_owner.getLink(
+    ...     url='/ubuntu/+series/hoary/+source/evolution') is not None
     True
 
 Any logged in users can still see the links to create a packaging link.
@@ -54,8 +56,9 @@ Deleting packaging links
 
 Packaging links can be deleted if they were created in error.
 
-    >>> evo_owner.getLink(
-    ...     url='/ubuntu/warty/+source/evolution/+remove-packaging').click()
+    >>> link = evo_owner.getLink(
+    ...     url='/ubuntu/+series/warty/+source/evolution/+remove-packaging')
+    >>> link.click()
     >>> print(evo_owner.title)
     Unlink an upstream project...
     >>> evo_owner.getControl('Unlink').click()

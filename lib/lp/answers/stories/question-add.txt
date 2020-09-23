@@ -37,7 +37,7 @@ start the creation process. Questions created this way will be
 associated with the source package of the used application.
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/ubuntu/hoary/'
+    ...     'http://launchpad.test/ubuntu/+series/hoary/'
     ...     '+sources/mozilla-firefox/+gethelp')
     >>> print(user_browser.title)
     Help and support...

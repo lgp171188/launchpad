@@ -15,7 +15,7 @@
       {
         "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0",
         "name": "Bug #2 in Ubuntu Hoary: “Blackhole Trash folder”",
-        "url": "http://bugs.launchpad.test/ubuntu/hoary/+bug/2",
+        "url": "http://bugs.launchpad.test/ubuntu/+series/hoary/+bug/2",
         "urlPingSuffix": "DevEx,5103.1",
         "isFamilyFriendly": true,
         "displayUrl": "https://help.launchpad.net/Bugs",

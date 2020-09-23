@@ -54,7 +54,7 @@ The link "View Uploads" is presented in Distrorelease page.
 Viewing the current queue, by default the NEW queue.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/ubuntu/breezy-autotest/")
+    ...     "http://launchpad.test/ubuntu/+series/breezy-autotest/")
     >>> anon_browser.getLink("All uploads").click()
 
     >>> anon_browser.getControl(
@@ -330,12 +330,12 @@ the form twice.
     >>> duplicate_submission_browser = setupBrowser(
     ...       auth="Basic test@canonical.com:test")
     >>> duplicate_submission_browser.open(
-    ...    "http://localhost/ubuntu/breezy-autotest/+queue")
+    ...    "http://localhost/ubuntu/+series/breezy-autotest/+queue")
 
 Go back to the "new" queue and accept "bar":
 
     >>> upload_manager_browser.open(
-    ...    "http://localhost/ubuntu/breezy-autotest/+queue")
+    ...    "http://localhost/ubuntu/+series/breezy-autotest/+queue")
     >>> print_queue(upload_manager_browser.contents)
     Package             Version     Component Section Priority Sets Pocket  When
     bar (source)        1.0-1       universe  devel   low           Release ...
@@ -393,7 +393,7 @@ accepted queue since it skips that state and goes straight to being published.
 Let's accept mozilla-firefox so we can see it in the accepted queue:
 
     >>> upload_manager_browser.open(
-    ...    "http://localhost/ubuntu/breezy-autotest/+queue")
+    ...    "http://localhost/ubuntu/+series/breezy-autotest/+queue")
     >>> upload_manager_browser.getControl(name="QUEUE_ID").value = ['1']
     >>> upload_manager_browser.getControl(name="Accept").click()
     >>> print_feedback_messages(upload_manager_browser.contents)

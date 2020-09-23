@@ -75,7 +75,8 @@ Foo Bar is a member of the Ubuntu team that owns the Ubuntu
 distribution. They decide to assign some bug to some milestones.
 First they register a new milestone.
 
-    >>> admin_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    >>> admin_browser.open(
+    ...     'http://launchpad.test/ubuntu/+series/hoary/+addmilestone')
     >>> name_field = admin_browser.getControl('Name:')
     >>> name_field.value = '5.04.rc1'
     >>> admin_browser.getControl('Register Milestone').click()

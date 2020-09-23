@@ -5,7 +5,7 @@ Adding a new architecture to a distro series
 Launchpad admins are allowed to add a new arch (also called 'port') to a
 given distro series.
 
-    >>> admin_browser.open('http://launchpad.test/ubuntu/hoary')
+    >>> admin_browser.open('http://launchpad.test/ubuntu/+series/hoary')
     >>> admin_browser.getLink('Add architecture').click()
     >>> print(admin_browser.title)
     Add a port of The Hoary...
@@ -13,7 +13,7 @@ given distro series.
 There is a cancel link.
 
     >>> admin_browser.getLink('Cancel')
-    <Link text='Cancel' url='http://launchpad.test/ubuntu/hoary'>
+    <Link text='Cancel' url='http://launchpad.test/ubuntu/+series/hoary'>
 
 To register a new architecture one has to specify the architecture tag, the
 processor and whether or not that architecture is officially supported
@@ -28,7 +28,7 @@ and/or has PPA support.
 
 Architecture tag is restricted to the usual Launchpad name format.
 
-    >>> admin_browser.open('http://launchpad.test/ubuntu/hoary')
+    >>> admin_browser.open('http://launchpad.test/ubuntu/+series/hoary')
     >>> admin_browser.getLink('Add architecture').click()
     >>> admin_browser.getControl('Architecture Tag').value = 'foo bar'
     >>> admin_browser.getControl('Continue').click()
@@ -39,12 +39,13 @@ Architecture tag is restricted to the usual Launchpad name format.
 Other users won't see the link nor the page where a new port can be
 registered.
 
-    >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
+    >>> user_browser.open('http://launchpad.test/ubuntu/+series/hoary')
     >>> user_browser.getLink('Add architecture')
     Traceback (most recent call last):
     ...
     LinkNotFoundError
-    >>> user_browser.open('http://launchpad.test/ubuntu/hoary/+addport')
+    >>> user_browser.open(
+    ...     'http://launchpad.test/ubuntu/+series/hoary/+addport')
     Traceback (most recent call last):
     ...
     Unauthorized:...

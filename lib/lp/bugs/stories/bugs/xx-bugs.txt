@@ -1,7 +1,7 @@
 This page checks that we can see a list of bugs on the distroseries,
 specifically Hoary.
 
-    >>> browser.open('http://localhost/ubuntu/hoary/+bugs')
+    >>> browser.open('http://localhost/ubuntu/+series/hoary/+bugs')
     >>> print(browser.title)
     Hoary (5.04) : Bugs : Ubuntu 
 
