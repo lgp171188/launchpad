@@ -595,8 +595,9 @@ Originally, this variable isn't set.
 
     >>> 'launchpad.pageid' in request._orig_env
     False
+    >>> logout()
 
-It is set during the callObject() hook. The pageid is made of the
+It is set during the afterTraversal() hook. The pageid is made of the
 name of the context class and the view class name.
 
     >>> class TestView(object):
@@ -613,10 +614,13 @@ name of the context class and the view class name.
     ...     """Test context object."""
 
     >>> view = TestView(TestContext(), request)
-    >>> publication.callObject(request, view)
-    u'Result'
+    >>> publication.beforeTraversal(request)
+    >>> publication.afterTraversal(request, view)
     >>> print request._orig_env['launchpad.pageid']
     TestContext:TestView
+    >>> from lp.services.webapp.adapter import (
+    ...     clear_request_started, set_request_started)
+    >>> clear_request_started()
 
 
 Durations
@@ -682,8 +686,6 @@ some calls to prepare that code to what handleException expects.)
 If the exception is raised before we even start the traversal, then
 there's nothing to store.
 
-    >>> from lp.services.webapp.adapter import (
-    ...     clear_request_started, set_request_started)
     >>> logger.setLevel(logging.CRITICAL)
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())

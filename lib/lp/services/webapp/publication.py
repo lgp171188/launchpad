@@ -427,8 +427,12 @@ class LaunchpadBrowserPublication(
         request.setInWSGIEnvironment(
             'launchpad.userid', request.principal.id)
 
-        # pageid is calculated at `afterTraversal`
-        pageid = request._orig_env['launchpad.pageid']
+        # pageid is calculated at `afterTraversal`, but can be missing
+        # if callObject is used directly, so either use the one we've got
+        # or work it out.
+        pageid = request._orig_env.get(
+            'launchpad.pageid',
+            self._setPageIDInEnvironment(request, ob))
         # And spit the pageid out to our tracelog.
         tracelog(request, 'p', pageid)
 
@@ -552,6 +556,16 @@ class LaunchpadBrowserPublication(
             request.traversed_objects.append(ob)
         notify(BeforeTraverseEvent(ob, request))
 
+    def _setPageIDInEnvironment(self, request, view):
+        # The view may be security proxied
+        view = removeSecurityProxy(view)
+        # It's possible that the view is a bound method.
+        view = getattr(view, '__self__', view)
+        context = removeSecurityProxy(getattr(view, 'context', None))
+        pageid = self.constructPageID(view, context)
+        request.setInWSGIEnvironment('launchpad.pageid', pageid)
+        return pageid
+
     def afterTraversal(self, request, ob):
         """See zope.publisher.interfaces.IPublication.
 
@@ -562,13 +576,7 @@ class LaunchpadBrowserPublication(
         # Log the URL including vhost information to the ZServer tracelog.
         tracelog(request, 'u', request.getURL())
 
-        # The view may be security proxied
-        view = removeSecurityProxy(ob)
-        # It's possible that the view is a bound method.
-        view = getattr(view, '__self__', view)
-        context = removeSecurityProxy(getattr(view, 'context', None))
-        pageid = self.constructPageID(view, context)
-        request.setInWSGIEnvironment('launchpad.pageid', pageid)
+        pageid = self._setPageIDInEnvironment(request, ob)
 
         assert hasattr(request, '_traversal_start'), (
             'request._traversal_start, which should have been set by '
