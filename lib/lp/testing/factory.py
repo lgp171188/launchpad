@@ -457,8 +457,12 @@ class ObjectFactory(
             hex_number = hex_number.zfill(digits)
         return hex_number
 
+    # XXX cjwatson 2020-09-22: Most users of getUniqueString should use
+    # either getUniqueBytes or getUniqueUnicode instead.  Remove this
+    # comment when all remaining instances have been audited as explicitly
+    # requiring native strings (i.e. bytes on Python 2, text on Python 3).
     def getUniqueString(self, prefix=None):
-        """Return a string unique to this factory instance.
+        """Return a native string unique to this factory instance.
 
         The string returned will always be a valid name that can be used in
         Launchpad URLs.
@@ -488,12 +492,16 @@ class ObjectFactory(
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
-    # XXX cjwatson 2020-02-20: We should disentangle this; most uses of
-    # getUniqueString should probably use getUniqueUnicode instead.
-    getUniqueBytes = getUniqueString
+    if sys.version_info[0] >= 3:
+        def getUniqueBytes(self, prefix=None):
+            return six.ensure_binary(self.getUniqueString(prefix=prefix))
 
-    def getUniqueUnicode(self, prefix=None):
-        return self.getUniqueString(prefix=prefix).decode('latin-1')
+        getUniqueUnicode = getUniqueString
+    else:
+        getUniqueBytes = getUniqueString
+
+        def getUniqueUnicode(self, prefix=None):
+            return six.ensure_text(self.getUniqueString(prefix=prefix))
 
     def getUniqueURL(self, scheme=None, host=None):
         """Return a URL unique to this run of the test case."""
