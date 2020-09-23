@@ -428,7 +428,7 @@ class LaunchpadBrowserPublication(
             'launchpad.userid', request.principal.id)
 
         # pageid is calculated at `afterTraversal`
-        pageid = request._orig_env['launchpad.pageid']
+        pageid = request._orig_env.get('launchpad.pageid')
         # And spit the pageid out to our tracelog.
         tracelog(request, 'p', pageid)
 
