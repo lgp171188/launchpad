@@ -21,14 +21,21 @@ import transaction
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    ISignableArchive,
+    )
 from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.services.database.interfaces import IStore
+from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.scripts.base import (
     LaunchpadScript,
     LaunchpadScriptFailure,
     )
 from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.interfaces.signingkey import (
+    IArchiveSigningKeySet,
+    ISigningKeySet,
+    )
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.model.archive import Archive
 
@@ -93,15 +100,13 @@ class SyncSigningKeysScript(LaunchpadScript):
                     self.options.type)
             key_types = [key_type]
         else:
-            # While archives do have OpenPGP keys, they work in a rather
-            # different way (and are used for signing the archive itself,
-            # not its contents), so skip them for now.
             key_types = [
                 SigningKeyType.UEFI,
                 SigningKeyType.KMOD,
                 SigningKeyType.OPAL,
                 SigningKeyType.SIPL,
                 SigningKeyType.FIT,
+                SigningKeyType.OPENPGP,
                 ]
         return key_types
 
@@ -122,6 +127,9 @@ class SyncSigningKeysScript(LaunchpadScript):
         }
         found_keys_per_type = {}
         for key_type in self.getKeyTypes():
+            if key_type == SigningKeyType.OPENPGP:
+                # OpenPGP keys are handled separately.
+                continue
             files = [os.path.join(dir, f) for f in keys_per_type[key_type]]
             self.logger.debug("Checking files %s...", ', '.join(files))
             if all(os.path.exists(f) for f in files):
@@ -189,6 +197,35 @@ class SyncSigningKeysScript(LaunchpadScript):
                 description, now, archive,
                 earliest_distro_series=series)
 
+    def injectGPG(self, archive, secret_key_path):
+        with open(secret_key_path, "rb") as key_file:
+            secret_key_export = key_file.read()
+        gpg_handler = getUtility(IGPGHandler)
+        secret_key = gpg_handler.importSecretKey(secret_key_export)
+        signing_key_set = getUtility(ISigningKeySet)
+        existing_signing_key = signing_key_set.get(
+            SigningKeyType.OPENPGP, secret_key.fingerprint)
+        if existing_signing_key is not None:
+            # There's no point in honouring self.options.overwrite here,
+            # because we know we'll just end up with the same fingerprint
+            # anyway, and lp-signing will reject attempts to update an
+            # existing key with new key material.
+            self.logger.info(
+                "Signing key for %s / %s already exists",
+                SigningKeyType.OPENPGP, archive.reference)
+            return existing_signing_key
+
+        if self.options.dry_run:
+            self.logger.info(
+                "Would inject signing key for %s / %s",
+                SigningKeyType.OPENPGP, archive.reference)
+        else:
+            public_key = gpg_handler.retrieveKey(secret_key.fingerprint)
+            now = datetime.now().replace(tzinfo=utc)
+            return signing_key_set.inject(
+                SigningKeyType.OPENPGP, secret_key.export(),
+                public_key.export(), secret_key.uids[0].name, now)
+
     def processArchive(self, archive):
         for series, path in self.getSeriesPaths(archive).items():
             keys_per_type = self.getKeysPerType(path)
@@ -198,6 +235,14 @@ class SyncSigningKeysScript(LaunchpadScript):
                     priv_key, pub_key, key_type,
                     series.name if series else None)
                 self.inject(archive, key_type, series, priv_key, pub_key)
+        if (SigningKeyType.OPENPGP in self.getKeyTypes() and
+                archive.signing_key is not None):
+            secret_key_path = ISignableArchive(archive).getPathForSecretKey(
+                archive.signing_key)
+            self.logger.info(
+                "Found key file %s (type=%s).",
+                secret_key_path, SigningKeyType.OPENPGP)
+            self.injectGPG(archive, secret_key_path)
 
     def main(self):
         for i, archive in enumerate(self.getArchives()):
