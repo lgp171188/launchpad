@@ -16,6 +16,7 @@ import tempfile
 import unittest
 
 from fixtures import MonkeyPatch
+import six
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from testtools.matchers import (
     Equals,
@@ -240,7 +241,7 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = unicode(self.temp_dir)
+        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
 

@@ -10,6 +10,7 @@ __metaclass__ = type
 import os
 from textwrap import dedent
 
+import six
 from testtools.matchers import (
     FileContains,
     StartsWith,
@@ -70,7 +71,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = unicode(self.temp_dir)
+        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.archive_root = getPubConfig(self.archive).archiveroot
@@ -207,7 +208,7 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = unicode(self.temp_dir)
+        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.archive_root = getPubConfig(self.archive).archiveroot

@@ -14,6 +14,7 @@ import time
 
 from apt_pkg import TagFile
 from fixtures import MonkeyPatch
+import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -136,7 +137,7 @@ class HelpersMixin:
         will be cleaned up after the test.
         """
         return self.factory.makeDistribution(
-            publish_root_dir=unicode(self.makeTemporaryDirectory()))
+            publish_root_dir=six.ensure_text(self.makeTemporaryDirectory()))
 
     def makeScript(self, distro=None, extra_args=[]):
         """Produce instance of the `PublishFTPMaster` script."""
@@ -150,8 +151,7 @@ class HelpersMixin:
     def setUpForScriptRun(self, distro):
         """Mock up config to run the script on `distro`."""
         pub_config = getUtility(IPublisherConfigSet).getByDistribution(distro)
-        pub_config.root_dir = unicode(
-            self.makeTemporaryDirectory())
+        pub_config.root_dir = six.ensure_text(self.makeTemporaryDirectory())
 
 
 class TestNewerMtime(TestCase):
