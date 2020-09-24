@@ -8,10 +8,10 @@ __all__ = [
 
 
 import datetime
+import io
 import json
 import operator
 import re
-from StringIO import StringIO
 
 import apt_pkg
 from debian.changelog import (
@@ -379,7 +379,7 @@ class SourcePackageRelease(SQLBase):
         # this regex is copied from apt-listchanges.py courtesy of MDZ
         new_stanza_line = re.compile(
             '^\S+ \((?P<version>.*)\) .*;.*urgency=(?P<urgency>\w+).*')
-        logfile = StringIO(self.changelog_entry)
+        logfile = io.StringIO(self.changelog_entry)
         change = ''
         top_stanza = False
         for line in logfile.readlines():

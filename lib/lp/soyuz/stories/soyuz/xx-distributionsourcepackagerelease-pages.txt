@@ -292,7 +292,6 @@ The full change log can be viewed as follows:
     0.9
     Pending in breezy-autotest-release
     ...
-    None
     1.0
     Published in breezy-autotest-release
     ...
