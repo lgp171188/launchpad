@@ -127,7 +127,7 @@ class CommandSpawner:
 
         # Iterate over a copy of the processes list: we may be removing
         # items from the original as processes complete.
-        processes = self.running_processes.keys()
+        processes = list(self.running_processes)
         for process in processes:
             self._service(process, events_by_fd)
             if process.returncode is not None:
