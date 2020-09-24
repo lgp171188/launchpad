@@ -7,7 +7,7 @@ __all__ = [
     'XMLRPCTestTransport',
     ]
 
-from cStringIO import StringIO
+import io
 
 from six.moves import (
     http_client,
@@ -34,7 +34,7 @@ class _FakeSocket(object):
         self._output = output
 
     def makefile(self, mode='rb', bufsize=0):
-        return StringIO(self._output)
+        return io.BytesIO(self._output)
 
 
 class TestHTTPConnection(http_client.HTTPConnection):
