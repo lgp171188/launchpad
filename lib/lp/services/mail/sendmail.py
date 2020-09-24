@@ -452,7 +452,7 @@ def sendmail(message, to_addrs=None, bulk=True):
     message_detail = message['Subject']
     if not isinstance(message_detail, six.string_types):
         # Might be a Header object; can be squashed.
-        message_detail = unicode(message_detail)
+        message_detail = six.text_type(message_detail)
     if _immediate_mail_delivery:
         # Immediate email delivery is not unit tested, and won't be.
         # The immediate-specific stuff is pretty simple though so this

@@ -21,6 +21,7 @@ import operator
 import os
 import time
 
+import six
 from six.moves.urllib.parse import urljoin
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -295,7 +296,7 @@ class FeedTypedData:
             for a_tag in a_tags:
                 if a_tag['href'].startswith('/'):
                     a_tag['href'] = urljoin(self.root_url, a_tag['href'])
-            altered_content = unicode(soup)
+            altered_content = six.text_type(soup)
         else:
             altered_content = self._content
 
@@ -303,7 +304,7 @@ class FeedTypedData:
             altered_content = html_escape(altered_content)
         elif self.content_type == 'xhtml':
             soup = BeautifulSoup(altered_content)
-            altered_content = unicode(soup)
+            altered_content = six.text_type(soup)
         return altered_content
 
 

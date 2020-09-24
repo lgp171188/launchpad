@@ -775,8 +775,8 @@ def canonical_url(
          request is not None and
          root_url.startswith(request.getApplicationURL()))
         or force_local_path):
-        return unicode('/' + path)
-    return unicode(root_url + path)
+        return u'/' + path
+    return six.ensure_text(root_url + path)
 
 
 def canonical_name(name):

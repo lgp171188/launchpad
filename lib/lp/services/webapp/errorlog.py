@@ -193,10 +193,10 @@ def attach_http_request(report, context):
 
     if principal is not None and principal is not missing:
         username = ', '.join([
-                unicode(login),
-                unicode(request.principal.id),
-                unicode(request.principal.title),
-                unicode(request.principal.description)])
+                six.ensure_text(login),
+                six.text_type(request.principal.id),
+                six.ensure_text(request.principal.title),
+                six.ensure_text(request.principal.description)])
         report['username'] = username
 
     if getattr(request, '_orig_env', None):
@@ -217,7 +217,7 @@ def attach_http_request(report, context):
         args = request.getPositionalArguments()
         # Request variables are strings: this could move to its own key and be
         # raw.
-        report['req_vars']['xmlrpc args'] = unicode(args)
+        report['req_vars']['xmlrpc args'] = six.text_type(args)
 
 
 def attach_ignore_from_exception(report, context):

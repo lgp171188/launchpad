@@ -64,6 +64,7 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
+import six
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -614,7 +615,7 @@ class URIField(TextLine):
                 uri = uri.ensureSlash()
             else:
                 uri = uri.ensureNoSlash()
-        input = unicode(uri)
+        input = six.text_type(uri)
         return input
 
     def _validate(self, value):

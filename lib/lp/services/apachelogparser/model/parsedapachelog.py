@@ -4,6 +4,7 @@
 __metaclass__ = type
 __all__ = ['ParsedApacheLog']
 
+import six
 from storm.locals import (
     Int,
     Storm,
@@ -31,6 +32,6 @@ class ParsedApacheLog(Storm):
 
     def __init__(self, first_line, bytes_read):
         super(ParsedApacheLog, self).__init__()
-        self.first_line = unicode(first_line)
+        self.first_line = six.ensure_text(first_line)
         self.bytes_read = bytes_read
         IStore(self.__class__).add(self)
