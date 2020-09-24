@@ -16,6 +16,7 @@ __all__ = [
 
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from storm.locals import And
 from zope.component import getUtility
 from zope.event import notify
@@ -199,7 +200,7 @@ class _BaseBranchNamespace:
         # so we validate the branch name here to give a nicer error message
         # than 'ERROR: new row for relation "branch" violates check
         # constraint "valid_name"...'.
-        IBranch['name'].validate(unicode(name))
+        IBranch['name'].validate(six.ensure_text(name))
 
         existing_branch = self.getByName(name)
         if existing_branch is not None:

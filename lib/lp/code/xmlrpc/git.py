@@ -316,7 +316,7 @@ class GitAPI(LaunchpadXMLRPCView):
     def _reportError(self, path, exception, hosting_path=None):
         properties = [
             ("path", path),
-            ("error-explanation", unicode(exception)),
+            ("error-explanation", six.text_type(exception)),
             ]
         if hosting_path is not None:
             properties.append(("hosting_path", hosting_path))
@@ -350,9 +350,9 @@ class GitAPI(LaunchpadXMLRPCView):
                 raise faults.InvalidSourcePackageName(e.name)
             return self._createRepository(requester, path)
         except NameLookupFailed as e:
-            raise faults.NotFound(unicode(e))
+            raise faults.NotFound(six.text_type(e))
         except GitRepositoryCreationForbidden as e:
-            raise faults.PermissionDenied(unicode(e))
+            raise faults.PermissionDenied(six.text_type(e))
 
         try:
             try:
@@ -381,7 +381,7 @@ class GitAPI(LaunchpadXMLRPCView):
                 # private repository).  Log an OOPS for investigation.
                 self._reportError(path, e)
             except (GitRepositoryCreationException, Unauthorized) as e:
-                raise faults.PermissionDenied(unicode(e))
+                raise faults.PermissionDenied(six.text_type(e))
             except GitRepositoryCreationFault as e:
                 # The hosting service failed.  Log an OOPS for investigation.
                 self._reportError(path, e, hosting_path=e.path)

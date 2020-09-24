@@ -13,6 +13,7 @@ __all__ = [
     ]
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from storm.locals import And
 from zope.component import getUtility
 from zope.event import notify
@@ -162,7 +163,7 @@ class _BaseGitNamespace:
         # schema-validated form, so we validate the repository name here to
         # give a nicer error message than 'ERROR: new row for relation
         # "gitrepository" violates check constraint "valid_name"...'.
-        IGitRepository['name'].validate(unicode(name))
+        IGitRepository['name'].validate(six.ensure_text(name))
 
         existing_repository = self.getByName(name)
         if existing_repository is not None:
