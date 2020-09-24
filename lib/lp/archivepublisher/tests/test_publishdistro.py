@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 
+import six
 from testtools.matchers import (
     Not,
     PathExists,
@@ -497,7 +498,7 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         # this, getPublisher will create archives in the current
         # directory.
         return self.factory.makeDistribution(
-            publish_root_dir=unicode(self.makeTemporaryDirectory()))
+            publish_root_dir=six.ensure_text(self.makeTemporaryDirectory()))
 
     def makeScript(self, distribution=None, args=[], all_derived=False):
         """Create a `PublishDistro` for `distribution`."""
