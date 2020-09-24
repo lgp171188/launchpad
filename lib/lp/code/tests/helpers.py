@@ -355,7 +355,7 @@ class GitHostingFixture(fixtures.Fixture):
                  merges=None, blob=None, disable_memcache=True):
         self.create = FakeMethod()
         self.getProperties = FakeMethod(
-            result={"default_branch": default_branch})
+            result={"default_branch": default_branch, "is_available": True})
         self.setProperties = FakeMethod()
         self.getRefs = FakeMethod(result=({} if refs is None else refs))
         self.getCommits = FakeMethod(
