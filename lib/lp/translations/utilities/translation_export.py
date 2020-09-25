@@ -11,7 +11,7 @@ __all__ = [
     'TranslationExporter',
     ]
 
-from StringIO import StringIO
+import io
 import tempfile
 
 from zope.component import subscribers
@@ -159,7 +159,7 @@ class SingleFileStorageStrategy(StorageStrategy):
     def export(self):
         """See `StorageStrategy`."""
         assert self.path is not None, "Exporting empty file."
-        output = ExportedTranslationFile(StringIO(self.content))
+        output = ExportedTranslationFile(io.BytesIO(self.content))
         output.path = self.path
         # We use x-po for consistency with other .po editors like GTranslator.
         output.content_type = self.mime_type
