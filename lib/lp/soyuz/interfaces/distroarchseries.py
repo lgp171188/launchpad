@@ -214,6 +214,14 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         tarball".
         """
 
+    @operation_parameters(
+        pocket=Choice(vocabulary=PackagePublishingPocket, required=True),
+        image_type=Choice(vocabulary=BuildBaseImageType, required=True))
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getChrootHash(pocket, image_type):
+        """Return the sha1sum of the current chroot for the given pocket."""
+
     def addOrUpdateChroot(chroot, pocket=None, image_type=None):
         """Return the just added or modified PocketChroot.
 

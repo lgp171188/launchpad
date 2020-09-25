@@ -175,6 +175,13 @@ class DistroArchSeries(SQLBase):
             return None
         return chroot.http_url
 
+    def getChrootHash(self, pocket, image_type):
+        """See `IDistroArchSeries`."""
+        chroot = self.getChroot(pocket=pocket, image_type=image_type)
+        if chroot is None:
+            return None
+        return {"sha256": chroot.content.sha256}
+
     @property
     def chroot_url(self):
         """See `IDistroArchSeries`."""
