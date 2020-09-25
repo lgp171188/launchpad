@@ -31,6 +31,7 @@ from breezy.transport import (
     get_transport,
     transport_server_registry,
     )
+import six
 
 
 class cmd_launchpad_server(Command):
