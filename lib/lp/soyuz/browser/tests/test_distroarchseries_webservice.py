@@ -130,7 +130,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         sha256 = hashlib.sha256('abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
         self.assertThat(
-            das.getChrootHash(),
+            das.getChrootHash(
+                PackagePublishingPocket.RELEASE, BuildBaseImageType.CHROOT),
             MatchesDict({'sha256': Equals(sha256)}))
 
     def test_setChroot_removeChroot(self):
