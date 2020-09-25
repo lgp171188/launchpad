@@ -14,6 +14,7 @@ from lazr.restfulclient.errors import (
 from testtools.matchers import (
     EndsWith,
     Equals,
+    MatchesDict,
     MatchesStructure,
     )
 from zope.security.management import endInteraction
@@ -120,17 +121,17 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             data=b'foo\r', sha1sum='95e0c0e09be59e04eb0e312e5daa11a2a830e526')
         self.assertEqual(sha1, das.getChroot().content.sha1)
 
-    def test_getChrootSHA(self):
+    def test_getChrootHash(self):
         das = self.factory.makeDistroArchSeries()
         user = das.distroseries.distribution.main_archive.owner
-        expected_file = 'chroot-%s-%s-%s.tar.gz' % (
-            das.distroseries.distribution.name, das.distroseries.name,
-            das.architecturetag)
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
         sha1 = hashlib.sha1('abcxyz').hexdigest()
+        sha256 = hashlib.sha256('abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
-        self.assertEqual(sha1, ws_das.getChrootSHA())
+        self.assertThat(
+            das.getChrootHash(),
+            MatchesDict({'sha256': Equals(sha256)}))
 
     def test_setChroot_removeChroot(self):
         das = self.factory.makeDistroArchSeries()

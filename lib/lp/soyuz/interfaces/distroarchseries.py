@@ -215,11 +215,11 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         """
 
     @operation_parameters(
-        pocket=Choice(vocabulary=PackagePublishingPocket, required=False),
-        image_type=Choice(vocabulary=BuildBaseImageType, required=False))
+        pocket=Choice(vocabulary=PackagePublishingPocket, required=True),
+        image_type=Choice(vocabulary=BuildBaseImageType, required=True))
     @export_read_operation()
     @operation_for_version("devel")
-    def getChrootSHA(pocket=None, image_type=None):
+    def getChrootHash(pocket=None, image_type=None):
         """Return the sha1sum of the current chroot for the given pocket.
 
         The pocket defaults to "Release"; the image type defaults to "Chroot
