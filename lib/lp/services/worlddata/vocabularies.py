@@ -20,7 +20,10 @@ from zope.schema.vocabulary import (
     SimpleVocabulary,
     )
 
-from lp.services.webapp.vocabulary import SQLObjectVocabularyBase
+from lp.services.webapp.vocabulary import (
+    NamedStormVocabulary,
+    StormVocabularyBase,
+    )
 from lp.services.worlddata.interfaces.language import (
     ILanguage,
     ILanguageSet,
@@ -43,24 +46,20 @@ def TimezoneNameVocabulary(context=None):
     return _timezone_vocab
 
 
-# Country.name may have non-ASCII characters, so we can't use
-# NamedSQLObjectVocabulary here.
-
-class CountryNameVocabulary(SQLObjectVocabularyBase):
+class CountryNameVocabulary(NamedStormVocabulary):
     """A vocabulary for country names."""
 
     _table = Country
-    _orderBy = 'name'
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name)
 
 
-class LanguageVocabulary(SQLObjectVocabularyBase):
+class LanguageVocabulary(StormVocabularyBase):
     """All the languages known by Launchpad."""
 
     _table = Language
-    _orderBy = 'englishname'
+    _order_by = 'englishname'
 
     def __contains__(self, language):
         """See `IVocabulary`."""

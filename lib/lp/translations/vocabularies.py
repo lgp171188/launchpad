@@ -3,6 +3,8 @@
 
 """Translations vocabularies."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -20,6 +22,7 @@ from zope.schema.vocabulary import SimpleTerm
 
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormexpr import IsTrue
 from lp.services.webapp.vocabulary import (
     NamedSQLObjectVocabulary,
     SQLObjectVocabularyBase,
@@ -59,9 +62,8 @@ class TranslatableLanguageVocabulary(LanguageVocabulary):
 
         Iterate languages that are visible and not English.
         """
-        languages = self._table.select(
-            "Language.code != 'en' AND Language.visible = True",
-            orderBy=self._orderBy)
+        languages = self._entries.find(
+            self._table.code != 'en', IsTrue(self._table.visible))
         for language in languages:
             yield self.toTerm(language)
 
