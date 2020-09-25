@@ -120,6 +120,18 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             data=b'foo\r', sha1sum='95e0c0e09be59e04eb0e312e5daa11a2a830e526')
         self.assertEqual(sha1, das.getChroot().content.sha1)
 
+    def test_getChrootSHA(self):
+        das = self.factory.makeDistroArchSeries()
+        user = das.distroseries.distribution.main_archive.owner
+        expected_file = 'chroot-%s-%s-%s.tar.gz' % (
+            das.distroseries.distribution.name, das.distroseries.name,
+            das.architecturetag)
+        webservice = launchpadlib_for("testing", user)
+        ws_das = ws_object(webservice, das)
+        sha1 = hashlib.sha1('abcxyz').hexdigest()
+        ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
+        self.assertEqual(sha1, ws_das.getChrootSHA())
+
     def test_setChroot_removeChroot(self):
         das = self.factory.makeDistroArchSeries()
         user = das.distroseries.distribution.main_archive.owner
