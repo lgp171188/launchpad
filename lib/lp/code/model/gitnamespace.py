@@ -14,6 +14,7 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.locals import And
+import transaction
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -33,6 +34,7 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
+    GitRepositoryStatus,
     )
 from lp.code.errors import (
     GitDefaultConflict,
@@ -75,7 +77,8 @@ class _BaseGitNamespace:
                          reviewer=None, information_type=None,
                          date_created=DEFAULT, description=None,
                          target_default=False, owner_default=False,
-                         with_hosting=False, status=None):
+                         with_hosting=False, async_hosting=False,
+                         status=GitRepositoryStatus.AVAILABLE):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
 
@@ -119,11 +122,20 @@ class _BaseGitNamespace:
 
             # Flush to make sure that repository.id is populated.
             IStore(repository).flush()
+            if async_hosting:
+                # If we are going to run async creation, we need to be sure
+                # the transaction is committed.
+                # Async creation will run a callback on Launchpad, and if
+                # the creation is quick enough, it might try to confirm on
+                # Launchpad (in another transaction) the creation of this
+                # repo before this transaction is actually committed.
+                transaction.commit()
             assert repository.id is not None
 
             clone_from_repository = repository.getClonedFrom()
             repository._createOnHostingService(
-                clone_from_repository=clone_from_repository)
+                clone_from_repository=clone_from_repository,
+                async_create=async_hosting)
 
         return repository
 

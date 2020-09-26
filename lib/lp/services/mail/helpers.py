@@ -3,7 +3,7 @@
 
 __metaclass__ = type
 
-from cStringIO import StringIO as cStringIO
+from io import BytesIO
 import os.path
 import re
 import time
@@ -249,7 +249,7 @@ def save_mail_to_librarian(raw_mail, restricted=False):
     # be guessable for example.
     file_name = str(uuid1()) + '.txt'
     file_alias = getUtility(ILibraryFileAliasSet).create(
-        file_name, len(raw_mail), cStringIO(raw_mail), 'message/rfc822',
+        file_name, len(raw_mail), BytesIO(raw_mail), 'message/rfc822',
         restricted=restricted)
     return file_alias
 

@@ -3406,7 +3406,7 @@ class TestPublisherLite(TestCaseWithFactory):
 
     def test_writeReleaseFile_dumps_release_file(self):
         # _writeReleaseFile writes a Release file for a suite.
-        root = unicode(self.makeTemporaryDirectory())
+        root = six.ensure_text(self.makeTemporaryDirectory())
         series = self.makePublishableSeries(root)
         spph = self.makePublishablePackage(series)
         suite = series.name + pocketsuffix[spph.pocket]
@@ -3424,7 +3424,7 @@ class TestPublisherLite(TestCaseWithFactory):
     def test_writeReleaseFile_creates_directory_if_necessary(self):
         # If the suite is new and its release directory does not exist
         # yet, _writeReleaseFile will create it.
-        root = unicode(self.makeTemporaryDirectory())
+        root = six.ensure_text(self.makeTemporaryDirectory())
         series = self.makePublishableSeries(root)
         spph = self.makePublishablePackage(series)
         suite = series.name + pocketsuffix[spph.pocket]
@@ -3437,7 +3437,7 @@ class TestPublisherLite(TestCaseWithFactory):
         self.assertTrue(file_exists(release_path))
 
     def test_syncTimestamps_makes_timestamps_match_latest(self):
-        root = unicode(self.makeTemporaryDirectory())
+        root = six.ensure_text(self.makeTemporaryDirectory())
         series = self.makePublishableSeries(root)
         location = self.getReleaseFileDir(root, series, series.name)
         os.makedirs(location)
@@ -3504,8 +3504,8 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
     layer = ZopelessDatabaseLayer
 
     def test_checksum_files_created(self):
-        tmpdir = unicode(self.makeTemporaryDirectory())
-        rootdir = unicode(self.makeTemporaryDirectory())
+        tmpdir = six.ensure_text(self.makeTemporaryDirectory())
+        rootdir = six.ensure_text(self.makeTemporaryDirectory())
 
         for dh_file in self.all_hash_files:
             checksum_file = os.path.join(rootdir, dh_file)
@@ -3522,8 +3522,8 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
                 self.assertFalse(os.path.exists(checksum_file))
 
     def test_basic_file_add(self):
-        tmpdir = unicode(self.makeTemporaryDirectory())
-        rootdir = unicode(self.makeTemporaryDirectory())
+        tmpdir = six.ensure_text(self.makeTemporaryDirectory())
+        rootdir = six.ensure_text(self.makeTemporaryDirectory())
         test1_file = os.path.join(rootdir, "test1")
         test1_hash = self.createTestFile(test1_file, "test1")
 
@@ -3550,8 +3550,8 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
         self.assertThat(self.fetchSums(rootdir), MatchesDict(expected))
 
     def test_basic_directory_add(self):
-        tmpdir = unicode(self.makeTemporaryDirectory())
-        rootdir = unicode(self.makeTemporaryDirectory())
+        tmpdir = six.ensure_text(self.makeTemporaryDirectory())
+        rootdir = six.ensure_text(self.makeTemporaryDirectory())
         test1_file = os.path.join(rootdir, "test1")
         test1_hash = self.createTestFile(test1_file, "test1 dir")
 

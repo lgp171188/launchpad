@@ -10,7 +10,6 @@ __all__ = [
     'UserToUserEmail',
     ]
 
-from cStringIO import StringIO as cStringIO
 from datetime import datetime
 import email
 from email.header import (
@@ -23,6 +22,7 @@ from email.utils import (
     parseaddr,
     parsedate_tz,
     )
+from io import BytesIO
 import logging
 from operator import attrgetter
 import os.path
@@ -460,7 +460,7 @@ class MessageSet:
                 if len(content) > 0:
                     blob = getUtility(ILibraryFileAliasSet).create(
                         name=filename, size=len(content),
-                        file=cStringIO(content), contentType=content_type,
+                        file=BytesIO(content), contentType=content_type,
                         restricted=restricted)
                     MessageChunk(message=message, sequence=sequence, blob=blob)
                     sequence += 1
