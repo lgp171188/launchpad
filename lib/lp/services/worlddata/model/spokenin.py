@@ -6,27 +6,22 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = ['SpokenIn']
 
-from storm.locals import (
-    Int,
-    Reference,
-    )
+from sqlobject import ForeignKey
 from zope.interface import implementer
 
-from lp.services.database.stormbase import StormBase
+from lp.services.database.sqlbase import SQLBase
 from lp.services.worlddata.interfaces.spokenin import ISpokenIn
 
 
 @implementer(ISpokenIn)
-class SpokenIn(StormBase):
+class SpokenIn(SQLBase):
     """A way of telling which languages are spoken in which countries.
 
     This table maps a language which is SpokenIn a country.
     """
 
-    __storm_table__ = 'SpokenIn'
+    _table = 'SpokenIn'
 
-    id = Int(primary=True)
-    country_id = Int(name='country', allow_none=False)
-    country = Reference(country_id, 'Country.id')
-    language_id = Int(name='language', allow_none=False)
-    language = Reference(language_id, 'Language.id')
+    country = ForeignKey(dbName='country', notNull=True, foreignKey='Country')
+    language = ForeignKey(dbName='language', notNull=True,
+                          foreignKey='Language')

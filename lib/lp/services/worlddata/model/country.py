@@ -6,18 +6,18 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = ['Country', 'CountrySet', 'Continent']
 
-from storm.locals import (
-    Int,
-    Reference,
-    ReferenceSet,
-    Unicode,
+import six
+from sqlobject import (
+    ForeignKey,
+    SQLRelatedJoin,
+    StringCol,
     )
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
-from lp.services.database.stormbase import StormBase
+from lp.services.database.sqlbase import SQLBase
 from lp.services.worlddata.interfaces.country import (
     IContinent,
     ICountry,
@@ -26,25 +26,27 @@ from lp.services.worlddata.interfaces.country import (
 
 
 @implementer(ICountry)
-class Country(StormBase):
+class Country(SQLBase):
     """A country."""
 
-    __storm_table__ = 'Country'
+    _table = 'Country'
 
     # default to listing newest first
-    __storm_order__ = 'name'
+    _defaultOrder = 'name'
 
     # db field names
-    id = Int(primary=True)
-    name = Unicode(name='name', allow_none=False)
-    iso3166code2 = Unicode(name='iso3166code2', allow_none=False)
-    iso3166code3 = Unicode(name='iso3166code3', allow_none=False)
-    title = Unicode(name='title', allow_none=True, default=DEFAULT)
-    description = Unicode(name='description')
-    continent_id = Int(name='continent', default=None)
-    continent = Reference(continent_id, 'Continent.id')
-    languages = ReferenceSet(
-        id, 'SpokenIn.country_id', 'SpokenIn.language_id', 'Language.id')
+    name = StringCol(dbName='name', unique=True, notNull=True)
+    iso3166code2 = StringCol(dbName='iso3166code2', unique=True,
+                             notNull=True)
+    iso3166code3 = StringCol(dbName='iso3166code3', unique=True,
+                             notNull=True)
+    title = StringCol(dbName='title', notNull=False, default=DEFAULT)
+    description = StringCol(dbName='description')
+    continent = ForeignKey(
+        dbName='continent', foreignKey='Continent', default=None)
+    languages = SQLRelatedJoin(
+        six.ensure_str('Language'), joinColumn='country',
+        otherColumn='language', intermediateTable='SpokenIn')
 
 
 @implementer(ICountrySet)
@@ -52,14 +54,13 @@ class CountrySet:
     """A set of countries"""
 
     def __getitem__(self, iso3166code2):
-        country = IStore(Country).find(
-            Country, iso3166code2=iso3166code2).one()
+        country = Country.selectOneBy(iso3166code2=iso3166code2)
         if country is None:
             raise NotFoundError(iso3166code2)
         return country
 
     def __iter__(self):
-        for row in IStore(Country).find(Country):
+        for row in Country.select():
             yield row
 
     def getByName(self, name):
@@ -76,12 +77,11 @@ class CountrySet:
 
 
 @implementer(IContinent)
-class Continent(StormBase):
+class Continent(SQLBase):
     """See IContinent."""
 
-    __storm_table__ = 'Continent'
-    __storm_order__ = ['name', 'id']
+    _table = 'Continent'
+    _defaultOrder = ['name', 'id']
 
-    id = Int(primary=True)
-    name = Unicode(allow_none=False)
-    code = Unicode(allow_none=False)
+    name = StringCol(unique=True, notNull=True)
+    code = StringCol(unique=True, notNull=True)
