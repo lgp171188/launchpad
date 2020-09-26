@@ -532,8 +532,8 @@ class IBranchMergeProposalEdit(Interface):
 
         If there is not an existing preview diff, one will be created.
 
-        :param diff_content: The raw bytes of the diff content to be put in
-            the librarian.
+        :param diff_content: The raw bytes (or text, which will be encoded
+            using UTF-8) of the diff content to be put in the librarian.
         :param diff_stat: Text describing the files added, remove or modified.
         :param source_revision_id: The revision id that was used from the
             source branch.
