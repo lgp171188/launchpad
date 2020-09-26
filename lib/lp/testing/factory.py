@@ -2627,13 +2627,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                      plural_expression=None):
         """Makes a language given the language_code and name."""
         if language_code is None:
-            language_code = self.getUniqueUnicode('lang')
+            language_code = self.getUniqueString('lang')
         if name is None:
             name = "Language %s" % language_code
         if plural_expression is None and pluralforms is not None:
             # If the number of plural forms is known, the language
             # should also have a plural expression and vice versa.
-            plural_expression = u'n %% %d' % pluralforms
+            plural_expression = 'n %% %d' % pluralforms
 
         language_set = getUtility(ILanguageSet)
         return language_set.createLanguage(
