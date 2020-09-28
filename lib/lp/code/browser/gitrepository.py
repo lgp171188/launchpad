@@ -40,6 +40,7 @@ from six.moves.urllib_parse import (
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
+from zope.formlib.form import FormFields
 from zope.formlib.textwidgets import IntWidget
 from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import (
@@ -58,6 +59,7 @@ from zope.schema.vocabulary import (
     SimpleTerm,
     SimpleVocabulary,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.browser.informationtype import InformationTypePortletMixin
@@ -103,6 +105,7 @@ from lp.code.interfaces.gitref import IGitRefBatchNavigator
 from lp.code.interfaces.gitrepository import (
     ContributorGitIdentity,
     IGitRepository,
+    IGitRepositorySet,
     )
 from lp.code.vocabularies.gitrule import GitPermissionsVocabulary
 from lp.registry.interfaces.person import (
@@ -139,6 +142,9 @@ from lp.services.webapp.publisher import DataDownloadView
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.hassnaps import HasSnapsViewMixin
+
+
+GIT_REPOSITORY_FORK_ENABLED = 'gitrepository.fork.enabled'
 
 
 @implementer(ICanonicalUrlData)
@@ -478,6 +484,62 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
         if self.context.status == GitRepositoryStatus.CREATING:
             return "This repository is being created."
         return None
+
+    @property
+    def allow_fork(self):
+        if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
+            return False
+        # User cannot fork repositories they already own (note that forking a
+        # repository owned by a team the user is in is still fine).
+        if self.context.owner == self.user:
+            return False
+        return self.context.namespace.supports_repository_forking
+
+    @property
+    def fork_url(self):
+        return canonical_url(self.context, view_name='+fork')
+
+
+class GitRepositoryForkView(LaunchpadEditFormView):
+
+    schema = Interface
+
+    field_names = []
+
+    def initialize(self):
+        if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
+            raise Unauthorized()
+        super(GitRepositoryForkView, self).initialize()
+
+    def setUpFields(self):
+        super(GitRepositoryForkView, self).setUpFields()
+        owner_field = Choice(
+            vocabulary='AllUserTeamsParticipationPlusSelf',
+            title=u'Fork to the following owner', required=True,
+            __name__=u'owner')
+        self.form_fields += FormFields(owner_field)
+
+    @property
+    def initial_values(self):
+        return {'owner': self.user}
+
+    def validate(self, data):
+        new_owner = data.get("owner")
+        if not new_owner or not self.user.inTeam(new_owner):
+            self.setFieldError(
+                "owner",
+                "You should select a valid user to fork the repository.")
+
+    @action('Fork it', name='fork')
+    def fork(self, action, data):
+        forked = getUtility(IGitRepositorySet).fork(
+            self.context, self.user, data.get("owner"))
+        self.request.response.addNotification("Repository forked.")
+        self.next_url = canonical_url(forked)
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
 
 
 class GitRepositoryRescanView(LaunchpadEditFormView):

@@ -33,6 +33,7 @@ from email.utils import (
     make_msgid,
     )
 import hashlib
+from io import BytesIO
 from itertools import count
 import os
 from StringIO import StringIO
@@ -1646,10 +1647,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeDiff(self, size='small'):
         diff_path = os.path.join(os.path.dirname(__file__),
                                  'data/{}.diff'.format(size))
-        with open(os.path.join(diff_path), 'r') as diff:
+        with open(os.path.join(diff_path), 'rb') as diff:
             diff_text = diff.read()
             return ProxyFactory(
-                Diff.fromFile(StringIO(diff_text), len(diff_text)))
+                Diff.fromFile(BytesIO(diff_text), len(diff_text)))
 
     def makePreviewDiff(self, conflicts=u'', merge_proposal=None,
                         date_created=None, size='small', git=False):

@@ -18,6 +18,10 @@ from textwrap import dedent
 from fixtures import FakeLogger
 import pytz
 import soupmatchers
+from soupmatchers import (
+    Tag,
+    HTMLContains,
+    )
 from storm.store import Store
 from testtools.matchers import (
     AfterPreprocessing,
@@ -28,6 +32,7 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
+    Not,
     )
 import transaction
 from zope.component import getUtility
@@ -40,16 +45,21 @@ from lp.app.enums import InformationType
 from lp.app.errors import UnexpectedFormData
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
-from lp.code.browser.gitrepository import encode_form_field_id
+from lp.code.browser.gitrepository import (
+    encode_form_field_id,
+    GIT_REPOSITORY_FORK_ENABLED,
+    )
 from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
     GitActivityType,
     GitGranteeType,
+    GitListingSort,
     GitPermissionType,
     GitRepositoryStatus,
     GitRepositoryType,
     )
+from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.gitjob import GitRefScanJob
@@ -130,6 +140,10 @@ class TestGitRepositoryNavigation(TestCaseWithFactory):
 class TestGitRepositoryView(BrowserTestCase):
 
     layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestGitRepositoryView, self).setUp()
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: 'on'}))
 
     def test_clone_instructions(self):
         repository = self.factory.makeGitRepository()
@@ -538,7 +552,7 @@ class TestGitRepositoryView(BrowserTestCase):
             repository, "+repository-portlet-subscriber-content")
         with StormStatementRecorder() as recorder:
             view.render()
-        self.assertThat(recorder, HasQueryCount(Equals(6)))
+        self.assertThat(recorder, HasQueryCount(Equals(7)))
 
     def test_show_rescan_link(self):
         repository = self.factory.makeGitRepository()
@@ -572,6 +586,65 @@ class TestGitRepositoryView(BrowserTestCase):
         view = create_initialized_view(repository, '+index')
         result = view.show_rescan_link
         self.assertTrue(result)
+
+    def assertContainsForkLink(self, browser, repository, text):
+        """Asserts that browser contains the fork link with the given text"""
+        with admin_logged_in():
+            url = canonical_url(repository, view_name='+fork')
+        fork_link = Tag(
+            "fork link", "a",
+            text=re.compile(re.escape(text)),
+            attrs={"class": "sprite add", "href": url})
+        self.assertThat(browser.contents, HTMLContains(fork_link))
+
+    def assertDoesntContainForkLink(self, browser, repository, texts):
+        """Asserts that there is no fork button with any of the given texts."""
+        with admin_logged_in():
+            url = canonical_url(repository, view_name='+fork')
+        for text in texts:
+            fork_link = Tag(
+                "fork link", "a",
+                text=re.compile(re.escape(text)),
+                attrs={"class": "sprite add", "href": url})
+            self.assertThat(browser.contents, Not(HTMLContains(fork_link)))
+
+    def test_hide_fork_link_for_repos_targeting_person(self):
+        person = self.factory.makePerson()
+        another_person = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(target=person)
+        browser = self.getViewBrowser(
+            repository, '+index', user=another_person)
+        self.assertDoesntContainForkLink(browser, repository, [
+            "Fork it to your account",
+            "Or click here to fork it to your account.",
+        ])
+
+    def test_show_fork_link_for_the_right_users(self):
+        another_person = self.factory.makePerson()
+        repository = self.factory.makeGitRepository()
+        repo_owner = repository.owner
+
+        # Do not show the link for the repository owner.
+        browser = self.getViewBrowser(repository, '+index', user=repo_owner)
+        self.assertDoesntContainForkLink(browser, repository, [
+            "Fork it to your account",
+            "fork it directly to your account",
+        ])
+
+        # Shows for another person.
+        browser = self.getViewBrowser(
+            repository, '+index', user=another_person)
+        self.assertContainsForkLink(
+            browser, repository, "fork it directly to your account")
+
+        # Even for another person, do not show it if the feature flag is off.
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: ''}))
+        browser = self.getViewBrowser(
+            repository, '+index', user=another_person)
+        self.assertDoesntContainForkLink(browser, repository, [
+            "Fork it to your account",
+            "fork it directly to your account",
+        ])
 
 
 class TestGitRepositoryViewPrivateArtifacts(BrowserTestCase):
@@ -2071,3 +2144,126 @@ class TestGitRepositoryActivityView(BrowserTestCase):
             create_activity,
             2)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+
+class TestGitRepositoryForkView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestGitRepositoryForkView, self).setUp()
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: 'on'}))
+
+    def getReposOwnedBy(self, user):
+        return IGitCollection(user).getRepositories(
+            sort_by=GitListingSort.NEWEST_FIRST)
+
+    def test_fork_page_redirects_with_disabled_feature(self):
+        self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: ''}))
+        with admin_logged_in():
+            repository = self.factory.makeGitRepository()
+            owner = repository.owner
+        self.assertRaises(
+            Unauthorized, self.getViewBrowser,
+            repository, "+fork", rootsite="code", user=owner)
+
+    def test_fork_page_shows_input(self):
+        with admin_logged_in():
+            repository = self.factory.makeGitRepository()
+            owner = removeSecurityProxy(repository.owner)
+
+            team = self.factory.makeTeam(members=[owner])
+            another_person = self.factory.makePerson()
+
+            select_owner = Tag(
+                "owner selector", "select",
+                attrs={"id": "field.owner", "name": "field.owner"})
+
+            def person_option_tag(person):
+                return Tag(
+                    "option for %s" % person, "option",
+                    text="%s (%s)" % (person.displayname, person.name),
+                    attrs=dict(value=person.name))
+
+            option_owner = person_option_tag(owner)
+            option_team = person_option_tag(team)
+            option_another_person = person_option_tag(another_person)
+
+        browser = self.getViewBrowser(
+            repository, "+fork", rootsite="code", user=owner)
+
+        html = browser.contents
+        self.assertThat(html, HTMLContains(select_owner))
+        self.assertThat(html, HTMLContains(option_owner))
+        self.assertThat(html, HTMLContains(option_team))
+        self.assertThat(html, Not(HTMLContains(option_another_person)))
+
+    def test_fork_page_submit_to_self(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+
+        with person_logged_in(another_person):
+            view = create_initialized_view(repository, name="+fork", form={
+                "field.owner": another_person.name,
+                "field.actions.fork": "Fork it"})
+
+            forked = self.getReposOwnedBy(another_person)[0]
+            self.assertNotEqual(forked, repository)
+            self.assertEqual(another_person, forked.owner)
+
+            notifications = view.request.response.notifications
+            self.assertEqual(1, len(notifications))
+            self.assertEqual("Repository forked.", notifications[0].message)
+
+            self.assertEqual(canonical_url(forked), view.next_url)
+
+    def test_fork_page_submit_to_team(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[another_person])
+
+        with person_logged_in(another_person):
+            view = create_initialized_view(repository, name="+fork", form={
+                "field.owner": team.name,
+                "field.actions.fork": "Fork it"})
+
+            forked = self.getReposOwnedBy(team)[0]
+            self.assertNotEqual(forked, repository)
+            self.assertEqual(team, forked.owner)
+
+            notifications = view.request.response.notifications
+            self.assertEqual(1, len(notifications))
+            self.assertEqual("Repository forked.", notifications[0].message)
+
+            self.assertEqual(canonical_url(forked), view.next_url)
+
+    def test_fork_page_submit_missing_user(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+
+        with person_logged_in(another_person):
+            view = create_initialized_view(repository, name="+fork", form={
+                "field.actions.fork": "Fork it"})
+
+            # No repository should have been created.
+            self.assertEqual(0, self.getReposOwnedBy(another_person).count())
+            self.assertEqual(
+                ['You should select a valid user to fork the repository.'],
+                view.errors)
+
+            self.assertEqual(None, view.next_url)
+
+    def test_fork_page_submit_invalid_user(self):
+        self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+        invalid_person = self.factory.makePerson()
+
+        with person_logged_in(another_person):
+            create_initialized_view(repository, name="+fork", form={
+                "field.owner": invalid_person.name,
+                "field.actions.fork": "Fork it"})
+            self.assertEqual(0, self.getReposOwnedBy(invalid_person).count())
