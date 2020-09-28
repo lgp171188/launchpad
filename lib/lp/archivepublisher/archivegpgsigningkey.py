@@ -256,12 +256,12 @@ class ArchiveGPGSigningKey(SignableArchive):
         # is then propagated to the context named-ppa.
         default_ppa = self.archive.owner.archive
         if self.archive != default_ppa:
-            if default_ppa.signing_key is None:
+            if default_ppa.signing_key_fingerprint is None:
                 yield IArchiveGPGSigningKey(default_ppa).generateSigningKey(
                     log=log, async_keyserver=async_keyserver)
-            key = default_ppa.signing_key
-            self.archive.signing_key_owner = key.owner
-            self.archive.signing_key_fingerprint = key.fingerprint
+            self.archive.signing_key_owner = default_ppa.signing_key_owner
+            self.archive.signing_key_fingerprint = (
+                default_ppa.signing_key_fingerprint)
             del get_property_cache(self.archive).signing_key
             defer.returnValue(None)
 
