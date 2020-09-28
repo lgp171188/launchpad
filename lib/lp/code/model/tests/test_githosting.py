@@ -433,8 +433,8 @@ class TestGitHostingClient(TestCase):
                 self.client.copyRefs, "123", self.getCopyRefOperations())
 
     def test_deleteRef(self):
-        with self.mockRequests("DELETE", status=202):
-            self.client.deleteRef("123", "refs/merge/123")
+        with self.mockRequests("DELETE", status=200):
+            self.client.deleteRefs([("123", "refs/merge/123")])
         self.assertRequest("repo/123/refs/merge/123", method="DELETE")
 
     def test_deleteRef_refs_request_error(self):
@@ -442,7 +442,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitReferenceDeletionFault,
                 "Error deleting refs/merge/123 from repo 123: HTTP 500",
-                self.client.deleteRef, "123", "refs/merge/123")
+                self.client.deleteRefs, [("123", "refs/merge/123")])
 
     def test_works_in_job(self):
         # `GitHostingClient` is usable from a running job.

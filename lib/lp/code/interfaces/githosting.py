@@ -140,10 +140,9 @@ class IGitHostingClient(Interface):
         :param logger: An optional logger.
         """
 
-    def deleteRef(path, ref, logger=None):
-        """Deletes a reference on the given git repository.
+    def deleteRefs(refs, logger=None):
+        """Deletes a list of repository paths and references.
 
-        :param path: Physical path of the repository on the hosting service.
-        :param ref: The reference to be delete.
+        :param refs: A list of tuples like (repo_path, ref_name) to be deleted.
         :param logger: An optional logger.
         """
