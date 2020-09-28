@@ -433,7 +433,7 @@ class FakeObjectFactory(ObjectFactory):
         else:
             sourcepackagename = sourcepackage.sourcepackagename
             distroseries = sourcepackage.distroseries
-        IBranch['name'].validate(unicode(name))
+        IBranch['name'].validate(six.ensure_text(name))
         branch = FakeBranch(
             branch_type, name=name, owner=owner, url=url,
             stacked_on=stacked_on, product=product,
