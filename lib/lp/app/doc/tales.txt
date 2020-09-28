@@ -157,8 +157,8 @@ them.
     ...     name='pppa', private=True, owner=owner)
 
     >>> print(test_tales("ppa/fmt:link", ppa=private_ppa))
-    <a href="/~joe/+archive/ubuntu/pppa" class="sprite ppa-icon private">PPA named
-    pppa for Joe Smith</a>
+    <a href="/~joe/+archive/ubuntu/pppa"
+    class="sprite ppa-icon private">PPA named pppa for Joe Smith</a>
 
     >>> login(ANONYMOUS)
 
@@ -782,8 +782,8 @@ Bug Trackers
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
     >>> bugtracker = getUtility(IBugTrackerSet).getByName('email')
     >>> bugtracker.title = 'an@email.address bug tracker'
-    >>> bugtracker.aliases = ['mailto:eatme@wundrlnd.com',
-    ...                       'http://bugs.vikingsrool.no/']
+    >>> bugtracker.aliases = [u'mailto:eatme@wundrlnd.com',
+    ...                       u'http://bugs.vikingsrool.no/']
 
 The "standard" 'url' name is supported:
 
