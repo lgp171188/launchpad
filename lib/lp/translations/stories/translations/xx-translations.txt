@@ -56,8 +56,9 @@ And we can see the error.
   Please correct it before continuing.
   Error in Translation:
   format specifications in 'msgid...' and 'msgstr[0]' for argument 1 are
-  not the sameformat specifications in 'msgid...' and 'msgstr[1]' for
-  argument 1 are not the same
+  not the same
+  format specifications in 'msgid...' and 'msgstr[1]' for argument 1 are
+  not the same
 
 The translation form got an error with the translations we wanted to store,
 and thus we still have that text as part of translations input, otherwise,
