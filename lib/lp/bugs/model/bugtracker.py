@@ -16,6 +16,7 @@ from itertools import chain
 
 from lazr.uri import URI
 from pytz import timezone
+import six
 from six.moves.urllib.parse import (
     quote,
     urlsplit,
@@ -33,13 +34,13 @@ from storm.expr import (
     Count,
     Desc,
     Not,
-    SQL,
     )
 from storm.locals import (
     Bool,
     Int,
     Reference,
     ReferenceSet,
+    SQL,
     Unicode,
     )
 from storm.store import Store
@@ -552,8 +553,9 @@ class BugTracker(SQLBase):
 
     # Join to return a list of BugTrackerAliases relating to this
     # BugTracker.
-    _bugtracker_aliases = SQLMultipleJoin(
-        'BugTrackerAlias', joinColumn='bugtracker')
+    _bugtracker_aliases = ReferenceSet(
+        '<primary key>',
+        'BugTrackerAlias.bugtracker_id')
 
     def _get_aliases(self):
         """See `IBugTracker.aliases`."""
@@ -585,7 +587,7 @@ class BugTracker(SQLBase):
             BugTrackerAlias(bugtracker=self, base_url=url)
         for url in to_del:
             alias = current_aliases_by_url[url]
-            alias.destroySelf()
+            alias.delete()
 
     aliases = property(
         _get_aliases, _set_aliases, None,
@@ -789,9 +791,10 @@ class BugTrackerSet:
                      for url in permutations))),
             # Search for any permutation in BugTrackerAlias.
             (alias.bugtracker for alias in
-             BugTrackerAlias.select(
-                    OR(*(BugTrackerAlias.q.base_url == url
-                         for url in permutations)))))
+             IStore(BugTrackerAlias).find(
+                 BugTrackerAlias,
+                 OR(*(BugTrackerAlias.base_url == six.ensure_text(url)
+                      for url in permutations)))))
         # Return the first match.
         for bugtracker in matching_bugtrackers:
             return bugtracker
@@ -870,12 +873,22 @@ class BugTrackerSet:
 
 
 @implementer(IBugTrackerAlias)
-class BugTrackerAlias(SQLBase):
+class BugTrackerAlias(StormBase):
     """See `IBugTrackerAlias`."""
+    __storm_table__ = 'BugTrackerAlias'
+    id = Int(primary=True)
 
-    bugtracker = ForeignKey(
-        foreignKey="BugTracker", dbName="bugtracker", notNull=True)
-    base_url = StringCol(notNull=True)
+    bugtracker_id = Int(name='bugtracker', allow_none=False)
+    bugtracker = Reference(bugtracker_id, 'BugTracker.id')
+
+    base_url = Unicode(allow_none=False)
+
+    def __init__(self, bugtracker, base_url):
+        self.bugtracker = bugtracker
+        self.base_url = base_url
+
+    def delete(self):
+        Store.of(self).remove(self)
 
 
 @implementer(IBugTrackerAliasSet)
@@ -886,4 +899,6 @@ class BugTrackerAliasSet:
 
     def queryByBugTracker(self, bugtracker):
         """See IBugTrackerSet."""
-        return self.table.selectBy(bugtracker=bugtracker.id)
+        return IStore(BugTrackerAlias).find(
+            BugTrackerAlias,
+            bugtracker=bugtracker)
