@@ -72,6 +72,7 @@ def make_config_test(config_file, description):
                 self.fail(message)
     # Hack the config file name into the class name.
     LAZRConfigTestCase.__name__ = '../' + description
+    LAZRConfigTestCase.__qualname__ = '../' + description
     return LAZRConfigTestCase
 
 
