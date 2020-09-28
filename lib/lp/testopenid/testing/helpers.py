@@ -13,7 +13,7 @@ __all__ = [
     'ZopeFetcher',
     ]
 
-from StringIO import StringIO
+import io
 
 from openid import fetchers
 from openid.consumer.discover import (
@@ -32,11 +32,11 @@ class EchoView(LaunchpadView):
     """A view which just echoes its form arguments in the response."""
 
     def render(self):
-        out = StringIO()
-        print('Request method: %s' % self.request.method, file=out)
+        out = io.StringIO()
+        print(u'Request method: %s' % self.request.method, file=out)
         keys = sorted(self.request.form.keys())
         for key in keys:
-            print('%s:%s' % (key, self.request.form[key]), file=out)
+            print(u'%s:%s' % (key, self.request.form[key]), file=out)
         return out.getvalue()
 
 
