@@ -14,6 +14,7 @@ __all__ = [
 import os
 
 import gpgme
+from twisted.internet import defer
 from twisted.internet.threads import deferToThread
 from zope.component import getUtility
 from zope.interface import implementer
@@ -250,17 +251,30 @@ class ArchiveGPGSigningKey(SignableArchive):
             "Cannot override signing_keys.")
 
         # Always generate signing keys for the default PPA, even if it
-        # was not expecifically requested. The default PPA signing key
+        # was not specifically requested. The default PPA signing key
         # is then propagated to the context named-ppa.
         default_ppa = self.archive.owner.archive
         if self.archive != default_ppa:
-            if default_ppa.signing_key is None:
-                IArchiveGPGSigningKey(default_ppa).generateSigningKey()
-            key = default_ppa.signing_key
-            self.archive.signing_key_owner = key.owner
-            self.archive.signing_key_fingerprint = key.fingerprint
-            del get_property_cache(self.archive).signing_key
-            return
+            def propagate_key(_):
+                self.archive.signing_key_owner = default_ppa.signing_key_owner
+                self.archive.signing_key_fingerprint = (
+                    default_ppa.signing_key_fingerprint)
+                del get_property_cache(self.archive).signing_key
+
+            if default_ppa.signing_key_fingerprint is None:
+                d = IArchiveGPGSigningKey(default_ppa).generateSigningKey(
+                    log=log, async_keyserver=async_keyserver)
+            else:
+                d = defer.succeed(None)
+            # generateSigningKey is only asynchronous if async_keyserver is
+            # true; we need some contortions to keep it synchronous
+            # otherwise.
+            if async_keyserver:
+                d.addCallback(propagate_key)
+                return d
+            else:
+                propagate_key(None)
+                return
 
         key_displayname = (
             "Launchpad PPA for %s" % self.archive.owner.displayname)

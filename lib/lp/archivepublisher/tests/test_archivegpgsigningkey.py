@@ -12,7 +12,11 @@ from textwrap import dedent
 
 import six
 from testtools.matchers import (
+    Equals,
     FileContains,
+    Is,
+    MatchesStructure,
+    Not,
     StartsWith,
     )
 from testtools.twistedsupport import (
@@ -339,6 +343,35 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         self.assertIn(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n", content)
 
     @defer.inlineCallbacks
+    def test_generateSigningKey_local_non_default_ppa(self):
+        # Generating a signing key locally using GPGHandler for a
+        # non-default PPA generates one for the user's default PPA first and
+        # then propagates it.
+        self.useFixture(FakeGenerateKey("ppa-sample@canonical.com.sec"))
+        logger = BufferLogger()
+        # Use a display name that matches the pregenerated sample key.
+        owner = self.factory.makePerson(
+            displayname="Celso \xe1\xe9\xed\xf3\xfa Providelo")
+        default_ppa = self.factory.makeArchive(owner=owner)
+        another_ppa = self.factory.makeArchive(owner=owner)
+        yield IArchiveGPGSigningKey(another_ppa).generateSigningKey(
+            log=logger, async_keyserver=True)
+        self.assertThat(default_ppa, MatchesStructure(
+            signing_key=Not(Is(None)),
+            signing_key_owner=Not(Is(None)),
+            signing_key_fingerprint=Not(Is(None))))
+        self.assertIsNotNone(
+            getUtility(IGPGKeySet).getByFingerprint(
+                default_ppa.signing_key_fingerprint))
+        self.assertIsNone(
+            getUtility(ISigningKeySet).get(
+                SigningKeyType.OPENPGP, default_ppa.signing_key_fingerprint))
+        self.assertThat(another_ppa, MatchesStructure.byEquality(
+            signing_key=default_ppa.signing_key,
+            signing_key_owner=default_ppa.signing_key_owner,
+            signing_key_fingerprint=default_ppa.signing_key_fingerprint))
+
+    @defer.inlineCallbacks
     def test_generateSigningKey_signing_service(self):
         # Generating a signing key on the signing service stores it in the
         # database and pushes it to the keyserver.
@@ -374,3 +407,39 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         yield check_status(response)
         content = yield treq.content(response)
         self.assertIn(test_key, content)
+
+    @defer.inlineCallbacks
+    def test_generateSigningKey_signing_service_non_default_ppa(self):
+        # Generating a signing key on the signing service for a non-default
+        # PPA generates one for the user's default PPA first and then
+        # propagates it.
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+        signing_service_client.generate.side_effect = None
+        test_key = test_pubkey_from_email("ftpmaster@canonical.com")
+        signing_service_client.generate.return_value = {
+            "fingerprint": "33C0A61893A5DC5EB325B29E415A12CAC2F30234",
+            "public-key": test_key,
+            }
+        logger = BufferLogger()
+        default_ppa = self.factory.makeArchive()
+        another_ppa = self.factory.makeArchive(owner=default_ppa.owner)
+        yield IArchiveGPGSigningKey(another_ppa).generateSigningKey(
+            log=logger, async_keyserver=True)
+        self.assertThat(default_ppa, MatchesStructure(
+            signing_key=Is(None),
+            signing_key_owner=Not(Is(None)),
+            signing_key_fingerprint=Not(Is(None))))
+        self.assertIsNone(
+            getUtility(IGPGKeySet).getByFingerprint(
+                default_ppa.signing_key_fingerprint))
+        signing_key = getUtility(ISigningKeySet).get(
+            SigningKeyType.OPENPGP, default_ppa.signing_key_fingerprint)
+        self.assertEqual(test_key, signing_key.public_key)
+        self.assertThat(another_ppa, MatchesStructure(
+            signing_key=Is(None),
+            signing_key_owner=Equals(default_ppa.signing_key_owner),
+            signing_key_fingerprint=Equals(
+                default_ppa.signing_key_fingerprint)))
