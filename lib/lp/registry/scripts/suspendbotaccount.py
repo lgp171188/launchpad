@@ -3,6 +3,7 @@
 
 """Suspend a bot account."""
 
+import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet
@@ -25,7 +26,7 @@ class SuspendBotAccountScript(LaunchpadScript):
             type='string', dest='email', default='', help='Email address')
 
     def main(self):
-        emailaddress = unicode(self.options.email)
+        emailaddress = six.ensure_text(self.options.email)
         if not emailaddress:
             raise LaunchpadScriptFailure('--email is required')
 

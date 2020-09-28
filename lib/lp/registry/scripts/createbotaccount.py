@@ -3,6 +3,7 @@
 
 """Create a bot account."""
 
+import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet
@@ -44,10 +45,10 @@ class CreateBotAccountScript(LaunchpadScript):
             help='Add bot to this comma separated list of teams')
 
     def main(self):
-        username = unicode(self.options.username)
+        username = six.ensure_text(self.options.username)
         if not username:
             raise LaunchpadScriptFailure('--username is required')
-        openid_suffix = unicode(self.options.openid)
+        openid_suffix = six.ensure_text(self.options.openid)
         if '/' in openid_suffix:
             raise LaunchpadScriptFailure(
                 'Invalid OpenID suffix {}'.format(openid_suffix))
@@ -55,18 +56,18 @@ class CreateBotAccountScript(LaunchpadScript):
         displayname = u'\U0001f916 {}'.format(username)  # U+1f916==ROBOT FACE
 
         if self.options.email:
-            emailaddress = unicode(self.options.email)
+            emailaddress = six.ensure_text(self.options.email)
         else:
             emailaddress = u'webops+{}@canonical.com'.format(username)
 
         if self.options.teams:
-            teamnames = [unicode(t.strip())
+            teamnames = [six.ensure_text(t.strip())
                          for t in self.options.teams.split(',')
                          if t.strip()]
         else:
             teamnames = []
 
-        sshkey_text = unicode(self.options.sshkey)  # Optional
+        sshkey_text = six.ensure_text(self.options.sshkey)  # Optional
 
         person_set = getUtility(IPersonSet)
 

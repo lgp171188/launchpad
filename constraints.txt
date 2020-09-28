@@ -265,6 +265,7 @@ psutil==5.4.2
 psycopg2==2.7.4
 pyasn1==0.4.2
 pyasn1-modules==0.2.1
+pygettextpo==0.2
 # lp:~launchpad/pygpgme/pthread
 # lp1 Link against libgpgme-pthread for thread-safety.
 pygpgme==0.3+lp1

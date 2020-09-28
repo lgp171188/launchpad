@@ -18,6 +18,7 @@ from operator import attrgetter
 
 import apt_pkg
 from lazr.delegates import delegate_to
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -321,7 +322,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
     @cachedproperty
     def suite_names(self):
         """See `IDistroSeries`."""
-        return [unicode(pocket) for pocket in PackagePublishingPocket.items]
+        return [
+            six.text_type(pocket) for pocket in PackagePublishingPocket.items]
 
     @property
     def answers_usage(self):
