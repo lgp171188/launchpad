@@ -3,6 +3,8 @@
 
 """Helpers for TestOpenID page tests."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'complete_from_browser',
@@ -31,10 +33,10 @@ class EchoView(LaunchpadView):
 
     def render(self):
         out = StringIO()
-        print >> out, 'Request method: %s' % self.request.method
+        print('Request method: %s' % self.request.method, file=out)
         keys = sorted(self.request.form.keys())
         for key in keys:
-            print >> out, '%s:%s' % (key, self.request.form[key])
+            print('%s:%s' % (key, self.request.form[key]), file=out)
         return out.getvalue()
 
 
