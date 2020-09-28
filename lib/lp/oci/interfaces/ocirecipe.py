@@ -262,18 +262,10 @@ class IOCIRecipeView(Interface):
             "Whether everything is set up to allow uploading builds of "
             "this OCI recipe to a registry."))
 
-    def requestBuild(requester, architecture):
-        """Request that the OCI recipe is built.
-
-        :param requester: The person requesting the build.
-        :param architecture: The architecture to build for.
-        :return: `IOCIRecipeBuild`.
-        """
-
     @call_with(requester=REQUEST_USER)
     @export_factory_operation(IOCIRecipeBuildRequest, [])
     @operation_for_version("devel")
-    def requestBuilds(requester):
+    def requestBuilds(requester, distro_arch_series=None):
         """Request that the OCI recipe is built for all available
         architectures.
 

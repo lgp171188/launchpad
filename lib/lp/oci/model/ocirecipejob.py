@@ -162,9 +162,12 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     config = config.IOCIRecipeRequestBuildsJobSource
 
     @classmethod
-    def create(cls, recipe, requester):
+    def create(cls, recipe, requester, distro_arch_series=None):
         """See `OCIRecipeRequestBuildsJob`."""
-        metadata = {"requester": requester.id}
+        metadata = {
+            "requester": requester.id,
+            "distro_arch_series": [i.id for i in distro_arch_series or []]
+        }
         recipe_job = OCIRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
         job.celeryRunOnCommit()
@@ -234,6 +237,10 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         """See `OCIRecipeRequestBuildsJob`."""
         self.metadata["builds"] = [build.id for build in builds]
 
+    @property
+    def distro_arch_series_ids(self):
+        return self.metadata.get("distro_arch_series") or []
+
     def run(self):
         """See `IRunnableJob`."""
         requester = self.requester
@@ -242,8 +249,13 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
                 "Skipping %r because the requester has been deleted." % self)
             return
         try:
+            arch_series = set(self.recipe.getAllowedArchitectures())
+            if self.distro_arch_series_ids:
+                arch_series = {i for i in arch_series
+                               if i.id in self.distro_arch_series_ids}
             self.builds = self.recipe.requestBuildsFromJob(
-                requester, build_request=self.build_request)
+                requester, build_request=self.build_request,
+                distro_arch_series=arch_series)
             self.error_message = None
         except self.retry_error_types:
             raise
