@@ -421,9 +421,6 @@ lxc-clean: clean_js clean_pip clean_logs
 	# it does everything expected from a clean target.  When the
 	# referenced bug is fixed, this target may be reunited with
 	# the 'clean' target.
-	if test -f sourcecode/pygettextpo/Makefile; then \
-		$(MAKE) -C sourcecode/pygettextpo clean; \
-	fi
 	$(RM) -r env wheelhouse
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
 	$(RM) -r $(CODEHOSTING_ROOT)/*
