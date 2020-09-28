@@ -36,7 +36,6 @@ import hashlib
 from io import BytesIO
 from itertools import count
 import os
-from StringIO import StringIO
 import sys
 from textwrap import dedent
 import types
@@ -2657,7 +2656,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if filename is None:
             filename = self.getUniqueString('filename')
         if content is None:
-            content = self.getUniqueString()
+            content = self.getUniqueBytes()
+        else:
+            content = six.ensure_binary(content)
 
         if db_only:
             # Often we don't actually care if the file exists on disk.
@@ -2671,7 +2672,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 content=lfc, filename=filename, mimetype=content_type)
         else:
             lfa = getUtility(ILibraryFileAliasSet).create(
-                filename, len(content), StringIO(content), content_type,
+                filename, len(content), BytesIO(content), content_type,
                 expires=expires, restricted=restricted)
         return lfa
 
@@ -3537,8 +3538,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeMirrorProbeRecord(self, mirror):
         """Create a probe record for a mirror of a distribution."""
-        log_file = StringIO()
-        log_file.write("Fake probe, nothing useful here.")
+        log_file = BytesIO()
+        log_file.write(b"Fake probe, nothing useful here.")
         log_file.seek(0)
 
         library_alias = getUtility(ILibraryFileAliasSet).create(
@@ -4638,8 +4639,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if filename is None:
             filename = self.getUniqueString()
         if content is None:
-            content = self.getUniqueString()
-        fileupload = StringIO(content)
+            content = self.getUniqueBytes()
+        fileupload = BytesIO(content)
         fileupload.filename = filename
         fileupload.headers = {
             'Content-Type': 'text/plain; charset=utf-8',
