@@ -245,7 +245,6 @@ class ArchiveGPGSigningKey(SignableArchive):
         with open(export_path, 'wb') as export_file:
             export_file.write(key.export())
 
-    @defer.inlineCallbacks
     def generateSigningKey(self, log=None, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""
         assert self.archive.signing_key_fingerprint is None, (
@@ -256,14 +255,26 @@ class ArchiveGPGSigningKey(SignableArchive):
         # is then propagated to the context named-ppa.
         default_ppa = self.archive.owner.archive
         if self.archive != default_ppa:
+            def propagate_key(_):
+                self.archive.signing_key_owner = default_ppa.signing_key_owner
+                self.archive.signing_key_fingerprint = (
+                    default_ppa.signing_key_fingerprint)
+                del get_property_cache(self.archive).signing_key
+
             if default_ppa.signing_key_fingerprint is None:
-                yield IArchiveGPGSigningKey(default_ppa).generateSigningKey(
+                d = IArchiveGPGSigningKey(default_ppa).generateSigningKey(
                     log=log, async_keyserver=async_keyserver)
-            self.archive.signing_key_owner = default_ppa.signing_key_owner
-            self.archive.signing_key_fingerprint = (
-                default_ppa.signing_key_fingerprint)
-            del get_property_cache(self.archive).signing_key
-            defer.returnValue(None)
+            else:
+                d = defer.succeed(None)
+            # generateSigningKey is only asynchronous if async_keyserver is
+            # true; we need some contortions to keep it synchronous
+            # otherwise.
+            if async_keyserver:
+                d.addCallback(propagate_key)
+                return d
+            else:
+                propagate_key(None)
+                return
 
         key_displayname = (
             "Launchpad PPA for %s" % self.archive.owner.displayname)
@@ -281,7 +292,7 @@ class ArchiveGPGSigningKey(SignableArchive):
         else:
             signing_key = getUtility(IGPGHandler).generateKey(
                 key_displayname, logger=log)
-        yield self._setupSigningKey(
+        return self._setupSigningKey(
             signing_key, async_keyserver=async_keyserver)
 
     def setSigningKey(self, key_path, async_keyserver=False):
