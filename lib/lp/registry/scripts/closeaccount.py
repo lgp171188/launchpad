@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = ['CloseAccountScript']
 
+import six
 from storm.exceptions import IntegrityError
 from storm.expr import (
     LeftJoin,
@@ -466,7 +467,7 @@ class CloseAccountScript(LaunchpadScript):
 
         for username in self.args:
             try:
-                close_account(unicode(username), self.logger)
+                close_account(six.ensure_text(username), self.logger)
             except Exception:
                 self.txn.abort()
                 raise
