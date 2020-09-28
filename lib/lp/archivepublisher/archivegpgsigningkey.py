@@ -14,6 +14,7 @@ __all__ = [
 import os
 
 import gpgme
+from twisted.internet import defer
 from twisted.internet.threads import deferToThread
 from zope.component import getUtility
 from zope.interface import implementer
@@ -244,23 +245,25 @@ class ArchiveGPGSigningKey(SignableArchive):
         with open(export_path, 'wb') as export_file:
             export_file.write(key.export())
 
+    @defer.inlineCallbacks
     def generateSigningKey(self, log=None, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""
         assert self.archive.signing_key_fingerprint is None, (
             "Cannot override signing_keys.")
 
         # Always generate signing keys for the default PPA, even if it
-        # was not expecifically requested. The default PPA signing key
+        # was not specifically requested. The default PPA signing key
         # is then propagated to the context named-ppa.
         default_ppa = self.archive.owner.archive
         if self.archive != default_ppa:
-            if default_ppa.signing_key is None:
-                IArchiveGPGSigningKey(default_ppa).generateSigningKey()
-            key = default_ppa.signing_key
-            self.archive.signing_key_owner = key.owner
-            self.archive.signing_key_fingerprint = key.fingerprint
+            if default_ppa.signing_key_fingerprint is None:
+                yield IArchiveGPGSigningKey(default_ppa).generateSigningKey(
+                    log=log, async_keyserver=async_keyserver)
+            self.archive.signing_key_owner = default_ppa.signing_key_owner
+            self.archive.signing_key_fingerprint = (
+                default_ppa.signing_key_fingerprint)
             del get_property_cache(self.archive).signing_key
-            return
+            defer.returnValue(None)
 
         key_displayname = (
             "Launchpad PPA for %s" % self.archive.owner.displayname)
@@ -278,7 +281,7 @@ class ArchiveGPGSigningKey(SignableArchive):
         else:
             signing_key = getUtility(IGPGHandler).generateKey(
                 key_displayname, logger=log)
-        return self._setupSigningKey(
+        yield self._setupSigningKey(
             signing_key, async_keyserver=async_keyserver)
 
     def setSigningKey(self, key_path, async_keyserver=False):
