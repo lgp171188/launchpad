@@ -2144,7 +2144,7 @@ class DistributionSourcePackageVocabulary(FilteredVocabularyBase):
         if not query:
             return EmptyResultSet()
 
-        query = unicode(query)
+        query = six.ensure_text(query)
         query_re = re.escape(query)
         store = IStore(DistributionSourcePackageInDatabase)
         # Construct the searchable text that could live in the DSP table.
