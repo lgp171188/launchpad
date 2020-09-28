@@ -66,30 +66,30 @@ Each binary publication exposes a number of properties:
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> pprint_entry(pubs['entries'][0])
     architecture_specific: True
-    archive_link: u'http://.../~cprov/+archive/ubuntu/ppa'
-    binary_package_name: u'mozilla-firefox'
-    binary_package_version: u'1.0'
-    build_link: u'http://.../~cprov/+archive/ubuntu/ppa/+build/28'
-    component_name: u'main'
+    archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
+    binary_package_name: 'mozilla-firefox'
+    binary_package_version: '1.0'
+    build_link: 'http://.../~cprov/+archive/ubuntu/ppa/+build/28'
+    component_name: 'main'
     copied_from_archive_link: None
     creator_link: None
-    date_created: u'2007-08-10T13:00:00+00:00'
+    date_created: '2007-08-10T13:00:00+00:00'
     date_made_pending: None
-    date_published: u'2007-08-10T13:00:01+00:00'
+    date_published: '2007-08-10T13:00:01+00:00'
     date_removed: None
     date_superseded: None
-    display_name: u'mozilla-firefox 1.0 in warty hppa'
-    distro_arch_series_link: u'http://.../ubuntu/warty/hppa'
+    display_name: 'mozilla-firefox 1.0 in warty hppa'
+    distro_arch_series_link: 'http://.../ubuntu/warty/hppa'
     phased_update_percentage: None
-    pocket: u'Release'
-    priority_name: u'IMPORTANT'
+    pocket: 'Release'
+    priority_name: 'IMPORTANT'
     removal_comment: None
     removed_by_link: None
-    resource_type_link: u'http://.../#binary_package_publishing_history'
+    resource_type_link: 'http://.../#binary_package_publishing_history'
     scheduled_deletion_date: None
-    section_name: u'base'
-    self_link: u'http://.../~cprov/+archive/ubuntu/ppa/+binarypub/30'
-    status: u'Published'
+    section_name: 'base'
+    self_link: 'http://.../~cprov/+archive/ubuntu/ppa/+binarypub/30'
+    status: 'Published'
 
 
 Security
@@ -186,14 +186,14 @@ Detailed download counts are also available from the getDownloadCounts method.
 A detailed count object can be retrieved by its URL.
 
     >>> pprint_entry(webservice.get(counts[1]['self_link']).jsonBody())
-    archive_link: u'http://.../~cprov/+archive/ubuntu/ppa'
-    binary_package_name: u'mozilla-firefox'
-    binary_package_version: u'1.0'
+    archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
+    binary_package_name: 'mozilla-firefox'
+    binary_package_version: '1.0'
     count: 10
-    country_link: u'http://.../+countries/AU'
-    day: u'2010-02-21'
-    resource_type_link: u'http://.../#binary_package_release_download_count'
-    self_link: u'http://.../~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/hppa/2010-02-21/AU'
+    country_link: 'http://.../+countries/AU'
+    day: '2010-02-21'
+    resource_type_link: 'http://.../#binary_package_release_download_count'
+    self_link: 'http://.../~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/hppa/2010-02-21/AU'
 
 We can also filter by date.
 
@@ -204,14 +204,14 @@ We can also filter by date.
     1
 
     >>> pprint_entry(webservice.get(counts[0]['self_link']).jsonBody())
-    archive_link: u'http://.../~cprov/+archive/ubuntu/ppa'
-    binary_package_name: u'mozilla-firefox'
-    binary_package_version: u'1.0'
+    archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
+    binary_package_name: 'mozilla-firefox'
+    binary_package_version: '1.0'
     count: 8
     country_link: None
-    day: u'2010-02-23'
-    resource_type_link: u'http://.../#binary_package_release_download_count'
-    self_link: u'http://.../~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/hppa/2010-02-23/unknown'
+    day: '2010-02-23'
+    resource_type_link: 'http://.../#binary_package_release_download_count'
+    self_link: 'http://.../~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/hppa/2010-02-23/unknown'
 
 But other URLs result in a 404.
 

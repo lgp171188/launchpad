@@ -106,45 +106,45 @@ time goes on.
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> pprint_entry(fooix_trunk)
     branch_format: None
-    branch_type: u'Hosted'
-    bzr_identity: u'lp://dev/~eric/fooix/trunk'
+    branch_type: 'Hosted'
+    bzr_identity: 'lp://dev/~eric/fooix/trunk'
     code_import_link: None
     control_format: None
-    date_created: u'2009-01-01T00:00:00+00:00'
-    date_last_modified: u'2009-01-01T00:00:00+00:00'
-    dependent_branches_collection_link: u'.../~eric/fooix/trunk/dependent_branches'
+    date_created: '2009-01-01T00:00:00+00:00'
+    date_last_modified: '2009-01-01T00:00:00+00:00'
+    dependent_branches_collection_link: '.../~eric/fooix/trunk/dependent_branches'
     description: None
-    display_name: u'lp://dev/~eric/fooix/trunk'
+    display_name: 'lp://dev/~eric/fooix/trunk'
     explicitly_private: False
-    information_type: u'Public'
-    landing_candidates_collection_link: u'.../~eric/fooix/trunk/landing_candidates'
-    landing_targets_collection_link: u'.../~eric/fooix/trunk/landing_targets'
+    information_type: 'Public'
+    landing_candidates_collection_link: '.../~eric/fooix/trunk/landing_candidates'
+    landing_targets_collection_link: '.../~eric/fooix/trunk/landing_targets'
     last_mirror_attempt: None
     last_mirrored: None
     last_scanned: None
     last_scanned_id: None
-    lifecycle_status: u'Development'
-    linked_bugs_collection_link: u'http://.../~eric/fooix/trunk/linked_bugs'
+    lifecycle_status: 'Development'
+    linked_bugs_collection_link: 'http://.../~eric/fooix/trunk/linked_bugs'
     mirror_status_message: None
-    name: u'trunk'
-    owner_link: u'.../~eric'
+    name: 'trunk'
+    owner_link: '.../~eric'
     private: False
-    project_link: u'.../fooix'
-    recipes_collection_link: u'http://.../~eric/fooix/trunk/recipes'
-    registrant_link: u'.../~eric'
+    project_link: '.../fooix'
+    recipes_collection_link: 'http://.../~eric/fooix/trunk/recipes'
+    registrant_link: '.../~eric'
     repository_format: None
-    resource_type_link: u'.../#branch'
+    resource_type_link: '.../#branch'
     reviewer_link: None
     revision_count: 0
-    self_link: u'.../~eric/fooix/trunk'
+    self_link: '.../~eric/fooix/trunk'
     sourcepackage_link: None
-    spec_links_collection_link: u'.../~eric/fooix/trunk/spec_links'
-    subscribers_collection_link: u'http://.../~eric/fooix/trunk/subscribers'
-    subscriptions_collection_link: u'http://.../~eric/fooix/trunk/subscriptions'
-    unique_name: u'~eric/fooix/trunk'
+    spec_links_collection_link: '.../~eric/fooix/trunk/spec_links'
+    subscribers_collection_link: 'http://.../~eric/fooix/trunk/subscribers'
+    subscriptions_collection_link: 'http://.../~eric/fooix/trunk/subscriptions'
+    unique_name: '~eric/fooix/trunk'
     url: None
-    web_link: u'http://code.../~eric/fooix/trunk'
-    webhooks_collection_link: u'http://.../~eric/fooix/trunk/webhooks'
+    web_link: 'http://code.../~eric/fooix/trunk'
+    webhooks_collection_link: 'http://.../~eric/fooix/trunk/webhooks'
     whiteboard: None
 
 There is a branch merge proposal with Fooix trunk as the target branch, so it

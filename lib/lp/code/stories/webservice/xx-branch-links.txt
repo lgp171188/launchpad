@@ -59,11 +59,11 @@ A spec can be linked to a branch through the API.
     ...     robots['spec_links_collection_link']).jsonBody()
     >>> spec_link = spec_links['entries'][0]
     >>> pprint_entry(spec_link)
-    branch_link: u'http://.../~prime/cybertron/robots'
-    registrant_link: u'http://.../~salgado'
-    resource_type_link: u'http://.../#specification_branch'
-    self_link: u'http://.../product-name.../+spec/name.../+branch/prime/cybertron/robots'
-    specification_link: u'http://.../product-name.../+spec/name...'
+    branch_link: 'http://.../~prime/cybertron/robots'
+    registrant_link: 'http://.../~salgado'
+    resource_type_link: 'http://.../#specification_branch'
+    self_link: 'http://.../product-name.../+spec/name.../+branch/prime/cybertron/robots'
+    specification_link: 'http://.../product-name.../+spec/name...'
 
 
 If it turns out that the branch has no connection with the spec, it can be
