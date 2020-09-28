@@ -604,8 +604,17 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         required=False, readonly=False)
     binarypackagerelease = Attribute(
         "The binary package release being published")
-    source_package_name = Attribute(
-        'The source package name that built this binary.')
+    source_package_name = exported(
+        TextLine(
+            title=_("Source Package Name"),
+            description=_('The source package name that built this binary.'),
+            required=False, readonly=True))
+    source_package_version = exported(
+        TextLine(
+            title=_("Source Package Version"),
+            description=_(
+                'The source package version that built this binary.'),
+            required=False, readonly=True))
     distroarchseriesID = Int(
         title=_("The DB id for the distroarchseries."),
         required=False, readonly=False)
