@@ -29,6 +29,7 @@ import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+import six
 from six.moves.collections_abc import (
     Iterable,
     Set,
@@ -384,7 +385,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.bugs.model.cve import Cve
         xref_cve_sequences = [
             sequence for _, sequence in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'cve'])]
+                (u'bug', six.text_type(self.id)), types=[u'cve'])]
         expr = Cve.sequence.is_in(xref_cve_sequences)
         return list(sorted(
             IStore(Cve).find(Cve, expr), key=operator.attrgetter('sequence')))
@@ -394,7 +395,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.answers.model.question import Question
         question_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'question'])]
+                (u'bug', six.text_type(self.id)), types=[u'question'])]
         return list(sorted(
             bulk.load(Question, question_ids), key=operator.attrgetter('id')))
 
@@ -403,7 +404,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.blueprints.model.specification import Specification
         spec_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'specification'])]
+                (u'bug', six.text_type(self.id)), types=[u'specification'])]
         return list(sorted(
             bulk.load(Specification, spec_ids), key=operator.attrgetter('id')))
 
@@ -1410,7 +1411,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.code.model.branchmergeproposal import BranchMergeProposal
         merge_proposal_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'merge_proposal'])]
+                (u'bug', six.text_type(self.id)), types=[u'merge_proposal'])]
         return list(sorted(
             bulk.load(BranchMergeProposal, merge_proposal_ids),
             key=operator.attrgetter('id')))

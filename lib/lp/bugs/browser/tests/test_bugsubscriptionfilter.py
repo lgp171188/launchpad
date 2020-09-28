@@ -8,6 +8,7 @@ __metaclass__ = type
 import json
 
 from lxml import html
+import six
 from six.moves.urllib.parse import urlparse
 from testtools.matchers import StartsWith
 
@@ -67,7 +68,7 @@ class TestBugSubscriptionFilterNavigation(
 
     def test_navigation(self):
         request = LaunchpadTestRequest()
-        request.setTraversalStack([unicode(self.subscription_filter.id)])
+        request.setTraversalStack([six.text_type(self.subscription_filter.id)])
         navigation = StructuralSubscriptionNavigation(
             self.subscription, request)
         view = navigation.publishTraverse(request, '+filter')
