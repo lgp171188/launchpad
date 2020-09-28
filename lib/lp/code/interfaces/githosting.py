@@ -14,13 +14,15 @@ from zope.interface import Interface
 class IGitHostingClient(Interface):
     """Interface for the internal API provided by the Git hosting service."""
 
-    def create(path, clone_from=None):
+    def create(path, clone_from=None, async_create=False):
         """Create a Git repository.
 
         :param path: Physical path of the new repository on the hosting
             service.
         :param clone_from: If not None, clone the new repository from this
             other physical path.
+        :param async_create: Do not block the call until the repository is
+            actually created.
         """
 
     def getProperties(path):

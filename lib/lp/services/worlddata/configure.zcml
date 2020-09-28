@@ -56,6 +56,11 @@
         factory="lp.translations.browser.language.LanguageSetBreadcrumb"
         permission="zope.Public"/>
 
+    <class class=".model.spokenin.SpokenIn">
+      <allow
+          interface=".interfaces.spokenin.ISpokenIn" />
+    </class>
+
     <include package=".browser"/>
 
    <webservice:register module="lp.services.worlddata.interfaces.webservice" />

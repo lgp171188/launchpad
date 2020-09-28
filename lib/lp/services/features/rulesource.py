@@ -19,6 +19,7 @@ from collections import (
     )
 import re
 
+import six
 from storm.locals import Desc
 
 from lp.services.features.model import (
@@ -100,7 +101,7 @@ class FeatureRuleSource(object):
                 continue
             flag, scope, priority_str, value = re.split('[ \t]+', line, 3)
             priority = int(priority_str)
-            r.append((flag, scope, priority, unicode(value)))
+            r.append((flag, scope, priority, six.ensure_text(value)))
             if priority in seen_priorities[flag]:
                 raise DuplicatePriorityError(flag, priority)
             seen_priorities[flag].add(priority)
@@ -146,8 +147,8 @@ class StormFeatureRuleSource(FeatureRuleSource):
         store.execute('DELETE FROM FeatureFlag')
         for (flag, scope, priority, value) in new_rules:
             store.add(FeatureFlag(
-                scope=unicode(scope),
-                flag=unicode(flag),
+                scope=six.ensure_text(scope),
+                flag=six.ensure_text(flag),
                 value=value,
                 priority=priority))
         store.flush()

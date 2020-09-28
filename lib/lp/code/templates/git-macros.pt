@@ -68,6 +68,11 @@
             </tt>
           </dd>
         </dl>
+        <dt tal:condition="python: getattr(view, 'allow_fork', False)">
+          <a tal:attributes="href view/fork_url" class="sprite add">
+            Fork it to your account
+          </a>
+        </dt>
       </tal:can-push>
 
       <tal:cannot-push condition="not:view/user_can_push">
@@ -83,7 +88,7 @@
              tal:content="context/owner/displayname">Team</a>
           can push to this <tal:kind replace="kind" />.
         </tal:team>
-        <dl tal:condition="context/namespace/show_push_url_hints" id="push-url">
+        <dl tal:condition="context/namespace/supports_repository_forking" id="push-url">
           <dt>To fork this repository and propose fixes from there, push to this repository:</dt>
           <dd>
             <tt class="command">
@@ -91,6 +96,12 @@
             <span class="ssh-url" tal:content="view/git_ssh_url_non_owner" />
             <em>BRANCHNAME</em>
             </tt>
+          </dd>
+          <dd tal:condition="python: getattr(view, 'allow_fork', False)">
+            or
+            <a tal:attributes="href view/fork_url" class="sprite add">
+              fork it directly to your account
+            </a>.
           </dd>
         </dl>
       </tal:cannot-push>

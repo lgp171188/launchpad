@@ -190,11 +190,11 @@ class POHeader:
             return text
         charset = self.charset
         try:
-            text = unicode(text, charset)
+            text = text.decode(charset)
         except UnicodeError:
             self._emitSyntaxWarning(
                 'String is not in declared charset %r' % charset)
-            text = unicode(text, charset, 'replace')
+            text = text.decode(charset, 'replace')
         except LookupError:
             raise TranslationFormatInvalidInputError(
                 message='Unknown charset %r' % charset)

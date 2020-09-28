@@ -77,8 +77,8 @@ class TestMergeProposalMailing(TestCaseWithFactory):
             initial_comment=initial_comment, reviewer=reviewer)
         if diff_text:
             PreviewDiff.create(
-                bmp, diff_text, unicode(self.factory.getUniqueString('revid')),
-                unicode(self.factory.getUniqueString('revid')), None, None)
+                bmp, diff_text, self.factory.getUniqueUnicode('revid'),
+                self.factory.getUniqueUnicode('revid'), None, None)
             transaction.commit()
         subscriber = self.factory.makePerson(displayname='Baz Quxx',
             email='baz.quxx@example.com')
@@ -442,8 +442,8 @@ class TestMergeProposalMailing(TestCaseWithFactory):
             merge_proposal, providing=providedBy(merge_proposal))
         merge_proposal.updatePreviewDiff(
             ''.join(unified_diff('', 'Fake diff')),
-            unicode(self.factory.getUniqueString('revid')),
-            unicode(self.factory.getUniqueString('revid')))
+            self.factory.getUniqueUnicode('revid'),
+            self.factory.getUniqueUnicode('revid'))
         event = ObjectModifiedEvent(
             merge_proposal, old_merge_proposal, [], merge_proposal.registrant)
         merge_proposal_modified(merge_proposal, event)

@@ -33,9 +33,9 @@ from email.utils import (
     make_msgid,
     )
 import hashlib
+from io import BytesIO
 from itertools import count
 import os
-from StringIO import StringIO
 import sys
 from textwrap import dedent
 import types
@@ -457,8 +457,12 @@ class ObjectFactory(
             hex_number = hex_number.zfill(digits)
         return hex_number
 
+    # XXX cjwatson 2020-09-22: Most users of getUniqueString should use
+    # either getUniqueBytes or getUniqueUnicode instead.  Remove this
+    # comment when all remaining instances have been audited as explicitly
+    # requiring native strings (i.e. bytes on Python 2, text on Python 3).
     def getUniqueString(self, prefix=None):
-        """Return a string unique to this factory instance.
+        """Return a native string unique to this factory instance.
 
         The string returned will always be a valid name that can be used in
         Launchpad URLs.
@@ -488,12 +492,16 @@ class ObjectFactory(
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
-    # XXX cjwatson 2020-02-20: We should disentangle this; most uses of
-    # getUniqueString should probably use getUniqueUnicode instead.
-    getUniqueBytes = getUniqueString
+    if sys.version_info[0] >= 3:
+        def getUniqueBytes(self, prefix=None):
+            return six.ensure_binary(self.getUniqueString(prefix=prefix))
 
-    def getUniqueUnicode(self, prefix=None):
-        return self.getUniqueString(prefix=prefix).decode('latin-1')
+        getUniqueUnicode = getUniqueString
+    else:
+        getUniqueBytes = getUniqueString
+
+        def getUniqueUnicode(self, prefix=None):
+            return six.ensure_text(self.getUniqueString(prefix=prefix))
 
     def getUniqueURL(self, scheme=None, host=None):
         """Return a URL unique to this run of the test case."""
@@ -831,7 +839,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if owner is None:
             owner = self.makePerson()
-        elif isinstance(owner, basestring):
+        elif isinstance(owner, six.string_types):
             owner = getUtility(IPersonSet).getByName(owner)
         else:
             pass
@@ -1121,14 +1129,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeSprint(self, title=None, name=None):
         """Make a sprint."""
         if title is None:
-            title = self.getUniqueString('title')
+            title = self.getUniqueUnicode('title')
         owner = self.makePerson()
         if name is None:
-            name = self.getUniqueString('name')
+            name = self.getUniqueUnicode('name')
         time_starts = datetime(2009, 1, 1, tzinfo=pytz.UTC)
         time_ends = datetime(2009, 1, 2, tzinfo=pytz.UTC)
-        time_zone = 'UTC'
-        summary = self.getUniqueString('summary')
+        time_zone = u'UTC'
+        summary = self.getUniqueUnicode('summary')
         return getUtility(ISprintSet).new(
             owner=owner, name=name, title=title, time_zone=time_zone,
             time_starts=time_starts, time_ends=time_ends, summary=summary)
@@ -1638,10 +1646,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeDiff(self, size='small'):
         diff_path = os.path.join(os.path.dirname(__file__),
                                  'data/{}.diff'.format(size))
-        with open(os.path.join(diff_path), 'r') as diff:
+        with open(os.path.join(diff_path), 'rb') as diff:
             diff_text = diff.read()
             return ProxyFactory(
-                Diff.fromFile(StringIO(diff_text), len(diff_text)))
+                Diff.fromFile(BytesIO(diff_text), len(diff_text)))
 
     def makePreviewDiff(self, conflicts=u'', merge_proposal=None,
                         date_created=None, size='small', git=False):
@@ -2132,7 +2140,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (six.integer_types, basestring)):
+        elif isinstance(bug, (six.integer_types, six.string_types)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2167,7 +2175,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (six.integer_types, basestring)):
+        elif isinstance(bug, (six.integer_types, six.string_types)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2648,7 +2656,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if filename is None:
             filename = self.getUniqueString('filename')
         if content is None:
-            content = self.getUniqueString()
+            content = self.getUniqueBytes()
+        else:
+            content = six.ensure_binary(content)
 
         if db_only:
             # Often we don't actually care if the file exists on disk.
@@ -2662,7 +2672,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 content=lfc, filename=filename, mimetype=content_type)
         else:
             lfa = getUtility(ILibraryFileAliasSet).create(
-                filename, len(content), StringIO(content), content_type,
+                filename, len(content), BytesIO(content), content_type,
                 expires=expires, restricted=restricted)
         return lfa
 
@@ -2919,7 +2929,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if purpose is None:
             purpose = ArchivePurpose.PPA
-        elif isinstance(purpose, basestring):
+        elif isinstance(purpose, six.string_types):
             purpose = ArchivePurpose.items[purpose.upper()]
 
         if distribution is None:
@@ -3528,8 +3538,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeMirrorProbeRecord(self, mirror):
         """Create a probe record for a mirror of a distribution."""
-        log_file = StringIO()
-        log_file.write("Fake probe, nothing useful here.")
+        log_file = BytesIO()
+        log_file.write(b"Fake probe, nothing useful here.")
         log_file.seek(0)
 
         library_alias = getUtility(ILibraryFileAliasSet).create(
@@ -3602,7 +3612,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         if distroseries is None:
@@ -3762,16 +3772,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             archive = distroseries.main_archive
 
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
 
-        if (component is None or isinstance(component, basestring)):
+        if (component is None or isinstance(component, six.string_types)):
             component = self.makeComponent(component)
 
         if urgency is None:
             urgency = self.getAnySourcePackageUrgency()
-        elif isinstance(urgency, basestring):
+        elif isinstance(urgency, six.string_types):
             urgency = SourcePackageUrgency.items[urgency.upper()]
 
         section = self.makeSection(name=section_name)
@@ -3878,7 +3888,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 archive = source_package_release.upload_archive
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
-        elif isinstance(pocket, basestring):
+        elif isinstance(pocket, six.string_types):
             pocket = PackagePublishingPocket.items[pocket.upper()]
 
         if source_package_release is None:
@@ -3958,12 +3968,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         if pocket is None:
             pocket = self.getAnyPocket()
-        elif isinstance(pocket, basestring):
+        elif isinstance(pocket, six.string_types):
             pocket = PackagePublishingPocket.items[pocket.upper()]
 
         if status is None:
             status = PackagePublishingStatus.PENDING
-        elif isinstance(status, basestring):
+        elif isinstance(status, six.string_types):
             status = PackagePublishingStatus.items[status.upper()]
 
         if sourcepackagerelease is None:
@@ -4163,7 +4173,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if build is None:
             build = self.makeBinaryPackageBuild()
         if (binarypackagename is None or
-            isinstance(binarypackagename, basestring)):
+            isinstance(binarypackagename, six.string_types)):
             binarypackagename = self.getOrMakeBinaryPackageName(
                 binarypackagename)
         if version is None:
@@ -4174,7 +4184,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             component = build.source_package_release.component
         elif isinstance(component, six.text_type):
             component = getUtility(IComponentSet)[component]
-        if isinstance(section_name, basestring):
+        if isinstance(section_name, six.string_types):
             section_name = self.makeSection(section_name)
         section = section_name or build.source_package_release.section
         if priority is None:
@@ -4287,7 +4297,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             pocket = self.getAnyPocket()
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         return ProxyFactory(
@@ -4297,7 +4307,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                       distribution=None, with_db=False):
         # Make sure we have a real sourcepackagename object.
         if (sourcepackagename is None or
-            isinstance(sourcepackagename, basestring)):
+            isinstance(sourcepackagename, six.string_types)):
             sourcepackagename = self.getOrMakeSourcePackageName(
                 sourcepackagename)
         if distribution is None:
@@ -4629,8 +4639,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if filename is None:
             filename = self.getUniqueString()
         if content is None:
-            content = self.getUniqueString()
-        fileupload = StringIO(content)
+            content = self.getUniqueBytes()
+        fileupload = BytesIO(content)
         fileupload.filename = filename
         fileupload.headers = {
             'Content-Type': 'text/plain; charset=utf-8',

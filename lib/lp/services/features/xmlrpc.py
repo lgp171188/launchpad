@@ -9,6 +9,7 @@ __all__ = [
     'FeatureFlagApplication',
     ]
 
+import six
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -52,7 +53,7 @@ class FeatureFlagApplication:
                     scopes.append(TeamScope(lambda: person))
             else:
                 scopes.append(FixedScope(scope_name))
-        flag_name = unicode(flag_name)
+        flag_name = six.ensure_text(flag_name)
         controller = FeatureController(
             MultiScopeHandler(scopes).lookup, StormFeatureRuleSource())
         return controller.getFlag(flag_name)

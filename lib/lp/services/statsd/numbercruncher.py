@@ -119,7 +119,7 @@ class NumberCruncher(service.Service):
         self._updateBuilderCounts()
 
     def startService(self):
-        self.logger.INFO("Starting number-cruncher service.")
+        self.logger.info("Starting number-cruncher service.")
         self.update_queues_loop, self.update_queues_deferred = (
             self._startLoop(self.QUEUE_INTERVAL, self.updateBuilderQueues))
         self.update_builder_loop, self.update_builder_deferred = (

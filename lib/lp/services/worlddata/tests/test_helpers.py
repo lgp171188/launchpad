@@ -1,6 +1,8 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from doctest import DocTestSuite
 import unittest
 
@@ -119,8 +121,8 @@ def test_preferred_or_request_languages():
     >>> languages = preferred_or_request_languages(DummyRequest())
     >>> len(languages)
     1
-    >>> languages[0].code
-    'es'
+    >>> print(languages[0].code)
+    es
 
     >>> tearDown()
 
@@ -141,8 +143,8 @@ def test_preferred_or_request_languages():
     >>> languages = preferred_or_request_languages(DummyRequest())
     >>> len(languages)
     6
-    >>> languages[0].code
-    'ja'
+    >>> print(languages[0].code)
+    ja
 
     >>> tearDown()
     '''

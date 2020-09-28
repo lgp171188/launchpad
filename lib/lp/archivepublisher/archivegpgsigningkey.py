@@ -14,6 +14,7 @@ __all__ = [
 import os
 
 import gpgme
+from twisted.internet import defer
 from twisted.internet.threads import deferToThread
 from zope.component import getUtility
 from zope.interface import implementer
@@ -28,6 +29,7 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     CannotSignArchive,
     IArchiveGPGSigningKey,
     ISignableArchive,
+    PUBLISHER_GPG_USES_SIGNING_SERVICE,
     )
 from lp.archivepublisher.run_parts import (
     find_run_parts_dir,
@@ -35,10 +37,25 @@ from lp.archivepublisher.run_parts import (
     )
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.config import config
-from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.features import getFeatureFlag
+from lp.services.gpg.interfaces import (
+    IGPGHandler,
+    IPymeKey,
+    )
 from lp.services.osutils import remove_if_exists
-from lp.services.propertycache import get_property_cache
-from lp.services.signing.enums import SigningMode
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
+from lp.services.signing.enums import (
+    OpenPGPKeyAlgorithm,
+    SigningKeyType,
+    SigningMode,
+    )
+from lp.services.signing.interfaces.signingkey import (
+    ISigningKey,
+    ISigningKeySet,
+    )
 
 
 @implementer(ISignableArchive)
@@ -54,13 +71,41 @@ class SignableArchive:
         self.archive = archive
         self.pubconf = getPubConfig(self.archive)
 
+    @cachedproperty
+    def _run_parts_dir(self):
+        """This distribution's sign.d run-parts directory, if any."""
+        return find_run_parts_dir(self.archive.distribution.name, "sign.d")
+
     @property
     def can_sign(self):
         """See `ISignableArchive`."""
         return (
-            self.archive.signing_key is not None or
-            find_run_parts_dir(
-                self.archive.distribution.name, "sign.d") is not None)
+            self.archive.signing_key_fingerprint is not None or
+            self._run_parts_dir is not None)
+
+    @cachedproperty
+    def _signing_key(self):
+        """This archive's signing key on the signing service, if any."""
+        if not getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
+            return None
+        elif self.archive.signing_key_fingerprint is not None:
+            return getUtility(ISigningKeySet).get(
+                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint)
+        else:
+            return None
+
+    @cachedproperty
+    def _secret_key(self):
+        """This archive's signing key as a local GPG key."""
+        if self.archive.signing_key is not None:
+            secret_key_path = self.getPathForSecretKey(
+                self.archive.signing_key)
+            with open(secret_key_path, "rb") as secret_key_file:
+                secret_key_export = secret_key_file.read()
+            gpghandler = getUtility(IGPGHandler)
+            return gpghandler.importSecretKey(secret_key_export)
+        else:
+            return None
 
     def _makeSignatures(self, signatures, log=None):
         """Make a sequence of signatures.
@@ -79,28 +124,38 @@ class SignableArchive:
             raise CannotSignArchive(
                 "No signing key available for %s" % self.archive.displayname)
 
-        if self.archive.signing_key is not None:
-            secret_key_path = self.getPathForSecretKey(
-                self.archive.signing_key)
-            with open(secret_key_path, "rb") as secret_key_file:
-                secret_key_export = secret_key_file.read()
-            gpghandler = getUtility(IGPGHandler)
-            secret_key = gpghandler.importSecretKey(secret_key_export)
-
         output_paths = []
         for input_path, output_path, mode, suite in signatures:
             if mode not in {SigningMode.DETACHED, SigningMode.CLEAR}:
                 raise ValueError('Invalid signature mode for GPG: %s' % mode)
-            if self.archive.signing_key is not None:
+            signed = False
+
+            if self._signing_key is not None or self._secret_key is not None:
                 with open(input_path, "rb") as input_file:
                     input_content = input_file.read()
-                signature = gpghandler.signContent(
-                    input_content, secret_key, mode=self.gpgme_modes[mode])
-                with open(output_path, "wb") as output_file:
-                    output_file.write(signature)
-                output_paths.append(output_path)
-            elif find_run_parts_dir(
-                    self.archive.distribution.name, "sign.d") is not None:
+                if self._signing_key is not None:
+                    try:
+                        signature = self._signing_key.sign(
+                            input_content, os.path.basename(input_path),
+                            mode=mode)
+                        signed = True
+                    except Exception:
+                        if log is not None:
+                            log.exception(
+                                "Failed to sign archive using signing "
+                                "service; falling back to local key")
+                        get_property_cache(self)._signing_key = None
+                if not signed and self._secret_key is not None:
+                    signature = getUtility(IGPGHandler).signContent(
+                        input_content, self._secret_key,
+                        mode=self.gpgme_modes[mode])
+                    signed = True
+                if signed:
+                    with open(output_path, "wb") as output_file:
+                        output_file.write(signature)
+                    output_paths.append(output_path)
+
+            if not signed and self._run_parts_dir is not None:
                 remove_if_exists(output_path)
                 env = {
                     "ARCHIVEROOT": self.pubconf.archiveroot,
@@ -113,9 +168,11 @@ class SignableArchive:
                 run_parts(
                     self.archive.distribution.name, "sign.d",
                     log=log, env=env)
+                signed = True
                 if os.path.exists(output_path):
                     output_paths.append(output_path)
-            else:
+
+            if not signed:
                 raise AssertionError(
                     "No signing key available for %s" %
                     self.archive.displayname)
@@ -188,33 +245,59 @@ class ArchiveGPGSigningKey(SignableArchive):
         with open(export_path, 'wb') as export_file:
             export_file.write(key.export())
 
-    def generateSigningKey(self, log=None):
+    def generateSigningKey(self, log=None, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""
-        assert self.archive.signing_key is None, (
+        assert self.archive.signing_key_fingerprint is None, (
             "Cannot override signing_keys.")
 
         # Always generate signing keys for the default PPA, even if it
-        # was not expecifically requested. The default PPA signing key
+        # was not specifically requested. The default PPA signing key
         # is then propagated to the context named-ppa.
         default_ppa = self.archive.owner.archive
         if self.archive != default_ppa:
-            if default_ppa.signing_key is None:
-                IArchiveGPGSigningKey(default_ppa).generateSigningKey()
-            key = default_ppa.signing_key
-            self.archive.signing_key_owner = key.owner
-            self.archive.signing_key_fingerprint = key.fingerprint
-            del get_property_cache(self.archive).signing_key
-            return
+            def propagate_key(_):
+                self.archive.signing_key_owner = default_ppa.signing_key_owner
+                self.archive.signing_key_fingerprint = (
+                    default_ppa.signing_key_fingerprint)
+                del get_property_cache(self.archive).signing_key
+
+            if default_ppa.signing_key_fingerprint is None:
+                d = IArchiveGPGSigningKey(default_ppa).generateSigningKey(
+                    log=log, async_keyserver=async_keyserver)
+            else:
+                d = defer.succeed(None)
+            # generateSigningKey is only asynchronous if async_keyserver is
+            # true; we need some contortions to keep it synchronous
+            # otherwise.
+            if async_keyserver:
+                d.addCallback(propagate_key)
+                return d
+            else:
+                propagate_key(None)
+                return
 
         key_displayname = (
             "Launchpad PPA for %s" % self.archive.owner.displayname)
-        secret_key = getUtility(IGPGHandler).generateKey(
-            key_displayname, logger=log)
-        self._setupSigningKey(secret_key)
+        if getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
+            try:
+                signing_key = getUtility(ISigningKeySet).generate(
+                    SigningKeyType.OPENPGP, key_displayname,
+                    openpgp_key_algorithm=OpenPGPKeyAlgorithm.RSA, length=4096)
+            except Exception as e:
+                if log is not None:
+                    log.exception(
+                        "Error generating signing key for %s: %s %s" %
+                        (self.archive.reference, e.__class__.__name__, e))
+                raise
+        else:
+            signing_key = getUtility(IGPGHandler).generateKey(
+                key_displayname, logger=log)
+        return self._setupSigningKey(
+            signing_key, async_keyserver=async_keyserver)
 
     def setSigningKey(self, key_path, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""
-        assert self.archive.signing_key is None, (
+        assert self.archive.signing_key_fingerprint is None, (
             "Cannot override signing_keys.")
         assert os.path.exists(key_path), (
             "%s does not exist" % key_path)
@@ -225,34 +308,46 @@ class ArchiveGPGSigningKey(SignableArchive):
         return self._setupSigningKey(
             secret_key, async_keyserver=async_keyserver)
 
-    def _uploadPublicSigningKey(self, secret_key):
+    def _uploadPublicSigningKey(self, signing_key):
         """Upload the public half of a signing key to the keyserver."""
         # The handler's security proxying doesn't protect anything useful
         # here, and when we're running in a thread we don't have an
         # interaction.
         gpghandler = removeSecurityProxy(getUtility(IGPGHandler))
-        pub_key = gpghandler.retrieveKey(secret_key.fingerprint)
-        gpghandler.uploadPublicKey(pub_key.fingerprint)
-        return pub_key
+        if IPymeKey.providedBy(signing_key):
+            pub_key = gpghandler.retrieveKey(signing_key.fingerprint)
+            gpghandler.uploadPublicKey(pub_key.fingerprint)
+            return pub_key
+        else:
+            assert ISigningKey.providedBy(signing_key)
+            gpghandler.submitKey(removeSecurityProxy(signing_key).public_key)
+            return signing_key
 
     def _storeSigningKey(self, pub_key):
         """Store signing key reference in the database."""
         key_owner = getUtility(ILaunchpadCelebrities).ppa_key_guard
-        key, _ = getUtility(IGPGKeySet).activate(
-            key_owner, pub_key, pub_key.can_encrypt)
-        self.archive.signing_key_owner = key.owner
+        if IPymeKey.providedBy(pub_key):
+            key, _ = getUtility(IGPGKeySet).activate(
+                key_owner, pub_key, pub_key.can_encrypt)
+        else:
+            assert ISigningKey.providedBy(pub_key)
+            key = pub_key
+        self.archive.signing_key_owner = key_owner
         self.archive.signing_key_fingerprint = key.fingerprint
         del get_property_cache(self.archive).signing_key
 
-    def _setupSigningKey(self, secret_key, async_keyserver=False):
+    def _setupSigningKey(self, signing_key, async_keyserver=False):
         """Mandatory setup for signing keys.
 
-        * Export the secret key into the protected disk location.
+        * Export the secret key into the protected disk location (for
+          locally-generated keys).
         * Upload public key to the keyserver.
-        * Store the public GPGKey reference in the database and update
-          the context archive.signing_key.
+        * Store the public GPGKey reference in the database (for
+          locally-generated keys) and update the context
+          archive.signing_key.
         """
-        self.exportSecretKey(secret_key)
+        if IPymeKey.providedBy(signing_key):
+            self.exportSecretKey(signing_key)
         if async_keyserver:
             # If we have an asynchronous keyserver running in the current
             # thread using Twisted, then we need some contortions to ensure
@@ -261,10 +356,10 @@ class ArchiveGPGSigningKey(SignableArchive):
             # Since that thread won't have a Zope interaction, we need to
             # unwrap the security proxy for it.
             d = deferToThread(
-                self._uploadPublicSigningKey, removeSecurityProxy(secret_key))
+                self._uploadPublicSigningKey, removeSecurityProxy(signing_key))
             d.addCallback(ProxyFactory)
             d.addCallback(self._storeSigningKey)
             return d
         else:
-            pub_key = self._uploadPublicSigningKey(secret_key)
+            pub_key = self._uploadPublicSigningKey(signing_key)
             self._storeSigningKey(pub_key)

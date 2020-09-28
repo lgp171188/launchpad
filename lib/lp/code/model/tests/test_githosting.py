@@ -23,7 +23,6 @@ from lazr.restful.utils import get_current_browser_request
 import responses
 from six.moves.urllib.parse import (
     parse_qsl,
-    urljoin,
     urlsplit,
     )
 from testtools.matchers import (
@@ -133,6 +132,15 @@ class TestGitHostingClient(TestCase):
         self.assertRequest(
             "repo", method="POST",
             json_data={"repo_path": "123", "clone_from": "122"})
+
+    def test_create_async(self):
+        with self.mockRequests("POST"):
+            self.client.create("123", clone_from="122", async_create=True)
+        self.assertRequest(
+            "repo", method="POST",
+            json_data={
+                "repo_path": "123", "clone_from": "122", "async": True,
+                "clone_refs": True})
 
     def test_create_failure(self):
         with self.mockRequests("POST", status=400):

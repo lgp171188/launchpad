@@ -16,6 +16,7 @@ from datetime import (
 from lazr.restful import HTTPResource
 import pytz
 import simplejson
+import six
 from zope.component import getUtility
 from zope.formlib.form import (
     Action,
@@ -415,7 +416,7 @@ class OAuthAccessTokenView(LaunchpadView):
 
     def _set_status_and_error(self, error):
         self.request.response.setStatus(403)
-        return unicode(error)
+        return six.text_type(error)
 
     def __call__(self):
         """Create an access token and respond with its key/secret/context.

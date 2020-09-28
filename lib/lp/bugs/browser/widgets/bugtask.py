@@ -17,6 +17,7 @@ __all__ = [
     "NewLineToSpacesWidget",
     ]
 
+import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import (
@@ -373,7 +374,7 @@ class BugTaskBugWatchWidget(RadioWidget):
         #      value instead of a valid field value.
         if value == self._missing:
             value = self.context.missing_value
-        elif (isinstance(value, basestring) and
+        elif (isinstance(value, six.string_types) and
               value != self._new_bugwatch_value):
             value = self._toFieldValue(value)
         # check if we want to select first item, the previously selected item

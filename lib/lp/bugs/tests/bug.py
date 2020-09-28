@@ -3,6 +3,8 @@
 
 """Helper functions for bug-related doctests and pagetests."""
 
+from __future__ import absolute_import, print_function
+
 from datetime import (
     datetime,
     timedelta,
@@ -45,7 +47,7 @@ def print_direct_subscribers(bug_page):
 
 def print_also_notified(bug_page):
     """Print the structural and duplicate subscribers listed in a portlet."""
-    print 'Also notified:'
+    print('Also notified:')
     print_subscribers(bug_page, 'Maybe')
 
 
@@ -56,7 +58,7 @@ def print_subscribers(bug_page, subscription_level=None, reverse=False):
 
     if details is None:
         # No subscribers at all.
-        print ""
+        print("")
     else:
         lines = []
         for subscription in details:
@@ -71,7 +73,7 @@ def print_subscribers(bug_page, subscription_level=None, reverse=False):
                 if subscriber['can_edit']:
                     line += " (Unsubscribe)"
                 lines.append(line)
-        print "\n".join(sorted(lines))
+        print("\n".join(sorted(lines)))
 
 
 def print_bug_affects_table(content, highlighted_only=False):
@@ -92,7 +94,7 @@ def print_bug_affects_table(content, highlighted_only=False):
             # Don't print the bugtask edit form.
             continue
         # Strip zero-width white-spaces.
-        print extract_text(tr).replace(u'\u200B', u'')
+        print(extract_text(tr).replace(u'\u200B', u''))
 
 
 def print_remote_bugtasks(content):
@@ -105,7 +107,7 @@ def print_remote_bugtasks(content):
         for key, value in span.attrs.items():
             if 'bug-remote' in value:
                 target = extract_text(span.findAllPrevious('td')[-2])
-                print target, extract_text(span.findNext('a'))
+                print(target, extract_text(span.findNext('a')))
 
 
 def print_bugs_list(content, list_id):
@@ -120,12 +122,12 @@ def print_bugs_list(content, list_id):
         None, {'class': 'similar-bug'})
     for node in bugs_list:
         # Also strip zero-width spaces out.
-        print extract_text(node).replace(u'\u200B', u'')
+        print(extract_text(node).replace(u'\u200B', u''))
 
 
 def print_bugtasks(text, show_heat=None):
     """Print all the bugtasks in the text."""
-    print '\n'.join(extract_bugtasks(text, show_heat=show_heat))
+    print('\n'.join(extract_bugtasks(text, show_heat=show_heat)))
 
 
 def extract_bugtasks(text, show_heat=None):
@@ -239,13 +241,13 @@ def summarize_bugtasks(bugtasks):
     expirable_bugtasks = list(bugtaskset.findExpirableBugTasks(
         config.malone.days_before_expiration,
         getUtility(ILaunchpadCelebrities).janitor))
-    print 'ROLE  EXPIRE  AGE  STATUS  ASSIGNED  DUP  MILE  REPLIES'
+    print('ROLE  EXPIRE  AGE  STATUS  ASSIGNED  DUP  MILE  REPLIES')
     for bugtask in sorted(set(bugtasks), key=attrgetter('id')):
         if len(bugtask.bug.bugtasks) == 1:
             title = bugtask.bug.title
         else:
             title = bugtask.target.name
-        print '%s  %s  %s  %s  %s  %s  %s  %s' % (
+        print('%s  %s  %s  %s  %s  %s  %s  %s' % (
             title,
             bugtask in expirable_bugtasks,
             (datetime.now(UTC) - bugtask.bug.date_last_updated).days,
@@ -253,7 +255,7 @@ def summarize_bugtasks(bugtasks):
             bugtask.assignee is not None,
             bugtask.bug.duplicateof is not None,
             bugtask.milestone is not None,
-            bugtask.bug.messages.count() == 1)
+            bugtask.bug.messages.count() == 1))
 
 
 def print_upstream_linking_form(browser):
@@ -278,15 +280,15 @@ def print_upstream_linking_form(browser):
         if label is None:
             label = soup.find('label', {'for': button['id']})
         if button.get('value') in link_upstream_how_radio_control.value:
-            print wrapper.fill('(*) %s' % extract_text(label))
+            print(wrapper.fill('(*) %s' % extract_text(label)))
         else:
-            print wrapper.fill('( ) %s' % extract_text(label))
+            print(wrapper.fill('( ) %s' % extract_text(label)))
         # Print related text field, if found. Assumes that the text
         # field is in the same table row as the radio button.
         text_field = button.findParent('tr').find('input', {'type': 'text'})
         if text_field is not None:
             text_control = browser.getControl(name=text_field.get('name'))
-            print '    [%s]' % text_control.value.ljust(10)
+            print('    [%s]' % text_control.value.ljust(10))
 
 
 def print_bugfilters_portlet_unfilled(browser, target):
@@ -333,7 +335,7 @@ def print_ul(ul):
     for li in ul.findAll('li'):
         li_content.append(extract_text(li))
     if len(li_content) > 0:
-        print '\n'.join(li_content)
+        print('\n'.join(li_content))
 
 
 def print_bug_tag_anchors(anchors):
@@ -341,4 +343,4 @@ def print_bug_tag_anchors(anchors):
     for anchor in anchors:
         href = anchor['href']
         if href != '+edit' and '/+help-bugs/tag-help.html' not in href:
-            print ' '.join(anchor['class']), anchor.contents[0]
+            print(' '.join(anchor['class']), anchor.contents[0])

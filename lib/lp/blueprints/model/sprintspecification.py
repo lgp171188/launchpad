@@ -1,13 +1,17 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 __all__ = ['SprintSpecification']
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Store,
+    Unicode,
     )
 from zope.interface import implementer
 
@@ -18,32 +22,41 @@ from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ISprintSpecification)
-class SprintSpecification(SQLBase):
+class SprintSpecification(StormBase):
     """A link between a sprint and a specification."""
 
-    _table = 'SprintSpecification'
+    __storm_table__ = 'SprintSpecification'
 
-    sprint = ForeignKey(dbName='sprint', foreignKey='Sprint',
-        notNull=True)
-    specification = ForeignKey(dbName='specification',
-        foreignKey='Specification', notNull=True)
-    status = EnumCol(schema=SprintSpecificationStatus, notNull=True,
+    id = Int(primary=True)
+
+    sprint_id = Int(name='sprint', allow_none=False)
+    sprint = Reference(sprint_id, 'Sprint.id')
+    specification_id = Int(name='specification', allow_none=False)
+    specification = Reference(specification_id, 'Specification.id')
+    status = DBEnum(
+        enum=SprintSpecificationStatus, allow_none=False,
         default=SprintSpecificationStatus.PROPOSED)
-    whiteboard = StringCol(notNull=False, default=None)
-    registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    decider = ForeignKey(
-        dbName='decider', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=False, default=None)
-    date_decided = UtcDateTimeCol(notNull=False, default=None)
+    whiteboard = Unicode(allow_none=True, default=None)
+    registrant_id = Int(
+        name='registrant', validator=validate_public_person, allow_none=False)
+    registrant = Reference(registrant_id, 'Person.id')
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    decider_id = Int(
+        name='decider', validator=validate_public_person, allow_none=True,
+        default=None)
+    decider = Reference(decider_id, 'Person.id')
+    date_decided = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+
+    def __init__(self, sprint, specification, registrant):
+        super(SprintSpecification, self).__init__()
+        self.sprint = sprint
+        self.specification = specification
+        self.registrant = registrant
 
     @property
     def is_confirmed(self):
@@ -66,3 +79,6 @@ class SprintSpecification(SQLBase):
         self.status = SprintSpecificationStatus.DECLINED
         self.decider = decider
         self.date_decided = UTC_NOW
+
+    def destroySelf(self):
+        Store.of(self).remove(self)

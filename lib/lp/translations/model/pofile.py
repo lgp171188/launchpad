@@ -255,7 +255,7 @@ class POFileMixIn(RosettaStats):
         Orders the result by TranslationTemplateItem.sequence which must
         be among `origin_tables`.
         """
-        if isinstance(query, basestring):
+        if isinstance(query, six.string_types):
             query = SQL(query)
         results = IMasterStore(POTMsgSet).using(origin_tables).find(
             POTMsgSet, query)

@@ -127,6 +127,12 @@
             interface="lp.snappy.interfaces.snappyseries.ISnappyDistroSeries" />
     </class>
 
+    <!-- SyntheticSnappyDistroSeries -->
+    <class class="lp.snappy.vocabularies.SyntheticSnappyDistroSeries">
+        <allow
+            interface="lp.snappy.interfaces.snappyseries.ISnappyDistroSeries" />
+    </class>
+
     <!-- SnappySeriesSet -->
     <securedutility
         class="lp.snappy.model.snappyseries.SnappySeriesSet"

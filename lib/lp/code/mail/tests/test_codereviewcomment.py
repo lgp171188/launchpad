@@ -243,7 +243,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
     def test_generateEmailWithVoteAndTag(self):
         """Ensure that vote tags are displayed."""
         mailer, subscriber = self.makeMailer(
-            vote=CodeReviewVote.APPROVE, vote_tag='DBTAG')
+            vote=CodeReviewVote.APPROVE, vote_tag=u'DBTAG')
         ctrl = mailer.generateEmail(
             subscriber.preferredemail.email, subscriber)
         self.assertEqual('Review: Approve dbtag', ctrl.body.splitlines()[0])

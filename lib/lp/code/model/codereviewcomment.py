@@ -10,9 +10,11 @@ __all__ = [
 
 from textwrap import TextWrapper
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+from storm.locals import (
+    Int,
+    Reference,
+    Store,
+    Unicode,
     )
 from zope.interface import implementer
 
@@ -22,8 +24,8 @@ from lp.code.interfaces.codereviewcomment import (
     ICodeReviewComment,
     ICodeReviewCommentDeletion,
     )
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 from lp.services.mail.signedmessage import signed_message_from_string
 
 
@@ -60,17 +62,27 @@ def quote_text_as_email(text, width=80):
 
 
 @implementer(ICodeReviewComment, ICodeReviewCommentDeletion, IHasBranchTarget)
-class CodeReviewComment(SQLBase):
+class CodeReviewComment(StormBase):
     """A table linking branch merge proposals and messages."""
 
-    _table = 'CodeReviewMessage'
+    __storm_table__ = 'CodeReviewMessage'
 
-    branch_merge_proposal = ForeignKey(
-        dbName='branch_merge_proposal', foreignKey='BranchMergeProposal',
-        notNull=True)
-    message = ForeignKey(dbName='message', foreignKey='Message', notNull=True)
-    vote = EnumCol(dbName='vote', notNull=False, schema=CodeReviewVote)
-    vote_tag = StringCol(default=None)
+    id = Int(primary=True)
+    branch_merge_proposal_id = Int(
+        name='branch_merge_proposal', allow_none=False)
+    branch_merge_proposal = Reference(
+        branch_merge_proposal_id, 'BranchMergeProposal.id')
+    message_id = Int(name='message', allow_none=False)
+    message = Reference(message_id, 'Message.id')
+    vote = DBEnum(name='vote', allow_none=True, enum=CodeReviewVote)
+    vote_tag = Unicode(default=None)
+
+    def __init__(self, branch_merge_proposal, message, vote=None,
+                 vote_tag=None):
+        self.branch_merge_proposal = branch_merge_proposal
+        self.message = message
+        self.vote = vote
+        self.vote_tag = vote_tag
 
     @property
     def author(self):
@@ -134,3 +146,7 @@ class CodeReviewComment(SQLBase):
         return (
             self.branch_merge_proposal.userCanSetCommentVisibility(user) or
             (user is not None and user.inTeam(self.author)))
+
+    def destroySelf(self):
+        """Delete this comment."""
+        Store.of(self).remove(self)

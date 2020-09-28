@@ -20,7 +20,7 @@ Launchpad object for a given user with a single call.
 
     >>> launchpad = launchpadlib_for(
     ...     u'launchpadlib test', 'salgado', 'WRITE_PUBLIC')
-    >>> print launchpad.me.name
+    >>> print(launchpad.me.name)
     salgado
 
     # XXX leonardr 2010-03-31 bug=552732
@@ -35,7 +35,7 @@ Launchpad object for a given user with a single call.
     #>>> launchpad = launchpadlib_for(
     #...     u'launchpadlib test', 'no-priv', 'READ_PRIVATE', 'firefox',
     #...     version="devel")
-    #>>> print launchpad.projects['firefox'].name
+    #>>> print(launchpad.projects['firefox'].name)
     #firefox
 
 With launchpadlib_credentials_for() you can get a launchpadlib
@@ -47,9 +47,9 @@ Credentials object.
     >>> credentials
     <launchpadlib.credentials.Credentials object ...>
 
-    >>> print credentials.consumer.key
+    >>> print(credentials.consumer.key)
     launchpadlib test
-    >>> print credentials.access_token
+    >>> print(credentials.access_token)
     oauth_token_secret=...&oauth_token=...
 
 This can be used to create your own Launchpad object.  Note you cannot
@@ -59,7 +59,7 @@ scheme which does not work in the test environment.
     >>> from launchpadlib.launchpad import Launchpad
     >>> launchpad = Launchpad(
     ...     credentials, None, None, 'http://api.launchpad.test/')
-    >>> print launchpad.me.name
+    >>> print(launchpad.me.name)
     no-priv
 
 Anonymous access
@@ -72,13 +72,13 @@ The Launchpad object for the anonymous user can be used to access
 public information.
 
     >>> apache_results = lp_anon.project_groups.search(text="Apache")
-    >>> print apache_results[0].name
+    >>> print(apache_results[0].name)
     apache
 
 But trying to access information that requires a logged in user
 results in an error.
 
-    >>> print lp_anon.me.name
+    >>> print(lp_anon.me.name)
     Traceback (most recent call last):
       ...
     Unauthorized: HTTP Error 401: Unauthorized...

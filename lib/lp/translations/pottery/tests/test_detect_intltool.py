@@ -6,9 +6,11 @@ __metaclass__ = type
 import errno
 import os
 import tarfile
+from textwrap import dedent
 
 from breezy.controldir import ControlDir
 
+from lp.services.scripts.tests import run_script
 from lp.testing import TestCase
 from lp.translations.pottery.detect_intltool import is_intltool_structure
 
@@ -51,6 +53,18 @@ class SetupTestPackageMixin:
                         raise
             with open(path, 'w') as the_file:
                 the_file.write(content)
+
+    def test_pottery_generate_intltool_script(self):
+        # Let the script run to see it works fine.
+        self.prepare_package("intltool_POTFILES_in_2")
+
+        return_code, stdout, stderr = run_script(
+            'scripts/rosetta/pottery-generate-intltool.py', [])
+
+        self.assertEqual(dedent("""\
+            module1/po/messages.pot
+            po/messages.pot
+            """), stdout)
 
 
 class TestDetectIntltoolInBzrTree(TestCase, SetupTestPackageMixin):

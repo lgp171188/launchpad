@@ -49,7 +49,7 @@ class SigningServiceClientFixture(fixtures.Fixture):
                   openpgp_key_algorithm=None, length=None):
         key = bytes(PrivateKey.generate().public_key)
         data = {
-            "fingerprint": self.factory.getUniqueHexString(40),
+            "fingerprint": self.factory.getUniqueHexString(40).upper(),
             "public-key": key,
             }
         self.generate_returns.append((key_type, data))
@@ -58,7 +58,8 @@ class SigningServiceClientFixture(fixtures.Fixture):
     def _sign(self, key_type, fingerprint, message_name, message, mode):
         key = bytes(PrivateKey.generate().public_key)
         signed_msg = (
-            "signed with key_type={}".format(key_type.name).encode("UTF-8"))
+            "signed with key_type={} mode={}".format(
+                key_type.name, mode.name).encode("UTF-8"))
         data = {
             'public-key': key,
             'signed-message': signed_msg,
@@ -68,7 +69,7 @@ class SigningServiceClientFixture(fixtures.Fixture):
 
     def _inject(self, key_type, private_key, public_key, description,
                 created_at):
-        data = {'fingerprint': self.factory.getUniqueHexString(40)}
+        data = {'fingerprint': self.factory.getUniqueHexString(40).upper()}
         self.inject_returns.append(data)
         return data
 

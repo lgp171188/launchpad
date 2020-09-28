@@ -257,7 +257,7 @@ class LaunchpadPrincipal:
 
     def __init__(self, id, title, description, account,
                  access_level=AccessLevel.WRITE_PRIVATE, scope_url=None):
-        self.id = unicode(id)
+        self.id = six.text_type(id)
         self.title = title
         self.description = description
         self.access_level = access_level

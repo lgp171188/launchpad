@@ -165,8 +165,10 @@ def value_string(item):
         return '(not set)'
     elif zope_isinstance(item, BaseItem):
         return item.title
+    elif zope_isinstance(item, bytes):
+        return six.ensure_text(item)
     else:
-        return unicode(item)
+        return six.text_type(item)
 
 
 def text_delta(instance_delta, delta_names, state_names, interface):

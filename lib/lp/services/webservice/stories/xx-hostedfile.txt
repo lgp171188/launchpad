@@ -19,13 +19,13 @@ Firefox starts out with a link to branding images, but no actual images.
     >>> project['brand_link']
     u'http://.../firefox/brand'
 
-    >>> print webservice.get(project['icon_link'])
+    >>> print(webservice.get(project['icon_link']))
     HTTP/1.1 404 Not Found
     ...
-    >>> print webservice.get(project['logo_link'])
+    >>> print(webservice.get(project['logo_link']))
     HTTP/1.1 404 Not Found
     ...
-    >>> print webservice.get(project['brand_link'])
+    >>> print(webservice.get(project['brand_link']))
     HTTP/1.1 404 Not Found
     ...
 
@@ -39,16 +39,16 @@ We can upload branding images with PUT.
     ...         'images', filename)
     ...     return open(image_file).read()
 
-    >>> print webservice.put(project['icon_link'], 'image/png',
-    ...                      load_image('team.png'))
+    >>> print(webservice.put(project['icon_link'], 'image/png',
+    ...                      load_image('team.png')))
     HTTP/1.1 200 Ok
     ...
-    >>> print webservice.put(project['logo_link'], 'image/png',
-    ...                      load_image('team-logo.png'))
+    >>> print(webservice.put(project['logo_link'], 'image/png',
+    ...                      load_image('team-logo.png')))
     HTTP/1.1 200 Ok
     ...
-    >>> print webservice.put(project['brand_link'], 'image/png',
-    ...                      load_image('team-mugshot.png'))
+    >>> print(webservice.put(project['brand_link'], 'image/png',
+    ...                      load_image('team-mugshot.png')))
     HTTP/1.1 200 Ok
     ...
 
@@ -56,21 +56,21 @@ The project's branding links now redirects you to files maintained
 by the librarian.
 
     >>> result = webservice.get(project['icon_link'])
-    >>> print result
+    >>> print(result)
     HTTP/1.1 303 See Other
     ...
     Location: http://.../icon
     ...
 
     >>> result = webservice.get(project['logo_link'])
-    >>> print result
+    >>> print(result)
     HTTP/1.1 303 See Other
     ...
     Location: http://.../logo
     ...
 
     >>> result = webservice.get(project['brand_link'])
-    >>> print result
+    >>> print(result)
     HTTP/1.1 303 See Other
     ...
     Location: http://.../brand
@@ -83,8 +83,8 @@ Error handling
 Launchpad's ImageUpload classes enforce restrictions on uploaded
 images. You can't upload an image that's the wrong type.
 
-    >>> print webservice.put(
-    ...     project['brand_link'], 'image/png', 'Not an image')
+    >>> print(webservice.put(
+    ...     project['brand_link'], 'image/png', 'Not an image'))
     HTTP/1.1 400 Bad Request
     ...
     The file uploaded was not recognized as an image; please check it
@@ -92,8 +92,8 @@ images. You can't upload an image that's the wrong type.
 
 You also can't upload an image that's the wrong size.
 
-    >>> print webservice.put(project['brand_link'], 'image/png',
-    ...                      load_image('team-logo.png'))
+    >>> print(webservice.put(project['brand_link'], 'image/png',
+    ...                      load_image('team-logo.png')))
     HTTP/1.1 400 Bad Request
     ...
     This image is not exactly 192x192 pixels in size.

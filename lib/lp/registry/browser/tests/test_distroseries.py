@@ -1205,8 +1205,8 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         rows = diff_table.tbody.findAll('tr')
 
         self.assertEqual(1, len(rows))
-        self.assertIn("Latest comment", unicode(rows[0]))
-        self.assertNotIn("Earlier comment", unicode(rows[0]))
+        self.assertIn("Latest comment", six.text_type(rows[0]))
+        self.assertNotIn("Earlier comment", six.text_type(rows[0]))
 
     def test_diff_row_links_to_extra_details(self):
         # The source package name links to the difference details.
