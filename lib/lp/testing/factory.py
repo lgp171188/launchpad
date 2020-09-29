@@ -1840,7 +1840,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             paths = [self.getUniqueUnicode('refs/heads/path')]
         refs_info = {
             path: {
-                u"sha1": unicode(
+                u"sha1": six.ensure_text(
                     hashlib.sha1(path.encode('utf-8')).hexdigest()),
                 u"type": GitObjectType.COMMIT,
                 }
@@ -3798,7 +3798,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             creator = self.makePerson()
 
         if version is None:
-            version = unicode(self.getUniqueInteger()) + 'version'
+            version = six.text_type(self.getUniqueInteger()) + 'version'
 
         if copyright is None:
             copyright = self.getUniqueString()
@@ -4563,7 +4563,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """Create a new `PlainPackageCopyJob`."""
         if package_name is None and package_version is None:
             package_name = self.makeSourcePackageName().name
-            package_version = unicode(self.getUniqueInteger()) + 'version'
+            package_version = (
+                six.text_type(self.getUniqueInteger()) + 'version')
         if source_archive is None:
             source_archive = self.makeArchive()
         if target_archive is None:
