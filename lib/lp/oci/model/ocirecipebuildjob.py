@@ -162,6 +162,7 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     @classmethod
     def create(cls, build):
         """See `IOCIRegistryUploadJobSource`"""
+        import ipdb; ipdb.set_trace()
         edited_fields = set()
         with notify_modified(build, edited_fields) as before_modification:
             oci_build_job = OCIRecipeBuildJob(
@@ -227,11 +228,16 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         """See `IOCIRegistryUploadJob`."""
         self.json_data["errors"] = errors
 
+    @property
+    def is_multi_arch(self):
+        return len(self.build.getAllowedArchitectures()) > 1
+
     def run(self):
         """See `IRunnableJob`."""
         client = getUtility(IOCIRegistryClient)
         # XXX twom 2020-04-16 This is taken from SnapStoreUploadJob
         # it will need to gain retry support.
+        import ipdb; ipdb.set_trace()
         try:
             try:
                 client.upload(self.build)

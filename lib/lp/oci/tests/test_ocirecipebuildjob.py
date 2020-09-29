@@ -8,6 +8,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
+from lp.buildmaster.interfaces.processor import IProcessorSet
+from storm.store import Store
 from testtools.matchers import (
     Equals,
     Is,
@@ -16,6 +18,7 @@ from testtools.matchers import (
     MatchesStructure,
     )
 import transaction
+from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.buildmaster.enums import BuildStatus
@@ -42,7 +45,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.testing import TestCaseWithFactory
+from lp.testing import TestCaseWithFactory, admin_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
@@ -51,6 +54,7 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
+from zope.security.proxy import removeSecurityProxy
 
 
 def run_isolated_jobs(jobs):
@@ -180,6 +184,46 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.errors)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(ocibuild, ["Pending", "Uploaded"], logger)
+
+    def test_run_multiple_architectures(self):
+        logger = self.useFixture(FakeLogger())
+        i386 = getUtility(IProcessorSet).getByName("386")
+        amd64 = getUtility(IProcessorSet).getByName("amd64")
+        recipe = self.factory.makeOCIRecipe()
+        recipe.setProcessors([i386, amd64])
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.oci_project.distribution)
+        distro_i386 = self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag="i386",
+                processor=i386)
+        distro_i386.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+        distro_amd64 = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="amd64",
+            processor=amd64)
+        distro_amd64.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+
+        ocibuild_i386 = removeSecurityProxy(self.makeOCIRecipeBuild(
+            distro_arch_series=distro_i386))
+        ocibuild_amd64 = removeSecurityProxy(self.makeOCIRecipeBuild(
+            distro_arch_series=distro_amd64))
+        build_request = recipe.createBuildRequest(recipe.owner)
+        ocibuild_i386.build_request_id = build_request.id
+        ocibuild_amd64.build_request_id = build_request.id
+        transaction.commit()
+        import ipdb; ipdb.set_trace()
+
+        self.assertContentEqual([], ocibuild_i386.registry_upload_jobs)
+        self.assertContentEqual([], ocibuild_amd64.registry_upload_jobs)
+
+        job_i386 = OCIRegistryUploadJob.create(ocibuild_i386)
+        job_amd64 = OCIRegistryUploadJob.create(ocibuild_amd64)
+
+        client = FakeRegistryClient()
+        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
+
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            JobRunner([job_i386]).runAll()
+        self.assertEqual([((ocibuild_i386,), {})], client.upload.calls)
 
     def test_run_failed_registry_error(self):
         # A run that fails with a registry error sets the registry upload
