@@ -10,6 +10,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
+from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.database.constants import UTC_NOW
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
@@ -24,11 +25,15 @@ from lp.soyuz.interfaces.publishing import (
     PackagePublishingStatus,
     )
 from lp.soyuz.tests.test_binarypackagebuild import BaseTestCaseWithThreeBuilds
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    person_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
+from zope.security.interfaces import Unauthorized
 
 
 class TestPublishingSet(BaseTestCaseWithThreeBuilds):
@@ -297,3 +302,49 @@ class TestBinaryPackagePublishingHistory(TestCaseWithFactory):
         bpph = self.factory.makeBinaryPackagePublishingHistory(
             binpackageformat=BinaryPackageFormat.DDEB)
         self.assertTrue(bpph.is_debug)
+
+    def test_source_package_name(self):
+        bpph = self.factory.makeBinaryPackagePublishingHistory()
+        self.assertEqual(
+            bpph.binarypackagerelease.sourcepackagename,
+            bpph.source_package_name)
+
+    def test_source_package_name_private(self):
+        team_owner = self.factory.makePerson()
+        private_team = self.factory.makeTeam(
+            owner=team_owner, visibility=PersonVisibility.PRIVATE)
+        ppa = self.factory.makeArchive(private=True, owner=private_team)
+        with person_logged_in(team_owner):
+            bpph = self.factory.makeBinaryPackagePublishingHistory(
+                archive=ppa)
+            self.assertEqual(
+                bpph.binarypackagerelease.sourcepackagename,
+                bpph.source_package_name)
+        self.assertRaises(
+            Unauthorized,
+            getattr,
+            bpph,
+            'source_package_name')
+
+    def test_source_package_version(self):
+        bpph = self.factory.makeBinaryPackagePublishingHistory()
+        self.assertEqual(
+            bpph.binarypackagerelease.sourcepackageversion,
+            bpph.source_package_version)
+
+    def test_source_package_version_private(self):
+        team_owner = self.factory.makePerson()
+        private_team = self.factory.makeTeam(
+            owner=team_owner, visibility=PersonVisibility.PRIVATE)
+        ppa = self.factory.makeArchive(private=True, owner=private_team)
+        with person_logged_in(team_owner):
+            bpph = self.factory.makeBinaryPackagePublishingHistory(
+                archive=ppa)
+            self.assertEqual(
+                bpph.binarypackagerelease.sourcepackageversion,
+                bpph.source_package_version)
+        self.assertRaises(
+            Unauthorized,
+            getattr,
+            bpph,
+            'source_package_version')
