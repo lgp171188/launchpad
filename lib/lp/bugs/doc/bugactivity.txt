@@ -21,6 +21,7 @@ authenticated user--let's login:
 Bug activity tracking is done using event subscribers. The handlers
 are simple little functions.
 
+    >>> import six
     >>> from lp.bugs.interfaces.bugtask import IBugTaskSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.services.webapp.snapshot import notify_modified
@@ -147,7 +148,7 @@ Bug report is marked as a duplicate of another bug report
     u'marked as duplicate'
     >>> latest_activity.oldvalue is None
     True
-    >>> latest_activity.newvalue == unicode(latest_bug.id)
+    >>> latest_activity.newvalue == six.text_type(latest_bug.id)
     True
 
 
@@ -163,9 +164,9 @@ Bug report has its duplicate marker changed to another bug report
     >>> latest_activity = bug.activity[-1]
     >>> latest_activity.whatchanged
     u'changed duplicate marker'
-    >>> latest_activity.oldvalue == unicode(latest_bug.id)
+    >>> latest_activity.oldvalue == six.text_type(latest_bug.id)
     True
-    >>> latest_activity.newvalue == unicode(another_bug.id)
+    >>> latest_activity.newvalue == six.text_type(another_bug.id)
     True
 
 
@@ -180,7 +181,7 @@ The bug report is un-duplicated
     >>> latest_activity = bug.activity[-1]
     >>> latest_activity.whatchanged
     u'removed duplicate marker'
-    >>> latest_activity.oldvalue == unicode(another_bug.id)
+    >>> latest_activity.oldvalue == six.text_type(another_bug.id)
     True
     >>> latest_activity.newvalue is None
     True
@@ -214,16 +215,16 @@ final_bug as their master bug.
     >>> latest_activity = dupe_one.activity[-1]
     >>> print(latest_activity.whatchanged)
     changed duplicate marker
-    >>> latest_activity.oldvalue == unicode(initial_bug.id)
+    >>> latest_activity.oldvalue == six.text_type(initial_bug.id)
     True
-    >>> latest_activity.newvalue == unicode(final_bug.id)
+    >>> latest_activity.newvalue == six.text_type(final_bug.id)
     True
     >>> latest_activity = dupe_two.activity[-1]
     >>> print(latest_activity.whatchanged)
     changed duplicate marker
-    >>> latest_activity.oldvalue == unicode(initial_bug.id)
+    >>> latest_activity.oldvalue == six.text_type(initial_bug.id)
     True
-    >>> latest_activity.newvalue == unicode(final_bug.id)
+    >>> latest_activity.newvalue == six.text_type(final_bug.id)
     True
 
 
