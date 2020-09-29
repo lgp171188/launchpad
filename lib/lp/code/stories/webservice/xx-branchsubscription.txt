@@ -31,15 +31,15 @@ A user can subscribe to a branch through the API.
 
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> pprint_entry(subscription.jsonBody())
-    branch_link: u'http://.../~farmer-bob/farm/corn'
-    max_diff_lines: u"Don't send diffs"
-    notification_level: u'Branch attribute notifications only'
-    person_link: u'http://.../~farmer-joe'
-    resource_type_link: u'http://.../#branch_subscription'
-    review_level: u'No email'
-    self_link: u'http://.../~farmer-bob/farm/corn/+subscription/farmer-joe'
-    subscribed_by_link: u'http://.../~salgado'
-    web_link: u'http://code.../~farmer-bob/farm/corn/+subscription/farmer-joe'
+    branch_link: 'http://.../~farmer-bob/farm/corn'
+    max_diff_lines: "Don't send diffs"
+    notification_level: 'Branch attribute notifications only'
+    person_link: 'http://.../~farmer-joe'
+    resource_type_link: 'http://.../#branch_subscription'
+    review_level: 'No email'
+    self_link: 'http://.../~farmer-bob/farm/corn/+subscription/farmer-joe'
+    subscribed_by_link: 'http://.../~salgado'
+    web_link: 'http://code.../~farmer-bob/farm/corn/+subscription/farmer-joe'
 
     >>> def print_subscriber_count(branch):
     ...     subscribers = webservice.get(
@@ -86,15 +86,15 @@ was originally subscribed.
     ...     code_review_level=u'Status changes only')
 
     >>> pprint_entry(subscription.jsonBody())
-    branch_link: u'http://.../~farmer-bob/farm/corn'
-    max_diff_lines: u'Send entire diff'
-    notification_level: u'No email'
-    person_link: u'http://.../~farmer-joe'
-    resource_type_link: u'http://.../#branch_subscription'
-    review_level: u'Status changes only'
-    self_link: u'http://.../~farmer-bob/farm/corn/+subscription/farmer-joe'
-    subscribed_by_link: u'http://.../~salgado'
-    web_link: u'http://code.../~farmer-bob/farm/corn/+subscription/farmer-joe'
+    branch_link: 'http://.../~farmer-bob/farm/corn'
+    max_diff_lines: 'Send entire diff'
+    notification_level: 'No email'
+    person_link: 'http://.../~farmer-joe'
+    resource_type_link: 'http://.../#branch_subscription'
+    review_level: 'Status changes only'
+    self_link: 'http://.../~farmer-bob/farm/corn/+subscription/farmer-joe'
+    subscribed_by_link: 'http://.../~salgado'
+    web_link: 'http://code.../~farmer-bob/farm/corn/+subscription/farmer-joe'
 
 
 We print the count, and even though subscribe was called again, there's still
