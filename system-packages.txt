@@ -22,9 +22,6 @@ apt_pkg
 # utilities/js-deps
 convoy
 
-# lp.services.geoip.model
-GeoIP
-
 # lp.testing.html5browser
 [optional] gi
 
