@@ -24,13 +24,16 @@ my $tree = MaxMind::DB::Writer::Tree->new(
     map_key_type_callback => sub { $types{$_[0]} },
     # Arguments are ($sec, $min, $hour, $mday, $mon, $year); $mon is
     # 0-based.  Bump this date when you change this script.
-    _build_epoch => timegm_modern(0, 38, 11, 29, 8, 2020),
+    _build_epoch => timegm_modern(0, 30, 23, 29, 8, 2020),
 );
 
 $tree->insert_network('69.232.0.0/15', { country => { iso_code => 'US' } });
+$tree->insert_network('80.66.224.0/20', { country => { iso_code => 'LI' } });
 $tree->insert_network('82.211.80.0/20', { country => { iso_code => 'GB' } });
 $tree->insert_network('83.196.40.0/21', { country => { iso_code => 'FR' } });
+$tree->insert_network('84.112.0.0/15', { country => { iso_code => 'AT' } });
 $tree->insert_network('121.44.0.0/15', { country => { iso_code => 'AU' } });
+$tree->insert_network('143.54.0.0/16', { country => { iso_code => 'BR' } });
 $tree->insert_network('157.92.0.0/16', { country => { iso_code => 'AR' } });
 $tree->insert_network('196.36.0.0/14', { country => { iso_code => 'ZA' } });
 $tree->insert_network('201.13.0.0/16', { country => { iso_code => 'BR' } });
