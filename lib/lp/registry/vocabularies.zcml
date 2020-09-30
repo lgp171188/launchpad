@@ -184,15 +184,6 @@
 
 
   <securedutility
-    name="PersonTeamParticipations"
-    component="lp.registry.vocabularies.person_team_participations_vocabulary_factory"
-    provides="zope.schema.interfaces.IVocabularyFactory"
-    >
-    <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
-
-
-  <securedutility
     name="Product"
     component="lp.registry.vocabularies.ProductVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"

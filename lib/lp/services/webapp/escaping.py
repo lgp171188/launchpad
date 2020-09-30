@@ -48,7 +48,11 @@ def html_escape(message):
         # It is possible that the message is wrapped in an
         # internationalized object, so we need to translate it
         # first. See bug #54987.
-        raw = unicode(translate_if_i18n(message))
+        raw = translate_if_i18n(message)
+        if isinstance(raw, bytes):
+            raw = six.ensure_text(raw)
+        else:
+            raw = six.text_type(raw)
         for needle, replacement in HTML_REPLACEMENTS:
             raw = raw.replace(needle, replacement)
         return raw
@@ -86,7 +90,11 @@ def translate_if_i18n(obj_or_msgid):
 class structured:
 
     def __init__(self, text, *reps, **kwreps):
-        text = unicode(translate_if_i18n(text))
+        text = translate_if_i18n(text)
+        if isinstance(text, bytes):
+            text = six.ensure_text(text)
+        else:
+            text = six.text_type(text)
         self.text = text
         if reps and kwreps:
             raise TypeError(

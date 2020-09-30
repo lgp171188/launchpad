@@ -6,6 +6,7 @@ __metaclass__ = type
 
 from lazr.restful.interfaces import IWebBrowserOriginatingRequest
 from lazr.restful.utils import get_current_web_service_request
+import six
 from testtools.matchers import LessThan
 import transaction
 from zope.component import getUtility
@@ -96,7 +97,7 @@ class TestSharingService(TestCaseWithFactory):
         shared_items_exist = False
         permissions = {}
         for (policy, permission) in policy_permissions:
-            permissions[policy.name] = unicode(permission.name)
+            permissions[policy.name] = six.ensure_text(permission.name)
             if permission == SharingPermission.SOME:
                 shared_items_exist = True
         grantee_data['shared_items_exist'] = shared_items_exist

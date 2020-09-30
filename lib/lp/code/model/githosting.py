@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the Git hosting service."""
@@ -14,6 +14,7 @@ import sys
 
 from lazr.restful.utils import get_current_browser_request
 import requests
+import six
 from six import reraise
 from six.moves.urllib.parse import (
     quote,
@@ -90,17 +91,24 @@ class GitHostingClient:
     def _delete(self, path, **kwargs):
         return self._request("delete", path, **kwargs)
 
-    def create(self, path, clone_from=None):
+    def create(self, path, clone_from=None, async_create=False):
         """See `IGitHostingClient`."""
         try:
             if clone_from:
                 request = {"repo_path": path, "clone_from": clone_from}
             else:
                 request = {"repo_path": path}
+            if async_create:
+                # XXX pappacena 2020-07-02: async forces to clone_refs
+                # because it's only used in situations where this is
+                # desirable for now. We might need to add "clone_refs" as
+                # parameter in the future.
+                request['async'] = True
+                request['clone_refs'] = clone_from is not None
             self._post("/repo", json=request)
         except requests.RequestException as e:
             raise GitRepositoryCreationFault(
-                "Failed to create Git repository: %s" % unicode(e), path)
+                "Failed to create Git repository: %s" % six.text_type(e), path)
 
     def getProperties(self, path):
         """See `IGitHostingClient`."""
@@ -108,7 +116,8 @@ class GitHostingClient:
             return self._get("/repo/%s" % path)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get properties of Git repository: %s" % unicode(e))
+                "Failed to get properties of Git repository: %s" %
+                six.text_type(e))
 
     def setProperties(self, path, **props):
         """See `IGitHostingClient`."""
@@ -116,7 +125,8 @@ class GitHostingClient:
             self._patch("/repo/%s" % path, json=props)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to set properties of Git repository: %s" % unicode(e))
+                "Failed to set properties of Git repository: %s" %
+                six.text_type(e))
 
     def getRefs(self, path, exclude_prefixes=None):
         """See `IGitHostingClient`."""
@@ -126,7 +136,8 @@ class GitHostingClient:
                 params={"exclude_prefix": exclude_prefixes})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get refs from Git repository: %s" % unicode(e))
+                "Failed to get refs from Git repository: %s" %
+                six.text_type(e))
 
     def getCommits(self, path, commit_oids, logger=None):
         """See `IGitHostingClient`."""
@@ -139,7 +150,7 @@ class GitHostingClient:
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
                 "Failed to get commit details from Git repository: %s" %
-                unicode(e))
+                six.text_type(e))
 
     def getLog(self, path, start, limit=None, stop=None, logger=None):
         """See `IGitHostingClient`."""
@@ -155,7 +166,7 @@ class GitHostingClient:
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
                 "Failed to get commit log from Git repository: %s" %
-                unicode(e))
+                six.text_type(e))
 
     def getDiff(self, path, old, new, common_ancestor=False,
                 context_lines=None, logger=None):
@@ -170,7 +181,8 @@ class GitHostingClient:
             return self._get(url, params={"context_lines": context_lines})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get diff from Git repository: %s" % unicode(e))
+                "Failed to get diff from Git repository: %s" %
+                six.text_type(e))
 
     def getMergeDiff(self, path, base, head, prerequisite=None, logger=None):
         """See `IGitHostingClient`."""
@@ -185,7 +197,7 @@ class GitHostingClient:
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
                 "Failed to get merge diff from Git repository: %s" %
-                unicode(e))
+                six.text_type(e))
 
     def detectMerges(self, path, target, sources, logger=None):
         """See `IGitHostingClient`."""
@@ -200,7 +212,8 @@ class GitHostingClient:
                 json={"sources": sources})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to detect merges in Git repository: %s" % unicode(e))
+                "Failed to detect merges in Git repository: %s" %
+                six.text_type(e))
 
     def delete(self, path, logger=None):
         """See `IGitHostingClient`."""
@@ -210,7 +223,7 @@ class GitHostingClient:
             self._delete("/repo/%s" % path)
         except requests.RequestException as e:
             raise GitRepositoryDeletionFault(
-                "Failed to delete Git repository: %s" % unicode(e))
+                "Failed to delete Git repository: %s" % six.text_type(e))
 
     def getBlob(self, path, filename, rev=None, logger=None):
         """See `IGitHostingClient`."""
@@ -226,7 +239,8 @@ class GitHostingClient:
                 raise GitRepositoryBlobNotFound(path, filename, rev=rev)
             else:
                 raise GitRepositoryScanFault(
-                    "Failed to get file from Git repository: %s" % unicode(e))
+                    "Failed to get file from Git repository: %s" %
+                    six.text_type(e))
         try:
             blob = base64.b64decode(response["data"].encode("UTF-8"))
             if len(blob) != response["size"]:
@@ -236,4 +250,5 @@ class GitHostingClient:
             return blob
         except Exception as e:
             raise GitRepositoryScanFault(
-                "Failed to get file from Git repository: %s" % unicode(e))
+                "Failed to get file from Git repository: %s" %
+                six.text_type(e))

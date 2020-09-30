@@ -13,12 +13,8 @@ import os
 import signal
 import time
 
-from fixtures import MockPatch
 from six.moves import xmlrpc_client
-from testtools.matchers import (
-    Equals,
-    MatchesListwise,
-    )
+from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
@@ -49,7 +45,6 @@ from lp.buildmaster.interfaces.builder import (
     IBuilderSet,
     )
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
-from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.manager import (
     BuilddManager,
     BUILDER_FAILURE_THRESHOLD,
@@ -78,6 +73,7 @@ from lp.buildmaster.tests.test_interactor import (
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
+from lp.services.statsd.tests import StatsMixin
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
@@ -101,7 +97,7 @@ from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 
 
-class TestSlaveScannerScan(TestCaseWithFactory):
+class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
     """Tests `SlaveScanner.scan` method.
 
     This method uses the old framework for scanning and dispatching builds.
@@ -123,6 +119,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.test_publisher.setUpDefaultDistroSeries(hoary)
         self.test_publisher.addFakeChroots(db_only=True)
         self.addCleanup(shut_down_default_process_pool)
+        self.setUpStats()
 
     def _resetBuilder(self, builder):
         """Reset the given builder and its job."""
@@ -528,6 +525,20 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         self.assertFalse(builder.builderok)
 
     @defer.inlineCallbacks
+    def test_scanFailed_increments_counter(self):
+        def failing_scan():
+            return defer.fail(Exception("fake exception"))
+        scanner = self._getScanner()
+        scanner.scan = failing_scan
+        builder = getUtility(IBuilderSet)[scanner.builder_name]
+        builder.failure_count = BUILDER_FAILURE_THRESHOLD
+        builder.currentjob.reset()
+        transaction.commit()
+
+        yield scanner.singleCycle()
+        self.assertEqual(1, self.stats_client.incr.call_count)
+
+    @defer.inlineCallbacks
     def test_fail_to_resume_leaves_it_dirty(self):
         # If an attempt to resume a slave fails, its failure count is
         # incremented and it is left DIRTY.
@@ -893,6 +904,7 @@ class FakeBuilddManager:
 
 class TestSlaveScannerWithoutDB(TestCase):
 
+    layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
@@ -1211,22 +1223,6 @@ class TestBuilddManager(TestCase):
         advance = BuilddManager.FLUSH_LOGTAILS_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(0, manager.flushLogTails.call_count)
-
-    def test_startService_adds_updateStats_loop(self):
-        # When startService is called, the manager will start up a
-        # updateStats loop.
-        self._stub_out_scheduleNextScanCycle()
-        clock = task.Clock()
-        manager = BuilddManager(clock=clock)
-
-        # Replace updateStats() with FakeMethod so we can see if it was
-        # called.
-        manager.updateStats = FakeMethod()
-
-        manager.startService()
-        advance = BuilddManager.UPDATE_STATS_INTERVAL + 1
-        clock.advance(advance)
-        self.assertNotEqual(0, manager.updateStats.call_count)
 
 
 class TestFailureAssessments(TestCaseWithFactory):
@@ -1617,71 +1613,3 @@ class TestBuilddManagerScript(TestCaseWithFactory):
         self.assertFalse(
             os.access(rotated_logfilepath, os.F_OK),
             "Twistd's log file was rotated by twistd.")
-
-
-class TestStats(TestCaseWithFactory):
-
-    layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
-
-    def setUp(self):
-        super(TestStats, self).setUp()
-        self.stats_client = self.useFixture(
-            MockPatch(
-                'lp.buildmaster.manager.get_statsd_client'
-            )).mock()
-
-    def test_single_processor(self):
-        builder = self.factory.makeBuilder()
-        builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
-        transaction.commit()
-        clock = task.Clock()
-        manager = BuilddManager(clock=clock)
-        manager.builder_factory.update()
-        manager.updateStats()
-
-        self.assertEqual(8, self.stats_client.gauge.call_count)
-        for call in self.stats_client.mock.gauge.call_args_list:
-            self.assertIn('386', call[0][0])
-
-    def test_multiple_processor(self):
-        builder = self.factory.makeBuilder(
-            processors=[getUtility(IProcessorSet).getByName('amd64')])
-        builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
-        transaction.commit()
-        clock = task.Clock()
-        manager = BuilddManager(clock=clock)
-        manager.builder_factory.update()
-        manager.updateStats()
-
-        self.assertEqual(12, self.stats_client.gauge.call_count)
-        i386_calls = [c for c in self.stats_client.gauge.call_args_list
-                      if '386' in c[0][0]]
-        amd64_calls = [c for c in self.stats_client.gauge.call_args_list
-                       if 'amd64' in c[0][0]]
-        self.assertEqual(8, len(i386_calls))
-        self.assertEqual(4, len(amd64_calls))
-
-    def test_correct_values(self):
-        builder = self.factory.makeBuilder(
-            processors=[getUtility(IProcessorSet).getByName('amd64')])
-        builder.setCleanStatus(BuilderCleanStatus.CLEANING)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
-        transaction.commit()
-        clock = task.Clock()
-        manager = BuilddManager(clock=clock)
-        manager.builder_factory.update()
-        manager.updateStats()
-
-        self.assertEqual(12, self.stats_client.gauge.call_count)
-        calls = [c[0] for c in self.stats_client.gauge.call_args_list
-                 if 'amd64' in c[0][0]]
-        self.assertThat(
-            calls, MatchesListwise(
-                [Equals(('builders.disabled,arch=amd64,virtualized=True', 0)),
-                 Equals(('builders.building,arch=amd64,virtualized=True', 0)),
-                 Equals(('builders.idle,arch=amd64,virtualized=True', 0)),
-                 Equals(('builders.cleaning,arch=amd64,virtualized=True', 1))
-                 ]))

@@ -3,6 +3,7 @@ DistroSeries translations view classes
 
 Let's use ubuntu/hoary for these tests.
 
+    >>> import six
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.series import SeriesStatus
@@ -41,7 +42,7 @@ reveal its translations to the public or hide them from the public.
     ...     try:
     ...         view.checkTranslationsViewable()
     ...     except TranslationUnavailable as message:
-    ...         return unicode(message)
+    ...         return six.text_type(message)
     ...     return None
 
     >>> def check_effect_of_hiding(distroseries):

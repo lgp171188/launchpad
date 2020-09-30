@@ -3,7 +3,7 @@
 
 __metaclass__ = type
 
-from cStringIO import StringIO as cStringIO
+from io import BytesIO
 import os.path
 import re
 import time
@@ -35,7 +35,13 @@ class IncomingEmailError(Exception):
 
 
 def get_main_body(signed_msg):
-    """Returns the first text part of the email."""
+    """Returns the first text part of the email.
+
+    This always returns text (or None if the email has no text parts at
+    all).  It decodes using the character set in the text part's
+    Content-Type, or ISO-8859-1 if unspecified (in order to minimise the
+    chances of `UnicodeDecodeError`s).
+    """
     msg = getattr(signed_msg, 'signedMessage', None)
     if msg is None:
         # The email wasn't signed.
@@ -43,9 +49,11 @@ def get_main_body(signed_msg):
     if msg.is_multipart():
         for part in msg.walk():
             if part.get_content_type() == 'text/plain':
-                return part.get_payload(decode=True)
+                charset = part.get_content_charset('ISO-8859-1')
+                return part.get_payload(decode=True).decode(charset)
     else:
-        return msg.get_payload(decode=True)
+        charset = msg.get_content_charset('ISO-8859-1')
+        return msg.get_payload(decode=True).decode(charset)
 
 
 def guess_bugtask(bug, person):
@@ -241,7 +249,7 @@ def save_mail_to_librarian(raw_mail, restricted=False):
     # be guessable for example.
     file_name = str(uuid1()) + '.txt'
     file_alias = getUtility(ILibraryFileAliasSet).create(
-        file_name, len(raw_mail), cStringIO(raw_mail), 'message/rfc822',
+        file_name, len(raw_mail), BytesIO(raw_mail), 'message/rfc822',
         restricted=restricted)
     return file_alias
 

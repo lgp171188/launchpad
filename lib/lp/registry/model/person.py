@@ -258,6 +258,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import (
     ensure_unicode,
@@ -654,8 +655,8 @@ class Person(
     def languages(self):
         """See `IPerson`."""
         results = Store.of(self).find(
-            Language, And(Language.id == PersonLanguage.languageID,
-                          PersonLanguage.personID == self.id))
+            Language, And(Language.id == PersonLanguage.language_id,
+                          PersonLanguage.person_id == self.id))
         results.order_by(Language.englishname)
         return list(results)
 
@@ -681,8 +682,8 @@ class Person(
     def addLanguage(self, language):
         """See `IPerson`."""
         person_language = Store.of(self).find(
-            PersonLanguage, And(PersonLanguage.languageID == language.id,
-                                PersonLanguage.personID == self.id)).one()
+            PersonLanguage, And(PersonLanguage.language_id == language.id,
+                                PersonLanguage.person_id == self.id)).one()
         if person_language is not None:
             # Nothing to do.
             return
@@ -692,12 +693,12 @@ class Person(
     def removeLanguage(self, language):
         """See `IPerson`."""
         person_language = Store.of(self).find(
-            PersonLanguage, And(PersonLanguage.languageID == language.id,
-                                PersonLanguage.personID == self.id)).one()
+            PersonLanguage, And(PersonLanguage.language_id == language.id,
+                                PersonLanguage.person_id == self.id)).one()
         if person_language is None:
             # Nothing to do.
             return
-        PersonLanguage.delete(person_language.id)
+        person_language.delete()
         self.deleteLanguagesCache()
 
     def _init(self, *args, **kw):
@@ -766,7 +767,10 @@ class Person(
     @cachedproperty
     def location(self):
         """See `IObjectWithLocation`."""
-        return PersonLocation.selectOneBy(person=self)
+        location = IStore(PersonLocation).find(
+            PersonLocation,
+            PersonLocation.person == self).one()
+        return location
 
     @property
     def time_zone(self):
@@ -785,7 +789,7 @@ class Person(
             "Cannot set a latitude without longitude (and vice-versa).")
 
         if self.location is not None:
-            self.location.time_zone = time_zone
+            self.location.time_zone = six.ensure_text(time_zone)
             self.location.latitude = latitude
             self.location.longitude = longitude
             self.location.last_modified_by = user
@@ -3129,12 +3133,6 @@ class Person(
             return False
 
     @property
-    def hardware_submissions(self):
-        """See `IPerson`."""
-        from lp.hardwaredb.model.hwdb import HWSubmissionSet
-        return HWSubmissionSet().search(owner=self)
-
-    @property
     def recipes(self):
         """See `IHasRecipes`."""
         from lp.code.model.sourcepackagerecipe import SourcePackageRecipe
@@ -4065,12 +4063,21 @@ class PersonSet:
 Owner = ClassAlias(Person, 'Owner')
 
 
-class PersonLanguage(SQLBase):
-    _table = 'PersonLanguage'
+class PersonLanguage(StormBase):
+    __storm_table__ = 'PersonLanguage'
+    id = Int(primary=True)
+    person_id = Int(name='person', allow_none=False)
+    person = Reference(person_id, 'Person.id')
 
-    person = ForeignKey(foreignKey='Person', dbName='person', notNull=True)
-    language = ForeignKey(foreignKey='Language', dbName='language',
-                          notNull=True)
+    language_id = Int(name='language', allow_none=False)
+    language = Reference(language_id, 'Language.id')
+
+    def __init__(self, person, language):
+        self.person = person
+        self.language = language
+
+    def delete(self):
+        Store.of(self).remove(self)
 
 
 @implementer(ISSHKey)
@@ -4097,7 +4104,7 @@ class SSHKey(SQLBase):
         try:
             ssh_keytype = getNS(base64.b64decode(self.keytext))[0].decode(
                 'ascii')
-        except Exception as e:
+        except Exception:
             # We didn't always validate keys, so there might be some that
             # can't be loaded this way.
             if self.keytype == SSHKeyType.RSA:

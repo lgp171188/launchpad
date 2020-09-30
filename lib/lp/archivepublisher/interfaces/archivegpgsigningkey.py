@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ArchiveGPGSigningKey interface."""
@@ -9,6 +9,7 @@ __all__ = [
     'CannotSignArchive',
     'IArchiveGPGSigningKey',
     'ISignableArchive',
+    'PUBLISHER_GPG_USES_SIGNING_SERVICE',
     ]
 
 from zope.interface import (
@@ -19,6 +20,10 @@ from zope.schema import Object
 
 from lp import _
 from lp.soyuz.interfaces.archive import IArchive
+
+
+PUBLISHER_GPG_USES_SIGNING_SERVICE = (
+    'archivepublisher.gpg.signing_service.enabled')
 
 
 class CannotSignArchive(Exception):
@@ -98,7 +103,7 @@ class IArchiveGPGSigningKey(ISignableArchive):
         :raises AssertionError: if the given key is public.
         """
 
-    def generateSigningKey():
+    def generateSigningKey(log=None):
         """Generate a new GPG secret/public key pair.
 
         For named-ppas, the existing signing-key for the default PPA
@@ -112,6 +117,7 @@ class IArchiveGPGSigningKey(ISignableArchive):
          * Store a reference for the public key in GPGKey table, which
            is set as the context archive 'signing_key'.
 
+        :param log: an optional logger.
         :raises AssertionError: if the context archive already has a
             `signing_key`.
         :raises GPGUploadFailure: if the just-generated key could not be

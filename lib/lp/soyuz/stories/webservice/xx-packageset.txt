@@ -594,16 +594,16 @@ Let's see what we've got:
     >>> new_permission = webservice.get(
     ...     response.getHeader('Location')).jsonBody()
     >>> pprint_entry(new_permission)
-    archive_link: u'http://.../+archive/primary'
+    archive_link: 'http://.../+archive/primary'
     component_name: None
     date_created: ...
     explicit: False
-    package_set_name: u'firefox'
-    permission: u'Archive Upload Rights'
-    person_link: u'http://.../~name12'
+    package_set_name: 'firefox'
+    permission: 'Archive Upload Rights'
+    person_link: 'http://.../~name12'
     pocket: None
     resource_type_link: ...
-    self_link: u'http://.../+archive/primary/+upload/name12?type=packageset&item=firefox&series=hoary'
+    self_link: 'http://.../+archive/primary/+upload/name12?type=packageset&item=firefox&series=hoary'
     source_package_name: None
 
 Grant upload privileges to 'name12' for package set 'mozilla' in the Ubuntu
@@ -915,11 +915,11 @@ The user 'cprov' has no upload permission for 'thunderbird' in 'hoary'.
     ...     '?type=packageset&item=thunderbird&series=hoary')
     >>> permission = webservice.get(url).jsonBody()
     >>> pprint_entry(permission)
-    archive_link: u'http://api.launchpad.test/beta/ubuntu/+archive/primary'
+    archive_link: 'http://api.launchpad.test/beta/ubuntu/+archive/primary'
     ...
-    distro_series_name: u'hoary'
+    distro_series_name: 'hoary'
     ...
-    package_set_name: u'thunderbird'
-    permission: u'Archive Upload Rights'
-    person_link: u'http://api.launchpad.test/beta/~cprov'
+    package_set_name: 'thunderbird'
+    permission: 'Archive Upload Rights'
+    person_link: 'http://api.launchpad.test/beta/~cprov'
     ...

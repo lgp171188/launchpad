@@ -10,6 +10,7 @@ __all__ = [
     'IOCIRegistryCredentials',
     'IOCIRegistryCredentialsSet',
     'OCIRegistryCredentialsAlreadyExist',
+    'OCIRegistryCredentialsNotOwner',
     'user_can_edit_credentials_for_owner',
     ]
 
@@ -20,6 +21,7 @@ from zope.schema import (
     Int,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.registry.interfaces.role import (
@@ -41,6 +43,11 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
     def __init__(self):
         super(OCIRegistryCredentialsAlreadyExist, self).__init__(
             "Credentials already exist with the same URL and username.")
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIRegistryCredentialsNotOwner(Unauthorized):
+    """The registrant is not the owner or a member of its team."""
 
 
 class IOCIRegistryCredentialsView(Interface):
@@ -97,10 +104,10 @@ class IOCIRegistryCredentials(IOCIRegistryCredentialsEdit,
 class IOCIRegistryCredentialsSet(Interface):
     """A utility to create and access OCI Registry Credentials."""
 
-    def new(owner, url, credentials):
+    def new(registrant, owner, url, credentials):
         """Create an `IOCIRegistryCredentials`."""
 
-    def getOrCreate(owner, url, credentials):
+    def getOrCreate(registrant, owner, url, credentials):
         """Get an `IOCIRegistryCredentials` that match the url and username
         or create a new object."""
 

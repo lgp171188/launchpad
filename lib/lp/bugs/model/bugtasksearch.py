@@ -661,7 +661,7 @@ def _build_query(params):
         join_tables.append(
             (BugAffectsPerson, Join(
                 BugAffectsPerson, And(
-                    BugTaskFlat.bug_id == BugAffectsPerson.bugID,
+                    BugTaskFlat.bug_id == BugAffectsPerson.bug_id,
                     BugAffectsPerson.affected,
                     BugAffectsPerson.person == params.affected_user))))
 
@@ -696,10 +696,6 @@ def _build_query(params):
         if clause:
             extra_clauses.append(clause)
             decorators.append(decorator)
-
-    hw_clause = _build_hardware_related_clause(params)
-    if hw_clause is not None:
-        extra_clauses.append(hw_clause)
 
     def make_branch_clause(branches=None):
         where = [BugBranch.bug_id == BugTaskFlat.bug_id]
@@ -1002,75 +998,6 @@ def _build_exclude_conjoined_clause(milestone):
                 "A milestone must always have either a project, "
                 "project group, or distribution")
     return (join_tables, extra_clauses)
-
-
-def _build_hardware_related_clause(params):
-    """Hardware related SQL expressions and tables for bugtask searches.
-
-    :return: (tables, clauses) where clauses is a list of SQL expressions
-        which limit a bugtask search to bugs related to a device or
-        driver specified in search_params. If search_params contains no
-        hardware related data, empty lists are returned.
-    :param params: A `BugTaskSearchParams` instance.
-
-    Device related WHERE clauses are returned if
-    params.hardware_bus, params.hardware_vendor_id,
-    params.hardware_product_id are all not None.
-    """
-    # Avoid cyclic imports.
-    from lp.hardwaredb.model.hwdb import (
-        HWSubmission, HWSubmissionBug, HWSubmissionDevice,
-        _userCanAccessSubmissionStormClause,
-        make_submission_device_statistics_clause)
-
-    bus = params.hardware_bus
-    vendor_id = params.hardware_vendor_id
-    product_id = params.hardware_product_id
-    driver_name = params.hardware_driver_name
-    package_name = params.hardware_driver_package_name
-
-    if (bus is not None and vendor_id is not None and
-        product_id is not None):
-        tables, clauses = make_submission_device_statistics_clause(
-            bus, vendor_id, product_id, driver_name, package_name, False)
-    elif driver_name is not None or package_name is not None:
-        tables, clauses = make_submission_device_statistics_clause(
-            None, None, None, driver_name, package_name, False)
-    else:
-        return None
-
-    tables.append(HWSubmission)
-    tables.append(Bug)
-    clauses.append(HWSubmissionDevice.submission == HWSubmission.id)
-    bug_link_clauses = []
-    if params.hardware_owner_is_bug_reporter:
-        bug_link_clauses.append(
-            HWSubmission.ownerID == Bug.ownerID)
-    if params.hardware_owner_is_affected_by_bug:
-        bug_link_clauses.append(
-            And(BugAffectsPerson.personID == HWSubmission.ownerID,
-                BugAffectsPerson.bug == Bug.id,
-                BugAffectsPerson.affected))
-        tables.append(BugAffectsPerson)
-    if params.hardware_owner_is_subscribed_to_bug:
-        bug_link_clauses.append(
-            And(BugSubscription.person_id == HWSubmission.ownerID,
-                BugSubscription.bug_id == Bug.id))
-        tables.append(BugSubscription)
-    if params.hardware_is_linked_to_bug:
-        bug_link_clauses.append(
-            And(HWSubmissionBug.bugID == Bug.id,
-                HWSubmissionBug.submissionID == HWSubmission.id))
-        tables.append(HWSubmissionBug)
-
-    if len(bug_link_clauses) == 0:
-        return None
-
-    clauses.append(Or(*bug_link_clauses))
-    clauses.append(_userCanAccessSubmissionStormClause(params.user))
-
-    return BugTaskFlat.bug_id.is_in(
-        Select(Bug.id, tables=tables, where=And(*clauses)))
 
 
 def _build_blueprint_related_clause(params):

@@ -40,8 +40,16 @@ class IGitNamespace(Interface):
     def createRepository(repository_type, registrant, name,
                          information_type=None, date_created=None,
                          target_default=False, owner_default=False,
-                         with_hosting=False, status=None):
-        """Create and return an `IGitRepository` in this namespace."""
+                         with_hosting=False, async_hosting=False, status=None):
+        """Create and return an `IGitRepository` in this namespace.
+
+        :param with_hosting: If True, also creates the repository on git
+            hosting service.
+        :param async_hosting: If with_hosting is True, this controls if the
+            call to create repository on hosting service will be done
+            asynchronously, or it will block until the service creates the
+            repository.
+        """
 
     def isNameUsed(name):
         """Is 'name' already used in this namespace?"""
@@ -99,8 +107,8 @@ class IGitNamespacePolicy(Interface):
         "True iff this namespace permits automatically setting a default "
         "repository on push.")
 
-    show_push_url_hints = Attribute(
-        "True if this namespace permits display of the push URL hint.")
+    supports_repository_forking = Attribute(
+        "Does this namespace support repository forking at all?")
 
     supports_merge_proposals = Attribute(
         "Does this namespace support merge proposals at all?")

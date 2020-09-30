@@ -1355,10 +1355,11 @@ class TestPersonOCIRegistryCredentialsView(
 
     def test_view_oci_registry_credentials(self):
         # Verify view helper attributes.
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
         login_person(self.user)
         view = create_initialized_view(
             self.owner, '+oci-registry-credentials', principal=self.user)
@@ -1369,12 +1370,13 @@ class TestPersonOCIRegistryCredentialsView(
                 Equals(credentials))))
 
     def test_edit_oci_registry_credentials(self):
-        url = unicode(self.factory.getUniqueURL())
-        newurl = unicode(self.factory.getUniqueURL())
-        third_url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
+        newurl = self.factory.getUniqueURL()
+        third_url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
 
         browser = self.getViewBrowser(
             self.owner, view_name='+oci-registry-credentials', user=self.user)
@@ -1449,11 +1451,12 @@ class TestPersonOCIRegistryCredentialsView(
                         })))
 
     def test_add_oci_registry_credentials(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         image_name = self.factory.getUniqueUnicode()
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
         getUtility(IOCIPushRuleSet).new(
             recipe=self.recipe,
             registry_credentials=registry_credentials,
@@ -1499,10 +1502,11 @@ class TestPersonOCIRegistryCredentialsView(
     def test_delete_oci_registry_credentials(self):
         # Test that we do not delete credentials when there are
         # push rules defined to use them
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.owner, url=url, credentials=credentials)
+            registrant=self.user, owner=self.owner, url=url,
+            credentials=credentials)
         IStore(registry_credentials).flush()
         registry_credentials_id = removeSecurityProxy(registry_credentials).id
         image_name = self.factory.getUniqueUnicode()

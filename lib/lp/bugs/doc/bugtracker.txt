@@ -212,7 +212,7 @@ the same effect as assigning an empty list.
     >>> mozilla_bugzilla.aliases
     ()
 
-    >>> mozilla_bugzilla.aliases = set(['http://set.example.com/'])
+    >>> mozilla_bugzilla.aliases = set([u'http://set.example.com/'])
     >>> mozilla_bugzilla.aliases
     (u'http://set.example.com/',)
 
@@ -224,7 +224,7 @@ Your ordering is not preserved; aliases are sorted using Python's
 standard unicode ordering.
 
     >>> mozilla_bugzilla.aliases = (
-    ...     'http://%s.example.com/' % domain
+    ...     u'http://%s.example.com/' % domain
     ...     for domain in '111 zzz ccc ZZZ'.split())
     >>> mozilla_bugzilla.aliases
     (u'http://111.example.com/',
@@ -235,8 +235,8 @@ standard unicode ordering.
 BugTrackerAliases can also be looked up by bug tracker.
 
     >>> mozilla_bugzilla.aliases = [
-    ...     'http://just.example.com/',
-    ...     'http://magic.example.com/']
+    ...     u'http://just.example.com/',
+    ...     u'http://magic.example.com/']
 
 Query by bug tracker:
 
@@ -250,7 +250,7 @@ if BugTracker.baseurl is changed to an existing alias of itself, the
 aliases attribute hides the baseurl, although it is still recorded as
 an alias.
 
-    >>> mozilla_bugzilla.baseurl = 'http://magic.example.com/'
+    >>> mozilla_bugzilla.baseurl = u'http://magic.example.com/'
     >>> mozilla_bugzilla.aliases
     (u'http://just.example.com/',)
 
@@ -259,7 +259,7 @@ an alias.
     [u'http://just.example.com/',
      u'http://magic.example.com/']
 
-    >>> mozilla_bugzilla.baseurl = 'https://bugzilla.mozilla.org/'
+    >>> mozilla_bugzilla.baseurl = u'https://bugzilla.mozilla.org/'
 
 
 Pillars for bugtrackers

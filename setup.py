@@ -208,6 +208,7 @@ setup(
         'pgbouncer',
         'psycopg2',
         'pyasn1',
+        'pygettextpo',
         'pygpgme',
         'pyinotify',
         'pymacaroons',

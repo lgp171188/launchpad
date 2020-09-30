@@ -44,7 +44,7 @@ def fix_doctest_output():
     class _SpoofOut(doctest._SpoofOut):
 
         def write(self, value):
-            _RealSpoofOut.write(self, six.ensure_binary(value))
+            _RealSpoofOut.write(self, six.ensure_str(value))
 
     doctest._SpoofOut = _SpoofOut
 

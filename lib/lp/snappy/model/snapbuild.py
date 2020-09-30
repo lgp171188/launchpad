@@ -13,6 +13,7 @@ from datetime import timedelta
 from operator import attrgetter
 
 import pytz
+import six
 from storm.expr import (
     Column,
     Table,
@@ -378,7 +379,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         if slave_status is not None:
             revision_id = slave_status.get("revision_id")
             if revision_id is not None:
-                self.revision_id = unicode(revision_id)
+                self.revision_id = six.ensure_text(revision_id)
         if status != old_status:
             notify(SnapBuildStatusChangedEvent(self))
 

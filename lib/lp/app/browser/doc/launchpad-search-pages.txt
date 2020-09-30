@@ -5,6 +5,7 @@ Users can search for Launchpad objects and pages from the search form
 located on all pages. The search is performed and displayed by the
 LaunchpadSearchView.
 
+    >>> import six
     >>> from zope.component import getMultiAdapter, getUtility
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
@@ -460,7 +461,7 @@ maximum number of results that can be returned per request.
     >>> len(pages)
     20
     >>> for page in pages[0:5]:
-    ...     unicode(page.title)
+    ...     six.ensure_text(page.title)
     u'Launchpad Bugs'
     u'Bugs in Ubuntu Linux'
     u'Bugs related to Sample Person'
@@ -496,7 +497,7 @@ is 20. That is because there were only 25 matching pages.
     >>> len(pages)
     5
     >>> for page in pages:
-    ...     unicode(page.title)
+    ...     six.ensure_text(page.title)
     u'...Bug... #2 in Ubuntu Hoary: \u201cBlackhole Trash folder\u201d'
     u'...Bug... #2 in mozilla-firefox (Debian): ...Blackhole Trash folder...'
     u'...Bug... #3 in mozilla-firefox (Debian): \u201cBug Title Test\u201d'

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -12,28 +12,33 @@ __all__ = [
 
 import atexit
 from contextlib import contextmanager
+from datetime import datetime
+from io import BytesIO
 import os
 import shutil
 import socket
-from StringIO import StringIO
 import subprocess
 import sys
 import tempfile
 
 import gpgme
 from lazr.restful.utils import get_current_browser_request
+import pytz
 import requests
 import six
 from six.moves import http_client
 from six.moves.urllib.parse import urlencode
+from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.validators.email import valid_email
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.gpg.interfaces import (
     get_gpg_path,
     get_gpgme_context,
+    GPG_INJECT,
     GPGKeyAlgorithm,
     GPGKeyDoesNotExistOnServer,
     GPGKeyExpired,
@@ -51,6 +56,8 @@ from lp.services.gpg.interfaces import (
     SecretGPGKeyImportDetected,
     valid_fingerprint,
     )
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import ISigningKeySet
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
     TimeoutError,
@@ -166,16 +173,16 @@ class GPGHandler:
 
         if signature:
             # store detach-sig
-            sig = StringIO(signature)
+            sig = BytesIO(signature)
             # store the content
-            plain = StringIO(content)
+            plain = BytesIO(content)
             args = (sig, plain, None)
             timeline_detail = "detached signature"
         else:
             # store clearsigned signature
-            sig = StringIO(content)
+            sig = BytesIO(content)
             # writeable content
-            plain = StringIO()
+            plain = BytesIO()
             args = (sig, None, plain)
             timeline_detail = "clear signature"
 
@@ -213,8 +220,8 @@ class GPGHandler:
     def getVerifiedSignature(self, content, signature=None):
         """See IGPGHandler."""
 
-        assert not isinstance(content, six.text_type)
-        assert not isinstance(signature, six.text_type)
+        assert isinstance(content, bytes)
+        assert signature is None or isinstance(signature, bytes)
 
         ctx = get_gpgme_context()
 
@@ -258,10 +265,10 @@ class GPGHandler:
 
     def importPublicKey(self, content):
         """See IGPGHandler."""
-        assert isinstance(content, str)
+        assert isinstance(content, bytes)
         context = get_gpgme_context()
 
-        newkey = StringIO(content)
+        newkey = BytesIO(content)
         with gpgme_timeline("import", "new public key"):
             result = context.import_(newkey)
 
@@ -288,14 +295,14 @@ class GPGHandler:
 
     def importSecretKey(self, content):
         """See `IGPGHandler`."""
-        assert isinstance(content, str)
+        assert isinstance(content, bytes)
 
         # Make sure that gpg-agent doesn't interfere.
         if 'GPG_AGENT_INFO' in os.environ:
             del os.environ['GPG_AGENT_INFO']
 
         context = get_gpgme_context()
-        newkey = StringIO(content)
+        newkey = BytesIO(content)
         with gpgme_timeline("import", "new secret key"):
             import_result = context.import_(newkey)
 
@@ -318,7 +325,16 @@ class GPGHandler:
         assert key.exists_in_local_keyring
         return key
 
-    def generateKey(self, name):
+    def _injectKeyPair(self, key):
+        """Inject a key pair into the signing service."""
+        secret_key = key.export()
+        public_key = self.retrieveKey(key.fingerprint).export()
+        now = datetime.now().replace(tzinfo=pytz.UTC)
+        getUtility(ISigningKeySet).inject(
+            SigningKeyType.OPENPGP, secret_key, public_key, key.uids[0].name,
+            now)
+
+    def generateKey(self, name, logger=None):
         """See `IGPGHandler`."""
         context = get_gpgme_context()
 
@@ -351,18 +367,33 @@ class GPGHandler:
         assert key.exists_in_local_keyring, (
             'The key does not seem to exist in the local keyring.')
 
+        if getFeatureFlag(GPG_INJECT):
+            if logger is not None:
+                logger.info(
+                    "Injecting key_type %s '%s' into signing service",
+                    SigningKeyType.OPENPGP, name)
+            try:
+                self._injectKeyPair(key)
+            except Exception:
+                with gpgme_timeline("delete", key.fingerprint):
+                    # For clarity this should be allow_secret=True, but
+                    # pygpgme doesn't allow it to be passed as a keyword
+                    # argument.
+                    context.delete(key.key, True)
+                raise
+
         return key
 
     def encryptContent(self, content, key):
         """See IGPGHandler."""
-        if isinstance(content, six.text_type):
-            raise TypeError('Content cannot be Unicode.')
+        if not isinstance(content, bytes):
+            raise TypeError('Content must be bytes.')
 
         ctx = get_gpgme_context()
 
         # setup containers
-        plain = StringIO(content)
-        cipher = StringIO()
+        plain = BytesIO(content)
+        cipher = BytesIO()
 
         if key.key is None:
             return None
@@ -381,8 +412,8 @@ class GPGHandler:
 
     def signContent(self, content, key, password='', mode=None):
         """See IGPGHandler."""
-        if not isinstance(content, str):
-            raise TypeError('Content should be a string.')
+        if not isinstance(content, bytes):
+            raise TypeError('Content must be bytes.')
 
         if mode is None:
             mode = gpgme.SIG_MODE_CLEAR
@@ -393,8 +424,8 @@ class GPGHandler:
         context.signers = [removeSecurityProxy(key.key)]
 
         # Set up containers.
-        plaintext = StringIO(content)
-        signature = StringIO()
+        plaintext = BytesIO(content)
+        signature = BytesIO()
 
         # Make sure that gpg-agent doesn't interfere.
         if 'GPG_AGENT_INFO' in os.environ:
@@ -422,7 +453,7 @@ class GPGHandler:
         # XXX michaeln 2010-05-07 bug=576405
         # Currently gpgme.Context().keylist fails if passed a unicode
         # string even though that's what is returned for fingerprints.
-        if type(filter) == unicode:
+        if isinstance(filter, six.text_type):
             filter = filter.encode('utf-8')
 
         with gpgme_timeline(
@@ -458,12 +489,8 @@ class GPGHandler:
             raise GPGKeyExpired(key)
         return key
 
-    def _submitKey(self, content):
-        """Submit an ASCII-armored public key export to the keyserver.
-
-        It issues a POST at /pks/add on the keyserver specified in the
-        configuration.
-        """
+    def submitKey(self, content):
+        """See `IGPGHandler`."""
         keyserver_http_url = '%s:%s' % (
             config.gpghandler.host, config.gpghandler.port)
 
@@ -496,7 +523,7 @@ class GPGHandler:
             return
 
         pub_key = self.retrieveKey(fingerprint)
-        self._submitKey(pub_key.export())
+        self.submitKey(pub_key.export())
 
     def getURLForKeyInServer(self, fingerprint, action='index', public=False):
         """See IGPGHandler"""
@@ -640,7 +667,7 @@ class PymeKey:
             return p.stdout.read()
 
         context = get_gpgme_context()
-        keydata = StringIO()
+        keydata = BytesIO()
         with gpgme_timeline("export", self.fingerprint):
             context.export(self.fingerprint.encode('ascii'), keydata)
 

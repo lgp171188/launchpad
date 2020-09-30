@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for communication with the Git hosting service."""
@@ -14,13 +14,15 @@ from zope.interface import Interface
 class IGitHostingClient(Interface):
     """Interface for the internal API provided by the Git hosting service."""
 
-    def create(path, clone_from=None):
+    def create(path, clone_from=None, async_create=False):
         """Create a Git repository.
 
         :param path: Physical path of the new repository on the hosting
             service.
         :param clone_from: If not None, clone the new repository from this
             other physical path.
+        :param async_create: Do not block the call until the repository is
+            actually created.
         """
 
     def getProperties(path):

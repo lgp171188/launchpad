@@ -17,8 +17,8 @@ Here's a bug: it has an ETag and values for fields like
 When we add a message to a bug, 'date_last_message' is changed as a
 side effect.
 
-  >>> print webservice.named_post(
-  ...     url, 'newMessage', subject="subject", content="content")
+  >>> print(webservice.named_post(
+  ...     url, 'newMessage', subject="subject", content="content"))
   HTTP/1.1 201 Created
   ...
 
@@ -37,7 +37,7 @@ changed:
 A conditional GET request using the old ETag will fail, and the client
 will hear about the new value for 'date_last_message'.
 
-  >>> print webservice.get(url, headers={'If-None-Match' : old_etag})
+  >>> print(webservice.get(url, headers={'If-None-Match' : old_etag}))
   HTTP/1.1 200 Ok
   ...
 
@@ -70,7 +70,7 @@ conditional write will succeed.
   >>> import simplejson
   >>> data = simplejson.dumps({'title' : 'New title'})
   >>> headers = {'If-Match': old_etag}
-  >>> print webservice.patch(url, 'application/json', data, headers=headers)
+  >>> print(webservice.patch(url, 'application/json', data, headers=headers))
   HTTP/1.1 209 Content Returned
   ...
 
@@ -93,7 +93,7 @@ A conditional write will fail when the write portion of the submitted
 ETag doesn't match, even if the read portion matches.
 
   >>> headers = {'If-Match': new_etag}
-  >>> print webservice.patch(url, 'application/json', data, headers=headers)
+  >>> print(webservice.patch(url, 'application/json', data, headers=headers))
   HTTP/1.1 412 Precondition Failed
   ...
 
@@ -114,7 +114,7 @@ modified by mod_compress as though it were the original ETag.
   >>> etag = webservice.get(url).jsonBody()['http_etag']
 
   >>> headers = {'If-None-Match': etag}
-  >>> print webservice.get(url, headers=headers)
+  >>> print(webservice.get(url, headers=headers))
   HTTP/1.1 304 Not Modified
   ...
 
@@ -122,18 +122,18 @@ Some versions of mod_compress turn '"foo"' into '"foo"-gzip', and some
 versions turn it into '"foo-gzip"'. We treat all three forms the same.
 
   >>> headers = {'If-None-Match': etag + "-gzip"}
-  >>> print webservice.get(url, headers=headers)
+  >>> print(webservice.get(url, headers=headers))
   HTTP/1.1 304 Not Modified
   ...
 
   >>> headers = {'If-None-Match': etag[:-1] + "-gzip" + etag[-1]}
-  >>> print webservice.get(url, headers=headers)
+  >>> print(webservice.get(url, headers=headers))
   HTTP/1.1 304 Not Modified
   ...
 
 Any other modification to the ETag is treated as a distinct ETag.
 
   >>> headers = {'If-None-Match': etag + "-not-gzip"}
-  >>> print webservice.get(url, headers=headers)
+  >>> print(webservice.get(url, headers=headers))
   HTTP/1.1 200 Ok
   ...

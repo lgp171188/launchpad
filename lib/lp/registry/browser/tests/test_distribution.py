@@ -9,23 +9,31 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
-from lazr.restful.interfaces import IJSONRequestCache
+from lazr.restful.fields import Reference
+from lazr.restful.interfaces import (
+    IFieldMarshaller,
+    IJSONRequestCache,
+    )
 import soupmatchers
 from testtools.matchers import (
     MatchesAll,
     MatchesAny,
     Not,
     )
+from zope.component import getMultiAdapter
 from zope.schema.vocabulary import SimpleVocabulary
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
+from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import OCI_PROJECT_ALLOW_CREATE
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.services.webapp.publisher import RedirectionView
+from lp.services.webapp.servers import WebServiceTestRequest
+from lp.services.webapp.vhosts import allvhosts
 from lp.testing import (
     admin_logged_in,
     login_celebrity,
@@ -80,6 +88,57 @@ class TestDistributionNavigation(TestCaseWithFactory):
                 distroseries.distribution.name),
             "http://launchpad.test/%s/%s" % (
                 distroseries.distribution.name, distroseries.name))
+
+    def assertDereferences(self, url, expected_obj, environ=None):
+        field = Reference(schema=IDistroSeries)
+        request = WebServiceTestRequest(environ=environ)
+        request.setVirtualHostRoot(names=["devel"])
+        marshaller = getMultiAdapter((field, request), IFieldMarshaller)
+        self.assertIsInstance(marshaller.dereference_url(url), RedirectionView)
+        self.assertEqual(expected_obj, marshaller.marshall_from_json_data(url))
+
+    def test_new_series_url_supports_object_lookup(self):
+        # New-style +series URLs are compatible with webservice object
+        # lookup.
+        distroseries = self.factory.makeDistroSeries()
+        distroseries_url = "/%s/+series/%s" % (
+            distroseries.distribution.name, distroseries.name)
+        self.assertDereferences(distroseries_url, distroseries)
+
+        # Objects subordinate to the redirected series work too.
+        distroarchseries = self.factory.makeDistroArchSeries(
+            distroseries=distroseries)
+        distroarchseries_url = "/%s/+series/%s/%s" % (
+            distroarchseries.distroseries.distribution.name,
+            distroarchseries.distroseries.name,
+            distroarchseries.architecturetag)
+        self.assertDereferences(distroarchseries_url, distroarchseries)
+
+    def test_new_series_url_supports_object_lookup_https(self):
+        # New-style +series URLs are compatible with webservice object
+        # lookup, even if the vhost is configured to use HTTPS.
+        # "SERVER_URL": None exposes a bug in lazr.restful < 0.22.2.
+        self.addCleanup(allvhosts.reload)
+        self.pushConfig("vhosts", use_https=True)
+        allvhosts.reload()
+
+        distroseries = self.factory.makeDistroSeries()
+        distroseries_url = "/%s/+series/%s" % (
+            distroseries.distribution.name, distroseries.name)
+        self.assertDereferences(
+            distroseries_url, distroseries,
+            environ={"HTTPS": "on", "SERVER_URL": None})
+
+        # Objects subordinate to the redirected series work too.
+        distroarchseries = self.factory.makeDistroArchSeries(
+            distroseries=distroseries)
+        distroarchseries_url = "/%s/+series/%s/%s" % (
+            distroarchseries.distroseries.distribution.name,
+            distroarchseries.distroseries.name,
+            distroarchseries.architecturetag)
+        self.assertDereferences(
+            distroarchseries_url, distroarchseries,
+            environ={"HTTPS": "on", "SERVER_URL": None})
 
 
 class TestDistributionPage(TestCaseWithFactory):

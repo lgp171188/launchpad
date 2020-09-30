@@ -152,7 +152,7 @@ class POHeader:
 
     def _emitSyntaxWarning(self, message):
         """Issue syntax warning, add to warnings list."""
-        self.syntax_warnings.append(unicode(POSyntaxWarning(message)))
+        self.syntax_warnings.append(six.text_type(POSyntaxWarning(message)))
 
     def _getHeaderDict(self, raw_header):
         """Return dictionary with all keys in raw_header.
@@ -190,11 +190,11 @@ class POHeader:
             return text
         charset = self.charset
         try:
-            text = unicode(text, charset)
+            text = text.decode(charset)
         except UnicodeError:
             self._emitSyntaxWarning(
                 'String is not in declared charset %r' % charset)
-            text = unicode(text, charset, 'replace')
+            text = text.decode(charset, 'replace')
         except LookupError:
             raise TranslationFormatInvalidInputError(
                 message='Unknown charset %r' % charset)
@@ -460,7 +460,8 @@ class POParser(object):
     def _emitSyntaxWarning(self, message):
         warning = POSyntaxWarning(message, line_number=self._lineno)
         if self._translation_file:
-            self._translation_file.syntax_warnings.append(unicode(warning))
+            self._translation_file.syntax_warnings.append(
+                six.text_type(warning))
 
     def _decode(self):
         # is there anything to convert?

@@ -5,6 +5,7 @@ import datetime
 import re
 
 import pytz
+import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.datetime import (
     DateTimeError,
@@ -199,7 +200,7 @@ class DelimitedListWidget(TextAreaWidget):
     # The default splitting function, which splits on
     # white-space. Subclasses can override this if different
     # delimiting rules are needed.
-    split = staticmethod(unicode.split)
+    split = staticmethod(six.text_type.split)
 
     # The default joining function, which simply separates each list
     # item with a newline. Subclasses can override this if different

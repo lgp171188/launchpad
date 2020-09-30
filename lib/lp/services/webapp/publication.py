@@ -19,6 +19,7 @@ from lazr.uri import (
     URI,
     )
 from psycopg2.extensions import TransactionRollbackError
+import six
 from six.moves.urllib.parse import quote
 from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
@@ -73,6 +74,7 @@ from lp.services.database.policy import LaunchpadDatabasePolicy
 from lp.services.features.flags import NullFeatureController
 from lp.services.oauth.interfaces import IOAuthSignedRequest
 from lp.services.osutils import open_for_writing
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 import lp.services.webapp.adapter as da
 from lp.services.webapp.interfaces import (
     FinishReadOnlyRequestEvent,
@@ -247,7 +249,7 @@ class LaunchpadBrowserPublication(
         threadrequestfile = open_for_writing(
             'logs/thread-%s.request' % threadid, 'w')
         try:
-            request_txt = unicode(request).encode('UTF-8')
+            request_txt = six.text_type(request).encode('UTF-8')
         except Exception:
             request_txt = 'Exception converting request to string\n\n'
             try:
@@ -426,13 +428,12 @@ class LaunchpadBrowserPublication(
         request.setInWSGIEnvironment(
             'launchpad.userid', request.principal.id)
 
-        # The view may be security proxied
-        view = removeSecurityProxy(ob)
-        # It's possible that the view is a bound method.
-        view = getattr(view, '__self__', view)
-        context = removeSecurityProxy(getattr(view, 'context', None))
-        pageid = self.constructPageID(view, context)
-        request.setInWSGIEnvironment('launchpad.pageid', pageid)
+        # pageid is calculated at `afterTraversal`, but can be missing
+        # if callObject is used directly, so either use the one we've got
+        # or work it out.
+        pageid = request._orig_env.get('launchpad.pageid')
+        if not pageid:
+            pageid = self._setPageIDInEnvironment(request, ob)
         # And spit the pageid out to our tracelog.
         tracelog(request, 'p', pageid)
 
@@ -484,6 +485,12 @@ class LaunchpadBrowserPublication(
             publication_thread_duration = None
         request.setInWSGIEnvironment(
             'launchpad.publicationduration', publication_duration)
+        # Update statsd, timing is in milliseconds
+        getUtility(IStatsdClient).timing(
+            'publication_duration,success=True,pageid={}'.format(
+                self._prepPageIDForMetrics(
+                    request._orig_env.get('launchpad.pageid'))),
+            publication_duration * 1000)
 
         # Calculate SQL statement statistics.
         sql_statements = da.get_request_statements()
@@ -551,6 +558,23 @@ class LaunchpadBrowserPublication(
             request.traversed_objects.append(ob)
         notify(BeforeTraverseEvent(ob, request))
 
+    def _setPageIDInEnvironment(self, request, view):
+        """Set the page ID in the WSGI environment."""
+        # The view may be security proxied
+        view = removeSecurityProxy(view)
+        # It's possible that the view is a bound method.
+        view = getattr(view, '__self__', view)
+        context = removeSecurityProxy(getattr(view, 'context', None))
+        pageid = self.constructPageID(view, context)
+        request.setInWSGIEnvironment('launchpad.pageid', pageid)
+        return pageid
+
+    def _prepPageIDForMetrics(self, pageid):
+        """Remove characters from PageID that can't be used in statsd."""
+        if not pageid:
+            return pageid
+        return re.sub('[^0-9a-zA-Z]+', '-', pageid)
+
     def afterTraversal(self, request, ob):
         """See zope.publisher.interfaces.IPublication.
 
@@ -561,12 +585,19 @@ class LaunchpadBrowserPublication(
         # Log the URL including vhost information to the ZServer tracelog.
         tracelog(request, 'u', request.getURL())
 
+        pageid = self._setPageIDInEnvironment(request, ob)
+
         assert hasattr(request, '_traversal_start'), (
             'request._traversal_start, which should have been set by '
             'beforeTraversal(), was not found.')
         traversal_duration = time.time() - request._traversal_start
         request.setInWSGIEnvironment(
             'launchpad.traversalduration', traversal_duration)
+        # Update statsd, timing is in milliseconds
+        getUtility(IStatsdClient).timing(
+            'traversal_duration,success=True,pageid={}'.format(
+                self._prepPageIDForMetrics(pageid)),
+            traversal_duration * 1000)
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
                 _get_thread_time() - request._traversal_thread_start)
@@ -599,6 +630,12 @@ class LaunchpadBrowserPublication(
             publication_duration = now - request._publication_start
             request.setInWSGIEnvironment(
                 'launchpad.publicationduration', publication_duration)
+            # Update statsd, timing is in milliseconds
+            getUtility(IStatsdClient).timing(
+                'publication_duration,success=False,pageid={}'.format(
+                    self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid'))),
+                publication_duration * 1000)
             if thread_now is not None:
                 publication_thread_duration = (
                     thread_now - request._publication_thread_start)
@@ -611,6 +648,12 @@ class LaunchpadBrowserPublication(
             traversal_duration = now - request._traversal_start
             request.setInWSGIEnvironment(
                 'launchpad.traversalduration', traversal_duration)
+            # Update statsd, timing is in milliseconds
+            getUtility(IStatsdClient).timing(
+                'traversal_duration,success=False,pageid={}'.format(
+                    self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid'))
+                ), traversal_duration * 1000)
             if thread_now is not None:
                 traversal_thread_duration = (
                     thread_now - request._traversal_thread_start)
@@ -727,6 +770,7 @@ class LaunchpadBrowserPublication(
         da.clear_request_started()
 
         getUtility(IOpenLaunchBag).clear()
+        statsd_client = getUtility(IStatsdClient)
 
         # Maintain operational statistics.
         if getattr(request, '_wants_retry', False):
@@ -744,10 +788,13 @@ class LaunchpadBrowserPublication(
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
                     OpStats.stats['404s'] += 1
+                    statsd_client.incr('errors.404')
                 elif status == 500:  # Unhandled exceptions
                     OpStats.stats['500s'] += 1
+                    statsd_client.incr('errors.500')
                 elif status == 503:  # Timeouts
                     OpStats.stats['503s'] += 1
+                    statsd_client.incr('errors.503')
 
                 # Increment counters for status code groups.
                 status_group = str(status)[0] + 'XXs'
@@ -756,6 +803,7 @@ class LaunchpadBrowserPublication(
                 # Increment counter for 5XXs_b.
                 if is_browser(request) and status_group == '5XXs':
                     OpStats.stats['5XXs_b'] += 1
+                    statsd_client.incr('errors.5XX')
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name

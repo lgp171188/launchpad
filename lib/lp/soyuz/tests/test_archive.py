@@ -4046,7 +4046,7 @@ class TestSigningKeyPropagation(TestCaseWithFactory):
 
     def test_ppa_created_with_no_signing_key(self):
         ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
-        self.assertIsNone(ppa.signing_key)
+        self.assertIsNone(ppa.signing_key_fingerprint)
 
     def test_default_signing_key_propagated_to_new_ppa(self):
         person = self.factory.makePerson()

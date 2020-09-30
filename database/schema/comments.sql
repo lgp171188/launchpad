@@ -1353,10 +1353,6 @@ COMMENT ON COLUMN SourcePackageRelease.urgency IS 'The urgency of the
 upload. This is generally used to prioritise buildd activity but may also be
 used for "testing" systems or security work in the future. The "urgency" is
 set by the uploader, in the DSC file.';
-COMMENT ON COLUMN SourcePackageRelease.dscsigningkey IS 'The GPG key used to
-sign the DSC. This is not necessarily the maintainer''s key, or the
-creator''s key. For example, it''s possible to produce a package, then ask a
-sponsor to upload it.';
 COMMENT ON COLUMN SourcePackageRelease.component IS 'The component in which
 this sourcepackagerelease is intended (by the uploader) to reside. E.g.
 main, universe, restricted. Note that the distribution managers will often
@@ -1921,7 +1917,6 @@ COMMENT ON COLUMN Archive.pending_count IS 'How many packages still need buildin
 COMMENT ON COLUMN Archive.succeeded_count IS 'How many source packages were built sucessfully?';
 COMMENT ON COLUMN Archive.failed_count IS 'How many packages failed to build?';
 COMMENT ON COLUMN Archive.building_count IS 'How many packages are building at present?';
-COMMENT ON COLUMN Archive.signing_key IS 'The GpgKey used for signing this archive.';
 COMMENT ON COLUMN Archive.removed_binary_retention_days IS 'The number of days before superseded or deleted binary files are expired in the librarian, or zero for never.';
 COMMENT ON COLUMN Archive.num_old_versions_published IS 'The number of versions of a package to keep published before older versions are superseded.';
 COMMENT ON COLUMN Archive.relative_build_score IS 'A delta to the build score that is applied to all builds in this archive.';

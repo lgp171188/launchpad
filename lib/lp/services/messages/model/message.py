@@ -10,7 +10,6 @@ __all__ = [
     'UserToUserEmail',
     ]
 
-from cStringIO import StringIO as cStringIO
 from datetime import datetime
 import email
 from email.header import (
@@ -23,6 +22,7 @@ from email.utils import (
     parseaddr,
     parsedate_tz,
     )
+from io import BytesIO
 import logging
 from operator import attrgetter
 import os.path
@@ -153,7 +153,7 @@ class Message(SQLBase):
 
     @classmethod
     def chunks_text(cls, chunks):
-        bits = [unicode(chunk) for chunk in chunks if chunk.content]
+        bits = [six.text_type(chunk) for chunk in chunks if chunk.content]
         return '\n\n'.join(bits)
 
     # XXX flacoste 2006-09-08: Bogus attribute only present so that
@@ -270,7 +270,7 @@ class MessageSet:
             re_encoded_bits.append(
                 (self.decode(bytes, charset).encode('utf-8'), 'utf-8'))
 
-        return unicode(email.header.make_header(re_encoded_bits))
+        return six.text_type(email.header.make_header(re_encoded_bits))
 
     def fromEmail(self, email_message, owner=None, filealias=None,
                   parsed_message=None, create_missing_persons=False,
@@ -460,7 +460,7 @@ class MessageSet:
                 if len(content) > 0:
                     blob = getUtility(ILibraryFileAliasSet).create(
                         name=filename, size=len(content),
-                        file=cStringIO(content), contentType=content_type,
+                        file=BytesIO(content), contentType=content_type,
                         restricted=restricted)
                     MessageChunk(message=message, sequence=sequence, blob=blob)
                     sequence += 1
@@ -571,8 +571,8 @@ class UserToUserEmail(Storm):
         # Initialize.
         self.sender = sender
         self.recipient = recipient
-        self.message_id = unicode(message_id, 'ascii')
-        self.subject = unicode(make_header(decode_header(subject)))
+        self.message_id = six.ensure_text(message_id, 'ascii')
+        self.subject = six.text_type(make_header(decode_header(subject)))
         # Add the object to the store of the sender.  Our StormMigrationGuide
         # recommends against this saying "Note that the constructor should not
         # usually add the object to a store -- leave that for a FooSet.new()

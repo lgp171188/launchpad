@@ -772,10 +772,10 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
             archive=self.archive)
         orig_tarball = 'test-source_1.0.orig.tar.gz'
         prev_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent='aaabbbccc')
+            orig_tarball, filecontent=b'aaabbbccc')
         prev_source.sourcepackagerelease.addFile(prev_tar)
         new_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent='zzzyyyxxx')
+            orig_tarball, filecontent=b'zzzyyyxxx')
         spr.addFile(new_tar)
         # Commit to ensure librarian files are written.
         self.layer.txn.commit()
@@ -792,10 +792,10 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
             archive=self.archive)
         orig_tarball = 'test-source_1.0.orig.tar.gz'
         prev_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent='aaabbbccc')
+            orig_tarball, filecontent=b'aaabbbccc')
         prev_source.sourcepackagerelease.addFile(prev_tar)
         new_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent='aaabbbccc')
+            orig_tarball, filecontent=b'aaabbbccc')
         spr.addFile(new_tar)
         # Commit to ensure librarian files are written.
         self.layer.txn.commit()
@@ -810,10 +810,10 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
             archive=self.archive)
         orig_tarball = 'test-source_1.0.orig.tar.gz'
         prev_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent='aaabbbccc')
+            orig_tarball, filecontent=b'aaabbbccc')
         prev_source.sourcepackagerelease.addFile(prev_tar)
         new_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent='aaabbbccc')
+            orig_tarball, filecontent=b'aaabbbccc')
         spr.addFile(new_tar)
         # Set previous source tarball to be expired.
         with dbuser('librarian'):

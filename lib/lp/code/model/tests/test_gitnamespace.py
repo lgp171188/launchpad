@@ -24,6 +24,7 @@ from lp.code.errors import (
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
     )
+from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitnamespace import (
     get_git_namespace,
     IGitNamespace,
@@ -45,10 +46,12 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantFlatSource,
     IAccessPolicySource,
     )
+from lp.services.compat import mock
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -99,6 +102,36 @@ class NamespaceMixin:
         repository = namespace.createRepository(
             GitRepositoryType.HOSTED, registrant, repository_name)
         self.assertEqual([owner], list(repository.subscribers))
+
+    def test_createRepository_creates_on_githosting_sync(self):
+        hosting_client = mock.Mock()
+        self.useFixture(ZopeUtilityFixture(hosting_client, IGitHostingClient))
+        owner = self.factory.makeTeam()
+        namespace = self.getNamespace(owner)
+        repository_name = self.factory.getUniqueUnicode()
+        registrant = owner.teamowner
+        repository = namespace.createRepository(
+            GitRepositoryType.HOSTED, registrant, repository_name,
+            with_hosting=True)
+        path = repository.getInternalPath()
+        self.assertEqual(
+            [mock.call(path, clone_from=None, async_create=False)],
+            hosting_client.create.call_args_list)
+
+    def test_createRepository_creates_on_githosting_async(self):
+        hosting_client = mock.Mock()
+        self.useFixture(ZopeUtilityFixture(hosting_client, IGitHostingClient))
+        owner = self.factory.makeTeam()
+        namespace = self.getNamespace(owner)
+        repository_name = self.factory.getUniqueUnicode()
+        registrant = owner.teamowner
+        repository = namespace.createRepository(
+            GitRepositoryType.HOSTED, registrant, repository_name,
+            with_hosting=True, async_hosting=True)
+        path = repository.getInternalPath()
+        self.assertEqual(
+            [mock.call(path, clone_from=None, async_create=True)],
+            hosting_client.create.call_args_list)
 
     def test_getRepositories_no_repositories(self):
         # getRepositories on an IGitNamespace returns a result set of

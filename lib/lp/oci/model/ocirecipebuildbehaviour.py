@@ -97,6 +97,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
 
         args['build_file'] = build.recipe.build_file
         args['build_args'] = build.recipe.build_args
+        args['build_path'] = build.recipe.build_path
 
         if build.recipe.git_ref is not None:
             args["git_repository"] = (

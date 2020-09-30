@@ -14,6 +14,7 @@ from lazr.batchnavigator.interfaces import InvalidBatchSizeError
 from lazr.restful.declarations import error_status
 import oops_amqp
 import pytz
+import six
 from six.moves import http_client
 import testtools
 from timeline.timeline import Timeline
@@ -655,5 +656,5 @@ class TestHooks(testtools.TestCase):
             'http_request': {'SIMPLE': 'string', 'COMPLEX': complexthing}}
         attach_http_request(report, context)
         self.assertEqual(
-            {'SIMPLE': 'string', 'COMPLEX': unicode(complexthing)},
+            {'SIMPLE': 'string', 'COMPLEX': six.text_type(complexthing)},
             report['req_vars'])

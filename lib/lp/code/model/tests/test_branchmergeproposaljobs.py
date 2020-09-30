@@ -17,6 +17,7 @@ from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.interfaces import IObjectModifiedEvent
 import pytz
+import six
 from sqlobject import SQLObjectNotFound
 from storm.locals import Select
 from storm.store import Store
@@ -279,7 +280,7 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         committer = self.factory.makePerson()
         self.hosting_fixture.getLog.result = [
             {
-                "sha1": unicode(hashlib.sha1("tip").hexdigest()),
+                "sha1": six.ensure_text(hashlib.sha1("tip").hexdigest()),
                 "message": "Fix upside-down messages\n\nLP: #%d" % bug.id,
                 "committer": {
                     "name": committer.display_name,

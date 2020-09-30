@@ -466,7 +466,7 @@ class Archive(SQLBase):
         return (
             not config.personalpackagearchive.require_signing_keys or
             not self.is_ppa or
-            self.signing_key is not None)
+            self.signing_key_fingerprint is not None)
 
     @property
     def reference(self):
@@ -1175,7 +1175,7 @@ class Archive(SQLBase):
 
     def _addArchiveDependency(self, dependency, pocket, component=None):
         """See `IArchive`."""
-        if isinstance(component, basestring):
+        if isinstance(component, six.string_types):
             try:
                 component = getUtility(IComponentSet)[component]
             except NotFoundError as e:
@@ -1430,9 +1430,9 @@ class Archive(SQLBase):
     def _checkUpload(self, person, distroseries, sourcepackagename, component,
                     pocket, strict_component=True):
         """See `IArchive`."""
-        if isinstance(component, basestring):
+        if isinstance(component, six.string_types):
             component = getUtility(IComponentSet)[component]
-        if isinstance(sourcepackagename, basestring):
+        if isinstance(sourcepackagename, six.string_types):
             sourcepackagename = getUtility(
                 ISourcePackageNameSet)[sourcepackagename]
         reason = self.checkUpload(person, distroseries, sourcepackagename,
@@ -1547,7 +1547,7 @@ class Archive(SQLBase):
         if self.is_ppa:
             if IComponent.providedBy(component_name):
                 name = component_name.name
-            elif isinstance(component_name, basestring):
+            elif isinstance(component_name, six.string_types):
                 name = component_name
             else:
                 name = None
@@ -1983,7 +1983,7 @@ class Archive(SQLBase):
         reason = self.checkUploadToPocket(series, pocket, person=person)
         if reason:
             # Wrap any forbidden-pocket error in CannotCopy.
-            raise CannotCopy(unicode(reason))
+            raise CannotCopy(six.text_type(reason))
 
         # Perform the copy, may raise CannotCopy. Don't do any further
         # permission checking: this method is protected by
@@ -2717,10 +2717,12 @@ class ArchiveSet:
                     (owner.name, distribution.name, name))
 
         # Signing-key for the default PPA is reused when it's already present.
-        signing_key = None
+        signing_key_owner = None
+        signing_key_fingerprint = None
         if purpose == ArchivePurpose.PPA:
             if owner.archive is not None:
-                signing_key = owner.archive.signing_key
+                signing_key_owner = owner.archive.signing_key_owner
+                signing_key_fingerprint = owner.archive.signing_key_fingerprint
             else:
                 # owner.archive is a cached property and we've just cached it.
                 del get_property_cache(owner).archive
@@ -2729,9 +2731,8 @@ class ArchiveSet:
             owner=owner, distribution=distribution, name=name,
             displayname=displayname, description=description,
             purpose=purpose, publish=publish,
-            signing_key_owner=signing_key.owner if signing_key else None,
-            signing_key_fingerprint=(
-                signing_key.fingerprint if signing_key else None),
+            signing_key_owner=signing_key_owner,
+            signing_key_fingerprint=signing_key_fingerprint,
             require_virtualized=require_virtualized)
 
         # Upon creation archives are enabled by default.
