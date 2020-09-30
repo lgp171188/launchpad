@@ -698,11 +698,12 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             OCI project: %s
             Source: ~test-person/\\+git/recipe-repository:master
             Build file path: Dockerfile
+            Build context directory: %s
             Build schedule: Built on request
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago 386
-            """ % (oci_project_name, oci_project_display),
+            """ % (oci_project_name, oci_project_display, recipe.build_path),
             self.getMainText(build.recipe))
 
     def test_index_success_with_buildlog(self):
