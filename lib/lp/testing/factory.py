@@ -4961,7 +4961,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                       oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
                       build_file=None, date_created=DEFAULT,
-                      allow_internet=True):
+                      allow_internet=True, build_path=None):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -4977,6 +4977,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             [git_ref] = self.makeGitRefs()
         if build_file is None:
             build_file = self.getUniqueUnicode(u"build_file_for")
+        if build_path is None:
+            build_path = self.getUniqueUnicode(u"build_path_for")
         return getUtility(IOCIRecipeSet).new(
             name=name,
             registrant=registrant,
@@ -4984,6 +4986,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             oci_project=oci_project,
             git_ref=git_ref,
             build_file=build_file,
+            build_path=build_path,
             description=description,
             official=official,
             require_virtualized=require_virtualized,

@@ -388,6 +388,14 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         readonly=False))
 
+    build_path = exported(TextLine(
+        title=_("Build directory context"),
+        description=_("Directory to use for build context "
+                      "and OCIRecipe.build_file location."),
+        constraint=path_does_not_escape,
+        required=True,
+        readonly=False))
+
     build_daily = exported(Bool(
         title=_("Build daily"),
         required=True,
