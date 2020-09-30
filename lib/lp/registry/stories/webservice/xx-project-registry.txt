@@ -64,33 +64,33 @@ host.
     >>> mozilla = webservice.get('/mozilla').jsonBody()
     >>> pprint_entry(mozilla)
     active: True
-    active_milestones_collection_link: u'http://.../mozilla/active_milestones'
-    all_milestones_collection_link: u'http://.../mozilla/all_milestones'
+    active_milestones_collection_link: 'http://.../mozilla/active_milestones'
+    all_milestones_collection_link: 'http://.../mozilla/all_milestones'
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
     bug_tracker_link: None
-    date_created: u'...'
-    description: u'The Mozilla Project...'
-    display_name: u'The Mozilla Project'
+    date_created: '...'
+    description: 'The Mozilla Project...'
+    display_name: 'The Mozilla Project'
     driver_link: None
     freshmeat_project: None
     homepage_content: None
-    homepage_url: u'http://www.mozilla.org/'
-    icon_link: u'http://.../mozilla/icon'
-    logo_link: u'http://.../mozilla/logo'
-    mugshot_link: u'http://.../mozilla/mugshot'
-    name: u'mozilla'
+    homepage_url: 'http://www.mozilla.org/'
+    icon_link: 'http://.../mozilla/icon'
+    logo_link: 'http://.../mozilla/logo'
+    mugshot_link: 'http://.../mozilla/mugshot'
+    name: 'mozilla'
     official_bug_tags: []
-    owner_link: u'http://.../~name12'
-    projects_collection_link: u'http://.../mozilla/projects'
-    registrant_link: u'http://.../~name12'
-    resource_type_link: u'...'
+    owner_link: 'http://.../~name12'
+    projects_collection_link: 'http://.../mozilla/projects'
+    registrant_link: 'http://.../~name12'
+    resource_type_link: '...'
     reviewed: False
-    self_link: u'http://.../mozilla'
+    self_link: 'http://.../mozilla'
     sourceforge_project: None
-    summary: u'The Mozilla Project...'
-    title: u'The Mozilla Project'
-    web_link: u'http://launchpad.../mozilla'
+    summary: 'The Mozilla Project...'
+    title: 'The Mozilla Project'
+    web_link: 'http://launchpad.../mozilla'
     wiki_url: None
 
 The milestones can be accessed through the
@@ -151,59 +151,59 @@ Projects are available at their canonical URL on the API virtual host.
     >>> firefox = webservice.get('/firefox').jsonBody()
     >>> pprint_entry(firefox)
     active: True
-    active_milestones_collection_link: u'http://.../firefox/active_milestones'
-    all_milestones_collection_link: u'http://.../firefox/all_milestones'
-    brand_link: u'http://.../firefox/brand'
+    active_milestones_collection_link: 'http://.../firefox/active_milestones'
+    all_milestones_collection_link: 'http://.../firefox/all_milestones'
+    brand_link: 'http://.../firefox/brand'
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
     bug_supervisor_link: None
     bug_tracker_link: None
     commercial_subscription_is_due: False
     commercial_subscription_link: None
-    date_created: u'2004-09-24T20:58:02.185708+00:00'
+    date_created: '2004-09-24T20:58:02.185708+00:00'
     date_next_suggest_packaging: None
-    description: u'The Mozilla Firefox web browser'
-    development_focus_link: u'http://.../firefox/trunk'
-    display_name: u'Mozilla Firefox'
+    description: 'The Mozilla Firefox web browser'
+    development_focus_link: 'http://.../firefox/trunk'
+    display_name: 'Mozilla Firefox'
     download_url: None
     driver_link: None
     freshmeat_project: None
     homepage_url: None
-    icon_link: u'http://.../firefox/icon'
-    information_type: u'Public'
+    icon_link: 'http://.../firefox/icon'
+    information_type: 'Public'
     is_permitted: True
     license_approved: False
     license_info: None
     licenses: [u'MIT / X / Expat Licence']
-    logo_link: u'http://.../firefox/logo'
-    name: u'firefox'
+    logo_link: 'http://.../firefox/logo'
+    name: 'firefox'
     official_answers: True
     official_blueprints: False
     official_bug_tags: []
     official_bugs: True
     official_codehosting: False
-    owner_link: u'http://.../~name12'
+    owner_link: 'http://.../~name12'
     private: False
     private_bugs: False
     programming_language: None
-    project_group_link: u'http://.../mozilla'
+    project_group_link: 'http://.../mozilla'
     project_reviewed: False
     qualifies_for_free_hosting: True
-    recipes_collection_link: u'http://.../firefox/recipes'
-    registrant_link: u'http://.../~name12'
-    releases_collection_link: u'http://.../firefox/releases'
+    recipes_collection_link: 'http://.../firefox/recipes'
+    registrant_link: 'http://.../~name12'
+    releases_collection_link: 'http://.../firefox/releases'
     remote_product: None
-    resource_type_link: u'http://.../#project'
+    resource_type_link: 'http://.../#project'
     reviewer_whiteboard: None
     screenshots_url: None
-    self_link: u'http://.../firefox'
-    series_collection_link: u'http://.../firefox/series'
+    self_link: 'http://.../firefox'
+    series_collection_link: 'http://.../firefox/series'
     sourceforge_project: None
-    summary: u'The Mozilla Firefox web browser'
-    title: u'Mozilla Firefox'
+    summary: 'The Mozilla Firefox web browser'
+    title: 'Mozilla Firefox'
     translation_focus_link: None
     vcs: None
-    web_link: u'http://launchpad.../firefox'
+    web_link: 'http://launchpad.../firefox'
     wiki_url: None
 
 In Launchpad project names may not have uppercase letters in their
@@ -665,9 +665,9 @@ functionality at an object called the pillar set.
 
     >>> pillar_set = webservice.get("/pillars").jsonBody()
     >>> pprint_entry(pillar_set)
-    featured_pillars_collection_link: u'http://.../pillars/featured_pillars'
-    resource_type_link: u'...'
-    self_link: u'...'
+    featured_pillars_collection_link: 'http://.../pillars/featured_pillars'
+    resource_type_link: '...'
+    self_link: '...'
 
 The featured pillars are available as a separate collection. Because
 they're of different resource types, the best way to compare them is by
@@ -727,28 +727,28 @@ virtual host.
     >>> pprint_entry(babadoo_foobadoo)
     active: True
     active_milestones_collection_link:
-            u'http://.../babadoo/foobadoo/active_milestones'
+            'http://.../babadoo/foobadoo/active_milestones'
     all_milestones_collection_link:
-            u'http://.../babadoo/foobadoo/all_milestones'
-    branch_link: u'http://.../~babadoo-owner/babadoo/fooey'
+            'http://.../babadoo/foobadoo/all_milestones'
+    branch_link: 'http://.../~babadoo-owner/babadoo/fooey'
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
-    date_created: u'...'
-    display_name: u'foobadoo'
+    date_created: '...'
+    display_name: 'foobadoo'
     driver_link: None
-    drivers_collection_link: u'http://.../babadoo/foobadoo/drivers'
-    name: u'foobadoo'
+    drivers_collection_link: 'http://.../babadoo/foobadoo/drivers'
+    name: 'foobadoo'
     official_bug_tags: []
-    owner_link: u'http://.../~babadoo-owner'
-    project_link: u'http://.../babadoo'
+    owner_link: 'http://.../~babadoo-owner'
+    project_link: 'http://.../babadoo'
     release_finder_url_pattern: None
-    releases_collection_link: u'http://.../babadoo/foobadoo/releases'
-    resource_type_link: u'...'
-    self_link: u'http://.../babadoo/foobadoo'
-    status: u'Active Development'
-    summary: u'Foobadoo support for Babadoo'
-    title: u'Babadoo foobadoo series'
-    web_link: u'http://launchpad.../babadoo/foobadoo'
+    releases_collection_link: 'http://.../babadoo/foobadoo/releases'
+    resource_type_link: '...'
+    self_link: 'http://.../babadoo/foobadoo'
+    status: 'Active Development'
+    summary: 'Foobadoo support for Babadoo'
+    title: 'Babadoo foobadoo series'
+    web_link: 'http://launchpad.../babadoo/foobadoo'
 
 "get_timeline" returns a lightweight representation of the series'
 milestones and releases.
@@ -840,20 +840,20 @@ host.
 
     >>> firefox_1_0_0 = webservice.get('/firefox/1.0/1.0.0').jsonBody()
     >>> pprint_entry(firefox_1_0_0)
-    changelog: u''
-    date_created: u'2005-06-06T08:59:51.930201+00:00'
-    date_released: u'2004-06-28T00:00:00+00:00'
-    display_name: u'Mozilla Firefox 1.0.0'
-    files_collection_link: u'http://.../firefox/1.0/1.0.0/files'
-    milestone_link: u'http://.../firefox/+milestone/1.0.0'
-    owner_link: u'http://.../~name12'
-    project_link: u'http://.../firefox'
-    release_notes: u'...'
-    resource_type_link: u'...'
-    self_link: u'http://.../firefox/1.0/1.0.0'
-    title: u'Mozilla Firefox 1.0.0 "First Stable Release"'
-    version: u'1.0.0'
-    web_link: u'http://launchpad.../firefox/1.0/1.0.0'
+    changelog: ''
+    date_created: '2005-06-06T08:59:51.930201+00:00'
+    date_released: '2004-06-28T00:00:00+00:00'
+    display_name: 'Mozilla Firefox 1.0.0'
+    files_collection_link: 'http://.../firefox/1.0/1.0.0/files'
+    milestone_link: 'http://.../firefox/+milestone/1.0.0'
+    owner_link: 'http://.../~name12'
+    project_link: 'http://.../firefox'
+    release_notes: '...'
+    resource_type_link: '...'
+    self_link: 'http://.../firefox/1.0/1.0.0'
+    title: 'Mozilla Firefox 1.0.0 "First Stable Release"'
+    version: '1.0.0'
+    web_link: 'http://launchpad.../firefox/1.0/1.0.0'
 
 The createProductRelease method is called by sending
 "ws.op=createProductRelease" as a request variable along with the
@@ -920,18 +920,18 @@ virtual host.
     ...     '/firefox/+milestone/1.0').jsonBody()
     >>> pprint_entry(firefox_milestone_1_0)
     code_name: None
-    date_targeted: u'2056-10-16'
+    date_targeted: '2056-10-16'
     is_active: True
-    name: u'1.0'
+    name: '1.0'
     official_bug_tags: []
     release_link: None
-    resource_type_link: u'...'
-    self_link: u'http://.../firefox/+milestone/1.0'
-    series_target_link: u'http://.../firefox/trunk'
+    resource_type_link: '...'
+    self_link: 'http://.../firefox/+milestone/1.0'
+    series_target_link: 'http://.../firefox/trunk'
     summary: None
-    target_link: u'http://.../firefox'
-    title: u'Mozilla Firefox 1.0'
-    web_link: u'http://launchpad.../firefox/+milestone/1.0'
+    target_link: 'http://.../firefox'
+    title: 'Mozilla Firefox 1.0'
+    web_link: 'http://launchpad.../firefox/+milestone/1.0'
 
 The milestone entry has a link to its release if it has one.
 
@@ -966,17 +966,17 @@ virtual host.
     >>> url = '/firefox/trunk/0.9.2/+file/firefox_0.9.2.orig.tar.gz'
     >>> result = webservice.get(url).jsonBody()
     >>> pprint_entry(result)
-    date_uploaded: u'2005-06-06T08:59:51.926792+00:00'
+    date_uploaded: '2005-06-06T08:59:51.926792+00:00'
     description: None
     file_link:
-        u'http://.../firefox/trunk/0.9.2/+file/firefox_0.9.2.orig.tar.gz/file'
-    file_type: u'Code Release Tarball'
-    project_release_link: u'http://.../firefox/trunk/0.9.2'
-    resource_type_link: u'http://.../#project_release_file'
+        'http://.../firefox/trunk/0.9.2/+file/firefox_0.9.2.orig.tar.gz/file'
+    file_type: 'Code Release Tarball'
+    project_release_link: 'http://.../firefox/trunk/0.9.2'
+    resource_type_link: 'http://.../#project_release_file'
     self_link:
-        u'http://.../firefox/trunk/0.9.2/+file/firefox_0.9.2.orig.tar.gz'
+        'http://.../firefox/trunk/0.9.2/+file/firefox_0.9.2.orig.tar.gz'
     signature_link:
-        u'http://.../trunk/0.9.2/+file/firefox_0.9.2.orig.tar.gz/signature'
+        'http://.../trunk/0.9.2/+file/firefox_0.9.2.orig.tar.gz/signature'
 
 The actual file redirects to the librarian when accessed.
 

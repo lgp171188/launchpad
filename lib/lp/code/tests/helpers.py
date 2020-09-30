@@ -28,6 +28,7 @@ from itertools import count
 
 from breezy.plugins.builder.recipe import RecipeParser
 import fixtures
+import six
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import (
@@ -170,7 +171,7 @@ def make_package_branches(factory, series, sourcepackagename, branch_count,
     Make `branch_count` branches, and make `official_count` of those
     official branches.
     """
-    if zisinstance(sourcepackagename, basestring):
+    if zisinstance(sourcepackagename, six.string_types):
         sourcepackagename = factory.getOrMakeSourcePackageName(
             sourcepackagename)
     # Make the branches created in the past in order.
@@ -354,7 +355,7 @@ class GitHostingFixture(fixtures.Fixture):
                  merges=None, blob=None, disable_memcache=True):
         self.create = FakeMethod()
         self.getProperties = FakeMethod(
-            result={"default_branch": default_branch})
+            result={"default_branch": default_branch, "is_available": True})
         self.setProperties = FakeMethod()
         self.getRefs = FakeMethod(result=({} if refs is None else refs))
         self.getCommits = FakeMethod(

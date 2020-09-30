@@ -171,10 +171,11 @@ class BuilderSlave(object):
         :param pool: Used by tests to override the HTTPConnectionPool.
         :param process_pool: Used by tests to override the ProcessPool.
         """
-        rpc_url = urlappend(builder_url.encode('utf-8'), 'rpc')
+        rpc_url = urlappend(builder_url, 'rpc')
         if proxy is None:
             server_proxy = xmlrpc.Proxy(
-                rpc_url, allowNone=True, connectTimeout=timeout)
+                rpc_url.encode('UTF-8'), allowNone=True,
+                connectTimeout=timeout)
             server_proxy.queryFactory = QuietQueryFactory
         else:
             server_proxy = proxy

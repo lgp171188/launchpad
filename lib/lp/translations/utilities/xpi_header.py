@@ -8,7 +8,7 @@ __all__ = [
     ]
 
 from email.utils import parseaddr
-from StringIO import StringIO
+import io
 
 import defusedxml.cElementTree as cElementTree
 import six
@@ -67,7 +67,8 @@ class XpiHeader:
         # proper unicode strings.  Use our raw input instead.
         try:
             parse = cElementTree.iterparse(
-                StringIO(self._raw_content), forbid_dtd=True)
+                io.BytesIO(six.ensure_binary(self._raw_content)),
+                forbid_dtd=True)
             for event, elem in parse:
                 if elem.tag == contributor_tag:
                     # An XPI header can list multiple contributors, but

@@ -75,7 +75,7 @@ class TestMailController(TestCase):
         self.assertEqual(
             'attachment', attachment['Content-Disposition'])
         self.assertEqual(
-            'content1', attachment.get_payload(decode=True))
+            b'content1', attachment.get_payload(decode=True))
         ctrl.addAttachment(
             'content2', 'text/plain', inline=True, filename='name1')
         attachment = ctrl.attachments[1]
@@ -84,7 +84,7 @@ class TestMailController(TestCase):
         self.assertEqual(
             'inline; filename="name1"', attachment['Content-Disposition'])
         self.assertEqual(
-            'content2', attachment.get_payload(decode=True))
+            b'content2', attachment.get_payload(decode=True))
         ctrl.addAttachment(
             'content2', 'text/plain', inline=True, filename='name1')
 
@@ -99,7 +99,7 @@ class TestMailController(TestCase):
         self.assertEqual('=?utf-8?b?4YSAdG9AZXhhbXBsZS5jb20=?=',
             message['To'])
         self.assertEqual('subject', message['Subject'])
-        self.assertEqual('body', message.get_payload(decode=True))
+        self.assertEqual(b'body', message.get_payload(decode=True))
 
     def test_MakeMessage_long_address(self):
         # Long email addresses are not wrapped if very long.  These are due to
@@ -124,7 +124,7 @@ class TestMailController(TestCase):
         self.assertEqual('from@example.com', message['From'])
         self.assertEqual('to@example.com', message['To'])
         self.assertEqual('subject', message['Subject'])
-        self.assertEqual('body', message.get_payload(decode=True))
+        self.assertEqual(b'body', message.get_payload(decode=True))
 
     def test_MakeMessage_unicode_body(self):
         # A message without an attachment with a unicode body gets sent as
@@ -136,7 +136,7 @@ class TestMailController(TestCase):
         # Make sure that the message can be flattened to a string as sendmail
         # does without raising a UnicodeEncodeError.
         message.as_string()
-        self.assertEqual('Bj\xc3\xb6rn', message.get_payload(decode=True))
+        self.assertEqual(b'Bj\xc3\xb6rn', message.get_payload(decode=True))
 
     def test_MakeMessage_unicode_body_with_attachment(self):
         # A message with an attachment with a unicode body gets sent as
@@ -150,7 +150,7 @@ class TestMailController(TestCase):
         # does without raising a UnicodeEncodeError.
         message.as_string()
         body, attachment = message.get_payload()
-        self.assertEqual('Bj\xc3\xb6rn', body.get_payload(decode=True))
+        self.assertEqual(b'Bj\xc3\xb6rn', body.get_payload(decode=True))
         self.assertTrue(is_ascii_only(message.as_string()))
 
     def test_MakeMessage_with_binary_attachment(self):
@@ -170,7 +170,8 @@ class TestMailController(TestCase):
         message = ctrl.makeMessage()
         body, attachment = message.get_payload()
         self.assertEqual(
-            attachment.get_payload(), attachment.get_payload(decode=True))
+            attachment.get_payload().encode('UTF-8'),
+            attachment.get_payload(decode=True))
 
     def test_MakeMessage_with_attachment(self):
         """A message with an attachment should be multipart."""
@@ -182,8 +183,8 @@ class TestMailController(TestCase):
         self.assertEqual('to@example.com', message['To'])
         self.assertEqual('subject', message['Subject'])
         body, attachment = message.get_payload()
-        self.assertEqual('body', body.get_payload(decode=True))
-        self.assertEqual('attach', attachment.get_payload(decode=True))
+        self.assertEqual(b'body', body.get_payload(decode=True))
+        self.assertEqual(b'attach', attachment.get_payload(decode=True))
         self.assertEqual(
             'application/octet-stream', attachment['Content-Type'])
         self.assertEqual('attachment', attachment['Content-Disposition'])
@@ -196,7 +197,7 @@ class TestMailController(TestCase):
             'attach', 'text/plain', inline=True, filename='README')
         message = ctrl.makeMessage()
         attachment = message.get_payload()[1]
-        self.assertEqual('attach', attachment.get_payload(decode=True))
+        self.assertEqual(b'attach', attachment.get_payload(decode=True))
         self.assertEqual(
             'text/plain', attachment['Content-Type'])
         self.assertEqual(
@@ -208,12 +209,13 @@ class TestMailController(TestCase):
         part = Message()
         part.set_payload(text)
         MailController.encodeOptimally(part, exact=False)
-        self.assertEqual(part.get_payload(), part.get_payload(decode=True))
+        self.assertEqual(
+            part.get_payload().encode('UTF-8'), part.get_payload(decode=True))
         self.assertIs(None, part['Content-Transfer-Encoding'])
 
     def test_encodeOptimally_with_7_bit_binary(self):
         """Mostly-ascii attachments should be encoded as quoted-printable."""
-        text = 'I went to the cafe today.\n\r'
+        text = b'I went to the cafe today.\n\r'
         part = Message()
         part.set_payload(text)
         MailController.encodeOptimally(part)
@@ -235,7 +237,7 @@ class TestMailController(TestCase):
 
     def test_encodeOptimally_with_binary(self):
         """Significantly non-ascii attachments should be base64-encoded."""
-        bytes = '\x00\xff\x44\x55\xaa\x99'
+        bytes = b'\x00\xff\x44\x55\xaa\x99'
         part = Message()
         part.set_payload(bytes)
         MailController.encodeOptimally(part)

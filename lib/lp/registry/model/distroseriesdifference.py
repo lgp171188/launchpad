@@ -838,7 +838,7 @@ class DistroSeriesDifference(StormBase):
         if ancestry is not None and parent_ancestry is not None:
             intersection = ancestry.intersection(parent_ancestry)
             if len(intersection) > 0:
-                self.base_version = unicode(max(intersection))
+                self.base_version = six.text_type(max(intersection))
                 return True
         return False
 

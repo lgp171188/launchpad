@@ -461,6 +461,8 @@ class IArchiveSubscriberView(Interface):
             "explicit publish flag and any other constraints."))
     series_with_sources = Attribute(
         "DistroSeries to which this archive has published sources")
+    signing_key_owner = Reference(
+        title=_("Archive signing key owner"), required=False, schema=IPerson)
     signing_key_fingerprint = exported(
         Text(
             title=_("Archive signing key fingerprint"), required=False,

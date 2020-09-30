@@ -8,10 +8,10 @@ __all__ = [
 
 
 import datetime
+import io
 import json
 import operator
 import re
-from StringIO import StringIO
 
 import apt_pkg
 from debian.changelog import (
@@ -20,6 +20,7 @@ from debian.changelog import (
     ChangelogParseError,
     )
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -172,7 +173,7 @@ class SourcePackageRelease(SQLBase):
         store = Store.of(self)
         store.flush()
         if content is not None:
-            content = unicode(content)
+            content = six.ensure_text(content)
         store.execute(
             "UPDATE sourcepackagerelease SET copyright=%s WHERE id=%s",
             (content, self.id))
@@ -379,7 +380,7 @@ class SourcePackageRelease(SQLBase):
         # this regex is copied from apt-listchanges.py courtesy of MDZ
         new_stanza_line = re.compile(
             '^\S+ \((?P<version>.*)\) .*;.*urgency=(?P<urgency>\w+).*')
-        logfile = StringIO(self.changelog_entry)
+        logfile = io.StringIO(self.changelog_entry)
         change = ''
         top_stanza = False
         for line in logfile.readlines():

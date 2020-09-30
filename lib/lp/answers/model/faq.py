@@ -12,6 +12,7 @@ __all__ = [
     ]
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -188,7 +189,7 @@ class FAQSearch:
         :param projectgroup: The project group in which to search for FAQs.
         """
         if search_text is not None:
-            assert isinstance(search_text, basestring), (
+            assert isinstance(search_text, six.string_types), (
                 'search_text should be a string, not %s' % type(search_text))
             self.search_text = search_text
 

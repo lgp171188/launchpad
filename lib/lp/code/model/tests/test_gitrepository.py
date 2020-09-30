@@ -25,6 +25,7 @@ from fixtures import MockPatch
 from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon
 import pytz
+import six
 from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.store import Store
@@ -1086,8 +1087,8 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         comment_id = comment.id
         repository = comment.branch_merge_proposal.source_git_repository
         repository.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, CodeReviewComment.get, comment_id)
+        self.assertIsNone(
+            IStore(CodeReviewComment).get(CodeReviewComment, comment_id))
 
     def test_delete_target_CodeReviewComment(self):
         # Deletion of target repositories that have CodeReviewComments works.
@@ -1095,8 +1096,8 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         comment_id = comment.id
         repository = comment.branch_merge_proposal.target_git_repository
         repository.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, CodeReviewComment.get, comment_id)
+        self.assertIsNone(
+            IStore(CodeReviewComment).get(CodeReviewComment, comment_id))
 
     def test_sourceBranchWithCodeReviewVoteReference(self):
         # break_references handles CodeReviewVoteReference source repository.
@@ -1522,7 +1523,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
 
     def test__convertRefInfo(self):
         # _convertRefInfo converts a valid info dictionary.
-        sha1 = unicode(hashlib.sha1("").hexdigest())
+        sha1 = six.ensure_text(hashlib.sha1("").hexdigest())
         info = {"object": {"sha1": sha1, "type": "commit"}}
         expected_info = {"sha1": sha1, "type": GitObjectType.COMMIT}
         self.assertEqual(expected_info, GitRepository._convertRefInfo(info))
@@ -1567,7 +1568,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=unicode(hashlib.sha1(path).hexdigest()),
+                commit_sha1=six.ensure_text(hashlib.sha1(path).hexdigest()),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))
@@ -1715,11 +1716,12 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "type": GitObjectType.COMMIT,
                 },
             "refs/heads/foo": {
-                "sha1": unicode(hashlib.sha1("refs/heads/foo").hexdigest()),
+                "sha1": six.ensure_text(
+                    hashlib.sha1("refs/heads/foo").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
             "refs/tags/1.0": {
-                "sha1": unicode(
+                "sha1": six.ensure_text(
                     hashlib.sha1("refs/heads/master").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
@@ -1731,7 +1733,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # planRefChanges does not attempt to update refs that point to
         # non-commits.
         repository = self.factory.makeGitRepository()
-        blob_sha1 = unicode(hashlib.sha1("refs/heads/blob").hexdigest())
+        blob_sha1 = six.ensure_text(
+            hashlib.sha1("refs/heads/blob").hexdigest())
         refs_info = {
             "refs/heads/blob": {
                 "sha1": blob_sha1,
@@ -1804,8 +1807,9 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test_fetchRefCommits(self):
         # fetchRefCommits fetches detailed tip commit metadata for the
         # requested refs.
-        master_sha1 = unicode(hashlib.sha1("refs/heads/master").hexdigest())
-        foo_sha1 = unicode(hashlib.sha1("refs/heads/foo").hexdigest())
+        master_sha1 = six.ensure_text(
+            hashlib.sha1("refs/heads/master").hexdigest())
+        foo_sha1 = six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
@@ -1826,7 +1830,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(committer_date)),
                     },
                 "parents": [],
-                "tree": unicode(hashlib.sha1("").hexdigest()),
+                "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
                 }]))
         refs = {
             "refs/heads/master": {
@@ -1902,9 +1906,9 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         expected_sha1s = [
             ("refs/heads/master", "1111111111111111111111111111111111111111"),
             ("refs/heads/foo",
-             unicode(hashlib.sha1("refs/heads/foo").hexdigest())),
+             six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())),
             ("refs/tags/1.0",
-             unicode(hashlib.sha1("refs/heads/master").hexdigest())),
+             six.ensure_text(hashlib.sha1("refs/heads/master").hexdigest())),
             ]
         matchers = [
             MatchesStructure.byEquality(
@@ -2729,6 +2733,38 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
         self.assertFalse(snap.is_stale)
 
 
+class TestGitRepositoryFork(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestGitRepositoryFork, self).setUp()
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+
+    def test_fork(self):
+        repo = self.factory.makeGitRepository()
+        another_person = self.factory.makePerson()
+        another_team = self.factory.makeTeam(members=[another_person])
+
+        forked_repo = getUtility(IGitRepositorySet).fork(
+            repo, another_person, another_team)
+        self.assertEqual(another_team, forked_repo.owner)
+        self.assertEqual(another_person, forked_repo.registrant)
+        self.assertEqual(1, self.hosting_fixture.create.call_count)
+
+    def test_fork_same_name(self):
+        repo = self.factory.makeGitRepository()
+
+        person = self.factory.makePerson()
+        same_name_repo = self.factory.makeGitRepository(
+            owner=person, registrant=person,
+            name=repo.name, target=repo.target)
+
+        forked_repo = getUtility(IGitRepositorySet).fork(repo, person, person)
+        self.assertEqual(forked_repo.target, repo.target)
+        self.assertEqual(forked_repo.name, "%s-1" % same_name_repo.name)
+
+
 class TestGitRepositoryDetectMerges(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
@@ -3271,7 +3307,8 @@ class TestGitRepositorySet(TestCaseWithFactory):
         self.assertThat(repository, MatchesStructure.byEquality(
             registrant=owner, owner=owner, target=target, name=name))
         self.assertEqual(
-            [((repository.getInternalPath(),), {"clone_from": None})],
+            [((repository.getInternalPath(),),
+              {'async_create': False, "clone_from": None})],
             hosting_fixture.create.calls)
 
     def test_provides_IGitRepositorySet(self):

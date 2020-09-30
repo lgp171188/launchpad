@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = ['CloseAccountScript']
 
+import six
 from storm.exceptions import IntegrityError
 from storm.expr import (
     LeftJoin,
@@ -19,7 +20,6 @@ from lp.answers.enums import QuestionStatus
 from lp.answers.model.question import Question
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.model.bugtask import BugTask
-from lp.hardwaredb.model.hwdb import HWSubmission
 from lp.registry.interfaces.person import PersonCreationRationale
 from lp.registry.model.person import (
     Person,
@@ -370,7 +370,10 @@ def close_account(username, log):
             AND owner = ?
         """, (person.id,))
     table_notification('HWSubmission')
-    store.find(HWSubmission, HWSubmission.ownerID == person.id).remove()
+    store.execute("""
+        DELETE FROM HWSubmission
+        WHERE HWSubmission.owner = ?
+        """, (person.id,))
 
     # Purge deleted PPAs.  This is safe because the archive can only be in
     # the DELETED status if the publisher has removed it from disk and set
@@ -464,7 +467,7 @@ class CloseAccountScript(LaunchpadScript):
 
         for username in self.args:
             try:
-                close_account(unicode(username), self.logger)
+                close_account(six.ensure_text(username), self.logger)
             except Exception:
                 self.txn.abort()
                 raise

@@ -51,7 +51,7 @@ class Library:
         """
         self.restricted = restricted
         self._authserver = xmlrpc.Proxy(
-            config.librarian.authentication_endpoint,
+            config.librarian.authentication_endpoint.encode('UTF-8'),
             connectTimeout=config.librarian.authentication_timeout)
 
     # The following methods are read-only queries.

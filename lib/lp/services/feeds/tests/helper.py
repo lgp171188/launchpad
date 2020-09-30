@@ -26,6 +26,7 @@ if socket.getdefaulttimeout() != original_timeout:
 from cStringIO import StringIO
 from textwrap import wrap
 
+import six
 from zope.interface import (
     Attribute,
     implementer,
@@ -125,7 +126,7 @@ def validate_feed(content, content_type, base_uri):
                     max(error_line_number - 2, 1),
                     min(error_line_number + 3, len(lines))))
                 for line_number in line_number_range:
-                    unicode_line = unicode(
+                    unicode_line = six.ensure_text(
                         lines[line_number - 1], 'ascii', 'replace')
                     ascii_line = unicode_line.encode('ascii', 'replace')
                     wrapped_lines = wrap(ascii_line, max_line_length)

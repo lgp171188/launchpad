@@ -832,7 +832,11 @@ def delete_unwanted_swift_files(con):
                     "File %d not removed - created too recently", content_id)
             else:
                 with swift.connection() as swift_connection:
-                    swift_connection.delete_object(container, name)
+                    try:
+                        swift_connection.delete_object(container, name)
+                    except swiftclient.ClientException as e:
+                        if e.http_status != 404:
+                            raise
                 log.debug3(
                     'Deleted ({0}, {1}) from Swift'.format(container, name))
                 removed_count += 1

@@ -228,7 +228,7 @@ lazr.delegates==2.0.4
 lazr.enum==1.2
 lazr.jobrunner==0.16
 lazr.lifecycle==1.2
-lazr.restful==0.22.1
+lazr.restful==0.23.0
 lazr.restfulclient==0.14.3
 lazr.sshserver==0.1.10
 lazr.uri==1.0.5
@@ -265,6 +265,7 @@ psutil==5.4.2
 psycopg2==2.7.4
 pyasn1==0.4.2
 pyasn1-modules==0.2.1
+pygettextpo==0.2
 # lp:~launchpad/pygpgme/pthread
 # lp1 Link against libgpgme-pthread for thread-safety.
 pygpgme==0.3+lp1
@@ -281,7 +282,7 @@ python-memcached==1.58
 # https://github.com/ziima/python-openid/pull/47
 # lp1 Fix normalization of non-ASCII query strings on Python 2.
 python-openid2==3.2+lp1
-python-swiftclient==2.0.3
+python-swiftclient==3.8.1
 PyYAML==3.10
 rabbitfixture==0.4.2
 requests-file==1.4.3

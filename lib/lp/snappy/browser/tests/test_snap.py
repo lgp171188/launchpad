@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package views."""
@@ -128,7 +128,8 @@ class TestSnapNavigation(TestCaseWithFactory):
     def test_snap(self):
         snap = self.factory.makeSnap()
         obj, _, _ = test_traverse(
-            "http://launchpad.test/~%s/+snap/%s" % (snap.owner.name, snap.name))
+            "http://launchpad.test/~%s/+snap/%s" % (
+                snap.owner.name, snap.name))
         self.assertEqual(snap, obj)
 
 
@@ -778,6 +779,92 @@ class TestSnapEditView(BaseTestSnapView):
             "the store.\nEdit snap package",
             MatchesTagText(content, "store_upload"))
 
+    def test_edit_snap_built_for_older_store_series(self):
+        distro_series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[distro_series],
+                status=SeriesStatus.SUPPORTED)
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person,
+            distroseries=distro_series,
+            store_series=snappy_series,
+            branch=self.factory.makeAnyBranch())
+        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
+        browser.getControl(name="field.store_distro_series").value = (
+            "ubuntu/%s/%s" % (distro_series.name, snappy_series.name))
+        browser.getControl("Update snap package").click()
+
+        self.assertEqual([], find_tags_by_class(browser.contents, "message"))
+        login_person(self.person)
+        self.assertThat(snap, MatchesStructure.byEquality(
+            distro_series=distro_series,
+            store_series=snappy_series))
+
+    def test_edit_snap_built_for_distro_series_None(self):
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                status=SeriesStatus.CURRENT)
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person,
+            distroseries=None,
+            store_series=snappy_series)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+        browser.getControl(
+            name="field.store_distro_series").value = (
+                        browser.getControl(
+                            name="field.store_distro_series"
+                        ).options[0].strip())
+        browser.getControl("Update snap package").click()
+        self.assertEqual([], find_tags_by_class(browser.contents, "message"))
+        login_person(self.person)
+        self.assertThat(snap, MatchesStructure(
+            distro_series=Is(None),
+            store_series=Equals(snappy_series)))
+
+    def test_edit_snap_built_for_snappy_series_None(self):
+        distro_series = self.factory.makeUbuntuDistroSeries()
+
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person,
+            distroseries=distro_series,
+            store_series=None)
+
+        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
+        self.assertIn(
+            "ubuntu/%s" % distro_series.name,
+            browser.getControl(name="field.store_distro_series").options)
+        browser.getControl(
+            name="field.store_distro_series").value = (
+                        "ubuntu/%s" % distro_series.name)
+        browser.getControl("Update snap package").click()
+        self.assertEqual([], find_tags_by_class(browser.contents, "message"))
+        login_person(self.person)
+        self.assertThat(snap, MatchesStructure(
+            distro_series=Equals(distro_series),
+            store_series=Is(None)))
+
+    def test_edit_snap_built_for_distro_snappy_series_None(self):
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person,
+            distroseries=None,
+            store_series=None)
+
+        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
+        self.assertIn(
+            "(unset)",
+            browser.getControl(name="field.store_distro_series").options)
+        browser.getControl(
+            name="field.store_distro_series").value = '(unset)'
+        browser.getControl("Update snap package").click()
+        self.assertEqual([], find_tags_by_class(browser.contents, "message"))
+
+        login_person(self.person)
+        self.assertThat(snap, MatchesStructure(
+            distro_series=Is(None),
+            store_series=Is(None)))
+
     def test_edit_snap_sets_date_last_modified(self):
         # Editing a snap package sets the date_last_modified property.
         date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
@@ -1187,7 +1274,7 @@ class TestSnapAuthorizeView(BaseTestSnapView):
         # If the form does not include a discharge macaroon, the "complete"
         # action fails.
         with person_logged_in(self.snap.owner):
-            self.snap.store_secrets = {"root": "root"}
+            self.snap.store_secrets = {"root": Macaroon().serialize()}
             transaction.commit()
             form = {"field.actions.complete": "1"}
             view = create_initialized_view(
@@ -1203,12 +1290,14 @@ class TestSnapAuthorizeView(BaseTestSnapView):
     def test_complete_authorization(self):
         # If the form includes a discharge macaroon, the "complete" action
         # succeeds and records the new secrets.
+        root_macaroon = Macaroon()
+        discharge_macaroon = Macaroon()
         with person_logged_in(self.snap.owner):
-            self.snap.store_secrets = {"root": "root"}
+            self.snap.store_secrets = {"root": root_macaroon.serialize()}
             transaction.commit()
             form = {
                 "field.actions.complete": "1",
-                "field.discharge_macaroon": "discharge",
+                "field.discharge_macaroon": discharge_macaroon.serialize(),
                 }
             view = create_initialized_view(
                 self.snap, "+authorize", form=form, method="POST",
@@ -1223,7 +1312,8 @@ class TestSnapAuthorizeView(BaseTestSnapView):
                 self.snap.name,
                 view.request.response.notifications[0].message)
             self.assertEqual(
-                {"root": "root", "discharge": "discharge"},
+                {"root": root_macaroon.serialize(),
+                 "discharge": discharge_macaroon.serialize()},
                 self.snap.store_secrets)
 
 
@@ -1625,6 +1715,28 @@ class TestSnapView(BaseTestSnapView):
         view = create_initialized_view(snap, "+index")
         self.assertEqual(
             "track/stable/fix-123, track/edge/fix-123", view.store_channels)
+
+    def test_authorize_navigation_no_store_secrets(self):
+        # A snap with no store secrets has an "Authorize store uploads"
+        # navigation link.
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(registrant=owner, owner=owner)
+        authorize_url = canonical_url(snap, view_name="+authorize")
+        browser = self.getViewBrowser(snap, user=owner)
+        authorize_link = browser.getLink("Authorize store uploads")
+        self.assertEqual(authorize_url, authorize_link.url)
+
+    def test_authorize_navigation_store_secrets(self):
+        # A snap with store secrets has an "Reauthorize store uploads"
+        # navigation link.
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner,
+            store_secrets={"root": Macaroon().serialize()})
+        authorize_url = canonical_url(snap, view_name="+authorize")
+        browser = self.getViewBrowser(snap, user=owner)
+        authorize_link = browser.getLink("Reauthorize store uploads")
+        self.assertEqual(authorize_url, authorize_link.url)
 
 
 class TestSnapRequestBuildsView(BaseTestSnapView):

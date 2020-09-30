@@ -15,6 +15,7 @@ import operator
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -23,14 +24,15 @@ from sqlobject import (
     SQLRelatedJoin,
     StringCol,
     )
-from storm.expr import (
+from storm.locals import (
     Count,
     Desc,
     Join,
     Or,
+    ReferenceSet,
     SQL,
+    Store,
     )
-from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -237,11 +239,13 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         joinColumn='specification', otherColumn='person',
         intermediateTable='SpecificationSubscription',
         orderBy=['display_name', 'name'])
-    sprint_links = SQLMultipleJoin('SprintSpecification', orderBy='id',
-        joinColumn='specification')
-    sprints = SQLRelatedJoin('Sprint', orderBy='name',
-        joinColumn='specification', otherColumn='sprint',
-        intermediateTable='SprintSpecification')
+    sprint_links = ReferenceSet(
+        '<primary key>', 'SprintSpecification.specification_id',
+        order_by='SprintSpecification.id')
+    sprints = ReferenceSet(
+        '<primary key>', 'SprintSpecification.specification_id',
+        'SprintSpecification.sprint_id', 'Sprint.id',
+        order_by='Sprint.name')
     spec_dependency_links = SQLMultipleJoin('SpecificationDependency',
         joinColumn='specification', orderBy='id')
 
@@ -791,7 +795,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         from lp.bugs.model.bug import Bug
         bug_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'specification', unicode(self.id)), types=[u'bug'])]
+                (u'specification', six.text_type(self.id)), types=[u'bug'])]
         return list(sorted(
             bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
 
@@ -801,14 +805,14 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'specification', unicode(self.id)):
-                {(u'bug', unicode(bug.id)): props}})
+            {(u'specification', six.text_type(self.id)):
+                {(u'bug', six.text_type(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {(u'specification', unicode(self.id)):
-                [(u'bug', unicode(bug.id))]})
+            {(u'specification', six.text_type(self.id)):
+                [(u'bug', six.text_type(bug.id))]})
 
     # sprint linking
     def linkSprint(self, sprint, user):
@@ -827,13 +831,11 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
 
     def unlinkSprint(self, sprint):
         """See ISpecification."""
-        from lp.blueprints.model.sprintspecification import (
-            SprintSpecification)
         for sprint_link in self.sprint_links:
             # sprints have unique names
             if sprint_link.sprint.name == sprint.name:
-                SprintSpecification.delete(sprint_link.id)
-                return sprint_link
+                sprint_link.destroySelf()
+                return
 
     # dependencies
     def createDependency(self, specification):
@@ -1060,8 +1062,8 @@ class SpecificationSet(HasSpecificationsMixin):
     def coming_sprints(self):
         """See ISpecificationSet."""
         from lp.blueprints.model.sprint import Sprint
-        return Sprint.select("time_ends > 'NOW'", orderBy='time_starts',
-            limit=5)
+        rows = IStore(Sprint).find(Sprint, Sprint.time_ends > UTC_NOW)
+        return rows.order_by(Sprint.time_starts).config(limit=5)
 
     def new(self, name, title, specurl, summary, definition_status,
             owner, target, approver=None, assignee=None, drafter=None,

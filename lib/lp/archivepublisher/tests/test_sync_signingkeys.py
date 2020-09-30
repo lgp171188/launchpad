@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -24,11 +28,19 @@ from testtools.matchers import (
     ContainsAll,
     Equals,
     MatchesDict,
+    MatchesListwise,
     MatchesStructure,
+    StartsWith,
     )
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
+from twisted.internet import defer
 from zope.component import getUtility
 
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
+    ISignableArchive,
+    )
 from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
 from lp.services.compat import mock
@@ -41,17 +53,22 @@ from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger
 from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.model.signingkey import SigningKey
 from lp.services.signing.testing.fixture import SigningServiceFixture
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.soyuz.model.archive import Archive
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
+from lp.testing.gpgkeys import gpgkeysdir
+from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.script import run_script
 
 
 class TestSyncSigningKeysScript(TestCaseWithFactory):
+
     layer = ZopelessDatabaseLayer
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
     def setUp(self):
         super(TestSyncSigningKeysScript, self).setUp()
@@ -130,6 +147,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             SigningKeyType.OPAL,
             SigningKeyType.SIPL,
             SigningKeyType.FIT,
+            SigningKeyType.OPENPGP,
             ]
         self.assertEqual(expected_key_types, key_types)
 
@@ -232,7 +250,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         # Check the log messages.
         content = script.logger.content.as_text()
         self.assertIn(
-            "INFO #0 - Processing keys for archive %s." % archive.reference,
+            "DEBUG #0 - Processing keys for archive %s." % archive.reference,
             content)
 
         tpl = "INFO Found key files %s / %s (type=%s, series=%s)."
@@ -329,7 +347,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.assertThat(
             script.logger.content.as_text().splitlines(),
             ContainsAll([
-                "INFO #0 - Processing keys for archive %s." %
+                "DEBUG #0 - Processing keys for archive %s." %
                     archive.reference,
                 found_tpl % (
                     os.path.join(archive_root, "uefi.key"),
@@ -503,6 +521,75 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             (SigningKeyType.UEFI, archive.reference, series.name),
             script.logger.content.as_text())
 
+    @defer.inlineCallbacks
+    def setUpArchiveKey(self, archive, secret_key_path):
+        with InProcessKeyServerFixture() as keyserver:
+            yield keyserver.start()
+            yield IArchiveGPGSigningKey(archive).setSigningKey(
+                secret_key_path, async_keyserver=True)
+
+    @defer.inlineCallbacks
+    def test_injectGPG(self):
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+        now = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.archivepublisher.scripts.sync_signingkeys.datetime')).mock
+        mock_datetime.now = lambda: now
+        archive = self.factory.makeArchive()
+        secret_key_path = os.path.join(
+            gpgkeysdir, "ppa-sample@canonical.com.sec")
+        yield self.setUpArchiveKey(archive, secret_key_path)
+        self.assertIsNotNone(archive.signing_key)
+        script = self.makeScript([])
+
+        with dbuser(config.archivepublisher.dbuser):
+            secret_key_path = ISignableArchive(archive).getPathForSecretKey(
+                archive.signing_key)
+            signing_key = script.injectGPG(archive, secret_key_path)
+
+        self.assertThat(signing_key, MatchesStructure(
+            key_type=Equals(SigningKeyType.OPENPGP),
+            public_key=StartsWith(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n"),
+            date_created=Equals(now.replace(tzinfo=utc))))
+        with open(secret_key_path, "rb") as f:
+            secret_key_bytes = f.read()
+        self.assertEqual(1, signing_service_client.inject.call_count)
+        self.assertThat(
+            signing_service_client.inject.call_args[0], MatchesListwise([
+                Equals(SigningKeyType.OPENPGP),
+                Equals(secret_key_bytes),
+                StartsWith(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n"),
+                Equals("Launchpad PPA for Celso áéíóú Providelo"),
+                Equals(now.replace(tzinfo=utc)),
+                ]))
+
+    @defer.inlineCallbacks
+    def test_injectGPG_existing_key(self):
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+        archive = self.factory.makeArchive()
+        secret_key_path = os.path.join(
+            gpgkeysdir, "ppa-sample@canonical.com.sec")
+        yield self.setUpArchiveKey(archive, secret_key_path)
+        self.assertIsNotNone(archive.signing_key)
+        expected_signing_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=archive.signing_key_fingerprint)
+        script = self.makeScript([])
+
+        with dbuser(config.archivepublisher.dbuser):
+            secret_key_path = ISignableArchive(archive).getPathForSecretKey(
+                archive.signing_key)
+            signing_key = script.injectGPG(archive, secret_key_path)
+
+        self.assertEqual(expected_signing_key, signing_key)
+        self.assertEqual(0, signing_service_client.inject.call_count)
+        self.assertIn(
+            "Signing key for %s / %s already exists" %
+            (SigningKeyType.OPENPGP, archive.reference),
+            script.logger.content.as_text())
+
     def runScript(self):
         transaction.commit()
         ret, out, err = run_script("scripts/sync-signingkeys.py")
@@ -511,6 +598,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.assertEqual(0, ret)
         transaction.commit()
 
+    @defer.inlineCallbacks
     def test_script(self):
         self.useFixture(SigningServiceFixture())
         series = self.factory.makeDistroSeries()
@@ -521,6 +609,10 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             fd.write(b"Private key content")
         with open(os.path.join(archive_root, "uefi.crt"), "wb") as fd:
             fd.write(b"Public key content")
+        secret_key_path = os.path.join(
+            gpgkeysdir, "ppa-sample@canonical.com.sec")
+        yield self.setUpArchiveKey(archive, secret_key_path)
+        self.assertIsNotNone(archive.signing_key)
 
         self.runScript()
 
@@ -529,3 +621,11 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.assertThat(archive_signing_key, MatchesStructure(
             key_type=Equals(SigningKeyType.UEFI),
             public_key=Equals(b"Public key content")))
+        # We can't look the key up by fingerprint in this test, because the
+        # fake signing service makes up a random fingerprint.  Just look for
+        # the most recently-added SigningKey.
+        gpg_signing_key = IStore(SigningKey).find(
+            SigningKey).order_by(SigningKey.date_created).last()
+        self.assertThat(gpg_signing_key, MatchesStructure(
+            key_type=Equals(SigningKeyType.OPENPGP),
+            public_key=StartsWith(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n")))

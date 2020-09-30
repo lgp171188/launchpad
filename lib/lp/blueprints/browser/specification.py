@@ -54,6 +54,7 @@ from lazr.restful.interfaces import (
     IJSONRequestCache,
     IWebServiceClientRequest,
     )
+import six
 from zope import component
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -1376,10 +1377,10 @@ def to_DOT_ID(value):
     u'"foo \\" bar \\n"'
 
     """
-    if isinstance(value, str):
-        unitext = unicode(value, encoding='ascii')
+    if isinstance(value, bytes):
+        unitext = six.ensure_text(value, encoding='ascii')
     else:
-        unitext = unicode(value)
+        unitext = six.text_type(value)
     output = unitext.replace(u'"', u'\\"')
     output = output.replace(u'\n', u'\\n')
     return u'"%s"' % output

@@ -484,10 +484,10 @@ class GenericBranchCollection:
         tables = [
             BranchMergeProposal,
             Join(CodeReviewVoteReference,
-                 CodeReviewVoteReference.branch_merge_proposalID == \
+                 CodeReviewVoteReference.branch_merge_proposal ==
                  BranchMergeProposal.id),
             LeftJoin(CodeReviewComment,
-                 CodeReviewVoteReference.commentID == CodeReviewComment.id)]
+                 CodeReviewVoteReference.comment == CodeReviewComment.id)]
 
         expressions = [
             CodeReviewVoteReference.reviewer == reviewer,
@@ -692,7 +692,7 @@ class GenericBranchCollection:
         if branch:
             collection = self._filterBy([Branch.id == branch.id])
         else:
-            term = unicode(term)
+            term = six.ensure_text(term)
             # Filter by name.
             field = Branch.name
             # Except if the term contains /, when we use unique_name.

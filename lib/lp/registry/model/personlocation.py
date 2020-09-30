@@ -14,36 +14,59 @@ __all__ = [
     'PersonLocation',
     ]
 
-from sqlobject import (
-    BoolCol,
-    FloatCol,
-    ForeignKey,
-    StringCol,
+import pytz
+import six
+from storm.locals import (
+    Bool,
+    DateTime,
+    Float,
+    Int,
+    Reference,
+    Unicode,
     )
 from zope.interface import implementer
 
 from lp.registry.interfaces.location import IPersonLocation
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IPersonLocation)
-class PersonLocation(SQLBase):
+class PersonLocation(StormBase):
     """A person's location."""
+    __storm_table__ = 'PersonLocation'
 
-    _defaultOrder = ['id']
+    __storm_order__ = 'id'
+    id = Int(primary=True)
 
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True, unique=True)
-    latitude = FloatCol(notNull=False)
-    longitude = FloatCol(notNull=False)
-    time_zone = StringCol(notNull=True)
-    last_modified_by = ForeignKey(
-        dbName='last_modified_by', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    date_last_modified = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    visible = BoolCol(notNull=True, default=True)
+    date_created = DateTime(
+        tzinfo=pytz.UTC, name='date_created', allow_none=False,
+        default=UTC_NOW)
+
+    person_id = Int(name='person', allow_none=False)
+    person = Reference(person_id, 'Person.id')
+
+    latitude = Float(allow_none=True)
+    longitude = Float(allow_none=True)
+    time_zone = Unicode(allow_none=False)
+
+    last_modified_by_id = Int(
+        name='last_modified_by',
+        validator=validate_public_person,
+        allow_none=False)
+    last_modified_by = Reference(last_modified_by_id, 'Person.id')
+
+    date_last_modified = DateTime(
+        tzinfo=pytz.UTC, name='date_last_modified', allow_none=False,
+        default=UTC_NOW)
+
+    visible = Bool(name='visible', allow_none=False, default=True)
+
+    def __init__(self, person, time_zone, latitude,
+                 longitude, last_modified_by):
+        self.person = person
+        self.time_zone = six.ensure_text(time_zone)
+        self.latitude = latitude
+        self.longitude = longitude
+        self.last_modified_by = last_modified_by

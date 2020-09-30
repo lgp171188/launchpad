@@ -23,6 +23,7 @@ from lazr.restful.utils import (
     safe_hasattr,
     )
 import simplejson
+import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.schema.interfaces import (
@@ -502,7 +503,7 @@ class InlineMultiCheckboxWidget(WidgetBase):
             else:
                 vocabulary = exported_field.vocabularyName
 
-        if isinstance(vocabulary, basestring):
+        if isinstance(vocabulary, six.string_types):
             vocabulary = getVocabularyRegistry().get(context, vocabulary)
 
         # Construct checkbox data dict for each item in the vocabulary.

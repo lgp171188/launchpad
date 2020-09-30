@@ -10,6 +10,7 @@ import _pythonpath
 
 import sys
 
+import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet
@@ -45,7 +46,7 @@ class AccessTokenGenerator(LaunchpadScript):
             self.parser.error('No username supplied')
         username = self.args[0]
 
-        key = unicode(self.options.consumer_name)
+        key = six.ensure_text(self.options.consumer_name)
         consumer = getUtility(IOAuthConsumerSet).new(key, u'')
         request_token, _ = consumer.newRequestToken()
 

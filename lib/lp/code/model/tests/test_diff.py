@@ -7,8 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from cStringIO import StringIO
 from difflib import unified_diff
+from io import BytesIO
 import logging
 from textwrap import dedent
 
@@ -192,11 +192,11 @@ class TestDiff(DiffTestCase):
 
     def _create_diff(self, content):
         # Create a Diff object with the content specified.
-        sio = StringIO()
-        sio.write(content)
-        size = sio.tell()
-        sio.seek(0)
-        diff = Diff.fromFile(sio, size)
+        buf = BytesIO()
+        buf.write(content)
+        size = buf.tell()
+        buf.seek(0)
+        diff = Diff.fromFile(buf, size)
         # Commit to make the alias available for reading.
         transaction.commit()
         return diff
@@ -204,14 +204,14 @@ class TestDiff(DiffTestCase):
     def test_text_reads_librarian_content(self):
         # IDiff.text will read at most config.diff.max_read_size bytes from
         # the librarian.
-        content = ''.join(unified_diff('', "1234567890" * 10))
+        content = b''.join(unified_diff(b'', b"1234567890" * 10))
         diff = self._create_diff(content)
         self.assertEqual(content, diff.text)
         self.assertTrue(diff.diff_text.restricted)
 
     def test_oversized_normal(self):
         # A diff smaller than config.diff.max_read_size is not oversized.
-        content = ''.join(unified_diff('', "1234567890" * 10))
+        content = b''.join(unified_diff(b'', b"1234567890" * 10))
         diff = self._create_diff(content)
         self.assertFalse(diff.oversized)
 
@@ -219,14 +219,14 @@ class TestDiff(DiffTestCase):
         # IDiff.text will read at most config.diff.max_read_size bytes from
         # the librarian.
         self.pushConfig("diff", max_read_size=25)
-        content = ''.join(unified_diff('', "1234567890" * 10))
+        content = b''.join(unified_diff(b'', b"1234567890" * 10))
         diff = self._create_diff(content)
         self.assertEqual(content[:25], diff.text)
 
     def test_oversized_for_big_diff(self):
         # A diff larger than config.diff.max_read_size is oversized.
         self.pushConfig("diff", max_read_size=25)
-        content = ''.join(unified_diff('', "1234567890" * 10))
+        content = b''.join(unified_diff(b'', b"1234567890" * 10))
         diff = self._create_diff(content)
         self.assertTrue(diff.oversized)
 
@@ -364,19 +364,19 @@ class TestDiffInScripts(DiffTestCase):
         self.assertEqual({'foo': (0, 0)}, Diff.generateDiffstat(diff_bytes))
 
     def test_fromFileSetsDiffstat(self):
-        diff = Diff.fromFile(StringIO(self.diff_bytes), len(self.diff_bytes))
+        diff = Diff.fromFile(BytesIO(self.diff_bytes), len(self.diff_bytes))
         self.assertEqual(
             {'bar': (0, 3), 'baz': (2, 0), 'foo': (2, 1)}, diff.diffstat)
 
     def test_fromFileAcceptsBinary(self):
         diff_bytes = b"Binary files a\t and b\t differ\n"
-        diff = Diff.fromFile(StringIO(diff_bytes), len(diff_bytes))
+        diff = Diff.fromFile(BytesIO(diff_bytes), len(diff_bytes))
         self.assertEqual({}, diff.diffstat)
 
     def test_fromFileSets_added_removed(self):
         """fromFile sets added_lines_count, removed_lines_count."""
         diff = Diff.fromFile(
-            StringIO(self.diff_bytes_2), len(self.diff_bytes_2))
+            BytesIO(self.diff_bytes_2), len(self.diff_bytes_2))
         self.assertEqual(5, diff.added_lines_count)
         self.assertEqual(4, diff.removed_lines_count)
 
@@ -384,7 +384,7 @@ class TestDiffInScripts(DiffTestCase):
         # If the diff is formatted such that generating the diffstat fails, we
         # want to record an oops but continue.
         diff_bytes = b"not a real diff"
-        diff = Diff.fromFile(StringIO(diff_bytes), len(diff_bytes))
+        diff = Diff.fromFile(BytesIO(diff_bytes), len(diff_bytes))
         oops = self.oopses[0]
         self.assertEqual('MalformedPatchHeader', oops['type'])
         self.assertIs(None, diff.diffstat)

@@ -543,7 +543,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             credentials_set = getUtility(IOCIRegistryCredentialsSet)
             try:
                 credentials = credentials_set.getOrCreate(
-                    owner=self.context.owner, url=url,
+                    registrant=self.user, owner=self.context.owner, url=url,
                     credentials={'username': username, 'password': password})
             except OCIRegistryCredentialsAlreadyExist:
                 self.setFieldError(
@@ -676,6 +676,7 @@ class IOCIRecipeEditSchema(Interface):
         "description",
         "git_ref",
         "build_file",
+        "build_path",
         "build_daily",
         "require_virtualized",
         "allow_internet",
@@ -694,6 +695,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin):
         "description",
         "git_ref",
         "build_file",
+        "build_path",
         "build_daily",
         )
     custom_widget_git_ref = GitRefWidget
@@ -728,6 +730,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin):
         return {
             "owner": self.user,
             "build_file": "Dockerfile",
+            "build_path": ".",
             "processors": [
                 p for p in getUtility(IProcessorSet).getAll()
                 if p.build_by_default],
@@ -751,7 +754,8 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin):
         recipe = getUtility(IOCIRecipeSet).new(
             name=data["name"], registrant=self.user, owner=data["owner"],
             oci_project=self.context, git_ref=data["git_ref"],
-            build_file=data["build_file"], description=data["description"],
+            build_file=data["build_file"], build_path=data["build_path"],
+            description=data["description"],
             build_daily=data["build_daily"], processors=data["processors"])
         self.next_url = canonical_url(recipe)
 
@@ -809,6 +813,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
         "description",
         "git_ref",
         "build_file",
+        "build_path",
         "build_daily",
         )
     custom_widget_git_ref = GitRefWidget

@@ -327,33 +327,6 @@ membership is public.
     LookupError:...
 
 
-PersonTeamParticipations
-........................
-
-This vocabulary contains all the teams a person participates in. Either
-through direct or indirect participations.
-
-    >>> sample_person = person_set.getByName('name12')
-    >>> [membership.team.name
-    ...  for membership in sample_person.team_memberships]
-    [u'hwdb-team', u'landscape-developers', u'launchpad-users', u'name20']
-
-    >>> [team.name for team in sample_person.teams_participated_in]
-    [u'hwdb-team', u'landscape-developers', u'launchpad-users', u'name18',
-     u'name20']
-
-    >>> sample_person_teams_vocabulary = get_naked_vocab(
-    ...     sample_person, 'PersonTeamParticipations')
-
-    >>> for term in sample_person_teams_vocabulary:
-    ...     print "%s: %s (%s)" % (term.token, term.title, term.value.name)
-    hwdb-team: HWDB Team (hwdb-team)
-    landscape-developers: Landscape Developers (landscape-developers)
-    launchpad-users: Launchpad Users (launchpad-users)
-    name18: Ubuntu Gnome Team (name18)
-    name20: Warty Security Team (name20)
-
-
 Milestone
 .........
 
@@ -381,6 +354,7 @@ all milestones. IPerson related pages showing milestone lists retrieve
 the milestones from RelevantMilestonesMixin.getMilestoneWidgetValues()
 but we need the big default vocabulary for form input validation.
 
+    >>> sample_person = person_set.getByName('name12')
     >>> all_milestones = get_naked_vocab(sample_person, 'Milestone')
     >>> len(all_milestones)
     3

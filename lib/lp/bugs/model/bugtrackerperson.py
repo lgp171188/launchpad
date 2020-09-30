@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """BugTrackerPerson database class."""
@@ -8,25 +8,40 @@ __all__ = [
     'BugTrackerPerson',
     ]
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
+import pytz
+import six
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Unicode,
     )
 from zope.interface import implementer
 
 from lp.bugs.interfaces.bugtrackerperson import IBugTrackerPerson
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IBugTrackerPerson)
-class BugTrackerPerson(SQLBase):
+class BugTrackerPerson(StormBase):
     """See `IBugTrackerPerson`."""
+    __storm_table__ = 'BugTrackerPerson'
+    id = Int(primary=True)
 
-    bugtracker = ForeignKey(
-        dbName='bugtracker', foreignKey='BugTracker', notNull=True)
-    person = ForeignKey(
-        dbName='person', foreignKey='Person', notNull=True)
-    name = StringCol(notNull=True)
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    bugtracker_id = Int(name='bugtracker', allow_none=False)
+    bugtracker = Reference(bugtracker_id, 'BugTracker.id')
+
+    person_id = Int(name='person', allow_none=False)
+    person = Reference(person_id, 'Person.id')
+
+    name = Unicode(allow_none=False)
+
+    date_created = DateTime(
+        tzinfo=pytz.UTC, name='date_created', allow_none=False,
+        default=UTC_NOW)
+
+    def __init__(self, name, bugtracker, person):
+        self.bugtracker = bugtracker
+        self.person = person
+        self.name = six.ensure_text(name)

@@ -17,6 +17,7 @@ __all__ = [
 import sys
 import traceback
 
+import six
 from six.moves import http_client
 from zope.browser.interfaces import ISystemErrorView
 from zope.browserpage import ViewPageTemplateFile
@@ -205,7 +206,7 @@ class NotFoundView(SystemErrorView):
             # to show a link back to the referring site, so we can't use
             # replace or ignore.  Best to just pretent it doesn't exist.
             try:
-                return unicode(referrer)
+                return six.ensure_text(referrer)
             except UnicodeDecodeError:
                 return None
         else:

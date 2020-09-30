@@ -8,6 +8,7 @@ __metaclass__ = type
 __all__ = [
     'BuilddManager',
     'BUILDD_MANAGER_LOG_NAME',
+    'PrefetchedBuilderFactory',
     'SlaveScanner',
     ]
 
@@ -61,7 +62,7 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.propertycache import get_property_cache
-from lp.services.statsd import get_statsd_client
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 BUILDD_MANAGER_LOG_NAME = "slave-scanner"
@@ -460,6 +461,8 @@ class SlaveScanner:
         self._cached_build_cookie = None
         self._cached_build_queue = None
 
+        self.statsd_client = getUtility(IStatsdClient)
+
     def startCycle(self):
         """Scan the builder and dispatch to it or deal with failures."""
         self.loop = LoopingCall(self.singleCycle)
@@ -528,6 +531,11 @@ class SlaveScanner:
             builder.gotFailure()
             if builder.current_build is not None:
                 builder.current_build.gotFailure()
+                self.statsd_client.incr(
+                    'builders.judged_failed,build=True,arch={}'.format(
+                        builder.current_build.processor.name))
+            else:
+                self.statsd_client.incr('builders.judged_failed,build=False')
             recover_failure(self.logger, vitals, builder, retry, failure.value)
             transaction.commit()
         except Exception:
@@ -698,9 +706,6 @@ class BuilddManager(service.Service):
     # How often to flush logtail updates, in seconds.
     FLUSH_LOGTAILS_INTERVAL = 15
 
-    # How often to update stats, in seconds
-    UPDATE_STATS_INTERVAL = 60
-
     def __init__(self, clock=None, builder_factory=None):
         # Use the clock if provided, it's so that tests can
         # advance it.  Use the reactor by default.
@@ -712,7 +717,7 @@ class BuilddManager(service.Service):
         self.logger = self._setupLogger()
         self.current_builders = []
         self.pending_logtails = {}
-        self.statsd_client = get_statsd_client()
+        self.statsd_client = getUtility(IStatsdClient)
 
     def _setupLogger(self):
         """Set up a 'slave-scanner' logger that redirects to twisted.
@@ -731,36 +736,6 @@ class BuilddManager(service.Service):
         logger.addHandler(channel)
         logger.setLevel(level)
         return logger
-
-    def updateStats(self):
-        """Update statsd with the builder statuses."""
-        self.logger.debug("Updating builder stats.")
-        counts_by_processor = {}
-        for builder in self.builder_factory.iterVitals():
-            if not builder.active:
-                continue
-            for processor_name in builder.processor_names:
-                counts = counts_by_processor.setdefault(
-                    "{},virtualized={}".format(
-                        processor_name,
-                        builder.virtualized),
-                    {'cleaning': 0, 'idle': 0, 'disabled': 0, 'building': 0})
-                if not builder.builderok:
-                    counts['disabled'] += 1
-                elif builder.clean_status == BuilderCleanStatus.CLEANING:
-                    counts['cleaning'] += 1
-                elif (builder.build_queue and
-                      builder.build_queue.status == BuildQueueStatus.RUNNING):
-                    counts['building'] += 1
-                elif builder.clean_status == BuilderCleanStatus.CLEAN:
-                    counts['idle'] += 1
-        for processor, counts in counts_by_processor.items():
-            for count_name, count_value in counts.items():
-                gauge_name = "builders.{},arch={}".format(
-                    count_name, processor)
-                self.logger.debug("{}: {}".format(gauge_name, count_value))
-                self.statsd_client.gauge(gauge_name, count_value)
-        self.logger.debug("Builder stats update complete.")
 
     def checkForNewBuilders(self):
         """Add and return any new builders."""
@@ -831,9 +806,6 @@ class BuilddManager(service.Service):
         # Schedule bulk flushes for build queue logtail updates.
         self.flush_logtails_loop, self.flush_logtails_deferred = (
             self._startLoop(self.FLUSH_LOGTAILS_INTERVAL, self.flushLogTails))
-        # Schedule stats updates.
-        self.stats_update_loop, self.stats_update_deferred = (
-            self._startLoop(self.UPDATE_STATS_INTERVAL, self.updateStats))
 
     def stopService(self):
         """Callback for when we need to shut down."""
@@ -842,11 +814,9 @@ class BuilddManager(service.Service):
         deferreds = [slave.stopping_deferred for slave in self.builder_slaves]
         deferreds.append(self.scan_builders_deferred)
         deferreds.append(self.flush_logtails_deferred)
-        deferreds.append(self.stats_update_deferred)
 
         self.flush_logtails_loop.stop()
         self.scan_builders_loop.stop()
-        self.stats_update_loop.stop()
         for slave in self.builder_slaves:
             slave.stopCycle()
 

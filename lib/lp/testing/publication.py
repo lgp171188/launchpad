@@ -12,7 +12,7 @@ __all__ = [
     'test_traverse',
     ]
 
-from cStringIO import StringIO
+import io
 
 from six.moves.urllib_parse import (
     unquote,
@@ -44,7 +44,7 @@ from lp.services.webapp.vhosts import allvhosts
 # IRequest and IPublication.
 def get_request_and_publication(host='localhost', port=None,
                                 method='GET', mime_type='text/html',
-                                in_stream='', extra_environment=None):
+                                in_stream=b'', extra_environment=None):
     """Helper method that return the IRequest and IPublication for a request.
 
     This method emulates what the Zope publisher would do to find the request
@@ -59,7 +59,7 @@ def get_request_and_publication(host='localhost', port=None,
     launchpad_factory = factoryRegistry.lookup(
         method, mime_type, environment)
     request_factory, publication_factory = launchpad_factory()
-    request = request_factory(StringIO(in_stream), environment)
+    request = request_factory(io.BytesIO(in_stream), environment)
     # Since Launchpad doesn't use ZODB, we use None here.
     publication = publication_factory(None)
     return request, publication

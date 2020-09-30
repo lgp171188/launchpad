@@ -26,6 +26,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import six
 from storm.expr import Union
 from storm.locals import (
     And,
@@ -106,7 +107,7 @@ class _SourcePackageRecipeDataInstruction(Storm):
                  revspec, directory, recipe_data, parent_instruction,
                  source_directory):
         super(_SourcePackageRecipeDataInstruction, self).__init__()
-        self.name = unicode(name)
+        self.name = six.ensure_text(name)
         self.type = type
         self.comment = comment
         self.line_number = line_number
@@ -122,10 +123,10 @@ class _SourcePackageRecipeDataInstruction(Storm):
             raise AssertionError(
                 "Unsupported source: %r" % (branch_or_repository,))
         if revspec is not None:
-            revspec = unicode(revspec)
+            revspec = six.ensure_text(revspec)
         self.revspec = revspec
         if directory is not None:
-            directory = unicode(directory)
+            directory = six.ensure_text(directory)
         self.directory = directory
         self.source_directory = source_directory
         self.recipe_data = recipe_data
@@ -420,7 +421,7 @@ class SourcePackageRecipeData(Storm):
         if Store.of(self) is not None:
             self.instructions.find().remove()
         if builder_recipe.revspec is not None:
-            self.revspec = unicode(builder_recipe.revspec)
+            self.revspec = six.ensure_text(builder_recipe.revspec)
         else:
             self.revspec = None
         self._recordInstructions(
@@ -429,8 +430,9 @@ class SourcePackageRecipeData(Storm):
         if builder_recipe.deb_version is None:
             self.deb_version_template = None
         else:
-            self.deb_version_template = unicode(builder_recipe.deb_version)
-        self.recipe_format = unicode(builder_recipe.format)
+            self.deb_version_template = six.ensure_text(
+                builder_recipe.deb_version)
+        self.recipe_format = six.text_type(builder_recipe.format)
 
     def __init__(self, recipe, recipe_branch_type, sourcepackage_recipe=None,
                  sourcepackage_recipe_build=None):

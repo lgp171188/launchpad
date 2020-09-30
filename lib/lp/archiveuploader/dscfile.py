@@ -18,9 +18,9 @@ __all__ = [
     'SignableTagFile',
     ]
 
-from cStringIO import StringIO
 import errno
 import glob
+import io
 import os
 import shutil
 import tempfile
@@ -676,7 +676,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         changelog_lfa = self.librarian.create(
             "changelog",
             len(self.changelog),
-            StringIO(self.changelog),
+            io.BytesIO(self.changelog),
             "text/x-debian-source-changelog",
             restricted=self.policy.archive.private)
 
@@ -825,7 +825,7 @@ def find_changelog(source_dir, logger):
 
     # Move the changelog file out of the package direcotry
     logger.debug("Found changelog")
-    with open(changelog_file) as changelog:
+    with open(changelog_file, "rb") as changelog:
         return changelog.read()
 
 

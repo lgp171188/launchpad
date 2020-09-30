@@ -405,7 +405,7 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
         if type(node) in IGNORED_ELEMENTS:
             continue
         elif isinstance(node, CData):
-            result.append(unicode(node))
+            result.append(six.text_type(node))
         elif isinstance(node, NavigableString):
             result.append(node.format_string(node, formatter=formatter))
         else:

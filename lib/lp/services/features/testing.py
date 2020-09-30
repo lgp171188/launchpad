@@ -91,7 +91,7 @@ class FeatureFixtureMixin:
                 flag=flag_name,
                 scope='default',
                 priority=999,
-                value=unicode(value))
+                value=six.text_type(value))
             for flag_name, value in six.iteritems(self.desired_features)
                 if value is not None]
 

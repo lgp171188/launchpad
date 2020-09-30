@@ -14,7 +14,7 @@ try:
     from contextlib import ExitStack
 except ImportError:
     from contextlib2 import ExitStack
-from cStringIO import StringIO
+import io
 from operator import attrgetter
 import sys
 from uuid import uuid1
@@ -29,6 +29,7 @@ from breezy.patches import (
 from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
 import simplejson
+import six
 from sqlobject import (
     ForeignKey,
     IntCol,
@@ -211,7 +212,7 @@ class Diff(SQLBase):
         :from_tree: The old tree in the diff.
         :to_tree: The new tree in the diff.
         """
-        diff_content = StringIO()
+        diff_content = io.BytesIO()
         show_diff_trees(from_tree, to_tree, diff_content, old_label='',
                         new_label='')
         return klass.fromFileAtEnd(diff_content, filename)
@@ -228,7 +229,7 @@ class Diff(SQLBase):
                  strip_prefix_segments=0):
         """Create a Diff from a textual diff.
 
-        :diff_content: The diff text
+        :diff_content: The diff text, as `bytes`.
         :size: The number of bytes in the diff text.
         :filename: The filename to store the content with.  Randomly generated
             if not supplied.
@@ -244,7 +245,7 @@ class Diff(SQLBase):
                 filename, size, diff_content, 'text/x-diff', restricted=True)
             diff_content.seek(0)
             diff_content_bytes = diff_content.read(size)
-            diff_lines_count = len(diff_content_bytes.strip().split('\n'))
+            diff_lines_count = len(diff_content_bytes.strip().split(b'\n'))
         try:
             diffstat = cls.generateDiffstat(
                 diff_content_bytes,
@@ -302,7 +303,7 @@ class Diff(SQLBase):
         :param ignore_brances: A collection of branches to ignore merges from.
         :return: a `Diff`.
         """
-        diff_content = StringIO()
+        diff_content = io.BytesIO()
         with ExitStack() as stack:
             for branch in [source_branch] + ignore_branches:
                 stack.enter_context(read_locked(branch))
@@ -430,7 +431,7 @@ class PreviewDiff(Storm):
             preview.branch_merge_proposal = bmp
             preview.diff = diff
             preview.conflicts = u''.join(
-                unicode(conflict) + '\n' for conflict in conflicts)
+                six.text_type(conflict) + '\n' for conflict in conflicts)
         else:
             source_repository = bmp.source_git_repository
             target_repository = bmp.target_git_repository
@@ -462,7 +463,8 @@ class PreviewDiff(Storm):
         """Create a PreviewDiff with specified values.
 
         :param bmp: The `BranchMergeProposal` this diff references.
-        :param diff_content: The text of the diff, as bytes.
+        :param diff_content: The text of the diff, as bytes (or text, which
+            will be encoded using UTF-8).
         :param source_revision_id: The revision_id of the source branch.
         :param target_revision_id: The revision_id of the target branch.
         :param prerequisite_revision_id: The revision_id of the prerequisite
@@ -470,10 +472,11 @@ class PreviewDiff(Storm):
         :param conflicts: The conflicts, as text.
         :return: A `PreviewDiff` with specified values.
         """
+        diff_content = six.ensure_binary(diff_content)
         filename = str(uuid1()) + '.txt'
         size = len(diff_content)
         diff = Diff.fromFile(
-            StringIO(diff_content), size, filename,
+            io.BytesIO(diff_content), size, filename,
             strip_prefix_segments=strip_prefix_segments)
 
         preview = cls()

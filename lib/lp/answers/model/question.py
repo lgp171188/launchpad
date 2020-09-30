@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Question models."""
@@ -27,6 +27,7 @@ from lazr.lifecycle.event import (
     )
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -678,7 +679,7 @@ class Question(SQLBase, BugLinkTargetMixin):
         from lp.bugs.model.bug import Bug
         bug_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'question', unicode(self.id)), types=[u'bug'])]
+                (u'question', six.text_type(self.id)), types=[u'bug'])]
         return list(sorted(
             bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
 
@@ -689,13 +690,14 @@ class Question(SQLBase, BugLinkTargetMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'question', unicode(self.id)):
-                {(u'bug', unicode(bug.id)): props}})
+            {(u'question', six.text_type(self.id)):
+                {(u'bug', six.text_type(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {(u'question', unicode(self.id)): [(u'bug', unicode(bug.id))]})
+            {(u'question', six.text_type(self.id)):
+                [(u'bug', six.text_type(bug.id))]})
 
     def setCommentVisibility(self, user, comment_number, visible):
         """See `IQuestion`."""
@@ -1367,9 +1369,9 @@ class QuestionTargetMixin:
             AnswerContact,
             LeftJoin(Person, AnswerContact.person == Person.id),
             LeftJoin(PersonLanguage,
-                     AnswerContact.personID == PersonLanguage.personID),
+                     AnswerContact.personID == PersonLanguage.person_id),
             LeftJoin(Language,
-                     PersonLanguage.language == Language.id)]
+                     PersonLanguage.language_id == Language.id)]
         columns = [Person, Language]
         conditions = self._getConditionsToQueryAnswerContacts()
         results = self._store.using(*origin).find(tuple(columns), conditions)

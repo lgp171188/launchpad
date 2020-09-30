@@ -42,6 +42,7 @@ from lazr.restful import (
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from simplejson import dumps
+import six
 from zope import formlib
 from zope.component import (
     getMultiAdapter,
@@ -407,7 +408,7 @@ class MaloneView(LaunchpadFormView):
 
     def _redirectToBug(self, bug_id):
         """Redirect to the specified bug id."""
-        if not isinstance(bug_id, basestring):
+        if not isinstance(bug_id, six.string_types):
             self.error_message = "Bug %r is not registered." % bug_id
             return
         if bug_id.startswith("#"):

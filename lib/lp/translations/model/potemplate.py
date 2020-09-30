@@ -68,6 +68,7 @@ from lp.services.database.sqlbase import (
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import get_email_template
 from lp.services.propertycache import cachedproperty
+from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.services.worlddata.model.language import Language
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.pofile import IPOFileSet
@@ -699,10 +700,10 @@ class POTemplate(SQLBase, RosettaStats):
 
     def _lookupLanguage(self, language_code):
         """Look up named `Language` object, or raise `LanguageNotFound`."""
-        try:
-            return Language.byCode(language_code)
-        except SQLObjectNotFound:
+        language = getUtility(ILanguageSet).getLanguageByCode(language_code)
+        if language is None:
             raise LanguageNotFound(language_code)
+        return language
 
     def isPOFilePathAvailable(self, path):
         """Can we assign given path to a new `POFile` without clashes?
@@ -1002,7 +1003,8 @@ class POTemplate(SQLBase, RosettaStats):
                         txn.begin()
                     if logger:
                         logger.warn(
-                            "Statistics update failed: %s" % unicode(error))
+                            "Statistics update failed: %s" %
+                            six.text_type(error))
 
         if template_mail is not None:
             template = get_email_template(

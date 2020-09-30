@@ -87,6 +87,12 @@ class SigningKey(StormBase):
         self.date_created = date_created
 
     @classmethod
+    def get(cls, key_type, fingerprint):
+        """See `ISigningKeySet`."""
+        return IStore(SigningKey).find(
+            SigningKey, key_type=key_type, fingerprint=fingerprint).one()
+
+    @classmethod
     def generate(cls, key_type, description,
                  openpgp_key_algorithm=None, length=None):
         signing_service = getUtility(ISigningServiceClient)
@@ -123,11 +129,12 @@ class SigningKey(StormBase):
             store.add(db_key)
         return db_key
 
-    def sign(self, message, message_name):
-        if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
-            mode = SigningMode.ATTACHED
-        else:
-            mode = SigningMode.DETACHED
+    def sign(self, message, message_name, mode=None):
+        if mode is None:
+            if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
+                mode = SigningMode.ATTACHED
+            else:
+                mode = SigningMode.DETACHED
         signing_service = getUtility(ISigningServiceClient)
         signed = signing_service.sign(
             self.key_type, self.fingerprint, message_name, message, mode)

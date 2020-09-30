@@ -3,6 +3,8 @@
 
 """Run the standalone wadllib tests."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['test_suite']
 
@@ -17,6 +19,11 @@ from lp.testing.systemdocs import LayeredDocFileSuite
 
 
 topdir = os.path.dirname(wadllib.__file__)
+
+
+def setUp(test):
+    for future_item in 'absolute_import', 'print_function':
+        test.globs[future_item] = getattr(globals(), future_item)
 
 
 def test_suite():
@@ -36,7 +43,7 @@ def test_suite():
     # Sort the tests.
     for filename in sorted(doctest_files):
         path = doctest_files[filename]
-        doctest = LayeredDocFileSuite(path, package=wadllib)
+        doctest = LayeredDocFileSuite(path, package=wadllib, setUp=setUp)
         suite.addTest(doctest)
 
     return suite

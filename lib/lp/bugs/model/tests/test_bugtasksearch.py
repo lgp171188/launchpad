@@ -48,15 +48,8 @@ from lp.bugs.model.bugtasksearch import (
     get_bug_bulk_privacy_filter_terms,
     get_bug_privacy_filter_terms,
     )
-from lp.hardwaredb.interfaces.hwdb import (
-    HWBus,
-    IHWDeviceSet,
-    )
 from lp.registry.enums import SharingPermission
-from lp.registry.interfaces.distribution import (
-    IDistribution,
-    IDistributionSet,
-    )
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
@@ -90,7 +83,6 @@ from lp.testing import (
     TestCase,
     TestCaseWithFactory,
     )
-from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -2189,31 +2181,6 @@ class TestBugTaskTagSearchClauses(TestCase):
                   (SELECT 1 FROM BugTag
                     WHERE BugTag.bug = BugTaskFlat.bug)""",
             self.searchClause(all(u'*', u'-*')))
-
-
-class TestBugTaskHardwareSearch(TestCaseWithFactory):
-
-    layer = LaunchpadFunctionalLayer
-
-    def test_search_results_without_duplicates(self):
-        # Searching for hardware related bugtasks returns each
-        # matching task exactly once, even if devices from more than
-        # one HWDB submission match the given criteria.
-        new_submission = self.factory.makeHWSubmission(
-            emailaddress=u'test@canonical.com')
-        device = getUtility(IHWDeviceSet).getByDeviceID(
-            HWBus.PCI, '0x10de', '0x0455')
-        with dbuser('hwdb-submission-processor'):
-            self.factory.makeHWSubmissionDevice(
-                new_submission, device, None, None, 1)
-        search_params = BugTaskSearchParams(
-            user=None, hardware_bus=HWBus.PCI, hardware_vendor_id='0x10de',
-            hardware_product_id='0x0455', hardware_owner_is_bug_reporter=True)
-        ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-        bugtasks = ubuntu.searchTasks(search_params)
-        self.assertEqual(
-            [1, 2],
-            [bugtask.bug.id for bugtask in bugtasks])
 
 
 class TestBugTaskSearch(TestCaseWithFactory):

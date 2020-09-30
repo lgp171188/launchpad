@@ -908,11 +908,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.setConfig()
 
     def test_view_oci_push_rules_owner(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.person,
-            url=url,
+            registrant=self.person, owner=self.person, url=url,
             credentials=credentials)
         image_name = self.factory.getUniqueUnicode()
         push_rule = getUtility(IOCIPushRuleSet).new(
@@ -943,11 +942,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                         "Image name", "td", text=image_name))))
 
     def test_view_oci_push_rules_non_owner(self):
-        url = unicode(self.factory.getUniqueURL())
+        url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.person,
-            url=url,
+            registrant=self.person, owner=self.person, url=url,
             credentials=credentials)
         image_name = self.factory.getUniqueUnicode()
         push_rule = getUtility(IOCIPushRuleSet).new(
@@ -1027,8 +1025,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.person,
-            url=url,
+            registrant=self.person, owner=self.person, url=url,
             credentials=credentials)
         image_name = self.factory.getUniqueUnicode()
         push_rule = getUtility(IOCIPushRuleSet).new(
@@ -1092,8 +1089,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.person,
-            url=url,
+            registrant=self.person, owner=self.person, url=url,
             credentials=credentials)
         image_names = [self.factory.getUniqueUnicode() for _ in range(2)]
         push_rules = [
@@ -1136,8 +1132,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         url = self.factory.getUniqueURL()
         credentials = {'username': 'foo', 'password': 'bar'}
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.person,
-            url=url,
+            registrant=self.person, owner=self.person, url=url,
             credentials=credentials)
         image_name = self.factory.getUniqueUnicode()
         push_rule = getUtility(IOCIPushRuleSet).new(
@@ -1242,7 +1237,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         existing_rule = self.factory.makeOCIPushRule(
             recipe=self.recipe,
             registry_credentials=self.factory.makeOCIRegistryCredentials(
-                owner=self.recipe.owner))
+                registrant=self.recipe.owner, owner=self.recipe.owner))
         existing_image_name = existing_rule.image_name
         existing_registry_url = existing_rule.registry_url
         existing_username = existing_rule.username
@@ -1267,7 +1262,8 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         existing_rule = self.factory.makeOCIPushRule(
             recipe=self.recipe,
             registry_credentials=self.factory.makeOCIRegistryCredentials(
-                owner=self.recipe.owner, credentials={}))
+                registrant=self.recipe.owner, owner=self.recipe.owner,
+                credentials={}))
         existing_registry_url = existing_rule.registry_url
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
@@ -1367,8 +1363,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         credentials = {'username': 'foo', 'password': 'bar'}
         image_name = self.factory.getUniqueUnicode()
         registry_credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            owner=self.person,
-            url=url,
+            registrant=self.person, owner=self.person, url=url,
             credentials=credentials)
         getUtility(IOCIPushRuleSet).new(
             recipe=self.recipe,

@@ -44,44 +44,44 @@ Branch merge proposals can be created through the API.
     >>> bmp_url = bmp_result.getHeader('Location')
     >>> bmp = registrant_webservice.get(bmp_url).jsonBody()
     >>> pprint_entry(bmp)
-    address: u'mp+...@code.launchpad.test'
+    address: 'mp+...@code.launchpad.test'
     all_comments_collection_link:
-        u'http://api.launchpad.test/devel/~.../+merge/.../all_comments'
+        'http://api.launchpad.test/devel/~.../+merge/.../all_comments'
     bugs_collection_link:
-        u'http://api.launchpad.test/devel/~.../+merge/.../bugs'
-    commit_message: u'It was merged!\n'
-    date_created: u'...'
+        'http://api.launchpad.test/devel/~.../+merge/.../bugs'
+    commit_message: 'It was merged!\n'
+    date_created: '...'
     date_merged: None
-    date_review_requested: u'...'
+    date_review_requested: '...'
     date_reviewed: None
-    description: u'Merge\nit!'
+    description: 'Merge\nit!'
     merge_reporter_link: None
     merged_revision_id: None
     merged_revno: None
-    prerequisite_branch_link: u'http://api.launchpad.test/devel/~...'
+    prerequisite_branch_link: 'http://api.launchpad.test/devel/~...'
     prerequisite_git_path: None
     prerequisite_git_repository_link: None
     preview_diff_link: None
-    preview_diffs_collection_link: u'http://.../preview_diffs'
+    preview_diffs_collection_link: 'http://.../preview_diffs'
     private: False
-    queue_status: u'Needs review'
-    registrant_link: u'http://api.launchpad.test/devel/~person-name...'
+    queue_status: 'Needs review'
+    registrant_link: 'http://api.launchpad.test/devel/~person-name...'
     resource_type_link:
-        u'http://api.launchpad.test/devel/#branch_merge_proposal'
+        'http://api.launchpad.test/devel/#branch_merge_proposal'
     reviewed_revid: None
     reviewer_link: None
-    self_link: u'http://api.launchpad.test/devel/~.../+merge/...'
-    source_branch_link: u'http://api.launchpad.test/devel/~...'
+    self_link: 'http://api.launchpad.test/devel/~.../+merge/...'
+    source_branch_link: 'http://api.launchpad.test/devel/~...'
     source_git_path: None
     source_git_repository_link: None
     superseded_by_link: None
     supersedes_link: None
-    target_branch_link: u'http://api.launchpad.test/devel/~...'
+    target_branch_link: 'http://api.launchpad.test/devel/~...'
     target_git_path: None
     target_git_repository_link: None
     votes_collection_link:
-        u'http://api.launchpad.test/devel/~.../+merge/.../votes'
-    web_link: u'http://code.../~.../+merge/...'
+        'http://api.launchpad.test/devel/~.../+merge/.../votes'
+    web_link: 'http://code.../~.../+merge/...'
 
 If we try and create the merge proposal again, we should get a ValueError.
 
@@ -101,15 +101,15 @@ Our review request is listed in the votes collection.
     >>> votes = webservice.get(
     ...     bmp['votes_collection_link']).jsonBody()
     >>> pprint_entry(votes['entries'][0])
-    branch_merge_proposal_link: u'http://api.launchpad.test/devel/~.../+merge/...'
+    branch_merge_proposal_link: 'http://api.launchpad.test/devel/~.../+merge/...'
     comment_link: None
-    date_created: u'...'
+    date_created: '...'
     is_pending: True
-    registrant_link: u'http://api.launchpad.test/devel/~person-name...'
-    resource_type_link: u'http://api.launchpad.test/devel/#code_review_vote_reference'
-    review_type: u'green'
-    reviewer_link: u'http://api.launchpad.test/devel/~person-name...'
-    self_link: u'http://api.launchpad.test/devel/~...'
+    registrant_link: 'http://api.launchpad.test/devel/~person-name...'
+    resource_type_link: 'http://api.launchpad.test/devel/#code_review_vote_reference'
+    review_type: 'green'
+    reviewer_link: 'http://api.launchpad.test/devel/~person-name...'
+    self_link: 'http://api.launchpad.test/devel/~...'
 
 == Get an existing merge proposal ==
 
@@ -149,10 +149,10 @@ We use the webservice as an unrelated, unprivileged user.
 
     >>> merge_proposal = webservice.get(proposal_url).jsonBody()
     >>> pprint_entry(merge_proposal)
-    address: u'mp+...@code.launchpad.test'
+    address: 'mp+...@code.launchpad.test'
     all_comments_collection_link:
-        u'http://.../~source/fooix/fix-it/+merge/.../all_comments'
-    bugs_collection_link: u'http://.../~source/fooix/fix-it/+merge/.../bugs'
+        'http://.../~source/fooix/fix-it/+merge/.../all_comments'
+    bugs_collection_link: 'http://.../~source/fooix/fix-it/+merge/.../bugs'
     commit_message: None
     date_created: ...
     date_merged: None
@@ -166,24 +166,24 @@ We use the webservice as an unrelated, unprivileged user.
     prerequisite_git_path: None
     prerequisite_git_repository_link: None
     preview_diff_link: None
-    preview_diffs_collection_link: u'http://.../preview_diffs'
+    preview_diffs_collection_link: 'http://.../preview_diffs'
     private: False
-    queue_status: u'Work in progress'
-    registrant_link: u'http://.../~person-name...'
-    resource_type_link: u'http://.../#branch_merge_proposal'
+    queue_status: 'Work in progress'
+    registrant_link: 'http://.../~person-name...'
+    resource_type_link: 'http://.../#branch_merge_proposal'
     reviewed_revid: None
     reviewer_link: None
-    self_link: u'http://.../~source/fooix/fix-it/+merge/...'
-    source_branch_link: u'http://.../~source/fooix/fix-it'
+    self_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    source_branch_link: 'http://.../~source/fooix/fix-it'
     source_git_path: None
     source_git_repository_link: None
     superseded_by_link: None
     supersedes_link: None
-    target_branch_link: u'http://.../~target/fooix/trunk'
+    target_branch_link: 'http://.../~target/fooix/trunk'
     target_git_path: None
     target_git_repository_link: None
-    votes_collection_link: u'http://.../~source/fooix/fix-it/+merge/.../votes'
-    web_link: u'http://code.../~source/fooix/fix-it/+merge/...'
+    votes_collection_link: 'http://.../~source/fooix/fix-it/+merge/.../votes'
+    web_link: 'http://code.../~source/fooix/fix-it/+merge/...'
 
 
 == Read the comments ==
@@ -195,36 +195,36 @@ The comments on a branch merge proposal are exposed through the API.
     >>> print(len(all_comments['entries']))
     2
     >>> pprint_entry(all_comments['entries'][0])
-    as_quoted_email: u'> This is great work'
-    author_link: u'http://api.launchpad.test/devel/~...'
-    branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
-    date_created: u'...'
+    as_quoted_email: '> This is great work'
+    author_link: 'http://api.launchpad.test/devel/~...'
+    branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    date_created: '...'
     id: ...
-    message_body: u'This is great work'
-    resource_type_link: u'http://.../#code_review_comment'
-    self_link: u'http://.../~source/fooix/fix-it/+merge/.../comments/...'
-    title: u'Comment on proposed merge of lp://dev/~source/fooix/fix-it into lp://dev/~target/fooix/trunk'
-    vote: u'Approve'
-    vote_tag: u'code'
-    web_link: u'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
+    message_body: 'This is great work'
+    resource_type_link: 'http://.../#code_review_comment'
+    self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
+    title: 'Comment on proposed merge of lp://dev/~source/fooix/fix-it into lp://dev/~target/fooix/trunk'
+    vote: 'Approve'
+    vote_tag: 'code'
+    web_link: 'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
 
     >>> comment_2_id = all_comments['entries'][1]['id']
     >>> comment_2 = webservice.named_get(
     ...     merge_proposal['self_link'], 'getComment',
     ...     id=comment_2_id).jsonBody()
     >>> pprint_entry(comment_2)
-    as_quoted_email: u'> This is mediocre work.'
-    author_link: u'http://api.launchpad.test/devel/~...'
-    branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
-    date_created: u'...'
+    as_quoted_email: '> This is mediocre work.'
+    author_link: 'http://api.launchpad.test/devel/~...'
+    branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    date_created: '...'
     id: ...
-    message_body: u'This is mediocre work.'
-    resource_type_link: u'http://.../#code_review_comment'
-    self_link: u'http://.../~source/fooix/fix-it/+merge/.../comments/...'
+    message_body: 'This is mediocre work.'
+    resource_type_link: 'http://.../#code_review_comment'
+    self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: ...
-    vote: u'Abstain'
+    vote: 'Abstain'
     vote_tag: None
-    web_link: u'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
+    web_link: 'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
 
 
 == Check the votes ==
@@ -236,15 +236,15 @@ The votes on a branch merge proposal can be checked through the API.
     >>> print(len(votes))
     2
     >>> pprint_entry(votes[0])
-    branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
-    comment_link: u'http://.../~source/fooix/fix-it/+merge/.../comments/...'
-    date_created: u'...'
+    branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    comment_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
+    date_created: '...'
     is_pending: False
-    registrant_link: u'http://.../~person-name...'
-    resource_type_link: u'http://.../#code_review_vote_reference'
-    review_type: u'code'
-    reviewer_link: u'http://.../~person-name...'
-    self_link: u'http://.../~source/fooix/fix-it/+merge/.../+review/...'
+    registrant_link: 'http://.../~person-name...'
+    resource_type_link: 'http://.../#code_review_vote_reference'
+    review_type: 'code'
+    reviewer_link: 'http://.../~person-name...'
+    self_link: 'http://.../~source/fooix/fix-it/+merge/.../+review/...'
 
 
 == Performing a Review ==
@@ -264,15 +264,15 @@ A review can be requested of the person 'target'.
     HTTP/1.1 200 Ok ...
     >>> reviewer_entry = reviewer.jsonBody()
     >>> pprint_entry(reviewer_entry)
-    branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
+    branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
     comment_link: None
-    date_created: u'...'
+    date_created: '...'
     is_pending: True
-    registrant_link: u'http://.../~target'
-    resource_type_link: u'http://.../#code_review_vote_reference'
-    review_type: u'code'
-    reviewer_link: u'http://.../~target'
-    self_link: u'http://.../~source/fooix/fix-it/+merge/.../+review/...'
+    registrant_link: 'http://.../~target'
+    resource_type_link: 'http://.../#code_review_vote_reference'
+    review_type: 'code'
+    reviewer_link: 'http://.../~target'
+    self_link: 'http://.../~source/fooix/fix-it/+merge/.../+review/...'
 
     >>> vote = reviewer_webservice.get(reviewer_entry['self_link'])
     >>> print(vote)
@@ -287,18 +287,18 @@ Now the code review should be made.
     >>> comment_link = comment_result.getHeader('Location')
     >>> comment = reviewer_webservice.get(comment_link).jsonBody()
     >>> pprint_entry(comment)
-    as_quoted_email: u'> This is great work'
-    author_link: u'http://api.launchpad.test/devel/~...'
-    branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
-    date_created: u'...'
+    as_quoted_email: '> This is great work'
+    author_link: 'http://api.launchpad.test/devel/~...'
+    branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    date_created: '...'
     id: ...
-    message_body: u'This is great work'
-    resource_type_link: u'http://.../#code_review_comment'
-    self_link: u'http://.../~source/fooix/fix-it/+merge/.../comments/...'
+    message_body: 'This is great work'
+    resource_type_link: 'http://.../#code_review_comment'
+    self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: ...
-    vote: u'Approve'
-    vote_tag: u'code'
-    web_link: u'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
+    vote: 'Approve'
+    vote_tag: 'code'
+    web_link: 'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
 
 In fact, now that the votes indicate approval, we might as well set the merge
 proposal status to "Approved" as well.
@@ -463,7 +463,7 @@ which is the one we want the method to return.
     ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
     ...     registrant=branch_owner, source_branch=source_branch)
     >>> proposal.nominateReviewer(target_owner, branch_owner)
-    <CodeReviewVoteReference at ...>
+    <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
 
 And then we propose a merge the other way, so that the owner is target,
 but they have not been asked to review, meaning that the method shouldn't
@@ -474,7 +474,7 @@ return this review.
     ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
     ...     registrant=target_owner, source_branch=target_branch)
     >>> proposal.nominateReviewer(branch_owner, target_owner)
-    <CodeReviewVoteReference at ...>
+    <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
     >>> logout()
 
     >>> proposals = webservice.named_get('/~target', 'getRequestedReviews'

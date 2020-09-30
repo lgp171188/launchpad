@@ -56,12 +56,11 @@ class TestBuildDepWait(TestCaseWithFactory):
             version="%s.1" % self.factory.getUniqueInteger(),
             distroseries=self.distroseries, archive=self.archive)
         [build] = spph.createMissingBuilds()
-        spn = self.factory.getUniqueString()
+        spn = self.factory.getUniqueUnicode()
         version = "%s.1" % self.factory.getUniqueInteger()
         with person_logged_in(self.admin):
             build.updateStatus(
-                BuildStatus.MANUALDEPWAIT,
-                slave_status={'dependencies': unicode(spn)})
+                BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': spn})
             [bpph] = self.publisher.getPubBinaries(
                 binaryname=spn, distroseries=self.distroseries,
                 version=version, builder=self.builder, archive=self.archive,
@@ -79,12 +78,11 @@ class TestBuildDepWait(TestCaseWithFactory):
             version="%s.1" % self.factory.getUniqueInteger(),
             distroseries=self.distroseries, archive=self.archive)
         [build] = spph.createMissingBuilds()
-        spn = self.factory.getUniqueString()
+        spn = self.factory.getUniqueUnicode()
         version = "%s.1" % self.factory.getUniqueInteger()
         with person_logged_in(self.admin):
             build.updateStatus(
-                BuildStatus.MANUALDEPWAIT,
-                slave_status={'dependencies': unicode(spn)})
+                BuildStatus.MANUALDEPWAIT,slave_status={'dependencies': spn})
             [bpph] = self.publisher.getPubBinaries(
                 binaryname=spn, distroseries=self.distroseries,
                 version=version, builder=self.builder, archive=self.archive,
@@ -94,7 +92,7 @@ class TestBuildDepWait(TestCaseWithFactory):
             transaction.commit()
         build.updateDependencies()
         # Since the dependency is in universe, we still can't see it.
-        self.assertEqual(unicode(spn), build.dependencies)
+        self.assertEqual(spn, build.dependencies)
         with person_logged_in(self.admin):
             bpph.component = getUtility(IComponentSet)['main']
             transaction.commit()

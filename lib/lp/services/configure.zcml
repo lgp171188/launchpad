@@ -29,6 +29,7 @@
   <include package=".signing" />
   <include package=".sitesearch" />
   <include package=".statistics" />
+  <include package=".statsd" />
   <include package=".temporaryblobstorage" />
   <include package=".verification" />
   <include package=".webhooks" />

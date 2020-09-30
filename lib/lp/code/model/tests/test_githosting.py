@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for `GitHostingClient`.
@@ -23,7 +23,6 @@ from lazr.restful.utils import get_current_browser_request
 import responses
 from six.moves.urllib.parse import (
     parse_qsl,
-    urljoin,
     urlsplit,
     )
 from testtools.matchers import (
@@ -129,6 +128,15 @@ class TestGitHostingClient(TestCase):
         self.assertRequest(
             "repo", method="POST",
             json_data={"repo_path": "123", "clone_from": "122"})
+
+    def test_create_async(self):
+        with self.mockRequests("POST"):
+            self.client.create("123", clone_from="122", async_create=True)
+        self.assertRequest(
+            "repo", method="POST",
+            json_data={
+                "repo_path": "123", "clone_from": "122", "async": True,
+                "clone_refs": True})
 
     def test_create_failure(self):
         with self.mockRequests("POST", status=400):

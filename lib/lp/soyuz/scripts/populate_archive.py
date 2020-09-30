@@ -9,7 +9,7 @@ __all__ = [
     'ArchivePopulator',
     ]
 
-
+import six
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -38,7 +38,7 @@ def specified(option):
     """
     if option is None:
         return False
-    if isinstance(option, basestring) and option.strip() == '':
+    if isinstance(option, six.string_types) and option.strip() == '':
         return False
     return True
 
@@ -231,7 +231,7 @@ class ArchivePopulator(SoyuzScript):
         # archive population parameters in the database.
         pcr = getUtility(IPackageCopyRequestSet).new(
             the_origin, the_destination, registrant,
-            copy_binaries=include_binaries, reason=unicode(reason))
+            copy_binaries=include_binaries, reason=six.ensure_text(reason))
 
         # Clone the source packages. We currently do not support the copying
         # of binary packages. It's a forthcoming feature.

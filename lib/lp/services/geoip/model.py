@@ -9,7 +9,6 @@ __all__ = [
 
 import os
 
-import GeoIP as libGeoIP
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from zope.component import getUtility
@@ -31,38 +30,34 @@ from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.services.worlddata.interfaces.language import ILanguageSet
 
 
+class NonexistentGeoIPDatabase(Exception):
+    """Configured GeoIP database does not exist."""
+
+
 @implementer(IGeoIP)
 class GeoIP:
     """See `IGeoIP`."""
 
     @cachedproperty
     def _gi(self):
+        if config.launchpad.geoip_database is None:
+            return None
         if not os.path.exists(config.launchpad.geoip_database):
-            raise NoGeoIPDatabaseFound(
-                "No GeoIP DB found. Please install launchpad-dependencies.")
-        if config.launchpad.geoip_database.endswith('.mmdb'):
-            return Reader(config.launchpad.geoip_database)
-        else:
-            return libGeoIP.open(
-                config.launchpad.geoip_database, libGeoIP.GEOIP_MEMORY_CACHE)
+            raise NonexistentGeoIPDatabase(
+                "The configured GeoIP DB (%s) does not exist." %
+                config.launchpad.geoip_database)
+        return Reader(config.launchpad.geoip_database)
 
     def getCountryCodeByAddr(self, ip_address):
         """See `IGeoIP`."""
         if not ipaddress_is_global(ip_address):
             return None
-        if isinstance(self._gi, Reader):
-            try:
-                return self._gi.country(ip_address).country.iso_code
-            except AddressNotFoundError:
-                return None
-        else:
-            try:
-                return self._gi.country_code_by_addr(ip_address)
-            except SystemError:
-                # libGeoIP may raise a SystemError if it doesn't find a
-                # record for some IP addresses (e.g. 255.255.255.255), so we
-                # need to catch that and return None here.
-                return None
+        if self._gi is None:
+            return None
+        try:
+            return self._gi.country(ip_address).country.iso_code
+        except AddressNotFoundError:
+            return None
 
     def getCountryByAddr(self, ip_address):
         """See `IGeoIP`."""
@@ -141,7 +136,3 @@ class RequestPreferredLanguages(object):
 
         languages = [language for language in languages if language.visible]
         return sorted(languages, key=lambda x: x.englishname)
-
-
-class NoGeoIPDatabaseFound(Exception):
-    """No GeoIP database was found."""

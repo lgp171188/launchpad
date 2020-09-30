@@ -32,6 +32,7 @@ import iso8601
 from psycopg2 import IntegrityError
 import pytz
 import simplejson
+import six
 from storm.expr import (
     And,
     Cast,
@@ -72,7 +73,6 @@ from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
     )
-from lp.hardwaredb.model.hwdb import HWSubmission
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
@@ -153,7 +153,7 @@ def load_garbo_job_state(job_name):
     # Load the json state data for the given job name.
     job_data = IMasterStore(Person).execute(
         "SELECT json_data FROM GarboJobState WHERE name = ?",
-        params=(unicode(job_name),)).get_one()
+        params=(six.ensure_text(job_name),)).get_one()
     if job_data:
         return simplejson.loads(job_data[0])
     return None
@@ -165,11 +165,12 @@ def save_garbo_job_state(job_name, job_data):
     json_data = simplejson.dumps(job_data, ensure_ascii=False)
     result = store.execute(
         "UPDATE GarboJobState SET json_data = ? WHERE name = ?",
-        params=(json_data, unicode(job_name)))
+        params=(json_data, six.ensure_text(job_name)))
     if result.rowcount == 0:
         store.execute(
         "INSERT INTO GarboJobState(name, json_data) "
-        "VALUES (?, ?)", params=(unicode(job_name), unicode(json_data)))
+        "VALUES (?, ?)",
+        params=(six.ensure_text(job_name), six.ensure_text(json_data)))
 
 
 class BulkPruner(TunableLoop):
@@ -900,67 +901,6 @@ class RevisionAuthorEmailLinker(TunableLoop):
                 author.personID = personID
 
         self.next_author_id = authors[-1].id + 1
-        transaction.commit()
-
-
-class HWSubmissionEmailLinker(TunableLoop):
-    """A TunableLoop that links `HWSubmission` objects to `Person` objects.
-
-    `EmailAddress` objects are looked up for `HWSubmission` objects
-    that have not yet been linked to a `Person`.  If the
-    `EmailAddress` is linked to a person, then the `HWSubmission` is
-    linked to the same.
-    """
-    maximum_chunk_size = 50000
-
-    def __init__(self, log, abort_time=None):
-        super(HWSubmissionEmailLinker, self).__init__(log, abort_time)
-        self.submission_store = IMasterStore(HWSubmission)
-        self.submission_store.execute(
-            "DROP TABLE IF EXISTS NewlyMatchedSubmission")
-        # The join with the Person table is to avoid any replication
-        # lag issues - EmailAddress.person might reference a Person
-        # that does not yet exist.
-        self.submission_store.execute("""
-            CREATE TEMPORARY TABLE NewlyMatchedSubmission AS
-            SELECT
-                HWSubmission.id AS submission,
-                EmailAddress.person AS owner
-            FROM HWSubmission, EmailAddress, Person
-            WHERE HWSubmission.owner IS NULL
-                AND EmailAddress.person = Person.id
-                AND EmailAddress.status IN %s
-                AND lower(HWSubmission.raw_emailaddress)
-                    = lower(EmailAddress.email)
-            """ % sqlvalues(
-                [EmailAddressStatus.VALIDATED, EmailAddressStatus.PREFERRED]),
-            noresult=True)
-        self.submission_store.execute("""
-            CREATE INDEX newlymatchsubmission__submission__idx
-            ON NewlyMatchedSubmission(submission)
-            """, noresult=True)
-        self.matched_submission_count = self.submission_store.execute("""
-            SELECT COUNT(*) FROM NewlyMatchedSubmission
-            """).get_one()[0]
-        self.offset = 0
-
-    def isDone(self):
-        return self.offset >= self.matched_submission_count
-
-    def __call__(self, chunk_size):
-        self.submission_store.execute("""
-            UPDATE HWSubmission
-            SET owner=NewlyMatchedSubmission.owner
-            FROM (
-                SELECT submission, owner
-                FROM NewlyMatchedSubmission
-                ORDER BY submission
-                OFFSET %d
-                LIMIT %d
-                ) AS NewlyMatchedSubmission
-            WHERE HWSubmission.id = NewlyMatchedSubmission.submission
-            """ % (self.offset, chunk_size), noresult=True)
-        self.offset += chunk_size
         transaction.commit()
 
 
@@ -1894,7 +1834,6 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         CodeImportResultPruner,
         DiffPruner,
         GitJobPruner,
-        HWSubmissionEmailLinker,
         LiveFSFilePruner,
         LoginTokenPruner,
         OCIFilePruner,

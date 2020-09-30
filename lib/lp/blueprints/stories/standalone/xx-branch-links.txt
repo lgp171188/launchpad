@@ -26,10 +26,10 @@ If the user is not logged in, they will be asked to log in.
     >>> def printSpecBranchLinks(browser):
     ...     tags = find_tags_by_class(browser.contents, 'spec-branch-summary')
     ...     if len(tags) == 0:
-    ...         print 'No spec branch links'
+    ...         print('No spec branch links')
     ...     else:
     ...         for tag in tags:
-    ...             print extract_text(tag)
+    ...             print(extract_text(tag))
 
 When linking from a branch to a spec, a select widget is used as a
 method for selecting values.  This widget is populated with the
@@ -74,8 +74,8 @@ The blueprint page shows the linked branches in a portlet.
 
     >>> user_browser.open(
     ...     'http://blueprints.launchpad.test/firefox/+spec/svg-support')
-    >>> print extract_text(find_tag_by_id(user_browser.contents,
-    ...     'linked_branches'))
+    >>> print(extract_text(find_tag_by_id(user_browser.contents,
+    ...     'linked_branches')))
     Related branches
     lp://dev/~mark/firefox/release-0.8
     Link to another branch
@@ -107,7 +107,7 @@ The branch is now no longer listed in the portlet:
 
     >>> user_browser.open(
     ...     'http://blueprints.launchpad.test/firefox/+spec/svg-support')
-    >>> print extract_text(find_tag_by_id(user_browser.contents,
-    ...     'linked_branches'))
+    >>> print(extract_text(find_tag_by_id(user_browser.contents,
+    ...     'linked_branches')))
     Related branches
     Link a related branch

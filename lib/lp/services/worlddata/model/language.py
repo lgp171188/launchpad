@@ -1,6 +1,8 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under
 # the GNU Affero General Public License version 3 (see the file
 # LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
@@ -48,12 +50,6 @@ from lp.services.worlddata.interfaces.language import (
     ILanguageSet,
     TextDirection,
     )
-# XXX: JonathanLange 2010-11-10 bug=673796: It turns out this module is
-# unusable without spokenin being imported first. So, import spokenin.
-from lp.services.worlddata.model.spokenin import SpokenIn
-
-
-SpokenIn
 
 
 @implementer(ILanguage)
@@ -61,8 +57,7 @@ class Language(SQLBase):
 
     _table = 'Language'
 
-    code = StringCol(
-        dbName='code', notNull=True, unique=True, alternateID=True)
+    code = StringCol(dbName='code', notNull=True, unique=True)
     uuid = StringCol(dbName='uuid', notNull=False, default=None)
     nativename = StringCol(dbName='nativename')
     englishname = StringCol(dbName='englishname')
@@ -74,12 +69,12 @@ class Language(SQLBase):
         default=TextDirection.LTR)
 
     translation_teams = SQLRelatedJoin(
-        'Person', joinColumn="language",
+        six.ensure_str('Person'), joinColumn="language",
         intermediateTable='Translator', otherColumn='translator')
 
     _countries = SQLRelatedJoin(
-        'Country', joinColumn='language', otherColumn='country',
-        intermediateTable='SpokenIn')
+        six.ensure_str('Country'), joinColumn='language',
+        otherColumn='country', intermediateTable='SpokenIn')
 
     # Define a read/write property `countries` so it can be passed
     # to language administration `LaunchpadFormView`.
@@ -127,13 +122,13 @@ class Language(SQLBase):
         if self.code == 'pt_BR':
             return None
         elif self.code == 'nn':
-            return Language.byCode('nb')
+            return IStore(Language).find(Language, code='nb').one()
         elif self.code == 'nb':
-            return Language.byCode('nn')
+            return IStore(Language).find(Language, code='nn').one()
         codes = self.code.split('_')
         if len(codes) == 2 and codes[0] != 'en':
-            language = Language.byCode(codes[0])
-            if language.visible == True:
+            language = IStore(Language).find(Language, code=codes[0]).one()
+            if language.visible:
                 return language
             else:
                 return None
@@ -165,7 +160,7 @@ class Language(SQLBase):
             Join(
                 Person,
                 LanguageSet._getTranslatorJoins(),
-                Person.id == PersonLanguage.personID),
+                Person.id == PersonLanguage.person_id),
             ).find(
                 Person,
                 PersonLanguage.language == self,
@@ -200,7 +195,7 @@ class LanguageSet:
                     KarmaCache.projectgroupID == None,
                     KarmaCache.sourcepackagenameID == None,
                     KarmaCache.distributionID == None)),
-            PersonLanguage.personID ==
+            PersonLanguage.person_id ==
                 KarmaCache.personID)
 
     @property
@@ -237,7 +232,7 @@ class LanguageSet:
                     LeftJoin(
                         Language,
                         self._getTranslatorJoins(),
-                        PersonLanguage.languageID == Language.id),
+                        PersonLanguage.language_id == Language.id),
                     ).find(
                         (Language, Count(PersonLanguage)),
                         Language.id.is_in(ids),
@@ -272,10 +267,7 @@ class LanguageSet:
         """See `ILanguageSet`."""
         assert isinstance(code, six.string_types), (
             "%s is not a valid type for 'code'" % type(code))
-        try:
-            return Language.byCode(code)
-        except SQLObjectNotFound:
-            return None
+        return IStore(Language).find(Language, code=code).one()
 
     def keys(self):
         """See `ILanguageSet`."""

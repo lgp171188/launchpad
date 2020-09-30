@@ -29,12 +29,12 @@ import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+import six
 from six.moves.collections_abc import (
     Iterable,
     Set,
     )
 from sqlobject import (
-    BoolCol,
     ForeignKey,
     IntCol,
     SQLMultipleJoin,
@@ -60,6 +60,7 @@ from storm.expr import (
     )
 from storm.info import ClassAlias
 from storm.locals import (
+    Bool,
     DateTime,
     Int,
     Reference,
@@ -166,7 +167,6 @@ from lp.bugs.model.structuralsubscription import (
     )
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
-from lp.hardwaredb.interfaces.hwdb import IHWSubmissionBugSet
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
@@ -385,7 +385,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.bugs.model.cve import Cve
         xref_cve_sequences = [
             sequence for _, sequence in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'cve'])]
+                (u'bug', six.text_type(self.id)), types=[u'cve'])]
         expr = Cve.sequence.is_in(xref_cve_sequences)
         return list(sorted(
             IStore(Cve).find(Cve, expr), key=operator.attrgetter('sequence')))
@@ -395,7 +395,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.answers.model.question import Question
         question_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'question'])]
+                (u'bug', six.text_type(self.id)), types=[u'question'])]
         return list(sorted(
             bulk.load(Question, question_ids), key=operator.attrgetter('id')))
 
@@ -404,7 +404,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.blueprints.model.specification import Specification
         spec_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'specification'])]
+                (u'bug', six.text_type(self.id)), types=[u'specification'])]
         return list(sorted(
             bulk.load(Specification, spec_ids), key=operator.attrgetter('id')))
 
@@ -1411,7 +1411,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.code.model.branchmergeproposal import BranchMergeProposal
         merge_proposal_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'merge_proposal'])]
+                (u'bug', six.text_type(self.id)), types=[u'merge_proposal'])]
         return list(sorted(
             bulk.load(BranchMergeProposal, merge_proposal_ids),
             key=operator.attrgetter('id')))
@@ -1936,7 +1936,7 @@ class Bug(SQLBase, InformationTypeMixin):
         if dupe_bug_ids:
             Store.of(self).find(
                 BugAffectsPerson, BugAffectsPerson.person == user,
-                BugAffectsPerson.bugID.is_in(dupe_bug_ids),
+                BugAffectsPerson.bug_id.is_in(dupe_bug_ids),
             ).set(affected=affected)
             for dupe in self.duplicates:
                 dupe._flushAndInvalidate()
@@ -2070,18 +2070,6 @@ class Bug(SQLBase, InformationTypeMixin):
             return True
         return getUtility(IService, 'sharing').checkPillarAccess(
             self.affected_pillars, InformationType.USERDATA, user)
-
-    def linkHWSubmission(self, submission):
-        """See `IBug`."""
-        getUtility(IHWSubmissionBugSet).create(submission, self)
-
-    def unlinkHWSubmission(self, submission):
-        """See `IBug`."""
-        getUtility(IHWSubmissionBugSet).remove(submission, self)
-
-    def getHWSubmissions(self, user=None):
-        """See `IBug`."""
-        return getUtility(IHWSubmissionBugSet).submissionsForBug(self, user)
 
     def personIsDirectSubscriber(self, person):
         """See `IBug`."""
@@ -2839,12 +2827,25 @@ class BugSet:
             Bug.heat_last_updated)
 
 
-class BugAffectsPerson(SQLBase):
+class BugAffectsPerson(StormBase):
     """A bug is marked as affecting a user."""
-    bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=True)
-    affected = BoolCol(notNull=True, default=True)
-    __storm_primary__ = "bugID", "personID"
+
+    __storm_table__ = 'BugAffectsPerson'
+    __storm_primary__ = 'bug_id', 'person_id'
+
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    person_id = Int(name='person', allow_none=False)
+    person = Reference(person_id, 'Person.id')
+
+    affected = Bool(allow_none=False, default=True)
+
+    def __init__(self, bug, person, affected=True):
+        super(BugAffectsPerson, self).__init__()
+        self.bug = bug
+        self.person = person
+        self.affected = affected
 
 
 @implementer(IFileBugData)

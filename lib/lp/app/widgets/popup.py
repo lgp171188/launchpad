@@ -16,6 +16,7 @@ __all__ = [
 
 from lazr.restful.utils import safe_hasattr
 import simplejson
+import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError
@@ -84,7 +85,7 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
         vocab = self.vocabulary
         # Special case - if the entered value is valid, it is an object
         # rather than a string (I think this is a bug somewhere)
-        if not isinstance(formValue, basestring):
+        if not isinstance(formValue, six.string_types):
             return [vocab.getTerm(formValue)]
 
         search_results = vocab.searchForTerms(formValue)
@@ -101,7 +102,7 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
         val = self._getFormValue()
 
         # We have a valid object - return the corresponding token
-        if not isinstance(val, basestring):
+        if not isinstance(val, six.string_types):
             return self.vocabulary.getTerm(val).token
 
         # Just return the existing invalid token

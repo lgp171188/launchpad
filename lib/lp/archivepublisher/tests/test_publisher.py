@@ -34,6 +34,7 @@ from debian.deb822 import Release
 from fixtures import MonkeyPatch
 import pytz
 import scandir
+import six
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,
@@ -153,11 +154,11 @@ class TestPublisherSeries(TestNativePublishingBase):
     def _createLinkedPublication(self, name, pocket):
         """Return a linked pair of source and binary publications."""
         pub_source = self.getPubSource(
-            sourcename=name, filecontent="Hello", pocket=pocket)
+            sourcename=name, filecontent=b"Hello", pocket=pocket)
 
         binaryname = '%s-bin' % name
         pub_bin = self.getPubBinaries(
-            binaryname=binaryname, filecontent="World",
+            binaryname=binaryname, filecontent=b"World",
             pub_source=pub_source, pocket=pocket)[0]
 
         return (pub_source, pub_bin)
@@ -762,7 +763,7 @@ class TestPublisher(TestPublisherBase):
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
 
-        pub_source = self.getPubSource(filecontent='Hello world')
+        pub_source = self.getPubSource(filecontent=b'Hello world')
 
         publisher.A_publish(False)
         self.layer.txn.commit()
@@ -926,7 +927,7 @@ class TestPublisher(TestPublisherBase):
             pub_config.poolroot, pub_config.temproot, self.logger)
         publisher = Publisher(
             self.logger, pub_config, disk_pool, archive)
-        self.getPubSource(archive=archive, filecontent="I am partner")
+        self.getPubSource(archive=archive, filecontent=b"I am partner")
 
         publisher.A_publish(False)
 
@@ -968,7 +969,7 @@ class TestPublisher(TestPublisherBase):
             pub_config.poolroot, pub_config.temproot, self.logger)
         publisher = Publisher(self.logger, pub_config, disk_pool, archive)
         self.getPubSource(
-            archive=archive, filecontent="I am partner",
+            archive=archive, filecontent=b"I am partner",
             status=PackagePublishingStatus.PENDING)
 
         publisher.A_publish(force_publishing=False)
@@ -998,9 +999,9 @@ class TestPublisher(TestPublisherBase):
             self.ubuntutest.main_archive,
             allowed_suites=[('hoary-test', PackagePublishingPocket.RELEASE)])
 
-        pub_source = self.getPubSource(filecontent='foo')
+        pub_source = self.getPubSource(filecontent=b'foo')
         pub_source2 = self.getPubSource(
-            sourcename='baz', filecontent='baz',
+            sourcename='baz', filecontent=b'baz',
             distroseries=self.ubuntutest['hoary-test'])
 
         publisher.A_publish(force_publishing=False)
@@ -1029,11 +1030,11 @@ class TestPublisher(TestPublisherBase):
             SeriesStatus.CURRENT)
 
         pub_source = self.getPubSource(
-            filecontent='foo',
+            filecontent=b'foo',
             pocket=PackagePublishingPocket.UPDATES)
 
         pub_source2 = self.getPubSource(
-            sourcename='baz', filecontent='baz',
+            sourcename='baz', filecontent=b'baz',
             pocket=PackagePublishingPocket.BACKPORTS)
 
         publisher.A_publish(force_publishing=False)
@@ -1076,7 +1077,7 @@ class TestPublisher(TestPublisherBase):
             self.ubuntutest.main_archive)
 
         self.getPubSource(
-            filecontent='Hello world',
+            filecontent=b'Hello world',
             status=PackagePublishingStatus.PUBLISHED)
 
         # Make everything other than breezy-autotest OBSOLETE so that they
@@ -1111,7 +1112,7 @@ class TestPublisher(TestPublisherBase):
             owner=ubuntu_team, purpose=ArchivePurpose.PPA)
 
         pub_source = self.getPubSource(
-            sourcename="foo", filename="foo_1.dsc", filecontent='Hello world',
+            sourcename="foo", filename="foo_1.dsc", filecontent=b'Hello world',
             status=PackagePublishingStatus.PENDING, archive=test_archive)
 
         publisher.A_publish(False)
@@ -1141,7 +1142,7 @@ class TestPublisher(TestPublisherBase):
 
         pub_source = self.getPubSource(
             sourcename="foo", filename="foo_1.dsc",
-            filecontent='I am supposed to be a embargoed archive',
+            filecontent=b'I am supposed to be a embargoed archive',
             status=PackagePublishingStatus.PENDING, archive=test_archive)
 
         publisher.A_publish(False)
@@ -1287,11 +1288,11 @@ class TestPublisher(TestPublisherBase):
             owner=name16, distribution=ubuntu, purpose=ArchivePurpose.PPA)
 
         self.getPubSource(
-            sourcename="foo", filename="foo_1.dsc", filecontent='Hello world',
+            sourcename="foo", filename="foo_1.dsc", filecontent=b'Hello world',
             status=PackagePublishingStatus.PENDING, archive=spiv.archive)
 
         self.getPubSource(
-            sourcename="foo", filename="foo_1.dsc", filecontent='Hello world',
+            sourcename="foo", filename="foo_1.dsc", filecontent=b'Hello world',
             status=PackagePublishingStatus.PUBLISHED, archive=name16.archive)
 
         self.assertEqual(4, ubuntu.getAllPPAs().count())
@@ -1390,7 +1391,7 @@ class TestPublisher(TestPublisherBase):
         # Pending source and binary publications.
         # The binary description explores index formatting properties.
         pub_source = self.getPubSource(
-            sourcename="foo", filename="foo_1.dsc", filecontent='Hello world',
+            sourcename="foo", filename="foo_1.dsc", filecontent=b'Hello world',
             status=PackagePublishingStatus.PENDING, archive=cprov.archive)
         self.getPubBinaries(
             pub_source=pub_source,
@@ -1891,7 +1892,7 @@ class TestPublisher(TestPublisherBase):
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
 
-        self.getPubSource(filecontent='Hello world')
+        self.getPubSource(filecontent=b'Hello world')
 
         publisher.A_publish(False)
         publisher.C_doFTPArchive(False)
@@ -1948,7 +1949,7 @@ class TestPublisher(TestPublisherBase):
         archive_publisher = getPublisher(
             cprov.archive, allowed_suites, self.logger)
 
-        self.getPubSource(filecontent='Hello world', archive=cprov.archive)
+        self.getPubSource(filecontent=b'Hello world', archive=cprov.archive)
 
         archive_publisher.A_publish(False)
         self.layer.txn.commit()
@@ -1995,7 +1996,7 @@ class TestPublisher(TestPublisherBase):
         allowed_suites = []
         archive_publisher = getPublisher(
             named_ppa, allowed_suites, self.logger)
-        self.getPubSource(filecontent='Hello world', archive=named_ppa)
+        self.getPubSource(filecontent=b'Hello world', archive=named_ppa)
 
         archive_publisher.A_publish(False)
         self.layer.txn.commit()
@@ -2024,7 +2025,7 @@ class TestPublisher(TestPublisherBase):
         allowed_suites = []
         publisher = getPublisher(archive, allowed_suites, self.logger)
 
-        self.getPubSource(filecontent='Hello world', archive=archive)
+        self.getPubSource(filecontent=b'Hello world', archive=archive)
 
         publisher.A_publish(False)
         publisher.C_writeIndexes(False)
@@ -2062,8 +2063,8 @@ class TestPublisher(TestPublisherBase):
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
-        self.getPubSource(filecontent='Hello world', pocket=RELEASE)
-        self.getPubSource(filecontent='Hello world', pocket=BACKPORTS)
+        self.getPubSource(filecontent=b'Hello world', pocket=RELEASE)
+        self.getPubSource(filecontent=b'Hello world', pocket=BACKPORTS)
 
         # Make everything other than breezy-autotest OBSOLETE so that they
         # aren't republished.
@@ -2101,7 +2102,7 @@ class TestPublisher(TestPublisherBase):
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
-        self.getPubSource(filecontent='Hello world')
+        self.getPubSource(filecontent=b'Hello world')
 
         # Make sure that apt-ftparchive generates i18n/Translation-en* files.
         ds = self.ubuntutest.getSeries('breezy-autotest')
@@ -2225,7 +2226,7 @@ class TestPublisher(TestPublisherBase):
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
 
-        self.getPubSource(filecontent='Hello world')
+        self.getPubSource(filecontent=b'Hello world')
 
         publisher.A_publish(False)
         publisher.C_doFTPArchive(False)
@@ -2587,7 +2588,7 @@ class TestArchiveIndices(TestPublisherBase):
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive, allowed_suites=[])
 
-        self.getPubSource(filecontent='Hello world')
+        self.getPubSource(filecontent=b'Hello world')
         publisher.A_publish(False)
         self.runStepC(publisher)
 
@@ -2683,7 +2684,7 @@ class TestUpdateByHash(TestPublisherBase):
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
-        self.getPubSource(filecontent='Source: foo\n')
+        self.getPubSource(filecontent=b'Source: foo\n')
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
 
         suite_path = partial(
@@ -2703,7 +2704,7 @@ class TestUpdateByHash(TestPublisherBase):
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
-        self.getPubSource(filecontent='Source: foo\n')
+        self.getPubSource(filecontent=b'Source: foo\n')
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
 
         suite_path = partial(
@@ -2721,7 +2722,7 @@ class TestUpdateByHash(TestPublisherBase):
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
-        self.getPubSource(filecontent='Source: foo\n')
+        self.getPubSource(filecontent=b'Source: foo\n')
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
         flush_database_caches()
 
@@ -2755,7 +2756,7 @@ class TestUpdateByHash(TestPublisherBase):
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive)
-        self.getPubSource(filecontent='Source: foo\n')
+        self.getPubSource(filecontent=b'Source: foo\n')
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
 
         suite_path = partial(
@@ -2771,7 +2772,7 @@ class TestUpdateByHash(TestPublisherBase):
             with open(suite_path('universe', 'source', name), 'rb') as f:
                 universe_contents.add(f.read())
 
-        self.getPubSource(sourcename='baz', filecontent='Source: baz\n')
+        self.getPubSource(sourcename='baz', filecontent=b'Source: baz\n')
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
         flush_database_caches()
 
@@ -2933,7 +2934,7 @@ class TestUpdateByHash(TestPublisherBase):
                 main_contents.add(f.read())
 
         # Add a source package so that Sources is non-empty.
-        pub_source = self.getPubSource(filecontent='Source: foo\n')
+        pub_source = self.getPubSource(filecontent=b'Source: foo\n')
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
         transaction.commit()
         with open(suite_path('main', 'source', 'Sources'), 'rb') as f:
@@ -2979,7 +2980,8 @@ class TestUpdateByHash(TestPublisherBase):
         main_contents = []
         for sourcename in ('foo', 'bar', 'baz'):
             self.getPubSource(
-                sourcename=sourcename, filecontent='Source: %s\n' % sourcename)
+                sourcename=sourcename,
+                filecontent=six.ensure_binary('Source: %s\n' % sourcename))
             self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
             with open(suite_path('Release'), 'rb') as f:
                 top_contents.append(f.read())
@@ -3404,7 +3406,7 @@ class TestPublisherLite(TestCaseWithFactory):
 
     def test_writeReleaseFile_dumps_release_file(self):
         # _writeReleaseFile writes a Release file for a suite.
-        root = unicode(self.makeTemporaryDirectory())
+        root = six.ensure_text(self.makeTemporaryDirectory())
         series = self.makePublishableSeries(root)
         spph = self.makePublishablePackage(series)
         suite = series.name + pocketsuffix[spph.pocket]
@@ -3422,7 +3424,7 @@ class TestPublisherLite(TestCaseWithFactory):
     def test_writeReleaseFile_creates_directory_if_necessary(self):
         # If the suite is new and its release directory does not exist
         # yet, _writeReleaseFile will create it.
-        root = unicode(self.makeTemporaryDirectory())
+        root = six.ensure_text(self.makeTemporaryDirectory())
         series = self.makePublishableSeries(root)
         spph = self.makePublishablePackage(series)
         suite = series.name + pocketsuffix[spph.pocket]
@@ -3435,7 +3437,7 @@ class TestPublisherLite(TestCaseWithFactory):
         self.assertTrue(file_exists(release_path))
 
     def test_syncTimestamps_makes_timestamps_match_latest(self):
-        root = unicode(self.makeTemporaryDirectory())
+        root = six.ensure_text(self.makeTemporaryDirectory())
         series = self.makePublishableSeries(root)
         location = self.getReleaseFileDir(root, series, series.name)
         os.makedirs(location)
@@ -3502,8 +3504,8 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
     layer = ZopelessDatabaseLayer
 
     def test_checksum_files_created(self):
-        tmpdir = unicode(self.makeTemporaryDirectory())
-        rootdir = unicode(self.makeTemporaryDirectory())
+        tmpdir = six.ensure_text(self.makeTemporaryDirectory())
+        rootdir = six.ensure_text(self.makeTemporaryDirectory())
 
         for dh_file in self.all_hash_files:
             checksum_file = os.path.join(rootdir, dh_file)
@@ -3520,8 +3522,8 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
                 self.assertFalse(os.path.exists(checksum_file))
 
     def test_basic_file_add(self):
-        tmpdir = unicode(self.makeTemporaryDirectory())
-        rootdir = unicode(self.makeTemporaryDirectory())
+        tmpdir = six.ensure_text(self.makeTemporaryDirectory())
+        rootdir = six.ensure_text(self.makeTemporaryDirectory())
         test1_file = os.path.join(rootdir, "test1")
         test1_hash = self.createTestFile(test1_file, "test1")
 
@@ -3548,8 +3550,8 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
         self.assertThat(self.fetchSums(rootdir), MatchesDict(expected))
 
     def test_basic_directory_add(self):
-        tmpdir = unicode(self.makeTemporaryDirectory())
-        rootdir = unicode(self.makeTemporaryDirectory())
+        tmpdir = six.ensure_text(self.makeTemporaryDirectory())
+        rootdir = six.ensure_text(self.makeTemporaryDirectory())
         test1_file = os.path.join(rootdir, "test1")
         test1_hash = self.createTestFile(test1_file, "test1 dir")
 
