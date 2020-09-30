@@ -54,7 +54,7 @@ class BuildFarmJobBehaviourBase:
         self.build = build
         self._builder = None
         self._authserver = xmlrpc.Proxy(
-            config.builddmaster.authentication_endpoint,
+            config.builddmaster.authentication_endpoint.encode('UTF-8'),
             connectTimeout=config.builddmaster.authentication_timeout)
 
     @property

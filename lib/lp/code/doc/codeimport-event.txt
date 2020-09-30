@@ -130,7 +130,7 @@ collate events associated with deleted CodeImport objects.
 
     >>> event_dict = dict(svn_create_event.items())
     >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == (
-    ...     unicode(svn_import.id))
+    ...     six.text_type(svn_import.id))
     True
 
 Different source details are recorded according to the type of the
@@ -262,7 +262,7 @@ useful to collate events associated with deleted CodeImport objects.
 
     >>> event_dict = dict(request_event.items())
     >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == (
-    ...     unicode(svn_import.id))
+    ...     six.text_type(svn_import.id))
     True
 
 

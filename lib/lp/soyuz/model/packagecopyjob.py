@@ -147,7 +147,7 @@ class PackageCopyJob(StormBase):
         self.source_archive = source_archive
         self.target_archive = target_archive
         self.target_distroseries = target_distroseries
-        self.package_name = unicode(package_name)
+        self.package_name = six.ensure_text(package_name)
         self.copy_policy = copy_policy
         self.metadata = metadata
 
@@ -589,7 +589,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             target_archive_purpose = self.target_archive.purpose
             self.logger.info("Job:\n%s\nraised CannotCopy:\n%s" % (self, e))
             self.abort()  # Abort the txn.
-            self.reportFailure(unicode(e))
+            self.reportFailure(six.text_type(e))
 
             # If there is an associated PackageUpload we need to reject it,
             # else it will sit in ACCEPTED forever.
@@ -628,7 +628,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             person=self.requester)
         if reason:
             # Wrap any forbidden-pocket error in CannotCopy.
-            raise CannotCopy(unicode(reason))
+            raise CannotCopy(six.text_type(reason))
 
         if self.silent and not self.requester_can_admin_target:
             raise CannotCopy(

@@ -18,12 +18,12 @@ And for every country we publish most of its attributes.
     >>> andorra = webservice.get(country['self_link']).jsonBody()
     >>> pprint_entry(andorra)
     description: None
-    iso3166code2: u'AD'
-    iso3166code3: u'AND'
-    name: u'Andorra'
-    resource_type_link: u'http://.../#country'
-    self_link: u'http://.../+countries/AD'
-    title: u'Principality of Andorra'
+    iso3166code2: 'AD'
+    iso3166code3: 'AND'
+    name: 'Andorra'
+    resource_type_link: 'http://.../#country'
+    self_link: 'http://.../+countries/AD'
+    title: 'Principality of Andorra'
 
 Make sure that invalid countries return 404s and not OOPSes.
 

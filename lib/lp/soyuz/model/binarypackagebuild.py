@@ -22,6 +22,7 @@ import warnings
 import apt_pkg
 from debian.deb822 import PkgRelation
 import pytz
+import six
 from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
@@ -650,7 +651,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
                 remaining_deps.append(or_dep)
 
         # Update dependencies line
-        self.dependencies = unicode(PkgRelation.str(remaining_deps))
+        self.dependencies = six.ensure_text(PkgRelation.str(remaining_deps))
 
     def __getitem__(self, name):
         return self.getBinaryPackageRelease(name)

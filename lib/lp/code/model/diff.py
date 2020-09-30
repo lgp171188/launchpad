@@ -431,7 +431,7 @@ class PreviewDiff(Storm):
             preview.branch_merge_proposal = bmp
             preview.diff = diff
             preview.conflicts = u''.join(
-                unicode(conflict) + '\n' for conflict in conflicts)
+                six.text_type(conflict) + '\n' for conflict in conflicts)
         else:
             source_repository = bmp.source_git_repository
             target_repository = bmp.target_git_repository

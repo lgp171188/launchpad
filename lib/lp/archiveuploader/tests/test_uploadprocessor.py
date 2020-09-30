@@ -17,6 +17,7 @@ from StringIO import StringIO
 import tempfile
 
 from fixtures import MonkeyPatch
+import six
 from storm.locals import Store
 from zope.component import (
     getGlobalSiteManager,
@@ -204,9 +205,9 @@ class TestUploadProcessorBase(TestCaseWithFactory):
         """Publish a single package that is currently NEW in the queue."""
         self.switchToAdmin()
 
-        packagename = unicode(packagename)
+        packagename = six.ensure_text(packagename)
         if version is not None:
-            version = unicode(version)
+            version = six.ensure_text(version)
         queue_items = self.breezy.getPackageUploads(
             status=PackageUploadStatus.NEW, name=packagename,
             version=version, exact_match=True, archive=archive)

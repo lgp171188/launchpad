@@ -868,7 +868,9 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
         logger = BufferLogger()
         monitor = CIWorkerMonitorForTesting(
             job_id, logger,
-            xmlrpc.Proxy(config.codeimportdispatcher.codeimportscheduler_url),
+            xmlrpc.Proxy(
+                config.codeimportdispatcher.codeimportscheduler_url.encode(
+                    'UTF-8')),
             "anything")
         deferred = monitor.run()
 

@@ -49,4 +49,4 @@ def validate_translation(original_singular, original_plural,
         msg.check_format()
     except gettextpo.error as e:
         # Wrap gettextpo.error in GettextValidationError.
-        raise GettextValidationError(unicode(e))
+        raise GettextValidationError(six.text_type(e))

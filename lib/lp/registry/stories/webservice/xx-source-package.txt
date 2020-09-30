@@ -29,16 +29,16 @@ distribution series.
     >>> pprint_entry(evolution)
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
-    displayname: u'evolution in My-distro My-series'
-    distribution_link: u'http://.../my-distro'
-    distroseries_link: u'http://.../my-distro/my-series'
+    displayname: 'evolution in My-distro My-series'
+    distribution_link: 'http://.../my-distro'
+    distroseries_link: 'http://.../my-distro/my-series'
     latest_published_component_name: None
-    name: u'evolution'
+    name: 'evolution'
     official_bug_tags: []
     productseries_link: None
     resource_type_link: ...
-    self_link: u'http://api.../my-distro/my-series/+source/evolution'
-    web_link: u'http://.../+source/evolution'
+    self_link: 'http://api.../my-distro/my-series/+source/evolution'
+    web_link: 'http://.../+source/evolution'
 
 
 Getting official branches

@@ -466,7 +466,7 @@ class FileImporter(object):
                 potmsgset.singular_text, potmsgset.plural_text,
                 translations, potmsgset.flags)
         except GettextValidationError as e:
-            self._addUpdateError(message_data, potmsgset, unicode(e))
+            self._addUpdateError(message_data, potmsgset, six.text_type(e))
             message.validation_status = (
                 TranslationValidationStatus.UNKNOWNERROR)
             return False
@@ -603,7 +603,7 @@ class FileImporter(object):
             'pofile': self.pofile,
             'pomessage': self.format_exporter.exportTranslationMessageData(
                 message),
-            'error-message': unicode(errormsg),
+            'error-message': six.ensure_text(errormsg),
         })
 
     def _addConflictError(self, message, potmsgset):

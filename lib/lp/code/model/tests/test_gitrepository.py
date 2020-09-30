@@ -25,6 +25,7 @@ from fixtures import MockPatch
 from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon
 import pytz
+import six
 from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.store import Store
@@ -1522,7 +1523,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
 
     def test__convertRefInfo(self):
         # _convertRefInfo converts a valid info dictionary.
-        sha1 = unicode(hashlib.sha1("").hexdigest())
+        sha1 = six.ensure_text(hashlib.sha1("").hexdigest())
         info = {"object": {"sha1": sha1, "type": "commit"}}
         expected_info = {"sha1": sha1, "type": GitObjectType.COMMIT}
         self.assertEqual(expected_info, GitRepository._convertRefInfo(info))
@@ -1567,7 +1568,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=unicode(hashlib.sha1(path).hexdigest()),
+                commit_sha1=six.ensure_text(hashlib.sha1(path).hexdigest()),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))
@@ -1715,11 +1716,12 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "type": GitObjectType.COMMIT,
                 },
             "refs/heads/foo": {
-                "sha1": unicode(hashlib.sha1("refs/heads/foo").hexdigest()),
+                "sha1": six.ensure_text(
+                    hashlib.sha1("refs/heads/foo").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
             "refs/tags/1.0": {
-                "sha1": unicode(
+                "sha1": six.ensure_text(
                     hashlib.sha1("refs/heads/master").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
@@ -1731,7 +1733,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # planRefChanges does not attempt to update refs that point to
         # non-commits.
         repository = self.factory.makeGitRepository()
-        blob_sha1 = unicode(hashlib.sha1("refs/heads/blob").hexdigest())
+        blob_sha1 = six.ensure_text(
+            hashlib.sha1("refs/heads/blob").hexdigest())
         refs_info = {
             "refs/heads/blob": {
                 "sha1": blob_sha1,
@@ -1804,8 +1807,9 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test_fetchRefCommits(self):
         # fetchRefCommits fetches detailed tip commit metadata for the
         # requested refs.
-        master_sha1 = unicode(hashlib.sha1("refs/heads/master").hexdigest())
-        foo_sha1 = unicode(hashlib.sha1("refs/heads/foo").hexdigest())
+        master_sha1 = six.ensure_text(
+            hashlib.sha1("refs/heads/master").hexdigest())
+        foo_sha1 = six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
@@ -1826,7 +1830,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(committer_date)),
                     },
                 "parents": [],
-                "tree": unicode(hashlib.sha1("").hexdigest()),
+                "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
                 }]))
         refs = {
             "refs/heads/master": {
@@ -1902,9 +1906,9 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         expected_sha1s = [
             ("refs/heads/master", "1111111111111111111111111111111111111111"),
             ("refs/heads/foo",
-             unicode(hashlib.sha1("refs/heads/foo").hexdigest())),
+             six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())),
             ("refs/tags/1.0",
-             unicode(hashlib.sha1("refs/heads/master").hexdigest())),
+             six.ensure_text(hashlib.sha1("refs/heads/master").hexdigest())),
             ]
         matchers = [
             MatchesStructure.byEquality(
