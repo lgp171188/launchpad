@@ -202,6 +202,9 @@ class IOCIRecipeView(Interface):
         "The architectures that are available to be enabled or disabled for "
         "this OCI recipe.")
 
+    pending_build_requests = Attribute(
+        "The list of build requests that didn't trigger builds yet.")
+
     # This should only be set by using IOCIProject.setOfficialRecipe
     official = Bool(
         title=_("OCI project official"),

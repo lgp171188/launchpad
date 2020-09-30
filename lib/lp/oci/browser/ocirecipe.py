@@ -60,7 +60,6 @@ from lp.oci.interfaces.ocirecipe import (
     NoSuchOCIRecipe,
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-    OCIRecipeBuildAlreadyPending,
     OCIRecipeFeatureDisabled,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -70,7 +69,6 @@ from lp.oci.interfaces.ociregistrycredentials import (
     user_can_edit_credentials_for_owner,
     )
 from lp.services.features import getFeatureFlag
-from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
@@ -241,6 +239,10 @@ class OCIRecipeView(LaunchpadView):
             return "Built daily"
         else:
             return "Built on request"
+
+    @property
+    def pending_build_requests(self):
+        return self.context.pending_build_requests.count()
 
 
 def builds_for_recipe(recipe):
@@ -634,36 +636,12 @@ class OCIRecipeRequestBuildsView(LaunchpadFormView):
                 'distro_arch_series',
                 'You need to select at least one architecture.')
 
-    def requestBuilds(self, data):
-        """User action for requesting a number of builds.
-
-        We raise exceptions for most errors, but if there's already a
-        pending build for a particular architecture, we simply record that
-        so that other builds can be queued and a message displayed to the
-        caller.
-        """
-        informational = {}
-        builds = []
-        already_pending = []
-        for arch in data['distro_arch_series']:
-            try:
-                build = self.context.requestBuild(self.user, arch)
-                builds.append(build)
-            except OCIRecipeBuildAlreadyPending:
-                already_pending.append(arch)
-        if already_pending:
-            informational['already_pending'] = (
-                "An identical build is already pending for %s." %
-                english_list(arch.architecturetag for arch in already_pending))
-        return builds, informational
-
     @action('Request builds', name='request')
     def request_action(self, action, data):
-        builds, informational = self.requestBuilds(data)
-        already_pending = informational.get('already_pending')
-        notification_text = new_builds_notification_text(
-            builds, already_pending)
-        self.request.response.addNotification(notification_text)
+        self.context.requestBuilds(self.user, data['distro_arch_series'])
+        self.request.response.addNotification(
+            "Your builds were scheduled and should start soon. "
+            "Refresh this page for details.")
         self.next_url = self.cancel_url
 
 

@@ -183,6 +183,15 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             raise NotFoundError("Could not find job ID %s" % job_id)
         return cls(job)
 
+    @classmethod
+    def getPendingByOCIRecipe(cls, recipe, statuses):
+        return IStore(OCIRecipeJob).find(
+            (OCIRecipeJob, Job),
+            OCIRecipeJob.job_id == Job.id,
+            OCIRecipeJob.recipe == recipe,
+            OCIRecipeJob.job_type == cls.class_job_type,
+            Job._status.is_in(statuses))
+
     def getOperationDescription(self):
         return "requesting builds of %s" % self.recipe
 

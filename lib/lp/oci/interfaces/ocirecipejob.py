@@ -91,6 +91,9 @@ class IOCIRecipeRequestBuildsJobSource(IJobSource):
             None, build for all available distro_arch_series.
         """
 
-    def getByOCIRecipeAndID(self, oci_recipe, job_id):
+    def getByOCIRecipeAndID(oci_recipe, job_id):
         """Retrieve the build job by OCI recipe and the given job ID.
         """
+
+    def getPendingByOCIRecipe(oci_recipe, statuses):
+        """Retrieve the build job list by OCI recipe."""
