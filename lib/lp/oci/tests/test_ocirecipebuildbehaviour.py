@@ -111,6 +111,7 @@ class MakeOCIBuildMixin:
                 build = self.factory.makeOCIRecipeBuild(
                     recipe=recipe, **kwargs)
         build.recipe.git_ref = git_ref
+        build.recipe.build_args = {"BUILD_VAR": "123"}
 
         job = IBuildFarmJobBehaviour(build)
         builder = MockBuilder()
@@ -242,6 +243,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             "archives": Equals(expected_archives),
             "arch_tag": Equals("i386"),
             "build_file": Equals(job.build.recipe.build_file),
+            "build_args": Equals({"BUILD_VAR": "123"}),
             "build_path": Equals(job.build.recipe.build_path),
             "build_url": Equals(canonical_url(job.build)),
             "fast_cleanup": Is(True),
@@ -273,6 +275,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             "archives": Equals(expected_archives),
             "arch_tag": Equals("i386"),
             "build_file": Equals(job.build.recipe.build_file),
+            "build_args": Equals({"BUILD_VAR": "123"}),
             "build_path": Equals(job.build.recipe.build_path),
             "build_url": Equals(canonical_url(job.build)),
             "fast_cleanup": Is(True),

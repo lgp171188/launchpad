@@ -14,6 +14,8 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+import six
+from storm.databases.postgres import JSON
 from storm.expr import (
     And,
     Desc,
@@ -146,6 +148,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
     build_path = Unicode(name="build_path", allow_none=False)
+    _build_args = JSON(name="build_args", allow_none=True)
 
     require_virtualized = Bool(name="require_virtualized", default=True,
                                allow_none=False)
@@ -157,7 +160,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
-                 allow_internet=True, build_path=None):
+                 allow_internet=True, build_args=None, build_path=None):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
@@ -174,6 +177,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.date_last_modified = date_created
         self.git_ref = git_ref
         self.allow_internet = allow_internet
+        self.build_args = build_args or {}
         self.build_path = build_path
 
     def __repr__(self):
@@ -189,6 +193,16 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def official(self):
         """See `IOCIProject.setOfficialRecipe` method."""
         return self._official
+
+    @property
+    def build_args(self):
+        return self._build_args or {}
+
+    @build_args.setter
+    def build_args(self, value):
+        assert value is None or isinstance(value, dict)
+        self._build_args = {k: six.text_type(v)
+                            for k, v in (value or {}).items()}
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -540,7 +554,7 @@ class OCIRecipeSet:
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True, build_path=None):
+            allow_internet=True, build_args=None, build_path=None):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -565,7 +579,7 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created, allow_internet, build_path)
+            date_created, allow_internet, build_args, build_path)
         store.add(oci_recipe)
 
         if processors is None:

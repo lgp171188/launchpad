@@ -130,7 +130,7 @@ class OCIProject(BugTargetBase, StormBase):
 
     def newRecipe(self, name, registrant, owner, git_ref,
                   build_file, description=None, build_daily=False,
-                  require_virtualized=True):
+                  require_virtualized=True, build_args=None):
         return getUtility(IOCIRecipeSet).new(
             name=name,
             registrant=registrant,
@@ -138,6 +138,7 @@ class OCIProject(BugTargetBase, StormBase):
             oci_project=self,
             git_ref=git_ref,
             build_file=build_file,
+            build_args=build_args,
             description=description,
             require_virtualized=require_virtualized,
             build_daily=build_daily,

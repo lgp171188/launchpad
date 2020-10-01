@@ -4961,7 +4961,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                       oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
                       build_file=None, date_created=DEFAULT,
-                      allow_internet=True, build_path=None):
+                      allow_internet=True, build_args=None, build_path=None):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -4991,7 +4991,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             official=official,
             require_virtualized=require_virtualized,
             date_created=date_created,
-            allow_internet=allow_internet)
+            allow_internet=allow_internet,
+            build_args=build_args)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""
