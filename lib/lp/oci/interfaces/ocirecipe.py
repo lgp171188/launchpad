@@ -383,6 +383,23 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         readonly=False))
 
+    build_args = exported(Dict(
+        title=_("Build ARG variables"),
+        description=_("The dictionary of ARG variables to be used when "
+                      "building this recipe."),
+        key_type=TextLine(title=_("ARG name")),
+        value_type=TextLine(title=_("ARG value")),
+        required=False,
+        readonly=False))
+
+    build_path = exported(TextLine(
+        title=_("Build directory context"),
+        description=_("Directory to use for build context "
+                      "and OCIRecipe.build_file location."),
+        constraint=path_does_not_escape,
+        required=True,
+        readonly=False))
+
     build_daily = exported(Bool(
         title=_("Build daily"),
         required=True,
@@ -429,7 +446,7 @@ class IOCIRecipeSet(Interface):
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True):
+            allow_internet=True, build_args=None):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):

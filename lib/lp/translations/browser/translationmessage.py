@@ -441,7 +441,7 @@ class BaseTranslationView(LaunchpadView):
         try:
             self._storeTranslations(potmsgset)
         except GettextValidationError as e:
-            return unicode(e)
+            return six.text_type(e)
         except TranslationConflict:
             # The translations are demoted to suggestions, but they may
             # still affect the "messages with new suggestions" filter.

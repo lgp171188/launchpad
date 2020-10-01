@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from textwrap import dedent
 
+import six
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -387,7 +388,7 @@ class FileImporterTestCase(TestCaseWithFactory):
                 "POFileImporter.importFile returned errors where there "
                 "should be none.")
             potmsgset = po_importer.pofile.potemplate.getPOTMsgSetByMsgIDText(
-                                                        unicode(TEST_MSGID))
+                six.ensure_text(TEST_MSGID))
             message = potmsgset.getCurrentTranslation(
                 po_importer.potemplate, po_importer.pofile.language,
                 po_importer.potemplate.translation_side)
@@ -452,7 +453,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         # Although the message has an error, it should still be stored
         # in the database, though only as a suggestion.
         potmsgset = po_importer.pofile.potemplate.getPOTMsgSetByMsgIDText(
-            unicode(TEST_MSGID_ERROR))
+            six.ensure_text(TEST_MSGID_ERROR))
         message = potmsgset.getLocalTranslationMessages(
             po_importer.potemplate, po_importer.pofile.language)[0]
         self.assertIsNotNone(message,
@@ -477,7 +478,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         po_importer2.importFile()
 
         potmsgset = po_importer.pofile.potemplate.getPOTMsgSetByMsgIDText(
-            unicode(TEST_MSGID_ERROR))
+            six.ensure_text(TEST_MSGID_ERROR))
         messages = potmsgset.getLocalTranslationMessages(
             po_importer.pofile.potemplate, po_importer.pofile.language)
 

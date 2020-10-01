@@ -119,32 +119,32 @@ publication to play with first.
 
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> pprint_entry(pubs['entries'][0])
-    archive_link: u'http://.../~cprov/+archive/ubuntu/ppa'
-    component_name: u'main'
+    archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
+    component_name: 'main'
     copied_from_archive_link: None
-    creator_link: u'http://api.launchpad.test/beta/~name16'
+    creator_link: 'http://api.launchpad.test/beta/~name16'
     date_created: ...
     date_made_pending: None
     date_published: None
     date_removed: None
     date_superseded: None
-    display_name: u'testwebservice 666 in breezy-autotest'
-    distro_series_link: u'http://.../ubuntutest/breezy-autotest'
-    package_creator_link: u'http://.../beta/~name16'
-    package_maintainer_link: u'http://.../beta/~name16'
-    package_signer_link: u'http://.../beta/~name16'
+    display_name: 'testwebservice 666 in breezy-autotest'
+    distro_series_link: 'http://.../ubuntutest/breezy-autotest'
+    package_creator_link: 'http://.../beta/~name16'
+    package_maintainer_link: 'http://.../beta/~name16'
+    package_signer_link: 'http://.../beta/~name16'
     packageupload_link: None
-    pocket: u'Release'
+    pocket: 'Release'
     removal_comment: None
     removed_by_link: None
-    resource_type_link: u'http://.../#source_package_publishing_history'
+    resource_type_link: 'http://.../#source_package_publishing_history'
     scheduled_deletion_date: None
-    section_name: u'base'
-    self_link: u'http://.../~cprov/+archive/ubuntu/ppa/+sourcepub/...'
-    source_package_name: u'testwebservice'
-    source_package_version: u'666'
+    section_name: 'base'
+    self_link: 'http://.../~cprov/+archive/ubuntu/ppa/+sourcepub/...'
+    source_package_name: 'testwebservice'
+    source_package_version: '666'
     sponsor_link: None
-    status: u'Pending'
+    status: 'Pending'
 
     >>> webservice.named_get(
     ...     pubs['entries'][0]['self_link'], 'changesFileUrl').jsonBody()

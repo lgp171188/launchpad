@@ -1003,7 +1003,8 @@ class POTemplate(SQLBase, RosettaStats):
                         txn.begin()
                     if logger:
                         logger.warn(
-                            "Statistics update failed: %s" % unicode(error))
+                            "Statistics update failed: %s" %
+                            six.text_type(error))
 
         if template_mail is not None:
             template = get_email_template(

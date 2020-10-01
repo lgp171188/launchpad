@@ -46,14 +46,14 @@ Now Eric subscribes to Fooix's bug notifications.
     start: 0
     total_size: 1
     ---
-    bug_filters_collection_link: u'.../fooix/+subscription/eric/bug_filters'
-    date_created: u'...'
-    date_last_updated: u'...'
-    resource_type_link: u'http://.../#structural_subscription'
-    self_link: u'http://.../fooix/+subscription/eric'
-    subscribed_by_link: u'http://.../~eric'
-    subscriber_link: u'http://.../~eric'
-    target_link: u'http://.../fooix'
+    bug_filters_collection_link: '.../fooix/+subscription/eric/bug_filters'
+    date_created: '...'
+    date_last_updated: '...'
+    resource_type_link: 'http://.../#structural_subscription'
+    self_link: 'http://.../fooix/+subscription/eric'
+    subscribed_by_link: 'http://.../~eric'
+    subscriber_link: 'http://.../~eric'
+    target_link: 'http://.../fooix'
     ---
 
 He can examine his subscription directly.
@@ -61,14 +61,14 @@ He can examine his subscription directly.
     >>> pprint_entry(eric_webservice.named_get(
     ...     '/fooix', 'getSubscription',
     ...     person=webservice.getAbsoluteUrl('/~eric')).jsonBody())
-    bug_filters_collection_link: u'.../fooix/+subscription/eric/bug_filters'
-    date_created: u'...'
-    date_last_updated: u'...'
-    resource_type_link: u'http://.../#structural_subscription'
-    self_link: u'http://.../fooix/+subscription/eric'
-    subscribed_by_link: u'http://.../~eric'
-    subscriber_link: u'http://.../~eric'
-    target_link: u'http://.../fooix'
+    bug_filters_collection_link: '.../fooix/+subscription/eric/bug_filters'
+    date_created: '...'
+    date_last_updated: '...'
+    resource_type_link: 'http://.../#structural_subscription'
+    self_link: 'http://.../fooix/+subscription/eric'
+    subscribed_by_link: 'http://.../~eric'
+    subscriber_link: 'http://.../~eric'
+    target_link: 'http://.../fooix'
 
 If the subscription doesn't exist, None will be returned.
 
@@ -118,14 +118,14 @@ admin by virtue of his ownership.
     start: 0
     total_size: 1
     ---
-    bug_filters_collection_link: u'.../fooix/+subscription/pythons/bug_filters'
-    date_created: u'...'
-    date_last_updated: u'...'
-    resource_type_link: u'http://.../#structural_subscription'
-    self_link: u'http://.../fooix/+subscription/pythons'
-    subscribed_by_link: u'http://.../~michael'
-    subscriber_link: u'http://.../~pythons'
-    target_link: u'http://.../fooix'
+    bug_filters_collection_link: '.../fooix/+subscription/pythons/bug_filters'
+    date_created: '...'
+    date_last_updated: '...'
+    resource_type_link: 'http://.../#structural_subscription'
+    self_link: 'http://.../fooix/+subscription/pythons'
+    subscribed_by_link: 'http://.../~michael'
+    subscriber_link: 'http://.../~pythons'
+    target_link: 'http://.../fooix'
     ---
 
 Eric can't unsubscribe the team either.

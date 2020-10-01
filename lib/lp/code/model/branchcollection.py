@@ -692,7 +692,7 @@ class GenericBranchCollection:
         if branch:
             collection = self._filterBy([Branch.id == branch.id])
         else:
-            term = unicode(term)
+            term = six.ensure_text(term)
             # Filter by name.
             field = Branch.name
             # Except if the term contains /, when we use unique_name.

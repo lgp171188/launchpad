@@ -1983,7 +1983,7 @@ class Archive(SQLBase):
         reason = self.checkUploadToPocket(series, pocket, person=person)
         if reason:
             # Wrap any forbidden-pocket error in CannotCopy.
-            raise CannotCopy(unicode(reason))
+            raise CannotCopy(six.text_type(reason))
 
         # Perform the copy, may raise CannotCopy. Don't do any further
         # permission checking: this method is protected by

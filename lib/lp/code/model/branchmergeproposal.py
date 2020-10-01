@@ -19,6 +19,7 @@ from lazr.lifecycle.event import (
     ObjectCreatedEvent,
     ObjectDeletedEvent,
     )
+import six
 from sqlobject import (
     ForeignKey,
     IntCol,
@@ -392,7 +393,8 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         else:
             bug_ids = [
                 int(id) for _, id in getUtility(IXRefSet).findFrom(
-                    (u'merge_proposal', unicode(self.id)), types=[u'bug'])]
+                    (u'merge_proposal', six.text_type(self.id)),
+                    types=[u'bug'])]
             bugs = load(Bug, bug_ids)
         return list(sorted(bugs, key=attrgetter('id')))
 
@@ -419,14 +421,14 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             props = {}
         # XXX cjwatson 2016-06-11: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'merge_proposal', unicode(self.id)):
-                {(u'bug', unicode(bug.id)): props}})
+            {(u'merge_proposal', six.text_type(self.id)):
+                {(u'bug', six.text_type(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See `BugLinkTargetMixin`."""
         getUtility(IXRefSet).delete(
-            {(u'merge_proposal', unicode(self.id)):
-                [(u'bug', unicode(bug.id))]})
+            {(u'merge_proposal', six.text_type(self.id)):
+                [(u'bug', six.text_type(bug.id))]})
 
     def linkBug(self, bug, user=None, check_permissions=True, props=None):
         """See `BugLinkTargetMixin`."""
@@ -502,7 +504,8 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         current_bug_ids_from_source = {
             int(id): (props['metadata'] or {}).get('from_source', False)
             for (_, id), props in getUtility(IXRefSet).findFrom(
-                (u'merge_proposal', unicode(self.id)), types=[u'bug']).items()}
+                (u'merge_proposal', six.text_type(self.id)),
+                types=[u'bug']).items()}
         current_bug_ids = set(current_bug_ids_from_source)
         new_bug_ids = self._fetchRelatedBugIDsFromSource()
         # Only remove links marked as originating in the source branch.
