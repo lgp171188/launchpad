@@ -209,7 +209,10 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "Source:\n%s\nEdit OCI recipe" % source_display,
             MatchesTagText(content, "source"))
         self.assertThat(
-            "Build file path:\nDockerfile\nEdit OCI recipe",
+            "Build file path:\nDockerfile\n"
+            "Edit OCI recipe\n"
+            "Build context directory:\n.\n"
+            "Edit OCI recipe",
             MatchesTagText(content, "build-file"))
         self.assertThat(
             "Build schedule:\nBuilt on request\nEdit OCI recipe\n",
@@ -385,6 +388,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             new_git_ref.repository.identity)
         browser.getControl("Git branch").value = new_git_ref.path
         browser.getControl("Build file path").value = "Dockerfile-2"
+        browser.getControl("Build directory context").value = "apath"
         browser.getControl("Build daily").selected = True
         browser.getControl("Update OCI recipe").click()
 
@@ -398,7 +402,10 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             "Source:\n%s\nEdit OCI recipe" % new_git_ref.display_name,
             MatchesTagText(content, "source"))
         self.assertThat(
-            "Build file path:\nDockerfile-2\nEdit OCI recipe",
+            "Build file path:\nDockerfile-2\n"
+            "Edit OCI recipe\n"
+            "Build context directory:\napath\n"
+            "Edit OCI recipe",
             MatchesTagText(content, "build-file"))
         self.assertThat(
             "Build schedule:\nBuilt daily\nEdit OCI recipe\n",
@@ -698,11 +705,12 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             OCI project: %s
             Source: ~test-person/\\+git/recipe-repository:master
             Build file path: Dockerfile
+            Build context directory: %s
             Build schedule: Built on request
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago 386
-            """ % (oci_project_name, oci_project_display),
+            """ % (oci_project_name, oci_project_display, recipe.build_path),
             self.getMainText(build.recipe))
 
     def test_index_success_with_buildlog(self):
