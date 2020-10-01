@@ -54,6 +54,7 @@ from zope.publisher.interfaces.browser import (
 from zope.publisher.publish import mapply
 from zope.security.management import newInteraction
 from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import isinstance as zope_isinstance
 from zope.traversing.interfaces import BeforeTraverseEvent
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -85,6 +86,7 @@ from lp.services.webapp.interfaces import (
     OffsiteFormPostError,
     )
 from lp.services.webapp.opstats import OpStats
+from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.vhosts import allvhosts
 
 
@@ -564,12 +566,10 @@ class LaunchpadBrowserPublication(
         view = removeSecurityProxy(view)
         # It's possible that the view is a bound method.
         view = getattr(view, '__self__', view)
-        try:
-            context = removeSecurityProxy(getattr(view, 'context', None))
-        except ValueError:
-            # Redirects don't have a view context, this is handled in
-            # constructPageID
+        if zope_isinstance(view, RedirectionView):
             context = None
+        else:
+            context = removeSecurityProxy(getattr(view, 'context', None))
         pageid = self.constructPageID(view, context)
         request.setInWSGIEnvironment('launchpad.pageid', pageid)
         return pageid
