@@ -53,8 +53,10 @@ from zope.publisher.interfaces.browser import (
     )
 from zope.publisher.publish import mapply
 from zope.security.management import newInteraction
-from zope.security.proxy import removeSecurityProxy
-from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 from zope.traversing.interfaces import BeforeTraverseEvent
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
