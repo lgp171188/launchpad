@@ -1840,7 +1840,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             paths = [self.getUniqueUnicode('refs/heads/path')]
         refs_info = {
             path: {
-                u"sha1": unicode(
+                u"sha1": six.ensure_text(
                     hashlib.sha1(path.encode('utf-8')).hexdigest()),
                 u"type": GitObjectType.COMMIT,
                 }
@@ -3798,7 +3798,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             creator = self.makePerson()
 
         if version is None:
-            version = unicode(self.getUniqueInteger()) + 'version'
+            version = six.text_type(self.getUniqueInteger()) + 'version'
 
         if copyright is None:
             copyright = self.getUniqueString()
@@ -4563,7 +4563,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """Create a new `PlainPackageCopyJob`."""
         if package_name is None and package_version is None:
             package_name = self.makeSourcePackageName().name
-            package_version = unicode(self.getUniqueInteger()) + 'version'
+            package_version = (
+                six.text_type(self.getUniqueInteger()) + 'version')
         if source_archive is None:
             source_archive = self.makeArchive()
         if target_archive is None:
@@ -4960,7 +4961,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                       oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
                       build_file=None, date_created=DEFAULT,
-                      allow_internet=True):
+                      allow_internet=True, build_args=None, build_path=None):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -4976,6 +4977,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             [git_ref] = self.makeGitRefs()
         if build_file is None:
             build_file = self.getUniqueUnicode(u"build_file_for")
+        if build_path is None:
+            build_path = self.getUniqueUnicode(u"build_path_for")
         return getUtility(IOCIRecipeSet).new(
             name=name,
             registrant=registrant,
@@ -4983,11 +4986,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             oci_project=oci_project,
             git_ref=git_ref,
             build_file=build_file,
+            build_path=build_path,
             description=description,
             official=official,
             require_virtualized=require_virtualized,
             date_created=date_created,
-            allow_internet=allow_internet)
+            allow_internet=allow_internet,
+            build_args=build_args)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""

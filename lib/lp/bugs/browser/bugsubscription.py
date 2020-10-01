@@ -18,6 +18,7 @@ from lazr.restful.interfaces import (
     IWebServiceClientRequest,
     )
 from simplejson import dumps
+import six
 from zope import formlib
 from zope.formlib.itemswidgets import RadioWidget
 from zope.formlib.widget import CustomWidgetFactory
@@ -77,7 +78,7 @@ class BugSubscriptionAddView(LaunchpadFormView):
             self.context.bug.subscribe(
                 person, self.user, suppress_notify=False)
         except SubscriptionPrivacyViolation as error:
-            self.setFieldError('person', unicode(error))
+            self.setFieldError('person', six.text_type(error))
         else:
             if person.is_team:
                 message = '%s team has been subscribed to this bug.'

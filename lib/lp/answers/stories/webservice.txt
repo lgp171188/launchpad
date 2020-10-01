@@ -201,23 +201,23 @@ a link to retrieve the question's messages.
     answer_link: None
     answerer_link: None
     assignee_link: None
-    date_created: u'20...+00:00'
+    date_created: '20...+00:00'
     date_due: None
-    date_last_query: u'20...+00:00'
-    date_last_response: u'20...+00:00'
+    date_last_query: '20...+00:00'
+    date_last_response: '20...+00:00'
     date_solved: None
-    description: u'description...'
+    description: 'description...'
     id: ...
-    language_link: u'http://api.launchpad.test/devel/+languages/en'
+    language_link: 'http://api.launchpad.test/devel/+languages/en'
     messages_collection_link:
-        u'http://api.launchpad.test/devel/my-project/+question/.../messages'
-    owner_link: u'http://api.launchpad.test/devel/~asker'
-    resource_type_link: u'http://api.launchpad.test/devel/#question'
-    self_link: u'http://api.launchpad.test/devel/my-project/+question/...'
-    status: u'Answered'
-    target_link: u'http://api.launchpad.test/devel/my-project'
-    title: u'Q 1 great'
-    web_link: u'http://answers.launchpad.test/my-project/+question/...'
+        'http://api.launchpad.test/devel/my-project/+question/.../messages'
+    owner_link: 'http://api.launchpad.test/devel/~asker'
+    resource_type_link: 'http://api.launchpad.test/devel/#question'
+    self_link: 'http://api.launchpad.test/devel/my-project/+question/...'
+    status: 'Answered'
+    target_link: 'http://api.launchpad.test/devel/my-project'
+    title: 'Q 1 great'
+    web_link: 'http://answers.launchpad.test/my-project/+question/...'
 
 
 Question messages
@@ -230,19 +230,19 @@ that indicate how the message changed the question.
     ...     question_1['messages_collection_link'],
     ...     api_version='devel').jsonBody()
     >>> pprint_entry(messages['entries'][0])
-    action: u'Answer'
-    bug_attachments_collection_link: u'...'
-    content: u'This is the answer'
-    date_created: u'20...+00:00'
+    action: 'Answer'
+    bug_attachments_collection_link: '...'
+    content: 'This is the answer'
+    date_created: '20...+00:00'
     index: 1
-    new_status: u'Answered'
-    owner_link: u'http://api.launchpad.test/devel/~contact'
+    new_status: 'Answered'
+    owner_link: 'http://api.launchpad.test/devel/~contact'
     parent_link: None
-    question_link: u'http://api.launchpad.test/devel/my-project/+question/...'
-    resource_type_link: u'http://api.launchpad.test/devel/#question_message'
+    question_link: 'http://api.launchpad.test/devel/my-project/+question/...'
+    resource_type_link: 'http://api.launchpad.test/devel/#question_message'
     self_link:
-        u'http://api.launchpad.test/devel/my-project/+question/.../messages/1'
-    subject: u'Re: Q 1 great'
+        'http://api.launchpad.test/devel/my-project/+question/.../messages/1'
+    subject: 'Re: Q 1 great'
     visible: True
     web_link:
-        u'http://answers.launchpad.test/my-project/+question/.../messages/1'
+        'http://answers.launchpad.test/my-project/+question/.../messages/1'

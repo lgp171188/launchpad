@@ -15,6 +15,7 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
+import six
 from storm.expr import (
     And,
     Asc,
@@ -551,7 +552,7 @@ class GenericGitCollection:
         if repository:
             collection = self._filterBy([GitRepository.id == repository.id])
         else:
-            term = unicode(term)
+            term = six.ensure_text(term)
             # Filter by name.
             field = GitRepository.name
             # Except if the term contains /, when we use unique_name.

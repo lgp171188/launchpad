@@ -637,7 +637,7 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
             try:
                 request.claimReview(self.user)
             except ClaimReviewFailed as e:
-                self.request.response.addErrorNotification(unicode(e))
+                self.request.response.addErrorNotification(six.text_type(e))
         self.next_url = canonical_url(self.context)
 
     @property

@@ -307,9 +307,9 @@ class BugWatch(SQLBase):
         else:
             activity.result = result
         if message is not None:
-            activity.message = unicode(message)
+            activity.message = six.ensure_text(message)
         if oops_id is not None:
-            activity.oops_id = unicode(oops_id)
+            activity.oops_id = six.ensure_text(oops_id)
         store = IStore(BugWatchActivity)
         store.add(activity)
 

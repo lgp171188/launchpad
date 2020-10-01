@@ -231,7 +231,7 @@ class ArchivePopulator(SoyuzScript):
         # archive population parameters in the database.
         pcr = getUtility(IPackageCopyRequestSet).new(
             the_origin, the_destination, registrant,
-            copy_binaries=include_binaries, reason=unicode(reason))
+            copy_binaries=include_binaries, reason=six.ensure_text(reason))
 
         # Clone the source packages. We currently do not support the copying
         # of binary packages. It's a forthcoming feature.

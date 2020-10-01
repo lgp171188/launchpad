@@ -32,6 +32,7 @@ import iso8601
 from psycopg2 import IntegrityError
 import pytz
 import simplejson
+import six
 from storm.expr import (
     And,
     Cast,
@@ -152,7 +153,7 @@ def load_garbo_job_state(job_name):
     # Load the json state data for the given job name.
     job_data = IMasterStore(Person).execute(
         "SELECT json_data FROM GarboJobState WHERE name = ?",
-        params=(unicode(job_name),)).get_one()
+        params=(six.ensure_text(job_name),)).get_one()
     if job_data:
         return simplejson.loads(job_data[0])
     return None
@@ -164,11 +165,12 @@ def save_garbo_job_state(job_name, job_data):
     json_data = simplejson.dumps(job_data, ensure_ascii=False)
     result = store.execute(
         "UPDATE GarboJobState SET json_data = ? WHERE name = ?",
-        params=(json_data, unicode(job_name)))
+        params=(json_data, six.ensure_text(job_name)))
     if result.rowcount == 0:
         store.execute(
         "INSERT INTO GarboJobState(name, json_data) "
-        "VALUES (?, ?)", params=(unicode(job_name), unicode(json_data)))
+        "VALUES (?, ?)",
+        params=(six.ensure_text(job_name), six.ensure_text(json_data)))
 
 
 class BulkPruner(TunableLoop):

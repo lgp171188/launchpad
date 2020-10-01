@@ -19,6 +19,7 @@ from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
+import six
 from sqlobject import SQLObjectNotFound
 from storm.locals import Store
 from testscenarios import (
@@ -1591,16 +1592,16 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
                 "message": "Commit 1\n\nLP: #%d" % bugs[0].id,
                 },
             {
-                "sha1": unicode(hashlib.sha1("1").hexdigest()),
+                "sha1": six.ensure_text(hashlib.sha1("1").hexdigest()),
                 # Will not be matched.
                 "message": "Commit 2; see LP #%d" % bugs[1].id,
                 },
             {
-                "sha1": unicode(hashlib.sha1("2").hexdigest()),
+                "sha1": six.ensure_text(hashlib.sha1("2").hexdigest()),
                 "message": "Commit 3; LP: #%d" % bugs[2].id,
                 },
             {
-                "sha1": unicode(hashlib.sha1("3").hexdigest()),
+                "sha1": six.ensure_text(hashlib.sha1("3").hexdigest()),
                 # Non-existent bug ID will not be returned.
                 "message": "Non-existent bug; LP: #%d" % (bugs[2].id + 100),
                 },
@@ -1620,7 +1621,7 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
         """Set up a fake log response referring to the given bugs."""
         self.hosting_fixture.getLog.result = [
             {
-                "sha1": unicode(hashlib.sha1(str(i)).hexdigest()),
+                "sha1": six.ensure_text(hashlib.sha1(str(i)).hexdigest()),
                 "message": "LP: #%d" % bug.id,
                 }
             for i, bug in enumerate(bugs)]
@@ -1692,15 +1693,16 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
         bmp.updateRelatedBugsFromSource()
         self.assertEqual([bug], bmp.bugs)
         matches_expected_xref = MatchesDict(
-            {("bug", unicode(bug.id)): ContainsDict({"metadata": Is(None)})})
+            {("bug", six.text_type(bug.id)):
+                ContainsDict({"metadata": Is(None)})})
         self.assertThat(
             getUtility(IXRefSet).findFrom(
-                ("merge_proposal", unicode(bmp.id)), types=["bug"]),
+                ("merge_proposal", six.text_type(bmp.id)), types=["bug"]),
             matches_expected_xref)
         self._setUpLog([bug])
         self.assertThat(
             getUtility(IXRefSet).findFrom(
-                ("merge_proposal", unicode(bmp.id)), types=["bug"]),
+                ("merge_proposal", six.text_type(bmp.id)), types=["bug"]),
             matches_expected_xref)
 
     def test_updateRelatedBugsFromSource_honours_limit(self):

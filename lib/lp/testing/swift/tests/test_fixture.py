@@ -175,11 +175,7 @@ class TestSwiftFixture(TestCase):
 
     def test_shutdown_and_startup(self):
         # This test demonstrates how the Swift client deals with a
-        # flapping Swift server. In particular, that once a connection
-        # has started failing it will continue failing so we need to
-        # ensure that once we encounter a fail we open a fresh
-        # connection. This is probably a property of our mock Swift
-        # server rather than reality but the mock is a required target.
+        # flapping Swift server.
         size = 30
 
         # With no Swift server, a fresh connection fails with
@@ -204,15 +200,8 @@ class TestSwiftFixture(TestCase):
             ConnectionError,
             client.get_object, "size", str(size))
 
-        # And even if we bring it back up, existing connections
-        # continue to fail
+        # If we bring it back up, the client retries and succeeds.
         self.swift_fixture.startup()
-        self.assertRaises(
-            ClientException,
-            client.get_object, "size", str(size))
-
-        # But fresh connections are fine.
-        client = self.swift_fixture.connect()
         headers, body = client.get_object("size", str(size))
         self.assertEqual(body, b"0" * size)
 

@@ -10,6 +10,7 @@ from datetime import (
     timedelta,
     )
 
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -102,7 +103,7 @@ class GettextCheckMessages(LaunchpadScript):
                 msgstrs, potmsgset.flags)
         except GettextValidationError as error:
             self._error_count += 1
-            return unicode(error)
+            return six.text_type(error)
 
         return None
 

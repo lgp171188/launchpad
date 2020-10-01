@@ -220,7 +220,7 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
     @export_read_operation()
     @operation_for_version("devel")
     def getChrootHash(pocket, image_type):
-        """Return the sha1sum of the current chroot for the given pocket."""
+        """Return applicable hashes for the current chroot of this pocket."""
 
     def addOrUpdateChroot(chroot, pocket=None, image_type=None):
         """Return the just added or modified PocketChroot.

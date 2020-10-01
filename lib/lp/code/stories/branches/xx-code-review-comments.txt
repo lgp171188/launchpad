@@ -201,7 +201,7 @@ log entries first.
     >>> hosting_fixture = GitHostingFixture()
     >>> for i in range(2):
     ...     hosting_fixture.getLog.result.insert(0, {
-    ...         u'sha1': unicode(i * 2) * 40,
+    ...         u'sha1': six.text_type(i * 2) * 40,
     ...         u'message': u'Testing commits in conversation',
     ...         u'author': {
     ...             u'name': bmp.registrant.display_name,
@@ -210,7 +210,7 @@ log entries first.
     ...             },
     ...         })
     ...     hosting_fixture.getLog.result.insert(0, {
-    ...         u'sha1': unicode(i * 2 + 1) * 40,
+    ...         u'sha1': six.text_type(i * 2 + 1) * 40,
     ...         u'message': u'and it works!',
     ...         u'author': {
     ...             u'name': bmp.registrant.display_name,
