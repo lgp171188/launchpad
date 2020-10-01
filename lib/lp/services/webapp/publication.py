@@ -564,7 +564,12 @@ class LaunchpadBrowserPublication(
         view = removeSecurityProxy(view)
         # It's possible that the view is a bound method.
         view = getattr(view, '__self__', view)
-        context = removeSecurityProxy(getattr(view, 'context', None))
+        try:
+            context = removeSecurityProxy(getattr(view, 'context', None))
+        except ValueError:
+            # Redirects don't have a view context, this is handled in
+            # constructPageID
+            context = None
         pageid = self.constructPageID(view, context)
         request.setInWSGIEnvironment('launchpad.pageid', pageid)
         return pageid
