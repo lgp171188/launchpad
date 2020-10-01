@@ -218,6 +218,26 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "Build schedule:\nBuilt on request\nEdit OCI recipe\n",
             MatchesTagText(content, "build-schedule"))
 
+    def test_create_new_recipe_with_build_args(self):
+        oci_project = self.factory.makeOCIProject()
+        [git_ref] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl("Git repository").value = (
+            git_ref.repository.identity)
+        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl("Build-time ARG variables").value = (
+            "VAR1=10\nVAR2=20")
+        browser.getControl("Create OCI recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("recipe-name", extract_text(content.h1))
+        self.assertThat(
+            "Build-time\nARG variables:\nVAR1=10\nVAR2=20",
+            MatchesTagText(content, "build-args"))
+
     def test_create_new_recipe_users_teams_as_owner_options(self):
         # Teams that the user is in are options for the OCI recipe owner.
         self.factory.makeTeam(
@@ -473,6 +493,47 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         login_person(self.person)
         self.assertRecipeProcessors(recipe, ["386", "amd64"])
 
+    def test_edit_build_args(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, build_args={"VAR1": "xxx", "VAR2": "uu"})
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        args = browser.getControl(name="field.build_args")
+        self.assertContentEqual("VAR1=xxx\r\nVAR2=uu", args.value)
+        args.value = "VAR=aa\nANOTHER_VAR=bbb"
+        browser.getControl("Update OCI recipe").click()
+        login_person(self.person)
+        IStore(recipe).reload(recipe)
+        self.assertEqual(
+            {"VAR": "aa", "ANOTHER_VAR": "bbb"}, recipe.build_args)
+
+    def test_edit_build_args_invalid_content(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, build_args={"VAR1": "xxx", "VAR2": "uu"})
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        args = browser.getControl(name="field.build_args")
+        self.assertContentEqual("VAR1=xxx\r\nVAR2=uu", args.value)
+        args.value = "VAR=aa\nmessed up text"
+        browser.getControl("Update OCI recipe").click()
+
+        # Error message should be shown.
+        content = find_main_content(browser.contents)
+        self.assertIn(
+            "'messed up text' at line 2 is not a valid KEY=value pair.",
+            extract_text(content))
+
+        # Assert that recipe still have the original build_args.
+        login_person(self.person)
+        IStore(recipe).reload(recipe)
+        self.assertEqual({"VAR1": "xxx", "VAR2": "uu"}, recipe.build_args)
+
     def test_edit_with_invisible_processor(self):
         # It's possible for existing recipes to have an enabled processor
         # that's no longer usable with the current distroseries, which will
@@ -711,6 +772,37 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Status When complete Architecture
             Successfully built 30 minutes ago 386
             """ % (oci_project_name, oci_project_display, recipe.build_path),
+            self.getMainText(build.recipe))
+
+    def test_index_with_build_args(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        oci_project_name = oci_project.name
+        oci_project_display = oci_project.display_name
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="recipe-repository",
+            paths=["refs/heads/master"])
+        recipe = self.makeOCIRecipe(
+            oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
+            build_args={"VAR1": "123", "VAR2": "XXX"})
+        build = self.makeBuild(
+            recipe=recipe, status=BuildStatus.FULLYBUILT,
+            duration=timedelta(minutes=30))
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            %s OCI project
+            recipe-name
+            .*
+            OCI recipe information
+            Owner: Test Person
+            OCI project: %s
+            Source: ~test-person/\\+git/recipe-repository:master
+            Build file path: Dockerfile
+            Build schedule: Built on request
+            Build-time\nARG variables: VAR1=123 VAR2=XXX
+            Latest builds
+            Status When complete Architecture
+            Successfully built 30 minutes ago 386
+            """ % (oci_project_name, oci_project_display),
             self.getMainText(build.recipe))
 
     def test_index_success_with_buildlog(self):

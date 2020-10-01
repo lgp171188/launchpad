@@ -23,9 +23,12 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+import six
 from zope.component import getUtility
 from zope.formlib.form import FormFields
+from zope.formlib.textwidgets import TextAreaWidget
 from zope.formlib.widget import (
+    CustomWidgetFactory,
     DisplayWidget,
     renderElement,
     )
@@ -35,6 +38,7 @@ from zope.schema import (
     Choice,
     List,
     Password,
+    Text,
     TextLine,
     ValidationError,
     )
@@ -241,6 +245,12 @@ class OCIRecipeView(LaunchpadView):
             return "Built daily"
         else:
             return "Built on request"
+
+    @property
+    def build_args(self):
+        return "\n".join(
+            "%s=%s" % (k, v)
+            for k, v in sorted(self.context.build_args.items()))
 
 
 def builds_for_recipe(recipe):
@@ -676,6 +686,7 @@ class IOCIRecipeEditSchema(Interface):
         "description",
         "git_ref",
         "build_file",
+        "build_args",
         "build_path",
         "build_daily",
         "require_virtualized",
@@ -683,7 +694,45 @@ class IOCIRecipeEditSchema(Interface):
         ])
 
 
-class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin):
+class OCIRecipeFormMixin:
+    """Mixin with common processing for both edit and add views."""
+    custom_widget_build_args = CustomWidgetFactory(
+        TextAreaWidget, height=5, width=100)
+
+    def createBuildArgsField(self):
+        """Create a form field for OCIRecipe.build_args attribute."""
+        if IOCIRecipe.providedBy(self.context):
+            default = "\n".join(
+                "%s=%s" % (k, v)
+                for k, v in sorted(self.context.build_args.items()))
+        else:
+            default = ""
+        return FormFields(Text(
+            __name__='build_args',
+            title=u'Build-time ARG variables',
+            description=("One per line. Each ARG should be in the format "
+                         "of ARG_KEY=arg_value."),
+            default=default,
+            required=False, readonly=False))
+
+    def validateBuildArgs(self, data):
+        field_value = data.get('build_args')
+        if not field_value:
+            return
+        build_args = {}
+        for i, line in enumerate(field_value.split("\n")):
+            if '=' not in line:
+                msg = ("'%s' at line %s is not a valid KEY=value pair." %
+                       (line, i + 1))
+                self.setFieldError("build_args", six.text_type(msg))
+                return
+            k, v = line.split('=', 1)
+            build_args[k] = v
+        data['build_args'] = build_args
+
+
+class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
+                       OCIRecipeFormMixin):
     """View for creating OCI recipes."""
 
     page_title = label = "Create a new OCI recipe"
@@ -708,6 +757,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin):
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeAddView, self).setUpFields()
+        self.form_fields += self.createBuildArgsField()
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
             "The architectures that this OCI recipe builds for. Some "
@@ -748,15 +798,16 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin):
                     "There is already an OCI recipe owned by %s in %s with "
                     "this name." % (
                         owner.display_name, self.context.display_name))
+        self.validateBuildArgs(data)
 
     @action("Create OCI recipe", name="create")
     def create_action(self, action, data):
         recipe = getUtility(IOCIRecipeSet).new(
             name=data["name"], registrant=self.user, owner=data["owner"],
             oci_project=self.context, git_ref=data["git_ref"],
-            build_file=data["build_file"], build_path=data["build_path"],
-            description=data["description"],
-            build_daily=data["build_daily"], processors=data["processors"])
+            build_file=data["build_file"], description=data["description"],
+            build_daily=data["build_daily"], build_args=data["build_args"],
+            build_path=data["build_path"], processors=data["processors"])
         self.next_url = canonical_url(recipe)
 
 
@@ -798,7 +849,8 @@ class OCIRecipeAdminView(BaseOCIRecipeEditView):
     field_names = ("require_virtualized", "allow_internet")
 
 
-class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
+class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
+                        OCIRecipeFormMixin):
     """View for editing OCI recipes."""
 
     @property
@@ -821,6 +873,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpFields()
+        self.form_fields += self.createBuildArgsField()
         self.form_fields += self.createEnabledProcessors(
             self.context.available_processors,
             "The architectures that this OCI recipe builds for. Some "
@@ -860,7 +913,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin):
                         # This processor is restricted and currently
                         # enabled. Leave it untouched.
                         data["processors"].append(processor)
-
+        self.validateBuildArgs(data)
 
 class OCIRecipeDeleteView(BaseOCIRecipeEditView):
     """View for deleting OCI recipes."""
