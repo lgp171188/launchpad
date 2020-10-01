@@ -62,6 +62,7 @@ from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
     )
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
@@ -700,6 +701,43 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             [recipe3, recipe1, recipe2],
             list(oci_project.searchRecipes(u"a")))
 
+    def test_build_args_dict(self):
+        args = {"MY_VERSION": "1.0.3", "ANOTHER_VERSION": "2.9.88"}
+        recipe = self.factory.makeOCIRecipe(build_args=args)
+        # Force fetch it from database
+        store = IStore(recipe)
+        store.invalidate(recipe)
+        self.assertEqual(args, recipe.build_args)
+
+    def test_build_args_not_dict(self):
+        invalid_build_args_set = [
+            [1, 2, 3],
+            "some string",
+            123,
+        ]
+        for invalid_build_args in invalid_build_args_set:
+            self.assertRaises(
+                AssertionError, self.factory.makeOCIRecipe,
+                build_args=invalid_build_args)
+
+    def test_build_args_flatten_dict(self):
+        # Makes sure we only store one level of key=pair, flattening to
+        # string every value.
+        args = {
+            "VAR1": {b"something": [1, 2, 3]},
+            "VAR2": 123,
+            "VAR3": "A string",
+        }
+        recipe = self.factory.makeOCIRecipe(build_args=args)
+        # Force fetch it from database
+        store = IStore(recipe)
+        store.invalidate(recipe)
+        self.assertEqual({
+            "VAR1": "{'something': [1, 2, 3]}",
+            "VAR2": "123",
+            "VAR3": "A string",
+        }, recipe.build_args)
+
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
 
@@ -1024,7 +1062,8 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project = self.factory.makeOCIProject(
                 registrant=self.person)
             recipe = self.factory.makeOCIRecipe(
-                oci_project=oci_project)
+                oci_project=oci_project,
+                build_args={"VAR_A": "123"})
             url = api_url(recipe)
 
         ws_recipe = self.load_from_api(url)
@@ -1043,8 +1082,9 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 git_ref_link=Equals(self.getAbsoluteURL(recipe.git_ref)),
                 description=Equals(recipe.description),
                 build_file=Equals(recipe.build_file),
+                build_args=Equals({"VAR_A": "123"}),
                 build_daily=Equals(recipe.build_daily),
-                build_path=Equals(recipe.build_path)
+                build_path=Equals(recipe.build_path),
                 )))
 
     def test_api_patch_oci_recipe(self):
@@ -1108,6 +1148,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             "owner": person_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
+            "build_args": {"VAR": "VAR VALUE"},
             "description": "My recipe"}
 
         resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
@@ -1125,6 +1166,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 description=Equals(obj["description"]),
                 owner_link=Equals(self.getAbsoluteURL(self.person)),
                 registrant_link=Equals(self.getAbsoluteURL(self.person)),
+                build_args=Equals({"VAR": "VAR VALUE"})
             )))
 
     def test_api_create_oci_recipe_non_legitimate_user(self):
