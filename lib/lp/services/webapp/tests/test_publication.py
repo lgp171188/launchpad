@@ -388,3 +388,17 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
         self.assertEqual(
             'RootObject-index-html',
             publication._prepPageIDForMetrics("RootObject:index.html"))
+
+    def test_no_context_pageid(self):
+        # request context may not exist in redirect scenarios
+        owner = self.factory.makePerson()
+        ppa = self.factory.makeArchive(owner=owner)
+        redirect_url = ("http://launchpad.test/api/devel/~{}/"
+                        "+archive/{}/testpackage".format(owner.name, ppa.name))
+        self.useFixture(FakeLogger())
+        browser = self.getUserBrowser()
+        # This shouldn't raise ValueError
+        self.assertRaises(
+            NotFound,
+            browser.open,
+            redirect_url)
