@@ -240,10 +240,6 @@ class OCIRecipeView(LaunchpadView):
         else:
             return "Built on request"
 
-    @property
-    def pending_build_requests(self):
-        return self.context.pending_build_requests.count()
-
 
 def builds_for_recipe(recipe):
     """A list of interesting builds.
