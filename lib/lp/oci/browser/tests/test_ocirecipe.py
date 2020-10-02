@@ -860,7 +860,7 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         browser = self.getViewBrowser(self.recipe, user=self.person)
         content = extract_text(find_main_content(browser.contents))
         self.assertIn(
-            "* You have 1 pending build request. "
+            "You have 1 pending build request. "
             "The builds should start automatically soon.",
             content.replace("\n", " "))
 

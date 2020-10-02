@@ -422,13 +422,15 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         return OCIRecipeBuildRequest(self, job_id)
 
     def requestBuildsFromJob(self, requester, build_request=None,
-                             distro_arch_series=None):
+                             architectures=None):
         self._checkRequestBuild(requester)
-        if distro_arch_series is None:
-            distro_arch_series = set(self.getAllowedArchitectures())
+        distro_arch_series = set(self.getAllowedArchitectures())
 
         builds = []
         for das in distro_arch_series:
+            if (architectures is not None
+                    and das.architecturetag not in architectures):
+                continue
             try:
                 builds.append(self.requestBuild(
                     requester, das, build_request=build_request))
@@ -442,10 +444,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
         return builds
 
-    def requestBuilds(self, requester, distro_arch_series=None):
+    def requestBuilds(self, requester, architectures=None):
         self._checkRequestBuild(requester)
         job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
-            self, requester, distro_arch_series)
+            self, requester, architectures)
         return self.getBuildRequest(job.job_id)
 
     @property
