@@ -231,10 +231,6 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         """See `IOCIRegistryUploadJob`."""
         self.json_data["errors"] = errors
 
-    @property
-    def is_multi_arch(self):
-        return len(self.build.getAllowedArchitectures()) > 1
-
     def allBuildsUploaded(self, build_request):
         """Returns True if all other builds already finished uploading.
         False otherwise."""
@@ -243,7 +239,7 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         upload_jobs = sum(uploads_per_build.values(), [])
 
         # Lock the Job rows, so no other job updates it's status until the
-        # end of this transation. This is done to avoid race conditions,
+        # end of this job's transaction. This is done to avoid race conditions,
         # where 2 upload jobs could be running simultaneously and none of them
         # realises that is the last upload.
         store = IMasterStore(builds[0])
@@ -272,7 +268,8 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
                 # The "allBuildsUploaded" call will lock, on the database,
                 # all upload jobs for update until this transaction finishes.
                 # So, make sure this is the last thing being done by this job.
-                if self.allBuildsUploaded(self.build.build_request):
+                build_request = self.build.build_request
+                if build_request and self.allBuildsUploaded(build_request):
                     client.uploadManifestList(self.build.build_request)
             except OCIRegistryError as e:
                 self.error_summary = str(e)

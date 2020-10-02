@@ -228,13 +228,13 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             ocirecipe._hasPendingBuilds([arch_series_386, arch_series_hppa]))
 
     def test_requestBuild(self):
-        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        ocirecipe = self.factory.makeOCIRecipe()
         oci_arch = self.factory.makeOCIRecipeArch(recipe=ocirecipe)
         build = ocirecipe.requestBuild(ocirecipe.owner, oci_arch)
         self.assertEqual(build.status, BuildStatus.NEEDSBUILD)
 
     def test_requestBuild_already_exists(self):
-        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        ocirecipe = self.factory.makeOCIRecipe()
         oci_arch = self.factory.makeOCIRecipeArch(recipe=ocirecipe)
         ocirecipe.requestBuild(ocirecipe.owner, oci_arch)
 
@@ -252,8 +252,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_arch = self.factory.makeOCIRecipeArch(recipe=recipe)
             hook = self.factory.makeWebhook(
                 target=recipe, event_types=["oci-recipe:build:0.1"])
-            build = removeSecurityProxy(recipe).requestBuild(
-                recipe.owner, oci_arch)
+            build = recipe.requestBuild(recipe.owner, oci_arch)
 
         expected_payload = {
             "recipe_build": Equals(

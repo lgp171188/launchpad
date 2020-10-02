@@ -72,11 +72,11 @@
     </div>
 
     <h2>Latest builds</h2>
-    <div tal:condition="view/pending_build_requests"
-         tal:define="count view/pending_build_requests|nothing;
+    <div tal:define="count context/pending_build_requests/count|nothing;
                   plural string: build requests;
-                  singular string: build request;">
-      * You have <span tal:replace="view/pending_build_requests" /> pending
+                  singular string: build request;"
+         tal:condition="count">
+      You have <span tal:replace="count" /> pending
       <tal:plural
         metal:use-macro="context/@@+base-layout-macros/plural-message"/>.
       The builds should start automatically soon.

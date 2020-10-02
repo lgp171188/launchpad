@@ -17,6 +17,7 @@ from lazr.enum import (
     )
 import six
 from storm.databases.postgres import JSON
+from storm.expr import Desc
 from storm.properties import Int
 from storm.references import Reference
 from storm.store import EmptyResultSet
@@ -162,11 +163,12 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     config = config.IOCIRecipeRequestBuildsJobSource
 
     @classmethod
-    def create(cls, recipe, requester, distro_arch_series=None):
+    def create(cls, recipe, requester, architectures=None):
         """See `OCIRecipeRequestBuildsJob`."""
         metadata = {
             "requester": requester.id,
-            "distro_arch_series": [i.id for i in distro_arch_series or []]
+            "architectures": (
+                list(architectures) if architectures is not None else None),
         }
         recipe_job = OCIRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
@@ -184,13 +186,18 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         return cls(job)
 
     @classmethod
-    def getPendingByOCIRecipe(cls, recipe, statuses):
+    def findByOCIRecipe(cls, recipe, statuses=None, job_ids=None):
+        conditions = [
+            OCIRecipeJob.recipe == recipe,
+            OCIRecipeJob.job_type == cls.class_job_type]
+        if statuses is not None:
+            conditions.append(Job._status.is_in(statuses))
+        if job_ids is not None:
+            conditions.append(OCIRecipeJob.job_id.is_in(job_ids))
         return IStore(OCIRecipeJob).find(
             (OCIRecipeJob, Job),
             OCIRecipeJob.job_id == Job.id,
-            OCIRecipeJob.recipe == recipe,
-            OCIRecipeJob.job_type == cls.class_job_type,
-            Job._status.is_in(statuses))
+            *conditions).order_by(Desc(OCIRecipeJob.job_id))
 
     def getOperationDescription(self):
         return "requesting builds of %s" % self.recipe
@@ -247,8 +254,9 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         self.metadata["builds"] = [build.id for build in builds]
 
     @property
-    def distro_arch_series_ids(self):
-        return self.metadata.get("distro_arch_series") or []
+    def architectures(self):
+        architectures = self.metadata["architectures"]
+        return set(architectures) if architectures is not None else None
 
     def run(self):
         """See `IRunnableJob`."""
@@ -258,13 +266,9 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
                 "Skipping %r because the requester has been deleted." % self)
             return
         try:
-            arch_series = set(self.recipe.getAllowedArchitectures())
-            if self.distro_arch_series_ids:
-                arch_series = {i for i in arch_series
-                               if i.id in self.distro_arch_series_ids}
             self.builds = self.recipe.requestBuildsFromJob(
                 requester, build_request=self.build_request,
-                distro_arch_series=arch_series)
+                architectures=self.architectures)
             self.error_message = None
         except self.retry_error_types:
             raise

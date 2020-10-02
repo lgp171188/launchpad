@@ -81,19 +81,26 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
 
 class IOCIRecipeRequestBuildsJobSource(IJobSource):
 
-    def create(oci_recipe, requester, distro_arch_series=None):
+    def create(oci_recipe, requester, architectures=None):
         """Request builds of an OCI Recipe.
 
         :param oci_recipe: The OCI recipe to build.
         :param requester: The person requesting the builds.
-        :param distro_arch_series: Build only for this list of
-            distro_arch_series, if they are available for the recipe. If
-            None, build for all available distro_arch_series.
+        :param architectures: Build only for this list of
+            architectures, if they are available for the recipe. If
+            None, build for all available architectures.
         """
 
-    def getByOCIRecipeAndID(oci_recipe, job_id):
+    def getByOCIRecipeAndID(recipe, job_id):
         """Retrieve the build job by OCI recipe and the given job ID.
         """
 
-    def getPendingByOCIRecipe(oci_recipe, statuses):
-        """Retrieve the build job list by OCI recipe."""
+    def findByOCIRecipe(recipe, statuses=None, job_ids=None):
+        """Find jobs for an OCI recipe.
+
+        :param oci_recipe: An OCI recipe to search for.
+        :param statuses: An optional iterable of `JobStatus`es to search for.
+        :param job_ids: An optional iterable of job IDs to search for.
+        :return: A sequence of `OCIRecipeRequestBuildsJob`s with the specified
+            OCI recipe.
+        """

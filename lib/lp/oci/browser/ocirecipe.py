@@ -240,10 +240,6 @@ class OCIRecipeView(LaunchpadView):
         else:
             return "Built on request"
 
-    @property
-    def pending_build_requests(self):
-        return self.context.pending_build_requests.count()
-
 
 def builds_for_recipe(recipe):
     """A list of interesting builds.
@@ -638,7 +634,12 @@ class OCIRecipeRequestBuildsView(LaunchpadFormView):
 
     @action('Request builds', name='request')
     def request_action(self, action, data):
-        self.context.requestBuilds(self.user, data['distro_arch_series'])
+        if data.get('distro_arch_series'):
+            architectures = [
+                arch.architecturetag for arch in data['distro_arch_series']]
+        else:
+            architectures = None
+        self.context.requestBuilds(self.user, architectures)
         self.request.response.addNotification(
             "Your builds were scheduled and should start soon. "
             "Refresh this page for details.")
