@@ -270,6 +270,18 @@ class IOCIRecipeView(Interface):
             "Whether everything is set up to allow uploading builds of "
             "this OCI recipe to a registry."))
 
+    def requestBuild(requester, architecture):
+        """Request that the OCI recipe is built.
+
+        Please, note that this method does not associate the created build
+        with an OCIRecipeBuildRequest. So, prefer using the
+        OCIRecipe.requestBuilds (plural).
+
+        :param requester: The person requesting the build.
+        :param architecture: The architecture to build for.
+        :return: `IOCIRecipeBuild`.
+        """
+
     @call_with(requester=REQUEST_USER)
     @export_factory_operation(IOCIRecipeBuildRequest, [])
     @operation_for_version("devel")
