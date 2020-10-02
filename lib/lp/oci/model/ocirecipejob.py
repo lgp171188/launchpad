@@ -17,6 +17,7 @@ from lazr.enum import (
     )
 import six
 from storm.databases.postgres import JSON
+from storm.expr import Desc
 from storm.properties import Int
 from storm.references import Reference
 from storm.store import EmptyResultSet
@@ -185,13 +186,18 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         return cls(job)
 
     @classmethod
-    def getPendingByOCIRecipe(cls, recipe, statuses):
+    def findByOCIRecipe(cls, recipe, statuses=None, job_ids=None):
+        conditions = [
+            OCIRecipeJob.recipe == recipe,
+            OCIRecipeJob.job_type == cls.class_job_type]
+        if statuses is not None:
+            conditions.append(Job._status.is_in(statuses))
+        if job_ids is not None:
+            conditions.append(OCIRecipeJob.job_id.is_in(job_ids))
         return IStore(OCIRecipeJob).find(
             (OCIRecipeJob, Job),
             OCIRecipeJob.job_id == Job.id,
-            OCIRecipeJob.recipe == recipe,
-            OCIRecipeJob.job_type == cls.class_job_type,
-            Job._status.is_in(statuses))
+            *conditions).order_by(Desc(OCIRecipeJob.job_id))
 
     def getOperationDescription(self):
         return "requesting builds of %s" % self.recipe

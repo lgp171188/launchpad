@@ -453,7 +453,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     @property
     def pending_build_requests(self):
         util = getUtility(IOCIRecipeRequestBuildsJobSource)
-        return util.getPendingByOCIRecipe(
+        return util.findByOCIRecipe(
             self, statuses=(JobStatus.WAITING, JobStatus.RUNNING))
 
     @property
