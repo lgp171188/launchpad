@@ -785,6 +785,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         recipe = self.makeOCIRecipe(
             oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
             build_args={"VAR1": "123", "VAR2": "XXX"})
+        build_path = recipe.build_path
         build = self.makeBuild(
             recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
@@ -797,12 +798,13 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             OCI project: %s
             Source: ~test-person/\\+git/recipe-repository:master
             Build file path: Dockerfile
+            Build context directory: %s
             Build schedule: Built on request
             Build-time\nARG variables: VAR1=123 VAR2=XXX
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago 386
-            """ % (oci_project_name, oci_project_display),
+            """ % (oci_project_name, oci_project_display, build_path),
             self.getMainText(build.recipe))
 
     def test_index_success_with_buildlog(self):
