@@ -36,6 +36,7 @@ from testtools.twistedsupport import (
     )
 from twisted.internet import defer
 from zope.component import getUtility
+from zope.proxy import isProxy
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import (
@@ -176,6 +177,24 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.addCleanup(shut_down_default_process_pool)
 
+    def assertHasNoZopeSecurityProxy(self, data):
+        """Makes sure that data doesn't contain a security proxy.
+
+        `data` can be a list, a tuple, a dict or an ordinary value. This
+        method checks `data` itself, and if it's a collection, it checks
+        each item in it.
+        """
+        self.assertFalse(
+            isProxy(data), "%s should not be a security proxy." % data)
+        # If it's a collection, keep searching for proxies.
+        if isinstance(data, (list, tuple)):
+            for i in data:
+                self.assertHasNoZopeSecurityProxy(i)
+        elif isinstance(data, dict):
+            for k, v in data.items():
+                self.assertHasNoZopeSecurityProxy(k)
+                self.assertHasNoZopeSecurityProxy(v)
+
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
         [ref] = self.factory.makeGitRefs()
@@ -238,6 +257,9 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
+        # Asserts that nothing here is a zope proxy, to avoid errors when
+        # serializing it for XML-RPC call.
+        self.assertHasNoZopeSecurityProxy(args)
         self.assertThat(args, MatchesDict({
             "archive_private": Is(False),
             "archives": Equals(expected_archives),
@@ -270,6 +292,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
+        self.assertHasNoZopeSecurityProxy(args)
         self.assertThat(args, MatchesDict({
             "archive_private": Is(False),
             "archives": Equals(expected_archives),
