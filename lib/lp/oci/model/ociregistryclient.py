@@ -15,6 +15,8 @@ from functools import partial
 import hashlib
 from io import BytesIO
 import json
+
+
 try:
     from json.decoder import JSONDecodeError
 except ImportError:
@@ -309,6 +311,21 @@ class OCIRegistryClient:
             raise exceptions[0]
         elif len(exceptions) > 1:
             raise MultipleOCIRegistryError(exceptions)
+
+    @classmethod
+    def uploadManifestList(cls, build_request):
+        # XXX: Here, we need to do the upload of the multiple archs' manifests.
+        # In theory, we should do the following to upload the manifest list
+        # here:
+        # 1- For each build:
+        #   - Read the manifest.json, and get "Config" content. That's the
+        #     digest of that specific architecture manifest file.
+        #   - Update the list of manifests with this file's size, digest,
+        #     os, platform, etc.
+        # 2- Build the manifest list file content, with the list of
+        #     manifests created above in it.
+        # 3- Upload this new file to registry overriding manifest.json
+        pass
 
 
 class OCIRegistryAuthenticationError(Exception):

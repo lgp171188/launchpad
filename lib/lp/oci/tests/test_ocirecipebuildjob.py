@@ -8,7 +8,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
-from lp.buildmaster.interfaces.processor import IProcessorSet
 from storm.store import Store
 from testtools.matchers import (
     Equals,
@@ -20,8 +19,10 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -30,6 +31,7 @@ from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRecipeBuildJob,
     IOCIRegistryUploadJob,
     )
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     IOCIRegistryClient,
@@ -45,7 +47,10 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.testing import TestCaseWithFactory, admin_logged_in
+from lp.testing import (
+    admin_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
@@ -54,7 +59,6 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
-from zope.security.proxy import removeSecurityProxy
 
 
 def run_isolated_jobs(jobs):
@@ -73,6 +77,7 @@ class FakeRegistryClient:
 
     def __init__(self):
         self.upload = FakeMethod()
+        self.uploadManifestList = FakeMethod()
 
 
 class FakeOCIBuildJob(OCIRecipeBuildJobDerived):
@@ -194,36 +199,44 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(
             distribution=recipe.oci_project.distribution)
         distro_i386 = self.factory.makeDistroArchSeries(
-                distroseries=distroseries, architecturetag="i386",
-                processor=i386)
+            distroseries=distroseries, architecturetag="i386",
+            processor=i386)
         distro_i386.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
         distro_amd64 = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="amd64",
             processor=amd64)
         distro_amd64.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
 
-        ocibuild_i386 = removeSecurityProxy(self.makeOCIRecipeBuild(
-            distro_arch_series=distro_i386))
-        ocibuild_amd64 = removeSecurityProxy(self.makeOCIRecipeBuild(
-            distro_arch_series=distro_amd64))
-        build_request = recipe.createBuildRequest(recipe.owner)
-        ocibuild_i386.build_request_id = build_request.id
-        ocibuild_amd64.build_request_id = build_request.id
-        transaction.commit()
-        import ipdb; ipdb.set_trace()
+        # Creates a build request with builds.
+        build_request = recipe.requestBuilds(recipe.owner)
+        with admin_logged_in():
+            jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
+                JobRunner(jobs).runAll()
 
-        self.assertContentEqual([], ocibuild_i386.registry_upload_jobs)
-        self.assertContentEqual([], ocibuild_amd64.registry_upload_jobs)
+        builds = build_request.builds
+        self.assertEqual(2, builds.count())
+        self.assertEqual(builds[0].build_request, builds[1].build_request)
 
-        job_i386 = OCIRegistryUploadJob.create(ocibuild_i386)
-        job_amd64 = OCIRegistryUploadJob.create(ocibuild_amd64)
+        upload_jobs = []
+        for build in builds:
+            self.assertContentEqual([], build.registry_upload_jobs)
+            upload_jobs.append(OCIRegistryUploadJob.create(build))
 
         client = FakeRegistryClient()
         self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
 
         with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
-            JobRunner([job_i386]).runAll()
-        self.assertEqual([((ocibuild_i386,), {})], client.upload.calls)
+            JobRunner([upload_jobs[0]]).runAll()
+        self.assertEqual([((builds[0],), {})], client.upload.calls)
+        self.assertEqual([], client.uploadManifestList.calls)
+
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            JobRunner([upload_jobs[1]]).runAll()
+        self.assertEqual(
+            [((builds[0],), {}), ((builds[1],), {})], client.upload.calls)
+        self.assertEqual([((builds[1].build_request, ), {})],
+                         client.uploadManifestList.calls)
 
     def test_run_failed_registry_error(self):
         # A run that fails with a registry error sets the registry upload

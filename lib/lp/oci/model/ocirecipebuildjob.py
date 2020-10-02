@@ -41,8 +41,12 @@ from lp.oci.interfaces.ociregistryclient import (
     OCIRegistryError,
     )
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IStore
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.database.stormbase import StormBase
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import (
     EnumeratedSubclass,
     Job,
@@ -162,7 +166,6 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     @classmethod
     def create(cls, build):
         """See `IOCIRegistryUploadJobSource`"""
-        import ipdb; ipdb.set_trace()
         edited_fields = set()
         with notify_modified(build, edited_fields) as before_modification:
             oci_build_job = OCIRecipeBuildJob(
@@ -232,15 +235,45 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     def is_multi_arch(self):
         return len(self.build.getAllowedArchitectures()) > 1
 
+    def allBuildsUploaded(self, build_request):
+        """Returns True if all other builds already finished uploading.
+        False otherwise."""
+        builds = list(build_request.builds)
+        uploads_per_build = {i: list(i.registry_upload_jobs) for i in builds}
+        upload_jobs = sum(uploads_per_build.values(), [])
+
+        # Lock the Job rows, so no other job updates it's status until the
+        # end of this transation. This is done to avoid race conditions,
+        # where 2 upload jobs could be running simultaneously and none of them
+        # realises that is the last upload.
+        store = IMasterStore(builds[0])
+        placeholders = ', '.join('?' for _ in upload_jobs)
+        sql = (
+            "SELECT id, status FROM job WHERE id IN (%s) FOR UPDATE"
+            % placeholders)
+        store.execute(sql, [i.job_id for i in upload_jobs])
+
+        for build, upload_jobs in uploads_per_build.items():
+            has_finished_upload = any(
+                i.status == JobStatus.COMPLETED or i.job_id == self.job_id
+                for i in upload_jobs)
+            if not has_finished_upload:
+                return False
+        return True
+
     def run(self):
         """See `IRunnableJob`."""
         client = getUtility(IOCIRegistryClient)
         # XXX twom 2020-04-16 This is taken from SnapStoreUploadJob
         # it will need to gain retry support.
-        import ipdb; ipdb.set_trace()
         try:
             try:
                 client.upload(self.build)
+                # The "allBuildsUploaded" call will lock, on the database,
+                # all upload jobs for update until this transaction finishes.
+                # So, make sure this is the last thing being done by this job.
+                if self.allBuildsUploaded(self.build.build_request):
+                    client.uploadManifestList(self.build.build_request)
             except OCIRegistryError as e:
                 self.error_summary = str(e)
                 self.errors = e.errors
