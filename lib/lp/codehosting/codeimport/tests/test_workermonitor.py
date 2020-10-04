@@ -230,7 +230,7 @@ class TestWorkerMonitorUnit(TestCase):
         def _logOopsFromFailure(self, failure):
             log.err(failure)
 
-    def makeWorkerMonitorWithJob(self, job_id=1, job_data=()):
+    def makeWorkerMonitorWithJob(self, job_id=1, job_data={}):
         return self.WorkerMonitor(
             job_id, BufferLogger(),
             FakeCodeImportScheduleEndpointProxy({job_id: job_data}),
@@ -247,16 +247,6 @@ class TestWorkerMonitorUnit(TestCase):
         # 'arguments' part of what getImportDataForJobID returns.
         args = [self.factory.getUniqueString(),
                 self.factory.getUniqueString()]
-        worker_monitor = self.makeWorkerMonitorWithJob(1, (args, 1, 2))
-        return worker_monitor.getWorkerArguments().addCallback(
-            self.assertEqual, args)
-
-    def test_getWorkerArguments_dict(self):
-        # getWorkerArguments returns a deferred that fires with the
-        # 'arguments' part of what getImportDataForJobID returns.
-        # (New protocol: data passed as a dict.)
-        args = [self.factory.getUniqueString(),
-                self.factory.getUniqueString()]
         data = {'arguments': args, 'target_url': 1, 'log_file_name': 2}
         worker_monitor = self.makeWorkerMonitorWithJob(1, data)
         return worker_monitor.getWorkerArguments().addCallback(
@@ -266,26 +256,6 @@ class TestWorkerMonitorUnit(TestCase):
         # getWorkerArguments sets the _target_url (for use in oops reports)
         # and _log_file_name (for upload to the librarian) attributes on the
         # WorkerMonitor from the data returned by getImportDataForJobID.
-        target_url = self.factory.getUniqueString()
-        log_file_name = self.factory.getUniqueString()
-        worker_monitor = self.makeWorkerMonitorWithJob(
-            1, (['a'], target_url, log_file_name))
-
-        def check_branch_log(ignored):
-            # Looking at the _ attributes here is in slightly poor taste, but
-            # much much easier than them by logging and parsing an oops, etc.
-            self.assertEqual(
-                (target_url, log_file_name),
-                (worker_monitor._target_url, worker_monitor._log_file_name))
-
-        return worker_monitor.getWorkerArguments().addCallback(
-            check_branch_log)
-
-    def test_getWorkerArguments_sets_target_url_and_logfilename_dict(self):
-        # getWorkerArguments sets the _target_url (for use in oops reports)
-        # and _log_file_name (for upload to the librarian) attributes on the
-        # WorkerMonitor from the data returned by getImportDataForJobID.
-        # (New protocol: data passed as a dict.)
         target_url = self.factory.getUniqueString()
         log_file_name = self.factory.getUniqueString()
         data = {
@@ -578,7 +548,13 @@ class TestWorkerMonitorRunNoProcess(TestCase):
 
         def __init__(self, process_deferred, has_job=True):
             if has_job:
-                job_data = {1: ([], '', '')}
+                job_data = {
+                    1: {
+                        'arguments': [],
+                        'target_url': '',
+                        'log_file_name': '',
+                        },
+                    }
             else:
                 job_data = {}
             CodeImportWorkerMonitor.__init__(

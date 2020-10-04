@@ -179,16 +179,9 @@ class CodeImportWorkerMonitor:
             'getImportDataForJobID', self._job_id)
 
         def _processResult(result):
-            if isinstance(result, dict):
-                code_import_arguments = result['arguments']
-                target_url = result['target_url']
-                log_file_name = result['log_file_name']
-            else:
-                # XXX cjwatson 2018-03-15: Remove once the scheduler always
-                # sends a dict.
-                code_import_arguments, target_url, log_file_name = result
-            self._target_url = target_url
-            self._log_file_name = log_file_name
+            code_import_arguments = result['arguments']
+            self._target_url = result['target_url']
+            self._log_file_name = result['log_file_name']
             self._logger.info(
                 'Found source details: %s', code_import_arguments)
             return code_import_arguments
