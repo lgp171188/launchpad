@@ -138,6 +138,16 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         self.assertEqual(
             b'log file data\n', code_import.results.last().log_file.read())
 
+    def test_finishJobID_with_empty_log_file_data(self):
+        # finishJobID calls the finishJobID job workflow method, but does
+        # not upload zero-byte log files to the librarian.
+        code_import_job = self.makeCodeImportJob(running=True)
+        code_import = code_import_job.code_import
+        self.api.finishJobID(
+            code_import_job.id, CodeImportResultStatus.SUCCESS.name,
+            xmlrpc_client.Binary(b''))
+        self.assertIsNone(code_import.results.last().log_file)
+
     def test_finishJobID_not_found(self):
         # getImportDataForJobID returns a NoSuchCodeImportJob fault when there
         # is no code import job with the given ID.

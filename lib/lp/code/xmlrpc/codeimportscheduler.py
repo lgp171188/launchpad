@@ -94,11 +94,14 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
         status = CodeImportResultStatus.items[status_name]
         workflow = removeSecurityProxy(getUtility(ICodeImportJobWorkflow))
         if isinstance(log_file, xmlrpc_client.Binary):
-            log_file_name = '%s.log' % (
-                job.code_import.target.unique_name[1:].replace('/', '-'))
-            log_file_alias = getUtility(ILibraryFileAliasSet).create(
-                log_file_name, len(log_file.data), io.BytesIO(log_file.data),
-                'text/plain')
+            if log_file.data:
+                log_file_name = '%s.log' % (
+                    job.code_import.target.unique_name[1:].replace('/', '-'))
+                log_file_alias = getUtility(ILibraryFileAliasSet).create(
+                    log_file_name, len(log_file.data),
+                    io.BytesIO(log_file.data), 'text/plain')
+            else:
+                log_file_alias = None
         elif log_file:
             # XXX cjwatson 2020-10-05: Backward compatibility for previous
             # versions that uploaded the log file to the librarian from the
