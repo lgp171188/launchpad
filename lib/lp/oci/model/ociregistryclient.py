@@ -313,6 +313,30 @@ class OCIRegistryClient:
             raise MultipleOCIRegistryError(exceptions)
 
     @classmethod
+    def makeMultiArchManifest(cls, build_request):
+        """Returns the multi-arch manifest content."""
+        manifests = []
+        for build in build_request.builds:
+            import ipdb; ipdb.set_trace()
+            manifest = cls._getJSONfile(build.manifest)
+            size = 0
+            digest = manifest["Config"]
+            arch = build.processor.name
+            manifests.append({
+                "mediaType": ("application/"
+                              "vnd.docker.distribution.manifest.v2+json"),
+                "size": size,
+                "digest": "sha256:%s" % digest,
+                "platform": {"architecture": arch, "os": "linux"}
+            })
+
+        return {
+          "schemaVersion": 2,
+          "mediaType": ("application/"
+                        "vnd.docker.distribution.manifest.list.v2+json"),
+          "manifests": manifests}
+
+    @classmethod
     def uploadManifestList(cls, build_request):
         # XXX: Here, we need to do the upload of the multiple archs' manifests.
         # In theory, we should do the following to upload the manifest list
@@ -325,6 +349,7 @@ class OCIRegistryClient:
         # 2- Build the manifest list file content, with the list of
         #     manifests created above in it.
         # 3- Upload this new file to registry overriding manifest.json
+        manifest = cls.makeMultiArchManifest(build_request)
         pass
 
 
