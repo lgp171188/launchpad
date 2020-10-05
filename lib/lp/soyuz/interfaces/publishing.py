@@ -604,6 +604,10 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         required=False, readonly=False)
     binarypackagerelease = Attribute(
         "The binary package release being published")
+    # This and source_package_version are exported here to
+    # avoid clients needing to indirectly look this up via a build.
+    # This can cause security errors due to the differing levels of access.
+    # Exporting here allows the lookup to happen internally.
     source_package_name = exported(
         TextLine(
             title=_("Source Package Name"),

@@ -6,6 +6,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
@@ -33,7 +34,6 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
-from zope.security.interfaces import Unauthorized
 
 
 class TestPublishingSet(BaseTestCaseWithThreeBuilds):
