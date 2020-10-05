@@ -604,8 +604,21 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         required=False, readonly=False)
     binarypackagerelease = Attribute(
         "The binary package release being published")
-    source_package_name = Attribute(
-        'The source package name that built this binary.')
+    # This and source_package_version are exported here to
+    # avoid clients needing to indirectly look this up via a build.
+    # This can cause security errors due to the differing levels of access.
+    # Exporting here allows the lookup to happen internally.
+    source_package_name = exported(
+        TextLine(
+            title=_("Source Package Name"),
+            description=_('The source package name that built this binary.'),
+            required=False, readonly=True))
+    source_package_version = exported(
+        TextLine(
+            title=_("Source Package Version"),
+            description=_(
+                'The source package version that built this binary.'),
+            required=False, readonly=True))
     distroarchseriesID = Int(
         title=_("The DB id for the distroarchseries."),
         required=False, readonly=False)
