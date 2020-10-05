@@ -75,6 +75,7 @@ from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
+from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
@@ -148,7 +149,8 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
         self.assertProvides(job, IBuildFarmJobBehaviour)
 
 
-class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
+class TestAsyncOCIRecipeBuildBehaviour(
+        StatsMixin, MakeOCIBuildMixin, TestCaseWithFactory):
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=10)
@@ -174,6 +176,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             "time.time", return_value=self.now))
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.addCleanup(shut_down_default_process_pool)
+        self.setUpStats()
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
@@ -342,6 +345,11 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         yield job.dispatchBuildToSlave(DevNullLogger())
         self.assertEqual(
             ('ensurepresent', lxd_lfa.http_url, '', ''), slave.call_log[0])
+        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('build.count,job_type=OCIRECIPEBUILD,builder_name={}'.format(
+                builder.name),))
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):

@@ -157,7 +157,9 @@ class BuildFarmJobBehaviourBase:
         job_type = getattr(self.build, 'job_type', None)
         job_type_name = job_type.name if job_type else 'UNKNOWN'
         getUtility(IStatsdClient).incr(
-            'build.count,job_type={}'.format(job_type_name))
+            'build.count,job_type={},builder_name={}'.format(
+                job_type_name,
+                self._builder.name))
 
         logger.info(
             "Job %s (%s) started on %s: %s %s"
