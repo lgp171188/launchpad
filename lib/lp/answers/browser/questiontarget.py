@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IQuestionTarget browser views."""
@@ -887,7 +887,8 @@ class QuestionTargetTraversalMixin:
         question = getUtility(IQuestionSet).get(question_id)
         if question is None:
             raise NotFoundError(name)
-        return self.redirectSubTree(canonical_url(question))
+        return self.redirectSubTree(
+            canonical_url(question, request=self.request))
 
     @stepto('+ticket')
     def redirect_ticket(self):
@@ -896,7 +897,9 @@ class QuestionTargetTraversalMixin:
         It will take care of the remaining steps and query URL.
         """
         target = urlappend(
-            canonical_url(self.context, rootsite='answers'), '+question')
+            canonical_url(
+                self.context, request=self.request, rootsite='answers'),
+            '+question')
         return self.redirectSubTree(target)
 
 

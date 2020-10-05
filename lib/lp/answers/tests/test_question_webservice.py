@@ -1,4 +1,4 @@
-# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webservice unit tests related to Launchpad Questions."""
@@ -118,7 +118,11 @@ class TestQuestionRepresentation(TestCaseWithFactory):
         # a question by id via redirect without url hacking.
         response = self.webservice.get(
             '/questions/%s' % self.question.id, 'application/xhtml+xml')
-        self.assertEqual(response.status, 200)
+        self.assertEqual(response.status, 301)
+        self.assertEqual(
+            'http://api.launchpad.test/devel/%s/+question/%d' % (
+                self.target_name, self.question.id),
+            response.getheader('Location'))
 
     def test_GET_xhtml_representation(self):
         # A question's xhtml representation is available on the api.
