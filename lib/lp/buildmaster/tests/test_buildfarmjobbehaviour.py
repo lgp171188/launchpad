@@ -44,6 +44,7 @@ from lp.buildmaster.tests.mock_slaves import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
+from lp.services.statsd.tests import StatsMixin
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.testing import (
     TestCase,
@@ -55,6 +56,7 @@ from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import (
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
+    ZopelessLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
 
@@ -155,8 +157,9 @@ class TestBuildFarmJobBehaviourBase(TestCaseWithFactory):
         self.assertIs(False, behaviour.extraBuildArgs()["fast_cleanup"])
 
 
-class TestDispatchBuildToSlave(TestCase):
+class TestDispatchBuildToSlave(StatsMixin, TestCase):
 
+    layer = ZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest
 
     def makeBehaviour(self, das):
@@ -259,6 +262,20 @@ class TestDispatchBuildToSlave(TestCase):
 
         self.assertDispatched(
             slave, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
+
+    @defer.inlineCallbacks
+    def test_dispatchBuildToSlave_stats(self):
+        self.setUpStats()
+        behaviour = self.makeBehaviour(FakeDistroArchSeries())
+        builder = MockBuilder()
+        slave = OkSlave()
+        logger = BufferLogger()
+        behaviour.setBuilder(builder, slave)
+        yield behaviour.dispatchBuildToSlave(logger)
+        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('build.count,job_type=UNKNOWN,builder_name=mock-builder',))
 
 
 class TestGetUploadMethodsMixin:
