@@ -53,6 +53,7 @@ from CVS import (
     )
 from dulwich.repo import Repo as GitRepo
 from fixtures import FakeLogger
+from pymacaroons import Macaroon
 import scandir
 import six
 import subvertpy
@@ -892,7 +893,7 @@ class TestActualImportMixin:
             config.root, 'scripts', 'code-import-worker.py')
         output = tempfile.TemporaryFile()
         retcode = subprocess.call(
-            [script_path, '--access-policy=anything'] + arguments,
+            [script_path, '--access-policy=anything', '--'] + arguments,
             stderr=output, stdout=output)
         self.assertEqual(retcode, 0)
 
@@ -930,11 +931,11 @@ class TestActualImportMixin:
             config.root, 'scripts', 'code-import-worker.py')
         output = tempfile.TemporaryFile()
         retcode = subprocess.call(
-            [script_path, '--access-policy=anything'] + arguments,
+            [script_path, '--access-policy=anything', '--'] + arguments,
             stderr=output, stdout=output)
         self.assertEqual(retcode, CodeImportWorkerExitCode.SUCCESS)
         retcode = subprocess.call(
-            [script_path, '--access-policy=anything'] + arguments,
+            [script_path, '--access-policy=anything', '--'] + arguments,
             stderr=output, stdout=output)
         self.assertEqual(retcode, CodeImportWorkerExitCode.SUCCESS_NOCHANGE)
 
@@ -990,6 +991,25 @@ class TestCVSImport(WorkerTest, CSCVSActualImportMixin):
         return [
             str(self.factory.getUniqueInteger()), 'cvs:bzr',
             cvs_server.getRoot(), 'trunk',
+            ]
+
+
+class TestCVSImportArgparse(TestCVSImport):
+    """Like `TestCVSImport`, but with argparse-style arguments."""
+
+    def makeWorkerArguments(self, module_name, files, stacked_on_url=None):
+        """Make CVS worker arguments pointing at a real CVS repo."""
+        cvs_server = CVSServer(self.makeTemporaryDirectory())
+        cvs_server.start_server()
+        self.addCleanup(cvs_server.stop_server)
+
+        cvs_server.makeModule('trunk', [('README', 'original\n')])
+
+        self.foreign_commit_count = 2
+
+        return [
+            str(self.factory.getUniqueInteger()), 'cvs', 'bzr',
+            cvs_server.getRoot(), '--cvs-module', 'trunk',
             ]
 
 
@@ -1222,6 +1242,28 @@ class TestGitImport(WorkerTest, TestActualImportMixin,
         self.assertEqual(lastrev.message, "Message for other")
 
 
+class TestGitImportArgparse(TestGitImport):
+    """Like `TestGitImport`, but with argparse-style arguments."""
+
+    def makeWorkerArguments(self, branch_name, files, stacked_on_url=None):
+        """Make Git worker arguments pointing at a real Git repo."""
+        repository_store = self.makeTemporaryDirectory()
+        git_server = GitServer(repository_store)
+        git_server.start_server()
+        self.addCleanup(git_server.stop_server)
+
+        git_server.makeRepo('source', files)
+        self.foreign_commit_count = 1
+
+        arguments = [
+            str(self.factory.getUniqueInteger()), 'git', 'bzr',
+            git_server.get_url('source'),
+            ]
+        if stacked_on_url is not None:
+            arguments.extend(['--stacked-on', stacked_on_url])
+        return arguments
+
+
 class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
                        TestActualImportMixin, PullingImportWorkerTests):
 
@@ -1281,6 +1323,27 @@ class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
         cache_dir = get_cache(uuid).create_cache_dir()
         with open(os.path.join(cache_dir, 'svn-cache')) as cache_file:
             self.assertEqual(content, cache_file.read())
+
+
+class TestBzrSvnImportArgparse(TestBzrSvnImport):
+    """Like `TestBzrSvnImport`, but with argparse-style arguments."""
+
+    def makeWorkerArguments(self, branch_name, files, stacked_on_url=None):
+        """Make SVN worker arguments pointing at a real SVN repo."""
+        svn_server = SubversionServer(self.makeTemporaryDirectory())
+        svn_server.start_server()
+        self.addCleanup(svn_server.stop_server)
+
+        svn_branch_url = svn_server.makeBranch(branch_name, files)
+        svn_branch_url = svn_branch_url.replace('://localhost/', ':///')
+        self.foreign_commit_count = 2
+        arguments = [
+            str(self.factory.getUniqueInteger()), self.rcstype, 'bzr',
+            svn_branch_url,
+            ]
+        if stacked_on_url is not None:
+            arguments.extend(['--stacked-on', stacked_on_url])
+        return arguments
 
 
 class TestBzrImport(WorkerTest, TestActualImportMixin,
@@ -1363,11 +1426,41 @@ class TestBzrImport(WorkerTest, TestActualImportMixin,
             branch.repository.get_revision(branch.last_revision()).committer)
 
 
+class TestBzrImportArgparse(TestBzrImport):
+    """Like `TestBzrImport`, but with argparse-style arguments."""
+
+    def makeWorkerArguments(self, branch_name, files, stacked_on_url=None):
+        """Make Bzr worker arguments pointing at a real Bzr repo."""
+        repository_path = self.makeTemporaryDirectory()
+        bzr_server = BzrServer(repository_path)
+        bzr_server.start_server()
+        self.addCleanup(bzr_server.stop_server)
+
+        bzr_server.makeRepo(files)
+        self.foreign_commit_count = 1
+
+        arguments = [
+            str(self.factory.getUniqueInteger()), 'bzr', 'bzr',
+            bzr_server.get_url(),
+            ]
+        if stacked_on_url is not None:
+            arguments.extend(['--stacked-on', stacked_on_url])
+        return arguments
+
+
 class TestGitToGitImportWorker(TestCase):
 
+    def makeWorkerArguments(self):
+        """Make Git worker arguments, pointing at a fake URL for now."""
+        return [
+            'git-unique-name', 'git:git',
+            self.factory.getUniqueURL(scheme='git'),
+            Macaroon().serialize(),
+            ]
+
     def test_throttleProgress(self):
-        source_details = self.factory.makeCodeImportSourceDetails(
-            rcstype="git", target_rcstype="git")
+        source_details = CodeImportSourceDetails.fromArguments(
+            self.makeWorkerArguments())
         logger = BufferLogger()
         worker = GitToGitImportWorker(
             source_details, logger, AcceptAnythingPolicy())
@@ -1408,6 +1501,18 @@ class TestGitToGitImportWorker(TestCase):
             self.assertThat(
                 progress_lines,
                 ContainsAll([u"%d ...\r" % i for i in (9, 19, 29, 39, 49)]))
+
+
+class TestGitToGitImportWorkerArgparse(TestCase):
+    """Like `TestGitToGitImportWorker`, but with argparse-style arguments."""
+
+    def makeWorkerArguments(self):
+        """Make Git worker arguments, pointing at a fake URL for now."""
+        return [
+            'git-unique-name', 'git', 'git',
+            self.factory.getUniqueURL(scheme='git'),
+            '--macaroon', Macaroon().serialize(),
+            ]
 
 
 class CodeImportBranchOpenPolicyTests(TestCase):
