@@ -262,7 +262,8 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     @property
     def uploaded_manifests(self):
-        return self.metadata["uploaded_manifests"]
+        return {
+            int(k): v for k, v in self.metadata["uploaded_manifests"].items()}
 
     def addUploadedManifest(self, build_id, manifest_info):
         self.metadata["uploaded_manifests"][int(build_id)] = manifest_info
