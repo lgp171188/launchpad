@@ -695,6 +695,13 @@ class OCIRecipeBuildRequest:
         return self.job.date_finished
 
     @property
+    def uploaded_manifests(self):
+        return self.job.uploaded_manifests
+
+    def addUploadedManifest(self, build_id, manifest_info):
+        self.job.addUploadedManifest(build_id, manifest_info)
+
+    @property
     def status(self):
         status_map = {
             JobStatus.WAITING: OCIRecipeBuildRequestStatus.PENDING,

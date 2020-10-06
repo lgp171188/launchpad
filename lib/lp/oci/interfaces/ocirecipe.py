@@ -178,6 +178,16 @@ class IOCIRecipeBuildRequest(Interface):
         title=_("If set, limit builds to these architecture tags."),
         value_type=TextLine(), required=False, readonly=True)
 
+    uploaded_manifests = Dict(
+        title=_("A dict of manifest digests per build."),
+        key_type=Int(), value_type=Dict(),
+        required=False, readonly=True)
+
+    def addUploadedManifest(build_id, manifest_info):
+        """Add the manifest information for one of the builds in
+        this BuildRequest.
+        """
+
 
 class IOCIRecipeView(Interface):
     """`IOCIRecipe` attributes that require launchpad.View permission."""
