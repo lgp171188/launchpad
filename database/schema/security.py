@@ -325,7 +325,7 @@ class PermissionGatherer:
     def countPrincipals(self):
         """Count the number of different principals."""
         return len(set(sum([
-            principals.keys()
+            list(principals)
             for principals in six.itervalues(self.permissions)], [])))
 
     def grant(self, cur):
@@ -481,7 +481,7 @@ def reset_permissions(con, config, options):
             managed_roles.add(section_name + "_ro")
 
     log.debug('Updating group memberships')
-    existing_memberships = list_role_members(cur, memberships.keys())
+    existing_memberships = list_role_members(cur, list(memberships))
     for group, users in six.iteritems(memberships):
         cur_users = managed_roles.intersection(existing_memberships[group])
         to_grant = users - cur_users
