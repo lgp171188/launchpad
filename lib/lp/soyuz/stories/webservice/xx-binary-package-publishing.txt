@@ -89,6 +89,8 @@ Each binary publication exposes a number of properties:
     scheduled_deletion_date: None
     section_name: 'base'
     self_link: 'http://.../~cprov/+archive/ubuntu/ppa/+binarypub/30'
+    source_package_name: 'mozilla-firefox'
+    source_package_version: '0.9'
     status: 'Published'
 
 

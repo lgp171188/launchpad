@@ -148,12 +148,13 @@ class OCIRegistryClient:
                     continue
                 fileobj = un_zipped.extractfile(tarinfo)
                 cls._upload(digest, push_rule, fileobj, http_client)
+                return tarinfo.size
         finally:
             lfa.close()
 
     @classmethod
     def _build_registry_manifest(cls, digests, config, config_json,
-                                 config_sha, preloaded_data):
+                                 config_sha, preloaded_data, layer_sizes):
         """Create an image manifest for the uploading image.
 
         This involves nearly everything as digests and lengths are required.
@@ -163,6 +164,7 @@ class OCIRegistryClient:
         :param config: The contents of the manifest config file as a dict.
         :param config_json: The config file as a JSON string.
         :param config_sha: The sha256sum of the config JSON string.
+        :param layer_sizes: Dict of layer digests and their size in bytes.
         """
         # Create the initial manifest data with empty layer information
         manifest = {
@@ -181,7 +183,10 @@ class OCIRegistryClient:
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
-                "size": preloaded_data[layer].content.filesize,
+                # This should be the size of the `layer.tar` that we extracted
+                # from the OCI image at build time. It is not the size of the
+                # gzipped version that we have in the librarian.
+                "size": layer_sizes[layer],
                 "digest": layer})
         return manifest
 
@@ -238,12 +243,14 @@ class OCIRegistryClient:
             file_data = preloaded_data[section["Config"]]
             config = file_data["config_file"]
             #  Upload the layers involved
+            layer_sizes = {}
             for diff_id in config["rootfs"]["diff_ids"]:
-                cls._upload_layer(
+                layer_size = cls._upload_layer(
                     diff_id,
                     push_rule,
                     file_data[diff_id],
                     http_client)
+                layer_sizes[diff_id] = layer_size
             # The config file is required in different forms, so we can
             # calculate the sha, work these out and upload
             config_json = json.dumps(config).encode("UTF-8")
@@ -258,7 +265,8 @@ class OCIRegistryClient:
             # and associated configs
             registry_manifest = cls._build_registry_manifest(
                 digests, config, config_json, config_sha,
-                preloaded_data[section["Config"]])
+                preloaded_data[section["Config"]],
+                layer_sizes)
 
             # Upload the registry manifest
             try:

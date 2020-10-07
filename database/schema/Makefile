@@ -5,8 +5,6 @@
 # One day the guts of this will be migrated to Python
 #
 
-PYTHON=../../bin/py
-
 # The database dump to restore on database creation
 SAMPLEDATA=../sampledata/current.sql
 SAMPLEDATA_DEV=../sampledata/current-dev.sql
@@ -34,9 +32,9 @@ TEST_PLAYGROUND_DBNAME=launchpad_ftest_playground
 SESSION_DBNAME=session_dev
 
 # The command we use to drop a database.
-DROPDB=${PYTHON} ../../utilities/pgmassacre.py
+DROPDB=../../utilities/pgmassacre.py
 # The command we use to drop (if exists) and recreate a database.
-CREATEDB=${PYTHON} ../../utilities/pgmassacre.py -t
+CREATEDB=../../utilities/pgmassacre.py -t
 
 YEAR=$(shell date +'%Y')
 HEADER="-- Copyright 2010-${YEAR} Canonical Ltd.  This software is licensed \
@@ -45,14 +43,14 @@ HEADER="-- Copyright 2010-${YEAR} Canonical Ltd.  This software is licensed \
 
 # The command used (in conjunction with $(call)) to dump the contents of the
 # given database ($1) into an SQL file ($2).
-build_new_sampledata=$(PYTHON) fti.py --null -d ${1} -q && \
+build_new_sampledata=./fti.py --null -d ${1} -q && \
 	echo $(HEADER) > $(2) && \
     echo -n "-- Created using " >> $(2) && \
     pg_dump --version >> $(2) && \
     pg_dump --schema=public --disable-triggers -a --column-inserts -O ${1} \
     | grep -v "\( TOC \|INSERT INTO launchpaddatabase\|sessiondata\|sessionpkgdata\|SELECT pg_catalog\.setval\|^--\| fticache \|'fticache'\|ALTER TABLE secret\|INSERT INTO secret\)" \
-    | $(PYTHON) sort_sql.py >> $(2) && \
-    $(PYTHON) fti.py --live-rebuild -d ${1} -q
+    | ./sort_sql.py >> $(2) && \
+    ./fti.py --live-rebuild -d ${1} -q
 
 
 # The latest schema dump from production. Database patches are relative
@@ -74,11 +72,11 @@ test: create
 	@ echo "* Loading sample data"
 	@ psql -v ON_ERROR_STOP=1 -d ${TEMPLATE_WITH_TEST_SAMPLEDATA} -f $(SAMPLEDATA) > /dev/null
 	@ echo "* Rebuilding full text indexes"
-	@ ${PYTHON} fti.py --live-rebuild -q -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
+	@ ./fti.py --live-rebuild -q -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 	@ echo "* Resetting sequences"
-	@ ${PYTHON} reset_sequences.py -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
+	@ ./reset_sequences.py -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 	@ echo "* Disabling autovacuum"
-	@ ${PYTHON} unautovacuumable.py -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
+	@ ./unautovacuumable.py -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 	@ echo "* Vacuuming"
 	@ vacuumdb -fz ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 
@@ -91,11 +89,11 @@ dev: test
 	@ echo "* Loading sample data"
 	@ psql -v ON_ERROR_STOP=1 -d ${TEMPLATE_WITH_DEV_SAMPLEDATA} -f $(SAMPLEDATA_DEV) > /dev/null
 	@ echo "* Rebuilding full text indexes"
-	@ ${PYTHON} fti.py --live-rebuild -q -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
+	@ ./fti.py --live-rebuild -q -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Resetting sequences"
-	@ ${PYTHON} reset_sequences.py -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
+	@ ./reset_sequences.py -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Disabling autovacuum"
-	@ ${PYTHON} unautovacuumable.py -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
+	@ ./unautovacuumable.py -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Vacuuming"
 	@ vacuumdb -fz ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Creating ${DBNAME_DEV}"
@@ -116,11 +114,11 @@ create:
 	@ echo "* Loading base database schema"
 	@ psql -d ${EMPTY_DBNAME} -f ${BASELINE} | grep : | cat
 	@ echo "* Patching the database schema"
-	@ ${PYTHON} upgrade.py -d ${EMPTY_DBNAME}
+	@ ./upgrade.py -d ${EMPTY_DBNAME}
 	@ echo "* Security setup"
-	@ ${PYTHON} security.py -q -d ${EMPTY_DBNAME}
+	@ ./security.py -q -d ${EMPTY_DBNAME}
 	@ echo "* Disabling autovacuum"
-	@ ${PYTHON} unautovacuumable.py -d ${EMPTY_DBNAME}
+	@ ./unautovacuumable.py -d ${EMPTY_DBNAME}
 	@ echo "* Vacuuming"
 	@ vacuumdb -fz ${EMPTY_DBNAME}
 

@@ -90,6 +90,8 @@ class IBinaryPackageRelease(Interface):
     name = Attribute("Binary Package Name")
     sourcepackagename = Attribute(
         "The name of the source package from where this binary was built.")
+    sourcepackageversion = Attribute(
+        "The version of the source package from where this binary was built.")
 
     def addFile(file):
         """Create a BinaryPackageFile record referencing this build

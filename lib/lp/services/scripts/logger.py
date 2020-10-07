@@ -223,9 +223,18 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
         parser, default,
         LogLevelNudger(default, False), LogLevelNudger(default, True))
 
-    debug_levels = ', '.join([
-        v for k, v in sorted(logging._levelNames.items(), reverse=True)
-            if isinstance(k, int)])
+    if hasattr(logging, '_levelToName'):
+        # Python >= 3.4
+        name_to_level = dict(logging._nameToLevel)
+        debug_levels = ', '.join(
+            v for k, v in sorted(logging._levelToName.items(), reverse=True))
+    else:
+        name_to_level = {
+            k: v for k, v in logging._levelNames.items()
+            if not isinstance(k, int)}
+        debug_levels = ', '.join(
+            v for k, v in sorted(logging._levelNames.items(), reverse=True)
+                if isinstance(k, int))
 
     def log_file(option, opt_str, value, parser):
         try:
@@ -235,12 +244,12 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
 
         if isinstance(level, int):
             pass
-        elif level.upper() not in logging._levelNames:
+        elif level.upper() not in name_to_level:
             parser.error(
                 "'%s' is not a valid logging level. Must be one of %s" % (
                     level, debug_levels))
         else:
-            level = logging._levelNames[level.upper()]
+            level = name_to_level[level.upper()]
 
         if not path:
             parser.error("Path to log file not specified")
