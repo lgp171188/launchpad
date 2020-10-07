@@ -232,8 +232,13 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         self.json_data["errors"] = errors
 
     def allBuildsUploaded(self, build_request):
-        """Returns True if all other builds already finished uploading.
-        False otherwise."""
+        """Returns True if all builds of the given build_request already
+        finished uploading. False otherwise.
+
+        Note that this method locks all upload jobs at database level,
+        preventing them from updating their status until the end of the
+        current transaction. Use it with caution.
+        """
         builds = list(build_request.builds)
         uploads_per_build = {i: list(i.registry_upload_jobs) for i in builds}
         upload_jobs = sum(uploads_per_build.values(), [])

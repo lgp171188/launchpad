@@ -81,12 +81,12 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
         title=_("Error message"), required=False, readonly=True)
 
     uploaded_manifests = Dict(
-        title=_("A dict of manifest digests per build."),
+        title=_("A dict of manifest information per build."),
         key_type=Int(), value_type=Dict(),
         required=False, readonly=True)
 
-    def addUploadedManifest(build_id, manifest):
-        """Add the manifest digest information for one of the builds in this
+    def addUploadedManifest(build_id, manifest_info):
+        """Add the manifest information for one of the builds in this
         BuildRequest.
         """
 

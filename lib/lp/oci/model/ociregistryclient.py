@@ -231,7 +231,14 @@ class OCIRegistryClient:
     @classmethod
     def _uploadRegistryManifest(cls, http_client, registry_manifest,
                                 push_rule, build=None):
-        """Uploads the build manifest, returning its content digest."""
+        """Uploads the build manifest, returning its content information.
+
+        The returned information can be used to create a Manifest list
+        including the uploaded manifest, for example, in order to create
+        multi-architecture images.
+
+        :return: A dict with {"digest": "sha256:xxx", "size": total_bytes}
+        """
         digest = None
         data = json.dumps(registry_manifest)
         size = len(data)
@@ -239,7 +246,7 @@ class OCIRegistryClient:
             "mediaType",
             "application/vnd.docker.distribution.manifest.v2+json")
         if build is None:
-            # When uploading a build list, use the tag.
+            # When uploading a manifest list, use the tag.
             tag = cls._calculateTag(build, push_rule)
         else:
             # When uploading individual build manifests, use their digest.
@@ -298,13 +305,13 @@ class OCIRegistryClient:
                 preloaded_data[section["Config"]])
 
             # Upload the registry manifest
-            maanifest = cls._uploadRegistryManifest(
+            manifest = cls._uploadRegistryManifest(
                 http_client, registry_manifest, push_rule, build)
 
             # Save the uploaded manifest location, so we can use it in case
             # this is a multi-arch image upload.
             if build.build_request:
-                build.build_request.addUploadedManifest(build.id, maanifest)
+                build.build_request.addUploadedManifest(build.id, manifest)
 
     @classmethod
     def upload(cls, build):
@@ -338,7 +345,9 @@ class OCIRegistryClient:
 
     @classmethod
     def makeMultiArchManifest(cls, build_request):
-        """Returns the multi-arch manifest content."""
+        """Returns the multi-arch manifest content including all builds of
+        the given build_request.
+        """
         manifests = []
         for build in build_request.builds:
             build_manifest = build_request.uploaded_manifests.get(build.id)
@@ -362,6 +371,9 @@ class OCIRegistryClient:
 
     @classmethod
     def uploadManifestList(cls, build_request):
+        """Uploads to all build_request.recipe.push_rules the manifest list
+        for the builds in the given build_request.
+        """
         multi_manifest_content = cls.makeMultiArchManifest(build_request)
         for push_rule in build_request.recipe.push_rules:
             http_client = RegistryHTTPClient.getInstance(push_rule)

@@ -263,6 +263,8 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     @property
     def uploaded_manifests(self):
         return {
+            # Converts keys to integer since saving json to database
+            # converts them to strings.
             int(k): v for k, v in self.metadata["uploaded_manifests"].items()}
 
     def addUploadedManifest(self, build_id, manifest_info):
