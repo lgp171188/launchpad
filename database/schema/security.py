@@ -462,7 +462,7 @@ def reset_permissions(con, config, options):
         if config.get(user, 'type') != 'user':
             continue
         groups = [
-            g.strip() for g in config.get(user, 'groups', '').split(',')
+            g.strip() for g in config.get(user, 'groups').split(',')
             if g.strip()]
         # Read-Only users get added to Read-Only groups.
         if user.endswith('_ro'):
