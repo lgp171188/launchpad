@@ -38,7 +38,10 @@ from zope.component import (
 from zope.event import notify
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
@@ -721,6 +724,6 @@ class OCIRecipeBuildRequest:
         return self.job.builds
 
     def __eq__(self, other):
-        if not isinstance(self, self.__class__):
+        if not zope_isinstance(other, self.__class__):
             return False
         return self.id == other.id

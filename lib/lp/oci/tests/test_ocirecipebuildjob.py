@@ -8,18 +8,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
-from storm.store import Store
 from testtools.matchers import (
     Equals,
     Is,
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
+    Not,
     )
 import transaction
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -131,9 +130,12 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         ocibuild = self.factory.makeOCIRecipeBuild(
             builder=self.factory.makeBuilder(), **kwargs)
         ocibuild.updateStatus(BuildStatus.FULLYBUILT)
-        self.factory.makeWebhook(
-            target=ocibuild.recipe, event_types=["oci-recipe:build:0.1"])
+        self.makeWebhook(ocibuild.recipe)
         return ocibuild
+
+    def makeWebhook(self, recipe):
+        self.factory.makeWebhook(
+            target=recipe, event_types=["oci-recipe:build:0.1"])
 
     def assertWebhookDeliveries(self, ocibuild,
                                 expected_registry_upload_statuses, logger):
@@ -146,7 +148,8 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
             "action": Equals("status-changed"),
             "recipe": Equals(
                 canonical_url(ocibuild.recipe, force_local_path=True)),
-            "build_request": Is(None),
+            "build_request": (Is(None) if ocibuild.build_request is None
+                              else Not(Is(None))),
             "status": Equals("Successfully built"),
             "registry_upload_status": Equals(expected),
             } for expected in expected_registry_upload_statuses]
@@ -174,28 +177,10 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         job = OCIRegistryUploadJob.create(ocibuild)
         self.assertProvides(job, IOCIRegistryUploadJob)
 
-    def test_run(self):
-        logger = self.useFixture(FakeLogger())
-        ocibuild = self.makeOCIRecipeBuild()
-        self.assertContentEqual([], ocibuild.registry_upload_jobs)
-        job = OCIRegistryUploadJob.create(ocibuild)
-        client = FakeRegistryClient()
-        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
-        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
-            run_isolated_jobs([job])
-        self.assertEqual([((ocibuild,), {})], client.upload.calls)
-        self.assertContentEqual([job], ocibuild.registry_upload_jobs)
-        self.assertIsNone(job.error_summary)
-        self.assertIsNone(job.errors)
-        self.assertEqual([], pop_notifications())
-        self.assertWebhookDeliveries(ocibuild, ["Pending", "Uploaded"], logger)
-
-    def test_run_multiple_architectures(self):
-        logger = self.useFixture(FakeLogger())
+    def makeRecipe(self, include_i386=True, include_amd64=True):
         i386 = getUtility(IProcessorSet).getByName("386")
         amd64 = getUtility(IProcessorSet).getByName("amd64")
         recipe = self.factory.makeOCIRecipe()
-        recipe.setProcessors([i386, amd64])
         distroseries = self.factory.makeDistroSeries(
             distribution=recipe.oci_project.distribution)
         distro_i386 = self.factory.makeDistroArchSeries(
@@ -206,6 +191,48 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
             distroseries=distroseries, architecturetag="amd64",
             processor=amd64)
         distro_amd64.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+
+        archs = []
+        if include_i386:
+            archs.append(i386)
+        if include_amd64:
+            archs.append(amd64)
+        recipe.setProcessors(archs)
+        return recipe
+
+    def test_run(self):
+        logger = self.useFixture(FakeLogger())
+        recipe = self.makeRecipe(include_i386=False, include_amd64=True)
+        # Creates a build request with a build in it.
+        build_request = recipe.requestBuilds(recipe.owner)
+        with admin_logged_in():
+            jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
+                JobRunner(jobs).runAll()
+
+        self.assertEqual(1, build_request.builds.count())
+        ocibuild = build_request.builds[0]
+        ocibuild.updateStatus(BuildStatus.FULLYBUILT)
+        self.makeWebhook(recipe)
+
+        self.assertContentEqual([], ocibuild.registry_upload_jobs)
+        job = OCIRegistryUploadJob.create(ocibuild)
+        client = FakeRegistryClient()
+        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        self.assertEqual([((ocibuild,), {})], client.upload.calls)
+        self.assertEqual([((build_request,), {})],
+                         client.uploadManifestList.calls)
+        self.assertContentEqual([job], ocibuild.registry_upload_jobs)
+        self.assertIsNone(job.error_summary)
+        self.assertIsNone(job.errors)
+        self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(ocibuild, ["Pending", "Uploaded"], logger)
+
+    def test_run_multiple_architectures(self):
+        recipe = self.makeRecipe()
 
         # Creates a build request with builds.
         build_request = recipe.requestBuilds(recipe.owner)
