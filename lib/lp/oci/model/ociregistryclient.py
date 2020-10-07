@@ -226,23 +226,24 @@ class OCIRegistryClient:
         """
         # XXX twom 2020-04-17 This needs to include OCIProjectSeries and
         # base image name
-        if build:
-            return "{}-{}".format(build.processor.name, "edge")
-        else:
-            return "edge"
+        return "{}".format("edge")
 
     @classmethod
     def _uploadRegistryManifest(cls, http_client, registry_manifest,
                                 push_rule, build=None):
         """Uploads the build manifest, returning its content digest."""
-        tag = cls._calculateTag(build, push_rule)
         digest = None
         data = json.dumps(registry_manifest)
         size = len(data)
         content_type = registry_manifest.get(
             "mediaType",
             "application/vnd.docker.distribution.manifest.v2+json")
-
+        if build is None:
+            # When uploading a build list, use the tag.
+            tag = cls._calculateTag(build, push_rule)
+        else:
+            # When uploading individual build manifests, use their digest.
+            tag = "sha256:%s" % hashlib.sha256(data).hexdigest()
         try:
             manifest_response = http_client.requestPath(
                 "/manifests/{}".format(tag),
