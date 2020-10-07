@@ -133,6 +133,9 @@ class DbObject(object):
     def __eq__(self, other):
         return self.schema == other.schema and self.name == other.name
 
+    def __hash__(self):
+        return hash((self.schema, self.name))
+
     @property
     def fullname(self):
         fn = "%s.%s" % (self.schema, self.name)
