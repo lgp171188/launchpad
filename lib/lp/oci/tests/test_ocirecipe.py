@@ -32,7 +32,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.oci.interfaces.ocipushrule import OCIPushRuleAlreadyExists
+from lp.oci.interfaces.ocipushrule import (
+    IOCIPushRuleSet,
+    OCIPushRuleAlreadyExists,
+    )
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
@@ -385,11 +388,16 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                     for payload_matcher in payload_matchers]))
 
     def test_destroySelf(self):
+        self.setConfig()
         oci_recipe = self.factory.makeOCIRecipe()
-        build_ids = []
-        for x in range(3):
-            build_ids.append(
-                self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id)
+        # Create associated builds:
+        build_ids = [
+            self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id
+            for _ in range(3)]
+        # Create associated push rules:
+        push_rule_ids = [
+            self.factory.makeOCIPushRule(recipe=oci_recipe).id
+            for i in range(3)]
 
         with person_logged_in(oci_recipe.owner):
             oci_recipe.destroySelf()
@@ -397,6 +405,9 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
         for build_id in build_ids:
             self.assertIsNone(getUtility(IOCIRecipeBuildSet).getByID(build_id))
+        for push_rule_id in push_rule_ids:
+            self.assertIsNone(
+                getUtility(IOCIPushRuleSet).getByID(push_rule_id))
 
     def test_related_webhooks_deleted(self):
         owner = self.factory.makePerson()
