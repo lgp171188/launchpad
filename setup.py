@@ -163,6 +163,7 @@ setup(
         'cssselect',
         'cssutils',
         'defusedxml',
+        'distro',
         'dkimpy[ed25519]',
         'dulwich',
         'feedparser',
