@@ -171,7 +171,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
@@ -188,14 +189,12 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(
-                        self.layer_files[0].library_file.content.filesize)}),
+                    "size": Equals(999)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(
-                        self.layer_files[1].library_file.content.filesize)})
+                    "size": Equals(999)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
@@ -310,21 +309,20 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             self.config,
             json.dumps(self.config),
             "config-sha",
-            preloaded_data["config_file_1.json"])
+            preloaded_data["config_file_1.json"],
+            {"diff_id_1": 999, "diff_id_2": 9001})
         self.assertThat(manifest, MatchesDict({
             "layers": MatchesListwise([
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(
-                        self.layer_files[0].library_file.content.filesize)}),
+                    "size": Equals(999)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(
-                        self.layer_files[1].library_file.content.filesize)})
+                    "size": Equals(9001)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
