@@ -111,10 +111,11 @@ from lp.services.webapp.interfaces import ILaunchBag
 # Marker object to tell BaseImageUpload to keep the existing image.
 KEEP_SAME_IMAGE = object()
 # Regexp for detecting milestone headers in work items text.
-MILESTONE_RE = re.compile('^work items(.*)\s*:\s*$', re.I)
+MILESTONE_RE = re.compile(r'^work items(.*)\s*:\s*$', re.I)
 # Regexp for work items.
 WORKITEM_RE = re.compile(
-    '^(\[(?P<assignee>.*?)\])?\s*(?P<title>.*)\s*:\s*(?P<status>.*)\s*$', re.I)
+    r'^(\[(?P<assignee>.*?)\])?\s*(?P<title>.*)\s*:\s*(?P<status>.*)\s*$',
+    re.I)
 
 
 # Field Interfaces
