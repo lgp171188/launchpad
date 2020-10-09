@@ -215,7 +215,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         _upload_fixture = self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         self.push_rule.registry_credentials.setCredentials({
             "username": "test-username",
@@ -239,7 +240,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         upload_fixture = self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         push_rules = [
             self.push_rule,
@@ -481,7 +483,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
@@ -515,7 +518,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
