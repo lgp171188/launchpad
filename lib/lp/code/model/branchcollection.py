@@ -317,8 +317,8 @@ class GenericBranchCollection:
 
     def getBranches(self, find_expr=Branch, eager_load=False, sort_by=None):
         """See `IBranchCollection`."""
-        all_tables = set(
-            self._tables.values() + self._asymmetric_tables.values())
+        all_tables = (
+            set(self._tables.values()) | set(self._asymmetric_tables.values()))
         tables = [Branch] + list(all_tables)
         expressions = self._getBranchExpressions()
         resultset = self.store.using(*tables).find(find_expr, *expressions)
@@ -385,8 +385,8 @@ class GenericBranchCollection:
                                 merged_revnos=None, merged_revision=None,
                                 eager_load=False):
         Target = ClassAlias(Branch, "target")
-        extra_tables = list(set(
-            self._tables.values() + self._asymmetric_tables.values()))
+        extra_tables = list(
+            set(self._tables.values()) | set(self._asymmetric_tables.values()))
         tables = [Branch] + extra_tables + [
             Join(BranchMergeProposal, And(
                 Branch.id == BranchMergeProposal.source_branchID,
