@@ -240,6 +240,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
         builds = store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self)
         builds.remove()
+        for push_rule in self.push_rules:
+            push_rule.destroySelf()
         getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
