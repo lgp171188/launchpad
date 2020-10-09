@@ -243,10 +243,15 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         uploads_per_build = {i: list(i.registry_upload_jobs) for i in builds}
         upload_jobs = sum(uploads_per_build.values(), [])
 
-        # Lock the Job rows, so no other job updates it's status until the
+        # Lock the Job rows, so no other job updates its status until the
         # end of this job's transaction. This is done to avoid race conditions,
         # where 2 upload jobs could be running simultaneously and none of them
         # realises that is the last upload.
+        # Note also that new upload jobs might be created between the
+        # transaction begin and this lock takes place, but in this case the
+        # new upload is either a retry from a failed upload, or the first
+        # upload for one of the existing builds. Either way, we would see that
+        # build as "not uploaded yet", which is ok for this method.
         store = IMasterStore(builds[0])
         placeholders = ', '.join('?' for _ in upload_jobs)
         sql = (

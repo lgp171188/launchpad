@@ -15,8 +15,6 @@ from functools import partial
 import hashlib
 from io import BytesIO
 import json
-
-
 try:
     from json.decoder import JSONDecodeError
 except ImportError:

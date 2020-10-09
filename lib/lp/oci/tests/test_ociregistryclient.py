@@ -34,7 +34,7 @@ from testtools.matchers import (
     Raises,
     )
 import transaction
-from zope.component._api import getUtility
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.interfaces.processor import IProcessorSet
