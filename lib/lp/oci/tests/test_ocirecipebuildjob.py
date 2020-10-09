@@ -7,7 +7,15 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import (
+    datetime,
+    timedelta,
+    )
+import threading
+import time
+
 from fixtures import FakeLogger
+from storm.store import Store
 from testtools.matchers import (
     Equals,
     Is,
@@ -19,6 +27,7 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -41,8 +50,10 @@ from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJobType,
     OCIRegistryUploadJob,
     )
+from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -200,15 +211,20 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         recipe.setProcessors(archs)
         return recipe
 
-    def test_run(self):
-        logger = self.useFixture(FakeLogger())
-        recipe = self.makeRecipe(include_i386=False, include_amd64=True)
+    def makeBuildRequest(self, include_i386=True, include_amd64=True):
+        recipe = self.makeRecipe(include_i386, include_amd64)
         # Creates a build request with a build in it.
         build_request = recipe.requestBuilds(recipe.owner)
         with admin_logged_in():
             jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
             with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
                 JobRunner(jobs).runAll()
+        return build_request
+
+    def test_run(self):
+        logger = self.useFixture(FakeLogger())
+        build_request = self.makeBuildRequest(include_i386=False)
+        recipe = build_request.recipe
 
         self.assertEqual(1, build_request.builds.count())
         ocibuild = build_request.builds[0]
@@ -232,15 +248,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertWebhookDeliveries(ocibuild, ["Pending", "Uploaded"], logger)
 
     def test_run_multiple_architectures(self):
-        recipe = self.makeRecipe()
-
-        # Creates a build request with builds.
-        build_request = recipe.requestBuilds(recipe.owner)
-        with admin_logged_in():
-            jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
-            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
-                JobRunner(jobs).runAll()
-
+        build_request = self.makeBuildRequest()
         builds = build_request.builds
         self.assertEqual(2, builds.count())
         self.assertEqual(builds[0].build_request, builds[1].build_request)
@@ -264,6 +272,153 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
             [((builds[0],), {}), ((builds[1],), {})], client.upload.calls)
         self.assertEqual([((builds[1].build_request, ), {})],
                          client.uploadManifestList.calls)
+
+    def test_failing_upload_does_not_retries_automatically(self):
+        build_request = self.makeBuildRequest(include_i386=False)
+        builds = build_request.builds
+        self.assertEqual(1, builds.count())
+
+        build = builds.one()
+        self.assertContentEqual([], build.registry_upload_jobs)
+        upload_job = OCIRegistryUploadJob.create(build)
+
+        client = mock.Mock()
+        client.upload.side_effect = Exception("Nope! Error.")
+        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
+
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            JobRunner([upload_job]).runAll()
+        self.assertEqual(1, client.upload.call_count)
+        self.assertEqual(0, client.uploadManifestList.call_count)
+        self.assertEqual(JobStatus.FAILED, upload_job.status)
+        self.assertFalse(upload_job.build_uploaded)
+        self.assertFalse(upload_job.manifest_list_uploaded)
+
+    def test_failing_upload_manifest_list_retries(self):
+        build_request = self.makeBuildRequest(include_i386=False)
+        builds = build_request.builds
+        self.assertEqual(1, builds.count())
+
+        build = builds.one()
+        self.assertContentEqual([], build.registry_upload_jobs)
+        upload_job = OCIRegistryUploadJob.create(build)
+
+        client = mock.Mock()
+        client.uploadManifestList.side_effect = (
+            OCIRegistryUploadJob.ManifestListUploadError("Nope! Error."))
+        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
+
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            JobRunner([upload_job]).runAll()
+        self.assertEqual(1, client.upload.call_count)
+        self.assertEqual(1, client.uploadManifestList.call_count)
+        self.assertEqual(JobStatus.WAITING, upload_job.status)
+        self.assertTrue(upload_job.is_pending)
+        self.assertTrue(upload_job.build_uploaded)
+        self.assertFalse(upload_job.manifest_list_uploaded)
+
+        # Retry should skip client.upload and only run
+        # client.uploadManifestList:
+        client.uploadManifestList.side_effect = None
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            JobRunner([upload_job]).runAll()
+        self.assertEqual(1, client.upload.call_count)
+        self.assertEqual(2, client.uploadManifestList.call_count)
+        self.assertEqual(JobStatus.COMPLETED, upload_job.status)
+        self.assertTrue(upload_job.build_uploaded)
+        self.assertTrue(upload_job.manifest_list_uploaded)
+
+    def test_allBuildsUploaded_lock_between_two_jobs(self):
+        """Simple test to ensure that allBuildsUploaded method locks
+        rows in the database and make concurrent calls wait for that.
+
+        This is not a 100% reliable way to check that concurrent calls to
+        allBuildsUploaded will queue up since it relies on the
+        execution time, but it's a "good enough" approach: this test might
+        pass if the machine running it is *really, really* slow, but a failure
+        here will indicate that something is for sure wrong.
+        """
+
+        class AllBuildsUploadedChecker(threading.Thread):
+            """Thread to run upload_job.allBuildsUploaded tracking the time."""
+            def __init__(self, build_request):
+                super(AllBuildsUploadedChecker, self).__init__()
+                self.build_request = build_request
+                self.upload_job = None
+                # Locks the measurement start until we finished running the
+                # bootstrap code. Parent thread should call waitBootstrap
+                # after self.start().
+                self.bootstrap_lock = threading.Lock()
+                self.bootstrap_lock.acquire()
+                self.error = None
+                self.start_date = None
+                self.end_date = None
+
+            @property
+            def lock_duration(self):
+                return self.end_date - self.start_date
+
+            def waitBootstrap(self):
+                """Wait until self.bootstrap finishes running."""
+                self.bootstrap_lock.acquire()
+                # We don't actually need the lock... just wanted to wait
+                # for it. let's release it then.
+                self.bootstrap_lock.release()
+
+            def bootstrap(self):
+                try:
+                    build = self.build_request.builds[1]
+                    self.upload_job = OCIRegistryUploadJob.create(build)
+                finally:
+                    self.bootstrap_lock.release()
+
+            def run(self):
+                with admin_logged_in():
+                    self.bootstrap()
+                    self.start_date = datetime.now()
+                    try:
+                        self.upload_job.allBuildsUploaded(self.build_request)
+                    except ImportError as e:
+                        self.error = e
+                    self.end_date = datetime.now()
+
+        # Create a build request with 2 builds.
+        build_request = self.makeBuildRequest()
+        builds = build_request.builds
+        self.assertEqual(2, builds.count())
+
+        # Create the upload job for the first build.
+        upload_job1 = OCIRegistryUploadJob.create(builds[0])
+        upload_job1 = removeSecurityProxy(upload_job1)
+
+        # How long the lock will be held by the first job, in seconds.
+        # Adjust to minimize false positives: a number too small here might
+        # make the test pass even if the lock is not correctly implemented.
+        # A number too big will slow down the test execution...
+        waiting_time = 2
+        # Start a clean transaction and lock the rows at database level.
+        transaction.commit()
+        upload_job1.allBuildsUploaded(build_request)
+
+        # Start, in parallel, another upload job to run `allBuildsUploaded`.
+        concurrent_checker = AllBuildsUploadedChecker(build_request)
+        concurrent_checker.start()
+        # Wait until concurrent_checker is ready to measure the time waiting
+        # for the database lock.
+        concurrent_checker.waitBootstrap()
+
+        # Wait a bit and release the database lock by committing current
+        # transaction.
+        time.sleep(waiting_time)
+        transaction.commit()
+
+        # Now, the concurrent checker should have already finished running,
+        # without any error and it should have taken at least the
+        # waiting_time to finish running (since it was waiting).
+        concurrent_checker.join()
+        self.assertIsNone(concurrent_checker.error)
+        self.assertGreaterEqual(
+            concurrent_checker.lock_duration, timedelta(seconds=waiting_time))
 
     def test_run_failed_registry_error(self):
         # A run that fails with a registry error sets the registry upload
