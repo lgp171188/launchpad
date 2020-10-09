@@ -93,7 +93,7 @@ def configure_environment():
     # Suppress accessibility warning because the test runner does not have UI.
     os.environ['GTK_MODULES'] = ''
 
-    if distro.linux_distribution()[:2] == ('Ubuntu', '18.04') and six.PY3:
+    if six.PY3 and distro.linux_distribution()[:2] == ('Ubuntu', '18.04'):
         # XXX cjwatson 2020-10-09: Certain versions of Python crash when
         # importing readline into a process that has libedit loaded
         # (https://bugs.python.org/issue38634,
