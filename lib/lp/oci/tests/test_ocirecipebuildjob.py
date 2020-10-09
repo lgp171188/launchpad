@@ -378,7 +378,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
                     self.start_date = datetime.now()
                     try:
                         self.upload_job.allBuildsUploaded(self.build_request)
-                    except ImportError as e:
+                    except Exception as e:
                         self.error = e
                     self.end_date = datetime.now()
 
