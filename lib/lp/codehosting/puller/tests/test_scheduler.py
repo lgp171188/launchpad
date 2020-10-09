@@ -1,6 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import logging
@@ -572,7 +574,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         # do this manually, and instead the test automatically gave us the
         # full error.
         error = getattr(failure, 'error', 'No stderr stored.')
-        print error
+        print(error)
         return failure
 
     def makePullerMaster(self, cls=scheduler.PullerMaster, script_text=None,

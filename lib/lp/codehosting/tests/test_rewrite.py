@@ -3,6 +3,8 @@
 
 """Tests for the dynamic RewriteMap used to serve branches over HTTP."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import os
