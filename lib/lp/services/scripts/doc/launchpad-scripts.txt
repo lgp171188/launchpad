@@ -25,7 +25,7 @@ LaunchpadCronScript) also log warnings and and errors as OOPS reports.
     ...     [sys.executable, cronscript_crash_path, '-vq'],
     ...     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     ...     stdin=subprocess.PIPE)
-    >>> print p.communicate()[0]
+    >>> print(p.communicate()[0])
     INFO    Creating lockfile: ...
     WARNING This is a warning
     INFO    None
