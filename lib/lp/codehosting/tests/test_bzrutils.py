@@ -51,15 +51,13 @@ from lp.testing import TestCase
 class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
     """Tests for get_branch_stacked_on_url()."""
 
-    excluded_scenarios = [
-        'BranchReferenceFormat',
-        'GitBranchFormat',
-        'SvnBranchFormat',
-        ]
-
     scenarios = [
         scenario for scenario in branch_scenarios()
-        if scenario[0] not in excluded_scenarios]
+        if scenario[0] not in {
+            'BranchReferenceFormat',
+            'GitBranchFormat',
+            'SvnBranchFormat',
+            }]
 
     def __str__(self):
         """Return the test id so that Zope test output shows the format."""
