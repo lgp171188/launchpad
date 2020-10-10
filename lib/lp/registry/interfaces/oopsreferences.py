@@ -31,7 +31,7 @@ class IHasOOPSReferences(Interface):
     @export_read_operation()
     @operation_for_version('devel')
     def findReferencedOOPS(start_date, end_date):
-        """Find OOPS reports between start_date and end_date.
+        r"""Find OOPS reports between start_date and end_date.
 
         :param start_date: Do not look in objects whose last modification time
             is before this date.

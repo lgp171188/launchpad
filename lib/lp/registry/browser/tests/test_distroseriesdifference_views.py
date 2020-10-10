@@ -162,7 +162,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             soupmatchers.Tag(
                 'Binary descriptions header', 'dt',
                 text=re.compile(
-                    '\s*Binary descriptions:\s*')))
+                    r'\s*Binary descriptions:\s*')))
 
         self.assertThat(view(), Not(binary_description_matcher))
 
@@ -293,7 +293,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             soupmatchers.Tag(
                 'Request link', 'a',
                 text=re.compile(
-                    '\s*Compute differences from last common version\s*')))
+                    r'\s*Compute differences from last common version\s*')))
 
         self.assertFalse(view.show_package_diffs_request_link)
         self.assertThat(view(), Not(package_diff_request_matcher))
@@ -606,7 +606,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             soupmatchers.Tag(
                 'Request link', 'a',
                 text=re.compile(
-                    '\s*Compute differences from last common version\s*')))
+                    r'\s*Compute differences from last common version\s*')))
 
         with person_logged_in(self.factory.makePerson()):
             self.assertTrue(
@@ -624,7 +624,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
         soupmatchers.Tag(
             'Package diffs header', 'dt',
             text=re.compile(
-                '\s*Differences from last common version:')))
+                r'\s*Differences from last common version:')))
 
     package_diff_info_matcher = soupmatchers.HTMLContains(
         soupmatchers.Within(
@@ -667,7 +667,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             soupmatchers.Tag(
                 'Request link', 'a',
                 text=re.compile(
-                    '\s*Compute differences from last common version\s*')))
+                    r'\s*Compute differences from last common version\s*')))
 
         pending_package_diff_matcher = soupmatchers.HTMLContains(
             soupmatchers.Tag(
@@ -678,7 +678,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             soupmatchers.Tag(
                 'Unknown base version', 'dd',
                 text=re.compile(
-                    '\s*Unknown, so no diffs are available')))
+                    r'\s*Unknown, so no diffs are available')))
 
         with celebrity_logged_in('admin'):
             view = create_initialized_view(

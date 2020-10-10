@@ -402,7 +402,7 @@ def get_person_visibility_terms(user):
             Person.visibility != PersonVisibility.PUBLIC))
 
 
-_person_sort_re = re.compile("(?:[^\w\s]|[\d_])", re.U)
+_person_sort_re = re.compile(r"(?:[^\w\s]|[\d_])", re.U)
 
 
 def person_sort_key(person):
@@ -4290,7 +4290,7 @@ def generate_nick(email_addr, is_registered=_is_nick_registered):
         raise NicknameGenerationError(
             "%s is not a valid email address" % email_addr)
 
-    user = re.match("^(\S+)@(?:\S+)$", email_addr).groups()[0]
+    user = re.match(r"^(\S+)@(?:\S+)$", email_addr).groups()[0]
     user = user.replace(".", "-").replace("_", "-")
 
     person_set = PersonSet()
