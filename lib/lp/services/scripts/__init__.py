@@ -151,7 +151,7 @@ def db_options(parser):
     >>> parser = OptionParser()
     >>> db_options(parser)
     >>> options, args = parser.parse_args([])
-    >>> print options.dbuser
+    >>> print(options.dbuser)
     None
     """
     conn_string = ConnectionString(config.database.rw_main_master)
