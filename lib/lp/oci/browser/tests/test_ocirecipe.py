@@ -50,18 +50,22 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipeSet,
     OCI_RECIPE_ALLOW_CREATE,
     )
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.runner import JobRunner
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    admin_logged_in,
     anonymous_logged_in,
     BrowserTestCase,
     login,
@@ -71,6 +75,7 @@ from lp.testing import (
     TestCaseWithFactory,
     time_counter,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -938,6 +943,30 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         self.assertRaises(
             Unauthorized, self.getViewBrowser, self.recipe, "+request-builds")
 
+    def runRequestBuildJobs(self):
+        with admin_logged_in():
+            jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
+                JobRunner(jobs).runAll()
+
+    def test_pending_build_requests_not_shown_if_absent(self):
+        self.recipe.requestBuilds(self.recipe.owner)
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        content = extract_text(find_main_content(browser.contents))
+        self.assertIn(
+            "You have 1 pending build request. "
+            "The builds should start automatically soon.",
+            content.replace("\n", " "))
+
+        # Run the build request, so we don't have any pending one. The
+        # message should be gone then.
+        self.runRequestBuildJobs()
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        content = extract_text(find_main_content(browser.contents))
+        self.assertNotIn(
+            "The builds should start automatically soon.",
+            content.replace("\n", " "))
+
     def test_request_builds_action(self):
         # Requesting a build creates pending builds.
         browser = self.getViewBrowser(
@@ -946,6 +975,8 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         self.assertTrue(browser.getControl("i386").selected)
         browser.getControl("Request builds").click()
 
+        self.runRequestBuildJobs()
+
         login_person(self.person)
         builds = self.recipe.pending_builds
         self.assertContentEqual(
@@ -953,19 +984,6 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
             [build.distro_arch_series.architecturetag for build in builds])
         self.assertContentEqual(
             [2510], set(build.buildqueue_record.lastscore for build in builds))
-
-    def test_request_builds_rejects_duplicate(self):
-        # A duplicate build request causes a notification.
-        self.recipe.requestBuild(self.person, self.distroseries["amd64"])
-        browser = self.getViewBrowser(
-            self.recipe, "+request-builds", user=self.person)
-        self.assertTrue(browser.getControl("amd64").selected)
-        self.assertTrue(browser.getControl("i386").selected)
-        browser.getControl("Request builds").click()
-        main_text = extract_text(find_main_content(browser.contents))
-        self.assertIn("1 new build has been queued.", main_text)
-        self.assertIn(
-            "An identical build is already pending for amd64.", main_text)
 
     def test_request_builds_no_architectures(self):
         # Selecting no architectures causes a validation failure.
