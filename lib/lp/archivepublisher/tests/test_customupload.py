@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 
-import cStringIO
+import io
 import os
 import shutil
 import tarfile
@@ -115,7 +115,7 @@ class TestTarfileVerification(TestCase):
         self.custom_processor.tarfile_path = self.tarfile_name
 
     def createTarfile(self):
-        self.tar_fileobj = cStringIO.StringIO()
+        self.tar_fileobj = io.BytesIO()
         tar_file = tarfile.open(name=None, mode="w", fileobj=self.tar_fileobj)
         root_info = tarfile.TarInfo(name='./')
         root_info.type = tarfile.DIRTYPE
