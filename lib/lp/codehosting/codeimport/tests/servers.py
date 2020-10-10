@@ -3,6 +3,8 @@
 
 """Server classes that know how to create various kinds of foreign archive."""
 
+from __future__ import absolute_import, print_function
+
 __all__ = [
     'BzrServer',
     'CVSServer',

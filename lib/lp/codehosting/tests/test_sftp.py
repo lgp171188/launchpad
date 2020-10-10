@@ -3,6 +3,8 @@
 
 """Tests for the transport-backed SFTP server implementation."""
 
+from __future__ import absolute_import, print_function
+
 from contextlib import closing
 import os
 

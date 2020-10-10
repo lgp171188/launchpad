@@ -3,6 +3,8 @@
 
 """The code import worker. This imports code from foreign repositories."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'BazaarBranchStore',

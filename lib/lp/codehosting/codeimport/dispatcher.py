@@ -8,6 +8,8 @@ imports need to be processed and launching child processes to handle
 them.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'CodeImportDispatcher',

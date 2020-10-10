@@ -3,6 +3,8 @@
 
 """Tests for the code import worker."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import logging

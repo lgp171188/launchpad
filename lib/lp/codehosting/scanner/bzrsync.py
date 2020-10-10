@@ -5,6 +5,8 @@
 
 """Import version control metadata from a Bazaar branch into the database."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 __all__ = [
