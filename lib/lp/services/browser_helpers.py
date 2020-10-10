@@ -19,7 +19,7 @@ def get_user_agent_distroseries(user_agent_string):
         return None
 
     # We're matching on the Ubuntu/10.09 section of the user-agent string.
-    pattern = 'Ubuntu/(?P<version>\d*\.\d*)'
+    pattern = r'Ubuntu/(?P<version>\d*\.\d*)'
     match = re.search(pattern, user_agent_string)
 
     if match is not None:

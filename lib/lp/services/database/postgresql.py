@@ -217,7 +217,7 @@ def listSequences(cur):
     rv = []
     cur.execute(sql)
     for schema, sequence in list(cur.fetchall()):
-        match = re.search('^(\w+)_(\w+)_seq$', sequence)
+        match = re.search(r'^(\w+)_(\w+)_seq$', sequence)
         if match is None:
             rv.append((schema, sequence, None, None))
         else:
@@ -308,7 +308,7 @@ def resetSequences(cur):
         cur.execute(sql)
 
 # Regular expression used to parse row count estimate from EXPLAIN output
-_rows_re = re.compile("rows=(\d+)\swidth=")
+_rows_re = re.compile(r"rows=(\d+)\swidth=")
 
 
 def estimateRowCount(cur, query):

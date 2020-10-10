@@ -154,7 +154,7 @@ class TestWebhookClient(TestCase):
     def sendToWebhook(self, body='Content', **kwargs):
         with responses.RequestsMock() as requests_mock:
             requests_mock.add(
-                'POST', re.compile('^http://example\.com/'), body=body,
+                'POST', re.compile(r'^http://example\.com/'), body=body,
                 **kwargs)
             result = WebhookClient().deliver(
                 'http://example.com/ep', 'http://squid.example.com:3128',

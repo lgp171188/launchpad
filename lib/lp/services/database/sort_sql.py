@@ -116,7 +116,7 @@ class Parser:
         if not self.is_complete_insert_statement(line):
             raise ValueError("Incomplete line")
 
-        insert_pattern = re.compile('''
+        insert_pattern = re.compile(r'''
             ^INSERT \s+ INTO \s+ \S+ \s+ \([^)]+\) \s+ VALUES \s+ \((\d+)
             ''', re.X)
         match = insert_pattern.match(line)

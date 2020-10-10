@@ -665,7 +665,7 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
 class LaunchpadStatementTracer:
     """Storm tracer class to log executed statements."""
 
-    _normalize_whitespace = partial(re.compile('\s+').sub, ' ')
+    _normalize_whitespace = partial(re.compile(r'\s+').sub, ' ')
 
     def __init__(self):
         self._debug_sql = bool(os.environ.get('LP_DEBUG_SQL'))
