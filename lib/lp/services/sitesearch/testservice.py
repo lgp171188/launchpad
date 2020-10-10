@@ -16,6 +16,7 @@ import socket
 import subprocess
 import time
 
+import six
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
 from lp.services.osutils import remove_if_exists
@@ -163,7 +164,7 @@ def wait_for_service_shutdown(host, port, seconds_to_wait=10.0):
 def hostpair(url):
     """Parse the host and port number out of a URL string."""
     parts = urlsplit(url)
-    host, port = parts[1].split(':')
+    host, port = six.ensure_str(parts[1]).split(':')
     port = int(port)
     return (host, port)
 
