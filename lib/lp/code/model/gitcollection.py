@@ -244,8 +244,8 @@ class GenericGitCollection:
     def getRepositories(self, find_expr=GitRepository, eager_load=False,
                         sort_by=None):
         """See `IGitCollection`."""
-        all_tables = set(
-            self._tables.values() + self._asymmetric_tables.values())
+        all_tables = (
+            set(self._tables.values()) | set(self._asymmetric_tables.values()))
         tables = [GitRepository] + list(all_tables)
         expressions = self._getRepositoryExpressions()
         resultset = (
@@ -311,8 +311,8 @@ class GenericGitCollection:
                                 merged_revision_ids=None,
                                 merge_proposal_ids=None, eager_load=False):
         Target = ClassAlias(GitRepository, "target")
-        extra_tables = list(set(
-            self._tables.values() + self._asymmetric_tables.values()))
+        extra_tables = list(
+            set(self._tables.values()) | set(self._asymmetric_tables.values()))
         tables = [GitRepository] + extra_tables + [
             Join(BranchMergeProposal, And(
                 GitRepository.id ==
