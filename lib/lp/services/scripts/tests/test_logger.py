@@ -16,7 +16,10 @@ from lp.services.scripts.logger import LaunchpadFormatter
 from lp.services.utils import traceback_info
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
-from lp.testing.systemdocs import LayeredDocFileSuite
+from lp.testing.systemdocs import (
+    LayeredDocFileSuite,
+    setGlobs,
+    )
 
 
 DOCTEST_FLAGS = (
@@ -54,7 +57,8 @@ def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(
         LayeredDocFileSuite(
-            'test_logger.txt', layer=BaseLayer))
+            'test_logger.txt',
+            setUp=lambda test: setGlobs(test, future=True), layer=BaseLayer))
     suite.addTest(
         unittest.TestLoader().loadTestsFromName(__name__))
     return suite

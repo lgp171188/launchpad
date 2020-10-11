@@ -3,6 +3,8 @@
 
 """Tests for branchfsclient."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from testtools.twistedsupport import AsynchronousDeferredRunTest

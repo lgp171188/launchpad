@@ -29,7 +29,7 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
     To accomplish that, this endpoint sends an HTTP CONNECT to the proxy.
     """
 
-    _responseMatcher = re.compile('HTTP/1\.. 200')
+    _responseMatcher = re.compile(r'HTTP/1\.. 200')
 
     def __init__(self, reactor, host, port, proxyConf, contextFactory,
                  timeout=30, bindAddress=None):

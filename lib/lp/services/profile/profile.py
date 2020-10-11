@@ -583,7 +583,7 @@ _condition_functions = {
     'INCLUDES': _make_includes
     }
 
-_normalize_whitespace = partial(re.compile('\s+').sub, ' ')
+_normalize_whitespace = partial(re.compile(r'\s+').sub, ' ')
 
 
 def _make_condition_function(condition_string):

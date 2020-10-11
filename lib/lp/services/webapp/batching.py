@@ -625,7 +625,7 @@ class StormRangeFactory:
             *columns)
         explain = 'EXPLAIN ' + convert_storm_clause_to_string(select)
         result = ISlaveStore(LibraryFileAlias).execute(explain)
-        _rows_re = re.compile("rows=(\d+)\swidth=")
+        _rows_re = re.compile(r"rows=(\d+)\swidth=")
         first_line = result.get_one()[0]
         match = _rows_re.search(first_line)
         if match is None:

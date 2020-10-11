@@ -3,6 +3,8 @@
 
 """Implementation of the Launchpad script to list modified branches."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['ModifiedBranchesScript']
 
@@ -124,6 +126,6 @@ class ModifiedBranchesScript(LaunchpadScript):
             self.update_locations(self.process_location(location))
 
         for location in sorted(self.locations):
-            print location
+            print(location)
 
         self.logger.info("Done.")

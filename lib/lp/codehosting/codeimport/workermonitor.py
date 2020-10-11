@@ -3,6 +3,8 @@
 
 """Code to talk to the database about what the worker script is doing."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = []
 
