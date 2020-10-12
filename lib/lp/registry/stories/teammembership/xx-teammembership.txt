@@ -227,9 +227,9 @@ have been invited.
     >>> def print_members(contents, type):
     ...     table = find_tag_by_id(contents, type)
     ...     for link in table.findAll('a'):
-    ...         if link.renderContents() != 'Edit' and not link.find('img'):
-    ...             contents = six.ensure_text(link.renderContents())
-    ...             print contents.encode('ascii', 'replace')
+    ...         link_contents = six.ensure_text(link.renderContents())
+    ...         if link_contents != 'Edit' and not link.find('img'):
+    ...             print link_contents.encode('ascii', 'replace')
 
     >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.getLink('All members').click()

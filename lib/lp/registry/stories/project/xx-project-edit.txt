@@ -144,12 +144,12 @@ there are fewer fields available.
     >>> expert_browser.getControl('Maintainer')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Maintainer'
+    LookupError: label ...'Maintainer'
     ...
     >>> expert_browser.getControl('Registrant')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Registrant'
+    LookupError: label ...'Registrant'
     ...
 
     >>> expert_browser.getControl('Name').value = 'newer-name'

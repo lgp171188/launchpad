@@ -184,16 +184,16 @@ An inactive mailing list can be reactivated.
 
     >>> browser.getLink(url='+mailinglist').click()
     >>> browser.getControl('Reactivate this Mailing List').click()
-    >>> mailing_list_status_message(browser.contents)
-    ''
+    >>> print(mailing_list_status_message(browser.contents))
+    <BLANKLINE>
     >>> print_feedback_messages(browser.contents)
     The mailing list will be reactivated within a few minutes.
     >>> act()
     >>> transaction.commit()
 
     >>> browser.getLink(url='+mailinglist').click()
-    >>> mailing_list_status_message(browser.contents)
-    ''
+    >>> print(mailing_list_status_message(browser.contents))
+    <BLANKLINE>
 
 This does not restore the mailing list as the team's contact method:
 

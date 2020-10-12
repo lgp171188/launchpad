@@ -122,7 +122,7 @@ A project owner should not see the delete button when there are no files.
     >>> tbird_owner.getControl('Delete Files')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Delete Files'
+    LookupError: label ...'Delete Files'
     ...
 
 
@@ -474,7 +474,7 @@ And no "Delete Files" button is shown.
     >>> non_owner.getControl('Delete Files')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Delete Files'
+    LookupError: label ...'Delete Files'
     ...
 
 As with the other listing, the administrators have the option to

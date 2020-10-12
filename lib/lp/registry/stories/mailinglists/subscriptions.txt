@@ -115,7 +115,7 @@ not been completed (specifically, Mailman hasn't constructed it yet).
     ...     name='field.subscription.testing-spanish-team')
     Traceback (most recent call last):
     ...
-    LookupError: name 'field.subscription.testing-spanish-team'
+    LookupError: name ...'field.subscription.testing-spanish-team'
     ...
 
 Carlos can subscribe to a list using his preferred email address.  Such
@@ -244,7 +244,7 @@ screen.
     ...     name='field.subscription.rosetta-admins')
     Traceback (most recent call last):
     ...
-    LookupError: name 'field.subscription.rosetta-admins'
+    LookupError: name ...'field.subscription.rosetta-admins'
     ...
 
 Jdub will become a member of the team's mailing list as soon as he has
@@ -286,7 +286,7 @@ list is not presented.
     >>> browser.getControl(name='mailinglist_subscribe')
     Traceback (most recent call last):
     ...
-    LookupError: name 'mailinglist_subscribe'
+    LookupError: name ...'mailinglist_subscribe'
     ...
 
 Of course, the option to subscribe to the mailing list isn't present
@@ -300,7 +300,7 @@ for teams that don't have mailing lists.
     >>> browser.getControl(name='mailinglist_subscribe')
     Traceback (most recent call last):
     ...
-    LookupError: name 'mailinglist_subscribe'
+    LookupError: name ...'mailinglist_subscribe'
     ...
 
 And the option is also missing from the sign-up pages of teams that
@@ -315,7 +315,7 @@ Overview.)
     >>> browser.getControl(name='mailinglist_subscribe')
     Traceback (most recent call last):
     ...
-    LookupError: name 'mailinglist_subscribe'
+    LookupError: name ...'mailinglist_subscribe'
     ...
 
 

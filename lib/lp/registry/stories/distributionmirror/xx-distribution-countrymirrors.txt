@@ -21,10 +21,11 @@ archive mirrors, plus the canonical one.
     83.196.46.77
     >>> print browser.headers['X-REQUEST-REMOTE_ADDR']
     127.0.0.1
-    >>> sorted(browser.contents.split('\n'))
-    ['http://archive.ubuntu.com/ubuntu/',
-     'http://localhost:11375/archive-mirror/',
-     'http://localhost:11375/valid-mirror/']
+    >>> for url in sorted(browser.contents.split('\n')):
+    ...     print(url)
+    http://archive.ubuntu.com/ubuntu/
+    http://localhost:11375/archive-mirror/
+    http://localhost:11375/valid-mirror/
 
 Using a request with no IP address information will give us only the
 canonical mirror.
@@ -33,8 +34,9 @@ canonical mirror.
     ...     'http://launchpad.test/ubuntu/+countrymirrors-archive')
     >>> print anon_browser.headers['X-Generated-For-Country']
     Unknown
-    >>> sorted(anon_browser.contents.split('\n'))
-    ['http://archive.ubuntu.com/ubuntu/']
+    >>> for url in sorted(anon_browser.contents.split('\n')):
+    ...     print(url)
+    http://archive.ubuntu.com/ubuntu/
 
 Note that unofficial mirrors are not included in the listings.
 
@@ -49,9 +51,10 @@ Note that unofficial mirrors are not included in the listings.
     # http://localhost:11375/archive-mirror/ is not included in the list
     # anymore.
     >>> browser.open('http://launchpad.test/ubuntu/+countrymirrors-archive')
-    >>> sorted(browser.contents.split('\n'))
-    ['http://archive.ubuntu.com/ubuntu/',
-     'http://localhost:11375/valid-mirror/']
+    >>> for url in sorted(browser.contents.split('\n')):
+    ...     print(url)
+    http://archive.ubuntu.com/ubuntu/
+    http://localhost:11375/valid-mirror/
 
 Also, the +countrymirrors-archive page is only available for the Ubuntu
 distribution.

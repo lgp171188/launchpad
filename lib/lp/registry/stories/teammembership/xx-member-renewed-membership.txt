@@ -40,7 +40,7 @@ membership can't be renewed and explain why.
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Renew'
+    LookupError: label ...'Renew'
     ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
@@ -70,7 +70,7 @@ the user to renew that membership because it's not about to expire.
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Renew'
+    LookupError: label ...'Renew'
     ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
@@ -127,7 +127,7 @@ Karl can't renew it again, since it's now not set to expire soon.
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Renew'
+    LookupError: label ...'Renew'
     ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
