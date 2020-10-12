@@ -7,6 +7,7 @@ __all__ = [
     ]
 
 from datetime import datetime
+import io
 import itertools
 import logging
 import os.path
@@ -959,9 +960,10 @@ class DistroMirrorProber:
         """
         logfile.seek(0)
         filename = '%s-probe-logfile.txt' % mirror.name
+        log_data = logfile.getvalue().encode('UTF-8')
         log_file = getUtility(ILibraryFileAliasSet).create(
-            name=filename, size=len(logfile.getvalue()),
-            file=logfile, contentType='text/plain')
+            name=filename, size=len(log_data),
+            file=io.BytesIO(log_data), contentType='text/plain')
         mirror.newProbeRecord(log_file)
 
     def probe(self, content_type, no_remote_hosts, ignore_last_probe,
