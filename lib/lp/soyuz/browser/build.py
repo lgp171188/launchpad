@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for builds."""
@@ -64,7 +64,6 @@ from lp.services.webapp import (
     LaunchpadView,
     Link,
     )
-from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import (
     BatchNavigator,
     StormRangeFactory,
@@ -203,15 +202,6 @@ class BuildView(LaunchpadView):
         return self.context.title
 
     page_title = label
-
-    @property
-    def user_can_retry_build(self):
-        """Return True if the user is permitted to Retry Build.
-
-        The build must be re-tryable.
-        """
-        return (check_permission('launchpad.Edit', self.context)
-            and self.context.can_be_retried)
 
     @cachedproperty
     def package_upload(self):

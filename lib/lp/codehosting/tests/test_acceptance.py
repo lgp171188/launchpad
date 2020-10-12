@@ -252,22 +252,20 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
 class SmokeTest(WithScenarios, SSHTestCase):
     """Smoke test for repository support."""
 
-    excluded_scenarios = [
-        # RepositoryFormat4 is not initializable (breezy raises TestSkipped
-        # when you try).
-        'RepositoryFormat4',
-        # Fetching weave formats from the smart server is known to be broken.
-        # See bug 173807 and breezy.tests.test_repository.
-        'RepositoryFormat5',
-        'RepositoryFormat6',
-        'RepositoryFormat7',
-        'GitRepositoryFormat',
-        'SvnRepositoryFormat',
-        ]
-
     scenarios = [
         scenario for scenario in all_repository_format_scenarios()
-        if scenario[0] not in excluded_scenarios
+        if scenario[0] not in {
+            # RepositoryFormat4 is not initializable (breezy raises
+            # TestSkipped when you try).
+            'RepositoryFormat4',
+            # Fetching weave formats from the smart server is known to be
+            # broken.  See bug 173807 and breezy.tests.test_repository.
+            'RepositoryFormat5',
+            'RepositoryFormat6',
+            'RepositoryFormat7',
+            'GitRepositoryFormat',
+            'SvnRepositoryFormat',
+            }
         and not scenario[0].startswith('RemoteRepositoryFormat')]
 
     def setUp(self):
