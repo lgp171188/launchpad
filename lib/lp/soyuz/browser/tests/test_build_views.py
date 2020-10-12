@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -36,6 +36,7 @@ from lp.soyuz.interfaces.packageset import IPackagesetSet
 from lp.soyuz.model.queue import PackageUploadBuild
 from lp.testing import (
     admin_logged_in,
+    ANONYMOUS,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -52,11 +53,10 @@ class TestBuildViews(TestCaseWithFactory):
         self.empty_request = LaunchpadTestRequest(form={})
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
 
-    def assertBuildViewRetryIsExpected(self, build, person, expected):
+    def assertBuildMenuRetryIsExpected(self, build, person, expected):
         with person_logged_in(person):
-            build_view = getMultiAdapter(
-                (build, self.empty_request), name="+index")
-            self.assertEqual(build_view.user_can_retry_build, expected)
+            build_menu = BuildContextMenu(build)
+            self.assertEqual(expected, build_menu.retry().enabled)
 
     def test_view_with_component(self):
         # The component name is provided when the component is known.
@@ -112,11 +112,9 @@ class TestBuildViews(TestCaseWithFactory):
             self.assertTrue(build_menu.cancel().enabled)
 
     def test_cannot_retry_stable_distroseries(self):
-        # 'BuildView.user_can_retry_build' property checks not only the
-        # user's permissions to retry but also if a build is in a status
-        # that it can be retried.
-        # The build cannot be retried (see IBuild) because it's targeted to a
-        # released distroseries.
+        # The 'retry' link is only enabled if the user has permissions to
+        # retry and the build has a status such that it can be retried.  A
+        # build for a released distroseries cannot be retried.
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         build = self.factory.makeBinaryPackageBuild(
             archive=archive, status=BuildStatus.FAILEDTOBUILD)
@@ -129,19 +127,17 @@ class TestBuildViews(TestCaseWithFactory):
         self.assertEqual(build_view.buildqueue, None)
         self.assertEqual(build_view.component_name, 'multiverse')
         self.assertFalse(build.can_be_retried)
-        self.assertFalse(build_view.user_can_retry_build)
+        self.assertBuildMenuRetryIsExpected(build, build.archive.owner, False)
 
     def test_retry_ppa_builds(self):
         # PPA builds can always be retried, no matter what status the
         # distroseries has.
         build = self.factory.makeBinaryPackageBuild(
             status=BuildStatus.FAILEDTOBUILD)
-        build_view = getMultiAdapter(
-            (build, self.empty_request), name="+index")
         self.assertTrue(build.can_be_retried)
         # Anonymous, therefore supposed to be disallowed
-        self.assertFalse(build_view.user_can_retry_build)
-        self.assertBuildViewRetryIsExpected(build, build.archive.owner, True)
+        self.assertBuildMenuRetryIsExpected(build, ANONYMOUS, False)
+        self.assertBuildMenuRetryIsExpected(build, build.archive.owner, True)
 
     def test_buildd_admins_retry_builds(self):
         # Buildd admins can retry any build as long is it's in a state that
@@ -153,13 +149,13 @@ class TestBuildViews(TestCaseWithFactory):
             self.assertTrue(build.can_be_retried)
         nopriv = getUtility(IPersonSet).getByName("no-priv")
         # A person with no privileges can't retry
-        self.assertBuildViewRetryIsExpected(build, nopriv, False)
+        self.assertBuildMenuRetryIsExpected(build, nopriv, False)
         # But they can as a member of launchpad-buildd-admins
         buildd_admins = getUtility(IPersonSet).getByName(
             "launchpad-buildd-admins")
         with person_logged_in(self.admin):
             buildd_admins.addMember(nopriv, nopriv)
-        self.assertBuildViewRetryIsExpected(build, nopriv, True)
+        self.assertBuildMenuRetryIsExpected(build, nopriv, True)
 
     def test_packageset_upload_retry(self):
         # A person in a team that has rights to upload to a packageset can
@@ -174,11 +170,11 @@ class TestBuildViews(TestCaseWithFactory):
                 distroseries=build.distro_arch_series.distroseries)
             packageset.add((build.source_package_release.sourcepackagename,))
         # The team doesn't have permission until we grant it
-        self.assertBuildViewRetryIsExpected(build, team.teamowner, False)
+        self.assertBuildMenuRetryIsExpected(build, team.teamowner, False)
         with person_logged_in(self.admin):
             getUtility(IArchivePermissionSet).newPackagesetUploader(
                 archive, team, packageset)
-        self.assertBuildViewRetryIsExpected(build, team.teamowner, True)
+        self.assertBuildMenuRetryIsExpected(build, team.teamowner, True)
 
     def test_build_view_package_upload(self):
         # `BuildView.package_upload` returns the cached `PackageUpload`
