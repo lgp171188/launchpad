@@ -79,10 +79,18 @@ Bug attachments in the context of a bugtask are all redirected to be at
     >>> check_redirect("/firefox/+bug/1/attachments/%d" % atid, status=301)
     http://bugs.launchpad.test/firefox/+bug/1/+attachment/1
     >>> check_redirect(
+    ...     "/devel/firefox/+bug/1/attachments/%d" % atid,
+    ...     host="api.launchpad.test", status=301)
+    http://api.launchpad.test/devel/firefox/+bug/1/+attachment/1
+    >>> check_redirect(
     ...     "/firefox/+bug/1/attachments/%d/+edit" % atid, status=301)
     http://bugs.launchpad.test/firefox/+bug/1/+attachment/1/+edit
     >>> check_redirect("/bugs/1/attachments/%d" % atid, status=301)
     http://bugs.launchpad.test/bugs/1/+attachment/1
+    >>> check_redirect(
+    ...     "/devel/bugs/1/attachments/%d" % atid,
+    ...     host="api.launchpad.test", status=301)
+    http://api.launchpad.test/devel/bugs/1/+attachment/1
     >>> check_redirect("/bugs/1/attachments/%d/+edit" % atid, status=301)
     http://bugs.launchpad.test/bugs/1/+attachment/1/+edit
 
