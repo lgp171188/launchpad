@@ -639,7 +639,7 @@ class Archive(SQLBase):
                     SourcePackageName.id)
 
         if name is not None:
-            if type(name) in (str, unicode):
+            if isinstance(name, six.string_types):
                 if exact_match:
                     clauses.append(SourcePackageName.name == name)
                 else:
