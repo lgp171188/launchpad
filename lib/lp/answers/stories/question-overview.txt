@@ -225,6 +225,12 @@ the proper context where the question can be found:
     >>> print(find_main_content(browser.contents).find('h1').renderContents())
     Firefox cannot render Bank Site
 
+This also works on the webservice.
+
+    >>> browser.open('http://api.launchpad.test/devel/questions/1')
+    >>> print(browser.url)
+    http://api.launchpad.test/devel/firefox/+question/1
+
 Asking for a non-existent question or an invalid ID will still raise a
 404 though:
 
@@ -245,6 +251,10 @@ useful after a question was retargeted.)
     >>> browser.open('http://answers.launchpad.test/ubuntu/+question/1')
     >>> print(browser.url)
     http://answers.launchpad.test/firefox/+question/1
+
+    >>> browser.open('http://api.launchpad.test/devel/ubuntu/+question/1')
+    >>> print(browser.url)
+    http://api.launchpad.test/devel/firefox/+question/1
 
 It also works with pages below that URL:
 

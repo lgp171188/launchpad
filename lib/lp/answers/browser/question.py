@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Question views."""
@@ -253,13 +253,8 @@ class QuestionSetNavigation(Navigation):
             question = None
         if question is None:
             raise NotFoundError(name)
-        # We need to check if this is an API request, as we don't want to
-        # send a redirect in that instance (it breaks launchpadlib).
-        if hasattr(self.request, 'version'):
-            return question
-        else:
-            return self.redirectSubTree(
-                canonical_url(question, self.request), status=301)
+        return self.redirectSubTree(
+            canonical_url(question, self.request), status=301)
 
 
 class QuestionBreadcrumb(Breadcrumb):
