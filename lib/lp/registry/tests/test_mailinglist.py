@@ -171,7 +171,7 @@ class MailingListTestCase(TestCaseWithFactory):
         self.assertEqual(
             'New Mailing List for Team', notifications[0]['subject'])
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            '.*To subscribe:.*http://launchpad.test/~.*/\+editmailinglists.*',
+            r'.*To subscribe:.*http://launchpad.test/~.*/\+editmailinglists.*',
             notifications[0].get_payload())
 
     def test_startConstructing_from_APPROVED(self):

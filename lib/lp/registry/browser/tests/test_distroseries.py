@@ -335,7 +335,7 @@ class DistroSeriesIndexFunctionalTestCase(TestCaseWithFactory):
                 text='Derived from Sid'),
             soupmatchers.Tag(
                 'Child diffs link', True,
-                text=re.compile('\s*No differences\s*')),
+                text=re.compile(r'\s*No differences\s*')),
               )
 
         with person_logged_in(self.simple_user):
@@ -361,7 +361,7 @@ class DistroSeriesIndexFunctionalTestCase(TestCaseWithFactory):
                 text='Series initialization in progress'),
             soupmatchers.Tag(
                 'Init message', True,
-                text=re.compile('\s*This series is initializing.\s*')),
+                text=re.compile(r'\s*This series is initializing.\s*')),
               )
 
         with person_logged_in(self.simple_user):
@@ -1093,7 +1093,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
                 principal=simple_user)
             html_content = view()
 
-        packageset_text = re.compile('\s*' + ps.name)
+        packageset_text = re.compile(r'\s*' + ps.name)
         self._test_packagesets(
             html_content, packageset_text, 'packagesets',
             'Packagesets')
@@ -1118,7 +1118,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             html_content = view()
 
         packageset_text = re.compile(
-            '\s*' + ', '.join(sorted(unsorted_names)))
+            r'\s*' + ', '.join(sorted(unsorted_names)))
         self._test_packagesets(
             html_content, packageset_text, 'packagesets',
             'Packagesets')
@@ -1249,14 +1249,14 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         multiple_parents_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 "Parent table header", 'th',
-                text=re.compile("\s*Parent\s")),
+                text=re.compile(r"\s*Parent\s")),
             soupmatchers.Tag(
                 "Parent version table header", 'th',
-                text=re.compile("\s*Parent version\s*")),
+                text=re.compile(r"\s*Parent version\s*")),
             soupmatchers.Tag(
                 "Parent name", 'a',
                 attrs={'class': 'parent-name'},
-                text=re.compile("\s*Other\s*")),
+                text=re.compile(r"\s*Other\s*")),
              )
         self.assertThat(view.render(), multiple_parents_matches)
 
@@ -2410,7 +2410,7 @@ class DistroSeriesMissingPackagesPageTestCase(TestCaseWithFactory,
                 principal=self.simple_user)
             html_content = view()
 
-        packageset_text = re.compile('\s*' + ps.name)
+        packageset_text = re.compile(r'\s*' + ps.name)
         self._test_packagesets(
             html_content, packageset_text, 'parent-packagesets',
             'Parent packagesets')
@@ -2506,14 +2506,14 @@ class DistroSerieUniquePackageDiffsTestCase(TestCaseWithFactory,
         multiple_parents_display_matcher = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 "Parent table header", 'th',
-                text=re.compile("^\s*Parent\s")),
+                text=re.compile(r"^\s*Parent\s")),
             Not(soupmatchers.Tag(
                 "Parent version table header", 'th',
-                text=re.compile("\s*Parent version\s*"))),
+                text=re.compile(r"\s*Parent version\s*"))),
             soupmatchers.Tag(
                 "Parent name", 'a',
                 attrs={'class': 'parent-name'},
-                text=re.compile("\s*%s\s*" % parent_series.displayname)),
+                text=re.compile(r"\s*%s\s*" % parent_series.displayname)),
              )
         self.assertThat(view.render(), multiple_parents_display_matcher)
 
@@ -2574,7 +2574,7 @@ class DistroSeriesUniquePackagesPageTestCase(TestCaseWithFactory,
                 principal=self.simple_user)
             html = view()
 
-        packageset_text = re.compile('\s*' + ps.name)
+        packageset_text = re.compile(r'\s*' + ps.name)
         self._test_packagesets(
             html, packageset_text, 'packagesets', 'Packagesets')
 
