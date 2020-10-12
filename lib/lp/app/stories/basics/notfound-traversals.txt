@@ -68,7 +68,6 @@ Bug attachments in the context of a bugtask are all redirected to be at
 Check a bug is traversable by nickname:
 
     >>> check_redirect("/bugs/blackhole")
-    >>> check_redirect("/bugs/blackhole")
     >>> check_not_found("/bugs/invalid-nickname")
 
 Note that you should not be able to directly file a bug on a
@@ -91,10 +90,6 @@ The old +filebug-advanced form now redirects to the +filebug form.
 
 And this is for a person:
 
-    >>> check_redirect("/~name12/+branch/gnome-terminal/pushed/", status=301)
-    >>> check_redirect(
-    ...     "/~name12/+branch/gnome-terminal/pushed/+edit",
-    ...     auth=True, status=301)
     >>> check_redirect("/~name12/+branch/gnome-terminal/pushed/", status=301)
     >>> check_redirect(
     ...     "/~name12/+branch/gnome-terminal/pushed/+edit",
