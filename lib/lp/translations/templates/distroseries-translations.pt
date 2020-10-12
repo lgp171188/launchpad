@@ -139,7 +139,7 @@
             </div>
           </div>
         </div>
-        <tal:stats condition="view/distroserieslanguages">
+        <tal:stats condition="not: view/distroserieslanguages/is_empty">
           <div class="yui-b top-portlet">
             <h2>Translation statistics</h2>
             <div tal:replace="structure context/@@+langchart" />
