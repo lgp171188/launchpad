@@ -8,7 +8,10 @@ __all__ = [
     'CodeImportSchedulerAPI',
     ]
 
+import io
+
 import six
+from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -61,11 +64,10 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
         """See `ICodeImportScheduler`."""
         return self._updateHeartbeat(job_id, six.ensure_text(log_tail))
 
-    def finishJobID(self, job_id, status_name, log_file_alias_url):
+    def finishJobID(self, job_id, status_name, log_file):
         """See `ICodeImportScheduler`."""
         return self._finishJobID(
-            job_id, six.ensure_text(status_name),
-            six.ensure_text(log_file_alias_url))
+            job_id, six.ensure_text(status_name), log_file)
 
     @return_fault
     def _getImportDataForJobID(self, job_id):
@@ -87,14 +89,27 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
         return 0
 
     @return_fault
-    def _finishJobID(self, job_id, status_name, log_file_alias_url):
+    def _finishJobID(self, job_id, status_name, log_file):
         job = self._getJob(job_id)
         status = CodeImportResultStatus.items[status_name]
         workflow = removeSecurityProxy(getUtility(ICodeImportJobWorkflow))
-        if log_file_alias_url:
+        if isinstance(log_file, xmlrpc_client.Binary):
+            if log_file.data:
+                log_file_name = '%s.log' % (
+                    job.code_import.target.unique_name[1:].replace('/', '-'))
+                log_file_alias = getUtility(ILibraryFileAliasSet).create(
+                    log_file_name, len(log_file.data),
+                    io.BytesIO(log_file.data), 'text/plain')
+            else:
+                log_file_alias = None
+        elif log_file:
+            # XXX cjwatson 2020-10-05: Backward compatibility for previous
+            # versions that uploaded the log file to the librarian from the
+            # scheduler; remove this once deployed code import machines no
+            # longer need this.
             library_file_alias_set = getUtility(ILibraryFileAliasSet)
             # XXX This is so so so terrible:
-            log_file_alias_id = int(log_file_alias_url.split('/')[-2])
+            log_file_alias_id = int(six.ensure_text(log_file).split('/')[-2])
             log_file_alias = library_file_alias_set[log_file_alias_id]
         else:
             log_file_alias = None
