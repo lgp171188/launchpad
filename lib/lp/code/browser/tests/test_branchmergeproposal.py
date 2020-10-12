@@ -1704,7 +1704,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                     Tag(
                         'merge proposal breadcrumb', 'li',
                         text=re.compile(
-                            '\sMerge into %s\s' %
+                            r'\sMerge into %s\s' %
                             re.escape(bmp.target_branch.name))))))
 
     def test_breadcrumbs_git(self):
@@ -1746,7 +1746,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                     Tag(
                         'merge proposal breadcrumb', 'li',
                         text=re.compile(
-                            '\sMerge into %s\s' %
+                            r'\sMerge into %s\s' %
                             re.escape(bmp.target_git_ref.name))))))
 
 
