@@ -283,8 +283,10 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 'type': 'commit'},
             }
         removed_refs = ['refs/tags/1.0']
+        old_refs_commits = {
+            ref.path: ref.commit_sha1 for ref in repository.refs}
         payload = GitRefScanJob.composeWebhookPayload(
-            repository, new_refs, removed_refs)
+            repository, old_refs_commits, new_refs, removed_refs)
         self.assertEqual(
             {'git_repository': '/' + repository.unique_name,
              'git_repository_path': repository.unique_name,
