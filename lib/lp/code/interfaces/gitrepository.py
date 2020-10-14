@@ -775,7 +775,7 @@ class IGitRepositoryEdit(IWebhookTarget):
         """
         Executes a synchronous scan of this repository.
 
-        :return: A tuple with (updated_refs, deleted_refs).
+        :return: A tuple with (upserted_refs, deleted_refs).
         """
 
     @export_write_operation()
