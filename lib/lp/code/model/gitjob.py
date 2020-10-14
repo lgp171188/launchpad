@@ -32,7 +32,6 @@ from zope.interface import (
     implementer,
     provider,
     )
-from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.code.enums import (
@@ -220,13 +219,13 @@ class GitRefScanJob(GitJobDerived):
         return job
 
     @staticmethod
-    def composeWebhookPayload(repository, refs_to_upsert, refs_to_remove):
-        old_refs = {ref.path: ref for ref in repository.refs}
+    def composeWebhookPayload(repository, old_refs_commits, refs_to_upsert,
+                              refs_to_remove):
         ref_changes = {}
         for ref in refs_to_upsert.keys() + list(refs_to_remove):
             old = (
-                {"commit_sha1": old_refs[ref].commit_sha1}
-                if ref in old_refs else None)
+                {"commit_sha1": old_refs_commits[ref]}
+                if ref in old_refs_commits else None)
             new = (
                 {"commit_sha1": refs_to_upsert[ref]['sha1']}
                 if ref in refs_to_upsert else None)
@@ -246,26 +245,17 @@ class GitRefScanJob(GitJobDerived):
             with try_advisory_lock(
                     LockType.GIT_REF_SCAN, self.repository.id,
                     Store.of(self.repository)):
-                hosting_path = self.repository.getInternalPath()
-                refs_to_upsert, refs_to_remove = (
-                    self.repository.planRefChanges(hosting_path, logger=log))
-                self.repository.fetchRefCommits(
-                    hosting_path, refs_to_upsert, logger=log)
+                old_refs_commits = {
+                    ref.path: ref.commit_sha1 for ref in self.repository.refs}
+                upserted_refs, removed_refs = self.repository.scan(log=log)
                 # The webhook delivery includes old ref information, so
                 # prepare it before we actually execute the changes.
                 if getFeatureFlag('code.git.webhooks.enabled'):
                     payload = self.composeWebhookPayload(
-                        self.repository, refs_to_upsert, refs_to_remove)
+                        self.repository, old_refs_commits,
+                        upserted_refs, removed_refs)
                     getUtility(IWebhookSet).trigger(
                         self.repository, 'git:push:0.1', payload)
-                self.repository.synchroniseRefs(
-                    refs_to_upsert, refs_to_remove, logger=log)
-                props = getUtility(IGitHostingClient).getProperties(
-                    hosting_path)
-                # We don't want ref canonicalisation, nor do we want to send
-                # this change back to the hosting service.
-                removeSecurityProxy(self.repository)._default_branch = (
-                    props["default_branch"])
         except LostObjectError:
             log.info(
                 "Skipping repository %s because it has been deleted." %
