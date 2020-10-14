@@ -239,10 +239,11 @@ class SyncSigningKeysScript(LaunchpadScript):
                 archive.signing_key is not None):
             secret_key_path = ISignableArchive(archive).getPathForSecretKey(
                 archive.signing_key)
-            self.logger.info(
-                "Found key file %s (type=%s).",
-                secret_key_path, SigningKeyType.OPENPGP)
-            self.injectGPG(archive, secret_key_path)
+            if os.path.exists(secret_key_path):
+                self.logger.info(
+                    "Found key file %s (type=%s).",
+                    secret_key_path, SigningKeyType.OPENPGP)
+                self.injectGPG(archive, secret_key_path)
 
     def main(self):
         for i, archive in enumerate(self.getArchives()):
