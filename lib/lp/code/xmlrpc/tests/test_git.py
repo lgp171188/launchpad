@@ -48,11 +48,13 @@ from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     )
+from lp.code.model.gitjob import GitRefScanJob
 from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.runner import JobRunner
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
@@ -70,6 +72,7 @@ from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     AppServerLayer,
@@ -313,6 +316,11 @@ class TestGitAPIMixin:
         request_id = auth_params["request-id"]
         result = self.assertDoesNotFault(
             request_id, "confirmRepoCreation", translated_path, auth_params)
+        # Run the ref scan job.
+        ref_scan_jobs = list(GitRefScanJob.iterReady())
+        self.assertEqual(1, len(ref_scan_jobs))
+        with dbuser("branchscanner"):
+            JobRunner(ref_scan_jobs).runAll()
         login(ANONYMOUS)
         self.assertIsNone(result)
         Store.of(git_repository).invalidate(git_repository)

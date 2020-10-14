@@ -248,8 +248,6 @@ class GitRefScanJob(GitJobDerived):
                 old_refs_commits = {
                     ref.path: ref.commit_sha1 for ref in self.repository.refs}
                 upserted_refs, removed_refs = self.repository.scan(log=log)
-                # The webhook delivery includes old ref information, so
-                # prepare it before we actually execute the changes.
                 if getFeatureFlag('code.git.webhooks.enabled'):
                     payload = self.composeWebhookPayload(
                         self.repository, old_refs_commits,
