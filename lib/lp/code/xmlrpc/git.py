@@ -658,6 +658,7 @@ class GitAPI(LaunchpadXMLRPCView):
             raise faults.GitRepositoryNotFound(translated_path)
         self._validateRequesterCanManageRepoCreation(
             requester, naked_repo, auth_params)
+        naked_repo.scan()
         naked_repo.status = GitRepositoryStatus.AVAILABLE
 
     def confirmRepoCreation(self, translated_path, auth_params):
