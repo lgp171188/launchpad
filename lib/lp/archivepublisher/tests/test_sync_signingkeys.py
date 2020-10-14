@@ -376,6 +376,55 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                     SigningKeyType.FIT, archive.reference, series1.name),
                 ]))
 
+    def test_process_archive_openpgp(self):
+        archive = self.factory.makeArchive()
+
+        # Create a fake OpenPGP key.
+        gpgkey = self.factory.makeGPGKey(archive.owner)
+        secret_key_path = os.path.join(
+            self.signing_root_dir, "%s.gpg" % gpgkey.fingerprint)
+        with open(secret_key_path, "wb") as fd:
+            fd.write(b"Private key %s" % gpgkey.fingerprint)
+        archive.signing_key_owner = archive.owner
+        archive.signing_key_fingerprint = gpgkey.fingerprint
+
+        script = self.makeScript(["--archive", archive.reference])
+        script.injectGPG = mock.Mock()
+        script.main()
+
+        script.injectGPG.assert_called_once_with(archive, secret_key_path)
+
+        # Check the log messages.
+        content = script.logger.content.as_text()
+        self.assertIn(
+            "DEBUG #0 - Processing keys for archive %s." % archive.reference,
+            content)
+        self.assertIn(
+            "INFO Found key file %s (type=%s)." % (
+                secret_key_path, SigningKeyType.OPENPGP),
+            content)
+
+    def test_process_archive_openpgp_missing(self):
+        archive = self.factory.makeArchive()
+
+        # Create a fake OpenPGP key, but don't write anything to disk.
+        gpgkey = self.factory.makeGPGKey(archive.owner)
+        archive.signing_key_owner = archive.owner
+        archive.signing_key_fingerprint = gpgkey.fingerprint
+
+        script = self.makeScript(["--archive", archive.reference])
+        script.injectGPG = mock.Mock()
+        script.main()
+
+        self.assertEqual(0, script.injectGPG.call_count)
+
+        # Check the log messages.
+        content = script.logger.content.as_text()
+        self.assertIn(
+            "DEBUG #0 - Processing keys for archive %s." % archive.reference,
+            content)
+        self.assertNotIn("INFO Found key file", content)
+
     def test_inject(self):
         signing_service_client = self.useFixture(
             SigningServiceClientFixture(self.factory))
