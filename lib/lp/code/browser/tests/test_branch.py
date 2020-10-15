@@ -441,7 +441,7 @@ class TestBranchView(BrowserTestCase):
             1. By Eric the Viking &lt;eric@vikings-r-us.example.com&gt;
             .*
             Testing the email address in revisions\n
-            email Bob \(bob@example.com\) for details.
+            email Bob \\(bob@example.com\\) for details.
             """
 
         self.assertTextMatchesExpressionIgnoreWhitespace(expected_text, text)
@@ -464,7 +464,7 @@ class TestBranchView(BrowserTestCase):
             1. By Eric the Viking &lt;email address hidden&gt;
             .*
             Testing the email address in revisions\n
-            email Bob \(&lt;email address hidden&gt;\) for details.
+            email Bob \\(&lt;email address hidden&gt;\\) for details.
             """
         self.assertTextMatchesExpressionIgnoreWhitespace(expected_text, text)
 
@@ -495,11 +495,11 @@ class TestBranchView(BrowserTestCase):
             2. By Eric the Viking &lt;eric@vikings-r-us.example.com&gt;
             .*
             Testing the email address in revisions\n
-            email Bob \(bob@example.com\) for details.\n
+            email Bob \\(bob@example.com\\) for details.\n
             1. By Eric the Viking &lt;eric@vikings-r-us.example.com&gt;
             .*
             Testing the email address in revisions\n
-            email Bob \(bob@example.com\) for details.
+            email Bob \\(bob@example.com\\) for details.
             Merged branch %s
             """ % branch_display_name
 
@@ -549,11 +549,11 @@ class TestBranchView(BrowserTestCase):
             2. By Eric the Viking &lt;eric@vikings-r-us.example.com&gt;
             .*
             Testing the email address in revisions\n
-            email Bob \(bob@example.com\) for details.\n
+            email Bob \\(bob@example.com\\) for details.\n
             1. By Eric the Viking &lt;eric@vikings-r-us.example.com&gt;
             .*
             Testing the email address in revisions\n
-            email Bob \(bob@example.com\) for details.
+            email Bob \\(bob@example.com\\) for details.
             Merged branch %s
             %s
             """ % (branch_display_name, linked_bug_rendered_text)

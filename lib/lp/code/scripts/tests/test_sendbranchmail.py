@@ -55,8 +55,8 @@ class TestSendbranchmail(TestCaseWithFactory):
             'Creating lockfile: /var/lock/launchpad-process-job-source-'
             'IRevisionMailJobSource.lock\n'
             'INFO    Running synchronously.\n'
-            'INFO    Running <REVISION_MAIL branch job \(\d+\) for .*?> '
-            '\(ID %d\) in status Waiting\n'
+            'INFO    Running <REVISION_MAIL branch job \\(\\d+\\) for .*?> '
+            '\\(ID %d\\) in status Waiting\n'
             'INFO    Ran 1 RevisionMailJob jobs.\n' % mail_job.job.id, stderr)
         self.assertEqual('', stdout)
         self.assertEqual(0, retcode)
@@ -80,8 +80,8 @@ class TestSendbranchmail(TestCaseWithFactory):
             'Creating lockfile: /var/lock/launchpad-process-job-source-'
             'IRevisionsAddedJobSource.lock\n'
             'INFO    Running synchronously.\n'
-            'INFO    Running <REVISIONS_ADDED_MAIL branch job \(\d+\) '
-            'for .*?> \(ID %d\) in status Waiting\n'
+            'INFO    Running <REVISIONS_ADDED_MAIL branch job \\(\\d+\\) '
+            'for .*?> \\(ID %d\\) in status Waiting\n'
             'INFO    Ran 1 RevisionsAddedJob jobs.\n' % job.job.id,
             stderr)
         self.assertEqual('', stdout)
