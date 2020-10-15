@@ -80,7 +80,7 @@ yet.
     >>> team_admin_browser.open(
     ...   'http://launchpad.test/~ubuntu-team/+poll/never-closes/+vote')
     >>> not_yet_voted_message = 'You have not yet voted in this poll.'
-    >>> not_yet_voted_message in team_admin_browser.contents
+    >>> not_yet_voted_message in six.ensure_text(team_admin_browser.contents)
     True
 
     >>> team_admin_browser.getControl(name='newoption').value = ["donotvote"]
@@ -141,7 +141,7 @@ It's not possible to vote on closed polls, even if we manually craft the URL.
     >>> team_admin_browser.getControl(name='continue')
     Traceback (most recent call last):
     ...
-    LookupError: name 'continue'
+    LookupError: name ...'continue'
     ...
 
 The same is true for condorcet polls too.
@@ -158,7 +158,7 @@ The same is true for condorcet polls too.
     >>> team_admin_browser.getControl(name='continue')
     Traceback (most recent call last):
     ...
-    LookupError: name 'continue'
+    LookupError: name ...'continue'
     ...
 
     >>> team_admin_browser.open(

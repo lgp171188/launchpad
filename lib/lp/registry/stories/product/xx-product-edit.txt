@@ -198,12 +198,12 @@ registrant fields.
     >>> browser.getControl('Maintainer')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Maintainer'
+    LookupError: label ...'Maintainer'
     ...
     >>> browser.getControl('Registrant')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Registrant'
+    LookupError: label ...'Registrant'
     ...
 
 But registry experts can change a product name and set an alias.
