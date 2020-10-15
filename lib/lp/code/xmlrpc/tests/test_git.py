@@ -328,7 +328,7 @@ class TestGitAPIMixin:
         # Should have checked the refs at some point.
         excluded_prefixes = config.codehosting.git_exclude_ref_prefixes
         self.assertEqual(
-            [(tuple(git_repository.getInternalPath(), ),
+            [((git_repository.getInternalPath(), ),
               dict(exclude_prefixes=excluded_prefixes.split(",")))],
             self.hosting_fixture.getRefs.calls)
         self.assertEqual(2, git_repository.refs.count())
