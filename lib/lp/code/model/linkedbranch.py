@@ -8,6 +8,8 @@ __metaclass__ = type
 # adapting another object.
 __all__ = []
 
+from functools import total_ordering
+
 from lazr.enum import (
     EnumeratedType,
     Item,
@@ -36,13 +38,19 @@ class LinkedBranchOrder(EnumeratedType):
     SUITE_SOURCE_PACKAGE = Item('Suite Source Package')
 
 
+@total_ordering
 class BaseLinkedBranch:
     """Provides the common sorting algorithm."""
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         if not ICanHasLinkedBranch.providedBy(other):
-            raise AssertionError("Can't compare with: %r" % other)
-        return cmp(self.sort_order, other.sort_order)
+            return NotImplemented
+        return self.sort_order < other.sort_order
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__) and
+            self.context == other.context)
 
 
 @adapter(IProductSeries)
@@ -59,10 +67,13 @@ class ProductSeriesLinkedBranch(BaseLinkedBranch):
     def product_series(self):
         return self.context
 
-    def __cmp__(self, other):
-        result = super(ProductSeriesLinkedBranch, self).__cmp__(other)
-        if result != 0:
-            return result
+    def __lt__(self, other):
+        if not ICanHasLinkedBranch.providedBy(other):
+            return NotImplemented
+        if self.sort_order < other.sort_order:
+            return True
+        elif self.sort_order > other.sort_order:
+            return False
         else:
             # The sorting of the product series uses the same sorting the
             # product itself uses, which is alphabetically by name.
@@ -72,7 +83,7 @@ class ProductSeriesLinkedBranch(BaseLinkedBranch):
             other_parts = (
                 other.product_series.product.name,
                 other.product_series.name)
-            return cmp(my_parts, other_parts)
+            return my_parts < other_parts
 
     @property
     def branch(self):
@@ -104,12 +115,15 @@ class ProductLinkedBranch(BaseLinkedBranch):
     def product(self):
         return self.context
 
-    def __cmp__(self, other):
-        result = super(ProductLinkedBranch, self).__cmp__(other)
-        if result != 0:
-            return result
+    def __lt__(self, other):
+        if not ICanHasLinkedBranch.providedBy(other):
+            return NotImplemented
+        if self.sort_order < other.sort_order:
+            return True
+        elif self.sort_order > other.sort_order:
+            return False
         else:
-            return cmp(self.product.name, other.product.name)
+            return self.product.name < other.product.name
 
     @property
     def branch(self):
@@ -141,24 +155,29 @@ class PackageLinkedBranch(BaseLinkedBranch):
     def suite_sourcepackage(self):
         return self.context
 
-    def __cmp__(self, other):
-        result = super(PackageLinkedBranch, self).__cmp__(other)
-        if result != 0:
-            return result
-        # The versions are reversed as we want the greater Version to sort
-        # before the lesser one.  Hence self in the other tuple, and other in
-        # the self tuple.  Next compare the distribution name.
-        my_parts = (
-            self.suite_sourcepackage.distribution.name,
-            Version(other.suite_sourcepackage.distroseries.version),
-            self.suite_sourcepackage.sourcepackagename.name,
-            self.suite_sourcepackage.pocket)
-        other_parts = (
-            other.suite_sourcepackage.distribution.name,
-            Version(self.suite_sourcepackage.distroseries.version),
-            other.suite_sourcepackage.sourcepackagename.name,
-            other.suite_sourcepackage.pocket)
-        return cmp(my_parts, other_parts)
+    def __lt__(self, other):
+        if not ICanHasLinkedBranch.providedBy(other):
+            return NotImplemented
+        if self.sort_order < other.sort_order:
+            return True
+        elif self.sort_order > other.sort_order:
+            return False
+        else:
+            # The versions are reversed as we want the greater Version to
+            # sort before the lesser one.  Hence self in the other tuple,
+            # and other in the self tuple.  Next compare the distribution
+            # name.
+            my_parts = (
+                self.suite_sourcepackage.distribution.name,
+                Version(other.suite_sourcepackage.distroseries.version),
+                self.suite_sourcepackage.sourcepackagename.name,
+                self.suite_sourcepackage.pocket)
+            other_parts = (
+                other.suite_sourcepackage.distribution.name,
+                Version(self.suite_sourcepackage.distroseries.version),
+                other.suite_sourcepackage.sourcepackagename.name,
+                other.suite_sourcepackage.pocket)
+            return my_parts < other_parts
 
     @property
     def branch(self):
@@ -193,10 +212,13 @@ class DistributionPackageLinkedBranch(BaseLinkedBranch):
     def distribution_sourcepackage(self):
         return self.context
 
-    def __cmp__(self, other):
-        result = super(DistributionPackageLinkedBranch, self).__cmp__(other)
-        if result != 0:
-            return result
+    def __lt__(self, other):
+        if not ICanHasLinkedBranch.providedBy(other):
+            return NotImplemented
+        if self.sort_order < other.sort_order:
+            return True
+        elif self.sort_order > other.sort_order:
+            return False
         else:
             my_names = (
                 self.distribution_sourcepackage.distribution.name,
@@ -204,7 +226,7 @@ class DistributionPackageLinkedBranch(BaseLinkedBranch):
             other_names = (
                 other.distribution_sourcepackage.distribution.name,
                 other.distribution_sourcepackage.sourcepackagename.name)
-            return cmp(my_names, other_names)
+            return my_names < other_names
 
     @property
     def branch(self):
