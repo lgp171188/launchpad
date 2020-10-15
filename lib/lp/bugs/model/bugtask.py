@@ -151,11 +151,11 @@ def bugtask_sort_key(bugtask):
           - distro tasks, followed by their distroseries tasks
           - ubuntu first among the distros
     """
-    product_name = None
-    productseries_name = None
-    distribution_name = None
-    distroseries_name = None
-    sourcepackage_name = None
+    product_name = ''
+    productseries_name = ''
+    distribution_name = ''
+    distroseries_name = ''
+    sourcepackage_name = ''
 
     if bugtask.product:
         product_name = bugtask.product.name
