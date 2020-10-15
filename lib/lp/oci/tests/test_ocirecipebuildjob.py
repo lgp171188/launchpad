@@ -15,7 +15,6 @@ import threading
 import time
 
 from fixtures import FakeLogger
-from storm.store import Store
 from testtools.matchers import (
     Equals,
     Is,
@@ -153,14 +152,16 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         hook = ocibuild.recipe.webhooks.one()
         deliveries = list(hook.deliveries)
         deliveries.reverse()
+        build_req_url = (
+            None if ocibuild.build_request is None
+            else canonical_url(ocibuild.build_request, force_local_path=True))
         expected_payloads = [{
             "recipe_build": Equals(
                 canonical_url(ocibuild, force_local_path=True)),
             "action": Equals("status-changed"),
             "recipe": Equals(
                 canonical_url(ocibuild.recipe, force_local_path=True)),
-            "build_request": (Is(None) if ocibuild.build_request is None
-                              else Not(Is(None))),
+            "build_request": Equals(build_req_url),
             "status": Equals("Successfully built"),
             "registry_upload_status": Equals(expected),
             } for expected in expected_registry_upload_statuses]
@@ -292,7 +293,6 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertEqual(0, client.uploadManifestList.call_count)
         self.assertEqual(JobStatus.FAILED, upload_job.status)
         self.assertFalse(upload_job.build_uploaded)
-        self.assertFalse(upload_job.manifest_list_uploaded)
 
     def test_failing_upload_manifest_list_retries(self):
         build_request = self.makeBuildRequest(include_i386=False)
@@ -315,7 +315,6 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.WAITING, upload_job.status)
         self.assertTrue(upload_job.is_pending)
         self.assertTrue(upload_job.build_uploaded)
-        self.assertFalse(upload_job.manifest_list_uploaded)
 
         # Retry should skip client.upload and only run
         # client.uploadManifestList:
@@ -326,7 +325,6 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertEqual(2, client.uploadManifestList.call_count)
         self.assertEqual(JobStatus.COMPLETED, upload_job.status)
         self.assertTrue(upload_job.build_uploaded)
-        self.assertTrue(upload_job.manifest_list_uploaded)
 
     def test_allBuildsUploaded_lock_between_two_jobs(self):
         """Simple test to ensure that allBuildsUploaded method locks

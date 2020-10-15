@@ -187,7 +187,6 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         with notify_modified(build, edited_fields) as before_modification:
             json_data = {
                 "build_uploaded": False,
-                "manifest_list_uploaded": False
             }
             oci_build_job = OCIRecipeBuildJob(
                 build, cls.class_job_type, json_data)
@@ -268,14 +267,6 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     def build_uploaded(self, value):
         self.json_data["build_uploaded"] = bool(value)
 
-    @property
-    def manifest_list_uploaded(self):
-        return self.json_data.get("manifest_list_uploaded", False)
-
-    @manifest_list_uploaded.setter
-    def manifest_list_uploaded(self, value):
-        self.json_data["manifest_list_uploaded"] = bool(value)
-
     def allBuildsUploaded(self, build_request):
         """Returns True if all builds of the given build_request already
         finished uploading. False otherwise.
@@ -330,22 +321,10 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         try:
             if self.allBuildsUploaded(build_request):
                 client.uploadManifestList(build_request)
-            # Force this job status to COMPLETED in the same transaction we
-            # called `allBuildsUpdated` to release the lock already
-            # including the new status. This way, any other transaction that
-            # was blocked waiting to get the info about the upload jobs will
-            # immediately have the new status of this job, avoiding race
-            # conditions. Keep the `manage_transaction=False` to prevent the
-            # method from commiting at the wrong moment.
-            self.manifest_list_uploaded = True
-            self.complete(manage_transaction=False)
-            transaction.commit()
-        except OCIRegistryError as e:
-            self.error_summary = str(e)
-            self.errors = e.errors
+        except OCIRegistryError:
+            # Do not retry automatically on known OCI registry errors.
+            raise
         except Exception as e:
-            self.error_summary = str(e)
-            self.errors = None
             raise self.ManifestListUploadError(str(e))
 
     def run(self):
@@ -358,6 +337,18 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
                 if not self.build_uploaded:
                     client.upload(self.build)
                     self.build_uploaded = True
+
+                self.uploadManifestList(client)
+                # Force this job status to COMPLETED in the same transaction we
+                # called `allBuildsUpdated` (in the uploadManifestList call
+                # above) to release the lock already including the new status.
+                # This way, any other transaction that was blocked waiting to
+                # get the info about the upload jobs will immediately have the
+                # new status of this job, avoiding race conditions. Keep the
+                # `manage_transaction=False` to prevent the method from
+                # commiting at the wrong moment.
+                self.complete(manage_transaction=False)
+
             except OCIRegistryError as e:
                 self.error_summary = str(e)
                 self.errors = e.errors
@@ -369,11 +360,3 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         except Exception:
             transaction.commit()
             raise
-        # Commits the transaction to persist the information changed so far
-        # (including self.build_uploaded) so, in case we need to retry this
-        # job, we skip the build upload part and only retry the
-        # uploadManifestList.
-        transaction.commit()
-
-        if not self.manifest_list_uploaded:
-            self.uploadManifestList(client)
