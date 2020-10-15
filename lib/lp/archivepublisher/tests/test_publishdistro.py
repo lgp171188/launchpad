@@ -59,7 +59,7 @@ from lp.testing.layers import ZopelessDatabaseLayer
 class TestPublishDistro(TestNativePublishingBase):
     """Test the publish-distro.py script works properly."""
 
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def runPublishDistro(self, extra_args=None, distribution="ubuntutest"):
         """Run publish-distro without invoking the script.

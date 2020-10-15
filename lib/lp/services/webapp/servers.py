@@ -575,14 +575,19 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
         self.traversed_objects = []
         self._wsgi_keys = set()
         if 'PATH_INFO' in environ:
-            # Zope's sane_environment assumes that PATH_INFO is UTF-8 encoded.
-            # This next step replaces problems with U+FFFD to ensure
-            # a UnicodeDecodeError is not raised before OOPS error handling
-            # is available. This change will convert a 400 error to a 404
-            # because tranversal will raise NotFound when it encounters a
-            # non-ascii path part.
-            environ['PATH_INFO'] = environ['PATH_INFO'].decode(
-                'utf-8', 'replace').encode('utf-8')
+            # Zope's sane_environment (called by the superclass's __init__)
+            # takes PATH_INFO, which according to WSGI must be a native
+            # string containing only code points representable in
+            # ISO-8859-1, and recodes it to UTF-8.  However, we don't want
+            # it to raise UnicodeDecodeError before OOPS error handling is
+            # available, so replace problems with U+FFFD before it has a
+            # chance to recode anything.  This change will convert a 400
+            # error to a 404, because traversal will raise NotFound when it
+            # encounters a non-ASCII path part.
+            pi = environ['PATH_INFO']
+            if isinstance(pi, bytes):
+                pi = pi.decode('utf-8', 'replace')
+            environ['PATH_INFO'] = pi.encode('utf-8')
         super(BasicLaunchpadRequest, self).__init__(
             body_instream, environ, response)
 

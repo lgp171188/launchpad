@@ -1209,7 +1209,7 @@ class TestSourcePackageRecipeViewMixin:
 
     def test_index(self):
         build = self.makeSuccessfulBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Recipes cake_recipe
             .*
             Description Edit
@@ -1237,7 +1237,7 @@ class TestSourcePackageRecipeViewMixin:
         build = self.makeSuccessfulBuild()
         build.setLog(self.factory.makeLibraryFileAlias())
 
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Latest builds
             Status .* Archive
             Successful build on 2010-03-16 buildlog \(.*\)
@@ -1263,7 +1263,7 @@ class TestSourcePackageRecipeViewMixin:
             processor=builder.processor)
         binary_build.queueBuild()
 
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Latest builds
             Status .* Archive
             Successful build on 2010-03-16 buildlog \(.*\)
@@ -1297,7 +1297,7 @@ class TestSourcePackageRecipeViewMixin:
             date_finished=datetime(2010, 4, 16, tzinfo=UTC))
         binary_build.setLog(self.factory.makeLibraryFileAlias())
 
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Latest builds
             Status .* Archive
             Successful build on 2010-03-16 buildlog \(.*\) Secret Squirrel
@@ -1316,7 +1316,7 @@ class TestSourcePackageRecipeViewMixin:
     def test_index_no_builds(self):
         """A message should be shown when there are no builds."""
         recipe = self.makeRecipe()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Latest builds
             Status .* Archive
             This recipe has not been built yet.""", self.getMainText(recipe))
@@ -1325,7 +1325,7 @@ class TestSourcePackageRecipeViewMixin:
         recipe = self.makeRecipe()
         self.factory.makeSourcePackageRecipeBuild(
             recipe=recipe, distroseries=self.squirrel, archive=self.ppa)
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Latest builds
             Status .* Archive
             No suitable builders Secret Squirrel Secret PPA
@@ -1344,7 +1344,7 @@ class TestSourcePackageRecipeViewMixin:
         recipe = self.makeRecipe()
         self.makeBuildJob(recipe)
         self.factory.makeBuilder()
-        pattern = """\
+        pattern = r"""
             Latest builds
             Status .* Archive
             Pending build in .* \(estimated\) Secret Squirrel Secret PPA
@@ -1780,11 +1780,11 @@ class TestSourcePackageRecipeBuildViewMixin:
     def test_render_index(self):
         """Test the basic index page."""
         main_text = self.getMainText(self.makeBuild(), '+index')
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             created .*
             Build status
             Needs building
-            Start in .* \\(2510\\) What's this?.*
+            Start in .* \(2510\) What's this?.*
             Estimated finish in .*
             Build details
             Recipe:        Recipe my-recipe for Owner
@@ -1809,7 +1809,7 @@ class TestSourcePackageRecipeBuildViewMixin:
         build.storeUploadLog('upload_log')
         main_text = self.getMainText(
             release.source_package_recipe_build, '+index')
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             created .*
             Build status
             Successfully built
@@ -1851,7 +1851,7 @@ class TestSourcePackageRecipeBuildViewMixin:
         self.makeBinaryBuild(release, 'x87-64')
         main_text = self.getMainText(
             release.source_package_recipe_build, '+index')
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Binary builds:
             itanic build of .* 3.14 in ubuntu squirrel RELEASE
             x87-64 build of .* 3.14 in ubuntu squirrel RELEASE$""",

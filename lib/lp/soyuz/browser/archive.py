@@ -1798,7 +1798,7 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
     @cachedproperty
     def has_dependencies(self):
         """Whether or not the PPA has recorded dependencies."""
-        return bool(self.context.dependencies)
+        return not self.context.dependencies.is_empty()
 
     @property
     def messages(self):

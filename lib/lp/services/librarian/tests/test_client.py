@@ -1,8 +1,8 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from cStringIO import StringIO
 import hashlib
+import io
 import os
 import re
 import socket
@@ -231,7 +231,7 @@ class LibrarianClientTestCase(TestCase):
         # addFile should send the Database-Name header.
         client = InstrumentedLibrarianClient()
         client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         self.assertTrue(client.sentDatabaseName,
             "Database-Name header not sent by addFile")
 
@@ -242,8 +242,8 @@ class LibrarianClientTestCase(TestCase):
         # different process, we need to explicitly tell the DatabaseLayer to
         # fully tear down and set up the database.
         DatabaseLayer.force_dirty_database()
-        client.remoteAddFile('sample.txt', 6, StringIO('sample'),
-                                   'text/plain')
+        client.remoteAddFile(
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         self.assertTrue(client.sentDatabaseName,
             "Database-Name header not sent by remoteAddFile")
 
@@ -254,7 +254,8 @@ class LibrarianClientTestCase(TestCase):
         # Force the client to mis-report its database
         client._getDatabaseName = lambda cur: 'wrong_database'
         try:
-            client.addFile('sample.txt', 6, StringIO('sample'), 'text/plain')
+            client.addFile(
+                'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         except UploadFailed as e:
             msg = e.args[0]
             self.assertTrue(
@@ -285,7 +286,8 @@ class LibrarianClientTestCase(TestCase):
         # right after, while uploading the file).
         self.assertRaisesRegex(
             UploadFailed, 'Server said early: STORE 7 sample.txt',
-            client.addFile, 'sample.txt', 7, StringIO('sample'), 'text/plain')
+            client.addFile,
+            'sample.txt', 7, io.BytesIO(b'sample'), 'text/plain')
 
     def test_addFile_uses_master(self):
         # addFile is a write operation, so it should always use the
@@ -296,7 +298,7 @@ class LibrarianClientTestCase(TestCase):
         ISlaveStore(LibraryFileAlias).close()
         with SlaveDatabasePolicy():
             alias_id = client.addFile(
-                'sample.txt', 6, StringIO('sample'), 'text/plain')
+                'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
         f = client.getFileByAlias(alias_id)
         self.assertEqual(f.read(), 'sample')
@@ -308,7 +310,7 @@ class LibrarianClientTestCase(TestCase):
         # empty line following the headers.
         client = InstrumentedLibrarianClient()
         client.addFile(
-            'sample.txt', 0, StringIO(''), 'text/plain',
+            'sample.txt', 0, io.BytesIO(b''), 'text/plain',
             allow_zero_length=True)
         # addFile() calls _sendHeader() three times and _sendLine()
         # twice, but it does not check if the server responded
@@ -321,7 +323,7 @@ class LibrarianClientTestCase(TestCase):
         # header line. It does _not_ do this check when it sends the
         # empty line following the headers.
         client = InstrumentedLibrarianClient()
-        client.addFile('sample.txt', 4, StringIO('1234'), 'text/plain')
+        client.addFile('sample.txt', 4, io.BytesIO(b'1234'), 'text/plain')
         # addFile() calls _sendHeader() three times and _sendLine()
         # twice.
         self.assertEqual(5, client.check_error_calls)
@@ -329,14 +331,14 @@ class LibrarianClientTestCase(TestCase):
     def test_addFile_hashes(self):
         # addFile() sets the MD5, SHA-1 and SHA-256 hashes on the
         # LibraryFileContent record.
-        data = 'i am some data'
+        data = b'i am some data'
         md5 = hashlib.md5(data).hexdigest()
         sha1 = hashlib.sha1(data).hexdigest()
         sha256 = hashlib.sha256(data).hexdigest()
 
         client = LibrarianClient()
         lfa = LibraryFileAlias.get(
-            client.addFile('file', len(data), StringIO(data), 'text/plain'))
+            client.addFile('file', len(data), io.BytesIO(data), 'text/plain'))
 
         self.assertEqual(md5, lfa.content.md5)
         self.assertEqual(sha1, lfa.content.sha1)
@@ -351,7 +353,7 @@ class LibrarianClientTestCase(TestCase):
         # (Set up:)
         client = LibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         config.push(
             'test config',
             textwrap.dedent('''\
@@ -387,7 +389,7 @@ class LibrarianClientTestCase(TestCase):
         # (Set up:)
         client = RestrictedLibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         config.push(
             'test config',
             textwrap.dedent('''\
@@ -421,7 +423,7 @@ class LibrarianClientTestCase(TestCase):
         # (Set up:)
         client = InstrumentedLibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()  # Make sure the file is in the "remote" database.
         self.assertFalse(client.called_getURLForDownload)
         # (Test:)
@@ -439,7 +441,7 @@ class LibrarianClientTestCase(TestCase):
 
         client = InstrumentedLibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
         self.assertRaises(LookupError, client.getFileByAlias, alias_id)
 
@@ -456,7 +458,7 @@ class LibrarianClientTestCase(TestCase):
             HTTPError('http://fake.url/', 500, 'Forced error', None, None), 2)
         client = InstrumentedLibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
         self.assertRaises(
             LibrarianServerError, client.getFileByAlias, alias_id, 1)
@@ -465,7 +467,7 @@ class LibrarianClientTestCase(TestCase):
             URLError('Connection refused'), 2)
         client = InstrumentedLibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
         self.assertRaises(
             LibrarianServerError, client.getFileByAlias, alias_id, 1)
@@ -482,7 +484,7 @@ class LibrarianClientTestCase(TestCase):
             HTTPError('http://fake.url/', 500, 'Forced error', None, None), 1)
         client = InstrumentedLibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
         self.assertEqual(
             client.getFileByAlias(alias_id), 'This is a fake file object', 3)
@@ -491,7 +493,7 @@ class LibrarianClientTestCase(TestCase):
             URLError('Connection refused'), 1)
         client = InstrumentedLibrarianClient()
         alias_id = client.addFile(
-            'sample.txt', 6, StringIO('sample'), 'text/plain')
+            'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
         self.assertEqual(
             client.getFileByAlias(alias_id), 'This is a fake file object', 3)
@@ -502,7 +504,7 @@ class LibrarianClientTestCase(TestCase):
         client = InstrumentedLibrarianClient()
         th = PropagatingThread(
             target=client.addFile,
-            args=('sample.txt', 6, StringIO('sample'), 'text/plain'))
+            args=('sample.txt', 6, io.BytesIO(b'sample'), 'text/plain'))
         th.start()
         th.join()
         self.assertEqual(5, client.check_error_calls)

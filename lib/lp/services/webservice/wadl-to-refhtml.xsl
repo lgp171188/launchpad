@@ -240,7 +240,7 @@
             <xsl:when test="@id = 'bug_attachment'">
                 <xsl:text>/bugs/</xsl:text>
                 <var>&lt;bug.id&gt;</var>
-                <xsl:text>/attachments/</xsl:text>
+                <xsl:text>/+attachment/</xsl:text>
                 <var>&lt;id&gt;</var>
             </xsl:when>
             <xsl:when test="@id = 'bug_subscription'">

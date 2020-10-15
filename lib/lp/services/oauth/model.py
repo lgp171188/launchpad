@@ -82,7 +82,8 @@ def sha256_digest(data):
     this is straightforward because hexdigest() returns that anyway, but in
     Python 2 we must decode.
     """
-    return six.ensure_text(hashlib.sha256(data).hexdigest(), encoding='ASCII')
+    return six.ensure_text(
+        hashlib.sha256(six.ensure_binary(data)).hexdigest(), encoding='ASCII')
 
 
 @implementer(IOAuthConsumer)

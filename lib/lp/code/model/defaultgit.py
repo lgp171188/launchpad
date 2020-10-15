@@ -8,6 +8,8 @@ __metaclass__ = type
 # adapting another object.
 __all__ = []
 
+from functools import total_ordering
+
 from zope.component import adapter
 from zope.interface import implementer
 
@@ -24,21 +26,19 @@ from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.registry.interfaces.product import IProduct
 
 
+@total_ordering
 class BaseDefaultGitRepository:
     """Provides the common sorting algorithm."""
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         if not ICanHasDefaultGitRepository.providedBy(other):
-            raise AssertionError("Can't compare with: %r" % other)
-        return cmp(self.sort_order, other.sort_order)
+            return NotImplemented
+        return self.sort_order < other.sort_order
 
     def __eq__(self, other):
         return (
             isinstance(other, self.__class__) and
             self.context == other.context)
-
-    def __ne__(self, other):
-        return not self == other
 
 
 @adapter(IProduct)

@@ -63,9 +63,10 @@ class TestReclaimBranchSpaceScript(TestCaseWithFactory):
             'INFO    Creating lockfile: /var/lock/'
             'launchpad-process-job-source-IReclaimBranchSpaceJobSource.lock\n'
             'INFO    Running synchronously.\n'
-            'INFO    Running <RECLAIM_BRANCH_SPACE branch job \(\d+\) for '
-            '\d+> \(ID %s\) in status Waiting\n'
-            'INFO    Ran 1 ReclaimBranchSpaceJob jobs.\n' % reclaim_job.job.id,
+            'INFO    Running <RECLAIM_BRANCH_SPACE branch job \\(\\d+\\) for '
+            '\\d+> \\(ID %s\\) in status Waiting\n'
+            'INFO    Ran 1 ReclaimBranchSpaceJob jobs.\n' %
+            reclaim_job.job.id,
             stderr)
         self.assertEqual(0, retcode)
         self.assertFalse(

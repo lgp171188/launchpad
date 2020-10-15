@@ -499,16 +499,13 @@ class Archive(SQLBase):
 
     @property
     def dependencies(self):
-        query = """
-            ArchiveDependency.dependency = Archive.id AND
-            Archive.owner = Person.id AND
-            ArchiveDependency.archive = %s
-        """ % sqlvalues(self)
-        clauseTables = ["Archive", "Person"]
-        orderBy = ['Person.displayname']
-        dependencies = ArchiveDependency.select(
-            query, clauseTables=clauseTables, orderBy=orderBy)
-        return dependencies
+        # Circular import.
+        from lp.registry.model.person import Person
+        return IStore(ArchiveDependency).find(
+            ArchiveDependency,
+            ArchiveDependency.dependency == Archive.id,
+            Archive.owner == Person.id,
+            ArchiveDependency.archive == self).order_by(Person.display_name)
 
     @cachedproperty
     def default_component(self):
@@ -639,7 +636,7 @@ class Archive(SQLBase):
                     SourcePackageName.id)
 
         if name is not None:
-            if type(name) in (str, unicode):
+            if isinstance(name, six.string_types):
                 if exact_match:
                     clauses.append(SourcePackageName.name == name)
                 else:
@@ -1127,8 +1124,8 @@ class Archive(SQLBase):
 
     def getArchiveDependency(self, dependency):
         """See `IArchive`."""
-        return ArchiveDependency.selectOneBy(
-            archive=self, dependency=dependency)
+        return IStore(ArchiveDependency).find(
+            ArchiveDependency, archive=self, dependency=dependency).one()
 
     def removeArchiveDependency(self, dependency):
         """See `IArchive`."""
