@@ -350,6 +350,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
                 # after self.start().
                 self.bootstrap_lock = threading.Lock()
                 self.bootstrap_lock.acquire()
+                self.result = None
                 self.error = None
                 self.start_date = None
                 self.end_date = None
@@ -377,7 +378,8 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
                     self.bootstrap()
                     self.start_date = datetime.now()
                     try:
-                        self.upload_job.allBuildsUploaded(self.build_request)
+                        self.result = self.upload_job.allBuildsUploaded(
+                            self.build_request)
                     except Exception as e:
                         self.error = e
                     self.end_date = datetime.now()
@@ -398,7 +400,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         waiting_time = 2
         # Start a clean transaction and lock the rows at database level.
         transaction.commit()
-        upload_job1.allBuildsUploaded(build_request)
+        self.assertFalse(upload_job1.allBuildsUploaded(build_request))
 
         # Start, in parallel, another upload job to run `allBuildsUploaded`.
         concurrent_checker = AllBuildsUploadedChecker(build_request)
@@ -410,6 +412,10 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         # Wait a bit and release the database lock by committing current
         # transaction.
         time.sleep(waiting_time)
+        # Let's force the first job to be finished, just to make sure the
+        # second job will realise it's the last one running.
+        upload_job1.start()
+        upload_job1.complete()
         transaction.commit()
 
         # Now, the concurrent checker should have already finished running,
@@ -417,6 +423,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         # waiting_time to finish running (since it was waiting).
         concurrent_checker.join()
         self.assertIsNone(concurrent_checker.error)
+        self.assertTrue(concurrent_checker.result)
         self.assertGreaterEqual(
             concurrent_checker.lock_duration, timedelta(seconds=waiting_time))
 
