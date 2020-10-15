@@ -584,7 +584,6 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
             # chance to recode anything.  This change will convert a 400
             # error to a 404, because traversal will raise NotFound when it
             # encounters a non-ASCII path part.
-            environ = dict(environ)
             pi = environ['PATH_INFO']
             if isinstance(pi, bytes):
                 pi = pi.decode('utf-8', 'replace')
