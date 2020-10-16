@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enumerations relating to Bazaar formats."""
@@ -75,6 +75,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import six
 
 
 def _format_enum(num, format, format_string=None, description=None):
@@ -83,7 +84,7 @@ def _format_enum(num, format, format_string=None, description=None):
         format_string = instance.get_format_string()
     if description is None:
         description = instance.get_format_description()
-    return DBItem(num, format_string, description)
+    return DBItem(num, six.ensure_str(format_string), description)
 
 
 class BazaarFormatEnum(DBEnumeratedType):
@@ -305,9 +306,11 @@ def get_branch_formats(bzr_branch):
 
     :returns: tuple of (ControlFormat, BranchFormat, RepositoryFormat)
     """
-    control_string = bzr_branch.controldir._format.get_format_string()
-    branch_string = bzr_branch._format.get_format_string()
-    repository_string = bzr_branch.repository._format.get_format_string()
+    control_string = six.ensure_str(
+        bzr_branch.controldir._format.get_format_string())
+    branch_string = six.ensure_str(bzr_branch._format.get_format_string())
+    repository_string = six.ensure_str(
+        bzr_branch.repository._format.get_format_string())
     return (ControlFormat.get_enum(control_string),
             BranchFormat.get_enum(branch_string),
             RepositoryFormat.get_enum(repository_string))

@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the upgrade_branches script."""
@@ -30,7 +30,7 @@ class TestUpgradeBranches(TestCaseWithFactory):
 
         self.assertEqual(
             target_tree.branch.repository._format.get_format_string(),
-            'Bazaar-NG Knit Repository Format 1')
+            b'Bazaar-NG Knit Repository Format 1')
 
         BranchUpgradeJob.create(target, self.factory.makePerson())
         transaction.commit()
@@ -45,7 +45,7 @@ class TestUpgradeBranches(TestCaseWithFactory):
         target_branch = BzrBranch.open(target_tree.branch.base)
         self.assertEqual(
             target_branch.repository._format.get_format_string(),
-            'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
+            b'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
 
     def test_upgrade_branches_packagebranch(self):
         """Test that upgrade_branches can upgrade package branches."""
@@ -58,7 +58,7 @@ class TestUpgradeBranches(TestCaseWithFactory):
 
         self.assertEqual(
             target_tree.branch.repository._format.get_format_string(),
-            'Bazaar-NG Knit Repository Format 1')
+            b'Bazaar-NG Knit Repository Format 1')
 
         BranchUpgradeJob.create(target, self.factory.makePerson())
         transaction.commit()
@@ -73,4 +73,4 @@ class TestUpgradeBranches(TestCaseWithFactory):
         target_branch = BzrBranch.open(target_tree.branch.base)
         self.assertEqual(
             target_branch.repository._format.get_format_string(),
-            'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
+            b'Bazaar repository format 2a (needs bzr 1.16 or later)\n')

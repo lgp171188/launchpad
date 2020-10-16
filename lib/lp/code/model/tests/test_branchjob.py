@@ -257,7 +257,7 @@ class TestBranchUpgradeJob(TestCaseWithFactory):
         db_branch, tree = create_knit(self)
         self.assertEqual(
             tree.branch.repository._format.get_format_string(),
-            'Bazaar-NG Knit Repository Format 1')
+            b'Bazaar-NG Knit Repository Format 1')
 
         job = BranchUpgradeJob.create(db_branch, self.factory.makePerson())
 
@@ -268,7 +268,7 @@ class TestBranchUpgradeJob(TestCaseWithFactory):
         new_branch = Branch.open(tree.branch.base)
         self.assertEqual(
             new_branch.repository._format.get_format_string(),
-            'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
+            b'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
 
         self.becomeDbUser(dbuser)
         self.assertFalse(db_branch.needs_upgrading)
@@ -302,7 +302,7 @@ class TestBranchUpgradeJob(TestCaseWithFactory):
         new_branch = Branch.open(tree.branch.base)
         self.assertEqual(
             new_branch.repository._format.get_format_string(),
-            'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
+            b'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
 
     def test_db_user_can_request_scan(self):
         # The database user that does the upgrade needs to be able to request

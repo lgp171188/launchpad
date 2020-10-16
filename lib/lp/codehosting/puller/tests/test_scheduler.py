@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function
@@ -13,6 +13,7 @@ from breezy.branch import Branch
 from breezy.bzr.bzrdir import BzrDir
 from breezy.controldir import format_registry
 from breezy.urlutils import join as urljoin
+import six
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
@@ -614,11 +615,11 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
 
         def check_authserver_called(ignored):
             default_format = format_registry.get('default')()
-            control_string = default_format.get_format_string()
-            branch_string = \
-                default_format.get_branch_format().get_format_string()
-            repository_string = \
-                default_format.repository_format.get_format_string()
+            control_string = six.ensure_str(default_format.get_format_string())
+            branch_string = six.ensure_str(
+                default_format.get_branch_format().get_format_string())
+            repository_string = six.ensure_str(
+                default_format.repository_format.get_format_string())
             self.assertEqual(
                 [('branchChanged', LAUNCHPAD_SERVICES, self.db_branch.id, '',
                   revision_id, control_string, branch_string,
