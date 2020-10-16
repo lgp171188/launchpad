@@ -1772,6 +1772,13 @@ class GitRepositorySet:
             date_created=UTC_NOW, description=origin.description,
             with_hosting=True, async_hosting=True,
             status=GitRepositoryStatus.CREATING)
+        try:
+            # Try to set the new repo as owner-default.
+            repository.setOwnerDefault(True)
+        except GitDefaultConflict:
+            # If there is already a owner-default for this owner/target,
+            # just move on.
+            pass
         return repository
 
     def getByPath(self, user, path):
