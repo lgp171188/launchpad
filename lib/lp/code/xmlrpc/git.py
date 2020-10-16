@@ -35,6 +35,7 @@ from lp.code.enums import (
     GitRepositoryType,
     )
 from lp.code.errors import (
+    GitDefaultConflict,
     GitRepositoryCreationException,
     GitRepositoryCreationFault,
     GitRepositoryCreationForbidden,
@@ -660,6 +661,13 @@ class GitAPI(LaunchpadXMLRPCView):
             requester, naked_repo, auth_params)
         naked_repo.rescan()
         naked_repo.status = GitRepositoryStatus.AVAILABLE
+        try:
+            # Try to set the new repo as owner-default.
+            naked_repo.setOwnerDefault(True)
+        except GitDefaultConflict:
+            # If there is already a owner-default for this owner/target,
+            # just move on.
+            pass
 
     def confirmRepoCreation(self, translated_path, auth_params):
         """See `IGitAPI`."""

@@ -291,8 +291,9 @@ class TestGitAPIMixin:
              "writable": writable, "trailing": trailing, "private": private},
             translation)
 
-    def assertConfirmsRepoCreation(self, requester, git_repository,
-                                   can_authenticate=True, macaroon_raw=None):
+    def assertConfirmsRepoCreation(
+            self, requester, git_repository, can_authenticate=True,
+            macaroon_raw=None, is_owner_default=True):
         # Puts some refs in git hosting, to make sure we scanned them.
         sha1 = lambda x: hashlib.sha1(x).hexdigest()
         self.hosting_fixture = self.useFixture(
@@ -325,6 +326,7 @@ class TestGitAPIMixin:
         self.assertIsNone(result)
         Store.of(git_repository).invalidate(git_repository)
         self.assertEqual(GitRepositoryStatus.AVAILABLE, git_repository.status)
+        self.assertEqual(is_owner_default, git_repository.owner_default)
         # Should have checked the refs at some point.
         excluded_prefixes = config.codehosting.git_exclude_ref_prefixes
         self.assertEqual(
@@ -355,6 +357,7 @@ class TestGitAPIMixin:
         if store:
             store.invalidate(git_repository)
         self.assertEqual(original_status, git_repository.status)
+        self.assertFalse(git_repository.owner_default)
 
     def assertConfirmRepoCreationUnauthorized(
             self, requester, git_repository, can_authenticate=True,
@@ -820,6 +823,16 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
         repo.status = GitRepositoryStatus.CREATING
         self.assertConfirmsRepoCreation(owner, repo)
+
+    def test_confirm_git_repository_creation_not_owner_default(self):
+        owner = self.factory.makePerson()
+        # Create a repository that is already a owner_default.
+        first_repo = self.factory.makeGitRepository(owner=owner)
+        first_repo.setOwnerDefault(True)
+        repo = removeSecurityProxy(self.factory.makeGitRepository(
+            owner=owner, target=first_repo.target))
+        repo.status = GitRepositoryStatus.CREATING
+        self.assertConfirmsRepoCreation(owner, repo, is_owner_default=False)
 
     def test_launchpad_service_confirm_git_repository_creation(self):
         owner = self.factory.makePerson()
