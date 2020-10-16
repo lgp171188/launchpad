@@ -26,10 +26,10 @@ and/or revoked from that user's +oauth-tokens page.
     # View the tokens.
     >>> my_browser = setupBrowser(auth='Basic salgado@ubuntu.com:test')
     >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
-    >>> print my_browser.title
+    >>> print(my_browser.title)
     Authorized applications...
     >>> main_content = find_tag_by_id(my_browser.contents, 'maincontent')
-    >>> print extract_text(main_content)
+    >>> print(extract_text(main_content))
     Authorized applications
     ...
     Claimed tokens:
@@ -50,7 +50,7 @@ authorization.
 
     >>> li = find_tag_by_id(main_content, 'tokens').find('li')
     >>> for input in li.find('form').findAll('input'):
-    ...     print input['name'], input['value']
+    ...     print(input['name'], input['value'])
     consumer_key System-wide: Ubuntu (mycomputer)
     token_key ...
     token_type access_token
@@ -58,7 +58,7 @@ authorization.
 
     >>> li2 = li.findNextSibling('li')
     >>> for input in li2.find('form').findAll('input'):
-    ...     print input['name'], input['value']
+    ...     print(input['name'], input['value'])
     consumer_key foobar123451432
     token_key salgado-read-nonprivate
     token_type access_token
@@ -66,7 +66,7 @@ authorization.
 
     >>> li3 = li2.findNext('li')
     >>> for input in li3.find('form').findAll('input'):
-    ...     print input['name'], input['value']
+    ...     print(input['name'], input['value'])
     consumer_key launchpad-library
     token_key salgado-change-anything
     token_type access_token
@@ -74,7 +74,7 @@ authorization.
 
     >>> li4 = li3.findNext('li')
     >>> for input in li4.find('form').findAll('input'):
-    ...     print input['name'], input['value']
+    ...     print(input['name'], input['value'])
     consumer_key oauthconsumerkey...
     token_key ...
     token_type request_token
@@ -85,13 +85,13 @@ Launchpad on that user's behalf anymore, nor will that application be
 shown as one of the authorized ones.
 
     >>> my_browser.getControl('Revoke Authorization', index=2).click()
-    >>> print my_browser.title
+    >>> print(my_browser.title)
     Authorized applications...
     >>> print_feedback_messages(my_browser.contents)
     Authorization revoked successfully.
 
     >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
-    >>> print extract_text(find_tag_by_id(my_browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(my_browser.contents, 'maincontent')))
     Authorized applications
     ...
     Claimed tokens:
@@ -118,7 +118,7 @@ include that.
     >>> access_token, _ = token.createAccessToken()
     >>> logout()
     >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
-    >>> print extract_text(find_tag_by_id(my_browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(my_browser.contents, 'maincontent')))
     Authorized applications
     ...
     launchpad-library
