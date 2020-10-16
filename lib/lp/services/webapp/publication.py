@@ -410,10 +410,10 @@ class LaunchpadBrowserPublication(
                 return self.constructPageID(context, context.context, names)
             view_names = ':'.join(names)
             pageid = '%s:%s' % (context_name, view_names)
-        # The view name used in the pageid usually comes from ZCML and so
-        # it will be a unicode string although it shouldn't.  To avoid
-        # problems we encode it into ASCII.
-        return pageid.encode('US-ASCII')
+        # The view name used in the pageid usually comes from ZCML and so it
+        # will be a Unicode string, but we want a native string.  On Python
+        # 2, to avoid problems we encode it into ASCII.
+        return six.ensure_str(pageid, 'US-ASCII')
 
     def callObject(self, request, ob):
         """See `zope.publisher.interfaces.IPublication`.
