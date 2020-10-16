@@ -24,33 +24,33 @@ Make revisions for the branch so it has a codebrowse link.
     >>> def print_development_focus(browser):
     ...     """Print out the development focus part of the project info."""
     ...     dev_focus = find_tag_by_id(browser.contents, 'development-focus')
-    ...     print extract_text(dev_focus)
-    ...     print "Links:"
+    ...     print(extract_text(dev_focus))
+    ...     print("Links:")
     ...     for a in dev_focus.findAll('a'):
     ...         for content in a.contents:
-    ...             print content
+    ...             print(content)
     ...         title = a.get('title', '')
-    ...         print "%s (%s)" % (title, a['href'])
+    ...         print("%s (%s)" % (title, a['href']))
     >>> def print_code_trunk(browser):
     ...     """Print out code trunk part of the project info."""
     ...     project_info = find_tag_by_id(browser.contents, 'code-info')
     ...     code_trunk = project_info.find(attrs={'id':'code-trunk'})
     ...     try:
-    ...         print extract_text(code_trunk)
+    ...         print(extract_text(code_trunk))
     ...     except TypeError:
     ...         return
-    ...     print "Links:"
+    ...     print("Links:")
     ...     for a in code_trunk.findAll('a'):
     ...         for content in a.contents:
-    ...             print content
+    ...             print(content)
     ...         title = a.get('title', '')
-    ...         print "%s (%s)" % (title, a['href'])
+    ...         print("%s (%s)" % (title, a['href']))
     >>> def print_involvement_portlet(browser):
     ...     involvement = find_tag_by_id(browser.contents, 'involvement')
     ...     for a in involvement.findAll('a'):
     ...         for content in a.contents:
-    ...             print content
-    ...         print a['href']
+    ...             print(content)
+    ...         print(a['href'])
 
 
 Projects without development focus branches

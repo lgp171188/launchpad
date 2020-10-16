@@ -148,10 +148,10 @@ Apart from the link to the preferred email, there is a link to the
 collection of other confirmed email addresses of that person/team.
 
     >>> sample_person = webservice.get("/~name12").jsonBody()
-    >>> print sample_person['preferred_email_address_link']
+    >>> print(sample_person['preferred_email_address_link'])
     http://.../~name12/+email/test@canonical.com
     >>> emails = sample_person['confirmed_email_addresses_collection_link']
-    >>> print emails
+    >>> print(emails)
     http://.../~name12/confirmed_email_addresses
     >>> print_self_link_of_entries(webservice.get(emails).jsonBody())
     http://.../~name12/+email/testing@canonical.com
@@ -170,7 +170,7 @@ representations too.
 One can only traverse to the email addresses of the person already
 traversed to, obviously.
 
-    >>> print webservice.get("/~salgado/+email/test@canonical.com")
+    >>> print(webservice.get("/~salgado/+email/test@canonical.com"))
     HTTP/1.1 404 Not Found
     ...
 
@@ -187,7 +187,7 @@ The sample person "ssh-user" doesn't have any keys to begin with:
     >>> logout()
     >>> sample_person = webservice.get("/~ssh-user").jsonBody()
     >>> sshkeys = sample_person['sshkeys_collection_link']
-    >>> print sshkeys
+    >>> print(sshkeys)
     http://.../~ssh-user/sshkeys
     >>> print_self_link_of_entries(anon_webservice.get(sshkeys).jsonBody())
 
@@ -234,7 +234,7 @@ The sample person "name12" doesn't have any keys to begin with:
 
     >>> sample_person = webservice.get("/~name12").jsonBody()
     >>> gpgkeys = sample_person['gpg_keys_collection_link']
-    >>> print gpgkeys
+    >>> print(gpgkeys)
     http://.../~name12/gpg_keys
     >>> print_self_link_of_entries(webservice.get(gpgkeys).jsonBody())
 
@@ -337,58 +337,58 @@ You can also change a TeamMembership through its custom operations.
 
 To change its expiration date, use setExpirationDate(date).
 
-    >>> print salgado_landscape['date_expires']
+    >>> print(salgado_landscape['date_expires'])
     None
 
     >>> import pytz
     >>> from datetime import datetime
     >>> someday = datetime(2058, 8, 1, tzinfo=pytz.UTC)
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     salgado_landscape['self_link'], 'setExpirationDate', {},
-    ...     date=str(someday))
+    ...     date=str(someday)))
     HTTP/1.1 200 Ok
     ...
 
-    >>> print webservice.get(
-    ...     salgado_landscape['self_link']).jsonBody()['date_expires']
+    >>> print(webservice.get(
+    ...     salgado_landscape['self_link']).jsonBody()['date_expires'])
     2058-08-01...
 
 To change its status, use setStatus(status).
 
-    >>> print salgado_landscape['status']
+    >>> print(salgado_landscape['status'])
     Approved
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     salgado_landscape['self_link'], 'setStatus', {},
-    ...     status='Deactivated')
+    ...     status='Deactivated'))
     HTTP/1.1 200 Ok
     ...
 
-    >>> print webservice.get(
-    ...     salgado_landscape['self_link']).jsonBody()['status']
+    >>> print(webservice.get(
+    ...     salgado_landscape['self_link']).jsonBody()['status'])
     Deactivated
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     salgado_landscape['self_link'], 'setStatus', {},
-    ...     status='Approved', silent=True)
+    ...     status='Approved', silent=True))
     HTTP/1.1 200 Ok
     ...
 
-    >>> print webservice.get(
-    ...     salgado_landscape['self_link']).jsonBody()['status']
+    >>> print(webservice.get(
+    ...     salgado_landscape['self_link']).jsonBody()['status'])
     Approved
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     salgado_landscape['self_link'], 'setStatus', {},
-    ...     status='Deactivated', silent=True)
+    ...     status='Deactivated', silent=True))
     HTTP/1.1 200 Ok
     ...
 
     # Now revert the change to salgado's membership to not break other tests
     # further down.
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     salgado_landscape['self_link'], 'setStatus', {},
-    ...     status='Approved')
+    ...     status='Approved'))
     HTTP/1.1 200 Ok
     ...
 
@@ -464,7 +464,7 @@ All wiki names associated to a person/team are also linked to that
 person/team.
 
     >>> wikis_link = salgado['wiki_names_collection_link']
-    >>> print wikis_link
+    >>> print(wikis_link)
     http://.../~salgado/wiki_names
     >>> print_self_link_of_entries(webservice.get(wikis_link).jsonBody())
     http://.../~salgado/+wikiname/2
@@ -490,7 +490,7 @@ representations too.
 One can only traverse to the WikiNames of the person already traversed
 to, obviously.
 
-    >>> print webservice.get("/~name12/+wikiname/2")
+    >>> print(webservice.get("/~name12/+wikiname/2"))
     HTTP/1.1 404 Not Found
     ...
 
@@ -504,7 +504,7 @@ Wiki names can be modified.
     ...     wiki_name['self_link'], 'application/json', dumps(patch))
     >>> wiki_name = sorted(
     ...     webservice.get(wikis_link).jsonBody()['entries'])[0]
-    >>> print wiki_name['url']
+    >>> print(wiki_name['url'])
     http://www.example.com/MrExample
 
 But only if we supply valid data. Due to bug #1088358 the error is
@@ -515,7 +515,7 @@ escaped as if it was HTML.
     ...    u'wikiname': 'MrExample'}
     >>> response = webservice.patch(
     ...     wiki_name['self_link'], 'application/json', dumps(patch))
-    >>> print response
+    >>> print(response)
     HTTP/1.1 400 Bad Request
     ...
     wiki: The URI scheme &quot;javascript&quot; is not allowed.
@@ -529,7 +529,7 @@ Jabber IDs of a person are also linked.
 
     >>> mark = webservice.get("/~mark").jsonBody()
     >>> jabber_ids_link = mark['jabber_ids_collection_link']
-    >>> print jabber_ids_link
+    >>> print(jabber_ids_link)
     http://.../~mark/jabber_ids
     >>> print_self_link_of_entries(webservice.get(jabber_ids_link).jsonBody())
     http://.../~mark/+jabberid/markshuttleworth@jabber.org
@@ -548,8 +548,8 @@ representations too.
 One can only traverse to the Jabber IDs of the person already traversed
 to, obviously.
 
-    >>> print webservice.get(
-    ...     "/~salgado/+jabberid/markshuttleworth@jabber.org")
+    >>> print(webservice.get(
+    ...     "/~salgado/+jabberid/markshuttleworth@jabber.org"))
     HTTP/1.1 404 Not Found
     ...
 
@@ -560,7 +560,7 @@ IRC nicknames
 The same for IRC nicknames
 
     >>> irc_ids_link = mark['irc_nicknames_collection_link']
-    >>> print irc_ids_link
+    >>> print(irc_ids_link)
     http://.../~mark/irc_nicknames
     >>> print_self_link_of_entries(webservice.get(irc_ids_link).jsonBody())
     http://.../~mark/+ircnick/1
@@ -585,7 +585,7 @@ too.
 One can only traverse to the IRC IDs of the person already traversed
 to, obviously.
 
-    >>> print webservice.get("/~salgado/+ircnick/1")
+    >>> print(webservice.get("/~salgado/+ircnick/1"))
     HTTP/1.1 404 Not Found
     ...
 
@@ -596,11 +596,11 @@ PPAs
 We can get to the person's default PPA via the 'archive' property:
 
     >>> mark_archive_link = mark['archive_link']
-    >>> print mark_archive_link
+    >>> print(mark_archive_link)
     http://.../~mark/+archive/ubuntu/ppa
 
     >>> mark_archive = webservice.get(mark_archive_link).jsonBody()
-    >>> print mark_archive['description']
+    >>> print(mark_archive['description'])
     packages to help the humanity (you know, ubuntu)
 
 The 'ppas' property returns a collection of PPAs owned by that
@@ -613,24 +613,24 @@ person.
 A specific PPA can be looked up by name via 'getPPAByName'
 named-operation on IPerson.
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     mark['self_link'], 'getPPAByName',
-    ...     distribution='/ubuntu', name='ppa').jsonBody()['self_link']
+    ...     distribution='/ubuntu', name='ppa').jsonBody()['self_link'])
     http://.../~mark/+archive/ubuntu/ppa
 
 If no distribution is specified, it defaults to Ubuntu.
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     mark['self_link'], 'getPPAByName',
-    ...     name='ppa').jsonBody()['self_link']
+    ...     name='ppa').jsonBody()['self_link'])
     http://.../~mark/+archive/ubuntu/ppa
 
 In cases where a PPA with a given name cannot be found, a Not Found error is
 returned.
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     mark['self_link'], 'getPPAByName', distribution='/debian',
-    ...     name='ppa')
+    ...     name='ppa'))
     HTTP/1.1 404 Not Found
     ...
     No such ppa: 'ppa'.
@@ -639,9 +639,9 @@ The method doesn't even bother to execute the lookup if the given
 'name' doesn't match the constraints for PPA names. An error message
 indicating what was wrong is returned.
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     mark['self_link'], 'getPPAByName', distribution='/ubuntu',
-    ...     name='XpTo@#$%')
+    ...     name='XpTo@#$%'))
     HTTP/1.1 400 Bad Request
     ...
     name:
@@ -662,7 +662,7 @@ all the URLs to the private archives that the person can access.
 
     >>> launchpad = launchpadlib_for(
     ...     'person test', 'mark', 'WRITE_PUBLIC')
-    >>> print launchpad.me.getArchiveSubscriptionURLs()
+    >>> print(launchpad.me.getArchiveSubscriptionURLs())
     [u'http://mark:testtoken@private-ppa.launchpad.test/mark/p3a/ubuntu']
 
 
@@ -708,18 +708,18 @@ Team membership operations
 
 Joining and leaving teams:
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     salgado['self_link'], 'join', {},
-    ...     team=ubuntu_team['self_link'])
+    ...     team=ubuntu_team['self_link']))
     HTTP/1.1 200 Ok
     ...
     >>> webservice.get(
     ...     "/~ubuntu-team/+member/salgado").jsonBody()['status']
     u'Proposed'
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     salgado['self_link'], 'leave', {},
-    ...     team=landscape_developers['self_link'])
+    ...     team=landscape_developers['self_link']))
     HTTP/1.1 200 Ok
     ...
     >>> webservice.get(
@@ -740,10 +740,10 @@ mentoring process (Bug 498181).
 
     # The sample user (name12) is used to verify that it works when
     # the new member's email address is hidden.
-    >>> print owner_webservice.named_post(
+    >>> print(owner_webservice.named_post(
     ...     webservice.getAbsoluteUrl('~otherteam'), 'addMember', {},
     ...     person=webservice.getAbsoluteUrl('/~name12'),
-    ...     status='Proposed', comment='Just a test')
+    ...     status='Proposed', comment='Just a test'))
     HTTP/1.1 200 Ok
     ...
     >>> owner_webservice.get("/~otherteam/+member/name12"
@@ -753,10 +753,10 @@ mentoring process (Bug 498181).
 Adding a team as a new member will result in the membership being
 set to the Invited status.
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     ubuntu_team['self_link'], 'addMember', {},
     ...     person=landscape_developers['self_link'],
-    ...     comment='Just a test')
+    ...     comment='Just a test'))
     HTTP/1.1 200 Ok
     ...
     >>> webservice.get("/~ubuntu-team/+member/landscape-developers"
@@ -765,18 +765,18 @@ set to the Invited status.
 
 Accepting or declining a membership invitation:
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     landscape_developers['self_link'], 'acceptInvitationToBeMemberOf',
-    ...     {}, team=ubuntu_team['self_link'], comment='Just a test')
+    ...     {}, team=ubuntu_team['self_link'], comment='Just a test'))
     HTTP/1.1 200 Ok
     ...
     >>> webservice.get("/~ubuntu-team/+member/landscape-developers"
     ...     ).jsonBody()['status']
     u'Approved'
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     '/~name20', 'declineInvitationToBeMemberOf', {},
-    ...     team=ubuntu_team['self_link'], comment='Just a test')
+    ...     team=ubuntu_team['self_link'], comment='Just a test'))
     HTTP/1.1 200 Ok
     ...
     >>> webservice.get("/~ubuntu-team/+member/name20").jsonBody()['status']
@@ -785,9 +785,9 @@ Accepting or declining a membership invitation:
 The retractTeamMembership method allows a team admin to remove their team
 from another team.
 
-    >>> print webservice.named_post(
+    >>> print(webservice.named_post(
     ...     landscape_developers['self_link'], 'retractTeamMembership',
-    ...     {}, team=ubuntu_team['self_link'], comment='bye bye')
+    ...     {}, team=ubuntu_team['self_link'], comment='bye bye'))
     HTTP/1.1 200 Ok
     ...
     >>> webservice.get("/~ubuntu-team/+member/landscape-developers"
@@ -802,8 +802,8 @@ A team can't be its own owner.
 
     >>> import simplejson
     >>> doc = {'team_owner_link' : webservice.getAbsoluteUrl("/~admins")}
-    >>> print webservice.patch(
-    ...    "/~admins", 'application/json', simplejson.dumps(doc))
+    >>> print(webservice.patch(
+    ...    "/~admins", 'application/json', simplejson.dumps(doc)))
     HTTP/1.1 400 Bad Request
     ...
     team_owner_link: Constraint not satisfied.

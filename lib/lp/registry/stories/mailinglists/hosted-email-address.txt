@@ -38,7 +38,7 @@ Launchpad sends that address a confirmation message.
     >>> user_browser.getControl(
     ...     name='field.contact_address').value = 'bar@example.com'
     >>> user_browser.getControl('Change').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Aardvarks in Launchpad
     >>> print_feedback_messages(user_browser.contents)
     A confirmation message has been sent to...
@@ -47,9 +47,9 @@ Launchpad sends that address a confirmation message.
     []
     >>> import email
     >>> msg = email.message_from_string(raw_msg)
-    >>> print msg['From']
+    >>> print(msg['From'])
     Launchpad Email Validator <noreply@launchpad.net>
-    >>> print msg['Subject']
+    >>> print(msg['Subject'])
     Launchpad: Validate your team's contact email address
 
 When the confirmation token url is followed, the external email address is
@@ -59,10 +59,10 @@ confirmed.
     ...     get_token_url_from_email)
     >>> token_url = get_token_url_from_email(raw_msg)
     >>> user_browser.open(token_url)
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Confirm email address
     >>> user_browser.getControl('Continue').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Aardvarks in Launchpad
     >>> print_feedback_messages(user_browser.contents)
     Email address successfully confirmed.

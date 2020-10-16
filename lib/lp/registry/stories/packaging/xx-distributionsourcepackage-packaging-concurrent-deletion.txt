@@ -22,9 +22,9 @@ deletion succeeds and the usual informational message is displayed.
     >>> first_browser.getControl('Unlink').click()
     >>> content = first_browser.contents
     >>> for tag in find_tags_by_class(content, 'error'):
-    ...     print extract_text(tag)
+    ...     print(extract_text(tag))
     >>> for tag in find_tags_by_class(content, 'informational'):
-    ...     print extract_text(tag)
+    ...     print(extract_text(tag))
     Removed upstream association between alsa-utils trunk series and Warty.
 
 A few minutes later, the user sees the same packaging association in the
@@ -37,7 +37,7 @@ succeed.
     ...     url='/ubuntu/warty/+source/alsa-utils/+remove-packaging').click()
     >>> content = second_browser.contents
     >>> for tag in find_tags_by_class(content, 'informational'):
-    ...     print extract_text(tag)
+    ...     print(extract_text(tag))
     >>> for tag in find_tags_by_class(content, 'error'):
-    ...     print extract_text(tag)
+    ...     print(extract_text(tag))
     This upstream association was deleted already.

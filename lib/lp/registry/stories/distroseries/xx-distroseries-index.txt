@@ -6,7 +6,7 @@ this distribution series.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
     >>> user_browser.getLink('Help translate').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Hoary (5.04) : Translations : Ubuntu
 
 
@@ -18,17 +18,17 @@ its main 'heading'.
 
     >>> anon_browser.open('http://launchpad.test/ubuntu/warty')
 
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'registration'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'registration')))
     Registered by
     Ubuntu Team on
     2006-10-16
 
-    >>> print extract_text(find_main_content(anon_browser.contents))
+    >>> print(extract_text(find_main_content(anon_browser.contents)))
     Warty
     ...
 
-    >>> print anon_browser.getLink('Ubuntu Team').url
+    >>> print(anon_browser.getLink('Ubuntu Team').url)
     http://launchpad.test/~ubuntu-team
 
 
@@ -38,8 +38,8 @@ Details portlet
 The distroseries page contains a details portlet giving more information
 on the series' details.
 
-    >>> print extract_text(
-    ...     find_portlet(anon_browser.contents, 'Series information'))
+    >>> print(extract_text(
+    ...     find_portlet(anon_browser.contents, 'Series information')))
     Series information
     Distribution: Ubuntu
     Series: Warty (4.10)
@@ -55,8 +55,8 @@ On series that have no source or binary packages, the portlet will
 change its text slightly to annouce this:
 
     >>> anon_browser.open('http://launchpad.test/debian/sarge')
-    >>> print extract_text(
-    ...     find_portlet(anon_browser.contents, 'Series information'))
+    >>> print(extract_text(
+    ...     find_portlet(anon_browser.contents, 'Series information')))
     Series information
     Distribution: Debian
     Series: Sarge (3.1)
@@ -94,8 +94,8 @@ the series derived from this series:
     ...         for child in children]
 
     >>> anon_browser.open('http://launchpad.test/debian/sarge')
-    >>> print extract_text(
-    ...     find_portlet(anon_browser.contents, 'Series information'))
+    >>> print(extract_text(
+    ...     find_portlet(anon_browser.contents, 'Series information')))
     Series information
     Distribution: Debian
     Series: Sarge (3.1)
@@ -116,10 +116,10 @@ series, we can create structural bug subscriptions.
 
     >>> admin_browser.open('http://launchpad.test/ubuntu/warty')
     >>> admin_browser.getLink('Subscribe to bug mail').click()
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://launchpad.test/ubuntu/warty/+subscribe
 
-    >>> print admin_browser.title
+    >>> print(admin_browser.title)
     Subscribe : Warty (4.10) : Bugs : Ubuntu
 
 
@@ -132,8 +132,8 @@ upstream packaging.
     >>> # Note that warty's sourcecount is stale in sample data
     >>> # which causes -2 need linking.
     >>> anon_browser.open('http://launchpad.test/ubuntu/warty')
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'series-packaging'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'series-packaging')))
     Upstream packaging
     5 source packages are linked to registered upstream projects.
     3 need linking.

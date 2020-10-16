@@ -33,8 +33,8 @@ Now Eric subscribes to Fooix's bug notifications.
     >>> eric_webservice = webservice_for_person(
     ...     eric_db, permission=OAuthPermission.WRITE_PRIVATE)
 
-    >>> print eric_webservice.named_post(
-    ...     '/fooix', 'addBugSubscription')
+    >>> print(eric_webservice.named_post(
+    ...     '/fooix', 'addBugSubscription'))
     HTTP/1.1 201 Created
     ...
     Location: http://.../fooix/+subscription/eric
@@ -72,28 +72,28 @@ He can examine his subscription directly.
 
 If the subscription doesn't exist, None will be returned.
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     '/fooix', 'getSubscription',
-    ...     person=webservice.getAbsoluteUrl('/~michael')).jsonBody()
+    ...     person=webservice.getAbsoluteUrl('/~michael')).jsonBody())
     None
 
 Eric can remove his subscription through the webservice.
 
-    >>> print eric_webservice.named_post(
-    ...     '/fooix', 'removeBugSubscription')
+    >>> print(eric_webservice.named_post(
+    ...     '/fooix', 'removeBugSubscription'))
     HTTP/1.1 200 Ok...
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     '/fooix', 'getSubscription',
-    ...     person=webservice.getAbsoluteUrl('/~eric')).jsonBody()
+    ...     person=webservice.getAbsoluteUrl('/~eric')).jsonBody())
     None
 
 Teams can be subscribed by passing in the team as an argument. Eric
 tries this.
 
-    >>> print eric_webservice.named_post(
+    >>> print(eric_webservice.named_post(
     ...     '/fooix', 'addBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 401 Unauthorized
     ...
     eric does not have permission to subscribe pythons.
@@ -104,9 +104,9 @@ admin by virtue of his ownership.
     >>> michael_webservice = webservice_for_person(
     ...     michael_db, permission=OAuthPermission.WRITE_PRIVATE)
 
-    >>> print michael_webservice.named_post(
+    >>> print(michael_webservice.named_post(
     ...     '/fooix', 'addBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 201 Created
     ...
     Location: http://.../fooix/+subscription/pythons
@@ -130,18 +130,18 @@ admin by virtue of his ownership.
 
 Eric can't unsubscribe the team either.
 
-    >>> print eric_webservice.named_post(
+    >>> print(eric_webservice.named_post(
     ...     '/fooix', 'removeBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 401 Unauthorized
     ...
     eric does not have permission to unsubscribe pythons.
 
 Michael can, though.
 
-    >>> print michael_webservice.named_post(
+    >>> print(michael_webservice.named_post(
     ...     '/fooix', 'removeBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 200 Ok...
 
     >>> subscriptions = webservice.named_get(

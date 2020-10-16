@@ -13,7 +13,7 @@ Any administrator of a team can add new members to that team.
 
     >>> for tag in find_tags_by_class(browser.contents,
     ...                               'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Celso Providelo (cprov) has been added as a member of this team.
 
 Let's make sure that 'cprov' is now an Approved member of
@@ -44,7 +44,7 @@ become a member.
 
     >>> for tag in find_tags_by_class(browser.contents,
     ...                               'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Launchpad Developers (launchpad) has been invited to join this team.
 
 As we can see, the launchpad team will not be one of the team's active
@@ -65,7 +65,7 @@ team, not even if they manually craft the URL.
     >>> browser.open(
     ...     'http://launchpad.test/~landscape-developers/+member/launchpad')
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'not-responded'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'not-responded')))
     Launchpad Developers (launchpad) has been invited to join this team, but
     hasn't responded to the invitation yet.
 
@@ -98,7 +98,7 @@ rights to edit the membership in question) can do it.
 First, let's accept the invitation sent on behalf of Landscape Developers to
 the Launchpad Developers.
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'invitations'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'invitations')))
     Sent by         On behalf of
     Andrew Bennetts Landscape Developers
 
@@ -113,8 +113,8 @@ the Launchpad Developers.
 
     >>> browser.url
     'http://launchpad.test/~launchpad'
-    >>> print extract_text(
-    ...     find_tags_by_class(browser.contents, 'informational')[0])
+    >>> print(extract_text(
+    ...     find_tags_by_class(browser.contents, 'informational')[0]))
     This team is now a member of Landscape Developers.
 
 Now we'll decline the invitation sent on behalf of Ubuntu Team to
@@ -124,8 +124,8 @@ Warty Security Team:
     >>> browser.getControl('Decline').click()
     >>> browser.url
     'http://launchpad.test/~name20'
-    >>> print extract_text(
-    ...     find_tags_by_class(browser.contents, 'informational')[0])
+    >>> print(extract_text(
+    ...     find_tags_by_class(browser.contents, 'informational')[0]))
     Declined the invitation to join Ubuntu Team
 
 
@@ -147,7 +147,7 @@ First invite name20 to be a member of ubuntu-team.
 
     >>> for tag in find_tags_by_class(browser.contents,
     ...                               'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Warty Security Team (name20) has been invited to join this team.
 
 Open the invitations page with one admin browser.
@@ -169,7 +169,7 @@ Accept the invitation in the first browser.
 
     >>> for tag in find_tags_by_class(browser.contents,
     ...                               'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     This team is now a member of Ubuntu Team.
 
 Accepting the invitation in the second browser, redirects to the team page
@@ -181,5 +181,5 @@ and a message is displayed.
 
     >>> for tag in find_tags_by_class(second_browser.contents,
     ...                               'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     This invitation has already been processed.
