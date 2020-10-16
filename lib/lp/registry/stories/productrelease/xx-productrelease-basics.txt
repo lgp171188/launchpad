@@ -22,22 +22,22 @@ release in the series.
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open('http://launchpad.test/firefox/+milestone/1.0')
     >>> browser.getLink('Create release').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox/+milestone/1.0/+addrelease
 
-    >>> print browser.title
+    >>> print(browser.title)
     Create a new release for Mozilla Firefox...
 
 Links to previous releases from the series are listed.
 
     >>> other_releases = find_tag_by_id(browser.contents, 'other-releases')
-    >>> print extract_text(other_releases)
+    >>> print(extract_text(other_releases))
     The following releases have been made for the trunk series:
     2004-10-16 Mozilla Firefox 0.9.2 (One (secure) Tree Hill)
     2004-10-16 Mozilla Firefox 0.9.1 (One Tree Hill (v2))
     2004-10-16 Mozilla Firefox 0.9 (One Tree Hill)
 
-    >>> print browser.getLink('0.9.1').url
+    >>> print(browser.getLink('0.9.1').url)
     http://launchpad.test/firefox/trunk/0.9.1
 
 Sample Person completes the release.
@@ -54,9 +54,9 @@ After creating the release, Sample Person sees the release page.
 
 The release's information is displayed in the page.
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'release-notes'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'release-notes')))
     Released 1.0
-    >>> print extract_text(find_tag_by_id(browser.contents, 'changelog'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'changelog')))
     Fix Foo
 
 Only one release can be created for each milestone.
@@ -106,12 +106,12 @@ The release owner can edit the release via its +edit form:
 
     >>> browser.open('http://launchpad.test/firefox/trunk/1.0')
     >>> browser.getLink('Change release details', index=1).click()
-    >>> print browser.title
+    >>> print(browser.title)
     Edit Mozilla Firefox 1.0 release details...
 
     >>> browser.getControl('Changelog').value = 'This is not a joke.'
     >>> browser.getControl('Change').click()
-    >>> print browser.title
+    >>> print(browser.title)
     1.0 : Series trunk : Mozilla Firefox
 
 
@@ -123,7 +123,7 @@ release too.
     >>> from lp.registry.model.person import Person
     >>> from lp.registry.model.product import Product
     >>> tomcat = Product.selectOneBy(name='tomcat')
-    >>> print tomcat.owner.name
+    >>> print(tomcat.owner.name)
     ubuntu-team
 
 Let's add a release as Jeff:
@@ -137,7 +137,7 @@ Let's add a release as Jeff:
     >>> browser.getControl('Date released').value = '2008-12-01'
     >>> browser.getControl('Changelog').value = 'Fix Foo'
     >>> browser.getControl('Create release').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/tomcat/+milestone/0.6.6.6
 
 Celso is a member of ubuntu-team, so he can edit this release too:
@@ -145,12 +145,12 @@ Celso is a member of ubuntu-team, so he can edit this release too:
     >>> browser = setupBrowser(auth='Basic celso.providelo@canonical.com:test')
     >>> browser.open('http://launchpad.test/tomcat/trunk/0.6.6.6')
     >>> browser.getLink('Change release details', index=0).click()
-    >>> print browser.title
+    >>> print(browser.title)
     Edit Tomcat 0.6.6.6 release details...
 
     >>> browser.getControl('Changelog').value = 'Fixes 3 bugs.'
     >>> browser.getControl('Change').click()
-    >>> print browser.title
+    >>> print(browser.title)
     0.6.6.6 : Series trunk : Tomcat
 
 And if no-priv drives the series...
@@ -164,10 +164,10 @@ others:
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open('http://launchpad.test/tomcat/trunk/0.6.6.6')
     >>> browser.getLink('Change release details', index=0).click()
-    >>> print browser.title
+    >>> print(browser.title)
     Edit Tomcat 0.6.6.6 release details...
 
     >>> browser.getControl('Changelog').value = 'Fixes 4 bugs.'
     >>> browser.getControl('Change').click()
-    >>> print browser.title
+    >>> print(browser.title)
     0.6.6.6 : Series trunk : Tomcat

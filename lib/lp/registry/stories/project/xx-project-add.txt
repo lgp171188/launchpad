@@ -56,5 +56,5 @@ Now we add a new project.
   'http://launchpad.test/kde'
 
   >>> anon_browser.open(admin_browser.url)
-  >>> print anon_browser.title
+  >>> print(anon_browser.title)
   K Desktop Environment in Launchpad

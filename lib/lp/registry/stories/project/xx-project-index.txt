@@ -27,7 +27,7 @@ The overview page for project groups is accessible to all users.
 The page lists the member projects, together with the releases/milestones of
 its development focus.
 
-    >>> print extract_text(find_tag_by_id(anon_browser.contents, 'products'))
+    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'products')))
     Projects
     Evolution
     GNOME Terminal
@@ -37,7 +37,7 @@ its development focus.
 
 The projects are linked.
 
-    >>> print anon_browser.getLink('gnomebaker').url
+    >>> print(anon_browser.getLink('gnomebaker').url)
     http://launchpad.test/gnomebaker
 
 The project overview page contains a link to register new products with the
@@ -130,7 +130,7 @@ the new product form for the project group.
 
     >>> admin_browser.getLink(
     ...     'register another project that is part of Test Group').click()
-    >>> print admin_browser.title
+    >>> print(admin_browser.title)
     Register a project in Launchpad...
 
 
@@ -143,7 +143,7 @@ that project.
     >>> browser.open('http://launchpad.test/mozilla')
     >>> products = find_tags_by_class(browser.contents, 'sprite product')
     >>> for product in products:
-    ...     print product
+    ...     print(product)
     <a...Mozilla Firefox</a>
     <a...Mozilla Thunderbird</a>
 
@@ -165,7 +165,7 @@ Inactive products are not included in that list, though.
     >>> browser.open('http://launchpad.test/mozilla')
     >>> products = find_tags_by_class(browser.contents, 'sprite product')
     >>> for product in products:
-    ...     print product
+    ...     print(product)
     <a...Mozilla Thunderbird</a>
 
     >>> firefox.active = True
@@ -180,7 +180,7 @@ can create structural bug subscriptions.
 
     >>> user_browser.open('http://launchpad.test/mozilla')
     >>> user_browser.getLink('Subscribe to bug mail').click()
-    >>> print user_browser.url
+    >>> print(user_browser.url)
     http://launchpad.test/mozilla/+subscribe
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Subscribe : Bugs : The Mozilla Project

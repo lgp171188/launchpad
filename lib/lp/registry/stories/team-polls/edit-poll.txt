@@ -73,8 +73,8 @@ Trying to edit a poll that's already open isn't possible.
 
     >>> team_admin_browser.open(
     ...     'http://launchpad.test/~ubuntu-team/+poll/never-closes/+edit')
-    >>> print extract_text(
-    ...     find_tag_by_id(team_admin_browser.contents, 'not-editable'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(team_admin_browser.contents, 'not-editable')))
     This poll can't be edited...
 
 It's also not possible to edit a poll that's already closed.
@@ -92,6 +92,6 @@ It's also not possible to edit a poll that's already closed.
     True
 
     >>> team_admin_browser.getLink('Change details').click()
-    >>> print extract_text(
-    ...     find_tag_by_id(team_admin_browser.contents, 'not-editable'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(team_admin_browser.contents, 'not-editable')))
     This poll can't be edited...

@@ -82,8 +82,8 @@ claim process the team's owner.
     LookupError:...
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> soup = BeautifulSoup(user_browser.contents)
-    >>> print extract_text(
-    ...     soup.find(attrs={'for': 'field.teamowner'}).findPrevious('tr'))
+    >>> print(extract_text(
+    ...     soup.find(attrs={'for': 'field.teamowner'}).findPrevious('tr')))
     Team Owner: No Privileges Person...
 
     >>> user_browser.getControl('Display Name').value = 'Ubuntu Doc Team'
@@ -98,7 +98,7 @@ page.
     >>> print_feedback_messages(user_browser.contents)
     Team claimed successfully
 
-    >>> print extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'team-owner'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(user_browser.contents, 'team-owner')))
     Owner:
     No Privileges Person

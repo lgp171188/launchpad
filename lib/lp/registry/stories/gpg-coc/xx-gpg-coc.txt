@@ -28,7 +28,7 @@ Start out with a clean page containing no imported keys:
     >>> browser = setupBrowserFreshLogin(name12)
     >>> browser.open("http://launchpad.test/~name12")
     >>> browser.getLink(url='+editpgpkeys').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Change your OpenPGP keys...
 
     >>> browser.getControl(name='DEACTIVATE_GPGKEY')
@@ -62,7 +62,7 @@ followed by ASCII armored encrypted confirmation instructions.  Ensure that
 the clear text instructions contain the expected URLs pointing to more help.
 
     >>> cipher_body = msg.get_payload(decode=True)
-    >>> print cipher_body
+    >>> print(cipher_body)
     Hello,
     <BLANKLINE>
     This message contains the instructions for confirming registration of an
@@ -123,7 +123,7 @@ Go to the link sent by email, to validate the email address.
 
 Get redirected to +validategpg, and confirm token:
 
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/token/.../+validategpg
     >>> browser.getControl('Continue').click()
 
@@ -146,9 +146,9 @@ Verify that the key was imported with the "can encrypt" flag set:
     >>> from lp.registry.model.gpgkey import GPGKey
     >>> key = GPGKey.selectOneBy(
     ...     fingerprint='A419AE861E88BC9E04B9C26FBA2B9389DFD20543')
-    >>> print key.owner.name
+    >>> print(key.owner.name)
     name12
-    >>> print key.can_encrypt
+    >>> print(key.can_encrypt)
     True
 
 
@@ -188,7 +188,7 @@ ability to decrypt text with this key.
 The email does contain some information about the key, and a token URL
 Sample Person should visit to verify their ownership of the key.
 
-    >>> print body
+    >>> print(body)
     <BLANKLINE>
     Hello,
     ...
@@ -231,7 +231,7 @@ Let's look at the text.
 
     >>> verification_content = find_main_content(
     ...     browser.contents).pre.string
-    >>> print verification_content
+    >>> print(verification_content)
     Please register 447DBF38C4F9C4ED752246B77D88913717B05A8F to the
     Launchpad user name12.  2005-04-01 12:00:00 UTC
 
@@ -354,7 +354,7 @@ Sample person has never signed a code of conduct.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open('http://launchpad.test/~name12/+codesofconduct')
-    >>> print extract_text(find_main_content(browser.contents))
+    >>> print(extract_text(find_main_content(browser.contents)))
     Codes of Conduct for Sample Person
     Launchpad records codes of conduct you sign as commitments to the
     principles of collaboration, tolerance and open communication that
@@ -401,11 +401,11 @@ that there is a new version available.
 
     >>> browser.open('http://launchpad.test/codeofconduct/1.0/+sign')
     >>> browser.getLink('the current version').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/codeofconduct/2.0
 
     >>> browser.getLink('Sign it').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/codeofconduct/2.0/+sign
 
 
@@ -419,13 +419,13 @@ appear in the same order.
     >>> reformatted_coc = read_file('reformatted_20_coc.asc')
     >>> browser.getControl('Signed Code').value = reformatted_coc
     >>> browser.getControl('Continue').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/~name12/+codesofconduct
 
 And now Sample Person's Codes of Conduct page shows that they've signed it.
 
     >>> browser.open('http://launchpad.test/~name12/+codesofconduct')
-    >>> print extract_text(find_main_content(browser.contents))
+    >>> print(extract_text(find_main_content(browser.contents)))
     Codes of Conduct for Sample Person
     Launchpad records codes of conduct you sign as commitments to the
     principles of collaboration, tolerance and open communication that
@@ -444,7 +444,7 @@ Now Sample Person will deactivate their key...
     >>> browser.url
     'http://launchpad.test/~name12/+editpgpkeys'
 
-    >>> print browser.contents
+    >>> print(browser.contents)
     <...
     ...Your active keys...
     ...1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543...
@@ -454,7 +454,7 @@ Now Sample Person will deactivate their key...
 
     >>> browser.getControl('Deactivate Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     No key(s) selected for deactivation.
 
 
@@ -465,7 +465,7 @@ Now they select the checkbox and deactivate it.
     >>> browser.getControl('Deactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Deactivated key(s): 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 
@@ -475,7 +475,7 @@ Sample Person already has a deactivated key.
     >>> browser.url
     'http://launchpad.test/~name12/+editpgpkeys'
 
-    >>> print browser.contents
+    >>> print(browser.contents)
     <...
     ...Deactivated keys...
     ...1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543...
@@ -486,7 +486,7 @@ Now they'll request their key to be reactivated.
     >>> browser.getControl('Reactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'error message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     No key(s) selected for reactivation.
 
     >>> browser.getControl(
@@ -494,7 +494,7 @@ Now they'll request their key to be reactivated.
     >>> browser.getControl('Reactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     A message has been sent to test@canonical.com with instructions to reactivate...
 
 
@@ -518,7 +518,7 @@ token type (+validategpg).
     >>> browser.url == '%s/+validategpg' % token_url
     True
 
-    >>> print browser.contents
+    >>> print(browser.contents)
     <...
     ...Confirm the OpenPGP key...A419AE861E88BC9E04B9C26FBA2B9389DFD20543...
     ...Sample Person...
@@ -530,7 +530,7 @@ Now Sample Person confirms the reactivation.
     >>> browser.url
     'http://launchpad.test/~name12'
 
-    >>> print browser.contents
+    >>> print(browser.contents)
     <...
     ...Key 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543 successfully
     reactivated...
@@ -539,7 +539,7 @@ Now Sample Person confirms the reactivation.
 And now we can see the key listed as one of Sample Person's active keys.
 
     >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
-    >>> print browser.contents
+    >>> print(browser.contents)
     <...
     ...Your active keys...
     ...1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543...
@@ -567,7 +567,7 @@ Try to import a key which is already imported:
   False
   >>> stub.test_emails
   []
-  >>> print browser.contents
+  >>> print(browser.contents)
   <BLANKLINE>
   ...
   ...has already been imported...
@@ -578,11 +578,11 @@ Try to import a key which is already imported:
 
 Ensure we are raising 404 error instead of System Error
 
-  >>> print http(r"""
+  >>> print(http(r"""
   ... POST /codeofconduct/donkey HTTP/1.1
   ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
   ... Referer: https://launchpad.test/
-  ... """)
+  ... """))
   HTTP/1.1 404 Not Found
   ...
 
@@ -613,7 +613,7 @@ Ensure the CoC was acknowledge by searching in the CoC Admin Console:
     >>> admin_browser.getControl(name='searchfor').value = ["all"]
     >>> admin_browser.getControl(name='name').value = "mark"
     >>> admin_browser.getControl(name='search').click()
-    >>> print extract_text(find_tag_by_id(admin_browser.contents, 'matches'))
+    >>> print(extract_text(find_tag_by_id(admin_browser.contents, 'matches')))
     Mark ... paper submission accepted by Foo Bar [ACTIVE]
 
 Test if the advertisement email was sent:
@@ -622,7 +622,7 @@ Test if the advertisement email was sent:
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
     >>> msg = email.message_from_string(raw_msg)
-    >>> print msg.get_payload(decode=True)
+    >>> print(msg.get_payload(decode=True))
     <BLANKLINE>
     ...
     User: 'Mark Shuttleworth'

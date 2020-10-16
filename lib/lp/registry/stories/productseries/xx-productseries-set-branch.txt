@@ -40,7 +40,7 @@ A user can choose to link to an existing branch on Launchpad.
     >>> browser.getControl('Update').click()
     >>> print_feedback_messages(browser.contents)
     Series code location updated.
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox/trunk
 
 
@@ -62,7 +62,7 @@ the branch name to use in Launchpad, and the branch owner.
     >>> browser.getControl('Update').click()
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox/trunk
 
 The process is the same for a Git external branch, though the novel
@@ -77,7 +77,7 @@ The process is the same for a Git external branch, though the novel
     >>> browser.getControl('Update').click()
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox/trunk
 
 Likewise Subversion can use the "svn://" scheme.
@@ -91,7 +91,7 @@ Likewise Subversion can use the "svn://" scheme.
     >>> browser.getControl('Update').click()
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox/trunk
 
 The branch owner can be the logged in user or one of their teams.
@@ -106,12 +106,12 @@ The branch owner can be the logged in user or one of their teams.
     >>> browser.getControl('Update').click()
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox/trunk
     >>> login('test@canonical.com')
     >>> firefox_trunk = firefox.getSeries('trunk')
-    >>> print firefox_trunk.branch.unique_name
+    >>> print(firefox_trunk.branch.unique_name)
     ~hwdb-team/firefox/git-firefox-branch
-    >>> print firefox_trunk.branch.owner.name
+    >>> print(firefox_trunk.branch.owner.name)
     hwdb-team
     >>> logout()
