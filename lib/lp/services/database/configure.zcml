@@ -14,7 +14,7 @@
 
     <class class="lp.services.database.decoratedresultset.DecoratedResultSet">
         <allow interface="storm.zope.interfaces.IResultSet" />
-        <allow attributes="__getslice__ get_plain_result_set" />
+        <allow attributes="__getslice__ __len__ get_plain_result_set" />
     </class>
 
 </configure>
