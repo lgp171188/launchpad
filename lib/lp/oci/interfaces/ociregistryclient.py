@@ -54,3 +54,6 @@ class IOCIRegistryClient(Interface):
 
         :param build: The `IOCIRecipeBuild` to upload.
         """
+
+    def uploadManifestList(build_request):
+        """Upload the "fat manifest" which aggregates all platforms built."""

@@ -11,6 +11,7 @@ from functools import partial
 import io
 import json
 import os
+import re
 import tarfile
 import uuid
 
@@ -33,13 +34,17 @@ from testtools.matchers import (
     Raises,
     )
 import transaction
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     ManifestUploadFailed,
     MultipleOCIRegistryError,
     )
+from lp.oci.model.ocirecipe import OCIRecipeBuildRequest
 from lp.oci.model.ociregistryclient import (
     BearerTokenRegistryClient,
     OCIRegistryAuthenticationError,
@@ -50,6 +55,7 @@ from lp.oci.model.ociregistryclient import (
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.compat import mock
 from lp.testing import TestCaseWithFactory
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
@@ -142,6 +148,23 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         transaction.commit()
 
+    def addManifestResponses(self, push_rule, status_code=201, json=None):
+        """Add responses for manifest upload URLs."""
+        # PUT to "anonymous" architecture-specific manifest.
+        manifests_url = "{}/v2/{}/manifests/sha256:.*".format(
+            push_rule.registry_credentials.url,
+            push_rule.image_name
+        )
+        responses.add(
+            "PUT", re.compile(manifests_url), status=status_code, json=json)
+
+        # PUT to tagged multi-arch manifest.
+        manifests_url = "{}/v2/{}/manifests/edge".format(
+            push_rule.registry_credentials.url,
+            push_rule.image_name
+        )
+        responses.add("PUT", manifests_url, status=status_code, json=json)
+
     @responses.activate
     def test_upload(self):
         self._makeFiles()
@@ -154,11 +177,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule = self.build.recipe.push_rules[0]
         responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
 
-        manifests_url = "{}/v2/{}/manifests/edge".format(
-            push_rule.registry_credentials.url,
-            push_rule.image_name
-        )
-        responses.add("PUT", manifests_url, status=201)
+        self.addManifestResponses(push_rule)
 
         self.client.upload(self.build)
 
@@ -196,7 +215,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         _upload_fixture = self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         self.push_rule.registry_credentials.setCredentials({
             "username": "test-username",
@@ -206,9 +226,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule = self.build.recipe.push_rules[0]
         responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
 
-        manifests_url = "{}/v2/{}/manifests/edge".format(
-            push_rule.registry_credentials.url, push_rule.image_name)
-        responses.add("PUT", manifests_url, status=201)
+        self.addManifestResponses(push_rule)
 
         self.client.upload(self.build)
 
@@ -222,7 +240,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         upload_fixture = self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         push_rules = [
             self.push_rule,
@@ -237,10 +256,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             responses.add(
                 "GET", "%s/v2/" % push_rule.registry_url, status=200)
 
-            manifests_url = "{}/v2/{}/manifests/edge".format(
-                push_rule.registry_credentials.url, push_rule.image_name)
             status = 400 if i < 2 else 201
-            responses.add("PUT", manifests_url, status=status)
+            self.addManifestResponses(push_rule, status_code=status)
 
         error = self.assertRaises(
             MultipleOCIRegistryError, self.client.upload, self.build)
@@ -466,15 +483,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
             "GET", "{}/v2/".format(push_rule.registry_url), status=200)
 
-        manifests_url = "{}/v2/{}/manifests/edge".format(
-            push_rule.registry_credentials.url,
-            push_rule.image_name)
         put_errors = [
             {
                 "code": "MANIFEST_INVALID",
@@ -482,8 +497,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "detail": [],
                 },
             ]
-        responses.add(
-            "PUT", manifests_url, status=400, json={"errors": put_errors})
+        self.addManifestResponses(
+            push_rule, status_code=400, json={"errors": put_errors})
 
         expected_msg = "Failed to upload manifest for {} ({}) in {}".format(
             self.build.recipe.name, self.push_rule.registry_url, self.build.id)
@@ -503,16 +518,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
             "GET", "{}/v2/".format(push_rule.registry_url), status=200)
 
-        manifests_url = "{}/v2/{}/manifests/edge".format(
-            push_rule.registry_credentials.url,
-            push_rule.image_name)
-        responses.add("PUT", manifests_url, status=200)
+        self.addManifestResponses(push_rule, status_code=200)
 
         expected_msg = "Failed to upload manifest for {} ({}) in {}".format(
             self.build.recipe.name, self.push_rule.registry_url, self.build.id)
@@ -525,6 +538,64 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                         str,
                         Equals(expected_msg)),
                     MatchesStructure(errors=Is(None))))))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload(self):
+        """Ensure that multi-arch manifest upload works and tags correctly
+        the uploaded image."""
+        # Creates a build request with 2 builds.
+        recipe = self.build.recipe
+        build1 = self.build
+        build2 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe)
+        naked_build1 = removeSecurityProxy(build1)
+        naked_build2 = removeSecurityProxy(build1)
+        naked_build1.processor = getUtility(IProcessorSet).getByName('386')
+        naked_build2.processor = getUtility(IProcessorSet).getByName('amd64')
+
+        # Creates a mock IOCIRecipeRequestBuildsJobSource, as it was created
+        # by the celery job and triggered the 2 registry uploads already.
+        job = mock.Mock()
+        job.builds = [build1, build2]
+        job.uploaded_manifests = {
+            build1.id: {"digest": "build1digest", "size": 123},
+            build2.id: {"digest": "build2digest", "size": 321},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.client.uploadManifestList(build_request)
+        self.assertEqual(2, len(responses.calls))
+        auth_call, manifest_call = responses.calls
+        self.assertEndsWith(
+            manifest_call.request.url,
+            "/v2/%s/manifests/edge" % push_rule.image_name)
+        self.assertEqual({
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "build1digest",
+                "size": 123
+            }, {
+                "platform": {"os": "linux", "architecture": "386"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "build2digest",
+                "size": 321
+            }]
+        }, json.loads(manifest_call.request.body))
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
