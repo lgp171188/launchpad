@@ -2750,6 +2750,21 @@ class TestGitRepositoryFork(TestCaseWithFactory):
             repo, another_person, another_team)
         self.assertEqual(another_team, forked_repo.owner)
         self.assertEqual(another_person, forked_repo.registrant)
+        self.assertTrue(forked_repo.owner_default)
+        self.assertEqual(1, self.hosting_fixture.create.call_count)
+
+    def test_fork_not_owner_default(self):
+        repo = self.factory.makeGitRepository()
+        # The person forking the repo already has another repo which is the
+        # owner-default for that owner & target.
+        previous_repo = self.factory.makeGitRepository(target=repo.target)
+        previous_repo.setOwnerDefault(True)
+
+        forked_repo = getUtility(IGitRepositorySet).fork(
+            repo, previous_repo.owner, previous_repo.owner)
+        self.assertEqual(previous_repo.owner, forked_repo.owner)
+        self.assertEqual(previous_repo.owner, forked_repo.registrant)
+        self.assertFalse(forked_repo.owner_default)
         self.assertEqual(1, self.hosting_fixture.create.call_count)
 
     def test_fork_same_name(self):
@@ -2762,6 +2777,7 @@ class TestGitRepositoryFork(TestCaseWithFactory):
 
         forked_repo = getUtility(IGitRepositorySet).fork(repo, person, person)
         self.assertEqual(forked_repo.target, repo.target)
+        self.assertTrue(forked_repo.owner_default)
         self.assertEqual(forked_repo.name, "%s-1" % same_name_repo.name)
 
 
