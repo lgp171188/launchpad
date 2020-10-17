@@ -11,13 +11,13 @@ wants to contact Salgado.
 
     >>> user_browser.open('http://launchpad.test/~salgado')
     >>> user_browser.getLink('Contact this user').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Contact this user : Guilherme Salgado
 
     >>> user_browser.getControl('Subject').value = 'Hi Salgado'
     >>> user_browser.getControl('Message').value = 'Just saying hello'
     >>> user_browser.getControl('Send').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Guilherme Salgado in Launchpad
 
 Salgado receives the email message from No Priv.
@@ -25,13 +25,13 @@ Salgado receives the email message from No Priv.
     >>> len(stub.test_emails)
     1
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> print from_addr
+    >>> print(from_addr)
     bounces@canonical.com
     >>> len(to_addrs)
     1
-    >>> print to_addrs[0]
+    >>> print(to_addrs[0])
     Guilherme Salgado <guilherme.salgado@canonical.com>
-    >>> print raw_msg
+    >>> print(raw_msg)
     Content-Type: text/plain; charset="us-ascii"
     MIME-Version: 1.0
     Content-Transfer-Encoding: 7bit
@@ -47,7 +47,7 @@ mind.
     >>> user_browser.getControl('Subject').value = 'Hi Salgado'
     >>> user_browser.getControl('Message').value = 'Hello again'
     >>> user_browser.getLink('Cancel').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Guilherme Salgado in Launchpad
 
 
@@ -63,7 +63,7 @@ Sample Person has multiple registered and validated email addresses.
 
 By default, Sample can use their preferred email address.
 
-    >>> print browser.getControl('From').value
+    >>> print(browser.getControl('From').value)
     ['test@canonical.com']
 
 But they don't have to use their preferred address; they can use one of
@@ -74,7 +74,7 @@ their alternative addresses.
     >>> browser.getControl('Send').click()
 
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> print raw_msg
+    >>> print(raw_msg)
     Content-Type: text/plain; charset="us-ascii"
     MIME-Version: 1.0
     Content-Transfer-Encoding: 7bit

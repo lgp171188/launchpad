@@ -11,19 +11,19 @@ Profile page
 User keys are shown on profile pages, and any user can see that.
 
     >>> anon_browser.open('http://launchpad.test/~name12')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Sample Person in Launchpad
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'sshkeys'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'sshkeys')))
     SSH keys: andrew@trogdor
 
 Salgado does not have a key, so we omit the 'SSH keys' section for anonymous
 users.
 
     >>> anon_browser.open('http://launchpad.test/~salgado')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Guilherme Salgado in Launchpad
-    >>> print find_tag_by_id(anon_browser.contents, 'sshkeys')
+    >>> print(find_tag_by_id(anon_browser.contents, 'sshkeys'))
     None
 
 Salgado sees a message explaining that he can register his ssh key.
@@ -37,10 +37,10 @@ Salgado sees a message explaining that he can register his ssh key.
     >>> logout()
     >>> browser = setupBrowserFreshLogin(salgado)
     >>> browser.open('http://launchpad.test/~salgado')
-    >>> print browser.title
+    >>> print(browser.title)
     Guilherme Salgado in Launchpad
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'sshkeys'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'sshkeys')))
     SSH keys: Add an SSH key
     No SSH keys registered.
 
@@ -53,7 +53,7 @@ an already uploaded one. Salgado sees a link on his profile page to update
 his SSH keys. The page allows him to add a key.
 
     >>> browser.getLink('Add an SSH key').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Change your SSH keys...
 
 Any key must be of the form "keytype keytext comment", where keytype must be
@@ -65,21 +65,21 @@ message will be shown.
     >>> browser.getControl(name='sshkey').value = sshkey
     >>> browser.getControl('Import Public Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Invalid public key
 
     >>> sshkey = "ssh-rsa foo"
     >>> browser.getControl(name='sshkey').value = sshkey
     >>> browser.getControl('Import Public Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Invalid public key
 
     >>> sshkey = "ssh-xsa foo comment"
     >>> browser.getControl(name='sshkey').value = sshkey
     >>> browser.getControl('Import Public Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Invalid public key
 
 
@@ -91,7 +91,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     SSH public key added.
 
     >>> sshkey = "ssh-dss AAAAB3NzaC1kc3MAAAEBAObOoy3fScSSQPHE/V6tPGoFzo5y1JRjDLcs8CNcvIHh9L27Qdj6h18AXn6MUCvvSCKm49aHpp1Xe14a6fmEIesjz6VopPWGENaOwRmhH6zfqM6imKUXQ0sq9p0znYb0TMjyRC0/AmqYneUF6FA2mVXygkGAkp/vDRPFQhPwnHpVD9TVPxHBQdHgM3bTo2TT+GoL7kw/s32ZiAH4OPvN5fN7bCkQWoUs/ySfoNbISMdvdtq07Rra2Biwzgjjs0ZcKbMicbDyYCe4gXlqK4wqcDfcwgrdqdG6NM0LUdekarWjnv0pMb6ttUl4U7e7Nf+eGkiTVItlppC8DyrnqC9SKCUAAAAVAOlEYNobJottyObVWQcrU8eAP4T5AAABAQDmJmL4DcQ1GVvw1Pjy57V0WUyGrOVBRVz7BwYBIvMA7xJCCvzd47mYWrWJkjV6O3tw2vG5oZx+BXE+ve8O6jL89CrwqncoUS8WHCojRmuUHTmtCCiRBCH+/68HMCusO3Blk//kQSsaqfIn+8Xa56Vr2SweSUlLgjvb51+89JJ13oDlUvdftW2GZu+grbmojqcoJ1LVAI5n0qsDItsFid46f8XfNzPeksasY9JbY5fKq/xf1KcgXL2F9XwmrDjFCuI4/xkJWNfGwaLKC/cbrJ1xmvPLl1/Hm5kNqgrwpNwHVOwyYSCUqXroU5PnpE9uydHUhjhtU2K2Hj0i7fOyxoxyAAABAQCpXKgd6lpTAEKm7ECY3TbJaTXPkNvAwg/2ud+PrtefHrVFFWrXrblSQhnmnc6ut8G3BsDzCljAIV2v+XcdOo+m8EViLf+Bi+gfbAIz4vdVepwQ2XHWUOTKk90i7Xqg4mUUDRIVw9ioNF0GAHbNlJTK3FWC3gstbCJU2hyV3UzgB95b6zqpUHeyn1RK4VAFYGY9fCIdZNy926HEart6uO/N6cO1ETw5B63kI8fTBjU7HLGgGXRjOv1APAqvKgry3tQD2WYkVJGRyYLjDK9d8nStUpwN5swI1xx2IWAbD+UCsRXAixn8s3mvpBD/jbnWjrzEensBc96jtiAsx2P5oXEd salgado@canario"
@@ -99,7 +99,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     SSH public key added.
 
     >>> sshkey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJseCUmxVG7D6qh4JmhLp0Du4kScScJ9PtZ0LGHYHaURnRw9tbX1wwURAio8og6dbnT75CQ3TbUE/xJhxI0aFXE= salgado@canario"
@@ -107,7 +107,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     SSH public key added.
 
     >>> sshkey = "ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBDUR0E0zCHRHJER6uzjfE/o0HAHFLcq/n8lp0duThpeIPsmo+wr3vHHuAAyOddOgkuQC8Lj8FzHlrOEYgXL6qa7FvpviE9YWUgmqVDa/yJbL/m6Mg8fvSIXlDJKmvOSv6g== salgado@canario"
@@ -115,7 +115,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     SSH public key added.
 
     >>> sshkey = "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAB3rpD+Ozb/kwUOqCZUXSiruAkIx6sNZLJyjJ0zxVTZSannaysCLxMQ/IiVxCd59+U2NaLduMzd93JcYDRlX3M5+AApY+3JjfSPo01Sb17HTLNSYU3RZWx0A3XJxm/YN+x/iuYZ3IziuAKeYMsNsdfHlO4/IWjw4Ruy0enW+QhWaY2qAQ== salgado@canario"
@@ -123,7 +123,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     SSH public key added.
 
 Launchpad administrators are not allowed to poke at other user's ssh keys.
@@ -141,9 +141,9 @@ Salgado chooses to remove one of his ssh keys from Launchpad. The link
 to edit his keys is on the page.
 
     >>> browser.open('http://launchpad.test/~salgado')
-    >>> print browser.title
+    >>> print(browser.title)
     Guilherme Salgado in Launchpad
-    >>> print extract_text(find_tag_by_id(browser.contents, 'sshkeys'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'sshkeys')))
     SSH keys: Update SSH keys
     salgado@canario
     salgado@canario
@@ -151,13 +151,13 @@ to edit his keys is on the page.
     salgado@canario
     salgado@canario
     >>> browser.getLink('Update SSH keys').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Change your SSH keys...
 
     >>> browser.getControl('Remove', index=0).click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Key ... removed
 
 If Salgado tries to remove a key that doesn't exist or one that doesn't
@@ -167,7 +167,7 @@ belong to him, it will fail with an error message.
     >>> browser.getControl('Remove', index=0).click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'error message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Cannot remove a key that doesn't exist
 
     >>> browser.getControl(name='key', index=0).value = '1'

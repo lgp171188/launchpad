@@ -26,8 +26,8 @@ redirect to the Ubuntu Hoary page showing the milestone we added.
     >>> name12_browser.getControl('Register Milestone').click()
     >>> name12_browser.url
     'http://launchpad.test/ubuntu/hoary'
-    >>> print extract_text(
-    ...     find_tag_by_id(name12_browser.contents, 'series-hoary'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(name12_browser.contents, 'series-hoary')))
     Version ...
     sounder01 ...
 

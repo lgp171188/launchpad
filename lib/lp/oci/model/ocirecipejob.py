@@ -169,6 +169,8 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             "requester": requester.id,
             "architectures": (
                 list(architectures) if architectures is not None else None),
+            # A dict of build_id: manifest location
+            "uploaded_manifests": {}
         }
         recipe_job = OCIRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
@@ -257,6 +259,16 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     def architectures(self):
         architectures = self.metadata["architectures"]
         return set(architectures) if architectures is not None else None
+
+    @property
+    def uploaded_manifests(self):
+        return {
+            # Converts keys to integer since saving json to database
+            # converts them to strings.
+            int(k): v for k, v in self.metadata["uploaded_manifests"].items()}
+
+    def addUploadedManifest(self, build_id, manifest_info):
+        self.metadata["uploaded_manifests"][int(build_id)] = manifest_info
 
     def run(self):
         """See `IRunnableJob`."""

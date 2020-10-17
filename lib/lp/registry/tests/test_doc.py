@@ -18,6 +18,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
+from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,
@@ -91,7 +92,9 @@ special = {
 
 
 def test_suite():
-    suite = build_test_suite(here, special, layer=DatabaseFunctionalLayer)
+    suite = build_test_suite(
+        here, special, layer=DatabaseFunctionalLayer,
+        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
     launchpadlib_path = os.path.join(os.path.pardir, 'doc', 'launchpadlib')
     lplib_suite = build_doctest_suite(here, launchpadlib_path,
                                       layer=DatabaseFunctionalLayer)

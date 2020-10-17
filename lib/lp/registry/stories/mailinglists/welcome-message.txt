@@ -22,7 +22,7 @@ Changes to the welcome message take effect as soon as Mailman can act on it.
 
     >>> user_browser.getLink('Configure mailing list').click()
     >>> welcome_message = user_browser.getControl('Welcome message')
-    >>> print welcome_message.value
+    >>> print(welcome_message.value)
     Welcome to the Aardvarks.
 
     >>> from lp.registry.tests import mailinglists_helper
@@ -55,6 +55,6 @@ What if Mailman failed to apply the change?
     >>> logout()
 
     >>> user_browser.open('http://launchpad.test/~aardvarks/+mailinglist')
-    >>> print extract_text(find_tag_by_id(
-    ...     user_browser.contents, 'mailing_list_status_message').strong)
+    >>> print(extract_text(find_tag_by_id(
+    ...     user_browser.contents, 'mailing_list_status_message').strong))
     This team's mailing list is in an inconsistent state...

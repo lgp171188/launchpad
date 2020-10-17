@@ -19,6 +19,8 @@ from zope.interface import (
     )
 from zope.schema import (
     Datetime,
+    Dict,
+    Int,
     List,
     TextLine,
     )
@@ -77,6 +79,16 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
 
     error_message = TextLine(
         title=_("Error message"), required=False, readonly=True)
+
+    uploaded_manifests = Dict(
+        title=_("A dict of manifest information per build."),
+        key_type=Int(), value_type=Dict(),
+        required=False, readonly=True)
+
+    def addUploadedManifest(build_id, manifest_info):
+        """Add the manifest information for one of the builds in this
+        BuildRequest.
+        """
 
 
 class IOCIRecipeRequestBuildsJobSource(IJobSource):

@@ -9,7 +9,7 @@ Source packages can be obtained from the context of a distribution.
     ...     debian['self_link'], 'getSourcePackage',
     ...     name='mozilla-firefox').jsonBody()
 
-    >>> print pretty(mozilla_firefox)
+    >>> print(pretty(mozilla_firefox))
     {u'bug_reported_acknowledgement': None,
      u'bug_reporting_guidelines': None,
      u'display_name': u'mozilla-firefox in Debian',
@@ -30,11 +30,11 @@ It's also possible to search for tasks with the "searchTasks" method:
     ...     'searchTasks', status='New').jsonBody()
 
     >>> for bug_task in bug_task_collection['entries']:
-    ...     print bug_task['title']
-    ...     print '%s, %s, <%s>' % (
+    ...     print(bug_task['title'])
+    ...     print('%s, %s, <%s>' % (
     ...         bug_task['status'], bug_task['importance'],
-    ...         bug_task['bug_link'])
-    ...     print '<%s>' % bug_task['self_link']
+    ...         bug_task['bug_link']))
+    ...     print('<%s>' % bug_task['self_link'])
     Bug #3 in mozilla-firefox (Debian): "Bug Title Test"
     New, Unknown, <http://api.launchpad.test/beta/bugs/3>
     <http://api.launchpad.test/beta/debian/+source/mozilla-firefox/+bug/3>
@@ -51,7 +51,7 @@ package.
     >>> upstream_product = webservice.get(
     ...     ubuntu_firefox['upstream_product_link']).jsonBody()
 
-    >>> print pretty(upstream_product)
+    >>> print(pretty(upstream_product))
     {...
      u'display_name': u'Mozilla Firefox'...
      u'self_link': u'http://.../firefox'...}
@@ -59,5 +59,5 @@ package.
 If the package isn't linked to an upstream product its
 upstream_product_link will be None.
 
-    >>> print mozilla_firefox['upstream_product_link']
+    >>> print(mozilla_firefox['upstream_product_link'])
     None

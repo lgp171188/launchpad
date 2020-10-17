@@ -10,7 +10,7 @@ We export FOAF RDF metadata from the /~Person.name/+index document.
     >>> anon_browser.open("http://launchpad.test/~name16")
     >>> strainer = SoupStrainer(['link'], {'type': ['application/rdf+xml']})
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
-    >>> print soup.renderContents()
+    >>> print(soup.renderContents())
     <link href="+rdf" rel="meta" title="FOAF" type="application/rdf+xml"/>
 
 
@@ -21,7 +21,7 @@ And this is what the FOAF document for an individual actually looks
 like. It includes GPG information, if the user has any.
 
     >>> anon_browser.open("http://launchpad.test/~name16/+rdf")
-    >>> print anon_browser.contents
+    >>> print(anon_browser.contents)
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
              xmlns:foaf="http://xmlns.com/foaf/0.1/"
@@ -45,7 +45,7 @@ like. It includes GPG information, if the user has any.
 It also includes SSH keys:
 
     >>> anon_browser.open("http://launchpad.test/~name12/+rdf")
-    >>> print anon_browser.contents
+    >>> print(anon_browser.contents)
     <?xml version="1.0"...?>
     ...
     <foaf:name>Sample Person</foaf:name>
@@ -57,7 +57,7 @@ And it's valid XML and RDF:
 
     >>> from xml.dom.minidom import parseString
     >>> document = parseString(str(anon_browser.contents))
-    >>> print document.documentElement.nodeName
+    >>> print(document.documentElement.nodeName)
     rdf:RDF
 
 
@@ -78,7 +78,7 @@ Now, generate the RDF itself:
 
     >>> from lp.services.helpers import backslashreplace
     >>> anon_browser.open("http://launchpad.test/~testing-spanish-team/+rdf")
-    >>> print backslashreplace(anon_browser.contents)
+    >>> print(backslashreplace(anon_browser.contents))
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
              xmlns:foaf="http://xmlns.com/foaf/0.1/"
@@ -118,7 +118,7 @@ present:
 
 And nothing about them is rendered at all:
 
-    >>> print anon_browser.contents
+    >>> print(anon_browser.contents)
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
              xmlns:foaf="http://xmlns.com/foaf/0.1/"

@@ -49,7 +49,7 @@ distribution series. By default, there are none bound to evolution.
 
     >>> branch = webservice.named_get(
     ...     evolution['self_link'], 'getBranch', pocket='Release').jsonBody()
-    >>> print branch
+    >>> print(branch)
     None
 
 
@@ -63,7 +63,7 @@ though.
     >>> owner = factory.makePerson(name='devo')
     >>> branch = factory.makePackageBranch(
     ...     sourcepackage=evolution_package, owner=owner, name='branch')
-    >>> print branch.unique_name
+    >>> print(branch.unique_name)
     ~devo/my-distro/my-series/evolution/branch
     >>> branch_url = '/' + branch.unique_name
     >>> logout()
@@ -79,7 +79,7 @@ Then we set the branch on the evolution package:
     >>> response = webservice.named_post(
     ...     evolution['self_link'], 'setBranch', pocket='Release',
     ...     branch=branch['self_link'])
-    >>> print response.jsonBody()
+    >>> print(response.jsonBody())
     None
 
 I guess this means that if we get the branch for the RELEASE pocket again,
@@ -87,15 +87,15 @@ we'll get the new branch.
 
     >>> branch = webservice.named_get(evolution['self_link'], 'getBranch',
     ...     pocket='Release').jsonBody()
-    >>> print branch['unique_name']
+    >>> print(branch['unique_name'])
     ~devo/my-distro/my-series/evolution/branch
 
     >>> linked_branches = webservice.named_get(
     ...     evolution['self_link'], 'linkedBranches').jsonBody()
-    >>> print linked_branches.keys()
+    >>> print(linked_branches.keys())
     [u'RELEASE']
     >>> branch = linked_branches[u'RELEASE']
-    >>> print branch['unique_name']
+    >>> print(branch['unique_name'])
     ~devo/my-distro/.../branch
 
 Of course, we're also allowed to change our minds. If we set the branch for
@@ -105,9 +105,9 @@ no longer an official branch for that pocket.
     >>> response = webservice.named_post(
     ...     evolution['self_link'], 'setBranch', pocket='Release',
     ...     branch='null')
-    >>> print response.jsonBody()
+    >>> print(response.jsonBody())
     None
     >>> branch = webservice.named_get(evolution['self_link'], 'getBranch',
     ...     pocket='Release').jsonBody()
-    >>> print branch
+    >>> print(branch)
     None

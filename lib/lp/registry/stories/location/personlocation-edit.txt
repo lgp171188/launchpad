@@ -36,5 +36,5 @@ selected value.
 
     >>> self_browser.open('http://launchpad.test/~zzz')
     >>> self_browser.getLink('Set location and time zone').click()
-    >>> print self_browser.getControl(name='field.time_zone').value
+    >>> print(self_browser.getControl(name='field.time_zone').value)
     ['Europe/Madrid']
