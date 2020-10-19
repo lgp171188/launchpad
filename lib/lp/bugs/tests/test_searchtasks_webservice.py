@@ -139,7 +139,10 @@ class TestMaloneApplicationSearchTasks(TestCaseWithFactory):
         webservice = LaunchpadWebServiceCaller(
             "launchpad-library", "salgado-change-anything")
         response = webservice.named_get(
-            "/bugs", "searchTasks", api_version="devel", tags=u'foo').jsonBody()
+            "/bugs",
+            "searchTasks",
+            api_version="devel",
+            tags=u'foo').jsonBody()
         self.assertEqual(2, response["total_size"])
         self.assertContentEqual(
             [bug1.id, bug3.id],

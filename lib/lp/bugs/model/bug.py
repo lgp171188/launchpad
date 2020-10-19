@@ -34,8 +34,6 @@ from six.moves.collections_abc import (
     Iterable,
     Set,
     )
-from storm.properties import Unicode
-
 from sqlobject import (
     ForeignKey,
     IntCol,
@@ -68,6 +66,7 @@ from storm.locals import (
     Reference,
     ReferenceSet,
     )
+from storm.properties import Unicode
 from storm.store import (
     EmptyResultSet,
     Store,
