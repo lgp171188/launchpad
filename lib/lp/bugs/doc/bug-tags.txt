@@ -25,8 +25,7 @@ look at it we can see that the added tags are there.
     >>> from lp.bugs.model.bug import BugTag
     >>> from lp.services.database.interfaces import IStore
     >>> bugtags = IStore(BugTag).find(
-        BugTag,
-        bug_id=bug_one.id).order_by(BugTag.tag)
+    ...     BugTag, bug_id=bug_one.id).order_by(BugTag.tag)
     >>> for bugtag in bugtags:
     ...     print(bugtag.tag)
     sco
@@ -40,11 +39,9 @@ The tag will be added in the table.
     [u'installl', u'sco', u'svg']
     >>> from lp.services.database.interfaces import IStore
     >>> bugtags = IStore(BugTag).find(
-        BugTag,
-        bug_id=bug_one.id).order_by(BugTag.tag)
+    ...     BugTag, bug_id=bug_one.id).order_by(BugTag.tag)
     >>> bugtags = IStore(BugTag).find(
-        BugTag,
-        bug_id=bug_one.id).order_by(BugTag.tag)
+    ...     BugTag, bug_id=bug_one.id).order_by(BugTag.tag)
     >>> for bugtag in bugtags:
     ...     print(bugtag.tag)
     installl
@@ -66,8 +63,7 @@ Let's correct the spelling mistake we did and delete one of the tags:
 
     >>> from lp.services.database.interfaces import IStore
     >>> bugtags = IStore(BugTag).find(
-        BugTag,
-        bug_id=bug_one.id).order_by(BugTag.tag)
+    ...     BugTag, bug_id=bug_one.id).order_by(BugTag.tag)
     >>> for bugtag in bugtags:
     ...     print(bugtag.tag)
     install
