@@ -1,7 +1,7 @@
 Start out by verifying the members page is sane.
 
     >>> browser.open('http://launchpad.test/~ubuntu-team/+members')
-    >>> 'Ubuntu Team' in browser.contents
+    >>> 'Ubuntu Team' in six.ensure_text(browser.contents)
     True
 
 Let's take a look at Colin's subscription page. Colin is an
@@ -12,9 +12,9 @@ administrator and his subscription never expires.
     >>> url = '/~ubuntu-team/+member/kamion'
     >>> browser.getLink(url=url).click()
 
-    >>> print browser.title
+    >>> print(browser.title)
     Colin Watson's membership : ...Ubuntu Team... team
-    >>> "Active member" in browser.contents
+    >>> "Active member" in six.ensure_text(browser.contents)
     True
     >>> browser.getControl(name='admin').value
     ['yes']
@@ -48,7 +48,7 @@ TestBrowser to manually re-enable the input. That's what the
 We get a nice error message
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Invalid expiration: Invalid date value
 
 Give up on change, nothing should have changed with Colin:
@@ -66,7 +66,7 @@ Give up on change, nothing should have changed with Colin:
     ...     kamion, ubuntu_team)
     >>> kamion_membership.status.title
     'Administrator'
-    >>> print kamion_membership.dateexpires
+    >>> print(kamion_membership.dateexpires)
     None
     >>> logout()
 
@@ -93,11 +93,11 @@ We're redirected to the +members page
     >>> login(ANONYMOUS)
     >>> kamion_membership = teammembershipset.getByPersonAndTeam(
     ...     kamion, ubuntu_team)
-    >>> print kamion_membership.status.title
+    >>> print(kamion_membership.status.title)
     Approved
     >>> kamion_membership.dateexpires.date() == expire_date.date()
     True
-    >>> print kamion_membership.last_change_comment
+    >>> print(kamion_membership.last_change_comment)
     Arfie
     >>> logout()
 
@@ -121,9 +121,9 @@ the administrator control on the membership page.
     >>> url = '/~ubuntu-team/+member/jdub'
     >>> jdub_browser.getLink(url=url).click()
 
-    >>> print jdub_browser.title
+    >>> print(jdub_browser.title)
     Jeff Waugh's membership : ...Ubuntu Team... team
-    >>> "Active member" in jdub_browser.contents
+    >>> "Active member" in six.ensure_text(jdub_browser.contents)
     True
 
     >>> jdub_browser.getControl(name='admin').value = ['no']
@@ -145,7 +145,7 @@ that the page works and that foo.bar@canonical can access it.
 
     >>> browser.open('http://launchpad.test/~guadamen/+member/name12/')
 
-    >>> 'Declined member' in browser.contents
+    >>> 'Declined member' in six.ensure_text(browser.contents)
     True
 
 Dave Miller is a proposed member in Ubuntu Gnome Team.
@@ -183,20 +183,20 @@ But in the second browser with the stale data we get an error message:
     >>> second_browser.getControl('Approve').click()
     >>> message = (
     ...     'The membership request for Dave Miller has already been processed')
-    >>> message in second_browser.contents
+    >>> message in six.ensure_text(second_browser.contents)
     True
 
 An admin can see the former members of the team.
 
     >>> browser.open('http://launchpad.test/~name18/+members')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'inactivemembers'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'inactivemembers')))
     Name    Joined in   Status...
 
 Other users cannot see the former members of the team.
 
     >>> user_browser.open('http://launchpad.test/~name18/+members')
-    >>> print find_tag_by_id(user_browser.contents, 'inactivemembers')
+    >>> print(find_tag_by_id(user_browser.contents, 'inactivemembers'))
     None
 
 
@@ -209,21 +209,21 @@ member, as well as the teams in which they are an indirect member.
 Kiko has not joined any teams:
 
     >>> anon_browser.open('http://launchpad.test/~kiko/+participation')
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'no-participation'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'no-participation')))
     Christian Reis has not yet joined any teams.
-    >>> print find_tag_by_id(anon_browser.contents, 'participation')
+    >>> print(find_tag_by_id(anon_browser.contents, 'participation'))
     None
 
 Sample Person has both direct and indirect memberships:
 
     >>> anon_browser.open('http://launchpad.test/~name12/+participation')
     >>> content = find_main_content(anon_browser.contents)
-    >>> print find_tag_by_id(content, 'no-participation')
+    >>> print(find_tag_by_id(content, 'no-participation'))
     None
 
-    >>> print extract_text(
-    ...     find_tag_by_id(content, 'participation'), formatter='html')
+    >>> print(extract_text(
+    ...     find_tag_by_id(content, 'participation'), formatter='html'))
     Team                  Joined      Role    Via                 Mailing List
     HWDB Team             2009-07-09  Member  &mdash;              &mdash;
     Landscape Developers  2006-07-11  Owner   &mdash;              &mdash;
@@ -234,13 +234,13 @@ Sample Person has both direct and indirect memberships:
 User can see links to register teams and change their mailing list
 subscriptions on their own participation page.
 
-    >>> print find_tag_by_id(content, 'participation-actions')
+    >>> print(find_tag_by_id(content, 'participation-actions'))
     None
 
     >>> user_browser.open('http://launchpad.test/~no-priv/+participation')
     >>> actions = find_tag_by_id(
     ...     user_browser.contents, 'participation-actions')
-    >>> print extract_text(actions)
+    >>> print(extract_text(actions))
     Register a team
     Change mailing list subscriptions
 
@@ -253,8 +253,8 @@ Teams also have a participation page, but it does not include a mailing
 list column.
 
     >>> admin_browser.open('http://launchpad.test/~admins/+participation')
-    >>> print extract_text(
+    >>> print(extract_text(
     ...     find_tag_by_id(admin_browser.contents, 'participation'),
-    ...     formatter='html')
+    ...     formatter='html'))
     Team                  Joined      Role    Via
     Mailing List Experts  2007-10-04  Owner   &mdash;

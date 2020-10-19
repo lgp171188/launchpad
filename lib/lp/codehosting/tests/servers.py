@@ -3,6 +3,8 @@
 
 """Server used in codehosting acceptance tests."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 __all__ = [

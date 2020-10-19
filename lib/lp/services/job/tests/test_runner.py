@@ -656,12 +656,12 @@ class TestTwistedJobRunner(TestCaseWithFactory):
         expected_exception = ('TimeoutError', 'Job ran too long.')
         self.assertEqual(expected_exception, (oops['type'], oops['value']))
         self.assertThat(logger.getLogBuffer(), MatchesRegex(
-            dedent("""\
+            dedent(r"""
                 INFO Running through Twisted.
                 INFO Running <StuckJob.*?> \(ID .*?\).
                 INFO Running <StuckJob.*?> \(ID .*?\).
                 INFO Job resulted in OOPS: .*
-            """)))
+            """).lstrip("\n")))
 
     # XXX: BradCrittenden 2012-05-09 bug=994777: Disabled as a spurious
     # failure.  In isolation this test fails 5% of the time.
@@ -685,12 +685,12 @@ class TestTwistedJobRunner(TestCaseWithFactory):
             (1, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
         self.assertThat(
             logger.getLogBuffer(), MatchesRegex(
-                dedent("""\
+                dedent(r"""
                 INFO Running through Twisted.
                 INFO Running <ShorterStuckJob.*?> \(ID .*?\).
                 INFO Running <ShorterStuckJob.*?> \(ID .*?\).
                 INFO Job resulted in OOPS: %s
-                """) % oops['id']))
+                """).lstrip("\n") % oops['id']))
         self.assertEqual(('TimeoutError', 'Job ran too long.'),
                          (oops['type'], oops['value']))
 

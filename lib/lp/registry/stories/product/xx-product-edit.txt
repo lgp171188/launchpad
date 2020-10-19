@@ -7,10 +7,10 @@ Page to edit a product - does the page load as the product owner?
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open('http://launchpad.test/firefox')
     >>> browser.getLink('Change details').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox/+edit
 
-    >>> print browser.title
+    >>> print(browser.title)
     Change Mozilla Firefox's details...
 
 We try to change the project related to that product. First with a
@@ -19,7 +19,7 @@ invalid project.
     >>> browser.getControl('Part of', index=0).value = 'asdasfasd'
     >>> browser.getControl(name='field.actions.change').click()
     >>> for message in find_tags_by_class(browser.contents, 'error'):
-    ...     print message.renderContents()
+    ...     print(message.renderContents())
     There is 1 error.
     <BLANKLINE>
     ...
@@ -30,12 +30,12 @@ Now we try to edit with a project that exists.
 
     >>> browser.getControl('Part of', index=0).value = 'gnome'
     >>> browser.getControl(name='field.actions.change').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/firefox
 
 Now we test if we edited it successfully.
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'partof'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'partof')))
     Part of: GNOME
 
 
@@ -50,7 +50,7 @@ But administrators can access the page:
     >>> admin_browser.url
     'http://launchpad.test/firefox/+admin'
 
-    >>> print admin_browser.title
+    >>> print(admin_browser.title)
     Administer Mozilla Firefox...
 
 And in that page they can set aliases to the product.
@@ -82,7 +82,7 @@ First a user adds a product named newproductname.
     >>> user_browser.getControl(name='field.licenses').value = ['GNU_GPL_V2']
     >>> user_browser.getControl(name='field.license_info').value = 'foo'
     >>> user_browser.getControl('Complete Registration').click()
-    >>> print user_browser.url
+    >>> print(user_browser.url)
     http://launchpad.test/newproductname
 
 Then a product named newproductname2.
@@ -98,7 +98,7 @@ Then a product named newproductname2.
     >>> user_browser.getControl(name='field.licenses').value = ['GNU_GPL_V2']
     >>> user_browser.getControl(name='field.license_info').value = 'foo'
     >>> user_browser.getControl('Complete Registration').click()
-    >>> print user_browser.url
+    >>> print(user_browser.url)
     http://launchpad.test/newproductname2
 
 Now we try to change newproductname2's name to newproductname.
@@ -108,7 +108,7 @@ Now we try to change newproductname2's name to newproductname.
     >>> admin_browser.getControl('Name').value = 'newproductname'
     >>> admin_browser.getControl(name='field.actions.change').click()
     >>> for message in find_tags_by_class(admin_browser.contents, 'error'):
-    ...     print message.renderContents()
+    ...     print(message.renderContents())
     There is 1 error.
     <BLANKLINE>
     ...
@@ -121,7 +121,7 @@ will be accepted because there is no product called newproductname3
 
     >>> admin_browser.getControl('Name').value = 'newproductname3'
     >>> admin_browser.getControl(name='field.actions.change').click()
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://launchpad.test/newproductname3
 
 
@@ -132,7 +132,7 @@ Administrators can change the owner of a project.
 
     >>> admin_browser.open(
     ...     'http://launchpad.test/newproductname3')
-    >>> print extract_text(find_tag_by_id(admin_browser.contents, 'owner'))
+    >>> print(extract_text(find_tag_by_id(admin_browser.contents, 'owner')))
     Maintainer: No Privileges Person
     ...
 
@@ -140,7 +140,7 @@ Administrators can change the owner of a project.
     ...     'http://launchpad.test/newproductname3/+admin')
     >>> admin_browser.getControl('Maintainer').value = 'cprov'
     >>> admin_browser.getControl(name='field.actions.change').click()
-    >>> print extract_text(find_tag_by_id(admin_browser.contents, 'owner'))
+    >>> print(extract_text(find_tag_by_id(admin_browser.contents, 'owner')))
     Maintainer: Celso Providelo
     ...
 
@@ -150,16 +150,16 @@ is created but we allow admins to change it to correct data.
 
     >>> admin_browser.open(
     ...     'http://launchpad.test/newproductname3')
-    >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'registration'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(admin_browser.contents, 'registration')))
     Registered ... by No Privileges Person
 
     >>> admin_browser.open(
     ...     'http://launchpad.test/newproductname3/+admin')
     >>> admin_browser.getControl('Registrant').value = 'cprov'
     >>> admin_browser.getControl(name='field.actions.change').click()
-    >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'registration'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(admin_browser.contents, 'registration')))
     Registered ... by Celso Providelo
 
 The registrant really should only be a person, not a team, but that
@@ -169,8 +169,8 @@ teams as registrants.
     >>> admin_browser.open('http://launchpad.test/newproductname3/+admin')
     >>> admin_browser.getControl('Registrant').value = 'registry'
     >>> admin_browser.getControl('Change').click()
-    >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'registration'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(admin_browser.contents, 'registration')))
     Registered ... by Registry Administrators
 
 
@@ -198,12 +198,12 @@ registrant fields.
     >>> browser.getControl('Maintainer')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Maintainer'
+    LookupError: label ...'Maintainer'
     ...
     >>> browser.getControl('Registrant')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Registrant'
+    LookupError: label ...'Registrant'
     ...
 
 But registry experts can change a product name and set an alias.
@@ -213,9 +213,9 @@ But registry experts can change a product name and set an alias.
     >>> browser.getControl('Change').click()
 
     >>> browser.getLink('Administer').click()
-    >>> print browser.getControl('Name').value
+    >>> print(browser.getControl('Name').value)
     trebuchet
-    >>> print browser.getControl('Aliases').value
+    >>> print(browser.getControl('Aliases').value)
     trebucket
 
 
@@ -241,7 +241,7 @@ The Admins and Registry Experts can deactivate a project.
     >>> registry_browser.open('http://launchpad.test/bzr/+review-license')
     >>> registry_browser.getControl(name='field.active').value = False
     >>> registry_browser.getControl(name='field.actions.change').click()
-    >>> print registry_browser.url
+    >>> print(registry_browser.url)
     http://launchpad.test/bzr
 
 The product overview page should show a notice that a product is
@@ -250,27 +250,27 @@ Admins can still see the product, but regular users can't.
 
     >>> registry_browser.open('http://launchpad.test/bzr')
     >>> contents = find_main_content(registry_browser.contents)
-    >>> print extract_text(contents.find(id='project-inactive'))
+    >>> print(extract_text(contents.find(id='project-inactive')))
     This project is currently inactive ...
 
     >>> admin_browser.open('http://launchpad.test/bzr')
     >>> contents = find_main_content(admin_browser.contents)
-    >>> print extract_text(contents.find(id='project-inactive'))
+    >>> print(extract_text(contents.find(id='project-inactive')))
     This project is currently inactive ...
 
 The product can then be reactivated.
 
     >>> registry_browser.getLink('Review project').click()
-    >>> print registry_browser.url
+    >>> print(registry_browser.url)
     http://launchpad.test/bzr/+review-license
 
     >>> registry_browser.getControl(name='field.active').value = True
     >>> registry_browser.getControl(name='field.actions.change').click()
-    >>> print registry_browser.url
+    >>> print(registry_browser.url)
     http://launchpad.test/bzr
 
     >>> contents = find_main_content(registry_browser.contents)
-    >>> print contents.find(id='project-inactive')
+    >>> print(contents.find(id='project-inactive'))
     None
 
 Revert team memberships.

@@ -7,40 +7,54 @@ __metaclass__ = type
 
 __all__ = ['ArchiveDependency']
 
-
-from sqlobject import ForeignKey
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Store,
+    )
 from zope.interface import implementer
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.adapters.archivedependencies import get_components_for_context
 from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 
 
 @implementer(IArchiveDependency)
-class ArchiveDependency(SQLBase):
+class ArchiveDependency(StormBase):
     """See `IArchiveDependency`."""
 
-    _table = 'ArchiveDependency'
-    _defaultOrder = 'id'
+    __storm_table__ = 'ArchiveDependency'
+    __storm_order__ = 'id'
 
-    date_created = UtcDateTimeCol(
-        dbName='date_created', notNull=True, default=UTC_NOW)
+    id = Int(primary=True)
 
-    archive = ForeignKey(
-        foreignKey='Archive', dbName='archive', notNull=True)
+    date_created = DateTime(
+        name='date_created', tzinfo=pytz.UTC, allow_none=False,
+        default=UTC_NOW)
 
-    dependency = ForeignKey(
-        foreignKey='Archive', dbName='dependency', notNull=True)
+    archive_id = Int(name='archive', allow_none=False)
+    archive = Reference(archive_id, 'Archive.id')
 
-    pocket = EnumCol(
-        dbName='pocket', notNull=True, schema=PackagePublishingPocket)
+    dependency_id = Int(name='dependency', allow_none=False)
+    dependency = Reference(dependency_id, 'Archive.id')
 
-    component = ForeignKey(
-        foreignKey='Component', dbName='component')
+    pocket = DBEnum(
+        name='pocket', allow_none=False, enum=PackagePublishingPocket)
+
+    component_id = Int(name='component', allow_none=True)
+    component = Reference(component_id, 'Component.id')
+
+    def __init__(self, archive, dependency, pocket, component=None):
+        super(ArchiveDependency, self).__init__()
+        self.archive = archive
+        self.dependency = dependency
+        self.pocket = pocket
+        self.component = component
 
     @property
     def component_name(self):
@@ -72,3 +86,6 @@ class ArchiveDependency(SQLBase):
             self.component, distroseries, self.pocket))
 
         return "%s (%s)" % (pocket_title, component_part)
+
+    def destroySelf(self):
+        Store.of(self).remove(self)

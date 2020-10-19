@@ -7,6 +7,8 @@ NOTE: Importing this package will load any system Bazaar plugins, as well as
 all plugins in the bzrplugins/ directory underneath the rocketfuel checkout.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'get_brz_path',

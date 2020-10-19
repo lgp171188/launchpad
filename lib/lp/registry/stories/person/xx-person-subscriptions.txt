@@ -8,7 +8,7 @@ Any user can view the direct subscriptions that a person or team has to
 blueprints, branches, bugs, merge proposals and questions.
 
     >>> anon_browser.open('http://launchpad.test/~ubuntu-team/+subscriptions')
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Subscriptions : Bugs : “Ubuntu Team” team
 
 The user can see that the Ubuntu Team does not have any direct bug
@@ -39,8 +39,8 @@ Any user can see Webster's bug subscriptions.  The bug subscriptions table
 includes the bug number, title and location.
 
     >>> anon_browser.open('http://launchpad.test/~webster/+subscriptions')
-    >>> print extract_text(find_tag_by_id(
-    ...     anon_browser.contents, 'bug_subscriptions'))
+    >>> print(extract_text(find_tag_by_id(
+    ...     anon_browser.contents, 'bug_subscriptions')))
     Summary
     In
     ...
@@ -77,7 +77,7 @@ subscribed to the bug.  They click cancel which takes them back to their
 
     >>> cancel_link = subscriber_browser.getLink('Cancel')
     >>> cancel_link.click()
-    >>> print subscriber_browser.title
+    >>> print(subscriber_browser.title)
     Subscriptions : Bugs : Webster
 
 They choose to unsubscribe from the bug about Affluenza.
@@ -87,7 +87,7 @@ They choose to unsubscribe from the bug about Affluenza.
     >>> subscriber_browser.getControl(
     ...     "unsubscribe me from this bug").selected = True
     >>> subscriber_browser.getControl("Continue").click()
-    >>> print subscriber_browser.title
+    >>> print(subscriber_browser.title)
     Subscriptions : Bugs : Webster
 
 Webster can see that the bug about Affluenza is no longer listed in their
@@ -95,8 +95,8 @@ direct bug subscriptions.
 
     >>> subscriber_browser.open(
     ...     'http://bugs.launchpad.test/~webster/+subscriptions')
-    >>> print extract_text(find_tag_by_id(
-    ...     subscriber_browser.contents, 'bug_subscriptions'))
+    >>> print(extract_text(find_tag_by_id(
+    ...     subscriber_browser.contents, 'bug_subscriptions')))
     Summary
     In
     ...
@@ -118,11 +118,11 @@ Webster chooses to review the subscriptions for their team America.
 
     >>> subscriber_browser.open(
     ...     'http://bugs.launchpad.test/~america/+subscriptions')
-    >>> print subscriber_browser.title
+    >>> print(subscriber_browser.title)
     Subscriptions : Bugs ...
 
-    >>> print extract_text(find_tag_by_id(
-    ...     subscriber_browser.contents, 'bug_subscriptions'))
+    >>> print(extract_text(find_tag_by_id(
+    ...     subscriber_browser.contents, 'bug_subscriptions')))
     Summary
     In
     ...
@@ -133,8 +133,8 @@ Webster now chooses to unsubscribe team America from the bug about Scofflaw.
 
     >>> subscriber_browser.getLink(id='unsubscribe-subscriber-%s' %
     ...     team.id).click()
-    >>> print extract_text(find_tags_by_class(
-    ...     subscriber_browser.contents, 'value')[0])
+    >>> print(extract_text(find_tags_by_class(
+    ...     subscriber_browser.contents, 'value')[0]))
     subscribe me to this bug, or
     unsubscribe America from this bug.
 
@@ -171,9 +171,9 @@ followed by a link to edit the subscription.
     ...     admin_browser.contents, 'structural-subscriptions')
     >>> for subscription in subscriptions.findAll("li"):
     ...     structure_link, modify_link = subscription.findAll("a")[:2]
-    ...     print "%s <%s>" % (
-    ...         extract_text(structure_link), structure_link.get("href"))
-    ...     print "--> %s" % modify_link.get("href")
+    ...     print("%s <%s>" % (
+    ...         extract_text(structure_link), structure_link.get("href")))
+    ...     print("--> %s" % modify_link.get("href"))
     mozilla-firefox in Ubuntu </ubuntu/+source/mozilla-firefox>
     --> /ubuntu/+source/mozilla-firefox/+subscribe
     pmount in Ubuntu </ubuntu/+source/pmount>
@@ -188,8 +188,8 @@ permission to modify those subscriptions.
     ...     subscriber_browser.contents, 'structural-subscriptions')
     >>> for subscription in subscriptions.findAll("li"):
     ...     structure_link = subscription.find("a")
-    ...     print "%s <%s>" % (
-    ...         extract_text(structure_link), structure_link.get("href"))
+    ...     print("%s <%s>" % (
+    ...         extract_text(structure_link), structure_link.get("href")))
     mozilla-firefox in Ubuntu </ubuntu/+source/mozilla-firefox>
     pmount in Ubuntu </ubuntu/+source/pmount>
 
@@ -204,8 +204,8 @@ structural subscriptions.
 
     >>> subscriber_browser.open(
     ...     "http://launchpad.test/people/+me/+structural-subscriptions")
-    >>> print extract_text(find_tag_by_id(
-    ...     subscriber_browser.contents, "structural-subscriptions"))
+    >>> print(extract_text(find_tag_by_id(
+    ...     subscriber_browser.contents, "structural-subscriptions")))
     Webster does not have any structural subscriptions.
 
 
@@ -222,14 +222,14 @@ subscription filter.
     ...         browser.contents, 'structural-subscriptions')
     ...     for subscription in subscriptions.findAll("li"):
     ...         structure_link = subscription.find("a")
-    ...         print extract_text(structure_link)
+    ...         print(extract_text(structure_link))
     ...         create_text = subscription.find(text=re.compile("Create"))
     ...         if create_text is None:
-    ...             print "* No create link."
+    ...             print("* No create link.")
     ...         else:
-    ...             print "* %s --> %s" % (
+    ...             print("* %s --> %s" % (
     ...                 create_text.strip(),
-    ...                 create_text.parent.get("href"))
+    ...                 create_text.parent.get("href")))
 
     >>> admin_browser.open(
     ...     "http://launchpad.test/people/+me/+structural-subscriptions")
@@ -273,9 +273,9 @@ filters are shown with a message stating that there is no filtering.
     ...     subscriptions = find_tag_by_id(
     ...         nigel_browser.contents, 'structural-subscriptions')
     ...     for subscription in subscriptions.findAll("li"):
-    ...         print extract_text(subscription.p)
+    ...         print(extract_text(subscription.p))
     ...         if subscription.dl is not None:
-    ...             print extract_text(subscription.dl)
+    ...             print(extract_text(subscription.dl))
 
     >>> show_nigels_subscriptions()
     Bug mail for Nigel about Scofflaw is filtered;

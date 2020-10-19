@@ -14,6 +14,7 @@ from lp.testing.layers import (
     )
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    setGlobs,
     setUp,
     tearDown,
     )
@@ -24,15 +25,17 @@ here = os.path.dirname(os.path.realpath(__file__))
 special = {
     'script-monitoring.txt': LayeredDocFileSuite(
             '../doc/script-monitoring.txt',
-            setUp=setUp, tearDown=tearDown,
+            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
             layer=LaunchpadZopelessLayer,
             ),
     'launchpad-scripts.txt': LayeredDocFileSuite(
             '../doc/launchpad-scripts.txt',
+            setUp=lambda test: setGlobs(test, future=True),
             layer=DatabaseLayer,
             ),
 }
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setGlobs(test, future=True))

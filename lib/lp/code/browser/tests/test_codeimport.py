@@ -50,7 +50,7 @@ class TestImportDetails(TestCaseWithFactory):
         details = find_tag_by_id(browser.contents, details_id)
         if span_title is not None:
             self.assertEqual(span_title, details.span['title'])
-        text = re.sub('\s+', ' ', extract_text(details))
+        text = re.sub(r'\s+', ' ', extract_text(details))
         self.assertThat(text, StartsWith(prefix_text))
 
     def test_bzr_svn_import(self):

@@ -6,8 +6,8 @@
 """Perform simple librarian operations to verify the current configuration.
 """
 
-from cStringIO import StringIO
 import datetime
+import io
 import sys
 
 import pytz
@@ -19,14 +19,14 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 
 
 FILE_SIZE = 1024
-FILE_DATA = 'x' * FILE_SIZE
+FILE_DATA = b'x' * FILE_SIZE
 FILE_LIFETIME = datetime.timedelta(hours=1)
 
 
 def store_file(client):
     expiry_date = datetime.datetime.now(pytz.UTC) + FILE_LIFETIME
     file_id = client.addFile(
-        'smoke-test-file', FILE_SIZE, StringIO(FILE_DATA), 'text/plain',
+        'smoke-test-file', FILE_SIZE, io.BytesIO(FILE_DATA), 'text/plain',
         expires=expiry_date)
     # To be able to retrieve the file, we must commit the current transaction.
     transaction.commit()

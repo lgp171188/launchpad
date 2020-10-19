@@ -6,14 +6,14 @@ series +index page.
 
     >>> anon_browser.open('http://launchpad.test/ubuntu/hoary')
     >>> anon_browser.getLink('All upstream links').click()
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     All upstream links : ...
 
 The page lists the upstream packaging links.
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'packagings'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'packagings')))
     Source Package   Upstream Project   Upstream Contributor Connections
     netapplet
       NetApplet The Novell Network Applet
@@ -30,7 +30,7 @@ The page lists the upstream packaging links.
 Any use can see that this page is related to the needs packaging report. It
 is linked, but the link to this page is not enabled.
 
-    >>> print extract_text(find_tag_by_id(content, 'related-pages'))
+    >>> print(extract_text(find_tag_by_id(content, 'related-pages')))
     Needs upstream links     All upstream links
 
     >>> anon_browser.getLink('Needs upstream links')
@@ -47,14 +47,14 @@ links packages. Users can also hack the URL to set their own batch size.
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/ubuntu/hoary/+packaging?start=0&batch=1')
-    >>> print extract_text(find_tag_by_id(
-    ...     anon_browser.contents, 'packagings'))
+    >>> print(extract_text(find_tag_by_id(
+    ...     anon_browser.contents, 'packagings')))
     Source Package   Upstream Project   Upstream Contributor Connections
     netapplet ...
 
     >>> anon_browser.getLink('Next', index=0).click()
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'packagings'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'packagings')))
     Source Package   Upstream Project   Upstream Contributor Connections
     evolution ...
 
@@ -77,11 +77,11 @@ packages with the greatest need are listed first.
 
     >>> anon_browser.open('http://launchpad.test/ubuntu/hoary')
     >>> anon_browser.getLink('Needs upstream links').click()
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Needs upstream links : ...
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print extract_text(find_tag_by_id(content, 'packages'))
+    >>> print(extract_text(find_tag_by_id(content, 'packages')))
     Source Package       Bugs     Translations
     pmount               No bugs  64 strings
     linux-source-2.6.15  1 bug    No strings
@@ -103,13 +103,13 @@ pages.
 
 The listing is batched so that the user can visit the next page listings.
 
-    >>> print extract_text(find_tag_by_id(content, 'listing-navigation'))
+    >>> print(extract_text(find_tag_by_id(content, 'listing-navigation')))
     1 ... 5 of 5 packages	First ... Previous ... Next ... Last
 
 Any use can see that this page is related to the packaging report. It is
 linked, but the link to this page is not enabled.
 
-    >>> print extract_text(find_tag_by_id(content, 'related-pages'))
+    >>> print(extract_text(find_tag_by_id(content, 'related-pages')))
     Needs upstream links     All upstream links
 
     >>> anon_browser.getLink('All upstream links')

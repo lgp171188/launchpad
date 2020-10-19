@@ -148,12 +148,13 @@ class OCIRegistryClient:
                     continue
                 fileobj = un_zipped.extractfile(tarinfo)
                 cls._upload(digest, push_rule, fileobj, http_client)
+                return tarinfo.size
         finally:
             lfa.close()
 
     @classmethod
     def _build_registry_manifest(cls, digests, config, config_json,
-                                 config_sha, preloaded_data):
+                                 config_sha, preloaded_data, layer_sizes):
         """Create an image manifest for the uploading image.
 
         This involves nearly everything as digests and lengths are required.
@@ -163,6 +164,7 @@ class OCIRegistryClient:
         :param config: The contents of the manifest config file as a dict.
         :param config_json: The config file as a JSON string.
         :param config_sha: The sha256sum of the config JSON string.
+        :param layer_sizes: Dict of layer digests and their size in bytes.
         """
         # Create the initial manifest data with empty layer information
         manifest = {
@@ -181,7 +183,10 @@ class OCIRegistryClient:
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
-                "size": preloaded_data[layer].content.filesize,
+                # This should be the size of the `layer.tar` that we extracted
+                # from the OCI image at build time. It is not the size of the
+                # gzipped version that we have in the librarian.
+                "size": layer_sizes[layer],
                 "digest": layer})
         return manifest
 
@@ -224,8 +229,51 @@ class OCIRegistryClient:
         """
         # XXX twom 2020-04-17 This needs to include OCIProjectSeries and
         # base image name
-
         return "{}".format("edge")
+
+    @classmethod
+    def _uploadRegistryManifest(cls, http_client, registry_manifest,
+                                push_rule, build=None):
+        """Uploads the build manifest, returning its content information.
+
+        The returned information can be used to create a Manifest list
+        including the uploaded manifest, for example, in order to create
+        multi-architecture images.
+
+        :return: A dict with {"digest": "sha256:xxx", "size": total_bytes}
+        """
+        digest = None
+        data = json.dumps(registry_manifest)
+        size = len(data)
+        content_type = registry_manifest.get(
+            "mediaType",
+            "application/vnd.docker.distribution.manifest.v2+json")
+        if build is None:
+            # When uploading a manifest list, use the tag.
+            tag = cls._calculateTag(build, push_rule)
+        else:
+            # When uploading individual build manifests, use their digest.
+            tag = "sha256:%s" % hashlib.sha256(data).hexdigest()
+        try:
+            manifest_response = http_client.requestPath(
+                "/manifests/{}".format(tag),
+                data=data,
+                headers={"Content-Type": content_type},
+                method="PUT")
+            digest = manifest_response.headers.get("Docker-Content-Digest")
+        except HTTPError as http_error:
+            manifest_response = http_error.response
+        if manifest_response.status_code != 201:
+            if build:
+                msg = "Failed to upload manifest for {} ({}) in {}".format(
+                    build.recipe.name, push_rule.registry_url, build.id)
+            else:
+                msg = ("Failed to upload manifest of manifests for"
+                       " {} ({})").format(
+                    push_rule.recipe.name, push_rule.registry_url)
+            raise cls._makeRegistryError(
+                ManifestUploadFailed, msg, manifest_response)
+        return {"digest": digest, "size": size}
 
     @classmethod
     def _upload_to_push_rule(
@@ -233,17 +281,18 @@ class OCIRegistryClient:
         http_client = RegistryHTTPClient.getInstance(push_rule)
 
         for section in manifest:
-            # Work out names and tags
-            tag = cls._calculateTag(build, push_rule)
+            # Work out names
             file_data = preloaded_data[section["Config"]]
             config = file_data["config_file"]
             #  Upload the layers involved
+            layer_sizes = {}
             for diff_id in config["rootfs"]["diff_ids"]:
-                cls._upload_layer(
+                layer_size = cls._upload_layer(
                     diff_id,
                     push_rule,
                     file_data[diff_id],
                     http_client)
+                layer_sizes[diff_id] = layer_size
             # The config file is required in different forms, so we can
             # calculate the sha, work these out and upload
             config_json = json.dumps(config).encode("UTF-8")
@@ -258,27 +307,17 @@ class OCIRegistryClient:
             # and associated configs
             registry_manifest = cls._build_registry_manifest(
                 digests, config, config_json, config_sha,
-                preloaded_data[section["Config"]])
+                preloaded_data[section["Config"]],
+                layer_sizes)
 
             # Upload the registry manifest
-            try:
-                manifest_response = http_client.requestPath(
-                    "/manifests/{}".format(tag),
-                    json=registry_manifest,
-                    headers={
-                        "Content-Type":
-                            "application/"
-                            "vnd.docker.distribution.manifest.v2+json"
-                    },
-                    method="PUT")
-            except HTTPError as http_error:
-                manifest_response = http_error.response
-            if manifest_response.status_code != 201:
-                raise cls._makeRegistryError(
-                    ManifestUploadFailed,
-                    "Failed to upload manifest for {} ({}) in {}".format(
-                        build.recipe.name, push_rule.registry_url, build.id),
-                    manifest_response)
+            manifest = cls._uploadRegistryManifest(
+                http_client, registry_manifest, push_rule, build)
+
+            # Save the uploaded manifest location, so we can use it in case
+            # this is a multi-arch image upload.
+            if build.build_request:
+                build.build_request.addUploadedManifest(build.id, manifest)
 
     @classmethod
     def upload(cls, build):
@@ -309,6 +348,43 @@ class OCIRegistryClient:
             raise exceptions[0]
         elif len(exceptions) > 1:
             raise MultipleOCIRegistryError(exceptions)
+
+    @classmethod
+    def makeMultiArchManifest(cls, build_request):
+        """Returns the multi-arch manifest content including all builds of
+        the given build_request.
+        """
+        manifests = []
+        for build in build_request.builds:
+            build_manifest = build_request.uploaded_manifests.get(build.id)
+            if not build_manifest:
+                continue
+            digest = build_manifest["digest"]
+            size = build_manifest["size"]
+            arch = build.processor.name
+            manifests.append({
+                "mediaType": ("application/"
+                              "vnd.docker.distribution.manifest.v2+json"),
+                "size": size,
+                "digest": digest,
+                "platform": {"architecture": arch, "os": "linux"}
+            })
+        return {
+          "schemaVersion": 2,
+          "mediaType": ("application/"
+                        "vnd.docker.distribution.manifest.list.v2+json"),
+          "manifests": manifests}
+
+    @classmethod
+    def uploadManifestList(cls, build_request):
+        """Uploads to all build_request.recipe.push_rules the manifest list
+        for the builds in the given build_request.
+        """
+        multi_manifest_content = cls.makeMultiArchManifest(build_request)
+        for push_rule in build_request.recipe.push_rules:
+            http_client = RegistryHTTPClient.getInstance(push_rule)
+            cls._uploadRegistryManifest(
+                http_client, multi_manifest_content, push_rule, build=None)
 
 
 class OCIRegistryAuthenticationError(Exception):
@@ -428,8 +504,8 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
 
         :param auth_retry: Should we authenticate and retry the request if
                            it fails with HTTP 401 code?"""
+        headers = request_kwargs.pop("headers", {})
         try:
-            headers = request_kwargs.pop("headers", {})
             if self.auth_token is not None:
                 headers["Authorization"] = "Bearer %s" % self.auth_token
             return proxy_urlfetch(url, headers=headers, **request_kwargs)
@@ -437,5 +513,6 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
             if auth_retry and e.response.status_code == 401:
                 self.authenticate(e.response)
                 return self.request(
-                    url, auth_retry=False, *args, **request_kwargs)
+                    url, auth_retry=False, headers=headers,
+                    *args, **request_kwargs)
             raise

@@ -246,9 +246,9 @@ archive.  First, define some general helper functions.
     >>> def permission_entry_sort_key(entry):
     ...      return (entry['permission'],
     ...              entry['person_link'],
-    ...              entry['component_name'],
-    ...              entry['source_package_name'],
-    ...              entry['pocket']),
+    ...              entry['component_name'] or '',
+    ...              entry['source_package_name'] or '',
+    ...              entry['pocket'] or ''),
 
     >>> def show_permission_entries(permissions):
     ...     for entry in sorted(permissions['entries'],

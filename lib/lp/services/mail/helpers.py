@@ -88,16 +88,16 @@ def reformat_wiki_text(text):
     # This implementation is neither correct nor complete.
 
     # Strip macros (anchors, TOC, etc'...)
-    re_macro = re.compile('\[\[.*?\]\]')
+    re_macro = re.compile(r'\[\[.*?\]\]')
     text = re_macro.sub('', text)
 
     # sterilize links
-    re_link = re.compile('\[(.*?)\]')
+    re_link = re.compile(r'\[(.*?)\]')
     text = re_link.sub(
         lambda match: ' '.join(match.group(1).split(' ')[1:]), text)
 
     # Strip comments
-    re_comment = re.compile('^#.*?$', re.MULTILINE)
+    re_comment = re.compile(r'^#.*?$', re.MULTILINE)
     text = re_comment.sub('', text)
 
     return text

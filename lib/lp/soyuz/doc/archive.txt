@@ -746,7 +746,7 @@ required dependencies when building.
 
     >>> def print_dependencies(archive):
     ...     dependencies = archive.dependencies
-    ...     if not dependencies:
+    ...     if dependencies.is_empty():
     ...         print("No dependencies recorded.")
     ...         return
     ...     for dep in dependencies:

@@ -403,5 +403,5 @@ def sanitise_urls(s):
     example).  This function removes them.
     """
     # Remove credentials from URLs.
-    password_re = re.compile('://([^:@/]*:[^@/]*@)(\S+)')
+    password_re = re.compile(r'://([^:@/]*:[^@/]*@)(\S+)')
     return password_re.sub(r'://<redacted>@\2', s)

@@ -17,6 +17,7 @@ from lazr.enum import (
     )
 import six
 from storm.databases.postgres import JSON
+from storm.expr import Desc
 from storm.properties import Int
 from storm.references import Reference
 from storm.store import EmptyResultSet
@@ -162,9 +163,15 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     config = config.IOCIRecipeRequestBuildsJobSource
 
     @classmethod
-    def create(cls, recipe, requester):
+    def create(cls, recipe, requester, architectures=None):
         """See `OCIRecipeRequestBuildsJob`."""
-        metadata = {"requester": requester.id}
+        metadata = {
+            "requester": requester.id,
+            "architectures": (
+                list(architectures) if architectures is not None else None),
+            # A dict of build_id: manifest location
+            "uploaded_manifests": {}
+        }
         recipe_job = OCIRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
         job.celeryRunOnCommit()
@@ -179,6 +186,20 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         if job is None:
             raise NotFoundError("Could not find job ID %s" % job_id)
         return cls(job)
+
+    @classmethod
+    def findByOCIRecipe(cls, recipe, statuses=None, job_ids=None):
+        conditions = [
+            OCIRecipeJob.recipe == recipe,
+            OCIRecipeJob.job_type == cls.class_job_type]
+        if statuses is not None:
+            conditions.append(Job._status.is_in(statuses))
+        if job_ids is not None:
+            conditions.append(OCIRecipeJob.job_id.is_in(job_ids))
+        return IStore(OCIRecipeJob).find(
+            (OCIRecipeJob, Job),
+            OCIRecipeJob.job_id == Job.id,
+            *conditions).order_by(Desc(OCIRecipeJob.job_id))
 
     def getOperationDescription(self):
         return "requesting builds of %s" % self.recipe
@@ -234,6 +255,21 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         """See `OCIRecipeRequestBuildsJob`."""
         self.metadata["builds"] = [build.id for build in builds]
 
+    @property
+    def architectures(self):
+        architectures = self.metadata["architectures"]
+        return set(architectures) if architectures is not None else None
+
+    @property
+    def uploaded_manifests(self):
+        return {
+            # Converts keys to integer since saving json to database
+            # converts them to strings.
+            int(k): v for k, v in self.metadata["uploaded_manifests"].items()}
+
+    def addUploadedManifest(self, build_id, manifest_info):
+        self.metadata["uploaded_manifests"][int(build_id)] = manifest_info
+
     def run(self):
         """See `IRunnableJob`."""
         requester = self.requester
@@ -243,7 +279,8 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             return
         try:
             self.builds = self.recipe.requestBuildsFromJob(
-                requester, build_request=self.build_request)
+                requester, build_request=self.build_request,
+                architectures=self.architectures)
             self.error_message = None
         except self.retry_error_types:
             raise

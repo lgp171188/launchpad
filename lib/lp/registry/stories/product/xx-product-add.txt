@@ -6,30 +6,30 @@ either from the Launchpad home page or the projects home page.
 
     >>> user_browser.open('http://launchpad.test')
     >>> user_browser.getLink('Register a project').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Register a project in Launchpad...
 
     >>> user_browser.open('http://launchpad.test/projects')
     >>> user_browser.getLink('Register a project').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Register a project in Launchpad...
 
 The user can see links about things that are often assumed to be related to
 project registration.
 
-    >>> print user_browser.getLink('Register a team').url
+    >>> print(user_browser.getLink('Register a team').url)
     https://help.launchpad.net/Teams
 
-    >>> print user_browser.getLink('Activate a PPA').url
+    >>> print(user_browser.getLink('Activate a PPA').url)
     https://help.launchpad.net/Packaging/PPA
 
-    >>> print user_browser.getLink('Access your personal branches').url
+    >>> print(user_browser.getLink('Access your personal branches').url)
     https://help.launchpad.net/Code/PersonalBranches
 
-    >>> print user_browser.getLink('Translate a project').url
+    >>> print(user_browser.getLink('Translate a project').url)
     https://help.launchpad.net/Translations/YourProject
 
-    >>> print user_browser.getLink('Request a project group').url
+    >>> print(user_browser.getLink('Request a project group').url)
     https://help.launchpad.net/ProjectGroups
 
 
@@ -73,7 +73,7 @@ information correctly this time.
 The project is not yet created; instead, the project basics are successfully
 validated and the second step of the process is entered.
 
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Register a project in Launchpad...
 
 
@@ -85,7 +85,7 @@ modify the project's URL.
 
     >>> user_browser.getControl(name='field.name')
     <Control name='field.name' type='hidden'>
-    >>> print user_browser.getControl(name='field.name').value
+    >>> print(user_browser.getControl(name='field.name').value)
     aardvark
 
 Sample Person is given the opportunity though to change the summary.
@@ -97,30 +97,30 @@ They can also add a longer description.
     ...     'The desktop aardvark is an ornery thing.')
     >>> user_browser.getControl('Python Licence').click()
     >>> user_browser.getControl('Complete Registration').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Aardvark Center in Launchpad
 
 Let's ensure the summary and description are presented.
 
     >>> summary = find_tags_by_class(user_browser.contents,
     ...                              'summary', only_first=True)
-    >>> print extract_text(summary)
+    >>> print(extract_text(summary))
     Control pesky aardvarkian fnords
     >>> desc = find_tags_by_class(user_browser.contents,
     ...                           'description', only_first=True)
-    >>> print extract_text(desc)
+    >>> print(extract_text(desc))
     The desktop aardvark is an ornery thing.
 
 Let's ensure the registrant and maintainer are listed correctly.
 
     >>> registrant = find_tag_by_id(user_browser.contents,
     ...                             'registration')
-    >>> print extract_text(registrant)
+    >>> print(extract_text(registrant))
     Registered...by...No Privileges Person...
 
     >>> maintainer = find_tag_by_id(user_browser.contents,
     ...                             'owner')
-    >>> print extract_text(maintainer)
+    >>> print(extract_text(maintainer))
     Maintainer: No Privileges Person...
 
 
@@ -150,12 +150,12 @@ Registry Admins.
 
     >>> registrant = find_tag_by_id(user_browser.contents,
     ...                             'registration')
-    >>> print extract_text(registrant)
+    >>> print(extract_text(registrant))
     Registered...by...No Privileges Person...
 
     >>> maintainer = find_tag_by_id(user_browser.contents,
     ...                             'owner')
-    >>> print extract_text(maintainer)
+    >>> print(extract_text(maintainer))
     Maintainer: Registry Administrators...
 
 
@@ -167,7 +167,7 @@ Firefox.
 
     >>> user_browser.open('http://launchpad.test')
     >>> user_browser.getLink('Register a project').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Register a project in Launchpad...
 
     >>> user_browser.getControl('Name').value = 'Snowdog'
@@ -183,7 +183,7 @@ Instead of registering their new project, Sample Person decides to participate
 in the Mozilla Project.
 
     >>> user_browser.getLink('The Mozilla Project').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     The Mozilla Project in Launchpad
 
 
@@ -195,8 +195,8 @@ The project registration workflow used to get started at
 location at /projects/+new.
 
     >>> user_browser.open('http://launchpad.test/projects/+new-guided')
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Register a project in Launchpad...
 
-    >>> print user_browser.url
+    >>> print(user_browser.url)
     http://launchpad.test/projects/+new

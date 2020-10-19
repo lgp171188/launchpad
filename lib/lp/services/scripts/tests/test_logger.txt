@@ -16,7 +16,7 @@ by our logging handler.
     ...         stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kw)
     ...     out, err = proc.communicate()
     ...     assert out == "", "Output to stdout"
-    ...     print err
+    ...     print(err)
 
 
 The default is to output INFO messages and above.
@@ -96,7 +96,7 @@ FATAL is an alias for CRITICAL, and DEBUG1 is an alias for DEBUG.
     ...     loglevels.DEBUG7, loglevels.DEBUG8, loglevels.DEBUG9]
     >>> import logging
     >>> for level in levels:
-    ...     print "%2d %s" % (level, logging.getLevelName(level))
+    ...     print("%2d %s" % (level, logging.getLevelName(level)))
     50 CRITICAL
     50 CRITICAL
     40 ERROR

@@ -23,8 +23,8 @@ Launchpad.
 They can see a link to an FAQ that explains launchpad accounts and passwords.
 Note that this is a link to an FAQ in production databases.
 
-    >>> print browser.getLink(
-    ...     'Learn about your Launchpad account and password').url
+    >>> print(browser.getLink(
+    ...     'Learn about your Launchpad account and password').url)
     http://launchpad.test/launchpad/+faq/51
 
 They noticed that their information is out of date and will update it.

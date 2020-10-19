@@ -12,23 +12,28 @@ __all__ = [
     ]
 
 from datetime import datetime
+from operator import itemgetter
 
 import pytz
-from sqlobject import (
-    ForeignKey,
-    IntCol,
+from storm.expr import LeftJoin
+from storm.locals import (
+    DateTime,
+    Desc,
+    Int,
+    Join,
+    Reference,
     )
 from zope.interface import implementer
 
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import IsTrue
 from lp.translations.interfaces.distroserieslanguage import (
     IDistroSeriesLanguage,
     IDistroSeriesLanguageSet,
@@ -37,30 +42,41 @@ from lp.translations.model.pofile import (
     DummyPOFile,
     POFile,
     )
-from lp.translations.model.potemplate import get_pofiles_for
+from lp.translations.model.potemplate import (
+    get_pofiles_for,
+    POTemplate,
+    )
+from lp.translations.model.translationgroup import TranslationGroup
 from lp.translations.model.translator import Translator
 from lp.translations.utilities.rosettastats import RosettaStats
 
 
 @implementer(IDistroSeriesLanguage)
-class DistroSeriesLanguage(SQLBase, RosettaStats):
+class DistroSeriesLanguage(StormBase, RosettaStats):
     """See `IDistroSeriesLanguage`.
 
     A SQLObject based implementation of IDistroSeriesLanguage.
     """
 
-    _table = 'DistroSeriesLanguage'
+    __storm_table__ = 'DistroSeriesLanguage'
 
-    distroseries = ForeignKey(foreignKey='DistroSeries',
-        dbName='distroseries', notNull=False, default=None)
-    language = ForeignKey(foreignKey='Language', dbName='language',
-        notNull=True)
-    currentcount = IntCol(notNull=True, default=0)
-    updatescount = IntCol(notNull=True, default=0)
-    rosettacount = IntCol(notNull=True, default=0)
-    unreviewed_count = IntCol(notNull=True, default=0)
-    contributorcount = IntCol(notNull=True, default=0)
-    dateupdated = UtcDateTimeCol(dbName='dateupdated', default=DEFAULT)
+    id = Int(primary=True)
+    distroseries_id = Int(name='distroseries', allow_none=True, default=None)
+    distroseries = Reference(distroseries_id, 'DistroSeries.id')
+    language_id = Int(name='language', allow_none=False)
+    language = Reference(language_id, 'Language.id')
+    currentcount = Int(allow_none=False, default=0)
+    updatescount = Int(allow_none=False, default=0)
+    rosettacount = Int(allow_none=False, default=0)
+    unreviewed_count = Int(allow_none=False, default=0)
+    contributorcount = Int(allow_none=False, default=0)
+    dateupdated = DateTime(
+        name='dateupdated', tzinfo=pytz.UTC, default=DEFAULT)
+
+    def __init__(self, distroseries, language):
+        super(DistroSeriesLanguage, self).__init__()
+        self.distroseries = distroseries
+        self.language = language
 
     @property
     def title(self):
@@ -71,15 +87,20 @@ class DistroSeriesLanguage(SQLBase, RosettaStats):
 
     @property
     def pofiles(self):
-        return POFile.select('''
-            POFile.language = %s AND
-            POFile.potemplate = POTemplate.id AND
-            POTemplate.distroseries = %s AND
-            POTemplate.iscurrent = TRUE
-            ''' % sqlvalues(self.language.id, self.distroseries.id),
-            clauseTables=['POTemplate'],
-            prejoins=["potemplate.sourcepackagename"],
-            orderBy=['-POTemplate.priority', 'POFile.id'])
+        tables = [
+            POFile,
+            Join(POTemplate, POFile.potemplate == POTemplate.id),
+            LeftJoin(
+                SourcePackageName,
+                POTemplate.sourcepackagename == SourcePackageName.id),
+            ]
+        result = IStore(POFile).using(*tables).find(
+            (POFile, SourcePackageName),
+            POFile.language == self.language,
+            POTemplate.distroseries == self.distroseries,
+            IsTrue(POTemplate.iscurrent),
+            ).order_by(Desc(POTemplate.priority), POFile.id)
+        return DecoratedResultSet(result, itemgetter(0))
 
     def getPOFilesFor(self, potemplates):
         """See `IDistroSeriesLanguage`."""
@@ -87,16 +108,15 @@ class DistroSeriesLanguage(SQLBase, RosettaStats):
 
     @property
     def translators(self):
-        return Translator.select('''
-            Translator.translationgroup = TranslationGroup.id AND
-            Distribution.translationgroup = TranslationGroup.id AND
-            Distribution.id = %s
-            Translator.language = %s
-            ''' % sqlvalues(self.distroseries.distribution.id,
-                            self.language.id),
-            orderBy=['id'],
-            clauseTables=['TranslationGroup', 'Distribution'],
-            distinct=True)
+        # Circular import.
+        from lp.registry.model.distribution import Distribution
+        return IStore(Translator).find(
+            Translator,
+            Translator.translationgroup == TranslationGroup.id,
+            Distribution.translationgroup == TranslationGroup.id,
+            Distribution.id == self.distroseries.distribution.id,
+            Translator.language == self.language,
+            ).order_by(Translator.id).config(distinct=True)
 
     @property
     def contributor_count(self):

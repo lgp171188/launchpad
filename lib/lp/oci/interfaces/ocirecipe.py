@@ -54,6 +54,7 @@ from zope.schema import (
     Dict,
     Int,
     List,
+    Set,
     Text,
     TextLine,
     )
@@ -173,6 +174,20 @@ class IOCIRecipeBuildRequest(Interface):
         value_type=Reference(schema=Interface),
         required=True, readonly=True)))
 
+    architectures = Set(
+        title=_("If set, limit builds to these architecture tags."),
+        value_type=TextLine(), required=False, readonly=True)
+
+    uploaded_manifests = Dict(
+        title=_("A dict of manifest information per build."),
+        key_type=Int(), value_type=Dict(),
+        required=False, readonly=True)
+
+    def addUploadedManifest(build_id, manifest_info):
+        """Add the manifest information for one of the builds in this
+        BuildRequest.
+        """
+
 
 class IOCIRecipeView(Interface):
     """`IOCIRecipe` attributes that require launchpad.View permission."""
@@ -201,6 +216,9 @@ class IOCIRecipeView(Interface):
     available_processors = Attribute(
         "The architectures that are available to be enabled or disabled for "
         "this OCI recipe.")
+
+    pending_build_requests = Attribute(
+        "The list of build requests that didn't trigger builds yet.")
 
     # This should only be set by using IOCIProject.setOfficialRecipe
     official = Bool(
@@ -265,6 +283,10 @@ class IOCIRecipeView(Interface):
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
 
+        Please, note that this method does not associate the created build
+        with an OCIRecipeBuildRequest. So, prefer using the
+        OCIRecipe.requestBuilds (plural).
+
         :param requester: The person requesting the build.
         :param architecture: The architecture to build for.
         :return: `IOCIRecipeBuild`.
@@ -273,7 +295,7 @@ class IOCIRecipeView(Interface):
     @call_with(requester=REQUEST_USER)
     @export_factory_operation(IOCIRecipeBuildRequest, [])
     @operation_for_version("devel")
-    def requestBuilds(requester):
+    def requestBuilds(requester, architectures=None):
         """Request that the OCI recipe is built for all available
         architectures.
 
@@ -281,7 +303,7 @@ class IOCIRecipeView(Interface):
         :return: A `IOCIRecipeBuildRequest` instance.
         """
 
-    def requestBuildsFromJob(requester):
+    def requestBuildsFromJob(requester, architectures=None):
         """Synchronous part of requesting builds, that should be called as a
         Celery task.
 

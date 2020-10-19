@@ -11,7 +11,7 @@ proposed members at once.
 
 Let's have a look at the proposed members that we have.
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'member-list'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'member-list')))
     Andrew Bennetts (Applied on ...)     Approve Decline Hold
     Sample Person (Applied on ...)       Approve Decline Hold
 
@@ -29,7 +29,7 @@ Person's. A comment is also sent to the applying users and the team admins.
     >>> len(stub.test_emails)
     12
     >>> for from_addr, to_addrs, raw_msg in sorted(stub.test_emails):
-    ...     print to_addrs
+    ...     print(to_addrs)
     ['andrew.bennetts@ubuntulinux.com']
     ['colin.watson@ubuntulinux.com']
     ['colin.watson@ubuntulinux.com']
@@ -42,7 +42,7 @@ Person's. A comment is also sent to the applying users and the team admins.
     ['mark@example.com']
     ['mark@example.com']
     ['test@canonical.com']
-    >>> print raw_msg
+    >>> print(raw_msg)
     Content-Type: text/plain; charset="utf-8"
     ...
     Mark Shuttleworth said:
@@ -54,7 +54,7 @@ as an inactive one.
 
     >>> browser.url
     'http://launchpad.test/~ubuntu-team/+members'
-    >>> print extract_text(find_tag_by_id(browser.contents, 'activemembers'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'activemembers')))
     Name Member since Expires Status
     ...
     Andrew Bennetts

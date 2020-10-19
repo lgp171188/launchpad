@@ -38,7 +38,10 @@ from zope.component import (
 from zope.event import notify
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
@@ -240,6 +243,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
         builds = store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self)
         builds.remove()
+        for push_rule in self.push_rules:
+            push_rule.destroySelf()
         getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
@@ -421,30 +426,40 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def getBuildRequest(self, job_id):
         return OCIRecipeBuildRequest(self, job_id)
 
-    def requestBuildsFromJob(self, requester, build_request=None):
+    def requestBuildsFromJob(self, requester, build_request=None,
+                             architectures=None):
         self._checkRequestBuild(requester)
-        distro_arch_series_to_build = set(self.getAllowedArchitectures())
+        distro_arch_series = set(self.getAllowedArchitectures())
 
         builds = []
-        for das in distro_arch_series_to_build:
+        for das in distro_arch_series:
+            if (architectures is not None
+                    and das.architecturetag not in architectures):
+                continue
             try:
                 builds.append(self.requestBuild(
                     requester, das, build_request=build_request))
             except OCIRecipeBuildAlreadyPending:
                 pass
 
-        # If we have distro_arch_series_to_build, but they all failed to due
+        # If we have distro_arch_series, but they all failed to due
         # to pending builds, we fail the job.
-        if len(distro_arch_series_to_build) > 0 and len(builds) == 0:
+        if len(distro_arch_series) > 0 and len(builds) == 0:
             raise OCIRecipeBuildAlreadyPending
 
         return builds
 
-    def requestBuilds(self, requester):
+    def requestBuilds(self, requester, architectures=None):
         self._checkRequestBuild(requester)
         job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
-            self, requester)
+            self, requester, architectures)
         return self.getBuildRequest(job.job_id)
+
+    @property
+    def pending_build_requests(self):
+        util = getUtility(IOCIRecipeRequestBuildsJobSource)
+        return util.findByOCIRecipe(
+            self, statuses=(JobStatus.WAITING, JobStatus.RUNNING))
 
     @property
     def push_rules(self):
@@ -685,6 +700,13 @@ class OCIRecipeBuildRequest:
         return self.job.date_finished
 
     @property
+    def uploaded_manifests(self):
+        return self.job.uploaded_manifests
+
+    def addUploadedManifest(self, build_id, manifest_info):
+        self.job.addUploadedManifest(build_id, manifest_info)
+
+    @property
     def status(self):
         status_map = {
             JobStatus.WAITING: OCIRecipeBuildRequestStatus.PENDING,
@@ -702,3 +724,8 @@ class OCIRecipeBuildRequest:
     @property
     def builds(self):
         return self.job.builds
+
+    def __eq__(self, other):
+        if not zope_isinstance(other, self.__class__):
+            return False
+        return self.id == other.id

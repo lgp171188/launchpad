@@ -7,6 +7,8 @@ Much of the code in here should be submitted upstream. The rest is code that
 integrates between Breezy's infrastructure and Launchpad's infrastructure.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'add_exception_logging_hook',

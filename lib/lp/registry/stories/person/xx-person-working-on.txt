@@ -31,8 +31,8 @@ displayed there.
     >>> logout()
 
     >>> anon_browser.open(new_person_url)
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'working-on'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'working-on')))
     All bugs in progress
     Assigned bugs
     ...

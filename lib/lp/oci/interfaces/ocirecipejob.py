@@ -19,6 +19,8 @@ from zope.interface import (
     )
 from zope.schema import (
     Datetime,
+    Dict,
+    Int,
     List,
     TextLine,
     )
@@ -78,16 +80,39 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
     error_message = TextLine(
         title=_("Error message"), required=False, readonly=True)
 
+    uploaded_manifests = Dict(
+        title=_("A dict of manifest information per build."),
+        key_type=Int(), value_type=Dict(),
+        required=False, readonly=True)
+
+    def addUploadedManifest(build_id, manifest_info):
+        """Add the manifest information for one of the builds in this
+        BuildRequest.
+        """
+
 
 class IOCIRecipeRequestBuildsJobSource(IJobSource):
 
-    def create(oci_recipe, requester):
+    def create(oci_recipe, requester, architectures=None):
         """Request builds of an OCI Recipe.
 
         :param oci_recipe: The OCI recipe to build.
         :param requester: The person requesting the builds.
+        :param architectures: Build only for this list of
+            architectures, if they are available for the recipe. If
+            None, build for all available architectures.
         """
 
-    def getByOCIRecipeAndID(self, oci_recipe, job_id):
+    def getByOCIRecipeAndID(recipe, job_id):
         """Retrieve the build job by OCI recipe and the given job ID.
+        """
+
+    def findByOCIRecipe(recipe, statuses=None, job_ids=None):
+        """Find jobs for an OCI recipe.
+
+        :param oci_recipe: An OCI recipe to search for.
+        :param statuses: An optional iterable of `JobStatus`es to search for.
+        :param job_ids: An optional iterable of job IDs to search for.
+        :return: A sequence of `OCIRecipeRequestBuildsJob`s with the specified
+            OCI recipe.
         """

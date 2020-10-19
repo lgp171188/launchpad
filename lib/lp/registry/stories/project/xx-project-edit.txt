@@ -6,7 +6,7 @@ The maintainer of a project can edit its details.
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.open('http://launchpad.test/gnome')
     >>> browser.getLink('Change details').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Change project group details...
 
     >>> soup = find_main_content(browser.contents)
@@ -17,7 +17,7 @@ The maintainer of a project can edit its details.
     >>> browser.getControl(name='field.bugtracker').value = 'mozilla.org'
     >>> browser.getControl('Change Details').click()
 
-    >>> print browser.url
+    >>> print(browser.url)
     http://launchpad.test/gnome
 
 Regular users can't access the +review page.
@@ -32,10 +32,10 @@ But administrators can access the page:
     >>> admin_browser.open('http://launchpad.test/gnome')
     >>> admin_browser.getLink('Administer').click()
 
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://launchpad.test/gnome/+review
 
-    >>> print admin_browser.title
+    >>> print(admin_browser.title)
     Change project group details : New Name
 
 Mark the project as reviewed and change the name.
@@ -44,19 +44,19 @@ Mark the project as reviewed and change the name.
     >>> admin_browser.getControl(name='field.name').value = 'new-name'
     >>> admin_browser.getControl('Change').click()
 
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://launchpad.test/new-name
 
 The project summary shows the status as reviewed for admins only.
 
-    >>> print extract_text(find_tag_by_id(admin_browser.contents, 'status'))
+    >>> print(extract_text(find_tag_by_id(admin_browser.contents, 'status')))
     Status: Active Reviewed
 
 Other users cannot see the Project group status in the details portlet.
 
     >>> anon_browser.open('http://launchpad.test/new-name')
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'portlet-details'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'portlet-details')))
     Project group information
     Maintainer:
     Sample Person
@@ -80,21 +80,21 @@ of each other, as well as adding aliases to the project group.
     >>> admin_browser.getControl('Change').click()
 
     >>> admin_browser.getLink('Administer').click()
-    >>> print admin_browser.getControl('Aliases').value
+    >>> print(admin_browser.getControl('Aliases').value)
     old-name
 
     >>> admin_browser.goBack()
 
 The project maintainer and registrant are now updated.
 
-    >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'maintainer'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(admin_browser.contents, 'maintainer')))
     Maintainer:
     Celso Providelo
     Edit
 
-    >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'registration'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(admin_browser.contents, 'registration')))
     Registered ... by David Allouche
 
 The registrant really should only be a person, not a team, but that
@@ -106,8 +106,8 @@ teams as registrants.
     >>> admin_browser.getControl('Registrant').value = 'registry'
     >>> admin_browser.getControl('Change').click()
 
-    >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'registration'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(admin_browser.contents, 'registration')))
     Registered ... by Registry Administrators
 
 Registry experts
@@ -138,18 +138,18 @@ there are fewer fields available.
 
     >>> expert_browser.open('http://launchpad.test/new-name')
     >>> expert_browser.getLink('Administer').click()
-    >>> print expert_browser.url
+    >>> print(expert_browser.url)
     http://launchpad.test/new-name/+review
 
     >>> expert_browser.getControl('Maintainer')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Maintainer'
+    LookupError: label ...'Maintainer'
     ...
     >>> expert_browser.getControl('Registrant')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Registrant'
+    LookupError: label ...'Registrant'
     ...
 
     >>> expert_browser.getControl('Name').value = 'newer-name'
@@ -160,5 +160,5 @@ there are fewer fields available.
 
     >>> expert_browser.open('http://launchpad.test/newer-name')
     >>> expert_browser.getLink('Administer').click()
-    >>> print expert_browser.getControl('Aliases').value
+    >>> print(expert_browser.getControl('Aliases').value)
     sleepy

@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-from cStringIO import StringIO
+import io
 import unittest
 
 import transaction
@@ -25,10 +25,10 @@ class TestLibraryFileAlias(unittest.TestCase):
 
     def setUp(self):
         login(ANONYMOUS)
-        self.text_content = "This is content\non two lines."
+        self.text_content = b"This is content\non two lines."
         self.file_alias = getUtility(ILibraryFileAliasSet).create(
             'content.txt', len(self.text_content),
-            StringIO(self.text_content), 'text/plain')
+            io.BytesIO(self.text_content), 'text/plain')
         # Make it posssible to retrieve the content from the Librarian.
         transaction.commit()
 

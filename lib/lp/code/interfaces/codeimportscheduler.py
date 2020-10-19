@@ -54,8 +54,14 @@ class ICodeImportScheduler(Interface):
         :raise NoSuchCodeImportJob: if no job with id `job_id` exists.
         """
 
-    def finishJobID(job_id, status_name, log_file_alias_url):
+    def finishJobID(job_id, status_name, log_file):
         """Call `ICodeImportJobWorkflow.finishJob` for job `job_id`.
 
+        :param job_id: The ID of the code import job to finish.
+        :param status_name: The outcome of the job as the name of a
+            `CodeImportResultStatus` item.
+        :param log_file: A log file to display for diagnostics, either as a
+            `six.moves.xmlrpc_client.Binary` containing the log file data or
+            as the URL of a file in the librarian.
         :raise NoSuchCodeImportJob: if no job with id `job_id` exists.
         """

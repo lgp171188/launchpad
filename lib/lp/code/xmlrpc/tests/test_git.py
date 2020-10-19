@@ -3,8 +3,11 @@
 
 """Tests for the internal Git API."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
+import hashlib
 import uuid
 
 from fixtures import FakeLogger
@@ -45,11 +48,13 @@ from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     )
+from lp.code.model.gitjob import GitRefScanJob
 from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.runner import JobRunner
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
@@ -67,6 +72,7 @@ from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     AppServerLayer,
@@ -287,6 +293,22 @@ class TestGitAPIMixin:
 
     def assertConfirmsRepoCreation(self, requester, git_repository,
                                    can_authenticate=True, macaroon_raw=None):
+        # Puts some refs in git hosting, to make sure we scanned them.
+        sha1 = lambda x: hashlib.sha1(x).hexdigest()
+        self.hosting_fixture = self.useFixture(
+            GitHostingFixture(refs={
+                'refs/heads/master': {
+                    "object": {
+                        "sha1": sha1('master-branch'),
+                        "type": "commit",
+                    },
+                },
+                'refs/heads/foo': {
+                    "object": {
+                        "sha1": sha1('foo-branch'),
+                        "type": "commit",
+                    },
+                }}))
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
@@ -294,10 +316,28 @@ class TestGitAPIMixin:
         request_id = auth_params["request-id"]
         result = self.assertDoesNotFault(
             request_id, "confirmRepoCreation", translated_path, auth_params)
+        # Run the ref scan job.
+        ref_scan_jobs = list(GitRefScanJob.iterReady())
+        self.assertEqual(1, len(ref_scan_jobs))
+        with dbuser("branchscanner"):
+            JobRunner(ref_scan_jobs).runAll()
         login(ANONYMOUS)
         self.assertIsNone(result)
         Store.of(git_repository).invalidate(git_repository)
         self.assertEqual(GitRepositoryStatus.AVAILABLE, git_repository.status)
+        # Should have checked the refs at some point.
+        excluded_prefixes = config.codehosting.git_exclude_ref_prefixes
+        self.assertEqual(
+            [((git_repository.getInternalPath(), ),
+              dict(exclude_prefixes=excluded_prefixes.split(",")))],
+            self.hosting_fixture.getRefs.calls)
+        self.assertEqual(2, git_repository.refs.count())
+        self.assertEqual(
+            {'refs/heads/foo', 'refs/heads/master'},
+            {i.path for i in git_repository.refs})
+        self.assertEqual(
+            {sha1('foo-branch'), sha1('master-branch')},
+            {i.commit_sha1 for i in git_repository.refs})
 
     def assertConfirmRepoCreationFails(
             self, failure, requester, git_repository, can_authenticate=True,
@@ -325,7 +365,7 @@ class TestGitAPIMixin:
             macaroon_raw)
 
     def assertAbortsRepoCreation(self, requester, git_repository,
-                                   can_authenticate=True, macaroon_raw=None):
+                                 can_authenticate=True, macaroon_raw=None):
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
@@ -403,7 +443,7 @@ class TestGitAPIMixin:
             expected_hosting_call_args = [(repository.getInternalPath(),)]
             expected_hosting_call_kwargs = [{
                 "clone_from": (cloned_from.getInternalPath()
-                                if cloned_from else None),
+                               if cloned_from else None),
                 "async_create": False}]
 
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)

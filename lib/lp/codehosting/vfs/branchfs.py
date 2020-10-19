@@ -40,6 +40,7 @@ hooks into operations like `mkdir` and ask the `LaunchpadServer` to make a
 branch if appropriate.
 """
 
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 __all__ = [
@@ -706,7 +707,7 @@ class LaunchpadServer(_BaseLaunchpadServer):
                 "updating a Launchpad branch", request.oopsid)
             # Twisted's log.err used to write to stderr but it doesn't now so
             # we will write to stderr as well as log.err.
-            print >> sys.stderr, repr(fault)
+            print(repr(fault), file=sys.stderr)
             log.err(repr(fault))
             return fault
         return deferred.addCallback(got_path_info).addErrback(handle_error)

@@ -3,6 +3,8 @@
 
 """Code to talk to the database about what the worker script is doing."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = []
 
@@ -252,6 +254,7 @@ class CodeImportWorkerMonitor:
         args = [interpreter, self.path_to_script]
         if self._access_policy is not None:
             args.append("--access-policy=%s" % self._access_policy)
+        args.append('--')
         command = args + worker_arguments
         self._logger.info(
             "Launching worker child process %s.", command)

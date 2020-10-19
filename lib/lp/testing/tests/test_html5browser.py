@@ -215,7 +215,7 @@ class BrowserTestCase(TestCase):
         script = (
             "document.body.innerHTML = '<p>pting</p>';"
             "window.status = '::::' + document.body.innerText;")
-        command = browser.run_script(script, timeout=1000)
+        command = browser.run_script(script, timeout=5000)
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_SUCCESS, command.return_code)
         self.assertEqual('pting', command.content)
@@ -228,6 +228,6 @@ class BrowserTestCase(TestCase):
         script = (
             "console.log('hello');"
             "window.status = '::::goodbye;'")
-        browser.run_script(script, timeout=1000)
+        browser.run_script(script, timeout=5000)
         self.assertTrue(
             browser._on_console_message(browser, 'message', 1, None, None))

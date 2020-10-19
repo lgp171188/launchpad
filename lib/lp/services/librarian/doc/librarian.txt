@@ -38,10 +38,10 @@ setUp
 High Level
 ----------
 
-    >>> from StringIO import StringIO
+    >>> import io
     >>> from lp.services.librarian.interfaces import (
     ...     ILibraryFileAliasSet)
-    >>> data = 'This is some data'
+    >>> data = b'This is some data'
 
 We can create LibraryFileAliases using the ILibraryFileAliasSet utility.
 This name is a mouthful, but is consistent with the rest of our naming.
@@ -49,13 +49,13 @@ This name is a mouthful, but is consistent with the rest of our naming.
     >>> lfas = getUtility(ILibraryFileAliasSet)
     >>> from lp.services.librarian.interfaces import NEVER_EXPIRES
     >>> alias = lfas.create(
-    ...     'text.txt', len(data), StringIO(data), 'text/plain', NEVER_EXPIRES
-    ...     )
-    >>> alias.mimetype
-    u'text/plain'
+    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain',
+    ...     NEVER_EXPIRES)
+    >>> print(alias.mimetype)
+    text/plain
 
-    >>> alias.filename
-    u'text.txt'
+    >>> print(alias.filename)
+    text.txt
 
 We may wish to set an expiry timestamp on the file. The NEVER_EXPIRES
 constant means the file will never be removed from the Librarian, and
@@ -65,7 +65,7 @@ because of this should probably never be used.
     True
 
     >>> alias = lfas.create(
-    ...     'text.txt', len(data), StringIO(data), 'text/plain')
+    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain')
 
 The default expiry of None means the file will expire a few days after
 it is no longer referenced in the database.
@@ -149,7 +149,7 @@ files.
     >>> transaction.commit()
 
     >>> alias.open()
-    >>> alias.read()
+    >>> six.ensure_str(alias.read())
     'This is some data'
 
     >>> alias.close()
@@ -157,13 +157,13 @@ files.
 We can also read it in chunks.
 
     >>> alias.open()
-    >>> alias.read(2)
+    >>> six.ensure_str(alias.read(2))
     'Th'
 
-    >>> alias.read(6)
+    >>> six.ensure_str(alias.read(6))
     'is is '
 
-    >>> alias.read()
+    >>> six.ensure_str(alias.read())
     'some data'
 
     >>> alias.close()
@@ -171,7 +171,7 @@ We can also read it in chunks.
 If you don't want to read the file in chunks you can neglect to call
 open() and close().
 
-    >>> alias.read()
+    >>> six.ensure_str(alias.read())
     'This is some data'
 
 Each alias also has an expiry date associated with it, the default of
@@ -197,11 +197,11 @@ access files in the Librarian.
     >>> from lp.services.librarian.interfaces.client import ILibrarianClient
     >>> client = getUtility(ILibrarianClient)
     >>> aid = client.addFile(
-    ...     'text.txt', len(data), StringIO(data), 'text/plain', NEVER_EXPIRES
-    ...     )
+    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain',
+    ...     NEVER_EXPIRES)
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
-    >>> f.read()
+    >>> six.ensure_str(f.read())
     'This is some data'
 
     >>> url = client.getURLForAlias(aid)
@@ -248,18 +248,18 @@ rolls back. However, the records in the database will not be visible to
 the client until it begins a new transaction.
 
     >>> url = client.remoteAddFile(
-    ...     'text.txt', len(data), StringIO(data), 'text/plain')
-    >>> print url
+    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain')
+    >>> print(url)
     http://.../text.txt
 
     >>> from six.moves.urllib.request import urlopen
-    >>> urlopen(url).read()
+    >>> six.ensure_str(urlopen(url).read())
     'This is some data'
 
 If we abort the transaction, it is still in there
 
     >>> transaction.abort()
-    >>> urlopen(url).read()
+    >>> six.ensure_str(urlopen(url).read())
     'This is some data'
 
 You can also set the expiry date on the file this way too:
@@ -267,7 +267,7 @@ You can also set the expiry date on the file this way too:
     >>> from datetime import date, datetime
     >>> from pytz import utc
     >>> url = client.remoteAddFile(
-    ...     'text.txt', len(data), StringIO(data), 'text/plain',
+    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain',
     ...     expires=datetime(2005,9,1,12,0,0, tzinfo=utc))
     >>> transaction.abort()
 
@@ -280,7 +280,7 @@ because, except for test cases, the URL is the only thing useful
     >>> match = re.search('/(\d+)/', url)
     >>> alias_id = int(match.group(1))
     >>> alias = lfas[alias_id]
-    >>> print alias.expires.isoformat()
+    >>> print(alias.expires.isoformat())
     2005-09-01T12:00:00+00:00
 
 
@@ -305,9 +305,9 @@ librarian.
 File alias uploaded through the restricted librarian have the restricted
 attribute set.
 
-    >>> private_content = 'This is private data.'
+    >>> private_content = b'This is private data.'
     >>> private_file_id = restricted_client.addFile(
-    ...     'private.txt', len(private_content), StringIO(private_content),
+    ...     'private.txt', len(private_content), io.BytesIO(private_content),
     ...     'text/plain')
     >>> file_alias = getUtility(ILibraryFileAliasSet)[private_file_id]
     >>> file_alias.restricted
@@ -315,14 +315,14 @@ attribute set.
 
     >>> transaction.commit()
     >>> file_alias.open()
-    >>> print file_alias.read()
+    >>> print(six.ensure_str(file_alias.read()))
     This is private data.
 
     >>> file_alias.close()
 
 Restricted files are accessible with HTTP on a private domain.
 
-    >>> print file_alias.http_url
+    >>> print(file_alias.http_url)
     http://.../private.txt
 
     >>> file_alias.http_url.startswith(
@@ -336,7 +336,7 @@ provide such a token.
 
     >>> import hashlib
     >>> token_url = file_alias.getURL(include_token=True)
-    >>> print token_url
+    >>> print(token_url)
     https://i...restricted.../private.txt?token=...
 
     >>> token_url.startswith('https://i%d.restricted.' % file_alias.id)
@@ -379,7 +379,7 @@ But using the restricted librarian will work:
     <lp.services.librarian.client._File...>
 
     >>> file_url = restricted_client.getURLForAlias(private_file_id)
-    >>> print file_url
+    >>> print(file_url)
     http://.../private.txt
 
 Trying to access that file directly on the normal librarian will fail
@@ -395,15 +395,15 @@ Trying to access that file directly on the normal librarian will fail
 
 But downloading it from the restricted host, will work.
 
-    >>> print urlopen(file_url).read()
+    >>> print(six.ensure_str(urlopen(file_url).read()))
     This is private data.
 
 Trying to retrieve a non-restricted file from the restricted librarian
 also fails:
 
-    >>> public_content = 'This is public data.'
+    >>> public_content = b'This is public data.'
     >>> public_file_id = getUtility(ILibrarianClient).addFile(
-    ...     'public.txt', len(public_content), StringIO(public_content),
+    ...     'public.txt', len(public_content), io.BytesIO(public_content),
     ...     'text/plain')
     >>> file_alias = getUtility(ILibraryFileAliasSet)[public_file_id]
     >>> file_alias.restricted
@@ -426,8 +426,8 @@ file:
 
     >>> url = restricted_client.remoteAddFile(
     ...     'another-private.txt', len(private_content),
-    ...     StringIO(private_content), 'text/plain')
-    >>> print url
+    ...     io.BytesIO(private_content), 'text/plain')
+    >>> print(url)
     http://.../another-private.txt
 
     >>> url.startswith(config.librarian.restricted_download_url)
@@ -435,7 +435,7 @@ file:
 
 The file can then immediately be retrieved:
 
-    >>> print urlopen(url).read()
+    >>> print(six.ensure_str(urlopen(url).read()))
     This is private data.
 
 Another way to create a restricted file is by using the restricted
@@ -443,7 +443,7 @@ parameter to ILibraryFileAliasSet:
 
     >>> restricted_file = getUtility(ILibraryFileAliasSet).create(
     ...     'yet-another-private.txt', len(private_content),
-    ...     StringIO(private_content), 'text/plain', restricted=True)
+    ...     io.BytesIO(private_content), 'text/plain', restricted=True)
     >>> restricted_file.restricted
     True
 
@@ -454,7 +454,7 @@ So searching for the private content on the public librarian will fail:
 
     >>> transaction.commit()
     >>> search_query = "search?digest=%s" % restricted_file.content.sha1
-    >>> print urlopen(config.librarian.download_url + search_query).read()
+    >>> print(urlopen(config.librarian.download_url + search_query).read())
     0
 
 But on the restricted server, this will work:
@@ -462,7 +462,7 @@ But on the restricted server, this will work:
     >>> result = urlopen(
     ...     config.librarian.restricted_download_url + search_query).read()
     >>> result = result.splitlines()
-    >>> print result[0]
+    >>> print(result[0])
     3
 
     >>> sorted(file_path.split('/')[1] for file_path in result[1:])
@@ -475,7 +475,7 @@ Odds and Sods
 An UploadFailed will be raised if you try to create a file with no
 content
 
-    >>> client.addFile('test.txt', 0, StringIO('hello'), 'text/plain')
+    >>> client.addFile('test.txt', 0, io.BytesIO(b'hello'), 'text/plain')
     Traceback (most recent call last):
         [...]
     UploadFailed: Invalid length: 0
@@ -483,16 +483,16 @@ content
 If you really want a zero length file you can do it:
 
     >>> aid = client.addFile(
-    ...     'test.txt', 0, StringIO(''), 'text/plain', allow_zero_length=True)
+    ...     'test.txt', 0, io.BytesIO(), 'text/plain', allow_zero_length=True)
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
-    >>> f.read()
+    >>> six.ensure_str(f.read())
     ''
 
 An AssertionError will be raised if the number of bytes that could be
 read from the file don't match the declared size.
 
-    >>> client.addFile('test.txt', 42, StringIO(''), 'text/plain')
+    >>> client.addFile('test.txt', 42, io.BytesIO(), 'text/plain')
     Traceback (most recent call last):
         [...]
     AssertionError: size is 42, but 0 were read from the file
@@ -500,10 +500,10 @@ read from the file don't match the declared size.
 Filenames with spaces in them work.
 
     >>> aid = client.addFile(
-    ...     'hot dog', len(data), StringIO(data), 'text/plain')
+    ...     'hot dog', len(data), io.BytesIO(data), 'text/plain')
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
-    >>> f.read()
+    >>> six.ensure_str(f.read())
     'This is some data'
 
     >>> url = client.getURLForAlias(aid)
@@ -514,10 +514,10 @@ Unicode file names work.  Note that the filename in the resulting URL is
 encoded as UTF-8.
 
     >>> aid = client.addFile(
-    ...     u'Yow\N{INTERROBANG}', len(data), StringIO(data), 'text/plain')
+    ...     u'Yow\N{INTERROBANG}', len(data), io.BytesIO(data), 'text/plain')
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
-    >>> f.read()
+    >>> six.ensure_str(f.read())
     'This is some data'
 
     >>> url = client.getURLForAlias(aid)
@@ -554,7 +554,7 @@ URL.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> req = LaunchpadTestRequest()
     >>> alias = lfas.create(
-    ...     'text2.txt', len(data), StringIO(data), 'text/plain',
+    ...     'text2.txt', len(data), io.BytesIO(data), 'text/plain',
     ...     NEVER_EXPIRES)
     >>> transaction.commit()
     >>> lfa_view = getMultiAdapter((alias, req), name='+index')
@@ -569,15 +569,15 @@ File views setup
 We need some files to test different ways of accessing them.
 
     >>> filename = 'public.txt'
-    >>> content = 'PUBLIC'
+    >>> content = b'PUBLIC'
     >>> public_file = getUtility(ILibraryFileAliasSet).create(
-    ...     filename, len(content), StringIO(content), 'text/plain',
+    ...     filename, len(content), io.BytesIO(content), 'text/plain',
     ...     NEVER_EXPIRES, restricted=False)
 
     >>> filename = 'restricted.txt'
-    >>> content = 'RESTRICTED'
+    >>> content = b'RESTRICTED'
     >>> restricted_file = getUtility(ILibraryFileAliasSet).create(
-    ...     filename, len(content), StringIO(content), 'text/plain',
+    ...     filename, len(content), io.BytesIO(content), 'text/plain',
     ...     NEVER_EXPIRES, restricted=True)
 
     # Create a new LibraryFileAlias not referencing any LibraryFileContent
@@ -595,7 +595,7 @@ Commit the just-created files.
     >>> transaction.commit()
 
     >>> deleted_file = getUtility(ILibraryFileAliasSet)[deleted_file.id]
-    >>> print deleted_file.deleted
+    >>> print(deleted_file.deleted)
     True
 
 Clear out existing tokens.
@@ -610,10 +610,10 @@ The MD5 summary for a file can be downloaded. The text file contains the
 hash and file name.
 
     >>> view = create_view(public_file, '+md5')
-    >>> print view.render()
+    >>> print(view.render())
     cd0c6092d6a6874f379fe4827ed1db8b public.txt
 
-    >>> print view.request.response.getHeader('Content-type')
+    >>> print(view.request.response.getHeader('Content-type'))
     text/plain
 
 
@@ -712,9 +712,9 @@ downloaded.
     >>> public_file.last_downloaded == today - last_downloaded_date
     True
 
-    >>> content = 'something'
+    >>> content = b'something'
     >>> brand_new_file = getUtility(ILibraryFileAliasSet).create(
-    ...     'new.txt', len(content), StringIO(content), 'text/plain',
+    ...     'new.txt', len(content), io.BytesIO(content), 'text/plain',
     ...     NEVER_EXPIRES, restricted=False)
-    >>> print brand_new_file.last_downloaded
+    >>> print(brand_new_file.last_downloaded)
     None

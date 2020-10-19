@@ -65,12 +65,14 @@ But an administrator can still see them if they traverse directly, and
 they'll see an informative message. They can then reactivate them..
 
     >>> admin_browser.open('http://launchpad.test/firefox')
-    >>> print find_tag_by_id(admin_browser.contents, 'project-inactive').renderContents()
+    >>> print(find_tag_by_id(
+    ...     admin_browser.contents, 'project-inactive').renderContents())
      This project is currently inactive...
     >>> toggleProject('firefox')
 
     >>> admin_browser.open('http://launchpad.test/mozilla')
-    >>> print find_tag_by_id(admin_browser.contents, 'project-inactive').renderContents()
+    >>> print(find_tag_by_id(
+    ...     admin_browser.contents, 'project-inactive').renderContents())
      This project is currently inactive...
     >>> toggleProject('mozilla')
 
@@ -80,12 +82,12 @@ And they are back to normal:
     >>> anon_browser.getLink(url='/firefox').click()
     >>> anon_browser.title
     'Mozilla Firefox in Launchpad'
-    >>> print find_tag_by_id(anon_browser.contents, 'project-inactive')
+    >>> print(find_tag_by_id(anon_browser.contents, 'project-inactive'))
     None
 
     >>> anon_browser.open('http://launchpad.test/projects/+index?text=mozilla')
     >>> anon_browser.getLink(url='/mozilla').click()
     >>> anon_browser.title
     'The Mozilla Project in Launchpad'
-    >>> print find_tag_by_id(anon_browser.contents, 'project-inactive')
+    >>> print(find_tag_by_id(anon_browser.contents, 'project-inactive'))
     None

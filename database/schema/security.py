@@ -133,6 +133,9 @@ class DbObject(object):
     def __eq__(self, other):
         return self.schema == other.schema and self.name == other.name
 
+    def __hash__(self):
+        return hash((self.schema, self.name))
+
     @property
     def fullname(self):
         fn = "%s.%s" % (self.schema, self.name)
@@ -325,7 +328,7 @@ class PermissionGatherer:
     def countPrincipals(self):
         """Count the number of different principals."""
         return len(set(sum([
-            principals.keys()
+            list(principals)
             for principals in six.itervalues(self.permissions)], [])))
 
     def grant(self, cur):
@@ -462,7 +465,7 @@ def reset_permissions(con, config, options):
         if config.get(user, 'type') != 'user':
             continue
         groups = [
-            g.strip() for g in config.get(user, 'groups', '').split(',')
+            g.strip() for g in config.get(user, 'groups').split(',')
             if g.strip()]
         # Read-Only users get added to Read-Only groups.
         if user.endswith('_ro'):
@@ -481,7 +484,7 @@ def reset_permissions(con, config, options):
             managed_roles.add(section_name + "_ro")
 
     log.debug('Updating group memberships')
-    existing_memberships = list_role_members(cur, memberships.keys())
+    existing_memberships = list_role_members(cur, list(memberships))
     for group, users in six.iteritems(memberships):
         cur_users = managed_roles.intersection(existing_memberships[group])
         to_grant = users - cur_users

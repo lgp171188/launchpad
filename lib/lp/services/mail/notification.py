@@ -113,7 +113,7 @@ def get_unified_diff(old_text, new_text, text_width):
         if not diff_line.startswith('?')]
     # Add a whitespace between the +/- and the text line.
     text_diff = [
-        re.sub('^([\+\- ])(.*)', r'\1 \2', line)
+        re.sub(r'^([\+\- ])(.*)', r'\1 \2', line)
         for line in text_diff]
     text_diff = '\n'.join(text_diff)
     return text_diff
