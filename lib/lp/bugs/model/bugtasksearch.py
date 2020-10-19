@@ -168,7 +168,7 @@ orderby_expression = {
                     # tag that comes first in alphabetic order.
                     BugTag.id == Select(
                         BugTag.id, tables=[BugTag],
-                        where=(BugTag.bugID == BugTaskFlat.bug_id),
+                        where=(BugTag.bug_id == BugTaskFlat.bug_id),
                         order_by=BugTag.tag, limit=1))),
             ]
         ),
@@ -1223,7 +1223,7 @@ def _build_upstream_clause(params):
 def _build_tag_set_query(clauses):
     subselects = [
         Select(
-            1, tables=[BugTag], where=And(BugTag.bugID == BugTaskFlat.bug_id,
+            1, tables=[BugTag], where=And(BugTag.bug_id == BugTaskFlat.bug_id,
             clause))
         for clause in clauses]
     if len(subselects) == 1:
@@ -1295,7 +1295,7 @@ def _build_tag_search_clause(tags_spec):
 
     universal_clause = (
         Exists(Select(
-            1, tables=[BugTag], where=BugTag.bugID == BugTaskFlat.bug_id)))
+            1, tables=[BugTag], where=BugTag.bug_id == BugTaskFlat.bug_id)))
 
     # Search for the *presence* of any tag.
     if '*' in wildcards:

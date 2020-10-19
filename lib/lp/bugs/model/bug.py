@@ -34,6 +34,8 @@ from six.moves.collections_abc import (
     Iterable,
     Set,
     )
+from storm.properties import Unicode
+
 from sqlobject import (
     ForeignKey,
     IntCol,
@@ -247,11 +249,23 @@ def snapshot_bug_params(bug_params):
             "importance", "milestone", "assignee", "cve"])
 
 
-class BugTag(SQLBase):
+class BugTag(StormBase):
     """A tag belonging to a bug."""
+    __storm_table__ = 'BugTag'
+    id = Int(primary=True)
 
     bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    tag = StringCol(notNull=True)
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    tag = Unicode(allow_none=False)
+
+    def __init__(self, bug, tag):
+        self.bug = bug
+        self.tag = tag
+
+    def destroySelf(self):
+        Store.of(self).remove(self)
 
 
 def get_bug_tags_open_count(context_condition, user, tag_limit=0,
@@ -1849,7 +1863,7 @@ class Bug(SQLBase, InformationTypeMixin):
     @cachedproperty
     def _cached_tags(self):
         return list(Store.of(self).find(
-            BugTag.tag, BugTag.bugID == self.id).order_by(BugTag.tag))
+            BugTag.tag, BugTag.bug_id == self.id).order_by(BugTag.tag))
 
     def _setTags(self, tags):
         """Set the tags from a list of strings."""
@@ -1862,7 +1876,9 @@ class Bug(SQLBase, InformationTypeMixin):
         # Find the set of tags that are to be removed and remove them.
         removed_tags = old_tags.difference(new_tags)
         for removed_tag in removed_tags:
-            tag = BugTag.selectOneBy(bug=self, tag=removed_tag)
+            tag = IStore(BugTag).find(
+                BugTag,
+                bug=self, tag=removed_tag).one()
             tag.destroySelf()
         # Find the set of tags that are to be added and add them.
         added_tags = new_tags.difference(old_tags)
