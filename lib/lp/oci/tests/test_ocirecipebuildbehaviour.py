@@ -104,7 +104,7 @@ class MakeOCIBuildMixin:
         build.queueBuild()
         return build
 
-    def makeJob(self, git_ref, recipe=None, build=None, **kwargs):
+    def makeJob(self, git_ref=None, recipe=None, build=None, **kwargs):
         """Create a sample `IOCIRecipeBuildBehaviour`."""
         if build is None:
             if recipe is None:
@@ -112,6 +112,8 @@ class MakeOCIBuildMixin:
             else:
                 build = self.factory.makeOCIRecipeBuild(
                     recipe=recipe, **kwargs)
+        if git_ref is None:
+            [git_ref] = self.factory.makeGitRefs()
         build.recipe.git_ref = git_ref
         build.recipe.build_args = {"BUILD_VAR": "123"}
 
@@ -131,7 +133,7 @@ class MakeOCIBuildMixin:
         return job
 
 
-class TestOCIBuildBehaviour(TestCaseWithFactory):
+class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
 
     layer = LaunchpadZopelessLayer
 
@@ -149,6 +151,89 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
         build = self.factory.makeOCIRecipeBuild()
         job = IBuildFarmJobBehaviour(build)
         self.assertProvides(job, IBuildFarmJobBehaviour)
+
+    def makeRecipe(self, **kwargs):
+        amd64 = getUtility(IProcessorSet).getByName("amd64")
+        recipe = self.factory.makeOCIRecipe(**kwargs)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.oci_project.distribution)
+        distro = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="amd64",
+            processor=amd64)
+        distro.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+        recipe.setProcessors([amd64])
+        return recipe
+
+    def makeBuildRequest(self, recipe, requester):
+        build_request = recipe.requestBuilds(requester)
+        # Create the builds for the build request, and set them at the build
+        # request job.
+        builds = recipe.requestBuildsFromJob(requester, build_request)
+        job = removeSecurityProxy(build_request).job
+        removeSecurityProxy(job).builds = builds
+        return build_request
+
+    def test_getBuildInfoArgs_with_build_request(self):
+        owner = self.factory.makePerson()
+        owner.setPreferredEmail(self.factory.makeEmail('owner@foo.com', owner))
+        oci_project = self.factory.makeOCIProject(registrant=owner)
+        recipe = self.makeRecipe(
+            oci_project=oci_project, registrant=owner, owner=owner)
+        build_request = self.makeBuildRequest(recipe, recipe.owner)
+        build = build_request.builds[0]
+        job = self.makeJob(build=build)
+
+        self.assertThat(job.getBuildInfoArgs(), MatchesDict({
+            "architectures": Equals(["amd64"]),
+            "recipe_owner": Equals({
+                "name": recipe.owner.name,
+                "email": "owner@foo.com"}),
+            "build_request_id": Equals(build_request.id),
+            "build_requester": Equals({
+                "name": build.requester.name,
+                "email": "owner@foo.com"}),
+            "build_request_timestamp": Equals(
+                build_request.date_requested.isoformat()),
+            "build_urls": MatchesDict({
+                "amd64": Equals(canonical_url(build_request.builds[0]))
+            }),
+        }))
+
+    def test_getBuildInfoArgs_hide_email(self):
+        owner = self.factory.makePerson()
+        owner.setPreferredEmail(self.factory.makeEmail('owner@foo.com', owner))
+        owner.hide_email_addresses = True
+        oci_project = self.factory.makeOCIProject(registrant=owner)
+        recipe = self.makeRecipe(
+            oci_project=oci_project, registrant=owner, owner=owner)
+        build_request = self.makeBuildRequest(recipe, recipe.owner)
+        build = build_request.builds[0]
+        job = self.makeJob(build=build)
+
+        self.assertThat(job.getBuildInfoArgs(), MatchesDict({
+            "architectures": Equals(["amd64"]),
+            "recipe_owner": Equals({"name": recipe.owner.name, "email": None}),
+            "build_request_id": Equals(build_request.id),
+            "build_requester": Equals({
+                "name": build.requester.name, "email": None}),
+            "build_request_timestamp": Equals(
+                build_request.date_requested.isoformat()),
+            "build_urls": MatchesDict({
+                "amd64": Equals(canonical_url(build_request.builds[0]))
+            }),
+        }))
+
+    def test_getBuildInfoArgs_without_build_request(self):
+        build = self.factory.makeOCIRecipeBuild()
+        job = self.makeJob(build=build)
+        self.assertThat(job.getBuildInfoArgs(), ContainsDict({
+            "architectures": Equals(["386"]),
+            "build_request_id": Equals(None),
+            "build_request_timestamp": Equals(None),
+            "build_urls": MatchesDict({
+                "386": Equals(canonical_url(build))
+            }),
+        }))
 
 
 class TestAsyncOCIRecipeBuildBehaviour(
@@ -279,7 +364,14 @@ class TestAsyncOCIRecipeBuildBehaviour(
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
-            }))
+            # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
+            "metadata": ContainsDict({
+                "architectures": Equals(["386"]),
+                "build_request_id": Equals(None),
+                "build_request_timestamp": Equals(None),
+                "build_urls": Equals({"386": canonical_url(job.build)})
+            })
+        }))
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_git_HEAD(self):
@@ -311,7 +403,14 @@ class TestAsyncOCIRecipeBuildBehaviour(
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
-            }))
+            # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
+            "metadata": ContainsDict({
+                "architectures": Equals(["386"]),
+                "build_request_id": Equals(None),
+                "build_request_timestamp": Equals(None),
+                "build_urls": Equals({"386": canonical_url(job.build)})
+            })
+        }))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):

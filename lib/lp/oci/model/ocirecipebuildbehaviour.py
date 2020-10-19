@@ -38,6 +38,7 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
 from lp.oci.interfaces.ocirecipebuild import IOCIFileSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.librarian.utils import copy_and_close
+from lp.services.webapp import canonical_url
 from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
@@ -77,6 +78,38 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             raise CannotBuild(
                 "Missing chroot for %s" % build.distro_arch_series.displayname)
 
+    def getBuildInfoArgs(self):
+        def format_user(user):
+            if user is None:
+                return None
+            hide_email = not user.preferredemail or user.hide_email_addresses
+            return {
+                "name": user.name,
+                "email": (None if hide_email else user.preferredemail.email)}
+        build = self.build
+        build_request = build.build_request
+        builds = list(build_request.builds) if build_request else [build]
+        info = {
+            "architectures": [],
+            "recipe_owner": format_user(self.build.recipe.owner),
+            "build_request_id": None,
+            "build_request_timestamp": None,
+            # With build_request set, all builds in this list will have the
+            # same requester. Without build_request, we only care about the
+            # only existing build in this list.
+            "build_requester": format_user(builds[0].requester),
+            # Build URL per architecture.
+            "build_urls": {},
+        }
+        if build_request:
+            info["build_request_id"] = build_request.id
+            info["build_request_timestamp"] = (
+                build_request.date_requested.isoformat())
+        info["architectures"] = [i.processor.name for i in builds]
+        info["build_urls"] = {
+            i.processor.name: canonical_url(i) for i in builds}
+        return info
+
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
@@ -101,6 +134,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
         # XML-RPC.
         args['build_args'] = removeSecurityProxy(build.recipe.build_args)
         args['build_path'] = build.recipe.build_path
+        args['metadata'] = self.getBuildInfoArgs()
 
         if build.recipe.git_ref is not None:
             args["git_repository"] = (
