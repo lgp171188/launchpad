@@ -1363,7 +1363,7 @@ class BugTaskSet:
             (BugTag.tag, BugTask.id),
             BugTask.bug == Bug.id,
             BugTag.bug == Bug.id,
-            BugTag.bugID.is_in(bug_ids),
+            BugTag.bug_id.is_in(bug_ids),
             BugTask.id.is_in(bugtask_ids)).order_by(BugTag.tag)
         tags_by_bugtask = defaultdict(list)
         for tag_name, bugtask_id in tags:
