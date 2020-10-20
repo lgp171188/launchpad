@@ -129,6 +129,8 @@ class TraversalMixin:
         :param use_default_referer: If True, set the referer attribute in the
             request header to DEFAULT_REFERER = "http://launchpad.test"
             (otherwise it remains as None)
+        :param webservice: If True, use a webservice-like request rather
+            than a normal test request.
         :return: The object found.
         """
         # XXX: What's the difference between first_segment and path? -- mbp
