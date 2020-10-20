@@ -20,20 +20,17 @@ from bzrlib.branch import Branch
 from bzrlib.tests import TestCaseInTempDir
 from dulwich.repo import Repo as GitRepo
 import oops_twisted
-from six.moves.urllib.request import urlopen
+from six.moves import xmlrpc_client
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
-    flush_logged_errors,
     )
-import transaction
 from twisted.internet import (
     defer,
     error,
     protocol,
     reactor,
     )
-from twisted.python import log
 from twisted.web import xmlrpc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -88,7 +85,6 @@ from lp.testing import (
     TestCase,
     )
 from lp.testing.factory import LaunchpadObjectFactory
-from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import (
     LaunchpadZopelessLayer,
     ZopelessAppServerLayer,
@@ -224,20 +220,14 @@ class TestWorkerMonitorUnit(TestCase):
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
-    class WorkerMonitor(CodeImportWorkerMonitor):
-        """A subclass of CodeImportWorkerMonitor that stubs logging OOPSes."""
-
-        def _logOopsFromFailure(self, failure):
-            log.err(failure)
-
-    def makeWorkerMonitorWithJob(self, job_id=1, job_data=()):
-        return self.WorkerMonitor(
+    def makeWorkerMonitorWithJob(self, job_id=1, job_data={}):
+        return CodeImportWorkerMonitor(
             job_id, BufferLogger(),
             FakeCodeImportScheduleEndpointProxy({job_id: job_data}),
             "anything")
 
     def makeWorkerMonitorWithoutJob(self, exception=None):
-        return self.WorkerMonitor(
+        return CodeImportWorkerMonitor(
             1, BufferLogger(),
             FakeCodeImportScheduleEndpointProxy({}, exception),
             None)
@@ -247,63 +237,10 @@ class TestWorkerMonitorUnit(TestCase):
         # 'arguments' part of what getImportDataForJobID returns.
         args = [self.factory.getUniqueString(),
                 self.factory.getUniqueString()]
-        worker_monitor = self.makeWorkerMonitorWithJob(1, (args, 1, 2))
-        return worker_monitor.getWorkerArguments().addCallback(
-            self.assertEqual, args)
-
-    def test_getWorkerArguments_dict(self):
-        # getWorkerArguments returns a deferred that fires with the
-        # 'arguments' part of what getImportDataForJobID returns.
-        # (New protocol: data passed as a dict.)
-        args = [self.factory.getUniqueString(),
-                self.factory.getUniqueString()]
-        data = {'arguments': args, 'target_url': 1, 'log_file_name': 2}
+        data = {'arguments': args}
         worker_monitor = self.makeWorkerMonitorWithJob(1, data)
         return worker_monitor.getWorkerArguments().addCallback(
             self.assertEqual, args)
-
-    def test_getWorkerArguments_sets_target_url_and_logfilename(self):
-        # getWorkerArguments sets the _target_url (for use in oops reports)
-        # and _log_file_name (for upload to the librarian) attributes on the
-        # WorkerMonitor from the data returned by getImportDataForJobID.
-        target_url = self.factory.getUniqueString()
-        log_file_name = self.factory.getUniqueString()
-        worker_monitor = self.makeWorkerMonitorWithJob(
-            1, (['a'], target_url, log_file_name))
-
-        def check_branch_log(ignored):
-            # Looking at the _ attributes here is in slightly poor taste, but
-            # much much easier than them by logging and parsing an oops, etc.
-            self.assertEqual(
-                (target_url, log_file_name),
-                (worker_monitor._target_url, worker_monitor._log_file_name))
-
-        return worker_monitor.getWorkerArguments().addCallback(
-            check_branch_log)
-
-    def test_getWorkerArguments_sets_target_url_and_logfilename_dict(self):
-        # getWorkerArguments sets the _target_url (for use in oops reports)
-        # and _log_file_name (for upload to the librarian) attributes on the
-        # WorkerMonitor from the data returned by getImportDataForJobID.
-        # (New protocol: data passed as a dict.)
-        target_url = self.factory.getUniqueString()
-        log_file_name = self.factory.getUniqueString()
-        data = {
-            'arguments': ['a'],
-            'target_url': target_url,
-            'log_file_name': log_file_name,
-            }
-        worker_monitor = self.makeWorkerMonitorWithJob(1, data)
-
-        def check_branch_log(ignored):
-            # Looking at the _ attributes here is in slightly poor taste, but
-            # much much easier than them by logging and parsing an oops, etc.
-            self.assertEqual(
-                (target_url, log_file_name),
-                (worker_monitor._target_url, worker_monitor._log_file_name))
-
-        return worker_monitor.getWorkerArguments().addCallback(
-            check_branch_log)
 
     def test_getWorkerArguments_job_not_found_raises_exit_quietly(self):
         # When getImportDataForJobID signals a fault indicating that
@@ -345,61 +282,34 @@ class TestWorkerMonitorUnit(TestCase):
 
     def test_finishJob_calls_finishJobID_empty_log_file(self):
         # When the log file is empty, finishJob calls finishJobID with the
-        # name of the status enum and an empty string to indicate that no log
-        # file was uplaoded to the librarian.
+        # name of the status enum and an empty binary string.
         job_id = self.factory.getUniqueInteger()
         worker_monitor = self.makeWorkerMonitorWithJob(job_id)
         self.assertEqual(worker_monitor._log_file.tell(), 0)
 
         def check_finishJob_called(result):
             self.assertEqual(
-                [('finishJobID', job_id, 'SUCCESS', '')],
+                [('finishJobID', job_id, 'SUCCESS',
+                  xmlrpc_client.Binary(b''))],
                 worker_monitor.codeimport_endpoint.calls)
 
         return worker_monitor.finishJob(
             CodeImportResultStatus.SUCCESS).addCallback(
             check_finishJob_called)
 
-    def test_finishJob_uploads_nonempty_file_to_librarian(self):
-        # finishJob method uploads the log file to the librarian and calls the
-        # finishJobID XML-RPC method with the url of that file.
-        self.layer.force_dirty_database()
-        log_bytes = self.factory.getUniqueBytes()
-        worker_monitor = self.makeWorkerMonitorWithJob()
-        worker_monitor._log_file.write(log_bytes)
-
-        def check_file_uploaded(result):
-            transaction.abort()
-            url = worker_monitor.codeimport_endpoint.calls[0][3]
-            got_log_bytes = urlopen(url).read()
-            self.assertEqual(log_bytes, got_log_bytes)
-
-        return worker_monitor.finishJob(
-            CodeImportResultStatus.SUCCESS).addCallback(
-            check_file_uploaded)
-
-    @suppress_stderr
-    def test_finishJob_still_calls_finishJobID_if_upload_fails(self):
-        # If the upload to the librarian fails for any reason, the worker
-        # monitor still calls the finishJobID XML-RPC method, but logs an
-        # error to indicate there was a problem.
-        class Fail(Exception):
-            """Some arbitrary failure."""
-
-        # Write some text so that we try to upload the log.
+    def test_finishJob_sends_nonempty_file_to_scheduler(self):
+        # finishJob method calls finishJobID with the contents of the log
+        # file.
         job_id = self.factory.getUniqueInteger()
+        log_bytes = self.factory.getUniqueBytes()
         worker_monitor = self.makeWorkerMonitorWithJob(job_id)
-        worker_monitor._log_file.write(b'some text')
-
-        # Make _createLibrarianFileAlias fail in a distinctive way.
-        worker_monitor._createLibrarianFileAlias = FakeMethod(failure=Fail())
+        worker_monitor._log_file.write(log_bytes)
 
         def check_finishJob_called(result):
             self.assertEqual(
-                [('finishJobID', job_id, 'SUCCESS', '')],
+                [('finishJobID', job_id, 'SUCCESS',
+                  xmlrpc_client.Binary(log_bytes))],
                 worker_monitor.codeimport_endpoint.calls)
-            errors = flush_logged_errors(Fail)
-            self.assertEqual(1, len(errors))
 
         return worker_monitor.finishJob(
             CodeImportResultStatus.SUCCESS).addCallback(
@@ -578,7 +488,7 @@ class TestWorkerMonitorRunNoProcess(TestCase):
 
         def __init__(self, process_deferred, has_job=True):
             if has_job:
-                job_data = {1: ([], '', '')}
+                job_data = {1: {'arguments': []}}
             else:
                 job_data = {}
             CodeImportWorkerMonitor.__init__(
