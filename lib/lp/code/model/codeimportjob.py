@@ -145,7 +145,7 @@ class CodeImportJob(StormBase):
         else:
             raise AssertionError("Unknown rcs_type %r." % code_import.rcs_type)
 
-        result = [str(target_id), '%s:%s' % (rcs_type, target_rcs_type)]
+        result = [str(target_id), rcs_type, target_rcs_type]
         if rcs_type in ('bzr-svn', 'git', 'bzr'):
             result.append(str(code_import.url))
             if (IBranch.providedBy(target) and
@@ -153,10 +153,10 @@ class CodeImportJob(StormBase):
                     not target.stacked_on.private):
                 stacked_path = branch_id_alias(target.stacked_on)
                 stacked_on_url = compose_public_url('http', stacked_path)
-                result.append(stacked_on_url)
+                result.extend(['--stacked-on', stacked_on_url])
         elif rcs_type == 'cvs':
             result.append(str(code_import.cvs_root))
-            result.append(str(code_import.cvs_module))
+            result.extend(['--cvs-module', str(code_import.cvs_module)])
         else:
             raise AssertionError("Unknown rcs_type %r." % rcs_type)
         if target_rcs_type == 'git':
@@ -164,7 +164,7 @@ class CodeImportJob(StormBase):
             macaroon = removeSecurityProxy(issuer).issueMacaroon(self)
             # XXX cjwatson 2016-10-12: Consider arranging for this to be
             # passed to worker processes in the environment instead.
-            result.append(macaroon.serialize())
+            result.extend(['--macaroon', macaroon.serialize()])
         return result
 
     def destroySelf(self):

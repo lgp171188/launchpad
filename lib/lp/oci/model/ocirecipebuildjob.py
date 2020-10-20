@@ -42,6 +42,7 @@ from lp.oci.interfaces.ociregistryclient import (
     IOCIRegistryClient,
     OCIRegistryError,
     )
+from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -114,11 +115,19 @@ class OCIRecipeBuildJobDerived(
 
     def __repr__(self):
         """An informative representation of the job."""
-        build = self.build
-        return "<%s for ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
-            self.__class__.__name__, build.recipe.owner.name,
-            build.recipe.oci_project.pillar.name,
-            build.recipe.oci_project.name, build.recipe.name, build.id)
+        try:
+            build = self.build
+            return "<%s for ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
+                self.__class__.__name__, build.recipe.owner.name,
+                build.recipe.oci_project.pillar.name,
+                build.recipe.oci_project.name, build.recipe.name, build.id)
+        except Exception:
+            # There might be errors while trying to do the full
+            # representation of this object (database transaction errors,
+            # for example). There has been some issues in the past trying to
+            # log this object, so let's not crash everything in case we
+            # cannot provide a full description of self.
+            return "<%s ID#%s>" % (self.__class__.__name__, self.job_id)
 
     @classmethod
     def get(cls, job_id):
@@ -179,6 +188,8 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
 
     retry_error_types = (ManifestListUploadError, )
     max_retries = 5
+
+    config = config.IOCIRegistryUploadJobSource
 
     @classmethod
     def create(cls, build):

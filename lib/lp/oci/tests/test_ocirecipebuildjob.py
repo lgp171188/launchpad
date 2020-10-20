@@ -17,11 +17,9 @@ import time
 from fixtures import FakeLogger
 from testtools.matchers import (
     Equals,
-    Is,
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
-    Not,
     )
 import transaction
 from zope.component import getUtility
@@ -54,6 +52,10 @@ from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
+from lp.services.job.tests import (
+    block_on_job,
+    pop_remote_notifications,
+    )
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
@@ -64,6 +66,7 @@ from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
+    CeleryJobLayer,
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
     )
@@ -124,7 +127,79 @@ class TestOCIRecipeBuildJob(TestCaseWithFactory):
         self.assertEqual(expected, oops)
 
 
-class TestOCIRegistryUploadJob(TestCaseWithFactory):
+class TestOCIRecipeBuildJobDerived(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeBuildJobDerived, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
+    def test_repr(self):
+        build = self.factory.makeOCIRecipeBuild()
+        job = OCIRecipeBuildJob(
+            build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
+        derived_job = OCIRecipeBuildJobDerived(job)
+        expected_repr = (
+            "<OCIRecipeBuildJobDerived for "
+            "~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
+                build.recipe.owner.name,
+                build.recipe.oci_project.pillar.name,
+                build.recipe.oci_project.name, build.recipe.name, build.id))
+        self.assertEqual(expected_repr, repr(derived_job))
+
+    def test_repr_fails_to_get_an_attribute(self):
+        class ErrorOCIRecipeBuildJobDerived(OCIRecipeBuildJobDerived):
+            def __getattribute__(self, item):
+                if item == 'build':
+                    raise AttributeError("Somethng is wrong with build")
+                return super(
+                    ErrorOCIRecipeBuildJobDerived, self).__getattribute__(item)
+        oci_build = self.factory.makeOCIRecipeBuild()
+        job = OCIRecipeBuildJob(
+            oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
+        derived_job = ErrorOCIRecipeBuildJobDerived(job)
+        self.assertEqual(
+            "<ErrorOCIRecipeBuildJobDerived ID#%s>" % derived_job.job_id,
+            repr(derived_job))
+
+
+class MultiArchRecipeMixin:
+    def makeRecipe(self, include_i386=True, include_amd64=True):
+        i386 = getUtility(IProcessorSet).getByName("386")
+        amd64 = getUtility(IProcessorSet).getByName("amd64")
+        recipe = self.factory.makeOCIRecipe()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.oci_project.distribution)
+        distro_i386 = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=i386)
+        distro_i386.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+        distro_amd64 = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="amd64",
+            processor=amd64)
+        distro_amd64.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+
+        archs = []
+        if include_i386:
+            archs.append(i386)
+        if include_amd64:
+            archs.append(amd64)
+        recipe.setProcessors(archs)
+        return recipe
+
+    def makeBuildRequest(self, include_i386=True, include_amd64=True):
+        recipe = self.makeRecipe(include_i386, include_amd64)
+        # Creates a build request with a build in it.
+        build_request = recipe.requestBuilds(recipe.owner)
+        with admin_logged_in():
+            jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
+                JobRunner(jobs).runAll()
+        return build_request
+
+
+class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
 
     layer = LaunchpadZopelessLayer
 
@@ -188,39 +263,6 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         ocibuild = self.factory.makeOCIRecipeBuild()
         job = OCIRegistryUploadJob.create(ocibuild)
         self.assertProvides(job, IOCIRegistryUploadJob)
-
-    def makeRecipe(self, include_i386=True, include_amd64=True):
-        i386 = getUtility(IProcessorSet).getByName("386")
-        amd64 = getUtility(IProcessorSet).getByName("amd64")
-        recipe = self.factory.makeOCIRecipe()
-        distroseries = self.factory.makeDistroSeries(
-            distribution=recipe.oci_project.distribution)
-        distro_i386 = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="i386",
-            processor=i386)
-        distro_i386.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-        distro_amd64 = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="amd64",
-            processor=amd64)
-        distro_amd64.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-
-        archs = []
-        if include_i386:
-            archs.append(i386)
-        if include_amd64:
-            archs.append(amd64)
-        recipe.setProcessors(archs)
-        return recipe
-
-    def makeBuildRequest(self, include_i386=True, include_amd64=True):
-        recipe = self.makeRecipe(include_i386, include_amd64)
-        # Creates a build request with a build in it.
-        build_request = recipe.requestBuilds(recipe.owner)
-        with admin_logged_in():
-            jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
-            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
-                JobRunner(jobs).runAll()
-        return build_request
 
     def test_run(self):
         logger = self.useFixture(FakeLogger())
@@ -485,3 +527,36 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
             ocibuild, ["Pending", "Failed to upload"], logger)
+
+
+class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
+                                        MultiArchRecipeMixin):
+    """Runs OCIRegistryUploadJob via Celery, to make sure the machinery
+    around it works.
+
+    It's important to have this test specially because this job does some
+    dodgy things with its own status and the database transaction,
+    so we should make sure we are not breaking anything in the interaction
+    with the job lifecycle via celery.
+    """
+    layer = CeleryJobLayer
+
+    def setUp(self):
+        super(TestOCIRegistryUploadJobViaCelery, self).setUp()
+        self.useFixture(FeatureFixture({
+            'webhooks.new.enabled': 'true',
+            OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
+            OCI_RECIPE_ALLOW_CREATE: 'on',
+            'jobs.celery.enabled_classes': 'OCIRegistryUploadJob',
+            }))
+
+    def test_run_upload(self):
+        build_request = self.makeBuildRequest()
+        builds = build_request.builds
+        self.assertEqual(2, builds.count())
+
+        with block_on_job():
+            for build in builds:
+                OCIRegistryUploadJob.create(build)
+            transaction.commit()
+        self.assertEqual(0, len(pop_remote_notifications()))

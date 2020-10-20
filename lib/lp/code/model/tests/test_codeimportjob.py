@@ -128,7 +128,7 @@ class TestCodeImportJob(TestCaseWithFactory):
             bzr_branch_url="http://example.com/foo")
         self.assertArgumentsMatch(
             code_import, Equals([
-                str(code_import.branch.id), 'bzr:bzr',
+                str(code_import.branch.id), 'bzr', 'bzr',
                 'http://example.com/foo']))
 
     def test_git_arguments(self):
@@ -136,7 +136,7 @@ class TestCodeImportJob(TestCaseWithFactory):
             git_repo_url="git://git.example.com/project.git")
         self.assertArgumentsMatch(
             code_import, Equals([
-                str(code_import.branch.id), 'git:bzr',
+                str(code_import.branch.id), 'git', 'bzr',
                 'git://git.example.com/project.git']))
 
     def test_git_to_git_arguments(self):
@@ -149,7 +149,9 @@ class TestCodeImportJob(TestCaseWithFactory):
         self.assertArgumentsMatch(
             code_import, MatchesListwise([
                 Equals(code_import.git_repository.unique_name),
-                Equals('git:git'), Equals('git://git.example.com/project.git'),
+                Equals('git'), Equals('git'),
+                Equals('git://git.example.com/project.git'),
+                Equals('--macaroon'),
                 CodeImportJobMacaroonVerifies(code_import)]),
             # Start the job so that the macaroon can be verified.
             start_job=True)
@@ -159,15 +161,15 @@ class TestCodeImportJob(TestCaseWithFactory):
             cvs_root=':pserver:foo@example.com/bar', cvs_module='bar')
         self.assertArgumentsMatch(
             code_import, Equals([
-                str(code_import.branch.id), 'cvs:bzr',
-                ':pserver:foo@example.com/bar', 'bar']))
+                str(code_import.branch.id), 'cvs', 'bzr',
+                ':pserver:foo@example.com/bar', '--cvs-module', 'bar']))
 
     def test_bzr_svn_arguments(self):
         code_import = self.factory.makeCodeImport(
             svn_branch_url='svn://svn.example.com/trunk')
         self.assertArgumentsMatch(
             code_import, Equals([
-                str(code_import.branch.id), 'bzr-svn:bzr',
+                str(code_import.branch.id), 'bzr-svn', 'bzr',
                 'svn://svn.example.com/trunk']))
 
     def test_bzr_stacked(self):
@@ -178,8 +180,9 @@ class TestCodeImportJob(TestCaseWithFactory):
         code_import.branch.stacked_on = devfocus
         self.assertArgumentsMatch(
             code_import, Equals([
-                str(code_import.branch.id), 'bzr:bzr',
+                str(code_import.branch.id), 'bzr', 'bzr',
                 'bzr://bzr.example.com/foo',
+                '--stacked-on',
                 compose_public_url('http', branch_id_alias(devfocus))]))
 
     def test_bzr_stacked_private(self):
@@ -193,7 +196,7 @@ class TestCodeImportJob(TestCaseWithFactory):
         branch.stacked_on = devfocus
         self.assertArgumentsMatch(
             code_import, Equals([
-                str(branch.id), 'bzr:bzr', 'bzr://bzr.example.com/foo']))
+                str(branch.id), 'bzr', 'bzr', 'bzr://bzr.example.com/foo']))
 
 
 class TestCodeImportJobSet(TestCaseWithFactory):
