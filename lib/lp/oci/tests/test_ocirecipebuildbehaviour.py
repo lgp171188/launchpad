@@ -29,6 +29,7 @@ from testtools.matchers import (
     IsInstance,
     MatchesDict,
     MatchesListwise,
+    MatchesSetwise,
     StartsWith,
     )
 from testtools.twistedsupport import (
@@ -152,16 +153,19 @@ class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
         job = IBuildFarmJobBehaviour(build)
         self.assertProvides(job, IBuildFarmJobBehaviour)
 
-    def makeRecipe(self, **kwargs):
-        amd64 = getUtility(IProcessorSet).getByName("amd64")
+    def makeRecipe(self, processor_names, **kwargs):
         recipe = self.factory.makeOCIRecipe(**kwargs)
+        processors_list = []
         distroseries = self.factory.makeDistroSeries(
             distribution=recipe.oci_project.distribution)
-        distro = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="amd64",
-            processor=amd64)
-        distro.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-        recipe.setProcessors([amd64])
+        for proc_name in processor_names:
+            proc = getUtility(IProcessorSet).getByName(proc_name)
+            distro = self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag=proc_name,
+                processor=proc)
+            distro.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            processors_list.append(proc)
+        recipe.setProcessors(processors_list)
         return recipe
 
     def makeBuildRequest(self, recipe, requester):
@@ -178,13 +182,16 @@ class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
         owner.setPreferredEmail(self.factory.makeEmail('owner@foo.com', owner))
         oci_project = self.factory.makeOCIProject(registrant=owner)
         recipe = self.makeRecipe(
+            processor_names=["amd64", "386"],
             oci_project=oci_project, registrant=owner, owner=owner)
         build_request = self.makeBuildRequest(recipe, recipe.owner)
+        self.assertEqual(2, build_request.builds.count())
         build = build_request.builds[0]
+        build_per_proc = {i.processor.name: i for i in build_request.builds}
         job = self.makeJob(build=build)
 
-        self.assertThat(job.getBuildInfoArgs(), MatchesDict({
-            "architectures": Equals(["amd64"]),
+        self.assertThat(job._getBuildInfoArgs(), MatchesDict({
+            "architectures": MatchesSetwise(Equals("amd64"), Equals("386")),
             "recipe_owner": Equals({
                 "name": recipe.owner.name,
                 "email": "owner@foo.com"}),
@@ -195,7 +202,8 @@ class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
             "build_request_timestamp": Equals(
                 build_request.date_requested.isoformat()),
             "build_urls": MatchesDict({
-                "amd64": Equals(canonical_url(build_request.builds[0]))
+                "amd64": Equals(canonical_url(build_per_proc["amd64"])),
+                "386": Equals(canonical_url(build_per_proc["386"]))
             }),
         }))
 
@@ -205,12 +213,13 @@ class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
         owner.hide_email_addresses = True
         oci_project = self.factory.makeOCIProject(registrant=owner)
         recipe = self.makeRecipe(
+            processor_names=["amd64"],
             oci_project=oci_project, registrant=owner, owner=owner)
         build_request = self.makeBuildRequest(recipe, recipe.owner)
         build = build_request.builds[0]
         job = self.makeJob(build=build)
 
-        self.assertThat(job.getBuildInfoArgs(), MatchesDict({
+        self.assertThat(job._getBuildInfoArgs(), MatchesDict({
             "architectures": Equals(["amd64"]),
             "recipe_owner": Equals({"name": recipe.owner.name, "email": None}),
             "build_request_id": Equals(build_request.id),
@@ -224,15 +233,17 @@ class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
         }))
 
     def test_getBuildInfoArgs_without_build_request(self):
-        build = self.factory.makeOCIRecipeBuild()
+        recipe = self.makeRecipe(processor_names=["amd64"])
+        distro_arch_series = removeSecurityProxy(
+            recipe.getAllowedArchitectures()[0])
+        build = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distro_arch_series)
         job = self.makeJob(build=build)
-        self.assertThat(job.getBuildInfoArgs(), ContainsDict({
-            "architectures": Equals(["386"]),
+        self.assertThat(job._getBuildInfoArgs(), ContainsDict({
+            "architectures": Equals(["amd64"]),
             "build_request_id": Equals(None),
             "build_request_timestamp": Equals(None),
-            "build_urls": MatchesDict({
-                "386": Equals(canonical_url(build))
-            }),
+            "build_urls": MatchesDict({"amd64": Equals(canonical_url(build))}),
         }))
 
 
@@ -366,10 +377,10 @@ class TestAsyncOCIRecipeBuildBehaviour(
             "trusted_keys": Equals(expected_trusted_keys),
             # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
             "metadata": ContainsDict({
-                "architectures": Equals(["386"]),
+                "architectures": Equals(["i386"]),
                 "build_request_id": Equals(None),
                 "build_request_timestamp": Equals(None),
-                "build_urls": Equals({"386": canonical_url(job.build)})
+                "build_urls": Equals({"i386": canonical_url(job.build)})
             })
         }))
 
@@ -405,10 +416,10 @@ class TestAsyncOCIRecipeBuildBehaviour(
             "trusted_keys": Equals(expected_trusted_keys),
             # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
             "metadata": ContainsDict({
-                "architectures": Equals(["386"]),
+                "architectures": Equals(["i386"]),
                 "build_request_id": Equals(None),
                 "build_request_timestamp": Equals(None),
-                "build_urls": Equals({"386": canonical_url(job.build)})
+                "build_urls": Equals({"i386": canonical_url(job.build)})
             })
         }))
 

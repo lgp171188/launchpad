@@ -78,7 +78,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             raise CannotBuild(
                 "Missing chroot for %s" % build.distro_arch_series.displayname)
 
-    def getBuildInfoArgs(self):
+    def _getBuildInfoArgs(self):
         def format_user(user):
             if user is None:
                 return None
@@ -105,9 +105,11 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             info["build_request_id"] = build_request.id
             info["build_request_timestamp"] = (
                 build_request.date_requested.isoformat())
-        info["architectures"] = [i.processor.name for i in builds]
+        info["architectures"] = [i.distro_arch_series.architecturetag
+                                 for i in builds]
         info["build_urls"] = {
-            i.processor.name: canonical_url(i) for i in builds}
+            i.distro_arch_series.architecturetag: canonical_url(i)
+            for i in builds}
         return info
 
     @defer.inlineCallbacks
@@ -134,7 +136,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
         # XML-RPC.
         args['build_args'] = removeSecurityProxy(build.recipe.build_args)
         args['build_path'] = build.recipe.build_path
-        args['metadata'] = self.getBuildInfoArgs()
+        args['metadata'] = self._getBuildInfoArgs()
 
         if build.recipe.git_ref is not None:
             args["git_repository"] = (
