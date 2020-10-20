@@ -535,7 +535,7 @@ class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
     around it works.
 
     It's important to have this test specially because this job does some
-    doggy things with it's own status and the database transaction,
+    dodgy things with its own status and the database transaction,
     so we should make sure we are not breaking anything in the interaction
     with the job lifecycle via celery.
     """
