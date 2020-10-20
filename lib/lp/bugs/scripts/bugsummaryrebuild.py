@@ -286,7 +286,7 @@ def calculate_bugsummary_rows(target):
     null_viewed_by = Alias(Cast(None, 'integer'), 'viewed_by')
     null_policy = Alias(Cast(None, 'integer'), 'access_policy')
 
-    tag_join = Join(BugTag, BugTag.bugID == RelevantTask.bug_id)
+    tag_join = Join(BugTag, BugTag.bug_id == RelevantTask.bug_id)
 
     public_constraint = RelevantTask.information_type.is_in(
         PUBLIC_INFORMATION_TYPES)
