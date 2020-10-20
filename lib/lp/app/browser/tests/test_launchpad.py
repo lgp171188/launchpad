@@ -36,7 +36,10 @@ from lp.services.webapp.interfaces import (
     BrowserNotificationLevel,
     ILaunchpadRoot,
     )
-from lp.services.webapp.servers import LaunchpadTestRequest
+from lp.services.webapp.servers import (
+    LaunchpadTestRequest,
+    WebServiceTestRequest,
+    )
 from lp.services.webapp.url import urlappend
 from lp.testing import (
     admin_logged_in,
@@ -108,11 +111,12 @@ class TraversalMixin:
             NotFound, self.traverse, path,
             use_default_referer=use_default_referer)
 
-    def assertRedirects(self, segments, url):
-        redirection = self.traverse(segments)
+    def assertRedirects(self, segments, url, webservice=False):
+        redirection = self.traverse(segments, webservice=webservice)
         self.assertEqual(url, redirection.target)
 
-    def traverse(self, path, first_segment, use_default_referer=True):
+    def traverse(self, path, first_segment, use_default_referer=True,
+                 webservice=False):
         """Traverse to 'path' using a 'LaunchpadRootNavigation' object.
 
         Using the Zope traversal machinery, traverse to the path given by
@@ -132,7 +136,9 @@ class TraversalMixin:
         extra = {'PATH_INFO': urlappend('/%s' % first_segment, path)}
         if use_default_referer:
             extra['HTTP_REFERER'] = DEFAULT_REFERER
-        request = LaunchpadTestRequest(**extra)
+        request_factory = (
+            WebServiceTestRequest if webservice else LaunchpadTestRequest)
+        request = request_factory(**extra)
         segments = reversed(path.split('/'))
         request.setTraversalStack(segments)
         traverser = LaunchpadRootNavigation(
@@ -168,6 +174,9 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         # branch.
         branch = self.factory.makeAnyBranch()
         self.assertRedirects(branch.unique_name, canonical_url(branch))
+        self.assertRedirects(
+            branch.unique_name, canonical_url(branch, rootsite='api'),
+            webservice=True)
 
     def test_no_such_unique_name(self):
         # Traversing to /+branch/<unique_name> where 'unique_name' is for a
@@ -346,10 +355,16 @@ class TestCodeTraversal(TestCaseWithFactory, TraversalMixin):
     def test_project_bzr_branch(self):
         branch = self.factory.makeAnyBranch()
         self.assertRedirects(branch.unique_name, canonical_url(branch))
+        self.assertRedirects(
+            branch.unique_name, canonical_url(branch, rootsite='api'),
+            webservice=True)
 
     def test_project_git_branch(self):
         git_repo = self.factory.makeGitRepository()
         self.assertRedirects(git_repo.unique_name, canonical_url(git_repo))
+        self.assertRedirects(
+            git_repo.unique_name, canonical_url(git_repo, rootsite='api'),
+            webservice=True)
 
     def test_no_such_bzr_unique_name(self):
         branch = self.factory.makeAnyBranch()
