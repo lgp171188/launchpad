@@ -251,16 +251,16 @@ class LaunchpadBrowserPublication(
         request._traversal_thread_start = _get_thread_time()
         threadid = threading.current_thread().ident
         threadrequestfile = open_for_writing(
-            'logs/thread-%s.request' % threadid, 'w')
+            'logs/thread-%s.request' % threadid, 'wb')
         try:
-            request_txt = six.text_type(request).encode('UTF-8')
+            request_txt = six.text_type(request)
         except Exception:
             request_txt = 'Exception converting request to string\n\n'
             try:
                 request_txt += traceback.format_exc()
             except:
                 request_txt += 'Unable to render traceback!'
-        threadrequestfile.write(request_txt)
+        threadrequestfile.write(request_txt.encode('UTF-8'))
         threadrequestfile.close()
 
         # Tell our custom database adapter that the request has started.
@@ -873,4 +873,4 @@ def tracelog(request, prefix, msg):
     """
     tracelog = ITraceLog(request, None)
     if tracelog is not None:
-        tracelog.log('%s %s' % (prefix, msg.encode('US-ASCII')))
+        tracelog.log('%s %s' % (prefix, six.ensure_str(msg, 'US-ASCII')))
