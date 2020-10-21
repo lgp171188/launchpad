@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the branch filesystem."""
@@ -37,6 +37,7 @@ from breezy.urlutils import (
     escape,
     local_path_to_url,
     )
+import six
 from six.moves import xmlrpc_client
 from testtools.twistedsupport import (
     assert_fails_with,
@@ -985,9 +986,11 @@ class TestBranchChangedNotification(TestCaseWithTransport):
 
     def assertFormatStringsPassed(self, branch):
         self.assertEqual(1, len(self._branch_changed_log))
-        control_string = branch.controldir._format.get_format_string()
-        branch_string = branch._format.get_format_string()
-        repository_string = branch.repository._format.get_format_string()
+        control_string = six.ensure_str(
+            branch.controldir._format.get_format_string())
+        branch_string = six.ensure_str(branch._format.get_format_string())
+        repository_string = six.ensure_str(
+            branch.repository._format.get_format_string())
         self.assertEqual(
             (control_string, branch_string, repository_string),
             self._branch_changed_log[0]['format_strings'])
