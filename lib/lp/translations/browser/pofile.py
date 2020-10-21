@@ -627,7 +627,7 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
     def _submitTranslations(self):
         """See BaseTranslationView._submitTranslations."""
         for key in self.request.form:
-            match = re.match('msgset_(\d+)$', key)
+            match = re.match(r'msgset_(\d+)$', key)
             if not match:
                 continue
 

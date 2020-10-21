@@ -199,12 +199,12 @@ class TestReuploadScript(TestCaseWithFactory):
         self.assertEqual('', stdout)
 
         expected_output = (
-            "INFO\s*Dry run.  Not really uploading anything.\n"
-            "INFO\s*Processing [^\s]+ in .*\n"
-            "WARNING\s*Found no translations upload for .*\n"
-            "INFO\s*Processing [^\s]+ in .*\n"
-            "WARNING\s*Found no translations upload for .*\n"
-            "INFO\s*Done.\n")
+            r"INFO\s*Dry run.  Not really uploading anything.\n"
+            r"INFO\s*Processing [^\s]+ in .*\n"
+            r"WARNING\s*Found no translations upload for .*\n"
+            r"INFO\s*Processing [^\s]+ in .*\n"
+            r"WARNING\s*Found no translations upload for .*\n"
+            r"INFO\s*Done.\n")
         self.assertTrue(
             re.match(expected_output, stderr),
             'expected %s, got %s' % (expected_output, stderr))

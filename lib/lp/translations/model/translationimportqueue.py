@@ -737,7 +737,7 @@ class TranslationImportQueueEntry(StormBase):
             # This package has the language information included as part of a
             # directory: koffice-i18n-LANG_CODE-VERSION
             # Extract the language information.
-            match = re.match('koffice-i18n-(\S+)-(\S+)', self.path)
+            match = re.match(r'koffice-i18n-(\S+)-(\S+)', self.path)
             if match is None:
                 # No idea what to do with this.
                 return None

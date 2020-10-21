@@ -144,7 +144,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
             "Processed 1 item(s); 0 failure(s), 0 unpushed branch(es).",
             stderr)
         self.assertEqual(
-            None, re.search("INFO\s+Committed [0-9]+ file", stderr))
+            None, re.search(r"INFO\s+Committed [0-9]+ file", stderr))
 
     def test_exportToStaleBranch(self):
         # Attempting to export to a stale branch marks it for scanning.
