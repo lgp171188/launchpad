@@ -141,12 +141,18 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         return urlunsplit(url)
 
     @property
-    def default_branch(self):
-        return self.context.repository.default_branch.strip("/").split("/")[2]
+    def current_branch(self):
+        return "{}/{}".format(self.user.name, self.context.name)
 
     @property
-    def current_branch(self):
-        return self.context.path.strip("/").split("/")[2]
+    def user_or_team(self):
+        return self.user.name
+
+    @property
+    def remote(self):
+        return "lp:/~{}/{}".format(
+            self.user.name,
+            self.context.repository.git_identity.split(":")[1])
 
     @property
     def user_can_push(self):

@@ -160,10 +160,10 @@ class TestGitRefView(BrowserTestCase):
 
     def test_push_directions_logged_in_cannot_push_individual(self):
         repo = self.factory.makeGitRepository()
-        ref1, ref2 = self.factory.makeGitRefs(repository=repo,
-            paths=["refs/heads/master", "refs/heads/branch"])
+        [ref] = self.factory.makeGitRefs(repository=repo,
+                                         paths=["refs/heads/branch"])
         login_person(self.user)
-        view = create_initialized_view(ref2, "+index", principal=self.user)
+        view = create_initialized_view(ref, "+index", principal=self.user)
         git_push_url_text_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Push url text', 'dt',
@@ -272,29 +272,29 @@ class TestGitRefView(BrowserTestCase):
                     git_push_url_text_match)))
 
     def test_merge_directions_personal_project(self):
+        # Personal repositories don't support merge proposals
+        # between different repositories. We don't show push URL
+        # or merge instructions for them.
         repository = self.factory.makeGitRepository(
             owner=self.user, target=self.user)
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/branch"])
+        other_user = self.factory.makePerson()
+        login_person(other_user)
+        view = create_initialized_view(ref, "+index", principal=self.user)
 
-        ref1, ref2 = self.factory.makeGitRefs(repository=repository,
-            paths=["refs/heads/master", "refs/heads/branch"])
-        removeSecurityProxy(repository).default_branch = "refs/heads/master"
-
-        login_person(self.user)
-        view = create_initialized_view(ref2, "+index", principal=self.user)
-        git_merge_checkout_match = soupmatchers.HTMLContains(
+        git_add_remote_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Checkout command text', 'tt',
-                attrs={"id": "merge-checkout-cmd"},
-                text="git checkout master"))
+                attrs={"id": "add-remote-cmd"}))
         git_merge_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Merge command text', 'tt',
-                attrs={"id": "merge-cmd"},
-                text="git merge branch"))
+                attrs={"id": "merge-cmd"}))
         with person_logged_in(self.user):
             rendered_view = view.render()
-            self.assertThat(rendered_view, git_merge_checkout_match)
-            self.assertThat(rendered_view, git_merge_match)
+            self.assertThat(rendered_view, Not(git_add_remote_match))
+            self.assertThat(rendered_view, Not(git_merge_match))
 
     def test_merge_directions_package(self):
         # Repository is the default for a package
@@ -305,9 +305,8 @@ class TestGitRefView(BrowserTestCase):
         repository = self.factory.makeGitRepository(
             owner=eric, target=mint_choc, name="choc-repo")
 
-        ref1, ref2 = self.factory.makeGitRefs(repository=repository,
-            paths=["refs/heads/master", "refs/heads/branch"])
-        removeSecurityProxy(repository).default_branch = "refs/heads/master"
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/branch"])
 
         dsp = repository.target
         self.repository_set = getUtility(IGitRepositorySet)
@@ -316,23 +315,57 @@ class TestGitRefView(BrowserTestCase):
                 repository.owner, dsp, repository, repository.owner)
             self.repository_set.setDefaultRepository(dsp, repository)
         login_person(self.user)
-        view = create_initialized_view(ref2, "+index", principal=self.user)
+        view = create_initialized_view(ref, "+index", principal=self.user)
 
-        git_merge_checkout_match = soupmatchers.HTMLContains(
+        git_add_remote_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Checkout command text', 'tt',
-                attrs={"id": "merge-checkout-cmd"},
-                text="git checkout master"))
+                attrs={"id": "add-remote-cmd"},
+                text=("git remote add -f {} lp:/~{}/mint/+source/choc"
+                      ).format(self.user.name, self.user.name)))
         git_merge_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Merge command text', 'tt',
                 attrs={"id": "merge-cmd"},
-                text="git merge branch"))
+                text="git merge {}/branch".format(self.user.name)))
 
         with person_logged_in(self.user):
             rendered_view = view.render()
-            self.assertThat(rendered_view, git_merge_checkout_match)
+            self.assertThat(rendered_view, git_add_remote_match)
             self.assertThat(rendered_view, git_merge_match)
+
+    def test_merge_directions_project(self):
+        # Repository is the default for a project
+        eric = self.factory.makePerson(name="eric")
+        fooix = self.factory.makeProduct(name="fooix", owner=eric)
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=fooix, name="fooix-repo")
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/branch"])
+        self.repository_set = getUtility(IGitRepositorySet)
+        with person_logged_in(fooix.owner) as user:
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, fooix, repository, user)
+            self.repository_set.setDefaultRepository(fooix, repository)
+        login_person(self.user)
+        view = create_initialized_view(ref, "+index", principal=self.user)
+        git_push_url_text_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url text', 'dt',
+                text='To fork this repository and propose '
+                     'fixes from there, push to this repository:'))
+        git_push_url_hint_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Push url hint', 'span',
+                text='git+ssh://%s@git.launchpad.test/~%s/%s' %
+                     (self.user.name,
+                      self.user.name,
+                      repository.target.name)))
+
+        with person_logged_in(self.user):                                                                                                                                                                               
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_push_url_text_match)
+            self.assertThat(rendered_view, git_push_url_hint_match)
 
     def makeCommitLog(self):
         authors = [self.factory.makePerson() for _ in range(5)]
