@@ -3,9 +3,11 @@
 
 """Tests for lp.services.rabbit.RabbitServer."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
-from StringIO import StringIO
+import io
 
 from fixtures import EnvironmentVariableFixture
 
@@ -28,7 +30,7 @@ class TestRabbitServer(TestCase):
         # RabbitServer pokes some .ini configuration into its config.
         fixture = self.useFixture(RabbitServer())
         service_config = SafeConfigParser()
-        service_config.readfp(StringIO(fixture.config.service_config))
+        service_config.readfp(io.StringIO(fixture.config.service_config))
         self.assertEqual(["rabbitmq"], service_config.sections())
         expected = {
             "host": "localhost:%d" % fixture.config.port,
