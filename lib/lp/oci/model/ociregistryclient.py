@@ -10,7 +10,7 @@ __all__ = [
     'OCIRegistryClient'
 ]
 
-
+import base64
 from functools import partial
 import hashlib
 from io import BytesIO
@@ -22,6 +22,7 @@ except ImportError:
 import logging
 import tarfile
 
+import boto3
 from requests.exceptions import (
     ConnectionError,
     HTTPError,
@@ -30,6 +31,7 @@ from six.moves.urllib.request import (
     parse_http_list,
     parse_keqv_list,
     )
+from six.moves.urllib.parse import urlparse
 from tenacity import (
     before_log,
     retry,
@@ -426,6 +428,9 @@ class RegistryHTTPClient:
     def getInstance(cls, push_rule):
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule and registry's authentication flow."""
+        registry_domain = urlparse(push_rule.registry_url).netloc
+        if registry_domain.endswith(".amazonaws.com"):
+            return AWSRegistryHTTPClient(push_rule)
         try:
             proxy_urlfetch("{}/v2/".format(push_rule.registry_url))
             # No authorization error? Just return the basic RegistryHTTPClient.
@@ -516,3 +521,24 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
                     url, auth_retry=False, headers=headers,
                     *args, **request_kwargs)
             raise
+
+
+class AWSRegistryHTTPClient(RegistryHTTPClient):
+
+    @property
+    def credentials(self):
+        """Exchange aws_access_key_id and aws_secret_access_key with the
+        authentication token that should be used when talking to ECR."""
+        auth = self.push_rule.registry_credentials.getCredentials()
+        username, password = auth['username'], auth.get('password')
+        region = 'sa-east-1'  # TODO: Get from push rule's URL
+        client = boto3.client('ecr', aws_access_key_id=username,
+                              aws_secret_access_key=password,
+                              region_name=region)
+        token = client.get_authorization_token()
+
+        auth_data = token["authorizationData"][0]
+        authorization_token = auth_data['authorizationToken']
+        username, password = base64.b64decode(
+            authorization_token).decode().split(':')
+        return username, password

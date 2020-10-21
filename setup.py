@@ -153,6 +153,7 @@ setup(
         'ampoule',
         'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
+        'boto3',
         'breezy',
         # XXX cjwatson 2020-08-07: This should eventually be removed
         # entirely, but we need to retain it until codeimport has been
