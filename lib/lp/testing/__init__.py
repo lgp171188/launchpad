@@ -1348,7 +1348,7 @@ def time_counter(origin=None, delta=timedelta(seconds=5)):
         now += delta
 
 
-def run_script(cmd_line, env=None, cwd=None):
+def run_script(cmd_line, env=None, cwd=None, universal_newlines=False):
     """Run the given command line as a subprocess.
 
     :param cmd_line: A command line suitable for passing to
@@ -1357,6 +1357,7 @@ def run_script(cmd_line, env=None, cwd=None):
         script will get a copy of your present environment.  Either way,
         PYTHONPATH will be removed from it because it will break the
         script.
+    :param universal_newlines: If True, return stdout and stderr as text.
     :return: A 3-tuple of stdout, stderr, and the process' return code.
     """
     if env is None:
@@ -1364,7 +1365,8 @@ def run_script(cmd_line, env=None, cwd=None):
     env.pop('PYTHONPATH', None)
     process = subprocess.Popen(
         cmd_line, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, env=env, cwd=cwd)
+        stderr=subprocess.PIPE, env=env, cwd=cwd,
+        universal_newlines=universal_newlines)
     (out, err) = process.communicate()
     return out, err, process.returncode
 
