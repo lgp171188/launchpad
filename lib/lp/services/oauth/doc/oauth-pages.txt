@@ -34,7 +34,7 @@ consumer's request to access Launchpad on their behalf.
     ...         html, parse_only=SoupStrainer(attrs={'type': 'hidden'}))
     ...     for tag in soup.findAll(attrs={'type': 'hidden'}):
     ...         if tag['value']:
-    ...             print tag['name'], tag['value']
+    ...             print(tag['name'], tag['value'])
 
 When the client doesn't specify a duration, the resulting request
 token will have no expiration date set.
@@ -42,7 +42,7 @@ token will have no expiration date set.
     >>> from datetime import datetime
     >>> view, token = get_view_with_fresh_token({})
     >>> view.reviewToken(OAuthPermission.READ_PRIVATE, None)
-    >>> print token.date_expires
+    >>> print(token.date_expires)
     None
 
 When the client specifies a duration, the resulting request
@@ -61,7 +61,7 @@ When the consumer doesn't specify a context, the token will not have a
 context either.
 
     >>> view, token = get_view_with_fresh_token({})
-    >>> print view.token_context
+    >>> print(view.token_context)
     None
 
     # Note that the token is stored in a hidden field in the HTML so that
@@ -73,11 +73,11 @@ context either.
     >>> view.reviewToken(OAuthPermission.READ_PRIVATE, None)
     >>> token.person.name
     u'salgado'
-    >>> print token.context
+    >>> print(token.context)
     None
     >>> token.permission
     <DBItem OAuthPermission.READ_PRIVATE...
-    >>> print token.is_reviewed
+    >>> print(token.is_reviewed)
     True
 
 The context can be a product, and if it's specified it will be carried

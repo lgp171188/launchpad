@@ -22,17 +22,25 @@ from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.model.builder import Builder
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.features.testing import FeatureFixture
 from lp.services.job.model.job import Job
+from lp.services.webapp.publisher import canonical_url
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     admin_logged_in,
+    logout,
     record_two_runs,
     TestCaseWithFactory,
     )
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
     find_tags_by_class,
+    setupBrowser,
     )
 from lp.testing.views import create_initialized_view
 
@@ -40,6 +48,62 @@ from lp.testing.views import create_initialized_view
 def builders_homepage_render():
     builders = getUtility(IBuilderSet)
     return create_initialized_view(builders, "+index").render()
+
+
+class TestBuilderSetNavigation(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_binary_package_build_api_redirects(self):
+        build = self.factory.makeBinaryPackageBuild()
+        url = "http://api.launchpad.test/devel/builders/+build/%s" % build.id
+        expected_url = (
+            "http://api.launchpad.test/devel" +
+            canonical_url(build, path_only_if_possible=True))
+        logout()
+        browser = setupBrowser()
+        browser.open(url)
+        self.assertEqual(expected_url, browser.url)
+
+    def test_source_package_recipe_build_api_redirects(self):
+        build = self.factory.makeSourcePackageRecipeBuild()
+        url = (
+            "http://api.launchpad.test/devel/builders/+recipebuild/%s" %
+            build.id)
+        expected_url = (
+            "http://api.launchpad.test/devel" +
+            canonical_url(build, path_only_if_possible=True))
+        logout()
+        browser = setupBrowser()
+        browser.open(url)
+        self.assertEqual(expected_url, browser.url)
+
+    def test_livefs_build_api_redirects(self):
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
+        build = self.factory.makeLiveFSBuild()
+        url = (
+            "http://api.launchpad.test/devel/builders/+livefsbuild/%s" %
+            build.id)
+        expected_url = (
+            "http://api.launchpad.test/devel" +
+            canonical_url(build, path_only_if_possible=True))
+        logout()
+        browser = setupBrowser()
+        browser.open(url)
+        self.assertEqual(expected_url, browser.url)
+
+    def test_snap_build_api_redirects(self):
+        build = self.factory.makeSnapBuild()
+        url = (
+            "http://api.launchpad.test/devel/builders/+snapbuild/%s" %
+            build.id)
+        expected_url = (
+            "http://api.launchpad.test/devel" +
+            canonical_url(build, path_only_if_possible=True))
+        logout()
+        browser = setupBrowser()
+        browser.open(url)
+        self.assertEqual(expected_url, browser.url)
 
 
 class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):

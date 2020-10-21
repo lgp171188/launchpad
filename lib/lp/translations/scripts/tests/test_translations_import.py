@@ -72,7 +72,7 @@ class TestTranslationsImport(TestCaseWithFactory):
         productseries = self._makeProductSeries()
         entry = self._makeEntry('foo.po', productseries=productseries)
         description = self.script._describeEntry(entry)
-        pattern = "'foo.po' \(id [0-9]+\) in [A-Za-z0-9_-]+ trunk series$"
+        pattern = r"'foo.po' \(id [0-9]+\) in [A-Za-z0-9_-]+ trunk series$"
         self.assertNotEqual(None, re.match(pattern, description))
 
     def test_describeEntry_for_pofile(self):
@@ -83,7 +83,7 @@ class TestTranslationsImport(TestCaseWithFactory):
             'foo.po', productseries=productseries, potemplate=template,
             pofile=pofile)
         description = self.script._describeEntry(entry)
-        pattern = "Dutch \(nl\) translation of .* in .* trunk \(id [0-9]+\)$"
+        pattern = r"Dutch \(nl\) translation of .* in .* trunk \(id [0-9]+\)$"
         self.assertNotEqual(None, re.match(pattern, description))
 
     def test_describeEntry_for_template(self):
@@ -92,7 +92,7 @@ class TestTranslationsImport(TestCaseWithFactory):
         entry = self._makeEntry(
             'foo.pot', productseries=productseries, potemplate=template)
         description = self.script._describeEntry(entry)
-        pattern = 'Template "[^"]+" in [A-Za-z0-9_-]+ trunk \(id [0-9]+\)$'
+        pattern = r'Template "[^"]+" in [A-Za-z0-9_-]+ trunk \(id [0-9]+\)$'
         self.assertNotEqual(None, re.match(pattern, description))
 
     def test_checkEntry(self):

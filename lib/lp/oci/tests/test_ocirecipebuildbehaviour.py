@@ -134,7 +134,7 @@ class MakeOCIBuildMixin:
         return job
 
 
-class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
+class TestOCIBuildBehaviour(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
@@ -152,99 +152,6 @@ class TestOCIBuildBehaviour(TestCaseWithFactory, MakeOCIBuildMixin):
         build = self.factory.makeOCIRecipeBuild()
         job = IBuildFarmJobBehaviour(build)
         self.assertProvides(job, IBuildFarmJobBehaviour)
-
-    def makeRecipe(self, processor_names, **kwargs):
-        recipe = self.factory.makeOCIRecipe(**kwargs)
-        processors_list = []
-        distroseries = self.factory.makeDistroSeries(
-            distribution=recipe.oci_project.distribution)
-        for proc_name in processor_names:
-            proc = getUtility(IProcessorSet).getByName(proc_name)
-            distro = self.factory.makeDistroArchSeries(
-                distroseries=distroseries, architecturetag=proc_name,
-                processor=proc)
-            distro.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-            processors_list.append(proc)
-        recipe.setProcessors(processors_list)
-        return recipe
-
-    def makeBuildRequest(self, recipe, requester):
-        build_request = recipe.requestBuilds(requester)
-        # Create the builds for the build request, and set them at the build
-        # request job.
-        builds = recipe.requestBuildsFromJob(requester, build_request)
-        job = removeSecurityProxy(build_request).job
-        removeSecurityProxy(job).builds = builds
-        return build_request
-
-    def test_getBuildInfoArgs_with_build_request(self):
-        owner = self.factory.makePerson()
-        owner.setPreferredEmail(self.factory.makeEmail('owner@foo.com', owner))
-        oci_project = self.factory.makeOCIProject(registrant=owner)
-        recipe = self.makeRecipe(
-            processor_names=["amd64", "386"],
-            oci_project=oci_project, registrant=owner, owner=owner)
-        build_request = self.makeBuildRequest(recipe, recipe.owner)
-        self.assertEqual(2, build_request.builds.count())
-        build = build_request.builds[0]
-        build_per_proc = {i.processor.name: i for i in build_request.builds}
-        job = self.makeJob(build=build)
-
-        self.assertThat(job._getBuildInfoArgs(), MatchesDict({
-            "architectures": MatchesSetwise(Equals("amd64"), Equals("386")),
-            "recipe_owner": Equals({
-                "name": recipe.owner.name,
-                "email": "owner@foo.com"}),
-            "build_request_id": Equals(build_request.id),
-            "build_requester": Equals({
-                "name": build.requester.name,
-                "email": "owner@foo.com"}),
-            "build_request_timestamp": Equals(
-                build_request.date_requested.isoformat()),
-            "build_urls": MatchesDict({
-                "amd64": Equals(canonical_url(build_per_proc["amd64"])),
-                "386": Equals(canonical_url(build_per_proc["386"]))
-            }),
-        }))
-
-    def test_getBuildInfoArgs_hide_email(self):
-        owner = self.factory.makePerson()
-        owner.setPreferredEmail(self.factory.makeEmail('owner@foo.com', owner))
-        owner.hide_email_addresses = True
-        oci_project = self.factory.makeOCIProject(registrant=owner)
-        recipe = self.makeRecipe(
-            processor_names=["amd64"],
-            oci_project=oci_project, registrant=owner, owner=owner)
-        build_request = self.makeBuildRequest(recipe, recipe.owner)
-        build = build_request.builds[0]
-        job = self.makeJob(build=build)
-
-        self.assertThat(job._getBuildInfoArgs(), MatchesDict({
-            "architectures": Equals(["amd64"]),
-            "recipe_owner": Equals({"name": recipe.owner.name, "email": None}),
-            "build_request_id": Equals(build_request.id),
-            "build_requester": Equals({
-                "name": build.requester.name, "email": None}),
-            "build_request_timestamp": Equals(
-                build_request.date_requested.isoformat()),
-            "build_urls": MatchesDict({
-                "amd64": Equals(canonical_url(build_request.builds[0]))
-            }),
-        }))
-
-    def test_getBuildInfoArgs_without_build_request(self):
-        recipe = self.makeRecipe(processor_names=["amd64"])
-        distro_arch_series = removeSecurityProxy(
-            recipe.getAllowedArchitectures()[0])
-        build = self.factory.makeOCIRecipeBuild(
-            recipe=recipe, distro_arch_series=distro_arch_series)
-        job = self.makeJob(build=build)
-        self.assertThat(job._getBuildInfoArgs(), ContainsDict({
-            "architectures": Equals(["amd64"]),
-            "build_request_id": Equals(None),
-            "build_request_timestamp": Equals(None),
-            "build_urls": MatchesDict({"amd64": Equals(canonical_url(build))}),
-        }))
 
 
 class TestAsyncOCIRecipeBuildBehaviour(
@@ -342,6 +249,99 @@ class TestAsyncOCIRecipeBuildBehaviour(
                     })),
                 }),
             ]))
+
+    def makeRecipe(self, processor_names, **kwargs):
+        recipe = self.factory.makeOCIRecipe(**kwargs)
+        processors_list = []
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.oci_project.distribution)
+        for proc_name in processor_names:
+            proc = getUtility(IProcessorSet).getByName(proc_name)
+            distro = self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag=proc_name,
+                processor=proc)
+            distro.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            processors_list.append(proc)
+        recipe.setProcessors(processors_list)
+        return recipe
+
+    def makeBuildRequest(self, recipe, requester):
+        build_request = recipe.requestBuilds(requester)
+        # Create the builds for the build request, and set them at the build
+        # request job.
+        builds = recipe.requestBuildsFromJob(requester, build_request)
+        job = removeSecurityProxy(build_request).job
+        removeSecurityProxy(job).builds = builds
+        return build_request
+
+    def test_getBuildInfoArgs_with_build_request(self):
+        owner = self.factory.makePerson()
+        owner.setPreferredEmail(self.factory.makeEmail('owner@foo.com', owner))
+        oci_project = self.factory.makeOCIProject(registrant=owner)
+        recipe = self.makeRecipe(
+            processor_names=["amd64", "386"],
+            oci_project=oci_project, registrant=owner, owner=owner)
+        build_request = self.makeBuildRequest(recipe, recipe.owner)
+        self.assertEqual(2, build_request.builds.count())
+        build = build_request.builds[0]
+        build_per_proc = {i.processor.name: i for i in build_request.builds}
+        job = self.makeJob(build=build)
+
+        self.assertThat(job._getBuildInfoArgs(), MatchesDict({
+            "architectures": MatchesSetwise(Equals("amd64"), Equals("386")),
+            "recipe_owner": Equals({
+                "name": recipe.owner.name,
+                "email": "owner@foo.com"}),
+            "build_request_id": Equals(build_request.id),
+            "build_requester": Equals({
+                "name": build.requester.name,
+                "email": "owner@foo.com"}),
+            "build_request_timestamp": Equals(
+                build_request.date_requested.isoformat()),
+            "build_urls": MatchesDict({
+                "amd64": Equals(canonical_url(build_per_proc["amd64"])),
+                "386": Equals(canonical_url(build_per_proc["386"]))
+            }),
+        }))
+
+    def test_getBuildInfoArgs_hide_email(self):
+        owner = self.factory.makePerson()
+        owner.setPreferredEmail(self.factory.makeEmail('owner@foo.com', owner))
+        owner.hide_email_addresses = True
+        oci_project = self.factory.makeOCIProject(registrant=owner)
+        recipe = self.makeRecipe(
+            processor_names=["amd64"],
+            oci_project=oci_project, registrant=owner, owner=owner)
+        build_request = self.makeBuildRequest(recipe, recipe.owner)
+        build = build_request.builds[0]
+        job = self.makeJob(build=build)
+
+        self.assertThat(job._getBuildInfoArgs(), MatchesDict({
+            "architectures": Equals(["amd64"]),
+            "recipe_owner": Equals({"name": recipe.owner.name, "email": None}),
+            "build_request_id": Equals(build_request.id),
+            "build_requester": Equals({
+                "name": build.requester.name, "email": None}),
+            "build_request_timestamp": Equals(
+                build_request.date_requested.isoformat()),
+            "build_urls": MatchesDict({
+                "amd64": Equals(canonical_url(build_request.builds[0]))
+            }),
+        }))
+
+    def test_getBuildInfoArgs_without_build_request(self):
+        recipe = self.makeRecipe(processor_names=["amd64"])
+        distro_arch_series = removeSecurityProxy(
+            recipe.getAllowedArchitectures()[0])
+        build = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distro_arch_series)
+        job = self.makeJob(build=build)
+        self.assertThat(job._getBuildInfoArgs(), ContainsDict({
+            "architectures": Equals(["amd64"]),
+            "build_request_id": Equals(None),
+            "build_request_timestamp": Equals(None),
+            "build_urls": MatchesDict({"amd64": Equals(canonical_url(build))}),
+        }))
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_git(self):

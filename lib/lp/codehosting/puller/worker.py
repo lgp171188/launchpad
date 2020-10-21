@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function
@@ -41,6 +41,7 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
+import six
 from six.moves import http_client
 from six.moves.urllib.error import HTTPError
 
@@ -468,8 +469,9 @@ class PullerWorker:
             else:
                 repository_string = repository_format.get_format_string()
             self.protocol.branchChanged(
-                stacked_on_url, revid_before, revid_after, control_string,
-                branch_string, repository_string)
+                stacked_on_url, revid_before, revid_after,
+                six.ensure_str(control_string), six.ensure_str(branch_string),
+                six.ensure_str(repository_string))
 
     def __eq__(self, other):
         return self.source == other.source and self.dest == other.dest

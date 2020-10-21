@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the internal codehosting API."""
@@ -11,6 +11,7 @@ import os
 from breezy import controldir
 from breezy.urlutils import escape
 import pytz
+import six
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,
@@ -660,10 +661,11 @@ class CodehostingTest(WithScenarios, TestCaseWithFactory):
 
     def getFormatStringsForFormatName(self, format_name):
         default_format = controldir.format_registry.get(format_name)()
-        control_string = default_format.get_format_string()
-        branch_string = default_format.get_branch_format().get_format_string()
-        repository_string = \
-            default_format.repository_format.get_format_string()
+        control_string = six.ensure_str(default_format.get_format_string())
+        branch_string = six.ensure_str(
+            default_format.get_branch_format().get_format_string())
+        repository_string = six.ensure_str(
+            default_format.repository_format.get_format_string())
         return (control_string, branch_string, repository_string)
 
     @property
