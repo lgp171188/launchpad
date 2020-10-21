@@ -350,12 +350,12 @@ class OCIRegistryClient:
             raise MultipleOCIRegistryError(exceptions)
 
     @classmethod
-    def makeMultiArchManifest(cls, build_request):
-        """Returns the multi-arch manifest content including all builds of
-        the given build_request.
+    def makeMultiArchManifest(cls, build_request, uploaded_builds):
+        """Returns the multi-arch manifest content including all uploaded
+        builds of the given build_request.
         """
         manifests = []
-        for build in build_request.builds:
+        for build in uploaded_builds:
             build_manifest = build_request.uploaded_manifests.get(build.id)
             if not build_manifest:
                 continue
@@ -376,11 +376,12 @@ class OCIRegistryClient:
           "manifests": manifests}
 
     @classmethod
-    def uploadManifestList(cls, build_request):
+    def uploadManifestList(cls, build_request, uploaded_builds):
         """Uploads to all build_request.recipe.push_rules the manifest list
         for the builds in the given build_request.
         """
-        multi_manifest_content = cls.makeMultiArchManifest(build_request)
+        multi_manifest_content = cls.makeMultiArchManifest(
+            build_request, uploaded_builds)
         for push_rule in build_request.recipe.push_rules:
             http_client = RegistryHTTPClient.getInstance(push_rule)
             cls._uploadRegistryManifest(

@@ -548,18 +548,23 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         build1 = self.build
         build2 = self.factory.makeOCIRecipeBuild(
             recipe=recipe)
+        build3 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe)
         naked_build1 = removeSecurityProxy(build1)
-        naked_build2 = removeSecurityProxy(build1)
+        naked_build2 = removeSecurityProxy(build2)
+        naked_build3 = removeSecurityProxy(build3)
         naked_build1.processor = getUtility(IProcessorSet).getByName('386')
         naked_build2.processor = getUtility(IProcessorSet).getByName('amd64')
+        naked_build3.processor = getUtility(IProcessorSet).getByName('hppa')
 
         # Creates a mock IOCIRecipeRequestBuildsJobSource, as it was created
-        # by the celery job and triggered the 2 registry uploads already.
+        # by the celery job and triggered the 3 registry uploads already.
         job = mock.Mock()
-        job.builds = [build1, build2]
+        job.builds = [build1, build2, build3]
         job.uploaded_manifests = {
             build1.id: {"digest": "build1digest", "size": 123},
             build2.id: {"digest": "build2digest", "size": 321},
+            build3.id: {"digest": "build2digest", "size": 333},
         }
         job_source = mock.Mock()
         job_source.getByOCIRecipeAndID.return_value = job
@@ -572,7 +577,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             "GET", "{}/v2/".format(push_rule.registry_url), status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
-        self.client.uploadManifestList(build_request)
+        # Let's try to generate the manifest for just 2 of the 3 builds:
+        self.client.uploadManifestList(build_request, [build1, build2])
         self.assertEqual(2, len(responses.calls))
         auth_call, manifest_call = responses.calls
         self.assertEndsWith(
@@ -583,13 +589,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             "mediaType": "application/"
                          "vnd.docker.distribution.manifest.list.v2+json",
             "manifests": [{
-                "platform": {"os": "linux", "architecture": "amd64"},
+                "platform": {"os": "linux", "architecture": "386"},
                 "mediaType": "application/"
                              "vnd.docker.distribution.manifest.v2+json",
                 "digest": "build1digest",
                 "size": 123
             }, {
-                "platform": {"os": "linux", "architecture": "386"},
+                "platform": {"os": "linux", "architecture": "amd64"},
                 "mediaType": "application/"
                              "vnd.docker.distribution.manifest.v2+json",
                 "digest": "build2digest",

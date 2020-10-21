@@ -30,6 +30,7 @@ from storm.locals import (
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
@@ -177,6 +178,11 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         self.build_farm_job = build_farm_job
         if build_request is not None:
             self.build_request_id = build_request.id
+
+    def __eq__(self, other):
+        if not zope_isinstance(other, self.__class__):
+            return False
+        return self.id == other.id
 
     @property
     def build_request(self):
