@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-import StringIO
+import io
 
 from lp.layers import WebServiceLayer
 from lp.services.config import config
@@ -44,7 +44,7 @@ class TestRegistration(TestCase):
     def test_response_should_vary_based_on_language(self):
         # Responses to requests to translations pages have the 'Vary' header
         # set to include Accept-Language.
-        request = TranslationsBrowserRequest(StringIO.StringIO(''), {})
+        request = TranslationsBrowserRequest(io.BytesIO(), {})
         self.assertEqual(
             request.response.getHeader('Vary'),
             'Cookie, Authorization, Accept-Language')
