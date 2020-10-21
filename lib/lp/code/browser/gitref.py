@@ -141,6 +141,14 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         return urlunsplit(url)
 
     @property
+    def default_branch(self):
+        return self.context.repository.default_branch.strip("/").split("/")[2]
+
+    @property
+    def current_branch(self):
+        return self.context.path.strip("/").split("/")[2]
+
+    @property
     def user_can_push(self):
         """Whether the user can push to this branch."""
         return (

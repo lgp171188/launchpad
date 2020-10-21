@@ -67,6 +67,13 @@
             <em>BRANCHNAME</em>
             </tt>
           </dd>
+          <dt>To merge this branch:</dt>
+          <dd>
+            <tt id="merge-checkout-cmd" class="command" tal:content="string:git checkout ${view/default_branch}" />
+          </dd>
+          <dd>
+            <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/current_branch}" />
+          </dd>
         </dl>
         <dt tal:condition="python: getattr(view, 'allow_fork', False)">
           <a tal:attributes="href view/fork_url" class="sprite add">
@@ -96,6 +103,13 @@
             <span class="ssh-url" tal:content="view/git_ssh_url_non_owner" />
             <em>BRANCHNAME</em>
             </tt>
+          </dd>
+          <dt>To merge this branch:</dt>
+          <dd>
+            <tt id="merge-checkout-cmd" class="command" tal:content="string:git checkout ${view/default_branch}" />
+          </dd>
+          <dd>
+            <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/current_branch}" />
           </dd>
           <dd tal:condition="python: getattr(view, 'allow_fork', False)">
             or
