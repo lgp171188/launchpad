@@ -282,7 +282,6 @@ class TestGitRefView(BrowserTestCase):
         other_user = self.factory.makePerson()
         login_person(other_user)
         view = create_initialized_view(ref, "+index", principal=self.user)
-
         git_add_remote_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Checkout command text', 'tt',
@@ -291,6 +290,7 @@ class TestGitRefView(BrowserTestCase):
             soupmatchers.Tag(
                 'Merge command text', 'tt',
                 attrs={"id": "merge-cmd"}))
+
         with person_logged_in(self.user):
             rendered_view = view.render()
             self.assertThat(rendered_view, Not(git_add_remote_match))
@@ -304,10 +304,8 @@ class TestGitRefView(BrowserTestCase):
             distribution=mint, sourcepackagename="choc")
         repository = self.factory.makeGitRepository(
             owner=eric, target=mint_choc, name="choc-repo")
-
         [ref] = self.factory.makeGitRefs(repository=repository,
                                          paths=["refs/heads/branch"])
-
         dsp = repository.target
         self.repository_set = getUtility(IGitRepositorySet)
         with admin_logged_in():
@@ -316,7 +314,6 @@ class TestGitRefView(BrowserTestCase):
             self.repository_set.setDefaultRepository(dsp, repository)
         login_person(self.user)
         view = create_initialized_view(ref, "+index", principal=self.user)
-
         git_add_remote_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Checkout command text', 'tt',
@@ -362,7 +359,7 @@ class TestGitRefView(BrowserTestCase):
                       self.user.name,
                       repository.target.name)))
 
-        with person_logged_in(self.user):                                                                                                                                                                               
+        with person_logged_in(self.user):
             rendered_view = view.render()
             self.assertThat(rendered_view, git_push_url_text_match)
             self.assertThat(rendered_view, git_push_url_hint_match)

@@ -97,13 +97,15 @@
             <em>BRANCHNAME</em>
             </tt>
           </dd>
-          <dt>To merge this branch:</dt>
-          <dd>
-            <tt id="add-remote-cmd" class="command" tal:content="string:git remote add -f ${view/user_or_team} ${view/remote}" />
-          </dd>
-          <dd>
-            <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/current_branch}" />
-          </dd>
+          <span tal:condition="python:kind == 'branch'">
+            <dt>To merge this branch:</dt>
+            <dd>
+              <tt id="add-remote-cmd" class="command" tal:content="string:git remote add -f ${view/user/name} ${view/remote}" />
+            </dd>
+            <dd>
+              <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/current_branch}" />
+            </dd>
+          </span>
           <dd tal:condition="python: getattr(view, 'allow_fork', False)">
             or
             <a tal:attributes="href view/fork_url" class="sprite add">

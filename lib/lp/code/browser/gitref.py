@@ -145,10 +145,6 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         return "{}/{}".format(self.user.name, self.context.name)
 
     @property
-    def user_or_team(self):
-        return self.user.name
-
-    @property
     def remote(self):
         return "lp:/~{}/{}".format(
             self.user.name,
