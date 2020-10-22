@@ -146,9 +146,14 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
 
     @property
     def remote(self):
-        return "lp:/~{}/{}".format(
-            self.user.name,
-            self.context.repository.git_identity.split(":")[1])
+        if self.context.repository.owner.is_team:
+            return "lp:/~{}/{}".format(
+                self.user.name,
+                self.context.repository.project.name)
+        else:
+            return "lp:/~{}/{}".format(
+                self.user.name,
+                self.context.repository.git_identity.split(":")[1])
 
     @property
     def user_can_push(self):

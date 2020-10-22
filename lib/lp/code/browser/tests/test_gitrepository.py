@@ -394,6 +394,111 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository)
         self.assertIsNone(find_tag_by_id(browser.contents, "push-directions"))
 
+    def test_merge_directions_project(self):
+        # Repository is the default for a project
+        eric = self.factory.makePerson(name="eric")
+        fooix = self.factory.makeProduct(name="fooix", owner=eric)
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=fooix, name="fooix-repo")
+        self.repository_set = getUtility(IGitRepositorySet)
+        with person_logged_in(fooix.owner) as user:
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, fooix, repository, user)
+            self.repository_set.setDefaultRepository(fooix, repository)
+        login_person(self.user)
+        view = create_initialized_view(
+            repository, '+index', principal=self.user)
+        git_add_remote_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "add-remote-cmd"}))
+        git_merge_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"}))
+
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, Not(git_add_remote_match))
+            self.assertThat(rendered_view, Not(git_merge_match))
+
+    def test_merge_directions_personal_project(self):
+        # If the user is logged in but cannot push to a repository owned by
+        # a person, we explain who can push.
+        repository = self.factory.makeGitRepository(
+            owner=self.user, target=self.user)
+        other_user = self.factory.makePerson()
+        login_person(other_user)
+        view = create_initialized_view(
+            repository, '+index', principal=other_user)
+        git_add_remote_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "add-remote-cmd"}))
+        git_merge_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"}))
+
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, Not(git_add_remote_match))
+            self.assertThat(rendered_view, Not(git_merge_match))
+
+    def test_merge_directions_package(self):
+        # Repository is the default for a package
+        mint = self.factory.makeDistribution(name="mint")
+        eric = self.factory.makePerson(name="eric")
+        mint_choc = self.factory.makeDistributionSourcePackage(
+            distribution=mint, sourcepackagename="choc")
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=mint_choc, name="choc-repo")
+        dsp = repository.target
+        self.repository_set = getUtility(IGitRepositorySet)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, dsp, repository, repository.owner)
+            self.repository_set.setDefaultRepository(dsp, repository)
+        login_person(self.user)
+        view = create_initialized_view(
+            repository, '+index', principal=self.user)
+        git_add_remote_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "add-remote-cmd"}))
+        git_merge_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"}))
+
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, Not(git_add_remote_match))
+            self.assertThat(rendered_view, Not(git_merge_match))
+
+    def test_merge_directions_team_owned_repo(self):
+        # We do not show merge instructions on repository page if
+        # the user is logged in and cannot push to a repository owned by
+        # a team.
+        team = self.factory.makeTeam()
+        repository = self.factory.makeGitRepository(owner=team)
+        login_person(self.user)
+        view = create_initialized_view(
+            repository, '+index', principal=self.user)
+        git_add_remote_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "add-remote-cmd"}))
+        git_merge_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"}))
+
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, Not(git_add_remote_match))
+            self.assertThat(rendered_view, Not(git_merge_match))
+
     def test_view_for_user_with_artifact_grant(self):
         # Users with an artifact grant for a repository related to a private
         # project can view the main repository page.

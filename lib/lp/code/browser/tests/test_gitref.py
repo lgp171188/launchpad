@@ -346,23 +346,51 @@ class TestGitRefView(BrowserTestCase):
             self.repository_set.setDefaultRepository(fooix, repository)
         login_person(self.user)
         view = create_initialized_view(ref, "+index", principal=self.user)
-        git_push_url_text_match = soupmatchers.HTMLContains(
+        git_add_remote_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'Push url text', 'dt',
-                text='To fork this repository and propose '
-                     'fixes from there, push to this repository:'))
-        git_push_url_hint_match = soupmatchers.HTMLContains(
+                'Checkout command text', 'tt',
+                attrs={"id": "add-remote-cmd"},
+                text=("git remote add -f {} lp:/~{}/fooix"
+                      ).format(self.user.name, self.user.name)))
+        git_merge_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'Push url hint', 'span',
-                text='git+ssh://%s@git.launchpad.test/~%s/%s' %
-                     (self.user.name,
-                      self.user.name,
-                      repository.target.name)))
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"},
+                text="git merge {}/branch".format(self.user.name)))
 
         with person_logged_in(self.user):
             rendered_view = view.render()
-            self.assertThat(rendered_view, git_push_url_text_match)
-            self.assertThat(rendered_view, git_push_url_hint_match)
+            self.assertThat(rendered_view, git_add_remote_match)
+            self.assertThat(rendered_view, git_merge_match)
+
+    def test_merge_directions_team_owned_repo(self):
+        # We do not show merge instructions on repository page if
+        # the user is logged in and cannot push to a repository owned by
+        # a team.
+        team = self.factory.makeTeam()
+        fooix = self.factory.makeProduct(name="fooix")
+        repository = self.factory.makeGitRepository(
+            owner=team, target=fooix, name="fooix-repo")
+
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/branch"])
+        login_person(self.user)
+        view = create_initialized_view(ref, "+index", principal=self.user)
+        git_add_remote_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "add-remote-cmd"},
+                text=("git remote add -f {} lp:/~{}/fooix"
+                      ).format(self.user.name, self.user.name)))
+        git_merge_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"},
+                text="git merge {}/branch".format(self.user.name)))
+        with person_logged_in(self.user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_add_remote_match)
+            self.assertThat(rendered_view, git_merge_match)
 
     def makeCommitLog(self):
         authors = [self.factory.makePerson() for _ in range(5)]
