@@ -141,10 +141,6 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         return urlunsplit(url)
 
     @property
-    def current_branch(self):
-        return "{}/{}".format(self.user.name, self.context.name)
-
-    @property
     def remote(self):
         if self.context.repository.owner.is_team:
             return "lp:/~{}/{}".format(

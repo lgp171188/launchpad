@@ -103,7 +103,7 @@
               <tt id="add-remote-cmd" class="command" tal:content="string:git remote add -f ${view/user/name} ${view/remote}" />
             </dd>
             <dd>
-              <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/current_branch}" />
+              <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/user/name}/${context/name}" />
             </dd>
           </span>
           <dd tal:condition="python: getattr(view, 'allow_fork', False)">
