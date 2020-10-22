@@ -47,6 +47,7 @@ from lp.oci.interfaces.ociregistryclient import (
     MultipleOCIRegistryError,
     ManifestUploadFailed,
     )
+from lp.services.propertycache import cachedproperty
 from lp.services.timeout import urlfetch
 
 
@@ -525,13 +526,20 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
 
 class AWSRegistryHTTPClient(RegistryHTTPClient):
 
-    @property
+    def _getRegion(self):
+        """Returns the region from the push URL domain."""
+        domain = urlparse(self.push_rule.registry_url).netloc
+        # The domain format should be something like
+        # 'xxx.dkr.ecr.sa-east-1.amazonaws.com'. 'sa-east-1' is the region.
+        return domain.split(".")[-3]
+
+    @cachedproperty
     def credentials(self):
         """Exchange aws_access_key_id and aws_secret_access_key with the
         authentication token that should be used when talking to ECR."""
         auth = self.push_rule.registry_credentials.getCredentials()
         username, password = auth['username'], auth.get('password')
-        region = 'sa-east-1'  # TODO: Get from push rule's URL
+        region = self._getRegion()
         client = boto3.client('ecr', aws_access_key_id=username,
                               aws_secret_access_key=password,
                               region_name=region)
