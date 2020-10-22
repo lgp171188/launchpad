@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import base64
 from functools import partial
 import io
 import json
@@ -46,6 +47,7 @@ from lp.oci.interfaces.ociregistryclient import (
     )
 from lp.oci.model.ocirecipe import OCIRecipeBuildRequest
 from lp.oci.model.ociregistryclient import (
+    AWSRegistryHTTPClient,
     BearerTokenRegistryClient,
     OCIRegistryAuthenticationError,
     OCIRegistryClient,
@@ -667,6 +669,56 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertEqual(1, self.proxy_call_count)
         call = responses.calls[0]
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
+
+    @responses.activate
+    def test_get_aws_client_instance(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-east-1.amazonaws.com",
+            credentials={
+                'username': 'aws_access_key_id',
+                'password': "aws_secret_access_key"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="ecr-test"))
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(AWSRegistryHTTPClient, type(instance))
+        self.assertIsInstance(instance, RegistryHTTPClient)
+
+    def test_aws_credentials(self):
+        boto_patch = self.useFixture(
+            MockPatch('lp.oci.model.ociregistryclient.boto3'))
+        boto = boto_patch.mock
+        get_authorization_token = (
+            boto.client.return_value.get_authorization_token)
+        get_authorization_token.return_value = {
+            "authorizationData": [{
+                "authorizationToken": base64.b64encode(
+                    b"the-username:the-token")
+            }]
+        }
+
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-east-1.amazonaws.com",
+            credentials={
+                'username': 'my_aws_access_key_id',
+                'password': "my_aws_secret_access_key"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="ecr-test"))
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        # Check the credentials twice, to make sure they are cached.
+        for _ in range(2):
+            http_user, http_passwd = instance.credentials
+            self.assertEqual("the-username", http_user)
+            self.assertEqual("the-token", http_passwd)
+            self.assertEqual(1, boto.client.call_count)
+            self.assertEqual(mock.call(
+                'ecr', aws_access_key_id="my_aws_access_key_id",
+                aws_secret_access_key="my_aws_secret_access_key",
+                region_name="sa-east-1"),
+                boto.client.call_args)
 
 
 class TestBearerTokenRegistryClient(OCIConfigHelperMixin,
