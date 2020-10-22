@@ -423,8 +423,6 @@ class TestGitRepositoryView(BrowserTestCase):
             self.assertThat(rendered_view, Not(git_merge_match))
 
     def test_merge_directions_personal_project(self):
-        # If the user is logged in but cannot push to a repository owned by
-        # a person, we explain who can push.
         repository = self.factory.makeGitRepository(
             owner=self.user, target=self.user)
         other_user = self.factory.makePerson()
