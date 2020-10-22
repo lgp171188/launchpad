@@ -685,6 +685,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertEqual(AWSRegistryHTTPClient, type(instance))
         self.assertIsInstance(instance, RegistryHTTPClient)
 
+    @responses.activate
     def test_aws_credentials(self):
         boto_patch = self.useFixture(
             MockPatch('lp.oci.model.ociregistryclient.boto3'))
@@ -719,6 +720,19 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 aws_secret_access_key="my_aws_secret_access_key",
                 region_name="sa-east-1"),
                 boto.client.call_args)
+
+    @responses.activate
+    def test_aws_malformed_url_region(self):
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://.amazonaws.com",
+            credentials={'username': 'aa', 'password': "bb"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="ecr-test"))
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertRaises(
+            OCIRegistryAuthenticationError, getattr, instance, 'credentials')
 
 
 class TestBearerTokenRegistryClient(OCIConfigHelperMixin,

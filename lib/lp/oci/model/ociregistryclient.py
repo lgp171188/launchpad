@@ -15,6 +15,8 @@ from functools import partial
 import hashlib
 from io import BytesIO
 import json
+
+
 try:
     from json.decoder import JSONDecodeError
 except ImportError:
@@ -537,16 +539,23 @@ class AWSRegistryHTTPClient(RegistryHTTPClient):
     def credentials(self):
         """Exchange aws_access_key_id and aws_secret_access_key with the
         authentication token that should be used when talking to ECR."""
-        auth = self.push_rule.registry_credentials.getCredentials()
-        username, password = auth['username'], auth.get('password')
-        region = self._getRegion()
-        client = boto3.client('ecr', aws_access_key_id=username,
-                              aws_secret_access_key=password,
-                              region_name=region)
-        token = client.get_authorization_token()
-
-        auth_data = token["authorizationData"][0]
-        authorization_token = auth_data['authorizationToken']
-        username, password = base64.b64decode(
-            authorization_token).decode().split(':')
-        return username, password
+        try:
+            auth = self.push_rule.registry_credentials.getCredentials()
+            username, password = auth['username'], auth.get('password')
+            region = self._getRegion()
+            log.info("Trying to authenticate with AWS in region %s" % region)
+            client = boto3.client('ecr', aws_access_key_id=username,
+                                  aws_secret_access_key=password,
+                                  region_name=region)
+            token = client.get_authorization_token()
+            auth_data = token["authorizationData"][0]
+            authorization_token = auth_data['authorizationToken']
+            username, password = base64.b64decode(
+                authorization_token).decode().split(':')
+            return username, password
+        except Exception as e:
+            log.error("Error trying to get authorization token for ECR "
+                      "registry: %s(%s)" % (e.__class__, e))
+            raise OCIRegistryAuthenticationError(
+                "It was not possible to get AWS credentials for %s: %s" %
+                (self.push_rule.registry_url, e))
