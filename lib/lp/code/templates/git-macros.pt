@@ -76,6 +76,15 @@
       </tal:can-push>
 
       <tal:cannot-push condition="not:view/user_can_push">
+        <dl tal:condition="python:kind == 'branch'">
+          <dt>To merge this branch:</dt>
+          <dd>
+            <tt id="add-remote-cmd" class="command" tal:content="string:git remote add -f ${view/user/name} ${view/remote}" />
+          </dd>
+          <dd>
+            <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/user/name}/${context/name}" />
+          </dd>
+        </dl>
         <tal:individual condition="not:context/owner/is_team">
           You cannot push directly to this <tal:kind replace="kind" />. Only
           <a tal:attributes="href context/owner/fmt:url"
@@ -97,15 +106,6 @@
             <em>BRANCHNAME</em>
             </tt>
           </dd>
-          <span tal:condition="python:kind == 'branch'">
-            <dt>To merge this branch:</dt>
-            <dd>
-              <tt id="add-remote-cmd" class="command" tal:content="string:git remote add -f ${view/user/name} ${view/remote}" />
-            </dd>
-            <dd>
-              <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/user/name}/${context/name}" />
-            </dd>
-          </span>
           <dd tal:condition="python: getattr(view, 'allow_fork', False)">
             or
             <a tal:attributes="href view/fork_url" class="sprite add">
