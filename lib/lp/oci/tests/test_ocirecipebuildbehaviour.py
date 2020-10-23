@@ -329,6 +329,29 @@ class TestAsyncOCIRecipeBuildBehaviour(
             }),
         }))
 
+    def test_getBuildInfoArgs_from_teams(self):
+        team = self.factory.makeTeam()
+        oci_project = self.factory.makeOCIProject(registrant=team)
+        recipe = self.makeRecipe(
+            processor_names=["amd64"],
+            oci_project=oci_project, registrant=team, owner=team)
+        build_request = self.makeBuildRequest(recipe, recipe.owner)
+        build = build_request.builds[0]
+        job = self.makeJob(build=build)
+
+        self.assertThat(job._getBuildInfoArgs(), MatchesDict({
+            "architectures": Equals(["amd64"]),
+            "recipe_owner": Equals({"name": recipe.owner.name, "email": None}),
+            "build_request_id": Equals(build_request.id),
+            "build_requester": Equals({
+                "name": build.requester.name, "email": None}),
+            "build_request_timestamp": Equals(
+                build_request.date_requested.isoformat()),
+            "build_urls": MatchesDict({
+                "amd64": Equals(canonical_url(build_request.builds[0]))
+            }),
+        }))
+
     def test_getBuildInfoArgs_without_build_request(self):
         recipe = self.makeRecipe(processor_names=["amd64"])
         distro_arch_series = removeSecurityProxy(
