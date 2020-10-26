@@ -364,7 +364,8 @@ class BranchTraversalMixin:
         """Redirect to canonical_url."""
         branch = getUtility(IBranchNamespaceSet).traverse(self._getSegments())
         if branch:
-            return self.redirectSubTree(canonical_url(branch))
+            return self.redirectSubTree(
+                canonical_url(branch, request=self.request))
         raise NotFoundError
 
     @stepthrough('+git')
@@ -414,7 +415,8 @@ class BranchTraversalMixin:
             if using_pillar_alias:
                 # This repository was accessed through one of its project's
                 # aliases, so we must redirect to its canonical URL.
-                return self.redirectSubTree(canonical_url(repository))
+                return self.redirectSubTree(
+                    canonical_url(repository, request=self.request))
 
             return repository
         except (NotFoundError, InvalidNamespace, InvalidProductName):
@@ -478,13 +480,15 @@ class BranchTraversalMixin:
             if branch.product.name != pillar_name:
                 # This branch was accessed through one of its project's
                 # aliases, so we must redirect to its canonical URL.
-                return self.redirectSubTree(canonical_url(branch))
+                return self.redirectSubTree(
+                    canonical_url(branch, request=self.request))
 
         if branch.distribution is not None:
             if branch.distribution.name != pillar_name:
                 # This branch was accessed through one of its distribution's
                 # aliases, so we must redirect to its canonical URL.
-                return self.redirectSubTree(canonical_url(branch))
+                return self.redirectSubTree(
+                    canonical_url(branch, request=self.request))
 
         return branch
 

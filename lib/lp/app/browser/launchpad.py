@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser code for the launchpad application."""
@@ -739,7 +739,7 @@ class LaunchpadRootNavigation(Navigation):
         path = '/'.join(self.request.stepstogo)
         try:
             branch, trailing = getUtility(IBranchLookup).getByLPPath(path)
-            target_url = canonical_url(branch)
+            target_url = canonical_url(branch, request=self.request)
             if trailing != '':
                 target_url = urlappend(target_url, trailing)
         except (NoLinkedBranch) as e:
@@ -789,7 +789,7 @@ class LaunchpadRootNavigation(Navigation):
         try:
             repository, trailing = getUtility(IGitLookup).getByPath(path)
             if repository is not None:
-                target_url = canonical_url(repository)
+                target_url = canonical_url(repository, request=self.request)
                 if trailing:
                     target_url = urlappend(target_url, trailing)
         except (InvalidNamespace, InvalidProductName, NameLookupFailed,
@@ -802,7 +802,7 @@ class LaunchpadRootNavigation(Navigation):
         # Attempt a bzr lookup as well:
         try:
             branch, trailing = getUtility(IBranchLookup).getByLPPath(path)
-            bzr_url = canonical_url(branch)
+            bzr_url = canonical_url(branch, request=self.request)
             if trailing != '':
                 bzr_url = urlappend(bzr_url, trailing)
 
