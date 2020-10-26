@@ -2743,18 +2743,31 @@ class TestGitRepositoryFork(TestCaseWithFactory):
 
     def test_fork(self):
         repo = self.factory.makeGitRepository()
+        with person_logged_in(repo.target.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                repo.target, repo)
         another_person = self.factory.makePerson()
         another_team = self.factory.makeTeam(members=[another_person])
 
         forked_repo = getUtility(IGitRepositorySet).fork(
             repo, another_person, another_team)
-        self.assertEqual(another_team, forked_repo.owner)
-        self.assertEqual(another_person, forked_repo.registrant)
-        self.assertTrue(forked_repo.owner_default)
-        self.assertEqual(1, self.hosting_fixture.create.call_count)
+        self.assertThat(forked_repo, MatchesStructure(
+            registrant=Equals(another_person),
+            owner=Equals(another_team),
+            target=Equals(repo.target),
+            name=Equals(repo.name),
+            owner_default=Is(True),
+            target_default=Is(False)))
+        self.assertEqual(
+            [((forked_repo.getInternalPath(),),
+              {"clone_from": repo.getInternalPath(), "async_create": True})],
+            self.hosting_fixture.create.calls)
 
     def test_fork_not_owner_default(self):
         repo = self.factory.makeGitRepository()
+        with person_logged_in(repo.target.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                repo.target, repo)
         # The person forking the repo already has another repo which is the
         # owner-default for that owner & target.
         previous_repo = self.factory.makeGitRepository(target=repo.target)
@@ -2762,23 +2775,64 @@ class TestGitRepositoryFork(TestCaseWithFactory):
 
         forked_repo = getUtility(IGitRepositorySet).fork(
             repo, previous_repo.owner, previous_repo.owner)
-        self.assertEqual(previous_repo.owner, forked_repo.owner)
-        self.assertEqual(previous_repo.owner, forked_repo.registrant)
-        self.assertFalse(forked_repo.owner_default)
-        self.assertEqual(1, self.hosting_fixture.create.call_count)
+        self.assertThat(forked_repo, MatchesStructure(
+            registrant=Equals(previous_repo.owner),
+            owner=Equals(previous_repo.owner),
+            target=Equals(repo.target),
+            name=Equals(repo.name),
+            owner_default=Is(False),
+            target_default=Is(False)))
+        self.assertEqual(
+            [((forked_repo.getInternalPath(),),
+              {"clone_from": repo.getInternalPath(), "async_create": True})],
+            self.hosting_fixture.create.calls)
 
     def test_fork_same_name(self):
         repo = self.factory.makeGitRepository()
+        with person_logged_in(repo.target.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                repo.target, repo)
 
         person = self.factory.makePerson()
-        same_name_repo = self.factory.makeGitRepository(
+        self.factory.makeGitRepository(
             owner=person, registrant=person,
             name=repo.name, target=repo.target)
 
         forked_repo = getUtility(IGitRepositorySet).fork(repo, person, person)
-        self.assertEqual(forked_repo.target, repo.target)
-        self.assertTrue(forked_repo.owner_default)
-        self.assertEqual(forked_repo.name, "%s-1" % same_name_repo.name)
+        self.assertThat(forked_repo, MatchesStructure(
+            registrant=Equals(person),
+            owner=Equals(person),
+            target=Equals(repo.target),
+            name=Equals("%s-1" % repo.name),
+            owner_default=Is(True),
+            target_default=Is(False)))
+        self.assertEqual(
+            [((forked_repo.getInternalPath(),),
+              {"clone_from": repo.getInternalPath(), "async_create": True})],
+            self.hosting_fixture.create.calls)
+
+    def test_fork_non_default_origin(self):
+        project = self.factory.makeProduct()
+        default_repo = self.factory.makeGitRepository(target=project)
+        non_default_repo = self.factory.makeGitRepository(target=project)
+        with person_logged_in(project.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                project, default_repo)
+        person = self.factory.makePerson()
+
+        forked_repo = getUtility(IGitRepositorySet).fork(
+            non_default_repo, person, person)
+        self.assertThat(forked_repo, MatchesStructure(
+            registrant=Equals(person),
+            owner=Equals(person),
+            target=Equals(project),
+            owner_default=Is(False),
+            target_default=Is(False)))
+        self.assertEqual(
+            [((forked_repo.getInternalPath(),),
+              {"clone_from": non_default_repo.getInternalPath(),
+               "async_create": True})],
+            self.hosting_fixture.create.calls)
 
 
 class TestGitRepositoryDetectMerges(TestCaseWithFactory):

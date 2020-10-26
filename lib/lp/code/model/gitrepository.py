@@ -1753,14 +1753,15 @@ class GitRepositorySet:
     def new(self, repository_type, registrant, owner, target, name,
             information_type=None, date_created=DEFAULT, description=None,
             with_hosting=False, async_hosting=False,
-            status=GitRepositoryStatus.AVAILABLE):
+            status=GitRepositoryStatus.AVAILABLE, clone_from_repository=None):
         """See `IGitRepositorySet`."""
         namespace = get_git_namespace(target, owner)
         return namespace.createRepository(
             repository_type, registrant, name,
             information_type=information_type, date_created=date_created,
             description=description, with_hosting=with_hosting,
-            async_hosting=async_hosting, status=status)
+            async_hosting=async_hosting, status=status,
+            clone_from_repository=clone_from_repository)
 
     def fork(self, origin, requester, new_owner):
         namespace = get_git_namespace(origin.target, new_owner)
@@ -1771,14 +1772,17 @@ class GitRepositorySet:
             name=name, information_type=origin.information_type,
             date_created=UTC_NOW, description=origin.description,
             with_hosting=True, async_hosting=True,
-            status=GitRepositoryStatus.CREATING)
-        try:
-            # Try to set the new repo as owner-default.
-            repository.setOwnerDefault(True)
-        except GitDefaultConflict:
-            # If there is already a owner-default for this owner/target,
-            # just move on.
-            pass
+            status=GitRepositoryStatus.CREATING, clone_from_repository=origin)
+        if origin.target_default or origin.owner_default:
+            try:
+                # If the origin is the default for its target or for its
+                # owner and target, then try to set the new repo as
+                # owner-default.
+                repository.setOwnerDefault(True)
+            except GitDefaultConflict:
+                # If there is already a owner-default for this owner/target,
+                # just move on.
+                pass
         return repository
 
     def getByPath(self, user, path):
