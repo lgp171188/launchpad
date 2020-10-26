@@ -184,6 +184,32 @@ class TestPersonNavigation(TestCaseWithFactory):
             repository.owner.name, project.name, repository.name)
         self.assertEqual(repository, test_traverse(url)[0])
 
+    def test_traverse_git_repository_project_alias(self):
+        project = self.factory.makeProduct()
+        alias = project.name + "-2"
+        removeSecurityProxy(project).setAliases([alias])
+        repository = self.factory.makeGitRepository(target=project)
+        url = "/~%s/%s/+git/%s" % (
+            repository.owner.name, alias, repository.name)
+        expected_url = "http://code.launchpad.test/~%s/%s/+git/%s" % (
+            repository.owner.name, project.name, repository.name)
+        _, view, _ = test_traverse(url)
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(expected_url, removeSecurityProxy(view).target)
+
+    def test_traverse_git_repository_project_alias_api(self):
+        project = self.factory.makeProduct()
+        alias = project.name + "-2"
+        removeSecurityProxy(project).setAliases([alias])
+        repository = self.factory.makeGitRepository(target=project)
+        url = "http://api.launchpad.test/devel/~%s/%s/+git/%s" % (
+            repository.owner.name, alias, repository.name)
+        expected_url = "http://api.launchpad.test/devel/~%s/%s/+git/%s" % (
+            repository.owner.name, project.name, repository.name)
+        _, view, _ = test_traverse(url)
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(expected_url, removeSecurityProxy(view).target)
+
     def test_traverse_git_repository_package(self):
         dsp = self.factory.makeDistributionSourcePackage()
         repository = self.factory.makeGitRepository(target=dsp)
@@ -191,6 +217,38 @@ class TestPersonNavigation(TestCaseWithFactory):
             repository.owner.name, dsp.distribution.name,
             dsp.sourcepackagename.name, repository.name)
         self.assertEqual(repository, test_traverse(url)[0])
+
+    def test_traverse_git_repository_package_alias(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        alias = dsp.distribution.name + "-2"
+        removeSecurityProxy(dsp.distribution).setAliases([alias])
+        repository = self.factory.makeGitRepository(target=dsp)
+        url = "/~%s/%s/+source/%s/+git/%s" % (
+            repository.owner.name, alias,
+            dsp.sourcepackagename.name, repository.name)
+        expected_url = (
+            "http://code.launchpad.test/~%s/%s/+source/%s/+git/%s" % (
+                repository.owner.name, dsp.distribution.name,
+                dsp.sourcepackagename.name, repository.name))
+        _, view, _ = test_traverse(url)
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(expected_url, removeSecurityProxy(view).target)
+
+    def test_traverse_git_repository_package_alias_api(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        alias = dsp.distribution.name + "-2"
+        removeSecurityProxy(dsp.distribution).setAliases([alias])
+        repository = self.factory.makeGitRepository(target=dsp)
+        url = "http://api.launchpad.test/devel/~%s/%s/+source/%s/+git/%s" % (
+            repository.owner.name, alias,
+            dsp.sourcepackagename.name, repository.name)
+        expected_url = (
+            "http://api.launchpad.test/devel/~%s/%s/+source/%s/+git/%s" % (
+                repository.owner.name, dsp.distribution.name,
+                dsp.sourcepackagename.name, repository.name))
+        _, view, _ = test_traverse(url)
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(expected_url, removeSecurityProxy(view).target)
 
     def test_traverse_git_repository_oci_project(self):
         oci_project = self.factory.makeOCIProject()
