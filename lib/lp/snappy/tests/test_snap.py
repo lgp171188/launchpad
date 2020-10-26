@@ -3936,6 +3936,7 @@ class TestSnapWebservice(TestCaseWithFactory):
 
         def make_build():
             with person_logged_in(self.person):
+                builder = self.factory.makeBuilder()
                 build = snap.requestBuild(
                     self.person, distroseries.main_archive, distroarchseries,
                     PackagePublishingPocket.PROPOSED)
@@ -3944,6 +3945,7 @@ class TestSnapWebservice(TestCaseWithFactory):
                         BuildStatus.BUILDING, date_started=snap.date_created)
                     build.updateStatus(
                         BuildStatus.FULLYBUILT,
+                        builder=builder,
                         date_finished=(
                             snap.date_created + timedelta(minutes=10)))
                 return build
