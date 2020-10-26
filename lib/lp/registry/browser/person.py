@@ -635,7 +635,8 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
             # This live filesystem was accessed through one of its
             # distribution's aliases, so we must redirect to its canonical
             # URL.
-            return self.redirectSubTree(canonical_url(livefs))
+            return self.redirectSubTree(
+                canonical_url(livefs, request=self.request))
 
         return livefs
 
