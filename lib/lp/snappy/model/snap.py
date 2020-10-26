@@ -58,6 +58,7 @@ from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.processor import Processor
@@ -878,6 +879,7 @@ class Snap(Storm, WebhookTargetMixin):
         def eager_load(rows):
             getUtility(ISnapBuildSet).preloadBuildsData(rows)
             getUtility(IBuildQueueSet).preloadForBuildFarmJobs(rows)
+            load_related(Builder, rows, ['builder_id'])
 
         return DecoratedResultSet(result, pre_iter_hook=eager_load)
 
