@@ -58,7 +58,8 @@ becomes visible.
 
 And look at the portlet.
 
-    >>> anon_browser.open("http://bugs.launchpad.test/debian/sarge/+bugs")
+    >>> anon_browser.open(
+    ...     "http://bugs.launchpad.test/debian/+series/sarge/+bugs")
     >>> portlet = find_portlet(
     ...     anon_browser.contents, "Milestone-targeted bugs")
     >>> print(extract_text(portlet))

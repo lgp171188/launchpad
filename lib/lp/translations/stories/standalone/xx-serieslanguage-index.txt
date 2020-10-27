@@ -41,7 +41,7 @@ informed about this fact and will be able to add translations without
 requiring a review.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/es')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/es')
     >>> print(extract_text(
     ...     find_tag_by_id(user_browser.contents, 'group-team-info')))
     There is no translation group to manage Ubuntu translations.
@@ -79,10 +79,10 @@ Evolution Spanish templates can be accessed from the distribution series
 translation page.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/')
     >>> user_browser.getLink('Spanish').click()
     >>> print(user_browser.url)
-    http://translations.launchpad.test/ubuntu/hoary/+lang/es
+    http://translations.launchpad.test/ubuntu/+series/hoary/+lang/es
 
     >>> print(extract_text(
     ...     find_tag_by_id(user_browser.contents, 'group-team-info')))
@@ -108,10 +108,10 @@ there is no one to review the work, authenticated users can not add
 suggestions.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/')
     >>> user_browser.getLink('Catalan').click()
     >>> print(user_browser.url)
-    http://translations.launchpad.test/ubuntu/hoary/+lang/ca
+    http://translations.launchpad.test/ubuntu/+series/hoary/+lang/ca
 
     >>> print(extract_text(
     ...     find_tag_by_id(user_browser.contents, 'group-team-info')))
@@ -131,7 +131,7 @@ Members of translation team and translations admins have full access to
 translations. They can add and review translations.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/ro')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/ro')
     >>> print(extract_text(find_tag_by_id(
     ...     admin_browser.contents, 'translation-access-level')))
     You can add and review translations...
@@ -145,7 +145,7 @@ be allowed to make any changes.
     >>> logout()
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/ro')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/ro')
     >>> print(extract_text(find_tag_by_id(
     ...     user_browser.contents, 'translation-access-level')))
     These templates can be translated only by their managers...
@@ -162,7 +162,7 @@ translations, and will see a link to the licence page.
     >>> no_license_browser = setupBrowser(
     ...     auth='Basic dude@ex.com:test')
     >>> no_license_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/ro')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/ro')
     >>> print(extract_text(find_tag_by_id(
     ...     no_license_browser.contents, 'translation-access-level')))
     To make translations in Launchpad you need to agree with
@@ -179,7 +179,7 @@ this fact. No access level information is displayed.
     >>> logout()
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/ro')
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/ro')
     >>> print(extract_text(
     ...     find_tag_by_id(user_browser.contents, 'group-team-info')))
     There is no translation group to manage Ubuntu translations.

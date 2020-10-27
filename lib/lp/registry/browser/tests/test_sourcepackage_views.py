@@ -78,7 +78,7 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
         params = parse_qsl(query)
         expected_params = [
             ('_return_url',
-             'http://launchpad.test/zoobuntu/walrus/'
+             'http://launchpad.test/zoobuntu/+series/walrus/'
              '+source/python-super-package'),
             ('field.__visited_steps__', 'projectaddstep1'),
             ('field.actions.continue', 'Continue'),

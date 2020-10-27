@@ -42,7 +42,7 @@ alternative suggestions.  We do not offer suggestions from standard English
 since that is the one language we always translate from, never to.
 
     >>> translate_page = (
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate')
     >>> anon_browser.open(translate_page)
     >>> get_alternative_languages_widget(anon_browser).displayOptions[:4]
@@ -239,7 +239,7 @@ If a user specifies more than one alternative language in the URL, they
 get an UnexpectedFormData exception:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate'
     ...     '?field.alternative_language=ja&field.alternative_language=aj')
     Traceback (most recent call last):

@@ -1148,7 +1148,7 @@ class TestSnap(TestCaseWithFactory):
             {
                 "self_link": expected_snap_url + "/+build/%d" % build.id,
                 "id": build.id,
-                "distro_arch_series_link": "/%s/%s/%s" % (
+                "distro_arch_series_link": "/%s/+series/%s/%s" % (
                     snap.distro_series.distribution.name,
                     snap.distro_series.name,
                     build.distro_arch_series.architecturetag),

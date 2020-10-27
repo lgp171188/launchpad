@@ -119,12 +119,12 @@ An IDistroSeries.
 
     >>> hoary = celebs.ubuntu.getSeries('hoary')
     >>> canonical_url(hoary)
-    u'http://launchpad.test/ubuntu/hoary'
+    u'http://launchpad.test/ubuntu/+series/hoary'
 
 An ISourcePackage.
 
     >>> canonical_url(hoary.getSourcePackage('evolution'))
-    u'http://launchpad.test/ubuntu/hoary/+source/evolution'
+    u'http://launchpad.test/ubuntu/+series/hoary/+source/evolution'
 
 An IDistributionSourcePackage.
 
@@ -231,7 +231,7 @@ An IBugTask on a distribution series source package.
 
     >>> distro_series_task = getUtility(IBugTaskSet).get(19)
     >>> canonical_url(distro_series_task)
-    u'http://bugs.launchpad.test/debian/sarge/+source/mozilla-firefox/+bug/3'
+    u'http://bugs.launchpad.test/debian/+series/sarge/+source/mozilla-firefox/+bug/3'
 
 An IBugTask on a distribution series without a sourcepackage.
 
@@ -239,7 +239,7 @@ An IBugTask on a distribution series without a sourcepackage.
     >>> distro_series_task.transitionToTarget(
     ...     distro_series_task.target.distroseries, getUtility(ILaunchBag).user)
     >>> canonical_url(distro_series_task)
-    u'http://bugs.launchpad.test/debian/sarge/+bug/3'
+    u'http://bugs.launchpad.test/debian/+series/sarge/+bug/3'
     >>> distro_series_task.transitionToTarget(
     ...     temp_target, getUtility(ILaunchBag).user)
 
@@ -263,7 +263,7 @@ private.)
 A private bugtask, as an anonymous user.
 
     >>> canonical_url(distro_series_task)
-    u'http://bugs.launchpad.test/debian/sarge/+source/mozilla-firefox/+bug/3'
+    u'http://bugs.launchpad.test/debian/+series/sarge/+source/mozilla-firefox/+bug/3'
 
     >>> login("foo.bar@canonical.com")
     >>> distro_series_task.bug.setPrivate(False, getUtility(ILaunchBag).user)

@@ -99,7 +99,7 @@
         />
     <browser:url
         for="lp.registry.interfaces.distroseries.IDistroSeries"
-        path_expression="name"
+        path_expression="string:+series/${name}"
         attribute_to_parent="distribution"
         />
     <browser:defaultView

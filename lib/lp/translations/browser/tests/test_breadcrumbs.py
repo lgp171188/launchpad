@@ -61,7 +61,7 @@ class TestTranslationsFacetBreadcrumb(BaseBreadcrumbTestCase):
              ("Translations",
               'http://translations.launchpad.test/crumb-tester'),
              ("Test (1.0)",
-              'http://translations.launchpad.test/crumb-tester/test')],
+              'http://translations.launchpad.test/crumb-tester/+series/test')],
             series, rootsite='translations')
 
     def test_project(self):
@@ -124,10 +124,10 @@ class TestSeriesLanguageBreadcrumbs(BaseBreadcrumbTestCase):
              ("Translations",
               "http://translations.launchpad.test/crumb-tester"),
              ("Test (1.0)",
-              "http://translations.launchpad.test/crumb-tester/test"),
+              "http://translations.launchpad.test/crumb-tester/+series/test"),
              ("Serbian (sr)",
               "http://translations.launchpad.test/"
-              "crumb-tester/test/+lang/sr")],
+              "crumb-tester/+series/test/+lang/sr")],
             serieslanguage)
 
     def test_productserieslanguage(self):
