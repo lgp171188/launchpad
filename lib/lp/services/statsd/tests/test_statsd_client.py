@@ -26,7 +26,8 @@ class TestClientConfiguration(TestCase):
         self.addCleanup(client.reload)
         config.push(
             'statsd_test',
-            "[statsd]\nhost: 127.0.01\nport: 9999\nprefix: test\n")
+            "[statsd]\nhost: 127.0.01\n"
+            "port: 9999\nprefix: test\nenvironment: test\n")
         client.reload()
         self.assertIsInstance(client._client, StatsClient)
 
@@ -45,6 +46,17 @@ class TestClientConfiguration(TestCase):
         self.addCleanup(client.reload)
         config.push(
             'statsd_test',
-            "[statsd]\nhost: 127.0.01\nport: 9999\nprefix: test\n")
+            "[statsd]\nhost: 127.0.01\n"
+            "port: 9999\nprefix: test\nenvironment: test\n")
         client.reload()
         self.assertIsInstance(client._client, StatsClient)
+
+    def test_lp_environment_is_available(self):
+        client = getUtility(IStatsdClient)
+        self.addCleanup(client.reload)
+        config.push(
+            'statsd_test',
+            "[statsd]\nhost: 127.0.01\n"
+            "port: 9999\nprefix: test\nenvironment: test\n")
+        client.reload()
+        self.assertEqual(client.lp_environment, "test")
