@@ -141,17 +141,6 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
         return urlunsplit(url)
 
     @property
-    def remote(self):
-        if self.context.repository.owner.is_team:
-            return "lp:/~{}/{}".format(
-                self.user.name,
-                self.context.repository.project.name)
-        else:
-            return "lp:/~{}/{}".format(
-                self.user.name,
-                self.context.repository.git_identity.split(":")[1])
-
-    @property
     def user_can_push(self):
         """Whether the user can push to this branch."""
         return (

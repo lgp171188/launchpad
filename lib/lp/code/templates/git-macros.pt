@@ -36,6 +36,17 @@
     </dd>
   </dl>
 
+  <div id="merge-instructions" tal:condition="python:kind == 'branch' and view.user">
+    <dt>Merge guidelines:</dt>
+    <dd>
+      <tt id="remote-add" class="command" tal:content="string:git remote add -f ${context/repository/owner/name} ${view/git_ssh_url}" />
+      <br />
+      <tt id="remote-update" class="command" tal:content="string:git remote update ${context/repository/owner/name}" />
+      <br />
+      <tt id="merge-cmd" class="command" tal:content="string:git merge ${context/repository/owner/name}/${context/name}" />
+    </dd>
+  </div>
+
   <div id="push-directions"
        tal:condition="context/repository_type/enumvalue:HOSTED">
     <tal:not-logged-in condition="not:view/user">
@@ -76,15 +87,6 @@
       </tal:can-push>
 
       <tal:cannot-push condition="not:view/user_can_push">
-        <dl tal:condition="python:kind == 'branch'">
-          <dt>To merge this branch:</dt>
-          <dd>
-            <tt id="add-remote-cmd" class="command" tal:content="string:git remote add -f ${view/user/name} ${view/remote}" />
-          </dd>
-          <dd>
-            <tt id="merge-cmd" class="command" tal:content="string:git merge ${view/user/name}/${context/name}" />
-          </dd>
-        </dl>
         <tal:individual condition="not:context/owner/is_team">
           You cannot push directly to this <tal:kind replace="kind" />. Only
           <a tal:attributes="href context/owner/fmt:url"
