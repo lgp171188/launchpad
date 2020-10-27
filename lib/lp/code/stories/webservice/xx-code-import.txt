@@ -223,9 +223,8 @@ We can create a Git-to-Git import.
 
 We can also create an import targetting a source package.
 
-    >>> source_package_url = (
-    ...     '/' + distribution.name + '/' + distroseries.name + '/+source/'
-    ...     + source_package.name)
+    >>> source_package_url = '/%s/+series/%s/+source/%s' % (
+    ...     distribution.name, distroseries.name, source_package.name)
     >>> new_remote_url = factory.getUniqueURL()
     >>> response = import_webservice.named_post(source_package_url,
     ...    'newCodeImport', branch_name='new-import', rcs_type='Git',

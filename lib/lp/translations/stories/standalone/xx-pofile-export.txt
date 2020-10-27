@@ -4,7 +4,7 @@ Exporting Single PO Files through the Web
 Not logged in users can't access the +export page.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary'
     ...     '/+source/evolution/+pots/evolution-2.2/es/')
     >>> anon_browser.getLink('Download').click()
     Traceback (most recent call last):
@@ -14,7 +14,7 @@ Not logged in users can't access the +export page.
 Logged in as a regular user, the +export page is accessible.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary'
     ...     '/+source/evolution/+pots/evolution-2.2/es')
     >>> user_browser.getLink('Download').click()
 
@@ -34,7 +34,7 @@ If we POST the page, it should add the request to the queue.
     >>> user_browser.getControl(name='format').value = ['PO']
     >>> user_browser.getControl('Request Download').click()
     >>> print(user_browser.url)
-    http://translatio.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es
+    http://translatio.../ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'informational'):
     ...     tag.renderContents()

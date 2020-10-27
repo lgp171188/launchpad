@@ -66,7 +66,7 @@ The second column links to the distribution series source package page. The
 user follows the "Ubuntu Hoary" link next to cnews:
 
     >>> browser.open("http://launchpad.test/~name16/+related-packages")
-    >>> link = browser.getLink(url="/ubuntu/hoary/+source/cnews")
+    >>> link = browser.getLink(url="/ubuntu/+series/hoary/+source/cnews")
     >>> print(link)
     <Link text='Ubuntu Hoary' ...>
     >>> link.click()

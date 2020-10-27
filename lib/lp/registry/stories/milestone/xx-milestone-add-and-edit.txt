@@ -38,12 +38,13 @@ see the link to add a milestone nor access the page directly.
       ...
     Unauthorized: ...
 
-    >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
+    >>> user_browser.open('http://launchpad.test/ubuntu/+series/hoary')
     >>> user_browser.getLink('Create milestone').click()
     Traceback (most recent call last):
       ...
     LinkNotFoundError
-    >>> user_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    >>> user_browser.open(
+    ...     'http://launchpad.test/ubuntu/+series/hoary/+addmilestone')
     Traceback (most recent call last):
       ...
     Unauthorized: ...
@@ -57,10 +58,10 @@ create a new milestone.
     >>> test_browser.url
     'http://launchpad.test/alsa-utils/trunk/+addmilestone'
 
-    >>> test_browser.open('http://launchpad.test/ubuntu/hoary')
+    >>> test_browser.open('http://launchpad.test/ubuntu/+series/hoary')
     >>> test_browser.getLink('Create milestone').click()
     >>> test_browser.url
-    'http://launchpad.test/ubuntu/hoary/+addmilestone'
+    'http://launchpad.test/ubuntu/+series/hoary/+addmilestone'
 
 
 == Milestone bug subscriptions ==

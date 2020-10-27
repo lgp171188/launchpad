@@ -123,7 +123,7 @@ Bugs can also be reported directly against a distribution series, for
 which the guidelines are taken from the respective distribution.
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/ubuntu/warty/+filebug')
+    ...     'http://launchpad.test/ubuntu/+series/warty/+filebug')
     >>> user_browser.getControl('Summary', index=0).value = "It doesn't work"
     >>> user_browser.getControl('Continue').click()
     >>> print(extract_text(find_tag_by_id(

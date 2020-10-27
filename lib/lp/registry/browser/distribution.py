@@ -189,17 +189,19 @@ class DistributionNavigation(
 
     @stepthrough('+series')
     def traverse_series(self, name):
-        series, _ = self._resolveSeries(name)
-        return self.redirectSubTree(
-            canonical_url(series, request=self.request), status=303)
-
-    def traverse(self, name):
         series, is_alias = self._resolveSeries(name)
         if is_alias:
             return self.redirectSubTree(
                 canonical_url(series, request=self.request), status=303)
         else:
             return series
+
+    def traverse(self, name):
+        series, _ = self._resolveSeries(name)
+        if series is None:
+            return None
+        return self.redirectSubTree(
+            canonical_url(series, request=self.request), status=303)
 
 
 class DistributionSetNavigation(Navigation):

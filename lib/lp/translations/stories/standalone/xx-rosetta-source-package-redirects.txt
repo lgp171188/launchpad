@@ -1,7 +1,7 @@
 Checks that the '+pots/' page redirects always to the '+translations' one.
 
   >>> print(http(r"""
-  ... GET /ubuntu/hoary/+source/evolution/+pots/ HTTP/1.1
+  ... GET /ubuntu/+series/hoary/+source/evolution/+pots/ HTTP/1.1
   ... Accept-Language: en-gb,en;q=0.5
   ... Host: translations.launchpad.test
   ... """))
@@ -15,13 +15,13 @@ Checks that the '+pots/' page redirects always to the '+translations' one.
 Checks that the '+pots' page redirects always to the '+translations' one.
 
   >>> print(http(r"""
-  ... GET /ubuntu/hoary/+source/evolution/+pots HTTP/1.1
+  ... GET /ubuntu/+series/hoary/+source/evolution/+pots HTTP/1.1
   ... Accept-Language: en-gb,en;q=0.5
   ... Host: translations.launchpad.test
   ... """))
   HTTP/1.1 303 See Other
   ...
-  Location: .../ubuntu/hoary/+source/evolution/+pots...
+  Location: .../ubuntu/+series/hoary/+source/evolution/+pots...
   ...
 
 Checks that the '+sources/.../+translate' page redirects always to the
@@ -32,7 +32,7 @@ Hardy, which is 2013-04.  Please consult with the Ubuntu Desktop team before
 removing.
 
   >>> print(http(r"""
-  ... GET /ubuntu/hoary/+sources/evolution/+translate HTTP/1.1
+  ... GET /ubuntu/+series/hoary/+sources/evolution/+translate HTTP/1.1
   ... Accept-Language: en-gb,en;q=0.5
   ... Host: translations.launchpad.test
   ... """))

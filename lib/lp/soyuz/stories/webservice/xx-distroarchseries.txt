@@ -12,7 +12,7 @@ operation:
     >>> current_series = webservice.get(
     ...     ubuntu['current_series_link']).jsonBody()
     >>> print(current_series['self_link'])
-    http://.../ubuntu/hoary
+    http://.../ubuntu/+series/hoary
 
 We'll first set up a buildd chroot, so we can check that its URL is
 exposed.
@@ -37,7 +37,7 @@ For a distroarchseries we publish a subset of its attributes.
     architecture_tag: 'i386'
     chroot_url: 'http://.../.../filename...'
     display_name: 'Ubuntu Hoary i386'
-    distroseries_link: 'http://.../ubuntu/hoary'
+    distroseries_link: 'http://.../ubuntu/+series/hoary'
     is_nominated_arch_indep: True
     main_archive_link: 'http://.../ubuntu/+archive/primary'
     official: True
@@ -45,21 +45,21 @@ For a distroarchseries we publish a subset of its attributes.
     package_count: 1
     processor_link: 'http://.../+processors/386'
     resource_type_link: 'http://.../#distro_arch_series'
-    self_link: 'http://.../ubuntu/hoary/i386'
+    self_link: 'http://.../ubuntu/+series/hoary/i386'
     supports_virtualized: True
     title: 'The Hoary Hedgehog Release for i386 (386)'
-    web_link: 'http://launchpad.../ubuntu/hoary/i386'
+    web_link: 'http://launchpad.../ubuntu/+series/hoary/i386'
 
 DistroArchSeries.enabled is published in the API devel version.
 
     >>> distroarchseries = webservice.get(
-    ...     "/ubuntu/hoary/i386", api_version='devel').jsonBody()
+    ...     "/ubuntu/+series/hoary/i386", api_version='devel').jsonBody()
 
     >>> pprint_entry(distroarchseries)
     architecture_tag: 'i386'
     chroot_url: 'http://.../.../filename...'
     display_name: 'Ubuntu Hoary i386'
-    distroseries_link: 'http://.../ubuntu/hoary'
+    distroseries_link: 'http://.../ubuntu/+series/hoary'
     enabled: True
     is_nominated_arch_indep: True
     main_archive_link: 'http://.../ubuntu/+archive/primary'
@@ -68,7 +68,7 @@ DistroArchSeries.enabled is published in the API devel version.
     package_count: 1
     processor_link: 'http://.../+processors/386'
     resource_type_link: 'http://.../#distro_arch_series'
-    self_link: 'http://.../ubuntu/hoary/i386'
+    self_link: 'http://.../ubuntu/+series/hoary/i386'
     supports_virtualized: True
     title: 'The Hoary Hedgehog Release for i386 (386)'
-    web_link: 'http://launchpad.../ubuntu/hoary/i386'
+    web_link: 'http://launchpad.../ubuntu/+series/hoary/i386'

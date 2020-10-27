@@ -509,7 +509,7 @@ def print_portlet_links(content, name, base=None):
     >>> print_portlet_links(admin_browser.contents,'Milestone milestone3 for
         Ubuntu details')
     Ubuntu: /ubuntu
-    Warty: /ubuntu/warty
+    Warty: /ubuntu/+series/warty
     --------------
     """
 

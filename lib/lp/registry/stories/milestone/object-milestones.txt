@@ -54,12 +54,14 @@ Distributions
 Distribution Series
 ...................
 
-    >>> anon_browser.open('http://launchpad.test/debian/woody/+milestones')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/debian/+series/woody/+milestones')
     >>> print(all_milestones(anon_browser))
     Debian 3.1      ...
     Debian 3.1-rc1  ...
 
-    >>> anon_browser.open('http://launchpad.test/debian/sarge/+milestones')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/debian/+series/sarge/+milestones')
     >>> print(all_milestones(anon_browser))
     None
 

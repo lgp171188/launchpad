@@ -5,7 +5,7 @@ First, we need to define a function to see that the message we are
 interested on doesn't have any translation.
 
   >>> user_browser.open(
-  ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+  ...     "http://translations.launchpad.test/ubuntu/+series/hoary/+source/"
   ...     "evolution/+pots/evolution-2.2/es/+translate?start=20")
 
 We are going to change message #21, but first, we see that this messages
@@ -91,14 +91,14 @@ First, we need to ensure that we can see the distroseries translations
 page, and that it has all the data we are expecting, in terms of languages.
 
   >>> from lp.testing.pages import extract_url_parameter
-  >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
+  >>> browser.open('http://translations.launchpad.test/ubuntu/+series/hoary/'
   ...     '+translations')
   >>> b'Translation status by language' in browser.contents
   True
   >>> print(browser.getLink('Catalan').url)
-  http://translations.launchpad.test/ubuntu/hoary/+lang/ca
+  http://translations.launchpad.test/ubuntu/+series/hoary/+lang/ca
   >>> print(browser.getLink('Xhosa').url)
-  http://translations.launchpad.test/ubuntu/hoary/+lang/xh
+  http://translations.launchpad.test/ubuntu/+series/hoary/+lang/xh
   >>> browser.getLink('Afrihili')
   Traceback (most recent call last):
   ...
@@ -110,16 +110,17 @@ our browser speaks Afrihili, and since the user is anonymous the system will
 put Afrihili into the list of "preferred languages".
 
   >>> browser.addHeader('Accept-Language', 'en-us,en;q=0.7,afh;q=0.3')
-  >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
+  >>> browser.open(
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
   ...     '+translations')
   >>> b'Translation status by language' in browser.contents
   True
   >>> print(browser.getLink('Catalan').url)
-  http://translations.launchpad.test/ubuntu/hoary/+lang/ca
+  http://translations.launchpad.test/ubuntu/+series/hoary/+lang/ca
   >>> print(browser.getLink('Xhosa').url)
-  http://translations.launchpad.test/ubuntu/hoary/+lang/xh
+  http://translations.launchpad.test/ubuntu/+series/hoary/+lang/xh
   >>> print(browser.getLink('Afrihili').url)
-  http://translations.launchpad.test/ubuntu/hoary/+lang/afh
+  http://translations.launchpad.test/ubuntu/+series/hoary/+lang/afh
 
 If we select Croatian, we would expect to see the list of source package
 templates, and in the sample data we should have a croatian pofile for
@@ -127,15 +128,16 @@ pmount. Note that we should also have an empty pofile (really a dummy
 pofile) for evolution-2.2
 
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/hr?batch=2')
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/hr'
+  ...     '?batch=2')
   >>> b'Croatian' in browser.contents
   True
   >>> b'Translatable templates' in browser.contents
   True
   >>> print(browser.getLink('evolution-2.2').url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/hr/+translate
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/hr/+translate
   >>> print(browser.getLink('man').url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/man/hr/+translate
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/man/hr/+translate
 
 pmount and pkgconf-mozilla are not in this page, because it belongs to the next batch.
 
@@ -155,9 +157,9 @@ Let's go to next page.
 Now, we have the other man and pkgconf-mozilla:
 
   >>> print(browser.getLink('man').url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/pmount/+pots/man/hr/+translate
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/pmount/+pots/man/hr/+translate
   >>> print(browser.getLink('pkgconf-mozilla').url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/mozilla/+pots/pkgconf-mozilla/hr/+translate
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/mozilla/+pots/pkgconf-mozilla/hr/+translate
 
 Let's go to next page.
 
@@ -166,7 +168,7 @@ Let's go to next page.
 And finally, we will get pmount.
 
   >>> print(browser.getLink('pmount').url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/pmount/+pots/pmount/hr/+translate
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/pmount/+pots/pmount/hr/+translate
 
 With its latest translator.
 
@@ -179,7 +181,8 @@ When there's no reviewer and date of review on a last touched PO message
 inside a PO file (for example, when it was uploaded from the package), the
 last translator is displayed.
 
-  >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/+lang/de')
+  >>> browser.open(
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/de')
   >>> print(extract_text(
   ...     find_tag_by_id(browser.contents, "pkgconf-mozilla-time")))
   2005-05-06
@@ -194,8 +197,8 @@ decided to start contributing translations to that package.
 
   >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary/+source/pmount/'
-  ...     '+pots/pmount/pt_BR/+translate')
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+  ...     'pmount/+pots/pmount/pt_BR/+translate')
 
 Then he decides that he only wants to filter on untranslated entries (he's
 not aware that this translation is actually empty, i.e. there is no such PO
@@ -233,7 +236,8 @@ Looking at the Spanish language overview page, we can see that there are
 15 untranslated, 1 unreviewed and 1 changed in Ubuntu Evolution translations
 (all numbers repeated as hidden 'sortkey' values).
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/+lang/es')
+    >>> browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+lang/es')
     >>> evolution_line = find_tag_by_id(browser.contents, 'evolution-2.2')
     >>> print(extract_text(evolution_line))
     evolution-2.2
@@ -252,7 +256,7 @@ The template title points to the general translate page:
     >>> print(extract_text(unfiltered))
     evolution-2.2
     >>> print(extract_link_from_tag(unfiltered, base_href))
-    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate
+    http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate
 
 The number of untranslated entries points to the same page, which now show
 only untranslated items. When we follow this link, the filtering combo box
@@ -264,7 +268,7 @@ has the right filter preselected.
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
     >>> browser.open(untranslated_link.encode('UTF-8'))
     >>> browser.url
-    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
+    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=1).value)
     ['untranslated']
 
@@ -277,7 +281,7 @@ with the 'with new suggestions' filter selected.
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
     >>> browser.open(unreviewed_link.encode('UTF-8'))
     >>> browser.url
-    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
+    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=1).value)
     ['new_suggestions']
 
@@ -290,7 +294,7 @@ The number of updated entries points to the translation page with the
     >>> updated_link = extract_link_from_tag(updated, base_href)
     >>> browser.open(updated_link.encode('UTF-8'))
     >>> browser.url
-    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
+    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=1).value)
     ['changed_in_ubuntu']
 
@@ -327,16 +331,16 @@ will again see the legend.
 The same happens for template overview page for packages.
 
     >>> anon_browser.open(
-    ...    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-    ...    '+translations')
+    ...    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+    ...    'evolution/+translations')
     >>> find_tag_by_id(anon_browser.contents, 'legend') is None
     True
 
 And with at least one translation, legend is shown.
 
     >>> anon_browser.open(
-    ...    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-    ...    '+pots/man')
+    ...    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+    ...    'evolution/+pots/man')
     >>> find_tag_by_id(anon_browser.contents, 'legend') is None
     False
 
@@ -359,8 +363,8 @@ And likewise for PO template pages for templates without translations
 in packages:
 
     >>> anon_browser.open(
-    ...    'http://translations.launchpad.test/ubuntu/hoary/+source/pmount/'
-    ...    '+pots/man')
+    ...    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+    ...    'pmount/+pots/man')
     >>> find_tag_by_id(anon_browser.contents, 'legend') is None
     True
 
@@ -374,7 +378,7 @@ should see Catalan in the list.
 
     >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+translations')
     >>> b'Catalan' in browser.contents
     True
@@ -406,8 +410,9 @@ Looking at the POTemplate overview page, we can see that there are
 15 untranslated, 1 unreviewed and 1 changed in Ubuntu Spanish translations
 (all numbers repeated as hidden 'sortkey' values).
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'+
-    ...              '+source/evolution/+pots/evolution-2.2')
+    >>> browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     '+source/evolution/+pots/evolution-2.2')
     >>> spanish_line = find_tag_by_id(browser.contents, 'evolution-2.2_es')
     >>> print(extract_text(spanish_line))
     Spanish
@@ -425,7 +430,7 @@ Language title points to the general translate page:
     >>> print(extract_text(unfiltered))
     Spanish
     >>> print(extract_link_from_tag(unfiltered, base_href))
-    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate
+    http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate
 
 The number of untranslated entries points to the same page, which now shows
 only untranslated items. When we follow this link, the filtering combo box has
@@ -437,7 +442,7 @@ the right filter preselected.
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
     >>> browser.open(untranslated_link.encode('UTF-8'))
     >>> browser.url
-    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
+    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=2).value)
     untranslated
 
@@ -450,7 +455,7 @@ with the 'with new suggestions' filter selected.
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
     >>> browser.open(unreviewed_link.encode('UTF-8'))
     >>> browser.url
-    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
+    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=2).value)
     new_suggestions
 
@@ -463,6 +468,6 @@ The number of updated entries points to the translation page with the
     >>> updated_link = extract_link_from_tag(updated, base_href)
     >>> browser.open(updated_link.encode('UTF-8'))
     >>> browser.url
-    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
+    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=2).value)
     changed_in_ubuntu

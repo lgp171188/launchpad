@@ -33,7 +33,8 @@ The no-redirect parameter is retained when we redirect a user to the bug
 filing view of another context.
 
     >>> user_browser.open(
-    ...    'http://bugs.launchpad.test/ubuntu/hoary/+filebug?no-redirect')
+    ...     'http://bugs.launchpad.test/ubuntu/+series/hoary/+filebug'
+    ...     '?no-redirect')
     >>> print(user_browser.url)
     http://bugs.launchpad.test/ubuntu/+filebug?no-redirect
 

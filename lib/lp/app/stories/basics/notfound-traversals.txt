@@ -52,9 +52,9 @@ Ubuntu release is still pointing to this old URL (see bug #138090).
     http://launchpad.test/firefox
     >>> check_redirect("/ubuntu/+source/evolution/+editbugcontact")
     +subscribe
-    >>> check_redirect("/ubuntu/hoary/+latest-full-language-pack")
+    >>> check_redirect("/ubuntu/+series/hoary/+latest-full-language-pack")
     http://localhost:.../ubuntu-hoary-translations.tar.gz
-    >>> check_redirect("/ubuntu/hoary/+source/mozilla-firefox/+pots")
+    >>> check_redirect("/ubuntu/+series/hoary/+source/mozilla-firefox/+pots")
     http://launchpad.test/.../+pots/../+translations
 
 Viewing a bug in the context of an upstream where the bug has already
@@ -106,10 +106,11 @@ distroseries or sourcepackage is *targeted* to be fixed in that specific
 release. Instead, you get redirected to the appropriate distro or
 distrosourcepackage filebug page.
 
-    >>> check_redirect("/ubuntu/warty/+filebug", auth=True)
+    >>> check_redirect("/ubuntu/+series/warty/+filebug", auth=True)
     http://launchpad.test/ubuntu/+filebug
     >>> check_redirect(
-    ...     "/ubuntu/warty/+source/mozilla-firefox/+filebug", auth=True)
+    ...     "/ubuntu/+series/warty/+source/mozilla-firefox/+filebug",
+    ...     auth=True)
     http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug
 
 The old +filebug-advanced form now redirects to the +filebug form.

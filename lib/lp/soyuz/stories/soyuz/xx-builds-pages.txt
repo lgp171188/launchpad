@@ -49,7 +49,7 @@ For Distribution, it's possible to filter build results by state and name:
 
 For DistroSeries, an architecture filter is also presented:
 
-    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+series/hoary")
     >>> anon_browser.getLink("Show builds").click()
     >>> print(anon_browser.title)
     Builds : Hoary (5.04) : Ubuntu
@@ -59,7 +59,7 @@ For DistroSeries, an architecture filter is also presented:
 
 For DistroArchSeries, same as Distribution:
 
-    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary/i386")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+series/hoary/i386")
     >>> anon_browser.getLink("Show builds").click()
     >>> print(anon_browser.title)
     Builds : i386 : Hoary (5.04) : Ubuntu
@@ -91,7 +91,7 @@ For Archive (PPA), same as Distribution:
 For SourcePackage, it's only possible to filter by state.
 
     >>> anon_browser.open(
-    ...   "http://launchpad.test/ubuntu/hoary/+source/pmount")
+    ...   "http://launchpad.test/ubuntu/+series/hoary/+source/pmount")
     >>> anon_browser.getLink("Show builds").click()
     >>> print(anon_browser.title)
     Builds : Hoary (5.04) : pmount package : Ubuntu
@@ -430,7 +430,7 @@ repeat the same set of accesses done for Distribution Builds page.
 
     >>> anon_browser.open(
     ...    "http://launchpad.test/"
-    ...    "ubuntu/hoary/+source/mozilla-firefox/+builds")
+    ...    "ubuntu/+series/hoary/+source/mozilla-firefox/+builds")
 
 When anonymous user first load only 'No packages currently building'
 message is presented.
@@ -480,7 +480,7 @@ page as any other packages from the primary archive.
 And also on the distro series builds page:
 
     >>> anon_browser.open(
-    ...    "http://launchpad.test/ubuntu/breezy-autotest/+builds"
+    ...    "http://launchpad.test/ubuntu/+series/breezy-autotest/+builds"
     ...    "?build_text=commercialpackage&build_state=built")
 
     >>> print(extract_text(

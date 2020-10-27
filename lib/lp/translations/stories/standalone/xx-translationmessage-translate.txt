@@ -22,7 +22,7 @@ First, we need to be sure that anonymous users are able to browse
 translations but are unable to actually change them.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/5')
 
 We are in read only mode, so there shouldn't be any textareas:
@@ -64,7 +64,7 @@ The main page for a pomsgset object should redirect us to the
 translation form.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/1')
 
 When we are on the first message, we should be 100% sure that the
@@ -72,7 +72,7 @@ When we are on the first message, we should be 100% sure that the
 right ones.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/1/+translate')
 
     >>> browser.getLink('First')
@@ -183,7 +183,7 @@ All those links should linked the proper pages
 Now, we are going to check a message submission.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/13/+translate')
 
 Check that the message #13 is without translation.
@@ -273,7 +273,7 @@ We moved to the next message, that means this submission worked.
 Now, it has the submitted value.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/13/+translate')
 
 Check that the message #13 has the new value we submitted.
@@ -306,7 +306,7 @@ In some other cases where translator and reviewer are different, they
 are both shown separately:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/man/es/1/+translate')
     >>> find_tag_by_id(browser.contents, 'translated_and_reviewed_by') is None
     True
@@ -320,7 +320,7 @@ are both shown separately:
 Now, we will check suggestions in this form.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/14/+translate')
 
 Check that suggestions come in from other contexts:
@@ -358,9 +358,9 @@ If we specify more than one alternative language in the URL, we get an
 UnexpectedFormData exception:
 
     >>> browser.open(
-    ...  'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-    ...  '+pots/evolution-2.2/es/14/+translate?field.alternative_language=ca&'
-    ...  'field.alternative_language=es')
+    ...  'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+    ...  'evolution/+pots/evolution-2.2/es/14/+translate'
+    ...  '?field.alternative_language=ca&field.alternative_language=es')
     Traceback (most recent call last):
     ...
     UnexpectedFormData: You specified...
@@ -373,7 +373,7 @@ the changes.
 
     >>> slow_submission = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> slow_submission.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/14/+translate')
     >>> import transaction
     >>> transaction.commit()
@@ -383,7 +383,7 @@ Now, we get another instance that will be submitted before
 
     >>> fast_submission = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> fast_submission.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/14/+translate')
 
 Let's change the translation.
@@ -475,8 +475,9 @@ If there is a message which has a translation, but no reviewer (eg.
 uploaded from a package), it only shows the translator, and not
 reviewer.
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...              'mozilla/+pots/pkgconf-mozilla/de/1/+translate')
+    >>> browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+    ...     'mozilla/+pots/pkgconf-mozilla/de/1/+translate')
     >>> print(extract_text(
     ...     find_tag_by_id(browser.contents, "translated_by").parent))
     Translated by Helge Kreutzmann on 2005-05-06
@@ -530,8 +531,9 @@ suggestions, even if we keep them to know when were they deactivated.
 
 Initially, a message has a non-empty packaged translation.
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
-    ...              '+source/evolution/+pots/evolution-2.2/es/5/+translate')
+    >>> browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     '+source/evolution/+pots/evolution-2.2/es/5/+translate')
     >>> packaged = find_tag_by_id(browser.contents, 'msgset_134_other')
     >>> print(extract_text(packaged))
     In upstream: tarjetas
@@ -583,8 +585,9 @@ We replace it with an empty, imported translation:
 If we browse to the page for this message, we won't be able to see a
 packaged translation anymore.
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
-    ...              '+source/evolution/+pots/evolution-2.2/es/5/+translate')
+    >>> browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     '+source/evolution/+pots/evolution-2.2/es/5/+translate')
     >>> packaged = find_tag_by_id(browser.contents, 'msgset_134_other')
 
 Also, the page now displays a "(not translated yet)" message.

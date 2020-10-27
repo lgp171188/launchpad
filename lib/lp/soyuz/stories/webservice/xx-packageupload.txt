@@ -25,11 +25,11 @@ Each record exposes a number of properties.
     display_arches: 'source'
     display_name: 'mozilla-firefox'
     display_version: '0.9'
-    distroseries_link: 'http://.../ubuntu/warty'
+    distroseries_link: 'http://.../ubuntu/+series/warty'
     id: 11
     pocket: 'Release'
     resource_type_link: 'http://.../#package_upload'
-    self_link: 'http://.../ubuntu/warty/+upload/11'
+    self_link: 'http://.../ubuntu/+series/warty/+upload/11'
     status: 'Done'
 
 getPackageUploads can filter on package names.
