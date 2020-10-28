@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = [
     'GitHostingClient',
+    'RefCopyOperation',
     ]
 
 import base64
@@ -15,7 +16,10 @@ import sys
 from lazr.restful.utils import get_current_browser_request
 import requests
 import six
-from six import reraise
+from six import (
+    ensure_text,
+    reraise,
+    )
 from six.moves.urllib.parse import (
     quote,
     urljoin,
@@ -23,10 +27,13 @@ from six.moves.urllib.parse import (
 from zope.interface import implementer
 
 from lp.code.errors import (
+    GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
+    GitTargetError,
+    NoSuchGitReference,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.services.config import config
@@ -40,6 +47,18 @@ from lp.services.timeout import (
 
 class RequestExceptionWrapper(requests.RequestException):
     """A non-requests exception that occurred during a request."""
+
+
+class RefCopyOperation:
+    """A description of a ref (or commit) copy between repositories.
+
+    This class is just a helper to define copy operations parameters on
+    IGitHostingClient.copyRefs method.
+    """
+    def __init__(self, source_ref, target_repo, target_ref):
+        self.source_ref = source_ref
+        self.target_repo = target_repo
+        self.target_ref = target_ref
 
 
 @implementer(IGitHostingClient)
@@ -252,3 +271,41 @@ class GitHostingClient:
             raise GitRepositoryScanFault(
                 "Failed to get file from Git repository: %s" %
                 six.text_type(e))
+
+    def copyRefs(self, path, operations, logger=None):
+        """See `IGitHostingClient`."""
+        json_data = {
+            "operations": [{
+                "from": i.source_ref,
+                "to": {"repo": i.target_repo, "ref": i.target_ref}
+            } for i in operations]
+        }
+        try:
+            if logger is not None:
+                logger.info(
+                    "Copying refs from %s to %s targets" %
+                    (path, len(operations)))
+            url = "/repo/%s/refs-copy" % path
+            self._post(url, json=json_data)
+        except requests.RequestException as e:
+            if (e.response is not None and
+                    e.response.status_code == requests.codes.NOT_FOUND):
+                raise GitTargetError(
+                    "Could not find repository %s or one of its refs" %
+                    ensure_text(path))
+            else:
+                raise GitRepositoryScanFault(
+                    "Could not copy refs: HTTP %s" % e.response.status_code)
+
+    def deleteRefs(self, refs, logger=None):
+        """See `IGitHostingClient`."""
+        for path, ref in refs:
+            try:
+                if logger is not None:
+                    logger.info("Delete from repo %s the ref %s" % (path, ref))
+                url = "/repo/%s/%s" % (path, ref)
+                self._delete(url)
+            except requests.RequestException as e:
+                raise GitReferenceDeletionFault(
+                    "Error deleting %s from repo %s: HTTP %s" %
+                    (ref, path, e.response.status_code))

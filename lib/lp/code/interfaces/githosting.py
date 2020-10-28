@@ -131,3 +131,20 @@ class IGitHostingClient(Interface):
         :param logger: An optional logger.
         :return: A binary string with the blob content.
         """
+
+    def copyRefs(path, operations, logger=None):
+        """Executes the copy of refs or commits between different
+        repositories.
+
+        :param path: Physical path of the repository on the hosting service.
+        :param operations: A list of RefCopyOperation objects describing
+                           source and target of the copy.
+        :param logger: An optional logger.
+        """
+
+    def deleteRefs(refs, logger=None):
+        """Deletes a list of repository paths and references.
+
+        :param refs: A list of tuples like (repo_path, ref_name) to be deleted.
+        :param logger: An optional logger.
+        """
