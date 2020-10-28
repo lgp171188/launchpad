@@ -19,5 +19,6 @@ class StatsMixin:
         # Install a mock statsd client so we can assert against the call
         # counts and args.
         self.stats_client = mock.Mock()
+        self.stats_client.lp_environment = "test"
         self.useFixture(
             ZopeUtilityFixture(self.stats_client, IStatsdClient))

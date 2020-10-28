@@ -85,10 +85,18 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
                  if 'amd64' in c[0][0]]
         self.assertThat(
             calls, MatchesListwise(
-                [Equals(('builders.disabled,arch=amd64,virtualized=True', 0)),
-                 Equals(('builders.building,arch=amd64,virtualized=True', 0)),
-                 Equals(('builders.idle,arch=amd64,virtualized=True', 0)),
-                 Equals(('builders.cleaning,arch=amd64,virtualized=True', 1))
+                [Equals((
+                    'builders,status=disabled,arch=amd64,'
+                    'virtualized=True,env=test', 0)),
+                 Equals((
+                     'builders,status=building,arch=amd64,'
+                     'virtualized=True,env=test', 0)),
+                 Equals((
+                     'builders,status=idle,arch=amd64,'
+                     'virtualized=True,env=test', 0)),
+                 Equals((
+                     'builders,status=cleaning,arch=amd64,'
+                     'virtualized=True,env=test', 1))
                  ]))
 
     def test_updateBuilderQueues(self):
@@ -109,9 +117,9 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         self.assertThat(
             [x[0] for x in self.stats_client.gauge.call_args_list],
             MatchesListwise(
-                [Equals(('buildqueue,virtualized=True,arch={}'.format(
+                [Equals(('buildqueue,virtualized=True,arch={},env=test'.format(
                     build.processor.name), 1)),
-                 Equals(('buildqueue,virtualized=False,arch=386', 1))
+                 Equals(('buildqueue,virtualized=False,arch=386,env=test', 1))
                  ]))
 
     def test_startService_starts_update_queues_loop(self):

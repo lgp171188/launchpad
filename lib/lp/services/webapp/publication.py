@@ -795,13 +795,16 @@ class LaunchpadBrowserPublication(
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
                     OpStats.stats['404s'] += 1
-                    statsd_client.incr('errors.404')
+                    statsd_client.incr('errors.404,env={}'.format(
+                        statsd_client.lp_environment))
                 elif status == 500:  # Unhandled exceptions
                     OpStats.stats['500s'] += 1
-                    statsd_client.incr('errors.500')
+                    statsd_client.incr('errors.500,env={}'.format(
+                        statsd_client.lp_environment))
                 elif status == 503:  # Timeouts
                     OpStats.stats['503s'] += 1
-                    statsd_client.incr('errors.503')
+                    statsd_client.incr('errors.503,env={}'.format(
+                        statsd_client.lp_environment))
 
                 # Increment counters for status code groups.
                 status_group = str(status)[0] + 'XXs'
@@ -810,7 +813,8 @@ class LaunchpadBrowserPublication(
                 # Increment counter for 5XXs_b.
                 if is_browser(request) and status_group == '5XXs':
                     OpStats.stats['5XXs_b'] += 1
-                    statsd_client.incr('errors.5XX')
+                    statsd_client.incr('errors.5XX,env={}'.format(
+                        statsd_client.lp_environment))
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name
