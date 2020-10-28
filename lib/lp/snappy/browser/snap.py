@@ -23,6 +23,7 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+import six
 from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -837,7 +838,7 @@ class SnapAuthorizeView(LaunchpadEditFormView):
                 ])
             return login_url
         except CannotAuthorizeStoreUploads as e:
-            request.response.addInfoNotification(unicode(e))
+            request.response.addInfoNotification(six.text_type(e))
             request.response.redirect(canonical_url(snap))
             return
 

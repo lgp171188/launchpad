@@ -125,6 +125,11 @@ class BinaryPackageRelease(SQLBase):
         """See `IBinaryPackageRelease`."""
         return self.build.source_package_release.sourcepackagename.name
 
+    @property
+    def sourcepackageversion(self):
+        """See `IBinaryPackageRelease`."""
+        return self.build.source_package_release.version
+
     @cachedproperty
     def files(self):
         return list(

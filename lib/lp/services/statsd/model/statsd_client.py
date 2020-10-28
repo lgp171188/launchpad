@@ -43,6 +43,12 @@ class StatsdClient:
         self._make_client()
 
     def __getattr__(self, name):
+        # This is a convenience to keep all statsd client related
+        # items on the client. Having this separate from prefix
+        # allows us to use it as a label, rather than as part of the
+        # gauge name
+        if name == 'lp_environment':
+            return config.statsd.environment
         if self._client is not None:
             return getattr(self._client, name)
         else:

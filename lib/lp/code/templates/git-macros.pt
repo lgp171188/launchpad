@@ -100,8 +100,7 @@
           <dd tal:condition="python: getattr(view, 'allow_fork', False)">
             or
             <a tal:attributes="href view/fork_url" class="sprite add">
-              fork it directly to your account
-            </a>.
+              fork it directly to your account</a>.
           </dd>
         </dl>
       </tal:cannot-push>

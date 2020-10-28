@@ -102,7 +102,10 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
-from lp.services.database.stormexpr import fti_search
+from lp.services.database.stormexpr import (
+    fti_search,
+    IsTrue,
+    )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import (
     LibraryFileAlias,
@@ -717,15 +720,11 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     @property
     def distroserieslanguages(self):
-        result = DistroSeriesLanguage.select(
-            "DistroSeriesLanguage.language = Language.id AND "
-            "DistroSeriesLanguage.distroseries = %d AND "
-            "Language.visible = TRUE" % self.id,
-            prejoinClauseTables=["Language"],
-            clauseTables=["Language"],
-            prejoins=["distroseries"],
-            orderBy=["Language.englishname"])
-        return result
+        return IStore(DistroSeriesLanguage).find(
+            DistroSeriesLanguage,
+            DistroSeriesLanguage.language == Language.id,
+            DistroSeriesLanguage.distroseries == self,
+            IsTrue(Language.visible)).order_by(Language.englishname)
 
     @property
     def bug_reporting_guidelines(self):
@@ -899,8 +898,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getDistroSeriesLanguage(self, language):
         """See `IDistroSeries`."""
-        return DistroSeriesLanguage.selectOneBy(
-            distroseries=self, language=language)
+        return IStore(DistroSeriesLanguage).find(
+            DistroSeriesLanguage, distroseries=self, language=language).one()
 
     def getDistroSeriesLanguageOrDummy(self, language):
         """See `IDistroSeries`."""
@@ -913,25 +912,25 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         """See `IDistroSeries`."""
         # first find the set of all languages for which we have pofiles in
         # the distribution that are visible and not English
-        langidset = set(IStore(Language).find(
-            Language.id,
-            Language.visible == True,
+        langset = set(IStore(Language).find(
+            Language,
+            IsTrue(Language.visible),
             Language.id == POFile.languageID,
             Language.code != 'en',
             POFile.potemplateID == POTemplate.id,
             POTemplate.distroseries == self,
-            POTemplate.iscurrent == True).config(distinct=True))
+            IsTrue(POTemplate.iscurrent)).config(distinct=True))
 
         # now run through the existing DistroSeriesLanguages for the
         # distroseries, and update their stats, and remove them from the
         # list of languages we need to have stats for
         for distroserieslanguage in self.distroserieslanguages:
             distroserieslanguage.updateStatistics(ztm)
-            langidset.discard(distroserieslanguage.language.id)
+            langset.discard(distroserieslanguage.language)
         # now we should have a set of languages for which we NEED
         # to have a DistroSeriesLanguage
-        for langid in langidset:
-            drl = DistroSeriesLanguage(distroseries=self, languageID=langid)
+        for lang in langset:
+            drl = DistroSeriesLanguage(distroseries=self, language=lang)
             drl.updateStatistics(ztm)
         # lastly, we need to update the message count for this distro
         # series itself

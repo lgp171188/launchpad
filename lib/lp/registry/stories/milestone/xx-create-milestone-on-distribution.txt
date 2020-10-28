@@ -3,7 +3,8 @@ add a milestone to the Ubuntu/hoary distroseries, which is owned by the Ubuntu
 Team (ubuntu-team).
 
     >>> name12_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> name12_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    >>> name12_browser.open(
+    ...     'http://launchpad.test/ubuntu/+series/hoary/+addmilestone')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
@@ -17,7 +18,8 @@ of the distribution should be able to add milestones for it, of course!
 
 Now let's go back and try the add milestone page again. It works:
 
-    >>> name12_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    >>> name12_browser.open(
+    ...     'http://launchpad.test/ubuntu/+series/hoary/+addmilestone')
 
 Now, if we post to that form, we should see a success, and the page should
 redirect to the Ubuntu Hoary page showing the milestone we added.
@@ -25,9 +27,9 @@ redirect to the Ubuntu Hoary page showing the milestone we added.
     >>> name12_browser.getControl('Name').value = 'sounder01'
     >>> name12_browser.getControl('Register Milestone').click()
     >>> name12_browser.url
-    'http://launchpad.test/ubuntu/hoary'
-    >>> print extract_text(
-    ...     find_tag_by_id(name12_browser.contents, 'series-hoary'))
+    'http://launchpad.test/ubuntu/+series/hoary'
+    >>> print(extract_text(
+    ...     find_tag_by_id(name12_browser.contents, 'series-hoary')))
     Version ...
     sounder01 ...
 

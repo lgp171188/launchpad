@@ -21,6 +21,7 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.interfaces import IJSONRequestCache
 import pytz
 import simplejson
+import six
 from soupmatchers import (
     HTMLContains,
     Tag,
@@ -1547,7 +1548,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
             date_created=review_date)
         self.useFixture(GitHostingFixture(log=[
             {
-                'sha1': unicode(hashlib.sha1(b'0').hexdigest()),
+                'sha1': six.ensure_text(hashlib.sha1(b'0').hexdigest()),
                 'message': '0',
                 'author': {
                     'name': author.display_name,
@@ -1618,7 +1619,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # Even if the source Git ref has been deleted, we still know its tip
         # SHA-1 and can ask the repository for its unmerged commits.
         bmp = self.factory.makeBranchMergeProposalForGit()
-        sha1 = unicode(hashlib.sha1(b'0').hexdigest())
+        sha1 = six.ensure_text(hashlib.sha1(b'0').hexdigest())
         commit_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
         self.useFixture(GitHostingFixture(log=[
             {
@@ -1703,7 +1704,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                     Tag(
                         'merge proposal breadcrumb', 'li',
                         text=re.compile(
-                            '\sMerge into %s\s' %
+                            r'\sMerge into %s\s' %
                             re.escape(bmp.target_branch.name))))))
 
     def test_breadcrumbs_git(self):
@@ -1745,7 +1746,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                     Tag(
                         'merge proposal breadcrumb', 'li',
                         text=re.compile(
-                            '\sMerge into %s\s' %
+                            r'\sMerge into %s\s' %
                             re.escape(bmp.target_git_ref.name))))))
 
 

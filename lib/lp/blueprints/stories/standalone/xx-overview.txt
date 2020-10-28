@@ -147,7 +147,8 @@ those targeted to a given distribution series. Let's pick the Grumpy Groundhog
 series as an example. To begin with, there are no blueprints listed on the
 blueprints page for Grumpy:
 
-    >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy')
+    >>> user_browser.open(
+    ...     'http://blueprints.launchpad.test/ubuntu/+series/grumpy')
     >>> main = find_main_content(user_browser.contents)
     >>> print(extract_text(main).encode('ascii', 'backslashreplace'))
     Blueprints for Grumpy
@@ -177,7 +178,7 @@ Let's target an existing Ubuntu blueprint to the Grumpy series:
 We'll also target the blueprint to a milestone.  First we'll create a
 milestone:
 
-    >>> browser.open('http://launchpad.test/ubuntu/grumpy/')
+    >>> browser.open('http://launchpad.test/ubuntu/+series/grumpy/')
     >>> browser.getLink('Create milestone').click()
     >>> browser.getControl('Name').value = 'drift-1'
     >>> browser.getControl('Date Targeted').value = '2050-05-05'
@@ -206,7 +207,8 @@ Now we'll target our chosen blueprint to the new milestone:
 Finally, the blueprint listing for Grumpy includes an entry for our chosen
 blueprint. It also lists the milestone to which the blueprint is targeted:
 
-    >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy')
+    >>> user_browser.open(
+    ...     'http://blueprints.launchpad.test/ubuntu/+series/grumpy')
     >>> main = find_main_content(user_browser.contents)
     >>> print(extract_text(main).encode('ascii', 'backslashreplace'))
     Blueprints for Grumpy...

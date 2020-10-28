@@ -20,6 +20,7 @@ from debian.changelog import (
     ChangelogParseError,
     )
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -172,7 +173,7 @@ class SourcePackageRelease(SQLBase):
         store = Store.of(self)
         store.flush()
         if content is not None:
-            content = unicode(content)
+            content = six.ensure_text(content)
         store.execute(
             "UPDATE sourcepackagerelease SET copyright=%s WHERE id=%s",
             (content, self.id))

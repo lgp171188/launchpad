@@ -18,22 +18,22 @@ We publish a subset of their attributes.
     >>> pprint_entry(cprov_archive)
     authorized_size: 1024
     dependencies_collection_link:
-        u'http://.../~cprov/+archive/ubuntu/ppa/dependencies'
-    description: u'packages to help my friends.'
-    displayname: u'PPA for Celso Providelo'
-    distribution_link: u'http://.../ubuntu'
+        'http://.../~cprov/+archive/ubuntu/ppa/dependencies'
+    description: 'packages to help my friends.'
+    displayname: 'PPA for Celso Providelo'
+    distribution_link: 'http://.../ubuntu'
     external_dependencies: None
-    name: u'ppa'
-    owner_link: u'http://.../~cprov'
+    name: 'ppa'
+    owner_link: 'http://.../~cprov'
     private: False
-    reference: u'~cprov/ubuntu/ppa'
+    reference: '~cprov/ubuntu/ppa'
     relative_build_score: 0
     require_virtualized: True
-    resource_type_link: u'http://.../#archive'
-    self_link: u'http://.../~cprov/+archive/ubuntu/ppa'
+    resource_type_link: 'http://.../#archive'
+    self_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     signing_key_fingerprint: None
     suppress_subscription_notifications: False
-    web_link: u'http://launchpad.../~cprov/+archive/ubuntu/ppa'
+    web_link: 'http://launchpad.../~cprov/+archive/ubuntu/ppa'
 
 For "devel" additional attributes are available.
 
@@ -42,27 +42,27 @@ For "devel" additional attributes are available.
     >>> pprint_entry(cprov_archive_devel)
     authorized_size: 1024
     build_debug_symbols: False
-    dependencies_collection_link: u'http://.../~cprov/+archive/ubuntu/ppa/dependencies'
-    description: u'packages to help my friends.'
-    displayname: u'PPA for Celso Providelo'
-    distribution_link: u'http://.../ubuntu'
-    enabled_restricted_processors_collection_link: u'http://.../~cprov/+archive/ubuntu/ppa/enabled_restricted_processors'
+    dependencies_collection_link: 'http://.../~cprov/+archive/ubuntu/ppa/dependencies'
+    description: 'packages to help my friends.'
+    displayname: 'PPA for Celso Providelo'
+    distribution_link: 'http://.../ubuntu'
+    enabled_restricted_processors_collection_link: 'http://.../~cprov/+archive/ubuntu/ppa/enabled_restricted_processors'
     external_dependencies: None
-    name: u'ppa'
-    owner_link: u'http://.../~cprov'
+    name: 'ppa'
+    owner_link: 'http://.../~cprov'
     permit_obsolete_series_uploads: False
     private: False
-    processors_collection_link: u'http://.../~cprov/+archive/ubuntu/ppa/processors'
+    processors_collection_link: 'http://.../~cprov/+archive/ubuntu/ppa/processors'
     publish_debug_symbols: False
-    reference: u'~cprov/ubuntu/ppa'
+    reference: '~cprov/ubuntu/ppa'
     relative_build_score: 0
     require_virtualized: True
-    resource_type_link: u'http://.../#archive'
-    self_link: u'http://.../~cprov/+archive/ubuntu/ppa'
+    resource_type_link: 'http://.../#archive'
+    self_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     signing_key_fingerprint: None
-    status: u'Active'
+    status: 'Active'
     suppress_subscription_notifications: False
-    web_link: u'http://launchpad.../~cprov/+archive/ubuntu/ppa'
+    web_link: 'http://launchpad.../~cprov/+archive/ubuntu/ppa'
 
 While the Archive signing key is being generated its
 'signing_key_fingerprint' attribute is None.
@@ -122,22 +122,22 @@ The archive has the following attributes:
     >>> pprint_entry(ubuntu_main_archive)
     authorized_size: None
     dependencies_collection_link:
-        u'http://.../ubuntutest/+archive/primary/dependencies'
+        'http://.../ubuntutest/+archive/primary/dependencies'
     description: None
-    displayname: u'Primary Archive for Ubuntu Test'
-    distribution_link: u'http://.../ubuntutest'
+    displayname: 'Primary Archive for Ubuntu Test'
+    distribution_link: 'http://.../ubuntutest'
     external_dependencies: None
-    name: u'primary'
-    owner_link: u'http://.../~ubuntu-team'
+    name: 'primary'
+    owner_link: 'http://.../~ubuntu-team'
     private: False
-    reference: u'ubuntutest'
+    reference: 'ubuntutest'
     relative_build_score: 0
     require_virtualized: False
-    resource_type_link: u'http://.../#archive'
-    self_link: u'http://.../ubuntutest/+archive/primary'
+    resource_type_link: 'http://.../#archive'
+    self_link: 'http://.../ubuntutest/+archive/primary'
     signing_key_fingerprint: None
     suppress_subscription_notifications: False
-    web_link: u'http://launchpad.../ubuntutest/+archive/primary'
+    web_link: 'http://launchpad.../ubuntutest/+archive/primary'
 
 A distribution can also provide a list of all its archives:
 
@@ -175,14 +175,14 @@ This is a permission that allows a team to upload to a component:
     ...     '?type=component&item=main')
     >>> ubuntu_main_permission = webservice.get(url).jsonBody()
     >>> pprint_entry(ubuntu_main_permission)
-    archive_link: u'http://.../ubuntu/+archive/primary'
-    component_name: u'main'
+    archive_link: 'http://.../ubuntu/+archive/primary'
+    component_name: 'main'
     date_created: ...
-    permission: u'Archive Upload Rights'
-    person_link: u'http://.../~ubuntu-team'
+    permission: 'Archive Upload Rights'
+    person_link: 'http://.../~ubuntu-team'
     pocket: None
     resource_type_link: ...
-    self_link: u'http://.../ubuntu/+archive/primary/+upload/ubuntu-team?type=component&item=main'
+    self_link: 'http://.../ubuntu/+archive/primary/+upload/ubuntu-team?type=component&item=main'
     source_package_name: None
 
 This is a permission that allows an individual to upload a source package.
@@ -191,16 +191,16 @@ This is a permission that allows an individual to upload a source package.
     ...     '?type=packagename&item=mozilla-firefox')
     >>> carlos_mozilla_permission = webservice.get(url).jsonBody()
     >>> pprint_entry(carlos_mozilla_permission)
-    archive_link: u'http://.../ubuntu/+archive/primary'
+    archive_link: 'http://.../ubuntu/+archive/primary'
     component_name: None
     date_created: ...
-    permission: u'Archive Upload Rights'
-    person_link: u'http://.../~carlos'
+    permission: 'Archive Upload Rights'
+    person_link: 'http://.../~carlos'
     pocket: None
     resource_type_link: ...
     self_link:
-        u'http://.../ubuntu/+archive/primary/+upload/carlos?type=packagename&item=mozilla-firefox'
-    source_package_name: u'mozilla-firefox'
+        'http://.../ubuntu/+archive/primary/+upload/carlos?type=packagename&item=mozilla-firefox'
+    source_package_name: 'mozilla-firefox'
 
 This is a queue admin right for ubuntu-team:
 
@@ -208,15 +208,15 @@ This is a queue admin right for ubuntu-team:
     ...     '?type=component&item=main')
     >>> ubuntu_main_permission = webservice.get(url).jsonBody()
     >>> pprint_entry(ubuntu_main_permission)
-    archive_link: u'http://.../ubuntu/+archive/primary'
-    component_name: u'main'
+    archive_link: 'http://.../ubuntu/+archive/primary'
+    component_name: 'main'
     date_created: ...
-    permission: u'Queue Administration Rights'
-    person_link: u'http://.../~ubuntu-team'
+    permission: 'Queue Administration Rights'
+    person_link: 'http://.../~ubuntu-team'
     pocket: None
     resource_type_link: ...
     self_link:
-        u'http://.../ubuntu/+archive/primary/+queue-admin/ubuntu-team?type=component&item=main'
+        'http://.../ubuntu/+archive/primary/+queue-admin/ubuntu-team?type=component&item=main'
     source_package_name: None
 
 And one for an individual:
@@ -225,15 +225,15 @@ And one for an individual:
     ...     '?type=component&item=universe')
     >>> name16_admin_permission = webservice.get(url).jsonBody()
     >>> pprint_entry(name16_admin_permission)
-    archive_link: u'http://.../ubuntu/+archive/primary'
-    component_name: u'universe'
+    archive_link: 'http://.../ubuntu/+archive/primary'
+    component_name: 'universe'
     date_created: ...
-    permission: u'Queue Administration Rights'
-    person_link: u'http://.../~name12'
+    permission: 'Queue Administration Rights'
+    person_link: 'http://.../~name12'
     pocket: None
     resource_type_link: ...
     self_link:
-        u'http://.../ubuntu/+archive/primary/+queue-admin/name12?type=component&item=universe'
+        'http://.../ubuntu/+archive/primary/+queue-admin/name12?type=component&item=universe'
     source_package_name: None
 
 
@@ -246,9 +246,9 @@ archive.  First, define some general helper functions.
     >>> def permission_entry_sort_key(entry):
     ...      return (entry['permission'],
     ...              entry['person_link'],
-    ...              entry['component_name'],
-    ...              entry['source_package_name'],
-    ...              entry['pocket']),
+    ...              entry['component_name'] or '',
+    ...              entry['source_package_name'] or '',
+    ...              entry['pocket'] or ''),
 
     >>> def show_permission_entries(permissions):
     ...     for entry in sorted(permissions['entries'],
@@ -478,7 +478,7 @@ component.
 We can use ``checkUpload`` to verify that a person can upload a
 sourcepackage.
 
-    >>> grumpy = user_webservice.get("/ubuntu/grumpy").jsonBody()
+    >>> grumpy = user_webservice.get("/ubuntu/+series/grumpy").jsonBody()
     >>> response = user_webservice.named_get(
     ...     ubuntu['main_archive_link'], 'checkUpload',
     ...     distroseries=grumpy['self_link'],
@@ -506,7 +506,7 @@ And we can see that it's gone:
 
 And ``checkUpload`` now also no longer passes:
 
-    >>> grumpy = user_webservice.get("/ubuntu/grumpy").jsonBody()
+    >>> grumpy = user_webservice.get("/ubuntu/+series/grumpy").jsonBody()
     >>> response = user_webservice.named_get(
     ...     ubuntu['main_archive_link'], 'checkUpload',
     ...     distroseries=grumpy['self_link'],
@@ -664,7 +664,7 @@ newPocketUploader adds a new permission for a person to upload to a pocket.
 
 The person named in the permission can upload a package to this pocket.
 
-    >>> grumpy = user_webservice.get("/ubuntu/grumpy").jsonBody()
+    >>> grumpy = user_webservice.get("/ubuntu/+series/grumpy").jsonBody()
     >>> response = user_webservice.named_get(
     ...     ubuntu['main_archive_link'], 'checkUpload',
     ...     distroseries=grumpy['self_link'],
@@ -745,7 +745,7 @@ It can also grant series-specific pocket queue admin permissions.
 
     >>> ubuntu_owner_ws = ubuntu_owner_webservice.get(
     ...     "/~ubuntu-owner").jsonBody()
-    >>> hoary = user_webservice.get("/ubuntu/hoary").jsonBody()
+    >>> hoary = user_webservice.get("/ubuntu/+series/hoary").jsonBody()
     >>> new_permissions = []
     >>> for series in hoary, grumpy:
     ...     response = ubuntu_owner_webservice.named_post(
@@ -1191,44 +1191,44 @@ attributes are only exposed when the requestor has View permission in
 the IArchive context, in this case only Celso has it.
 
     >>> pprint_entry(user_webservice.get("/~cprov/+archive/ubuntu/p3a").jsonBody())
-    authorized_size: u'tag:launchpad.net:2008:redacted'
+    authorized_size: 'tag:launchpad.net:2008:redacted'
     dependencies_collection_link:
-        u'http://.../~cprov/+archive/ubuntu/p3a/dependencies'
-    description: u'tag:launchpad.net:2008:redacted'
-    displayname: u'PPA named p3a for Celso Providelo'
-    distribution_link: u'http://.../ubuntu'
-    external_dependencies: u'tag:launchpad.net:2008:redacted'
-    name: u'p3a'
-    owner_link: u'http://.../~cprov'
+        'http://.../~cprov/+archive/ubuntu/p3a/dependencies'
+    description: 'tag:launchpad.net:2008:redacted'
+    displayname: 'PPA named p3a for Celso Providelo'
+    distribution_link: 'http://.../ubuntu'
+    external_dependencies: 'tag:launchpad.net:2008:redacted'
+    name: 'p3a'
+    owner_link: 'http://.../~cprov'
     private: True
-    reference: u'~cprov/ubuntu/p3a'
+    reference: '~cprov/ubuntu/p3a'
     relative_build_score: 0
-    require_virtualized: u'tag:launchpad.net:2008:redacted'
-    resource_type_link: u'http://.../#archive'
-    self_link: u'http://.../~cprov/+archive/ubuntu/p3a'
-    signing_key_fingerprint: u'tag:launchpad.net:2008:redacted'
+    require_virtualized: 'tag:launchpad.net:2008:redacted'
+    resource_type_link: 'http://.../#archive'
+    self_link: 'http://.../~cprov/+archive/ubuntu/p3a'
+    signing_key_fingerprint: 'tag:launchpad.net:2008:redacted'
     suppress_subscription_notifications: False
-    web_link: u'http://launchpad.../~cprov/+archive/ubuntu/p3a'
+    web_link: 'http://launchpad.../~cprov/+archive/ubuntu/p3a'
 
     >>> pprint_entry(cprov_webservice.get("/~cprov/+archive/ubuntu/p3a").jsonBody())
     authorized_size: 2048
     dependencies_collection_link:
-        u'http://.../~cprov/+archive/ubuntu/p3a/dependencies'
-    description: u'packages to help my friends.'
-    displayname: u'PPA named p3a for Celso Providelo'
-    distribution_link: u'http://.../ubuntu'
+        'http://.../~cprov/+archive/ubuntu/p3a/dependencies'
+    description: 'packages to help my friends.'
+    displayname: 'PPA named p3a for Celso Providelo'
+    distribution_link: 'http://.../ubuntu'
     external_dependencies: None
-    name: u'p3a'
-    owner_link: u'http://.../~cprov'
+    name: 'p3a'
+    owner_link: 'http://.../~cprov'
     private: True
-    reference: u'~cprov/ubuntu/p3a'
+    reference: '~cprov/ubuntu/p3a'
     relative_build_score: 0
     require_virtualized: True
-    resource_type_link: u'http://.../#archive'
-    self_link: u'http://.../~cprov/+archive/ubuntu/p3a'
-    signing_key_fingerprint: u'ABCDEF0123456789ABCDDCBA0000111112345678'
+    resource_type_link: 'http://.../#archive'
+    self_link: 'http://.../~cprov/+archive/ubuntu/p3a'
+    signing_key_fingerprint: 'ABCDEF0123456789ABCDDCBA0000111112345678'
     suppress_subscription_notifications: False
-    web_link: u'http://launchpad.../~cprov/+archive/ubuntu/p3a'
+    web_link: 'http://launchpad.../~cprov/+archive/ubuntu/p3a'
 
 Creating subscriptions to a (private) archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1277,16 +1277,16 @@ We publish a subset of the IArchiveSubscriber attributes.
     >>> new_subscription = cprov_webservice.get(
     ...     response.getHeader('Location')).jsonBody()
     >>> pprint_entry(new_subscription)
-    archive_link: u'http://api.launchpad.test/beta/~cprov/+archive/ubuntu/p3a'
+    archive_link: 'http://api.launchpad.test/beta/~cprov/+archive/ubuntu/p3a'
     date_created: ...
     date_expires: None
     description: None
-    registrant_link: u'http://api.launchpad.test/beta/~cprov'
-    resource_type_link: u'http://api.launchpad.test/beta/#archive_subscriber'
-    self_link: u'http://api.../~cprov/+archive/ubuntu/p3a/+subscriptions/mark'
-    status: u'Active'
-    subscriber_link: u'http://api.launchpad.test/beta/~mark'
-    web_link: u'http://launchpad.../~cprov/+archive/ubuntu/p3a/+subscriptions/mark'
+    registrant_link: 'http://api.launchpad.test/beta/~cprov'
+    resource_type_link: 'http://api.launchpad.test/beta/#archive_subscriber'
+    self_link: 'http://api.../~cprov/+archive/ubuntu/p3a/+subscriptions/mark'
+    status: 'Active'
+    subscriber_link: 'http://api.launchpad.test/beta/~mark'
+    web_link: 'http://launchpad.../~cprov/+archive/ubuntu/p3a/+subscriptions/mark'
 
 Other webservice users cannot view the subscription.
 
@@ -1448,14 +1448,14 @@ attributes.
     ...     '/~cprov/+archive/ubuntu/ppa', 'getArchiveDependency',
     ...     dependency=ubuntu['main_archive_link']).jsonBody()
     >>> pprint_entry(cprov_main_dependency)
-    archive_link: u'http://.../~cprov/+archive/ubuntu/ppa'
-    component_name: u'universe'
+    archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
+    component_name: 'universe'
     date_created: ...
-    dependency_link: u'http://.../ubuntu/+archive/primary'
-    pocket: u'Release'
-    resource_type_link: u'http://.../#archive_dependency'
-    self_link: u'http://.../~cprov/+archive/ubuntu/ppa/+dependency/1'
-    title: u'Primary Archive for Ubuntu Linux - RELEASE (main, universe)'
+    dependency_link: 'http://.../ubuntu/+archive/primary'
+    pocket: 'Release'
+    resource_type_link: 'http://.../#archive_dependency'
+    self_link: 'http://.../~cprov/+archive/ubuntu/ppa/+dependency/1'
+    title: 'Primary Archive for Ubuntu Linux - RELEASE (main, universe)'
 
 Asking for an archive on which there is no dependency returns None.
 

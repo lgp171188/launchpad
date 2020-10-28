@@ -50,18 +50,22 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipeSet,
     OCI_RECIPE_ALLOW_CREATE,
     )
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.runner import JobRunner
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    admin_logged_in,
     anonymous_logged_in,
     BrowserTestCase,
     login,
@@ -71,6 +75,7 @@ from lp.testing import (
     TestCaseWithFactory,
     time_counter,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -209,11 +214,34 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "Source:\n%s\nEdit OCI recipe" % source_display,
             MatchesTagText(content, "source"))
         self.assertThat(
-            "Build file path:\nDockerfile\nEdit OCI recipe",
+            "Build file path:\nDockerfile\n"
+            "Edit OCI recipe\n"
+            "Build context directory:\n.\n"
+            "Edit OCI recipe",
             MatchesTagText(content, "build-file"))
         self.assertThat(
             "Build schedule:\nBuilt on request\nEdit OCI recipe\n",
             MatchesTagText(content, "build-schedule"))
+
+    def test_create_new_recipe_with_build_args(self):
+        oci_project = self.factory.makeOCIProject()
+        [git_ref] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl("Git repository").value = (
+            git_ref.repository.identity)
+        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl("Build-time ARG variables").value = (
+            "VAR1=10\nVAR2=20")
+        browser.getControl("Create OCI recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("recipe-name", extract_text(content.h1))
+        self.assertThat(
+            "Build-time\nARG variables:\nVAR1=10\nVAR2=20",
+            MatchesTagText(content, "build-args"))
 
     def test_create_new_recipe_users_teams_as_owner_options(self):
         # Teams that the user is in are options for the OCI recipe owner.
@@ -385,6 +413,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             new_git_ref.repository.identity)
         browser.getControl("Git branch").value = new_git_ref.path
         browser.getControl("Build file path").value = "Dockerfile-2"
+        browser.getControl("Build directory context").value = "apath"
         browser.getControl("Build daily").selected = True
         browser.getControl("Update OCI recipe").click()
 
@@ -398,7 +427,10 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             "Source:\n%s\nEdit OCI recipe" % new_git_ref.display_name,
             MatchesTagText(content, "source"))
         self.assertThat(
-            "Build file path:\nDockerfile-2\nEdit OCI recipe",
+            "Build file path:\nDockerfile-2\n"
+            "Edit OCI recipe\n"
+            "Build context directory:\napath\n"
+            "Edit OCI recipe",
             MatchesTagText(content, "build-file"))
         self.assertThat(
             "Build schedule:\nBuilt daily\nEdit OCI recipe\n",
@@ -465,6 +497,47 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Update OCI recipe").click()
         login_person(self.person)
         self.assertRecipeProcessors(recipe, ["386", "amd64"])
+
+    def test_edit_build_args(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, build_args={"VAR1": "xxx", "VAR2": "uu"})
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        args = browser.getControl(name="field.build_args")
+        self.assertContentEqual("VAR1=xxx\r\nVAR2=uu", args.value)
+        args.value = "VAR=aa\nANOTHER_VAR=bbb"
+        browser.getControl("Update OCI recipe").click()
+        login_person(self.person)
+        IStore(recipe).reload(recipe)
+        self.assertEqual(
+            {"VAR": "aa", "ANOTHER_VAR": "bbb"}, recipe.build_args)
+
+    def test_edit_build_args_invalid_content(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, build_args={"VAR1": "xxx", "VAR2": "uu"})
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        args = browser.getControl(name="field.build_args")
+        self.assertContentEqual("VAR1=xxx\r\nVAR2=uu", args.value)
+        args.value = "VAR=aa\nmessed up text"
+        browser.getControl("Update OCI recipe").click()
+
+        # Error message should be shown.
+        content = find_main_content(browser.contents)
+        self.assertIn(
+            "'messed up text' at line 2 is not a valid KEY=value pair.",
+            extract_text(content))
+
+        # Assert that recipe still have the original build_args.
+        login_person(self.person)
+        IStore(recipe).reload(recipe)
+        self.assertEqual({"VAR1": "xxx", "VAR2": "uu"}, recipe.build_args)
 
     def test_edit_with_invisible_processor(self):
         # It's possible for existing recipes to have an enabled processor
@@ -698,11 +771,45 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             OCI project: %s
             Source: ~test-person/\\+git/recipe-repository:master
             Build file path: Dockerfile
+            Build context directory: %s
             Build schedule: Built on request
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago 386
-            """ % (oci_project_name, oci_project_display),
+            """ % (oci_project_name, oci_project_display, recipe.build_path),
+            self.getMainText(build.recipe))
+
+    def test_index_with_build_args(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        oci_project_name = oci_project.name
+        oci_project_display = oci_project.display_name
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="recipe-repository",
+            paths=["refs/heads/master"])
+        recipe = self.makeOCIRecipe(
+            oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
+            build_args={"VAR1": "123", "VAR2": "XXX"})
+        build_path = recipe.build_path
+        build = self.makeBuild(
+            recipe=recipe, status=BuildStatus.FULLYBUILT,
+            duration=timedelta(minutes=30))
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            %s OCI project
+            recipe-name
+            .*
+            OCI recipe information
+            Owner: Test Person
+            OCI project: %s
+            Source: ~test-person/\\+git/recipe-repository:master
+            Build file path: Dockerfile
+            Build context directory: %s
+            Build schedule: Built on request
+            Build-time\nARG variables: VAR1=123 VAR2=XXX
+            Latest builds
+            Status When complete Architecture
+            Successfully built 30 minutes ago 386
+            """ % (oci_project_name, oci_project_display, build_path),
             self.getMainText(build.recipe))
 
     def test_index_success_with_buildlog(self):
@@ -836,6 +943,30 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         self.assertRaises(
             Unauthorized, self.getViewBrowser, self.recipe, "+request-builds")
 
+    def runRequestBuildJobs(self):
+        with admin_logged_in():
+            jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
+                JobRunner(jobs).runAll()
+
+    def test_pending_build_requests_not_shown_if_absent(self):
+        self.recipe.requestBuilds(self.recipe.owner)
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        content = extract_text(find_main_content(browser.contents))
+        self.assertIn(
+            "You have 1 pending build request. "
+            "The builds should start automatically soon.",
+            content.replace("\n", " "))
+
+        # Run the build request, so we don't have any pending one. The
+        # message should be gone then.
+        self.runRequestBuildJobs()
+        browser = self.getViewBrowser(self.recipe, user=self.person)
+        content = extract_text(find_main_content(browser.contents))
+        self.assertNotIn(
+            "The builds should start automatically soon.",
+            content.replace("\n", " "))
+
     def test_request_builds_action(self):
         # Requesting a build creates pending builds.
         browser = self.getViewBrowser(
@@ -844,6 +975,8 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         self.assertTrue(browser.getControl("i386").selected)
         browser.getControl("Request builds").click()
 
+        self.runRequestBuildJobs()
+
         login_person(self.person)
         builds = self.recipe.pending_builds
         self.assertContentEqual(
@@ -851,19 +984,6 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
             [build.distro_arch_series.architecturetag for build in builds])
         self.assertContentEqual(
             [2510], set(build.buildqueue_record.lastscore for build in builds))
-
-    def test_request_builds_rejects_duplicate(self):
-        # A duplicate build request causes a notification.
-        self.recipe.requestBuild(self.person, self.distroseries["amd64"])
-        browser = self.getViewBrowser(
-            self.recipe, "+request-builds", user=self.person)
-        self.assertTrue(browser.getControl("amd64").selected)
-        self.assertTrue(browser.getControl("i386").selected)
-        browser.getControl("Request builds").click()
-        main_text = extract_text(find_main_content(browser.contents))
-        self.assertIn("1 new build has been queued.", main_text)
-        self.assertIn(
-            "An identical build is already pending for amd64.", main_text)
 
     def test_request_builds_no_architectures(self):
         # Selecting no architectures causes a validation failure.

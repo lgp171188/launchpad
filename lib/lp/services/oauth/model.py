@@ -82,7 +82,8 @@ def sha256_digest(data):
     this is straightforward because hexdigest() returns that anyway, but in
     Python 2 we must decode.
     """
-    return six.ensure_text(hashlib.sha256(data).hexdigest(), encoding='ASCII')
+    return six.ensure_text(
+        hashlib.sha256(six.ensure_binary(data)).hexdigest(), encoding='ASCII')
 
 
 @implementer(IOAuthConsumer)
@@ -126,7 +127,7 @@ class OAuthConsumer(OAuthBase, StormBase):
     #  - A Mac OS X computer called "hostname"
     #    (Presumably an iPhone will also send this string,
     #     but we're not sure.)
-    integrated_desktop_re = re.compile("^System-wide: (.*) \(([^)]*)\)$")
+    integrated_desktop_re = re.compile(r"^System-wide: (.*) \(([^)]*)\)$")
 
     def _integrated_desktop_match_group(self, position):
         """Return information about a desktop integration token.

@@ -3,6 +3,8 @@
 
 """Tests for the virtual filesystem presented by Launchpad codehosting."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import stat

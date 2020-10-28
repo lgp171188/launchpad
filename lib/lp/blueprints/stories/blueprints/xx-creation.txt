@@ -98,7 +98,8 @@ From a distribution series
 
 Starting from the Ubuntu Hoary distribution series page:
 
-    >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/hoary')
+    >>> user_browser.open(
+    ...     'http://blueprints.launchpad.test/ubuntu/+series/hoary')
 
 Users can also follow the textual "Register a blueprint" link:
 
@@ -106,7 +107,7 @@ Users can also follow the textual "Register a blueprint" link:
     ...     user_browser.contents, 'menu-link-new'):
     ...     print(tag)
     <a class="menu-link-new..."
-       href="http://blueprints.launchpad.test/ubuntu/hoary/+addspec">Register
+       href="http://blueprints.launchpad.test/ubuntu/+series/hoary/+addspec">Register
        a blueprint</a>
 
 
@@ -288,7 +289,7 @@ the series.
 Let's register a blueprint from the Ubuntu Hoary distribution series:
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.test/ubuntu/hoary/+addspec')
+    ...     'http://blueprints.launchpad.test/ubuntu/+series/hoary/+addspec')
     >>> control('Name').value = 'networkmagic-2'
     >>> control('Title').value = 'Network Magic: Auto Network Detection'
     >>> control('URL').value = 'http://wiki.ubuntu.com/NetworkMagic2'
@@ -297,7 +298,7 @@ Let's register a blueprint from the Ubuntu Hoary distribution series:
 Canceling creation, brings one back to the blueprints Hoary home.
 
     >>> user_browser.getLink('Cancel').url
-    'http://blueprints.launchpad.test/ubuntu/hoary'
+    'http://blueprints.launchpad.test/ubuntu/+series/hoary'
 
 By default, blueprints are not proposed as series goals:
 
@@ -321,7 +322,7 @@ The new blueprint is not proposed as a series goal:
 Let's register another blueprint from the Mozilla Firefox 1.0 product series:
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.test/ubuntu/hoary/+addspec')
+    ...     'http://blueprints.launchpad.test/ubuntu/+series/hoary/+addspec')
     >>> control('Name').value = 'networkmagic-3'
     >>> control('Title').value = 'Network Magic: Auto Network Detection'
     >>> control('URL').value = 'http://wiki.ubuntu.com/NetworkMagic3'
@@ -350,7 +351,7 @@ If the registration is performed by a user with permission to accept goals
 for the series, the new blueprint is automatically accepted as a series goal:
 
     >>> admin_browser.open(
-    ...     'http://blueprints.launchpad.test/ubuntu/hoary/+addspec')
+    ...     'http://blueprints.launchpad.test/ubuntu/+series/hoary/+addspec')
     >>> control = admin_browser.getControl
     >>> control('Name').value = 'networkmagic-4'
     >>> control('Title').value = 'Network Magic: Auto Network Detection'

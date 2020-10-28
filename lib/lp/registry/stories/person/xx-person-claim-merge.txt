@@ -7,7 +7,7 @@ exception that will redirect the user to the login page.
 
     >>> anon_browser.open('http://launchpad.test/~matsubara')
     >>> link = anon_browser.getLink("Are you Diogo Matsubara?")
-    >>> print link.url
+    >>> print(link.url)
     http://launchpad.test/people/+requestmerge?field.dupe_person=matsubara
     >>> link.click()
     Traceback (most recent call last):

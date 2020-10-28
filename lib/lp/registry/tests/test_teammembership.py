@@ -525,7 +525,7 @@ class TestParticipationCleanup(TeamParticipationTestCase):
 
 
 class TestTeamParticipationMesh(TeamParticipationTestCase):
-    """Participation management tests using two roots and some duplicated
+    r"""Participation management tests using two roots and some duplicated
     branches.
 
     Create a team hierarchy looking like this:

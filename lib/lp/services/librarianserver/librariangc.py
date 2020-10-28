@@ -639,7 +639,7 @@ def delete_unwanted_disk_files(con):
     removed_count = 0
     content_id = next_wanted_content_id = -1
 
-    hex_content_id_re = re.compile('^([0-9a-f]{8})(\.migrated)?$')
+    hex_content_id_re = re.compile(r'^([0-9a-f]{8})(\.migrated)?$')
     ONE_DAY = 24 * 60 * 60
 
     for dirpath, dirnames, filenames in scandir.walk(

@@ -58,6 +58,7 @@ from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.config import config
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import BufferLogger
+from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
@@ -74,7 +75,7 @@ from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
-class TestBinaryBuildPackageBehaviour(TestCaseWithFactory):
+class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
     """Tests for the BinaryPackageBuildBehaviour.
 
     In particular, these tests are about how the BinaryPackageBuildBehaviour
@@ -90,6 +91,7 @@ class TestBinaryBuildPackageBehaviour(TestCaseWithFactory):
     def setUp(self):
         super(TestBinaryBuildPackageBehaviour, self).setUp()
         switch_dbuser('testadmin')
+        self.setUpStats()
 
     @defer.inlineCallbacks
     def assertExpectedInteraction(self, call_log, builder, build, chroot,
@@ -182,6 +184,12 @@ class TestBinaryBuildPackageBehaviour(TestCaseWithFactory):
         yield self.assertExpectedInteraction(
             slave.call_log, builder, build, lf, archive,
             ArchivePurpose.PRIMARY, 'universe')
+        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('build.count,job_type=PACKAGEBUILD,'
+             'builder_name={},env=test'.format(
+                builder.name),))
 
     @defer.inlineCallbacks
     def test_non_virtual_ppa_dispatch_with_primary_ancestry(self):
@@ -233,6 +241,12 @@ class TestBinaryBuildPackageBehaviour(TestCaseWithFactory):
             interactor.getBuildBehaviour(bq, builder, slave), BufferLogger())
         yield self.assertExpectedInteraction(
             slave.call_log, builder, build, lf, archive, ArchivePurpose.PPA)
+        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('build.count,job_type=PACKAGEBUILD,'
+             'builder_name={},env=test'.format(
+                builder.name),))
 
     @defer.inlineCallbacks
     def test_private_source_dispatch(self):

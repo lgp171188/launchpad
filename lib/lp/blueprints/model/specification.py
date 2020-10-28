@@ -15,6 +15,7 @@ import operator
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -794,7 +795,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         from lp.bugs.model.bug import Bug
         bug_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'specification', unicode(self.id)), types=[u'bug'])]
+                (u'specification', six.text_type(self.id)), types=[u'bug'])]
         return list(sorted(
             bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
 
@@ -804,14 +805,14 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'specification', unicode(self.id)):
-                {(u'bug', unicode(bug.id)): props}})
+            {(u'specification', six.text_type(self.id)):
+                {(u'bug', six.text_type(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {(u'specification', unicode(self.id)):
-                [(u'bug', unicode(bug.id))]})
+            {(u'specification', six.text_type(self.id)):
+                [(u'bug', six.text_type(bug.id))]})
 
     # sprint linking
     def linkSprint(self, sprint, user):

@@ -13,12 +13,14 @@ to demonstrate this:
     >>> from textwrap import dedent
     >>> script_file = tempfile.NamedTemporaryFile()
     >>> script_file.write(dedent("""\
+    ...     from __future__ import absolute_import, print_function
+    ...
     ...     from lp.services.scripts import execute_zcml_for_scripts
     ...     from lp.registry.interfaces.person import IPersonSet
     ...     from zope.component import getUtility
     ... 
     ...     execute_zcml_for_scripts()
-    ...     print getUtility(IPersonSet).get(1).displayname
+    ...     print(getUtility(IPersonSet).get(1).displayname)
     ...     """))
     >>> script_file.flush()
 
@@ -31,10 +33,10 @@ Run the script (making sure it uses the testrunner configuration).
 
 Check that we get the expected output.
 
-    >>> print proc.stdout.read()
+    >>> print(proc.stdout.read())
     Mark Shuttleworth
 
-    >>> print proc.wait()
+    >>> print(proc.wait())
     0
 
 Remove the temporary file.

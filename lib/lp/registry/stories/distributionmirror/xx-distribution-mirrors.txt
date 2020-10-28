@@ -13,7 +13,7 @@ on their status and content.
     ...     mirrors = []
     ...     for tr in header.findNextSiblings('tr'):
     ...         if 'head' in str(tr.attrs):
-    ...             print "%s: %s" % (country, mirrors)
+    ...             print("%s: %s" % (country, mirrors))
     ...             country = extract_text(tr.find('th'))
     ...             if country == 'Total':
     ...                 break
@@ -39,7 +39,7 @@ The archive mirrors display the "freshness", how far behind they are.
 
     >>> browser.open('http://launchpad.test/ubuntu')
     >>> browser.getLink('Archive mirrors').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Mirrors :...
     >>> print_mirrors_by_countries(browser.contents)
     Antarctica:
@@ -89,7 +89,7 @@ seen by distro owners, mirror admins of the distro or launchpad admins.
     >>> browser.url
     'http://launchpad.test/ubuntu/+disabledmirrors'
 
-    >>> print find_tag_by_id(browser.contents, 'maincontent').renderContents()
+    >>> print(find_tag_by_id(browser.contents, 'maincontent').renderContents())
     <BLANKLINE>
     ...We don't know of any Disabled Mirrors for this distribution...
 

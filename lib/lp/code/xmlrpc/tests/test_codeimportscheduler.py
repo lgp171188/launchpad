@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 from six.moves import xmlrpc_client
+import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -113,7 +114,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         self.assertSqlAttributeEqualsDate(
             code_import, 'date_last_successful', UTC_NOW)
 
-    def test_finishJobID_with_log_file(self):
+    def test_finishJobID_with_log_file_alias_url(self):
         # finishJobID calls the finishJobID job workflow method and can parse
         # a librarian file's http url to figure out its ID.
         code_import_job = self.makeCodeImportJob(running=True)
@@ -124,6 +125,28 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
             log_file_alias.http_url)
         self.assertEqual(
             log_file_alias, code_import.results.last().log_file)
+
+    def test_finishJobID_with_log_file_data(self):
+        # finishJobID calls the finishJobID job workflow method and uploads
+        # log file data to the librarian.
+        code_import_job = self.makeCodeImportJob(running=True)
+        code_import = code_import_job.code_import
+        self.api.finishJobID(
+            code_import_job.id, CodeImportResultStatus.SUCCESS.name,
+            xmlrpc_client.Binary(b'log file data\n'))
+        transaction.commit()
+        self.assertEqual(
+            b'log file data\n', code_import.results.last().log_file.read())
+
+    def test_finishJobID_with_empty_log_file_data(self):
+        # finishJobID calls the finishJobID job workflow method, but does
+        # not upload zero-byte log files to the librarian.
+        code_import_job = self.makeCodeImportJob(running=True)
+        code_import = code_import_job.code_import
+        self.api.finishJobID(
+            code_import_job.id, CodeImportResultStatus.SUCCESS.name,
+            xmlrpc_client.Binary(b''))
+        self.assertIsNone(code_import.results.last().log_file)
 
     def test_finishJobID_not_found(self):
         # getImportDataForJobID returns a NoSuchCodeImportJob fault when there

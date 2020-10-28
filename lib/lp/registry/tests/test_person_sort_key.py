@@ -72,11 +72,8 @@ class TestPersonSortKeyInDatabase(TestPersonSortKeyBase, TestCase):
         Note that although the stored procedure returns a UTF-8 encoded
         string, our database driver converts that to Unicode for us.
         '''
-        # Note that as we are testing a PostgreSQL stored procedure, we should
-        # pass it UTF-8 encoded strings to match our database encoding.
         self.cur.execute(
-            "SELECT person_sort_key(%s, %s)", (
-                display_name.encode("UTF-8"), name.encode("UTF-8")))
+            "SELECT person_sort_key(%s, %s)", (display_name, name))
         return self.cur.fetchone()[0]
 
     def assertSortKeysEqual(self, display_name, name, expected):

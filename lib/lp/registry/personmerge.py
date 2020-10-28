@@ -947,7 +947,7 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         ''' % vars())
 
     # Append a -merged suffix to the person's name.
-    name = base = "%s-merged" % from_person.name.encode('ascii')
+    name = base = "%s-merged" % from_person.name
     cur.execute("SELECT id FROM Person WHERE name = %s" % sqlvalues(name))
     i = 1
     while cur.fetchone():

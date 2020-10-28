@@ -588,7 +588,8 @@ class AffectsEmailCommand(EmailCommand):
         try:
             bug_target = self.getBugTarget(path)
         except BugTargetNotFound as error:
-            raise EmailProcessingError(unicode(error), stop_processing=True)
+            raise EmailProcessingError(
+                six.text_type(error), stop_processing=True)
         event = None
 
         if isinstance(bug, CreateBugParams):

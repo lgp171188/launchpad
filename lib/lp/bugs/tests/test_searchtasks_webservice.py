@@ -33,12 +33,14 @@ class TestOmitTargetedParameter(TestCaseWithFactory):
             'launchpad-library', 'salgado-change-anything')
 
     def test_omit_targeted_old_default_true(self):
-        response = self.webservice.named_get('/mebuntu/inkanyamba',
+        response = self.webservice.named_get(
+            '/mebuntu/+series/inkanyamba',
             'searchTasks', api_version='1.0').jsonBody()
         self.assertEqual(response['total_size'], 0)
 
     def test_omit_targeted_new_default_false(self):
-        response = self.webservice.named_get('/mebuntu/inkanyamba',
+        response = self.webservice.named_get(
+            '/mebuntu/+series/inkanyamba',
             'searchTasks', api_version='devel').jsonBody()
         self.assertEqual(response['total_size'], 1)
 
@@ -132,14 +134,17 @@ class TestMaloneApplicationSearchTasks(TestCaseWithFactory):
     def test_global_search_by_tag(self):
         project1 = self.factory.makeProduct()
         project2 = self.factory.makeProduct()
-        bug1 = self.factory.makeBug(target=project1, tags=["foo"])
-        self.factory.makeBug(target=project1, tags=["bar"])
-        bug3 = self.factory.makeBug(target=project2, tags=["foo"])
-        self.factory.makeBug(target=project2, tags=["baz"])
+        bug1 = self.factory.makeBug(target=project1, tags=[u'foo'])
+        self.factory.makeBug(target=project1, tags=[u'bar'])
+        bug3 = self.factory.makeBug(target=project2, tags=[u'foo'])
+        self.factory.makeBug(target=project2, tags=[u'baz'])
         webservice = LaunchpadWebServiceCaller(
             "launchpad-library", "salgado-change-anything")
         response = webservice.named_get(
-            "/bugs", "searchTasks", api_version="devel", tags="foo").jsonBody()
+            "/bugs",
+            "searchTasks",
+            api_version="devel",
+            tags=u'foo').jsonBody()
         self.assertEqual(2, response["total_size"])
         self.assertContentEqual(
             [bug1.id, bug3.id],

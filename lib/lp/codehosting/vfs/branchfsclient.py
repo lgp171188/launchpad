@@ -6,6 +6,8 @@
 This code talks to the internal XML-RPC server for the branch filesystem.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'BranchFileSystemClient',

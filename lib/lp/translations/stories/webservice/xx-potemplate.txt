@@ -9,26 +9,27 @@ Anonymous users have read access to PO templates attributes.
 
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> potemplate = anon_webservice.get(
-    ...     '/ubuntu/hoary/+source/pmount/+pots/pmount').jsonBody()
+    ...     '/ubuntu/+series/hoary/+source/pmount/+pots/pmount').jsonBody()
     >>> pprint_entry(potemplate)
     active: True
-    date_last_updated: u'2005-05-06T20:09:23.775993+00:00'
+    date_last_updated: '2005-05-06T20:09:23.775993+00:00'
     description: None
     exported_in_languagepacks: True
-    format: u'PO format'
+    format: 'PO format'
     id: 2
     language_count: 9
     message_count: 63
-    name: u'pmount'
-    owner_link: u'http://.../~rosetta-admins'
-    path: u'po/template.pot'
+    name: 'pmount'
+    owner_link: 'http://.../~rosetta-admins'
+    path: 'po/template.pot'
     priority: 0
-    resource_type_link: u'http://.../#translation_template'
-    self_link: u'http://.../ubuntu/hoary/+source/pmount/+pots/pmount'
-    translation_domain: u'pmount'
+    resource_type_link: 'http://.../#translation_template'
+    self_link: 'http://.../ubuntu/+series/hoary/+source/pmount/+pots/pmount'
+    translation_domain: 'pmount'
     translation_files_collection_link:
-        u'http://.../pmount/+pots/pmount/translation_files'
-    web_link: u'http://translati.../ubuntu/hoary/+source/pmount/+pots/pmount'
+        'http://.../pmount/+pots/pmount/translation_files'
+    web_link:
+    	'http://translati.../ubuntu/+series/hoary/+source/pmount/+pots/pmount'
 
 "translation_files" will list all POFiles associated with this template.
 
@@ -55,7 +56,7 @@ All templates associated to a distribution series are available from the
     >>> db_count = len(list(templates))
     >>> logout()
     >>> all_translation_templates = anon_webservice.named_get(
-    ...     '/ubuntu/hoary/', 'getTranslationTemplates').jsonBody()
+    ...     '/ubuntu/+series/hoary/', 'getTranslationTemplates').jsonBody()
     >>> api_count = all_translation_templates['total_size']
     >>> api_count == db_count
     True
@@ -111,7 +112,7 @@ All translation templates for a source package are available using the
     >>> db_count = len(list(templates))
     >>> logout()
     >>> all_translation_templates = anon_webservice.named_get(
-    ...     '/ubuntu/hoary/+source/evolution',
+    ...     '/ubuntu/+series/hoary/+source/evolution',
     ...     'getTranslationTemplates').jsonBody()
     >>> api_count = all_translation_templates['total_size']
     >>> api_count == db_count

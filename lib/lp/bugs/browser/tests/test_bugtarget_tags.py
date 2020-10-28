@@ -26,7 +26,7 @@ class TestBugTargetTags(TestCaseWithFactory):
         self.assertEqual([], [tag['tag'] for tag in view.tags_cloud_data])
 
     def test_tags(self):
-        self.factory.makeBug(target=self.target_product, tags=['foo'])
+        self.factory.makeBug(target=self.target_product, tags=[u'foo'])
         view = create_view(
             self.project_group,
             name="+bugtarget-portlet-tags-content")
@@ -36,13 +36,13 @@ class TestBugTargetTags(TestCaseWithFactory):
 
     def test_tags_order(self):
         """Test that the tags are ordered by most used first"""
-        self.factory.makeBug(target=self.target_product, tags=['tag-last'])
+        self.factory.makeBug(target=self.target_product, tags=[u'tag-last'])
         for counter in range(0, 2):
             self.factory.makeBug(
-                target=self.target_product, tags=['tag-middle'])
+                target=self.target_product, tags=[u'tag-middle'])
         for counter in range(0, 3):
             self.factory.makeBug(
-                target=self.target_product, tags=['tag-first'])
+                target=self.target_product, tags=[u'tag-first'])
         view = create_view(
             self.project_group,
             name="+bugtarget-portlet-tags-content")

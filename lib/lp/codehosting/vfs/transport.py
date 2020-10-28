@@ -8,6 +8,8 @@ module contains utilities for implementing virtual filesystems using
 breezy.transport classes.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'AsyncVirtualServer',

@@ -3,6 +3,8 @@
 
 """Code to talk to the database about what the worker script is doing."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = []
 
@@ -11,6 +13,7 @@ import os
 import tempfile
 
 import six
+from six.moves import xmlrpc_client
 from twisted.internet import (
     defer,
     error,
@@ -19,16 +22,13 @@ from twisted.internet import (
     )
 from twisted.python import failure
 from twisted.web import xmlrpc
-from zope.component import getUtility
 
 from lp.code.enums import CodeImportResultStatus
 from lp.codehosting.codeimport.worker import CodeImportWorkerExitCode
 from lp.services.config import config
-from lp.services.librarian.interfaces.client import IFileUploadClient
 from lp.services.twistedsupport.processmonitor import (
     ProcessMonitorProtocolWithTimeout,
     )
-from lp.services.webapp import errorlog
 from lp.xmlrpc.faults import NoSuchCodeImportJob
 
 
@@ -135,29 +135,7 @@ class CodeImportWorkerMonitor:
         self.codeimport_endpoint = codeimport_endpoint
         self._call_finish_job = True
         self._log_file = tempfile.TemporaryFile()
-        self._target_url = None
-        self._log_file_name = 'no-name-set.txt'
         self._access_policy = access_policy
-
-    def _logOopsFromFailure(self, failure):
-        config = errorlog.globalErrorUtility._oops_config
-        context = {
-            'twisted_failure': failure,
-            'http_request': errorlog.ScriptRequest(
-                [('code_import_job_id', self._job_id)], self._target_url),
-            }
-        report = config.create(context)
-
-        def log_oops_if_published(ids):
-            if ids:
-                self._logger.info(
-                    "Logged OOPS id %s: %s: %s",
-                    report['id'], report.get('type', 'No exception type'),
-                    report.get('value', 'No exception value'))
-
-        d = config.publish(report)
-        d.addCallback(log_oops_if_published)
-        return d
 
     def _trap_nosuchcodeimportjob(self, failure):
         failure.trap(xmlrpc.Fault)
@@ -168,25 +146,12 @@ class CodeImportWorkerMonitor:
             raise failure.value
 
     def getWorkerArguments(self):
-        """Get arguments for the worker for the import we are working on.
-
-        This also sets the _target_url and _log_file_name attributes for use
-        in the _logOopsFromFailure and finishJob methods respectively.
-        """
+        """Get arguments for the worker for the import we are working on."""
         deferred = self.codeimport_endpoint.callRemote(
             'getImportDataForJobID', self._job_id)
 
         def _processResult(result):
-            if isinstance(result, dict):
-                code_import_arguments = result['arguments']
-                target_url = result['target_url']
-                log_file_name = result['log_file_name']
-            else:
-                # XXX cjwatson 2018-03-15: Remove once the scheduler always
-                # sends a dict.
-                code_import_arguments, target_url, log_file_name = result
-            self._target_url = target_url
-            self._log_file_name = log_file_name
+            code_import_arguments = result['arguments']
             self._logger.info(
                 'Found source details: %s', code_import_arguments)
             return code_import_arguments
@@ -204,40 +169,12 @@ class CodeImportWorkerMonitor:
             six.ensure_text(tail, errors='replace'))
         return deferred.addErrback(self._trap_nosuchcodeimportjob)
 
-    def _createLibrarianFileAlias(self, name, size, file, contentType):
-        """Call `IFileUploadClient.remoteAddFile` with the given parameters.
-
-        This is a separate method that exists only to be patched in tests.
-        """
-        # This blocks, but never mind: nothing else is going on in the process
-        # by this point.  We could dispatch to a thread if we felt like it, or
-        # even come up with an asynchronous implementation of the librarian
-        # protocol (it's not very complicated).
-        return getUtility(IFileUploadClient).remoteAddFile(
-            name, size, file, contentType)
-
     def finishJob(self, status):
-        """Call the finishJobID method for the job we are working on.
-
-        This method uploads the log file to the librarian first.
-        """
-        log_file_size = self._log_file.tell()
-        if log_file_size > 0:
-            self._log_file.seek(0)
-            try:
-                log_file_alias_url = self._createLibrarianFileAlias(
-                    self._log_file_name, log_file_size, self._log_file,
-                    'text/plain')
-                self._logger.info(
-                    "Uploaded logs to librarian %s.", log_file_alias_url)
-            except:
-                self._logger.error("Upload to librarian failed.")
-                self._logOopsFromFailure(failure.Failure())
-                log_file_alias_url = ''
-        else:
-            log_file_alias_url = ''
+        """Call the finishJobID method for the job we are working on."""
+        self._log_file.seek(0)
         return self.codeimport_endpoint.callRemote(
-            'finishJobID', self._job_id, status.name, log_file_alias_url
+            'finishJobID', self._job_id, status.name,
+            xmlrpc_client.Binary(self._log_file.read())
             ).addErrback(self._trap_nosuchcodeimportjob)
 
     def _makeProcessProtocol(self, deferred):
@@ -252,6 +189,7 @@ class CodeImportWorkerMonitor:
         args = [interpreter, self.path_to_script]
         if self._access_policy is not None:
             args.append("--access-policy=%s" % self._access_policy)
+        args.append('--')
         command = args + worker_arguments
         self._logger.info(
             "Launching worker child process %s.", command)

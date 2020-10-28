@@ -13,8 +13,8 @@ the separator in language codes rather than an underscore.
 
   >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-  ...     '+pots/evolution-2.2/en_AU/+translate')
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+  ...     'evolution/+pots/evolution-2.2/en_AU/+translate')
   >>> control = browser.getControl(name="msgset_130_en_AU_translation_0_new")
   >>> print(control._control.attrs.get('dir'))
   ltr
@@ -25,8 +25,8 @@ the separator in language codes rather than an underscore.
 When entering Hebrew translations, the form controls are set to right to left:
 
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-  ...     '+pots/evolution-2.2/he/+translate')
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+  ...     'evolution/+pots/evolution-2.2/he/+translate')
   >>> control = browser.getControl(name="msgset_130_he_translation_0_new")
   >>> print(control._control.attrs.get('dir'))
   rtl
@@ -37,8 +37,9 @@ When entering Hebrew translations, the form controls are set to right to left:
 If we post the form with suggestions, the form controls are still set to rtl:
 
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-  ...     '+pots/evolution-2.2/he/+translate?field.alternative_language=es')
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+  ...     'evolution/+pots/evolution-2.2/he/+translate'
+  ...     '?field.alternative_language=es')
   >>> control = browser.getControl(name="msgset_130_he_translation_0_new")
   >>> print(control._control.attrs.get('dir'))
   rtl

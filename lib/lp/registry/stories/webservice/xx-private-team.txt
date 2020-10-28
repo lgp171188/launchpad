@@ -26,7 +26,7 @@ even exists.
     >>> member = user_webservice.get("/~private-team-owner").jsonBody()
     >>> response = user_webservice.get(
     ...     member['memberships_details_collection_link'])
-    >>> print sorted(response.jsonBody().items())
+    >>> print(sorted(response.jsonBody().items()))
     [(u'entries', []),
      (u'resource_type_link',
       u'http://.../#team_membership-page-resource'),
@@ -38,7 +38,7 @@ even exists.
     >>> member = webservice.get("/~private-team-owner").jsonBody()
     >>> response = webservice.get(
     ...     member['memberships_details_collection_link'])
-    >>> print sorted(response.jsonBody().items())
+    >>> print(sorted(response.jsonBody().items()))
     [(u'entries',
       [{u'status': u'Administrator',...
         u'team_link': u'http://.../~private-team'...
@@ -61,7 +61,7 @@ cannot see the private team in the public team's super_team's attribute.
     >>> team = user_webservice.get('/~guadamen').jsonBody()
     >>> super_teams = user_webservice.get(
     ...     team['super_teams_collection_link']).jsonBody()
-    >>> print super_teams['entries']
+    >>> print(super_teams['entries'])
     []
 
 But a user with the proper permissions can see the private super team.
@@ -69,9 +69,9 @@ But a user with the proper permissions can see the private super team.
     >>> team = webservice.get('/~guadamen').jsonBody()
     >>> super_teams = webservice.get(
     ...     team['super_teams_collection_link']).jsonBody()
-    >>> print len(super_teams['entries'])
+    >>> print(len(super_teams['entries']))
     1
-    >>> print super_teams['entries'][0]['self_link']
+    >>> print(super_teams['entries'][0]['self_link'])
     http://api.launchpad.test/beta/~myteam
 
 
@@ -93,17 +93,17 @@ changed by admins and commercial admins but not by regular users.
     >>> comm_webservice = webservice_for_person(
     ...     commercial_admin, permission=OAuthPermission.WRITE_PRIVATE)
 
-    >>> print comm_webservice.named_post(
+    >>> print(comm_webservice.named_post(
     ...    "/people", "newTeam", {},
-    ...    name='my-new-team', display_name="My New Team")
+    ...    name='my-new-team', display_name="My New Team"))
     HTTP/1.1 201 Created
     ...
     Location: http://.../~my-new-team
     ...
     >>> team = webservice.get('/~my-new-team').jsonBody()
-    >>> print team['self_link']
+    >>> print(team['self_link'])
     http://api.launchpad.test/.../~my-new-team
-    >>> print team['visibility']
+    >>> print(team['visibility'])
     Public
 
 A commercial admin may change the visibility.  There is no helper
@@ -117,9 +117,9 @@ method to do it, but it can be changed via a patch.
     ...                    simplejson.dumps(representation),
     ...                    headers)
 
-    >>> print modify_team(
+    >>> print(modify_team(
     ...     '/~my-new-team', {'visibility' : 'Private'},
-    ...     'PATCH', comm_webservice)
+    ...     'PATCH', comm_webservice))
     HTTP/1.1 209 Content Returned
     ...
     Content-Type: application/json
@@ -128,27 +128,27 @@ method to do it, but it can be changed via a patch.
     {...}
 
     >>> team = webservice.get('/~my-new-team').jsonBody()
-    >>> print team['visibility']
+    >>> print(team['visibility'])
     Private
 
 As an admin, Salgado can also change a team's visibility.
 
-    >>> print user_webservice.named_post(
+    >>> print(user_webservice.named_post(
     ...    "/people", "newTeam", {},
-    ...    name='my-new-team-2', display_name="My New Team 2")
+    ...    name='my-new-team-2', display_name="My New Team 2"))
     HTTP/1.1 201 Created
     ...
     Location: http://.../~my-new-team-2
     ...
     >>> team = user_webservice.get('/~my-new-team-2').jsonBody()
-    >>> print team['self_link']
+    >>> print(team['self_link'])
     http://api.launchpad.test/.../~my-new-team-2
-    >>> print team['visibility']
+    >>> print(team['visibility'])
     Public
 
-    >>> print modify_team(
+    >>> print(modify_team(
     ...     '/~my-new-team-2', {'visibility' : 'Private'},
-    ...     'PATCH', webservice)
+    ...     'PATCH', webservice))
     HTTP/1.1 209 Content Returned
     ...
     Content-Type: application/json
@@ -157,25 +157,25 @@ As an admin, Salgado can also change a team's visibility.
     {...}
 
     >>> team = webservice.get('/~my-new-team-2').jsonBody()
-    >>> print team['visibility']
+    >>> print(team['visibility'])
     Private
 
 An unprivileged user is not able to change the visibility.
 
-    >>> print user_webservice.named_post(
+    >>> print(user_webservice.named_post(
     ...    "/people", "newTeam", {},
-    ...    name='my-new-team-3', display_name="My New Team 3")
+    ...    name='my-new-team-3', display_name="My New Team 3"))
     HTTP/1.1 201 Created
     ...
     Location: http://.../~my-new-team-3
     ...
     >>> team = user_webservice.get('/~my-new-team-3').jsonBody()
-    >>> print team['self_link']
+    >>> print(team['self_link'])
     http://api.launchpad.test/.../~my-new-team-3
-    >>> print team['visibility']
+    >>> print(team['visibility'])
     Public
 
-    >>> print modify_team('/~my-new-team-3', {'visibility' : 'Private'},
-    ...     'PATCH', user_webservice)
+    >>> print(modify_team('/~my-new-team-3', {'visibility' : 'Private'},
+    ...     'PATCH', user_webservice))
     HTTP/1.1 403 Forbidden
     ...

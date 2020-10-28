@@ -80,28 +80,28 @@ class BuilderSetNavigation(GetitemNavigation):
         build = get_build_by_id_str(IBinaryPackageBuildSet, name)
         if build is None:
             return None
-        return self.redirectSubTree(canonical_url(build))
+        return self.redirectSubTree(canonical_url(build, request=self.request))
 
     @stepthrough('+recipebuild')
     def traverse_recipebuild(self, name):
         build = get_build_by_id_str(ISourcePackageRecipeBuildSource, name)
         if build is None:
             return None
-        return self.redirectSubTree(canonical_url(build))
+        return self.redirectSubTree(canonical_url(build, request=self.request))
 
     @stepthrough('+livefsbuild')
     def traverse_livefsbuild(self, name):
         build = get_build_by_id_str(ILiveFSBuildSet, name)
         if build is None:
             return None
-        return self.redirectSubTree(canonical_url(build))
+        return self.redirectSubTree(canonical_url(build, request=self.request))
 
     @stepthrough('+snapbuild')
     def traverse_snapbuild(self, name):
         build = get_build_by_id_str(ISnapBuildSet, name)
         if build is None:
             return None
-        return self.redirectSubTree(canonical_url(build))
+        return self.redirectSubTree(canonical_url(build, request=self.request))
 
 
 class BuilderSetBreadcrumb(Breadcrumb):

@@ -3,6 +3,8 @@
 
 """In-memory doubles of core codehosting objects."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'InMemoryFrontend',
@@ -433,7 +435,7 @@ class FakeObjectFactory(ObjectFactory):
         else:
             sourcepackagename = sourcepackage.sourcepackagename
             distroseries = sourcepackage.distroseries
-        IBranch['name'].validate(unicode(name))
+        IBranch['name'].validate(six.ensure_text(name))
         branch = FakeBranch(
             branch_type, name=name, owner=owner, url=url,
             stacked_on=stacked_on, product=product,

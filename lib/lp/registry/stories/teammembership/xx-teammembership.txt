@@ -39,8 +39,8 @@ Karl will join the newly created team.
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
     >>> browser.open('http://launchpad.test/~myemail')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'subscription-policy'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'subscription-policy')))
     Membership policy:
     Open Team
 
@@ -55,7 +55,7 @@ Karl will join the newly created team.
 Since this is an open team, he's automatically approved.
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     You have successfully joined your own team.
 
 Now, the link to join the team is not present anymore and the +join page will
@@ -68,7 +68,7 @@ team.
     LinkNotFoundError
     >>> browser.open('http://launchpad.test/~myemail/+join')
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     You are an active member of this team already.
 
 We have a 'Back' button, though, which just takes the user back to
@@ -90,8 +90,8 @@ approved, though.
     >>> browser = setupBrowser(
     ...     auth='Basic james.blackwell@ubuntulinux.com:test')
     >>> browser.open('http://launchpad.test/~myemail')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'subscription-policy'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'subscription-policy')))
     Membership policy:
     Moderated Team
 
@@ -99,7 +99,7 @@ approved, though.
     >>> browser.url
     'http://launchpad.test/~myemail/+join'
 
-    >>> print find_tag_by_id(browser.contents, 'maincontent').renderContents()
+    >>> print(find_tag_by_id(browser.contents, 'maincontent').renderContents())
     <BLANKLINE>
     ...
     One of this team's administrators will have to approve your membership
@@ -121,7 +121,7 @@ hit the 'Cancel' button, going back to the team's page...
     'http://launchpad.test/~myemail'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Your request to join your own team is awaiting approval.
 
 Delegated teams also require approval of direct membership.
@@ -133,8 +133,8 @@ Delegated teams also require approval of direct membership.
 
     >>> browser = setupBrowser(auth='Basic colin.watson@ubuntulinux.com:test')
     >>> browser.open('http://launchpad.test/~myemail')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'subscription-policy'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'subscription-policy')))
     Membership policy:
     Delegated Team
 
@@ -142,7 +142,7 @@ Delegated teams also require approval of direct membership.
     >>> browser.url
     'http://launchpad.test/~myemail/+join'
 
-    >>> print find_tag_by_id(browser.contents, 'maincontent').renderContents()
+    >>> print(find_tag_by_id(browser.contents, 'maincontent').renderContents())
     <BLANKLINE>
     ...
     One of this team's administrators will have to approve your membership
@@ -154,7 +154,7 @@ Delegated teams also require approval of direct membership.
     'http://launchpad.test/~myemail'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Your request to join your own team is awaiting approval.
 
 If it was a restricted team, users wouldn't even see a link to join the team.
@@ -167,8 +167,8 @@ If it was a restricted team, users wouldn't even see a link to join the team.
     >>> browser.open('http://launchpad.test/~myemail')
     >>> browser.url
     'http://launchpad.test/~myemail'
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'subscription-policy'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'subscription-policy')))
     Membership policy:
     Restricted Team
 
@@ -185,7 +185,7 @@ message explaining that this is a restricted team.
     'http://launchpad.test/~myemail/+join'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     your own team is a restricted team.
     Only a team administrator can add new members.
 
@@ -207,12 +207,12 @@ be there at all.
 
     >>> contents = anon_browser.contents
     >>> for link in find_tag_by_id(contents, 'activemembers').findAll('a'):
-    ...     print link.renderContents()
+    ...     print(link.renderContents())
     Karl Tilbury
     Sample Person
 
     >>> for link in find_tag_by_id(contents, 'proposedmembers').findAll('a'):
-    ...     print link.renderContents()
+    ...     print(link.renderContents())
     Colin Watson
     James Blackwell
 
@@ -227,9 +227,9 @@ have been invited.
     >>> def print_members(contents, type):
     ...     table = find_tag_by_id(contents, type)
     ...     for link in table.findAll('a'):
-    ...         if link.renderContents() != 'Edit' and not link.find('img'):
-    ...             contents = six.ensure_text(link.renderContents())
-    ...             print contents.encode('ascii', 'replace')
+    ...         link_contents = six.ensure_text(link.renderContents())
+    ...         if link_contents != 'Edit' and not link.find('img'):
+    ...             print(link_contents.encode('ascii', 'replace'))
 
     >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.getLink('All members').click()
@@ -248,7 +248,7 @@ have been invited.
 
 Former members are only viewable by admins of the team.
 
-    >>> print find_tag_by_id(browser.contents, 'inactivemembers')
+    >>> print(find_tag_by_id(browser.contents, 'inactivemembers'))
     None
 
     >>> name12_browser = setupBrowser(
@@ -398,7 +398,7 @@ possible.
     >>> browser.url
     'http://launchpad.test/~myemail/+members'
 
-    >>> print find_tag_by_id(browser.contents, 'inactivemembers')
+    >>> print(find_tag_by_id(browser.contents, 'inactivemembers'))
     None
     >>> print_members(browser.contents, 'activemembers')
     James Blackwell
@@ -415,5 +415,5 @@ error message:
     >>> browser2.url
     'http://launchpad.test/~myemail/+member/karl/+index'
     >>> for tag in find_tags_by_class(browser2.contents, 'error message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     The membership request for Karl Tilbury has already been processed.

@@ -472,7 +472,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
             'New mailing list message requiring approval for Team',
             notifications[0]['subject'])
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            '.*http://launchpad.test/~team/\+mailinglist-moderate.*',
+            r'.*http://launchpad.test/~team/\+mailinglist-moderate.*',
             notifications[0].get_payload())
         self.assertEqual({}, self.mailinglist_api.getMessageDispositions())
 

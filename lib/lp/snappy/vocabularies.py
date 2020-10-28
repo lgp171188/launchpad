@@ -102,13 +102,13 @@ def sorting_tuple_date_created(element):
         else:
             return (1, element.distro_series.distribution.display_name,
                     (-seconds_since_epoch(element.distro_series.date_created)),
-                    None)
+                    0)
     else:
         if element.snappy_series is not None:
-            return (0, None, None,
+            return (0,
                     (-seconds_since_epoch(element.snappy_series.date_created)))
         else:
-            return 0, None, None, None
+            return 0, 0
 
 
 class SnappyDistroSeriesVocabulary(StormVocabularyBase):

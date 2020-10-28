@@ -32,7 +32,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.oci.interfaces.ocipushrule import OCIPushRuleAlreadyExists
+from lp.oci.interfaces.ocipushrule import (
+    IOCIPushRuleSet,
+    OCIPushRuleAlreadyExists,
+    )
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
@@ -62,6 +65,7 @@ from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
     )
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
@@ -384,11 +388,16 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                     for payload_matcher in payload_matchers]))
 
     def test_destroySelf(self):
+        self.setConfig()
         oci_recipe = self.factory.makeOCIRecipe()
-        build_ids = []
-        for x in range(3):
-            build_ids.append(
-                self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id)
+        # Create associated builds:
+        build_ids = [
+            self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id
+            for _ in range(3)]
+        # Create associated push rules:
+        push_rule_ids = [
+            self.factory.makeOCIPushRule(recipe=oci_recipe).id
+            for i in range(3)]
 
         with person_logged_in(oci_recipe.owner):
             oci_recipe.destroySelf()
@@ -396,6 +405,9 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
         for build_id in build_ids:
             self.assertIsNone(getUtility(IOCIRecipeBuildSet).getByID(build_id))
+        for push_rule_id in push_rule_ids:
+            self.assertIsNone(
+                getUtility(IOCIPushRuleSet).getByID(push_rule_id))
 
     def test_related_webhooks_deleted(self):
         owner = self.factory.makePerson()
@@ -700,6 +712,43 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             [recipe3, recipe1, recipe2],
             list(oci_project.searchRecipes(u"a")))
 
+    def test_build_args_dict(self):
+        args = {"MY_VERSION": "1.0.3", "ANOTHER_VERSION": "2.9.88"}
+        recipe = self.factory.makeOCIRecipe(build_args=args)
+        # Force fetch it from database
+        store = IStore(recipe)
+        store.invalidate(recipe)
+        self.assertEqual(args, recipe.build_args)
+
+    def test_build_args_not_dict(self):
+        invalid_build_args_set = [
+            [1, 2, 3],
+            "some string",
+            123,
+        ]
+        for invalid_build_args in invalid_build_args_set:
+            self.assertRaises(
+                AssertionError, self.factory.makeOCIRecipe,
+                build_args=invalid_build_args)
+
+    def test_build_args_flatten_dict(self):
+        # Makes sure we only store one level of key=pair, flattening to
+        # string every value.
+        args = {
+            "VAR1": {b"something": [1, 2, 3]},
+            "VAR2": 123,
+            "VAR3": "A string",
+        }
+        recipe = self.factory.makeOCIRecipe(build_args=args)
+        # Force fetch it from database
+        store = IStore(recipe)
+        store.invalidate(recipe)
+        self.assertEqual({
+            "VAR1": "{'something': [1, 2, 3]}",
+            "VAR2": "123",
+            "VAR3": "A string",
+        }, recipe.build_args)
+
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
 
@@ -849,7 +898,8 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             description='a description',
             official=False,
             require_virtualized=False,
-            build_file='build file')
+            build_file='build file',
+            build_path='build path')
         self.assertEqual(target.registrant, registrant)
         self.assertEqual(target.owner, owner)
         self.assertEqual(target.oci_project, oci_project)
@@ -1023,7 +1073,8 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project = self.factory.makeOCIProject(
                 registrant=self.person)
             recipe = self.factory.makeOCIRecipe(
-                oci_project=oci_project)
+                oci_project=oci_project,
+                build_args={"VAR_A": "123"})
             url = api_url(recipe)
 
         ws_recipe = self.load_from_api(url)
@@ -1042,7 +1093,9 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 git_ref_link=Equals(self.getAbsoluteURL(recipe.git_ref)),
                 description=Equals(recipe.description),
                 build_file=Equals(recipe.build_file),
-                build_daily=Equals(recipe.build_daily)
+                build_args=Equals({"VAR_A": "123"}),
+                build_daily=Equals(recipe.build_daily),
+                build_path=Equals(recipe.build_path),
                 )))
 
     def test_api_patch_oci_recipe(self):
@@ -1106,6 +1159,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             "owner": person_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
+            "build_args": {"VAR": "VAR VALUE"},
             "description": "My recipe"}
 
         resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
@@ -1123,6 +1177,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 description=Equals(obj["description"]),
                 owner_link=Equals(self.getAbsoluteURL(self.person)),
                 registrant_link=Equals(self.getAbsoluteURL(self.person)),
+                build_args=Equals({"VAR": "VAR VALUE"})
             )))
 
     def test_api_create_oci_recipe_non_legitimate_user(self):

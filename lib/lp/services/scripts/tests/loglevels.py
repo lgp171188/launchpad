@@ -6,6 +6,8 @@
 Used by test_logger.txt.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = []
 
@@ -31,7 +33,7 @@ logger_options(parser)
 options, args = parser.parse_args()
 
 if len(args) > 0:
-    print "Args: %s" % repr(args)
+    print("Args: %s" % repr(args))
 
 log = logger(options, 'loglevels')
 

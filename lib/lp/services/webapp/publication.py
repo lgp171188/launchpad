@@ -53,7 +53,10 @@ from zope.publisher.interfaces.browser import (
     )
 from zope.publisher.publish import mapply
 from zope.security.management import newInteraction
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 from zope.traversing.interfaces import BeforeTraverseEvent
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -85,6 +88,7 @@ from lp.services.webapp.interfaces import (
     OffsiteFormPostError,
     )
 from lp.services.webapp.opstats import OpStats
+from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.vhosts import allvhosts
 
 
@@ -247,16 +251,16 @@ class LaunchpadBrowserPublication(
         request._traversal_thread_start = _get_thread_time()
         threadid = threading.current_thread().ident
         threadrequestfile = open_for_writing(
-            'logs/thread-%s.request' % threadid, 'w')
+            'logs/thread-%s.request' % threadid, 'wb')
         try:
-            request_txt = six.text_type(request).encode('UTF-8')
+            request_txt = six.text_type(request)
         except Exception:
             request_txt = 'Exception converting request to string\n\n'
             try:
                 request_txt += traceback.format_exc()
             except:
                 request_txt += 'Unable to render traceback!'
-        threadrequestfile.write(request_txt)
+        threadrequestfile.write(request_txt.encode('UTF-8'))
         threadrequestfile.close()
 
         # Tell our custom database adapter that the request has started.
@@ -406,10 +410,10 @@ class LaunchpadBrowserPublication(
                 return self.constructPageID(context, context.context, names)
             view_names = ':'.join(names)
             pageid = '%s:%s' % (context_name, view_names)
-        # The view name used in the pageid usually comes from ZCML and so
-        # it will be a unicode string although it shouldn't.  To avoid
-        # problems we encode it into ASCII.
-        return pageid.encode('US-ASCII')
+        # The view name used in the pageid usually comes from ZCML and so it
+        # will be a Unicode string, but we want a native string.  On Python
+        # 2, to avoid problems we encode it into ASCII.
+        return six.ensure_str(pageid, 'US-ASCII')
 
     def callObject(self, request, ob):
         """See `zope.publisher.interfaces.IPublication`.
@@ -564,7 +568,10 @@ class LaunchpadBrowserPublication(
         view = removeSecurityProxy(view)
         # It's possible that the view is a bound method.
         view = getattr(view, '__self__', view)
-        context = removeSecurityProxy(getattr(view, 'context', None))
+        if zope_isinstance(view, RedirectionView):
+            context = None
+        else:
+            context = removeSecurityProxy(getattr(view, 'context', None))
         pageid = self.constructPageID(view, context)
         request.setInWSGIEnvironment('launchpad.pageid', pageid)
         return pageid
@@ -788,13 +795,16 @@ class LaunchpadBrowserPublication(
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
                     OpStats.stats['404s'] += 1
-                    statsd_client.incr('errors.404')
+                    statsd_client.incr('errors.404,env={}'.format(
+                        statsd_client.lp_environment))
                 elif status == 500:  # Unhandled exceptions
                     OpStats.stats['500s'] += 1
-                    statsd_client.incr('errors.500')
+                    statsd_client.incr('errors.500,env={}'.format(
+                        statsd_client.lp_environment))
                 elif status == 503:  # Timeouts
                     OpStats.stats['503s'] += 1
-                    statsd_client.incr('errors.503')
+                    statsd_client.incr('errors.503,env={}'.format(
+                        statsd_client.lp_environment))
 
                 # Increment counters for status code groups.
                 status_group = str(status)[0] + 'XXs'
@@ -803,7 +813,8 @@ class LaunchpadBrowserPublication(
                 # Increment counter for 5XXs_b.
                 if is_browser(request) and status_group == '5XXs':
                     OpStats.stats['5XXs_b'] += 1
-                    statsd_client.incr('errors.5XX')
+                    statsd_client.incr('errors.5XX,env={}'.format(
+                        statsd_client.lp_environment))
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name
@@ -866,4 +877,4 @@ def tracelog(request, prefix, msg):
     """
     tracelog = ITraceLog(request, None)
     if tracelog is not None:
-        tracelog.log('%s %s' % (prefix, msg.encode('US-ASCII')))
+        tracelog.log('%s %s' % (prefix, six.ensure_str(msg, 'US-ASCII')))

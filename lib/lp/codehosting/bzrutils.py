@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Utilities for dealing with Breezy.
@@ -6,6 +6,8 @@
 Much of the code in here should be submitted upstream. The rest is code that
 integrates between Breezy's infrastructure and Launchpad's infrastructure.
 """
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 __all__ = [
@@ -53,6 +55,7 @@ from breezy.transport import (
     )
 from breezy.transport.local import LocalTransport
 from lazr.uri import URI
+import six
 
 from lp.services.webapp.errorlog import (
     ErrorReportingUtility,
@@ -325,9 +328,11 @@ def get_branch_info(branch):
     # XXX: Aaron Bentley 2008-06-13
     # Bazaar does not provide a public API for learning about
     # format markers.  Fix this in Bazaar, then here.
-    info['control_string'] = branch.controldir._format.get_format_string()
-    info['branch_string'] = branch._format.get_format_string()
-    info['repository_string'] = branch.repository._format.get_format_string()
+    info['control_string'] = six.ensure_str(
+        branch.controldir._format.get_format_string())
+    info['branch_string'] = six.ensure_str(branch._format.get_format_string())
+    info['repository_string'] = six.ensure_str(
+        branch.repository._format.get_format_string())
     return info
 
 

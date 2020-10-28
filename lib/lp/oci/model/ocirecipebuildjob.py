@@ -11,6 +11,8 @@ __all__ = [
     'OCIRecipeBuildJobType',
     ]
 
+from datetime import timedelta
+import random
 
 from lazr.delegates import delegate_to
 from lazr.enum import (
@@ -40,9 +42,14 @@ from lp.oci.interfaces.ociregistryclient import (
     IOCIRegistryClient,
     OCIRegistryError,
     )
+from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IStore
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.database.stormbase import StormBase
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import (
     EnumeratedSubclass,
     Job,
@@ -108,11 +115,19 @@ class OCIRecipeBuildJobDerived(
 
     def __repr__(self):
         """An informative representation of the job."""
-        build = self.build
-        return "<%s for ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
-            self.__class__.__name__, build.recipe.owner.name,
-            build.recipe.oci_project.pillar.name,
-            build.recipe.oci_project.name, build.recipe.name, build.id)
+        try:
+            build = self.build
+            return "<%s for ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
+                self.__class__.__name__, build.recipe.owner.name,
+                build.recipe.oci_project.pillar.name,
+                build.recipe.oci_project.name, build.recipe.name, build.id)
+        except Exception:
+            # There might be errors while trying to do the full
+            # representation of this object (database transaction errors,
+            # for example). There has been some issues in the past trying to
+            # log this object, so let's not crash everything in case we
+            # cannot provide a full description of self.
+            return "<%s ID#%s>" % (self.__class__.__name__, self.job_id)
 
     @classmethod
     def get(cls, job_id):
@@ -156,16 +171,36 @@ class OCIRecipeBuildJobDerived(
 @implementer(IOCIRegistryUploadJob)
 @provider(IOCIRegistryUploadJobSource)
 class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
+    """Manages the OCI image upload to registries.
+
+    This job coordinates with other OCIRegistryUploadJob in a way that the
+    last job uploading its layers and manifest will also upload the
+    manifest list with all the previously built OCI images uploaded from
+    other architectures in the same build request. To avoid race conditions,
+    we synchronize that using a SELECT ... FOR UPDATE at database level to
+    make sure that the status is consistent across all the upload jobs.
+    """
 
     class_job_type = OCIRecipeBuildJobType.REGISTRY_UPLOAD
+
+    class ManifestListUploadError(Exception):
+        pass
+
+    retry_error_types = (ManifestListUploadError, )
+    max_retries = 5
+
+    config = config.IOCIRegistryUploadJobSource
 
     @classmethod
     def create(cls, build):
         """See `IOCIRegistryUploadJobSource`"""
         edited_fields = set()
         with notify_modified(build, edited_fields) as before_modification:
+            json_data = {
+                "build_uploaded": False,
+            }
             oci_build_job = OCIRecipeBuildJob(
-                build, cls.class_job_type, {})
+                build, cls.class_job_type, json_data)
             job = cls(oci_build_job)
             job.celeryRunOnCommit()
             del get_property_cache(build).last_registry_upload_job
@@ -173,6 +208,14 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
             if upload_status != before_modification.registry_upload_status:
                 edited_fields.add("registry_upload_status")
         return job
+
+    @property
+    def retry_delay(self):
+        dithering_secs = int(random.random() * 60)
+        # Adds some random seconds between 0 and 60 to minimize the
+        # likelihood of synchronized retries holding locks on the database
+        # at the same time.
+        return timedelta(minutes=10, seconds=dithering_secs)
 
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
@@ -227,6 +270,74 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         """See `IOCIRegistryUploadJob`."""
         self.json_data["errors"] = errors
 
+    @property
+    def build_uploaded(self):
+        return self.json_data.get("build_uploaded", False)
+
+    @build_uploaded.setter
+    def build_uploaded(self, value):
+        self.json_data["build_uploaded"] = bool(value)
+
+    def allBuildsUploaded(self, build_request):
+        """Returns True if all builds of the given build_request already
+        finished uploading. False otherwise.
+
+        Note that this method locks all upload jobs at database level,
+        preventing them from updating their status until the end of the
+        current transaction. Use it with caution.
+        """
+        builds = list(build_request.builds)
+        uploads_per_build = {i: list(i.registry_upload_jobs) for i in builds}
+        upload_jobs = sum(uploads_per_build.values(), [])
+
+        # Lock the Job rows, so no other job updates its status until the
+        # end of this job's transaction. This is done to avoid race conditions,
+        # where 2 upload jobs could be running simultaneously and none of them
+        # realises that is the last upload.
+        # Note also that new upload jobs might be created between the
+        # transaction begin and this lock takes place, but in this case the
+        # new upload is either a retry from a failed upload, or the first
+        # upload for one of the existing builds. Either way, we would see that
+        # build as "not uploaded yet", which is ok for this method, and the
+        # new job will block until these locks are released, so we should be
+        # safe.
+        store = IMasterStore(builds[0])
+        placeholders = ', '.join('?' for _ in upload_jobs)
+        sql = (
+            "SELECT id, status FROM job WHERE id IN (%s) FOR UPDATE"
+            % placeholders)
+        job_status = {
+            job_id: JobStatus.items[status] for job_id, status in
+            store.execute(sql, [i.job_id for i in upload_jobs])}
+
+        for build, upload_jobs in uploads_per_build.items():
+            has_finished_upload = any(
+                job_status[i.job_id] == JobStatus.COMPLETED
+                or i.job_id == self.job_id
+                for i in upload_jobs)
+            if not has_finished_upload:
+                return False
+        return True
+
+    def uploadManifestList(self, client):
+        """Uploads the aggregated manifest list for all builds in the
+        current build request.
+        """
+        # The "allBuildsUploaded" call will lock, on the database,
+        # all upload jobs for update until this transaction finishes.
+        # So, make sure this is the last thing being done by this job.
+        build_request = self.build.build_request
+        if not build_request:
+            return
+        try:
+            if self.allBuildsUploaded(build_request):
+                client.uploadManifestList(build_request)
+        except OCIRegistryError:
+            # Do not retry automatically on known OCI registry errors.
+            raise
+        except Exception as e:
+            raise self.ManifestListUploadError(str(e))
+
     def run(self):
         """See `IRunnableJob`."""
         client = getUtility(IOCIRegistryClient)
@@ -234,7 +345,21 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         # it will need to gain retry support.
         try:
             try:
-                client.upload(self.build)
+                if not self.build_uploaded:
+                    client.upload(self.build)
+                    self.build_uploaded = True
+
+                self.uploadManifestList(client)
+                # Force this job status to COMPLETED in the same transaction we
+                # called `allBuildsUpdated` (in the uploadManifestList call
+                # above) to release the lock already including the new status.
+                # This way, any other transaction that was blocked waiting to
+                # get the info about the upload jobs will immediately have the
+                # new status of this job, avoiding race conditions. Keep the
+                # `manage_transaction=False` to prevent the method from
+                # commiting at the wrong moment.
+                self.complete(manage_transaction=False)
+
             except OCIRegistryError as e:
                 self.error_summary = str(e)
                 self.errors = e.errors

@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test live filesystem views."""
@@ -18,6 +18,7 @@ import pytz
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -27,6 +28,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
+from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.soyuz.browser.livefs import (
     LiveFSAdminView,
@@ -91,6 +93,36 @@ class TestLiveFSNavigation(TestCaseWithFactory):
                 livefs.owner.name, livefs.distro_series.distribution.name,
                 livefs.distro_series.name, livefs.name))
         self.assertEqual(livefs, obj)
+
+    def test_livefs_via_alias(self):
+        livefs = self.factory.makeLiveFS()
+        removeSecurityProxy(livefs.distro_series.distribution).setAliases(
+            [livefs.distro_series.distribution.name + "-2"])
+        _, view, _ = test_traverse(
+            "http://launchpad.test/~%s/+livefs/%s-2/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name))
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(
+            "http://launchpad.test/~%s/+livefs/%s/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name),
+            removeSecurityProxy(view).target)
+
+    def test_livefs_via_alias_api(self):
+        livefs = self.factory.makeLiveFS()
+        removeSecurityProxy(livefs.distro_series.distribution).setAliases(
+            [livefs.distro_series.distribution.name + "-2"])
+        _, view, _ = test_traverse(
+            "http://api.launchpad.test/devel/~%s/+livefs/%s-2/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name))
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(
+            "http://api.launchpad.test/devel/~%s/+livefs/%s/%s/%s" % (
+                livefs.owner.name, livefs.distro_series.distribution.name,
+                livefs.distro_series.name, livefs.name),
+            removeSecurityProxy(view).target)
 
 
 class TestLiveFSViewsFeatureFlag(TestCaseWithFactory):

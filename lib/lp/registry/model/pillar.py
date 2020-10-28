@@ -73,8 +73,8 @@ def pillar_sort_key(pillar):
           - products first, alphabetically
           - distributions, with ubuntu first and the rest alphabetically
     """
-    product_name = None
-    distribution_name = None
+    product_name = ''
+    distribution_name = ''
     if IProduct.providedBy(pillar):
         product_name = pillar.name
     elif IDistribution.providedBy(pillar):

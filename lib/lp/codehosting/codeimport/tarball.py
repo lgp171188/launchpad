@@ -3,6 +3,8 @@
 
 """Create and extract tarballs."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['create_tarball', 'extract_tarball', 'TarError']
 

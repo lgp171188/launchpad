@@ -58,7 +58,8 @@ class PackageBuildMixin(BuildFarmJobMixin):
 
         if (status == BuildStatus.MANUALDEPWAIT and slave_status is not None
             and slave_status.get('dependencies') is not None):
-            self.dependencies = unicode(slave_status.get('dependencies'))
+            self.dependencies = six.ensure_text(
+                slave_status.get('dependencies'))
         else:
             self.dependencies = None
 

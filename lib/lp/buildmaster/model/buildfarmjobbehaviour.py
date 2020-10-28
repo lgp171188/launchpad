@@ -34,6 +34,7 @@ from lp.services.config import config
 from lp.services.helpers import filenameToContentType
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.utils import copy_and_close
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.utils import sanitise_urls
 from lp.services.webapp import canonical_url
 
@@ -54,7 +55,7 @@ class BuildFarmJobBehaviourBase:
         self.build = build
         self._builder = None
         self._authserver = xmlrpc.Proxy(
-            config.builddmaster.authentication_endpoint,
+            config.builddmaster.authentication_endpoint.encode('UTF-8'),
             connectTimeout=config.builddmaster.authentication_timeout)
 
     @property
@@ -151,6 +152,16 @@ class BuildFarmJobBehaviourBase:
 
         (status, info) = yield self._slave.build(
             cookie, builder_type, chroot.content.sha1, filename_to_sha1, args)
+
+        # Update stats
+        job_type = getattr(self.build, 'job_type', None)
+        job_type_name = job_type.name if job_type else 'UNKNOWN'
+        statsd_client = getUtility(IStatsdClient)
+        statsd_client.incr(
+            'build.count,job_type={},builder_name={},env={}'.format(
+                job_type_name,
+                self._builder.name,
+                statsd_client.lp_environment))
 
         logger.info(
             "Job %s (%s) started on %s: %s %s"

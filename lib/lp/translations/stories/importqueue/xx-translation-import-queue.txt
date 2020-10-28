@@ -107,8 +107,8 @@ to where we can edit imports.
 Now, we attach a new file to an already existing translation resource.
 
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-  ...     '+pots/evolution-2.2/+upload')
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+  ...     'evolution/+pots/evolution-2.2/+upload')
   >>> upload = browser.getControl('File')
   >>> upload
   <Control name='file' type='file'>
@@ -117,7 +117,7 @@ Now, we attach a new file to an already existing translation resource.
   ...   'text/x-gettext-translation-template', 'evolution.pot')
   >>> browser.getControl('Upload').click()
   >>> print(browser.url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+upload
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/+upload
   >>> for tag in find_tags_by_class(browser.contents, 'message'):
   ...     print(tag.renderContents())
   Thank you for your upload.  It will be automatically reviewed...
@@ -362,7 +362,7 @@ Let's try breaking the form by not supplying a file object. It give us a
 decent error message:
 
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary/'
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
   ...     '+source/evolution/+pots/evolution-2.2/+upload')
   >>> browser.getControl('Upload').click()
   >>> for tag in find_tags_by_class(browser.contents, 'message'):

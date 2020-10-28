@@ -38,6 +38,10 @@ terminology. We provide redirect from the old names to the new ones.
     >>> print(browser.url)
     http://answers.launchpad.test/firefox/+question/1
 
+    >>> browser.open('http://api.launchpad.test/devel/firefox/+ticket/1')
+    >>> print(browser.url)
+    http://api.launchpad.test/devel/firefox/+question/1
+
 == Person Questions Listing ==
 
     >>> browser.open('http://launchpad.test/~name12/+tickets')

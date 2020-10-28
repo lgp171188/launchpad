@@ -33,23 +33,23 @@ The distribution's registrant can access the page and change the usage.
     >>> registrant = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
     >>> registrant.open('http://launchpad.test/ubuntu/+edit')
-    >>> print registrant.url
+    >>> print(registrant.url)
     http://launchpad.test/ubuntu/+edit
 
-    >>> print registrant.getControl(name='field.translations_usage').value[0]
+    >>> print(registrant.getControl(name='field.translations_usage').value[0])
     LAUNCHPAD
-    >>> print registrant.getControl(name='field.official_malone').value
+    >>> print(registrant.getControl(name='field.official_malone').value)
     True
-    >>> print registrant.getControl(name='field.enable_bug_expiration').value
+    >>> print(registrant.getControl(name='field.enable_bug_expiration').value)
     True
-    >>> print registrant.getControl(name='field.blueprints_usage').value[0]
+    >>> print(registrant.getControl(name='field.blueprints_usage').value[0])
     LAUNCHPAD
-    >>> print registrant.getControl(name='field.answers_usage').value[0]
+    >>> print(registrant.getControl(name='field.answers_usage').value[0])
     LAUNCHPAD
-    >>> print bool(
-    ...     registrant.getControl(name='field.require_virtualized').value)
+    >>> print(bool(
+    ...     registrant.getControl(name='field.require_virtualized').value))
     False
-    >>> print registrant.getControl(name='field.processors').value
+    >>> print(registrant.getControl(name='field.processors').value)
     ['386', 'amd64', 'hppa']
 
     >>> registrant.getControl(name='field.translations_usage').value = [
@@ -60,19 +60,19 @@ Just like Launchpad administrators can.
 
     >>> admin_browser.open('http://launchpad.test/ubuntu')
     >>> admin_browser.getLink('Change details').click()
-    >>> print admin_browser.title
+    >>> print(admin_browser.title)
     Change Ubuntu details...
-    >>> print admin_browser.getControl(
-    ...     name='field.translations_usage').value[0]
+    >>> print(admin_browser.getControl(
+    ...     name='field.translations_usage').value[0])
     UNKNOWN
-    >>> print admin_browser.getControl(name='field.official_malone').value
+    >>> print(admin_browser.getControl(name='field.official_malone').value)
     True
-    >>> print admin_browser.getControl(
-    ...     name='field.enable_bug_expiration').value
+    >>> print(admin_browser.getControl(
+    ...     name='field.enable_bug_expiration').value)
     True
-    >>> print admin_browser.getControl(name='field.blueprints_usage').value[0]
+    >>> print(admin_browser.getControl(name='field.blueprints_usage').value[0])
     LAUNCHPAD
-    >>> print admin_browser.getControl(name='field.answers_usage').value[0]
+    >>> print(admin_browser.getControl(name='field.answers_usage').value[0])
     LAUNCHPAD
 
     >>> admin_browser.getControl(
@@ -84,13 +84,13 @@ Just like Launchpad administrators can.
     ...     name='field.answers_usage').value = ['UNKNOWN']
     >>> admin_browser.getControl('Change', index=3).click()
 
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://launchpad.test/ubuntu
 
 Only administators can configure the publisher for the distribution:
 
     >>> admin_browser.getLink('Configure publisher').click()
-    >>> print admin_browser.title
+    >>> print(admin_browser.title)
     Publisher configuration for...
 
     >>> admin_browser.getControl(
@@ -101,7 +101,7 @@ Only administators can configure the publisher for the distribution:
     ...     name='field.copy_base_url').value = "http://copy.base.url/"
     >>> admin_browser.getControl('Save').click()
 
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://launchpad.test/ubuntu
 
 
@@ -130,11 +130,11 @@ do not change the expiration check box, and they do the whole
 operation before the page complete loading.
 
     >>> admin_browser.getLink('Change details').click()
-    >>> print admin_browser.getControl(name='field.official_malone').value
+    >>> print(admin_browser.getControl(name='field.official_malone').value)
     True
 
-    >>> print admin_browser.getControl(
-    ...     name='field.enable_bug_expiration').value
+    >>> print(admin_browser.getControl(
+    ...     name='field.enable_bug_expiration').value)
     True
 
     >>> admin_browser.getControl(name='field.official_malone').value = False

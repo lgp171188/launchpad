@@ -120,7 +120,7 @@ sudo apt-get update
             <dd tal:content="signing_key/fingerprint"/>
           </dl>
           <div id="archive-dependencies"
-               tal:condition="context/dependencies">
+               tal:condition="not: context/dependencies/is_empty">
             <h3>Dependencies:</h3>
             <ul>
               <li tal:repeat="dependency context/dependencies">

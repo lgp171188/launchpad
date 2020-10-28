@@ -16,6 +16,7 @@ import hashlib
 from fixtures import FakeLogger
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -112,7 +113,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
     def makeFakeCommits(author, author_date_gen, paths):
         dates = {path: next(author_date_gen) for path in paths}
         return [{
-            "sha1": unicode(hashlib.sha1(path).hexdigest()),
+            "sha1": six.ensure_text(hashlib.sha1(path).hexdigest()),
             "message": "tip of %s" % path,
             "author": {
                 "name": author.displayname,
@@ -125,7 +126,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 "time": int(seconds_since_epoch(dates[path])),
                 },
             "parents": [],
-            "tree": unicode(hashlib.sha1("").hexdigest()),
+            "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
             } for path in paths]
 
     def assertRefsMatch(self, refs, repository, paths):
@@ -133,7 +134,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=unicode(hashlib.sha1(path).hexdigest()),
+                commit_sha1=six.ensure_text(hashlib.sha1(path).hexdigest()),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))
@@ -282,8 +283,10 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 'type': 'commit'},
             }
         removed_refs = ['refs/tags/1.0']
+        old_refs_commits = {
+            ref.path: ref.commit_sha1 for ref in repository.refs}
         payload = GitRefScanJob.composeWebhookPayload(
-            repository, new_refs, removed_refs)
+            repository, old_refs_commits, new_refs, removed_refs)
         self.assertEqual(
             {'git_repository': '/' + repository.unique_name,
              'git_repository_path': repository.unique_name,

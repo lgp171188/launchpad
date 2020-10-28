@@ -3,6 +3,8 @@
 
 """Unit tests for the error presentation in worker.py."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import os

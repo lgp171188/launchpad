@@ -29,6 +29,7 @@ import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+import six
 from six.moves.collections_abc import (
     Iterable,
     Set,
@@ -65,6 +66,7 @@ from storm.locals import (
     Reference,
     ReferenceSet,
     )
+from storm.properties import Unicode
 from storm.store import (
     EmptyResultSet,
     Store,
@@ -246,11 +248,23 @@ def snapshot_bug_params(bug_params):
             "importance", "milestone", "assignee", "cve"])
 
 
-class BugTag(SQLBase):
+class BugTag(StormBase):
     """A tag belonging to a bug."""
+    __storm_table__ = 'BugTag'
+    id = Int(primary=True)
 
     bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    tag = StringCol(notNull=True)
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    tag = Unicode(allow_none=False)
+
+    def __init__(self, bug, tag):
+        self.bug = bug
+        self.tag = tag
+
+    def destroySelf(self):
+        Store.of(self).remove(self)
 
 
 def get_bug_tags_open_count(context_condition, user, tag_limit=0,
@@ -384,7 +398,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.bugs.model.cve import Cve
         xref_cve_sequences = [
             sequence for _, sequence in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'cve'])]
+                (u'bug', six.text_type(self.id)), types=[u'cve'])]
         expr = Cve.sequence.is_in(xref_cve_sequences)
         return list(sorted(
             IStore(Cve).find(Cve, expr), key=operator.attrgetter('sequence')))
@@ -394,7 +408,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.answers.model.question import Question
         question_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'question'])]
+                (u'bug', six.text_type(self.id)), types=[u'question'])]
         return list(sorted(
             bulk.load(Question, question_ids), key=operator.attrgetter('id')))
 
@@ -403,7 +417,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.blueprints.model.specification import Specification
         spec_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'specification'])]
+                (u'bug', six.text_type(self.id)), types=[u'specification'])]
         return list(sorted(
             bulk.load(Specification, spec_ids), key=operator.attrgetter('id')))
 
@@ -1410,7 +1424,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.code.model.branchmergeproposal import BranchMergeProposal
         merge_proposal_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', unicode(self.id)), types=[u'merge_proposal'])]
+                (u'bug', six.text_type(self.id)), types=[u'merge_proposal'])]
         return list(sorted(
             bulk.load(BranchMergeProposal, merge_proposal_ids),
             key=operator.attrgetter('id')))
@@ -1848,7 +1862,7 @@ class Bug(SQLBase, InformationTypeMixin):
     @cachedproperty
     def _cached_tags(self):
         return list(Store.of(self).find(
-            BugTag.tag, BugTag.bugID == self.id).order_by(BugTag.tag))
+            BugTag.tag, BugTag.bug_id == self.id).order_by(BugTag.tag))
 
     def _setTags(self, tags):
         """Set the tags from a list of strings."""
@@ -1861,7 +1875,9 @@ class Bug(SQLBase, InformationTypeMixin):
         # Find the set of tags that are to be removed and remove them.
         removed_tags = old_tags.difference(new_tags)
         for removed_tag in removed_tags:
-            tag = BugTag.selectOneBy(bug=self, tag=removed_tag)
+            tag = IStore(BugTag).find(
+                BugTag,
+                bug=self, tag=removed_tag).one()
             tag.destroySelf()
         # Find the set of tags that are to be added and add them.
         added_tags = new_tags.difference(old_tags)

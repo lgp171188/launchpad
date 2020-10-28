@@ -279,7 +279,7 @@ Carlos uploads files for Evolution in Ubuntu Hoary.
     >>> import transaction
     >>> from io import BytesIO
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/+upload')
     >>> file_ctrl = admin_browser.getControl('File:')
     >>> file_ctrl.add_file(

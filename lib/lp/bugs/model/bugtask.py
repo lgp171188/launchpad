@@ -151,11 +151,11 @@ def bugtask_sort_key(bugtask):
           - distro tasks, followed by their distroseries tasks
           - ubuntu first among the distros
     """
-    product_name = None
-    productseries_name = None
-    distribution_name = None
-    distroseries_name = None
-    sourcepackage_name = None
+    product_name = ''
+    productseries_name = ''
+    distribution_name = ''
+    distroseries_name = ''
+    sourcepackage_name = ''
 
     if bugtask.product:
         product_name = bugtask.product.name
@@ -1363,7 +1363,7 @@ class BugTaskSet:
             (BugTag.tag, BugTask.id),
             BugTask.bug == Bug.id,
             BugTag.bug == Bug.id,
-            BugTag.bugID.is_in(bug_ids),
+            BugTag.bug_id.is_in(bug_ids),
             BugTask.id.is_in(bugtask_ids)).order_by(BugTag.tag)
         tags_by_bugtask = defaultdict(list)
         for tag_name, bugtask_id in tags:
@@ -1390,7 +1390,7 @@ class BugTaskSet:
         bug_ids = set(bugtask.bugID for bugtask in bugtasks)
         bug_ids_with_specifications = set(
             int(id) for _, id in getUtility(IXRefSet).findFromMany(
-                [(u'bug', unicode(bug_id)) for bug_id in bug_ids],
+                [(u'bug', six.text_type(bug_id)) for bug_id in bug_ids],
                 types=[u'specification']).keys())
         bug_ids_with_branches = set(IStore(BugBranch).find(
                 BugBranch.bug_id, BugBranch.bug_id.is_in(bug_ids)))

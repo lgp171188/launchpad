@@ -33,7 +33,7 @@ class TestMergeTranslations(TestCaseWithFactory):
         matcher = MatchesRegex(dedent("""\
             INFO    Creating lockfile: /var/lock/launchpad-process-job-source-ITranslationPackagingJobSource.lock
             INFO    Running synchronously.
-            INFO    Running <.*?TranslationMergeJob.*?> \(ID .*\) in status Waiting
+            INFO    Running <.*?TranslationMergeJob.*?> \\(ID .*\\) in status Waiting
             INFO    Merging .* and .* in Ubuntu Distroseries.*
             INFO    Deleted POTMsgSets: 1.  TranslationMessages: 1.
             INFO    Merging template 1/2.
@@ -53,7 +53,7 @@ class TestMergeTranslations(TestCaseWithFactory):
         matcher = MatchesRegex(dedent("""\
             INFO    Creating lockfile: /var/lock/launchpad-process-job-source-ITranslationPackagingJobSource.lock
             INFO    Running synchronously.
-            INFO    Running <.*?TranslationSplitJob.*?> \(ID .*\) in status Waiting
+            INFO    Running <.*?TranslationSplitJob.*?> \\(ID .*\\) in status Waiting
             INFO    Splitting .* and .* in Ubuntu Distroseries.*
             INFO    1 entries split.
             INFO    Ran 1 TranslationSplitJob jobs.

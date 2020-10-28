@@ -24,6 +24,7 @@ from itertools import (
     chain,
     groupby,
     )
+import logging
 from operator import attrgetter
 
 from breezy import urlutils
@@ -206,6 +207,9 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
+
+
+logger = logging.getLogger(__name__)
 
 
 object_type_map = {
@@ -805,6 +809,23 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             self.createOrUpdateRefs(refs_to_upsert, logger=logger)
         if refs_to_remove:
             self.removeRefs(refs_to_remove)
+
+    def scan(self, log=None):
+        """See `IGitRepository`"""
+        log = log if log is not None else logger
+        hosting_path = self.getInternalPath()
+        refs_to_upsert, refs_to_remove = (
+            self.planRefChanges(hosting_path, logger=log))
+        self.fetchRefCommits(
+            hosting_path, refs_to_upsert, logger=log)
+        self.synchroniseRefs(
+            refs_to_upsert, refs_to_remove, logger=log)
+        props = getUtility(IGitHostingClient).getProperties(
+            hosting_path)
+        # We don't want ref canonicalisation, nor do we want to send
+        # this change back to the hosting service.
+        self._default_branch = props["default_branch"]
+        return refs_to_upsert, refs_to_remove
 
     def rescan(self):
         """See `IGitRepository`."""
@@ -1732,14 +1753,15 @@ class GitRepositorySet:
     def new(self, repository_type, registrant, owner, target, name,
             information_type=None, date_created=DEFAULT, description=None,
             with_hosting=False, async_hosting=False,
-            status=GitRepositoryStatus.AVAILABLE):
+            status=GitRepositoryStatus.AVAILABLE, clone_from_repository=None):
         """See `IGitRepositorySet`."""
         namespace = get_git_namespace(target, owner)
         return namespace.createRepository(
             repository_type, registrant, name,
             information_type=information_type, date_created=date_created,
             description=description, with_hosting=with_hosting,
-            async_hosting=async_hosting, status=status)
+            async_hosting=async_hosting, status=status,
+            clone_from_repository=clone_from_repository)
 
     def fork(self, origin, requester, new_owner):
         namespace = get_git_namespace(origin.target, new_owner)
@@ -1750,7 +1772,17 @@ class GitRepositorySet:
             name=name, information_type=origin.information_type,
             date_created=UTC_NOW, description=origin.description,
             with_hosting=True, async_hosting=True,
-            status=GitRepositoryStatus.CREATING)
+            status=GitRepositoryStatus.CREATING, clone_from_repository=origin)
+        if origin.target_default or origin.owner_default:
+            try:
+                # If the origin is the default for its target or for its
+                # owner and target, then try to set the new repo as
+                # owner-default.
+                repository.setOwnerDefault(True)
+            except GitDefaultConflict:
+                # If there is already a owner-default for this owner/target,
+                # just move on.
+                pass
         return repository
 
     def getByPath(self, user, path):

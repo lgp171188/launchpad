@@ -13,6 +13,7 @@ __all__ = [
     ]
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from storm.locals import And
 import transaction
 from zope.component import getUtility
@@ -78,7 +79,8 @@ class _BaseGitNamespace:
                          date_created=DEFAULT, description=None,
                          target_default=False, owner_default=False,
                          with_hosting=False, async_hosting=False,
-                         status=GitRepositoryStatus.AVAILABLE):
+                         status=GitRepositoryStatus.AVAILABLE,
+                         clone_from_repository=None):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
 
@@ -132,7 +134,8 @@ class _BaseGitNamespace:
                 transaction.commit()
             assert repository.id is not None
 
-            clone_from_repository = repository.getClonedFrom()
+            if clone_from_repository is None:
+                clone_from_repository = repository.getClonedFrom()
             repository._createOnHostingService(
                 clone_from_repository=clone_from_repository,
                 async_create=async_hosting)
@@ -174,7 +177,7 @@ class _BaseGitNamespace:
         # schema-validated form, so we validate the repository name here to
         # give a nicer error message than 'ERROR: new row for relation
         # "gitrepository" violates check constraint "valid_name"...'.
-        IGitRepository['name'].validate(unicode(name))
+        IGitRepository['name'].validate(six.ensure_text(name))
 
         existing_repository = self.getByName(name)
         if existing_repository is not None:

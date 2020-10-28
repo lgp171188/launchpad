@@ -56,6 +56,11 @@
           <span tal:content="context/build_file"/>
           <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
         </dd>
+        <dt>Build context directory:</dt>
+        <dd>
+          <span tal:content="context/build_path"/>
+          <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
+        </dd>
       </dl>
       <dl id="build-schedule">
         <dt>Build schedule:</dt>
@@ -64,9 +69,30 @@
           <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
         </dd>
       </dl>
+      <dl id="build-args"
+          tal:define="build_args view/build_args"
+          tal:condition="build_args">
+        <dt>
+          Build-time
+          <a href="https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg"
+             target="_blank">ARG variables</a>:
+        </dt>
+        <dd>
+          <pre tal:content="build_args" />
+        </dd>
+      </dl>
     </div>
 
     <h2>Latest builds</h2>
+    <div tal:define="count context/pending_build_requests/count|nothing;
+                  plural string: build requests;
+                  singular string: build request;"
+         tal:condition="count">
+      You have <span tal:replace="count" /> pending
+      <tal:plural
+        metal:use-macro="context/@@+base-layout-macros/plural-message"/>.
+      The builds should start automatically soon.
+    </div>
     <table id="latest-builds-listing" class="listing"
            style="margin-bottom: 1em;">
       <thead>

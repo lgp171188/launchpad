@@ -86,6 +86,7 @@ from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
     )
+from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.snappy.interfaces.snap import (
     SNAP_PRIVATE_FEATURE_FLAG,
@@ -283,7 +284,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.assertIn("Missing chroot", str(e))
 
 
-class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
+class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=10)
 
@@ -306,6 +307,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
         self.addCleanup(shut_down_default_process_pool)
+        self.setUpStats()
 
     def makeJob(self, **kwargs):
         # We need a builder slave in these tests, in order that requesting a
@@ -779,6 +781,11 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         yield job.dispatchBuildToSlave(DevNullLogger())
         self.assertEqual(
             ('ensurepresent', lxd_lfa.http_url, '', ''), slave.call_log[0])
+        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('build.count,job_type=SNAPBUILD,builder_name={},env=test'.format(
+                builder.name),))
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):

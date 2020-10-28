@@ -31,23 +31,23 @@ class TestMergeProposalJobScript(DiffTestCase):
         self.assertEqual(0, retcode)
         self.assertEqual('', stdout)
         matches_expected = MatchesRegex(
-            'INFO    Creating lockfile: /var/lock/launchpad-process-job-'
-            'source-IBranchMergeProposalJobSource.lock\n'
-            'INFO    Running through Twisted.\n'
-            'Log opened.\n'
-            'INFO    Log opened.\n'
-            'ProcessPool stats:\n'
-            '    workers:       0\n'
-            '(.|\n)*'
-            'INFO    ProcessPool stats:\n'
-            '    workers:       0\n'
-            '(.|\n)*'
-            'INFO    Running '
-            '<GENERATE_INCREMENTAL_DIFF job for merge .*?> \(ID %d\).\n'
-            '(.|\n)*'
-            'INFO    STOPPING: \n'
-            'Main loop terminated.\n'
-            'INFO    Main loop terminated.\n'
-            'INFO    Ran 1 GenerateIncrementalDiffJob jobs.\n' % job.job.id)
+            r'INFO    Creating lockfile: /var/lock/launchpad-process-job-'
+            r'source-IBranchMergeProposalJobSource.lock\n'
+            r'INFO    Running through Twisted.\n'
+            r'Log opened.\n'
+            r'INFO    Log opened.\n'
+            r'ProcessPool stats:\n'
+            r'    workers:       0\n'
+            r'(.|\n)*'
+            r'INFO    ProcessPool stats:\n'
+            r'    workers:       0\n'
+            r'(.|\n)*'
+            r'INFO    Running '
+            r'<GENERATE_INCREMENTAL_DIFF job for merge .*?> \(ID %d\).\n'
+            r'(.|\n)*'
+            r'INFO    STOPPING: \n'
+            r'Main loop terminated.\n'
+            r'INFO    Main loop terminated.\n'
+            r'INFO    Ran 1 GenerateIncrementalDiffJob jobs.\n' % job.job.id)
         self.assertThat(stderr, matches_expected)
         self.assertEqual(JobStatus.COMPLETED, job.status)

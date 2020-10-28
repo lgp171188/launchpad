@@ -33,8 +33,8 @@ Now Eric subscribes to Fooix's bug notifications.
     >>> eric_webservice = webservice_for_person(
     ...     eric_db, permission=OAuthPermission.WRITE_PRIVATE)
 
-    >>> print eric_webservice.named_post(
-    ...     '/fooix', 'addBugSubscription')
+    >>> print(eric_webservice.named_post(
+    ...     '/fooix', 'addBugSubscription'))
     HTTP/1.1 201 Created
     ...
     Location: http://.../fooix/+subscription/eric
@@ -46,14 +46,14 @@ Now Eric subscribes to Fooix's bug notifications.
     start: 0
     total_size: 1
     ---
-    bug_filters_collection_link: u'.../fooix/+subscription/eric/bug_filters'
-    date_created: u'...'
-    date_last_updated: u'...'
-    resource_type_link: u'http://.../#structural_subscription'
-    self_link: u'http://.../fooix/+subscription/eric'
-    subscribed_by_link: u'http://.../~eric'
-    subscriber_link: u'http://.../~eric'
-    target_link: u'http://.../fooix'
+    bug_filters_collection_link: '.../fooix/+subscription/eric/bug_filters'
+    date_created: '...'
+    date_last_updated: '...'
+    resource_type_link: 'http://.../#structural_subscription'
+    self_link: 'http://.../fooix/+subscription/eric'
+    subscribed_by_link: 'http://.../~eric'
+    subscriber_link: 'http://.../~eric'
+    target_link: 'http://.../fooix'
     ---
 
 He can examine his subscription directly.
@@ -61,39 +61,39 @@ He can examine his subscription directly.
     >>> pprint_entry(eric_webservice.named_get(
     ...     '/fooix', 'getSubscription',
     ...     person=webservice.getAbsoluteUrl('/~eric')).jsonBody())
-    bug_filters_collection_link: u'.../fooix/+subscription/eric/bug_filters'
-    date_created: u'...'
-    date_last_updated: u'...'
-    resource_type_link: u'http://.../#structural_subscription'
-    self_link: u'http://.../fooix/+subscription/eric'
-    subscribed_by_link: u'http://.../~eric'
-    subscriber_link: u'http://.../~eric'
-    target_link: u'http://.../fooix'
+    bug_filters_collection_link: '.../fooix/+subscription/eric/bug_filters'
+    date_created: '...'
+    date_last_updated: '...'
+    resource_type_link: 'http://.../#structural_subscription'
+    self_link: 'http://.../fooix/+subscription/eric'
+    subscribed_by_link: 'http://.../~eric'
+    subscriber_link: 'http://.../~eric'
+    target_link: 'http://.../fooix'
 
 If the subscription doesn't exist, None will be returned.
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     '/fooix', 'getSubscription',
-    ...     person=webservice.getAbsoluteUrl('/~michael')).jsonBody()
+    ...     person=webservice.getAbsoluteUrl('/~michael')).jsonBody())
     None
 
 Eric can remove his subscription through the webservice.
 
-    >>> print eric_webservice.named_post(
-    ...     '/fooix', 'removeBugSubscription')
+    >>> print(eric_webservice.named_post(
+    ...     '/fooix', 'removeBugSubscription'))
     HTTP/1.1 200 Ok...
 
-    >>> print webservice.named_get(
+    >>> print(webservice.named_get(
     ...     '/fooix', 'getSubscription',
-    ...     person=webservice.getAbsoluteUrl('/~eric')).jsonBody()
+    ...     person=webservice.getAbsoluteUrl('/~eric')).jsonBody())
     None
 
 Teams can be subscribed by passing in the team as an argument. Eric
 tries this.
 
-    >>> print eric_webservice.named_post(
+    >>> print(eric_webservice.named_post(
     ...     '/fooix', 'addBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 401 Unauthorized
     ...
     eric does not have permission to subscribe pythons.
@@ -104,9 +104,9 @@ admin by virtue of his ownership.
     >>> michael_webservice = webservice_for_person(
     ...     michael_db, permission=OAuthPermission.WRITE_PRIVATE)
 
-    >>> print michael_webservice.named_post(
+    >>> print(michael_webservice.named_post(
     ...     '/fooix', 'addBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 201 Created
     ...
     Location: http://.../fooix/+subscription/pythons
@@ -118,30 +118,30 @@ admin by virtue of his ownership.
     start: 0
     total_size: 1
     ---
-    bug_filters_collection_link: u'.../fooix/+subscription/pythons/bug_filters'
-    date_created: u'...'
-    date_last_updated: u'...'
-    resource_type_link: u'http://.../#structural_subscription'
-    self_link: u'http://.../fooix/+subscription/pythons'
-    subscribed_by_link: u'http://.../~michael'
-    subscriber_link: u'http://.../~pythons'
-    target_link: u'http://.../fooix'
+    bug_filters_collection_link: '.../fooix/+subscription/pythons/bug_filters'
+    date_created: '...'
+    date_last_updated: '...'
+    resource_type_link: 'http://.../#structural_subscription'
+    self_link: 'http://.../fooix/+subscription/pythons'
+    subscribed_by_link: 'http://.../~michael'
+    subscriber_link: 'http://.../~pythons'
+    target_link: 'http://.../fooix'
     ---
 
 Eric can't unsubscribe the team either.
 
-    >>> print eric_webservice.named_post(
+    >>> print(eric_webservice.named_post(
     ...     '/fooix', 'removeBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 401 Unauthorized
     ...
     eric does not have permission to unsubscribe pythons.
 
 Michael can, though.
 
-    >>> print michael_webservice.named_post(
+    >>> print(michael_webservice.named_post(
     ...     '/fooix', 'removeBugSubscription',
-    ...     subscriber=webservice.getAbsoluteUrl('/~pythons'))
+    ...     subscriber=webservice.getAbsoluteUrl('/~pythons')))
     HTTP/1.1 200 Ok...
 
     >>> subscriptions = webservice.named_get(

@@ -23,7 +23,7 @@ some changes.
     >>> membership = getUtility(ITeamMembershipSet).getByPersonAndTeam(
     ...     personset.getByName('karl'),
     ...     personset.getByName('ubuntu-mirror-admins'))
-    >>> print membership.dateexpires
+    >>> print(membership.dateexpires)
     None
     >>> membership.team.renewal_policy != TeamMembershipRenewalPolicy.ONDEMAND
     True
@@ -40,9 +40,9 @@ membership can't be renewed and explain why.
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Renew'
+    LookupError: label ...'Renew'
     ...
-    >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because Mirror Administrators
     (ubuntu-mirror-admins) is not a team that allows its members to renew
@@ -70,9 +70,9 @@ the user to renew that membership because it's not about to expire.
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Renew'
+    LookupError: label ...'Renew'
     ...
-    >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
     7 days or less. You or one of the team administrators has already
@@ -104,7 +104,7 @@ of the expiry._control.attrs TestBrowser voodoo.
 
     >>> browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...              'ubuntu-mirror-admins')
-    >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership is going to expire ... from now. If you want to
     remain a member of Mirror Administrators, you must renew it.
@@ -117,7 +117,7 @@ Karl then renews his membership.
     'http://launchpad.test/~karl'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Membership renewed until ...
 
 Karl can't renew it again, since it's now not set to expire soon.
@@ -127,9 +127,9 @@ Karl can't renew it again, since it's now not set to expire soon.
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
     ...
-    LookupError: label 'Renew'
+    LookupError: label ...'Renew'
     ...
-    >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
     7 days or less. You or one of the team administrators has already
@@ -158,7 +158,7 @@ now renew the membership.
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open('http://launchpad.test/~landscape-developers'
     ...              '/+expiringmembership/ubuntu-mirror-admins')
-    >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Landscape Developers in Mirror Administrators
     This membership is going to expire ... from now. If you want this team
     to remain a member of Mirror Administrators, you must renew it.
@@ -169,7 +169,7 @@ now renew the membership.
     'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Membership renewed until ...
 
 If the user double clicks or goes back to a cached version of the page
@@ -184,7 +184,7 @@ provided no information as to whether the membership was renewed.
     'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Membership renewed until ...
 
 When the page is loaded again, there is no form since the membership
@@ -192,7 +192,7 @@ will no longer be expiring soon.
 
     >>> browser.open('http://launchpad.test/~landscape-developers'
     ...              '/+expiringmembership/ubuntu-mirror-admins')
-    >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Landscape Developers in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
     7 days or less. Somebody else has already renewed it.

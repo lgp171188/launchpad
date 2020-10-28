@@ -15,7 +15,7 @@ import os
 import signal
 import tempfile
 
-from lpbuildd.slave import BuilderStatus
+from lpbuildd.builder import BuilderStatus
 from six.moves import xmlrpc_client
 from testtools.matchers import ContainsAll
 from testtools.testcase import ExpectedException

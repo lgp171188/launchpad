@@ -11,6 +11,8 @@ __all__ = [
 from email import message_from_string
 import tempfile
 
+import six
+
 from lp.bugs.model.bug import FileBugData
 
 
@@ -71,9 +73,9 @@ class FileBugDataParser:
     def _setDataFromHeaders(self, data, headers):
         """Set the data attributes from the message headers."""
         if 'Subject' in headers:
-            data.initial_summary = unicode(headers['Subject'])
+            data.initial_summary = six.ensure_text(headers['Subject'])
         if 'Tags' in headers:
-            tags_string = unicode(headers['Tags'])
+            tags_string = six.ensure_text(headers['Tags'])
             data.initial_tags = tags_string.lower().split()
         if 'Private' in headers:
             private = headers['Private']
@@ -86,7 +88,7 @@ class FileBugDataParser:
                 # ignore it as we cannot currently give the user an error
                 pass
         if 'Subscribers' in headers:
-            subscribers_string = unicode(headers['Subscribers'])
+            subscribers_string = six.ensure_text(headers['Subscribers'])
             data.subscribers = subscribers_string.lower().split()
 
     def parse(self):
@@ -147,11 +149,12 @@ class FileBugDataParser:
                     data.comments.append(inline_content)
             elif disposition == 'attachment':
                 attachment = dict(
-                    filename=unicode(part_headers.get_filename().strip("'")),
-                    content_type=unicode(part_headers['Content-type']),
+                    filename=six.ensure_text(
+                        part_headers.get_filename().strip("'")),
+                    content_type=six.ensure_text(part_headers['Content-type']),
                     content=part_file)
                 if 'Content-Description' in part_headers:
-                    attachment['description'] = unicode(
+                    attachment['description'] = six.ensure_text(
                         part_headers['Content-Description'])
                 else:
                     attachment['description'] = attachment['filename']

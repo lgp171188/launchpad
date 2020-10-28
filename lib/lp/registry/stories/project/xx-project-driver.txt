@@ -5,7 +5,7 @@ Appoint Sample Person as the driver of the GNOME Project.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.open('http://launchpad.test/gnome/+driver')
-    >>> print browser.title
+    >>> print(browser.title)
     Appoint the driver for...
 
     >>> browser.getControl('Driver').value = 'name12'
@@ -23,7 +23,7 @@ message informs them of the driver change.
 
 Sample Person is listed as the driver of the project.
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'driver'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'driver')))
     Driver:
     Sample Person
     Edit

@@ -532,10 +532,13 @@ class SlaveScanner:
             if builder.current_build is not None:
                 builder.current_build.gotFailure()
                 self.statsd_client.incr(
-                    'builders.judged_failed,build=True,arch={}'.format(
-                        builder.current_build.processor.name))
+                    'builders.judged_failed,build=True,arch={},env={}'.format(
+                        builder.current_build.processor.name,
+                        self.statsd_client.lp_environment))
             else:
-                self.statsd_client.incr('builders.judged_failed,build=False')
+                self.statsd_client.incr(
+                    'builders.judged_failed,build=False,env={}'.format(
+                        self.statsd_client.lp_environment))
             recover_failure(self.logger, vitals, builder, retry, failure.value)
             transaction.commit()
         except Exception:

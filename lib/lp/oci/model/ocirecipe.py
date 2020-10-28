@@ -14,6 +14,8 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+import six
+from storm.databases.postgres import JSON
 from storm.expr import (
     And,
     Desc,
@@ -36,7 +38,10 @@ from zope.component import (
 from zope.event import notify
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
@@ -145,6 +150,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     git_repository = Reference(git_repository_id, "GitRepository.id")
     git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
+    build_path = Unicode(name="build_path", allow_none=False)
+    _build_args = JSON(name="build_args", allow_none=True)
 
     require_virtualized = Bool(name="require_virtualized", default=True,
                                allow_none=False)
@@ -156,7 +163,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
-                 allow_internet=True):
+                 allow_internet=True, build_args=None, build_path=None):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
@@ -173,6 +180,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.date_last_modified = date_created
         self.git_ref = git_ref
         self.allow_internet = allow_internet
+        self.build_args = build_args or {}
+        self.build_path = build_path
 
     def __repr__(self):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
@@ -187,6 +196,16 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def official(self):
         """See `IOCIProject.setOfficialRecipe` method."""
         return self._official
+
+    @property
+    def build_args(self):
+        return self._build_args or {}
+
+    @build_args.setter
+    def build_args(self, value):
+        assert value is None or isinstance(value, dict)
+        self._build_args = {k: six.text_type(v)
+                            for k, v in (value or {}).items()}
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -224,6 +243,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
         builds = store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self)
         builds.remove()
+        for push_rule in self.push_rules:
+            push_rule.destroySelf()
         getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
@@ -405,30 +426,40 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def getBuildRequest(self, job_id):
         return OCIRecipeBuildRequest(self, job_id)
 
-    def requestBuildsFromJob(self, requester, build_request=None):
+    def requestBuildsFromJob(self, requester, build_request=None,
+                             architectures=None):
         self._checkRequestBuild(requester)
-        distro_arch_series_to_build = set(self.getAllowedArchitectures())
+        distro_arch_series = set(self.getAllowedArchitectures())
 
         builds = []
-        for das in distro_arch_series_to_build:
+        for das in distro_arch_series:
+            if (architectures is not None
+                    and das.architecturetag not in architectures):
+                continue
             try:
                 builds.append(self.requestBuild(
                     requester, das, build_request=build_request))
             except OCIRecipeBuildAlreadyPending:
                 pass
 
-        # If we have distro_arch_series_to_build, but they all failed to due
+        # If we have distro_arch_series, but they all failed to due
         # to pending builds, we fail the job.
-        if len(distro_arch_series_to_build) > 0 and len(builds) == 0:
+        if len(distro_arch_series) > 0 and len(builds) == 0:
             raise OCIRecipeBuildAlreadyPending
 
         return builds
 
-    def requestBuilds(self, requester):
+    def requestBuilds(self, requester, architectures=None):
         self._checkRequestBuild(requester)
         job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
-            self, requester)
+            self, requester, architectures)
         return self.getBuildRequest(job.job_id)
+
+    @property
+    def pending_build_requests(self):
+        util = getUtility(IOCIRecipeRequestBuildsJobSource)
+        return util.findByOCIRecipe(
+            self, statuses=(JobStatus.WAITING, JobStatus.RUNNING))
 
     @property
     def push_rules(self):
@@ -538,7 +569,7 @@ class OCIRecipeSet:
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True):
+            allow_internet=True, build_args=None, build_path=None):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -556,11 +587,14 @@ class OCIRecipeSet:
         if self.exists(owner, oci_project, name):
             raise DuplicateOCIRecipeName
 
+        if build_path is None:
+            build_path = "."
+
         store = IMasterStore(OCIRecipe)
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created, allow_internet)
+            date_created, allow_internet, build_args, build_path)
         store.add(oci_recipe)
 
         if processors is None:
@@ -666,6 +700,13 @@ class OCIRecipeBuildRequest:
         return self.job.date_finished
 
     @property
+    def uploaded_manifests(self):
+        return self.job.uploaded_manifests
+
+    def addUploadedManifest(self, build_id, manifest_info):
+        self.job.addUploadedManifest(build_id, manifest_info)
+
+    @property
     def status(self):
         status_map = {
             JobStatus.WAITING: OCIRecipeBuildRequestStatus.PENDING,
@@ -683,3 +724,8 @@ class OCIRecipeBuildRequest:
     @property
     def builds(self):
         return self.job.builds
+
+    def __eq__(self, other):
+        if not zope_isinstance(other, self.__class__):
+            return False
+        return self.id == other.id

@@ -4,7 +4,7 @@ Exporting Files from PO Templates Through the Web
 Not logged in users can't access the +export page.
 
   >>> anon_browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary'
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary'
   ...     '/+source/evolution/+pots/evolution-2.2/')
   >>> anon_browser.getLink('download').click()
   Traceback (most recent call last):
@@ -15,7 +15,7 @@ Logged in as a regular user, the +export page is accessible.
 
   >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
   >>> browser.open(
-  ...     'http://translations.launchpad.test/ubuntu/hoary'
+  ...     'http://translations.launchpad.test/ubuntu/+series/hoary'
   ...     '/+source/evolution/+pots/evolution-2.2')
   >>> browser.getLink('download').click()
   >>> browser.title
@@ -48,7 +48,7 @@ added to the export queue and individual requests are added for the PO files.
   >>> browser.getControl('Format:').value = ['PO']
   >>> browser.getControl('Request Download').click()
   >>> print(browser.url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2
 
   >>> print_feedback_messages(browser.contents)
   Your request has been received. Expect to receive an email shortly.
@@ -63,7 +63,7 @@ This is a no-op: (See bug https://launchpad.net/rosetta/+bug/1558)
   >>> browser.getControl('Format:').value = ['PO']
   >>> browser.getControl('Request Download').click()
   >>> print(browser.url)
-  http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2
+  http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2
 
   >>> print_feedback_messages(browser.contents)
   Your request has been received. Expect to receive an email shortly.

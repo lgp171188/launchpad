@@ -11,7 +11,7 @@ to confirm that the environment hasn't been corrupted by tests
 
 __metaclass__ = type
 
-from cStringIO import StringIO
+import io
 import os
 import signal
 import uuid
@@ -218,10 +218,10 @@ class BaseTestCase(TestCase):
                 and self.want_component_architecture
                 )
         client = LibrarianClient()
-        data = 'Whatever'
+        data = b'Whatever'
         try:
             client.addFile(
-                    'foo.txt', len(data), StringIO(data), 'text/plain'
+                    'foo.txt', len(data), io.BytesIO(data), 'text/plain'
                     )
         except UploadFailed:
             self.assertFalse(
@@ -297,9 +297,9 @@ class LibrarianTestCase(BaseTestCase):
         # We can test this using remoteAddFile (it does not need the CA
         # loaded)
         client = LibrarianClient()
-        data = 'This is a test'
+        data = b'This is a test'
         client.remoteAddFile(
-            'foo.txt', len(data), StringIO(data), 'text/plain')
+            'foo.txt', len(data), io.BytesIO(data), 'text/plain')
 
 
 class LibrarianLayerTest(TestCase, TestWithFixtures):
@@ -336,7 +336,7 @@ class LibrarianResetTestCase(TestCase):
     """
     layer = LibrarianLayer
 
-    sample_data = 'This is a test'
+    sample_data = b'This is a test'
 
     def test_librarian_is_reset(self):
         # Add a file. We use remoteAddFile because it does not need the CA
@@ -344,7 +344,7 @@ class LibrarianResetTestCase(TestCase):
         client = LibrarianClient()
         LibrarianTestCase.url = client.remoteAddFile(
                 self.sample_data, len(self.sample_data),
-                StringIO(self.sample_data), 'text/plain'
+                io.BytesIO(self.sample_data), 'text/plain'
                 )
         self.assertEqual(
                 urlopen(LibrarianTestCase.url).read(), self.sample_data
@@ -362,9 +362,9 @@ class LibrarianHideTestCase(TestCase):
     def testHideLibrarian(self):
         # First perform a successful upload:
         client = LibrarianClient()
-        data = 'foo'
+        data = b'foo'
         client.remoteAddFile(
-            'foo', len(data), StringIO(data), 'text/plain')
+            'foo', len(data), io.BytesIO(data), 'text/plain')
         # The database was committed to, but not by this process, so we need
         # to ensure that it is fully torn down and recreated.
         DatabaseLayer.force_dirty_database()
@@ -372,12 +372,12 @@ class LibrarianHideTestCase(TestCase):
         # Hide the librarian, and show that the upload fails:
         LibrarianLayer.hide()
         self.assertRaises(UploadFailed, client.remoteAddFile,
-                          'foo', len(data), StringIO(data), 'text/plain')
+                          b'foo', len(data), io.BytesIO(data), 'text/plain')
 
         # Reveal the librarian again, allowing uploads:
         LibrarianLayer.reveal()
         client.remoteAddFile(
-            'foo', len(data), StringIO(data), 'text/plain')
+            b'foo', len(data), io.BytesIO(data), 'text/plain')
 
 
 class RabbitMQTestCase(BaseTestCase):

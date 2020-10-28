@@ -397,7 +397,7 @@ class TestBranchWriteJobViaCelery(TestCaseWithFactory):
         db_branch, tree = create_knit(self)
         self.assertEqual(
             tree.branch.repository._format.get_format_string(),
-            'Bazaar-NG Knit Repository Format 1')
+            b'Bazaar-NG Knit Repository Format 1')
 
         with person_logged_in(db_branch.owner):
             db_branch.requestUpgrade(db_branch.owner)
@@ -406,7 +406,7 @@ class TestBranchWriteJobViaCelery(TestCaseWithFactory):
         new_branch = Branch.open(tree.branch.base)
         self.assertEqual(
             new_branch.repository._format.get_format_string(),
-            'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
+            b'Bazaar repository format 2a (needs bzr 1.16 or later)\n')
         self.assertFalse(db_branch.needs_upgrading)
 
 

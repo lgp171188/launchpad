@@ -1,7 +1,7 @@
 Check that we can get a potlist for a source pacakge that has potemplates:
 
   >>> print(http(br"""
-  ... GET /ubuntu/hoary/+source/evolution/+potlist HTTP/1.1
+  ... GET /ubuntu/+series/hoary/+source/evolution/+potlist HTTP/1.1
   ... Host: translations.launchpad.test
   ... """))
   HTTP/1.1 200 Ok
