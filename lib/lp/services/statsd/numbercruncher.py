@@ -47,7 +47,7 @@ class NumberCruncher(service.Service):
     def _setupLogger(self):
         """Set up a 'number-cruncher' logger that redirects to twisted.
         """
-        level = logging.INFO
+        level = logging.DEBUG
         logger = logging.getLogger(NUMBER_CRUNCHER_LOG_NAME)
         logger.propagate = False
 
@@ -74,8 +74,8 @@ class NumberCruncher(service.Service):
         for queue_type, contents in queue_details.items():
             virt = queue_type == 'virt'
             for arch, value in contents.items():
-                gauge_name = "buildqueue,virtualized={},arch={}".format(
-                    virt, arch)
+                gauge_name = "buildqueue,virtualized={},arch={},env={}".format(
+                    virt, arch, self.statsd_client.lp_environment)
                 self.logger.debug("{}: {}".format(gauge_name, value[0]))
                 self.statsd_client.gauge(gauge_name, value[0])
         self.logger.debug("Build queue stats update complete.")
@@ -107,8 +107,8 @@ class NumberCruncher(service.Service):
                     counts['idle'] += 1
         for processor, counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
-                gauge_name = "builders.{},arch={}".format(
-                    count_name, processor)
+                gauge_name = "builders,status={},arch={},env={}".format(
+                    count_name, processor, self.statsd_client.lp_environment)
                 self.logger.debug("{}: {}".format(gauge_name, count_value))
                 self.statsd_client.gauge(gauge_name, count_value)
         self.logger.debug("Builder stats update complete.")
