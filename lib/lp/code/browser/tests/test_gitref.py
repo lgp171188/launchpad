@@ -271,7 +271,7 @@ class TestGitRefView(BrowserTestCase):
                     div,
                     git_push_url_text_match)))
 
-    def test_merge_directions_personal_project(self):
+    def test_merge_guidelines_personal(self):
         repository = self.factory.makeGitRepository(
             owner=self.user, target=self.user)
         [ref] = self.factory.makeGitRefs(repository=repository,
@@ -306,7 +306,7 @@ class TestGitRefView(BrowserTestCase):
             self.assertThat(rendered_view, git_remote_update_match)
             self.assertThat(rendered_view, git_merge_match)
 
-    def test_merge_directions_package(self):
+    def test_merge_guidelines_package(self):
         # Repository is the default for a package
         mint = self.factory.makeDistribution(name="mint")
         eric = self.factory.makePerson(name="eric")
@@ -351,7 +351,7 @@ class TestGitRefView(BrowserTestCase):
             self.assertThat(rendered_view, git_remote_update_match)
             self.assertThat(rendered_view, git_merge_match)
 
-    def test_merge_directions_project(self):
+    def test_merge_guidelines_project(self):
         # Repository is the default for a project
         eric = self.factory.makePerson(name="eric")
         fooix = self.factory.makeProduct(name="fooix", owner=eric)
@@ -391,7 +391,12 @@ class TestGitRefView(BrowserTestCase):
             self.assertThat(rendered_view, git_remote_update_match)
             self.assertThat(rendered_view, git_merge_match)
 
-    def test_merge_directions_team_owned_repo(self):
+    def test_merge_guidelines_anonymous_view(self):
+        # Merge guidelines are mainly intended for maintainers merging
+        # contributions, they might be a bit noisy otherwise, therefore
+        # we do not show them on anonymous views.
+        # There is of course the permissions aspect involved here that you can
+        # do a local merge using only read permissions on the source branch.
         team = self.factory.makeTeam()
         fooix = self.factory.makeProduct(name="fooix")
         repository = self.factory.makeGitRepository(
@@ -399,33 +404,25 @@ class TestGitRefView(BrowserTestCase):
 
         [ref] = self.factory.makeGitRefs(repository=repository,
                                          paths=["refs/heads/branch"])
-        login_person(self.user)
-        view = create_initialized_view(ref, "+index", principal=self.user)
+        with person_logged_in(self.user):
+            view = create_initialized_view(ref, "+index", principal=self.user)
         git_add_remote_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Git remote add text', 'tt',
-                attrs={"id": "remote-add"},
-                text=("git remote add -f %s "
-                      "git+ssh://%s@git.launchpad.test/~%s/fooix/+git/%s"
-                      % (team.name,
-                         self.user.name,
-                         team.name,
-                         repository.name))))
+                attrs={"id": "remote-add"}))
         git_remote_update_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Git remote update text', 'tt',
-                attrs={"id": "remote-update"},
-                text=("git remote update %s" % team.name)))
+                attrs={"id": "remote-update"}))
         git_merge_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Merge command text', 'tt',
-                attrs={"id": "merge-cmd"},
-                text="git merge %s/branch" % team.name))
-        with person_logged_in(self.user):
-            rendered_view = view.render()
-            self.assertThat(rendered_view, git_add_remote_match)
-            self.assertThat(rendered_view, git_remote_update_match)
-            self.assertThat(rendered_view, git_merge_match)
+                attrs={"id": "merge-cmd"}))
+
+        rendered_view = view.render()
+        self.assertThat(rendered_view, Not(git_add_remote_match))
+        self.assertThat(rendered_view, Not(git_remote_update_match))
+        self.assertThat(rendered_view, Not(git_merge_match))
 
     def makeCommitLog(self):
         authors = [self.factory.makePerson() for _ in range(5)]

@@ -394,107 +394,12 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository)
         self.assertIsNone(find_tag_by_id(browser.contents, "push-directions"))
 
-    def test_merge_directions_project(self):
-        # Repository is the default for a project
-        eric = self.factory.makePerson(name="eric")
-        fooix = self.factory.makeProduct(name="fooix", owner=eric)
-        repository = self.factory.makeGitRepository(
-            owner=eric, target=fooix, name="fooix-repo")
-        self.repository_set = getUtility(IGitRepositorySet)
-        with person_logged_in(fooix.owner) as user:
-            self.repository_set.setDefaultRepositoryForOwner(
-                repository.owner, fooix, repository, user)
-            self.repository_set.setDefaultRepository(fooix, repository)
+    def test_merge_guidelines_not_displayed(self):
+        # Merge guidelines are only shown for branches, not repositories.
+        repository = self.factory.makeGitRepository()
         login_person(self.user)
         view = create_initialized_view(
-            repository, '+index', principal=self.user)
-        git_add_remote_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Git remote add text', 'tt',
-                attrs={"id": "remote-add"}))
-        git_remote_update_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Git remote update text', 'tt',
-                attrs={"id": "remote-update"}))
-        git_merge_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Merge command text', 'tt',
-                attrs={"id": "merge-cmd"}))
-
-        with person_logged_in(self.user):
-            rendered_view = view.render()
-            self.assertThat(rendered_view, Not(git_add_remote_match))
-            self.assertThat(rendered_view, Not(git_remote_update_match))
-            self.assertThat(rendered_view, Not(git_merge_match))
-
-    def test_merge_directions_personal_project(self):
-        repository = self.factory.makeGitRepository(
-            owner=self.user, target=self.user)
-        other_user = self.factory.makePerson()
-        login_person(other_user)
-        view = create_initialized_view(
-            repository, '+index', principal=other_user)
-        git_add_remote_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Git remote add text', 'tt',
-                attrs={"id": "remote-add"}))
-        git_remote_update_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Git remote update text', 'tt',
-                attrs={"id": "remote-update"}))
-        git_merge_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Merge command text', 'tt',
-                attrs={"id": "merge-cmd"}))
-
-        with person_logged_in(self.user):
-            rendered_view = view.render()
-            self.assertThat(rendered_view, Not(git_add_remote_match))
-            self.assertThat(rendered_view, Not(git_remote_update_match))
-            self.assertThat(rendered_view, Not(git_merge_match))
-
-    def test_merge_directions_package(self):
-        # Repository is the default for a package
-        mint = self.factory.makeDistribution(name="mint")
-        eric = self.factory.makePerson(name="eric")
-        mint_choc = self.factory.makeDistributionSourcePackage(
-            distribution=mint, sourcepackagename="choc")
-        repository = self.factory.makeGitRepository(
-            owner=eric, target=mint_choc, name="choc-repo")
-        dsp = repository.target
-        self.repository_set = getUtility(IGitRepositorySet)
-        with admin_logged_in():
-            self.repository_set.setDefaultRepositoryForOwner(
-                repository.owner, dsp, repository, repository.owner)
-            self.repository_set.setDefaultRepository(dsp, repository)
-        login_person(self.user)
-        view = create_initialized_view(
-            repository, '+index', principal=self.user)
-        git_add_remote_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Git remote add text', 'tt',
-                attrs={"id": "remote-add"}))
-        git_remote_update_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Git remote update text', 'tt',
-                attrs={"id": "remote-update"}))
-        git_merge_match = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Merge command text', 'tt',
-                attrs={"id": "merge-cmd"}))
-
-        with person_logged_in(self.user):
-            rendered_view = view.render()
-            self.assertThat(rendered_view, Not(git_add_remote_match))
-            self.assertThat(rendered_view, Not(git_remote_update_match))
-            self.assertThat(rendered_view, Not(git_merge_match))
-
-    def test_merge_directions_team_owned_repo(self):
-        team = self.factory.makeTeam()
-        repository = self.factory.makeGitRepository(owner=team)
-        login_person(self.user)
-        view = create_initialized_view(
-            repository, '+index', principal=self.user)
+            repository, "+index", principal=self.user)
         git_add_remote_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Git remote add text', 'tt',
