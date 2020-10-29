@@ -10,7 +10,7 @@ __all__ = [
     'OCIRegistryClient'
 ]
 
-
+import base64
 from functools import partial
 import hashlib
 from io import BytesIO
@@ -22,6 +22,7 @@ except ImportError:
 import logging
 import tarfile
 
+import boto3
 from requests.exceptions import (
     ConnectionError,
     HTTPError,
@@ -30,6 +31,7 @@ from six.moves.urllib.request import (
     parse_http_list,
     parse_keqv_list,
     )
+from six.moves.urllib.parse import urlparse
 from tenacity import (
     before_log,
     retry,
@@ -45,6 +47,7 @@ from lp.oci.interfaces.ociregistryclient import (
     MultipleOCIRegistryError,
     ManifestUploadFailed,
     )
+from lp.services.propertycache import cachedproperty
 from lp.services.timeout import urlfetch
 
 
@@ -426,6 +429,9 @@ class RegistryHTTPClient:
     def getInstance(cls, push_rule):
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule and registry's authentication flow."""
+        registry_domain = urlparse(push_rule.registry_url).netloc
+        if registry_domain.endswith(".amazonaws.com"):
+            return AWSRegistryHTTPClient(push_rule)
         try:
             proxy_urlfetch("{}/v2/".format(push_rule.registry_url))
             # No authorization error? Just return the basic RegistryHTTPClient.
@@ -516,3 +522,38 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
                     url, auth_retry=False, headers=headers,
                     *args, **request_kwargs)
             raise
+
+
+class AWSRegistryHTTPClient(RegistryHTTPClient):
+
+    def _getRegion(self):
+        """Returns the region from the push URL domain."""
+        domain = urlparse(self.push_rule.registry_url).netloc
+        # The domain format should be something like
+        # 'xxx.dkr.ecr.sa-east-1.amazonaws.com'. 'sa-east-1' is the region.
+        return domain.split(".")[-3]
+
+    @cachedproperty
+    def credentials(self):
+        """Exchange aws_access_key_id and aws_secret_access_key with the
+        authentication token that should be used when talking to ECR."""
+        try:
+            auth = self.push_rule.registry_credentials.getCredentials()
+            username, password = auth['username'], auth.get('password')
+            region = self._getRegion()
+            log.info("Trying to authenticate with AWS in region %s" % region)
+            client = boto3.client('ecr', aws_access_key_id=username,
+                                  aws_secret_access_key=password,
+                                  region_name=region)
+            token = client.get_authorization_token()
+            auth_data = token["authorizationData"][0]
+            authorization_token = auth_data['authorizationToken']
+            username, password = base64.b64decode(
+                authorization_token).decode().split(':')
+            return username, password
+        except Exception as e:
+            log.error("Error trying to get authorization token for ECR "
+                      "registry: %s(%s)" % (e.__class__, e))
+            raise OCIRegistryAuthenticationError(
+                "It was not possible to get AWS credentials for %s: %s" %
+                (self.push_rule.registry_url, e))
