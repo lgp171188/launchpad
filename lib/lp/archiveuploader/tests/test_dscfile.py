@@ -188,7 +188,7 @@ class TestSignableTagFile(TestCaseWithFactory):
     def test_parseAddress_raises_UploadError_if_address_is_malformed(self):
         self.assertRaises(
             UploadError,
-            self.makeSignableTagFile().parseAddress, "invalid@bad-address")
+            self.makeSignableTagFile().parseAddress, "invalid@bad@address")
 
     def test_parseAddress_decodes_utf8(self):
         name = u'B\u0105r'
