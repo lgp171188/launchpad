@@ -19,6 +19,7 @@ from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesListwise,
+    MatchesSetwise,
     MatchesStructure,
     )
 import transaction
@@ -165,31 +166,32 @@ class TestOCIRecipeBuildJobDerived(TestCaseWithFactory):
 
 
 class MultiArchRecipeMixin:
-    def makeRecipe(self, include_i386=True, include_amd64=True):
-        i386 = getUtility(IProcessorSet).getByName("386")
-        amd64 = getUtility(IProcessorSet).getByName("amd64")
-        recipe = self.factory.makeOCIRecipe()
+    def makeRecipe(self, include_i386=True, include_amd64=True,
+                   include_hppa=False):
+        processors = []
+        if include_i386:
+            processors.append("386")
+        if include_amd64:
+            processors.append("amd64")
+        if include_hppa:
+            processors.append("hppa")
+        archs = []
+        recipe = self.factory.makeOCIRecipe(require_virtualized=False)
         distroseries = self.factory.makeDistroSeries(
             distribution=recipe.oci_project.distribution)
-        distro_i386 = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="i386",
-            processor=i386)
-        distro_i386.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-        distro_amd64 = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="amd64",
-            processor=amd64)
-        distro_amd64.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
-
-        archs = []
-        if include_i386:
-            archs.append(i386)
-        if include_amd64:
-            archs.append(amd64)
+        for processor_name in processors:
+            proc = getUtility(IProcessorSet).getByName(processor_name)
+            distro_arch = self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag=processor_name,
+                processor=proc)
+            distro_arch.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            archs.append(proc)
         recipe.setProcessors(archs)
         return recipe
 
-    def makeBuildRequest(self, include_i386=True, include_amd64=True):
-        recipe = self.makeRecipe(include_i386, include_amd64)
+    def makeBuildRequest(self, include_i386=True, include_amd64=True,
+                         include_hppa=False):
+        recipe = self.makeRecipe(include_i386, include_amd64, include_hppa)
         # Creates a build request with a build in it.
         build_request = recipe.requestBuilds(recipe.owner)
         with admin_logged_in():
@@ -282,7 +284,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
             run_isolated_jobs([job])
 
         self.assertEqual([((ocibuild,), {})], client.upload.calls)
-        self.assertEqual([((build_request,), {})],
+        self.assertEqual([((build_request, {ocibuild}), {})],
                          client.uploadManifestList.calls)
         self.assertContentEqual([job], ocibuild.registry_upload_jobs)
         self.assertIsNone(job.error_summary)
@@ -292,8 +294,8 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
 
     def test_run_multiple_architectures(self):
         build_request = self.makeBuildRequest()
-        builds = build_request.builds
-        self.assertEqual(2, builds.count())
+        builds = list(build_request.builds)
+        self.assertEqual(2, len(builds))
         self.assertEqual(builds[0].build_request, builds[1].build_request)
 
         upload_jobs = []
@@ -307,14 +309,20 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
         with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
             JobRunner([upload_jobs[0]]).runAll()
         self.assertEqual([((builds[0],), {})], client.upload.calls)
-        self.assertEqual([], client.uploadManifestList.calls)
+        # Should have tried to upload the manifest list with only the first
+        # build.
+        self.assertEqual([((build_request, set(builds[:1])), {})],
+                         client.uploadManifestList.calls)
 
         with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
             JobRunner([upload_jobs[1]]).runAll()
         self.assertEqual(
             [((builds[0],), {}), ((builds[1],), {})], client.upload.calls)
-        self.assertEqual([((builds[1].build_request, ), {})],
-                         client.uploadManifestList.calls)
+        # Should have tried to upload the manifest list with both builds.
+        self.assertEqual(
+            [((build_request, set(builds[:1])), {}),
+             ((build_request, set(builds)), {})],
+            client.uploadManifestList.calls)
 
     def test_failing_upload_does_not_retries_automatically(self):
         build_request = self.makeBuildRequest(include_i386=False)
@@ -368,19 +376,19 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
         self.assertEqual(JobStatus.COMPLETED, upload_job.status)
         self.assertTrue(upload_job.build_uploaded)
 
-    def test_allBuildsUploaded_lock_between_two_jobs(self):
-        """Simple test to ensure that allBuildsUploaded method locks
+    def test_getUploadedBuilds_lock_between_two_jobs(self):
+        """Simple test to ensure that getUploadedBuilds method locks
         rows in the database and make concurrent calls wait for that.
 
         This is not a 100% reliable way to check that concurrent calls to
-        allBuildsUploaded will queue up since it relies on the
+        getUploadedBuilds will queue up since it relies on the
         execution time, but it's a "good enough" approach: this test might
         pass if the machine running it is *really, really* slow, but a failure
         here will indicate that something is for sure wrong.
         """
 
         class AllBuildsUploadedChecker(threading.Thread):
-            """Thread to run upload_job.allBuildsUploaded tracking the time."""
+            """Thread to run upload_job.getUploadedBuilds tracking the time."""
             def __init__(self, build_request):
                 super(AllBuildsUploadedChecker, self).__init__()
                 self.build_request = build_request
@@ -418,16 +426,20 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
                     self.bootstrap()
                     self.start_date = datetime.now()
                     try:
-                        self.result = self.upload_job.allBuildsUploaded(
+                        self.result = self.upload_job.getUploadedBuilds(
                             self.build_request)
                     except Exception as e:
                         self.error = e
                     self.end_date = datetime.now()
 
         # Create a build request with 2 builds.
-        build_request = self.makeBuildRequest()
+        build_request = self.makeBuildRequest(
+            include_i386=True, include_amd64=True, include_hppa=True)
         builds = build_request.builds
-        self.assertEqual(2, builds.count())
+        self.assertEqual(3, builds.count())
+
+        # Fail one of the builds, to make sure we are ignoring it.
+        removeSecurityProxy(builds[2]).status = BuildStatus.FAILEDTOBUILD
 
         # Create the upload job for the first build.
         upload_job1 = OCIRegistryUploadJob.create(builds[0])
@@ -440,9 +452,10 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
         waiting_time = 2
         # Start a clean transaction and lock the rows at database level.
         transaction.commit()
-        self.assertFalse(upload_job1.allBuildsUploaded(build_request))
+        self.assertEqual(
+            {builds[0]}, upload_job1.getUploadedBuilds(build_request))
 
-        # Start, in parallel, another upload job to run `allBuildsUploaded`.
+        # Start, in parallel, another upload job to run `getUploadedBuilds`.
         concurrent_checker = AllBuildsUploadedChecker(build_request)
         concurrent_checker.start()
         # Wait until concurrent_checker is ready to measure the time waiting
@@ -463,9 +476,14 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
         # waiting_time to finish running (since it was waiting).
         concurrent_checker.join()
         self.assertIsNone(concurrent_checker.error)
-        self.assertTrue(concurrent_checker.result)
         self.assertGreaterEqual(
             concurrent_checker.lock_duration, timedelta(seconds=waiting_time))
+        # Should have noticed that both builds are ready to upload.
+        self.assertEqual(2, len(concurrent_checker.result))
+        thread_build1, thread_build2 = concurrent_checker.result
+        self.assertThat(set(builds[:2]), MatchesSetwise(
+            MatchesStructure(id=Equals(thread_build1.id)),
+            MatchesStructure(id=Equals(thread_build2.id))))
 
     def test_run_failed_registry_error(self):
         # A run that fails with a registry error sets the registry upload
