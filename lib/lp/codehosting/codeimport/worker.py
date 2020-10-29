@@ -284,17 +284,6 @@ def get_default_bazaar_branch_store():
         get_transport_from_url(config.codeimport.bazaar_branch_store))
 
 
-class ArgumentParserError(Exception):
-    """An argument parsing error."""
-
-
-class TolerantArgumentParser(ArgumentParser):
-    """An `ArgumentParser` that raises exceptions on errors."""
-
-    def error(self, message):
-        raise ArgumentParserError(message)
-
-
 class CodeImportSourceDetails:
     """The information needed to process an import.
 
@@ -336,7 +325,7 @@ class CodeImportSourceDetails:
     def fromArguments(cls, arguments):
         """Convert command line-style arguments to an instance."""
         # Keep this in sync with CodeImportJob.makeWorkerArguments.
-        parser = TolerantArgumentParser(description='Code import worker.')
+        parser = ArgumentParser(description='Code import worker.')
         parser.add_argument(
             'target_id', help='Target branch ID or repository unique name')
         parser.add_argument(
@@ -357,69 +346,32 @@ class CodeImportSourceDetails:
             help=(
                 'Macaroon authorising push (only valid for target_rcstype '
                 'git)'))
-        arguments = list(arguments)
-        try:
-            args = parser.parse_args(arguments)
-            target_id = args.target_id
-            rcstype = args.rcstype
-            target_rcstype = args.target_rcstype
-            url = args.url if rcstype in ('bzr', 'bzr-svn', 'git') else None
-            if rcstype == 'cvs':
-                if args.cvs_module is None:
-                    parser.error('rcstype cvs requires --cvs-module')
-                cvs_root = args.url
-                cvs_module = args.cvs_module
-            else:
-                cvs_root = None
-                cvs_module = None
-            if target_rcstype == 'bzr':
-                try:
-                    target_id = int(target_id)
-                except ValueError:
-                    parser.error(
-                        'rcstype bzr requires target_id to be an integer')
-                stacked_on_url = args.stacked_on
-                macaroon = None
-            elif target_rcstype == 'git':
-                if args.macaroon is None:
-                    parser.error('target_rcstype git requires --macaroon')
-                stacked_on_url = None
-                macaroon = args.macaroon
-        except ArgumentParserError:
-            # XXX cjwatson 2020-10-05: Remove this old-style argument
-            # handling once the scheduler always passes something argparse
-            # can handle.
-            target_id = arguments.pop(0)
-            rcstype = arguments.pop(0)
-            if ':' not in rcstype:
-                raise AssertionError(
-                    "'%s' does not contain both source and target types." %
-                    rcstype)
-            rcstype, target_rcstype = rcstype.split(':', 1)
-            if rcstype in ['bzr-svn', 'git', 'bzr']:
-                url = arguments.pop(0)
-                if target_rcstype == 'bzr':
-                    try:
-                        stacked_on_url = arguments.pop(0)
-                    except IndexError:
-                        stacked_on_url = None
-                else:
-                    stacked_on_url = None
-                cvs_root = cvs_module = None
-            elif rcstype == 'cvs':
-                url = None
-                stacked_on_url = None
-                [cvs_root, cvs_module] = arguments
-            else:
-                raise AssertionError("Unknown rcstype %r." % rcstype)
-            if target_rcstype == 'bzr':
+        args = parser.parse_args(arguments)
+        target_id = args.target_id
+        rcstype = args.rcstype
+        target_rcstype = args.target_rcstype
+        url = args.url if rcstype in ('bzr', 'bzr-svn', 'git') else None
+        if rcstype == 'cvs':
+            if args.cvs_module is None:
+                parser.error('rcstype cvs requires --cvs-module')
+            cvs_root = args.url
+            cvs_module = args.cvs_module
+        else:
+            cvs_root = None
+            cvs_module = None
+        if target_rcstype == 'bzr':
+            try:
                 target_id = int(target_id)
-                macaroon = None
-            elif target_rcstype == 'git':
-                macaroon = Macaroon.deserialize(arguments.pop(0))
-            else:
-                raise AssertionError(
-                    "Unknown target_rcstype %r." % target_rcstype)
+            except ValueError:
+                parser.error(
+                    'rcstype bzr requires target_id to be an integer')
+            stacked_on_url = args.stacked_on
+            macaroon = None
+        elif target_rcstype == 'git':
+            if args.macaroon is None:
+                parser.error('target_rcstype git requires --macaroon')
+            stacked_on_url = None
+            macaroon = args.macaroon
         return cls(
             target_id, rcstype, target_rcstype, url, cvs_root, cvs_module,
             stacked_on_url, macaroon)
