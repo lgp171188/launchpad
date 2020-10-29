@@ -278,13 +278,15 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     def build_uploaded(self, value):
         self.json_data["build_uploaded"] = bool(value)
 
-    def allBuildsUploaded(self, build_request):
-        """Returns True if all builds of the given build_request already
-        finished uploading. False otherwise.
+    def getUploadedBuilds(self, build_request):
+        """Returns the list of builds in the given build_request that
+        already finished uploading.
 
         Note that this method locks all upload jobs at database level,
         preventing them from updating their status until the end of the
-        current transaction. Use it with caution.
+        current transaction. Use it with caution. Note also that self.build is
+        always included in the resulting list, as this method should only be
+        called *after* the untagged manifest is uploaded.
         """
         builds = list(build_request.builds)
         uploads_per_build = {i: list(i.registry_upload_jobs) for i in builds}
@@ -292,15 +294,15 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
 
         # Lock the Job rows, so no other job updates its status until the
         # end of this job's transaction. This is done to avoid race conditions,
-        # where 2 upload jobs could be running simultaneously and none of them
-        # realises that is the last upload.
+        # where 2 upload jobs could be running simultaneously and end up
+        # uploading an incomplete manifest list at the same time.
         # Note also that new upload jobs might be created between the
         # transaction begin and this lock takes place, but in this case the
         # new upload is either a retry from a failed upload, or the first
-        # upload for one of the existing builds. Either way, we would see that
-        # build as "not uploaded yet", which is ok for this method, and the
-        # new job will block until these locks are released, so we should be
-        # safe.
+        # upload for one of the existing builds. Either way, we will succeed
+        # to execute our manifest list upload, and the new job will wait
+        # until this job finishes to upload their version of the manifest
+        # list (which will override our version, including both manifests).
         store = IMasterStore(builds[0])
         placeholders = ', '.join('?' for _ in upload_jobs)
         sql = (
@@ -310,28 +312,27 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
             job_id: JobStatus.items[status] for job_id, status in
             store.execute(sql, [i.job_id for i in upload_jobs])}
 
+        builds = set()
         for build, upload_jobs in uploads_per_build.items():
             has_finished_upload = any(
                 job_status[i.job_id] == JobStatus.COMPLETED
                 or i.job_id == self.job_id
                 for i in upload_jobs)
-            if not has_finished_upload:
-                return False
-        return True
+            if has_finished_upload:
+                builds.add(build)
+        return builds
 
     def uploadManifestList(self, client):
-        """Uploads the aggregated manifest list for all builds in the
+        """Uploads the aggregated manifest list for all uploaded builds in the
         current build request.
         """
-        # The "allBuildsUploaded" call will lock, on the database,
-        # all upload jobs for update until this transaction finishes.
-        # So, make sure this is the last thing being done by this job.
         build_request = self.build.build_request
         if not build_request:
             return
         try:
-            if self.allBuildsUploaded(build_request):
-                client.uploadManifestList(build_request)
+            uploaded_builds = self.getUploadedBuilds(build_request)
+            if uploaded_builds:
+                client.uploadManifestList(build_request, uploaded_builds)
         except OCIRegistryError:
             # Do not retry automatically on known OCI registry errors.
             raise
@@ -351,8 +352,8 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
 
                 self.uploadManifestList(client)
                 # Force this job status to COMPLETED in the same transaction we
-                # called `allBuildsUpdated` (in the uploadManifestList call
-                # above) to release the lock already including the new status.
+                # called `getUploadedBuilds` (in the uploadManifestList call
+                # above) to release the lock already including our new status.
                 # This way, any other transaction that was blocked waiting to
                 # get the info about the upload jobs will immediately have the
                 # new status of this job, avoiding race conditions. Keep the
