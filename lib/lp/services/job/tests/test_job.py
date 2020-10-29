@@ -28,6 +28,7 @@ from lp.services.job.model.job import (
     Job,
     UniversalJobSource,
     )
+from lp.services.statsd.tests import StatsMixin
 from lp.testing import (
     StormStatementRecorder,
     TestCase,
@@ -38,10 +39,14 @@ from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.matchers import HasQueryCount
 
 
-class TestJob(TestCaseWithFactory):
+class TestJob(StatsMixin, TestCaseWithFactory):
     """Ensure Job behaves as intended."""
 
     layer = ZopelessDatabaseLayer
+
+    def setUp(self):
+        super(TestJob, self).setUp()
+        self.setUpStats()
 
     def test_implements_IJob(self):
         """Job should implement IJob."""
@@ -97,6 +102,9 @@ class TestJob(TestCaseWithFactory):
         self.assertNotEqual(None, job.date_started)
         self.assertEqual(None, job.date_finished)
         self.assertEqual(job.status, JobStatus.RUNNING)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('job.start_count,type=UNKNOWN,env=test',))
 
     def test_start_increments_attempt_count(self):
         """Job.start should increment the attempt count."""
@@ -133,6 +141,9 @@ class TestJob(TestCaseWithFactory):
         job.complete()
         self.assertNotEqual(None, job.date_finished)
         self.assertEqual(job.status, JobStatus.COMPLETED)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('job.complete_count,type=UNKNOWN,env=test',))
 
     def test_complete_when_waiting_is_invalid(self):
         """When a job is waiting, attempting to complete is invalid."""
@@ -159,6 +170,9 @@ class TestJob(TestCaseWithFactory):
         job.fail()
         self.assertNotEqual(None, job.date_finished)
         self.assertEqual(job.status, JobStatus.FAILED)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('job.fail_count,type=UNKNOWN,env=test',))
 
     def test_fail_when_waiting_is_invalid(self):
         """When a job is waiting, attempting to fail is invalid."""

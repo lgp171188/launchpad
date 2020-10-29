@@ -348,11 +348,14 @@ class BaseJobRunner(LazrJobRunner):
         return True
 
     def runJob(self, job, fallback):
+        insecure_job = removeSecurityProxy(job)
+        insecure_job.job.setOriginalClass(job.__class__.__name__)
         original_timeout_function = get_default_timeout_function()
         if job.lease_expires is not None:
             set_default_timeout_function(lambda: job.getTimeout())
         try:
-            super(BaseJobRunner, self).runJob(IRunnableJob(job), fallback)
+            job = IRunnableJob(job)
+            super(BaseJobRunner, self).runJob(job, fallback)
         finally:
             set_default_timeout_function(original_timeout_function)
 
