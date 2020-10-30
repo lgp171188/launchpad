@@ -348,6 +348,8 @@ class BaseJobRunner(LazrJobRunner):
         return True
 
     def runJob(self, job, fallback):
+        # delegation makes this reference tricky to achieve without
+        # directly setting it.
         insecure_job = removeSecurityProxy(job)
         insecure_job.job.setOriginalClass(job.__class__.__name__)
         original_timeout_function = get_default_timeout_function()
