@@ -330,11 +330,12 @@ class TestAsyncOCIRecipeBuildBehaviour(
         }))
 
     def test_getBuildInfoArgs_from_teams(self):
-        team = self.factory.makeTeam()
-        oci_project = self.factory.makeOCIProject(registrant=team)
+        registrant = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[registrant])
+        oci_project = self.factory.makeOCIProject(registrant=registrant)
         recipe = self.makeRecipe(
             processor_names=["amd64"],
-            oci_project=oci_project, registrant=team, owner=team)
+            oci_project=oci_project, registrant=registrant, owner=team)
         build_request = self.makeBuildRequest(recipe, recipe.owner)
         build = build_request.builds[0]
         job = self.makeJob(build=build)
