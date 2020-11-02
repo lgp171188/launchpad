@@ -279,6 +279,8 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                 SigningKeyType.UEFI, None),
             content)
 
+        self.assertIn("INFO 1 archive processed; committing.", content)
+
     def test_process_archive_dry_run(self):
         signing_service_client = self.useFixture(
             SigningServiceClientFixture(self.factory))
@@ -403,6 +405,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             "INFO Found key file %s (type=%s)." % (
                 secret_key_path, SigningKeyType.OPENPGP),
             content)
+        self.assertIn("INFO 1 archive processed; committing.", content)
 
     def test_process_archive_openpgp_missing(self):
         archive = self.factory.makeArchive()
@@ -424,6 +427,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             "DEBUG #0 - Processing keys for archive %s." % archive.reference,
             content)
         self.assertNotIn("INFO Found key file", content)
+        self.assertIn("INFO 1 archive processed; committing.", content)
 
     def test_inject(self):
         signing_service_client = self.useFixture(
