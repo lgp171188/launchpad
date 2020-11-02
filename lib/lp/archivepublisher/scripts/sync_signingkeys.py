@@ -255,9 +255,8 @@ class SyncSigningKeysScript(LaunchpadScript):
             transaction.commit()
 
     def main(self):
-        archives = list(self.getArchives())
         total = 0
-        for i, archive in enumerate(archives):
+        for i, archive in enumerate(self.getArchives()):
             if i != 0 and i % 100 == 0:
                 self._maybeCommit(i)
             self.logger.debug(
