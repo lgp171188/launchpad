@@ -1,16 +1,22 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the initialize_distroseries script machinery."""
 
 __metaclass__ = type
 
-from testtools.matchers import MatchesStructure
+from testtools.matchers import (
+    MatchesSetwise,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import getUtility
 
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.enums import (
+    BuildBaseImageType,
+    BuildStatus,
+    )
 from lp.buildmaster.interfaces.processor import (
     IProcessorSet,
     ProcessorNotFound,
@@ -40,7 +46,10 @@ from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
     )
 from lp.soyuz.model.component import ComponentSelection
-from lp.soyuz.model.distroarchseries import DistroArchSeries
+from lp.soyuz.model.distroarchseries import (
+    DistroArchSeries,
+    PocketChroot,
+    )
 from lp.soyuz.model.distroseriesdifferencejob import find_waiting_jobs
 from lp.soyuz.model.section import SectionSelection
 from lp.soyuz.scripts.initialize_distroseries import (
@@ -941,6 +950,78 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         child = self._fullInitialize([parent])
         for child_das in child.architectures:
             self.assertIsNone(child_das.getSourceFilter())
+
+    def test_intra_distro_base_image_copying(self):
+        # If child.distribution equals parent.distribution, we also copy any
+        # base images.
+        parent, parent_das1 = self.setupParent(proc='386', arch_tag='i386')
+        _, parent_das2 = self.setupParent(
+            parent=parent, proc='amd64', arch_tag='amd64')
+        _, parent_das3 = self.setupParent(
+            parent=parent, proc='hppa', arch_tag='hppa')
+        # setupDas (called by setupParent) already added some base images.
+        # Add a couple more so that we can test that pockets and image types
+        # are preserved.
+        lfa1 = self.factory.makeLibraryFileAlias()
+        lfa2 = self.factory.makeLibraryFileAlias()
+        transaction.commit()
+        parent_das1.addOrUpdateChroot(
+            lfa1, pocket=PackagePublishingPocket.UPDATES,
+            image_type=BuildBaseImageType.CHROOT)
+        parent_das2.addOrUpdateChroot(
+            lfa2, pocket=PackagePublishingPocket.SECURITY,
+            image_type=BuildBaseImageType.LXD)
+        parent_das3.removeChroot(
+            pocket=PackagePublishingPocket.RELEASE,
+            image_type=BuildBaseImageType.CHROOT)
+        # Create child series in the same distribution.
+        child = self.factory.makeDistroSeries(
+            distribution=parent.distribution, previous_series=parent)
+        self._fullInitialize([parent], child=child)
+
+        # The child series has corresponding base images.
+        child_images = IStore(PocketChroot).find(
+            PocketChroot,
+            PocketChroot.distroarchseries == DistroArchSeries.id,
+            DistroArchSeries.distroseries == child)
+        self.assertThat(child_images, MatchesSetwise(
+            MatchesStructure.byEquality(
+                distroarchseries=child['i386'],
+                pocket=PackagePublishingPocket.RELEASE,
+                chroot=parent_das1.getChroot(
+                    pocket=PackagePublishingPocket.RELEASE,
+                    image_type=BuildBaseImageType.CHROOT),
+                image_type=BuildBaseImageType.CHROOT),
+            MatchesStructure.byEquality(
+                distroarchseries=child['i386'],
+                pocket=PackagePublishingPocket.UPDATES,
+                chroot=lfa1,
+                image_type=BuildBaseImageType.CHROOT),
+            MatchesStructure.byEquality(
+                distroarchseries=child['amd64'],
+                pocket=PackagePublishingPocket.RELEASE,
+                chroot=parent_das2.getChroot(
+                    pocket=PackagePublishingPocket.RELEASE,
+                    image_type=BuildBaseImageType.CHROOT),
+                image_type=BuildBaseImageType.CHROOT),
+            MatchesStructure.byEquality(
+                distroarchseries=child['amd64'],
+                pocket=PackagePublishingPocket.SECURITY,
+                chroot=lfa2,
+                image_type=BuildBaseImageType.LXD)))
+
+    def test_no_cross_distro_base_image_copying(self):
+        # No cross-distro base image copying should happen.
+        parent, parent_das = self.setupParent()
+        lfa = self.factory.makeLibraryFileAlias()
+        transaction.commit()
+        parent_das.addOrUpdateChroot(lfa)
+        child = self._fullInitialize([parent])
+        child_images = IStore(PocketChroot).find(
+            PocketChroot,
+            PocketChroot.distroarchseries == DistroArchSeries.id,
+            DistroArchSeries.distroseries == child)
+        self.assertEqual([], list(child_images))
 
     def test_packageset_owner_preserved_within_distro(self):
         # When initializing a new series within a distro, the copied
