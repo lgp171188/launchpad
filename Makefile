@@ -240,6 +240,16 @@ jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
 	build/js/lp/meta.js >/dev/null
 	utilities/check-js-deps
 
+requirements/combined.txt: \
+		requirements/setup.txt \
+		requirements/ztk-versions.cfg \
+		requirements/launchpad.txt
+	$(PYTHON) utilities/make-requirements.py \
+		--exclude requirements/setup.txt \
+		--buildout requirements/ztk-versions.cfg \
+		--include requirements/launchpad.txt \
+		>"$@"
+
 # This target is used by LOSAs to prepare a build to be pushed out to
 # destination machines.  We only want wheels: they are the expensive bits,
 # and the other bits might run into problems like bug 575037.  This target
@@ -250,10 +260,11 @@ jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
 # It doesn't seem to be straightforward to build a wheelhouse of all our
 # dependencies without also building a useless wheel of Launchpad itself;
 # fortunately that doesn't take too long, and we just remove it afterwards.
-build_wheels: $(PIP_BIN)
+build_wheels: $(PIP_BIN) requirements/combined.txt
 	$(RM) -r wheelhouse
 	$(SHHH) $(PIP) wheel \
-		-c setup-requirements.txt -c constraints.txt -w wheelhouse .
+		-c requirements/setup.txt -c requirements/combined.txt \
+		-w wheelhouse .
 	$(RM) wheelhouse/lp-[0-9]*.whl
 	$(MAKE) clean_pip
 
@@ -267,7 +278,7 @@ build_eggs: build_wheels
 # If we listed every target on the left-hand side, a parallel make would try
 # multiple copies of this rule to build them all.  Instead, we nominally build
 # just $(PY), and everything else is implicitly updated by that.
-$(PY): download-cache constraints.txt setup.py
+$(PY): download-cache requirements/combined.txt setup.py
 	rm -rf env
 	mkdir -p env
 	$(VIRTUALENV) \
@@ -276,10 +287,10 @@ $(PY): download-cache constraints.txt setup.py
 		--extra-search-dir=$(WD)/wheelhouse/ \
 		env
 	ln -sfn env/bin bin
-	$(SHHH) $(PIP) install -r setup-requirements.txt
+	$(SHHH) $(PIP) install -r requirements/setup.txt
 	$(SHHH) LPCONFIG=$(LPCONFIG) $(PIP) \
 		install \
-		-c setup-requirements.txt -c constraints.txt -e . \
+		-c requirements/setup.txt -c requirements/combined.txt -e . \
 		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
 
@@ -422,6 +433,7 @@ lxc-clean: clean_js clean_pip clean_logs
 	# referenced bug is fixed, this target may be reunited with
 	# the 'clean' target.
 	$(RM) -r env wheelhouse
+	$(RM) requirements/combined.txt
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
 	$(RM) -r $(CODEHOSTING_ROOT)/*
 	$(RM) -r $(APIDOC_DIR)

@@ -36,6 +36,17 @@
     </dd>
   </dl>
 
+  <div id="merge-instructions" tal:condition="python:kind == 'branch' and view.user">
+    <dt>Merge guidelines:</dt>
+    <dd>
+      <tt id="remote-add" class="command" tal:content="string:git remote add -f ${context/repository/owner/name} ${view/git_ssh_url}" />
+      <br />
+      <tt id="remote-update" class="command" tal:content="string:git remote update ${context/repository/owner/name}" />
+      <br />
+      <tt id="merge-cmd" class="command" tal:content="string:git merge ${context/repository/owner/name}/${context/name}" />
+    </dd>
+  </div>
+
   <div id="push-directions"
        tal:condition="context/repository_type/enumvalue:HOSTED">
     <tal:not-logged-in condition="not:view/user">

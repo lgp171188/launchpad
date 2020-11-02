@@ -52,8 +52,13 @@ def valid_email(emailaddr):
     False
     >>> valid_email('keith@-risby-family.co.uk')
     False
+
+    The IDNA encoding of internationalised domain names is also accepted.
+
+    >>> valid_email('user@example.xn--deba0ad')
+    True
     """
-    email_re = r"^[_\.0-9a-zA-Z-+=]+@(([0-9a-zA-Z-]{1,}\.)*)[a-zA-Z]{2,}$"
+    email_re = r"^[_\.0-9a-zA-Z-+=]+@(([0-9a-zA-Z-]{1,}\.)*)[0-9a-zA-Z-]{2,}$"
     email_match = re.match(email_re, emailaddr)
     if not email_match:
         return False
