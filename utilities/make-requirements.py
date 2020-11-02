@@ -3,7 +3,7 @@
 # Copyright 2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Build a constraints.txt file from inputs."""
+"""Build a pip constraints file from inputs."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
