@@ -86,8 +86,8 @@ clear, much of this is based on our own decisions of what to do.  If you see
 something problematic, bring it up with other Launchpad developers.  Maybe
 together we can come up with another approach that meets our needs better.
 
-These are the items in the top-level Launchpad directory associated with
-pip:
+These are the items in or near the top-level Launchpad directory associated
+with pip:
 
 ``setup.py``
     This is the file that uses ``distutils``, extended by ``setuptools``, to
@@ -102,18 +102,25 @@ pip:
     information beyond these recipes, see the setuptools and distutils
     documentation.
 
-``setup-requirements.txt``
+``requirements/ztk-versions.cfg``
+    This is a copy of the dependency versions file published by the `Zope
+    Toolkit`_.  It is preprocessed into a pip-compatible form by
+    ``utilities/make-requirements.py``.
+
+``requirements/setup.txt``
     This is a `requirements file`_ used to upgrade pip itself to a
     reasonably recent version and install a few other packages that must be
     installed before installing anything else.  We use this so that we
     aren't confined to features of pip supported by the version supplied by
     the operating system.
 
-``constraints.txt``
+``requirements/launchpad.txt``
     This is a `constraints file`_ that specifies the precise versions of the
-    dependencies we use.  This means that we can have several versions of a
-    dependency available locally, but we only build the precise one we
-    specify.  We give an example of its use below.
+    dependencies we use, in addition to those specified in
+    ``requirements/ztk-versions.cfg`` and ``requirements/setup.txt``.  This
+    means that we can have several versions of a dependency available
+    locally, but we only build the precise one we specify.  We give an
+    example of its use below.
 
 ``env``
     The ``env`` directory holds a virtualenv built from the downloaded
@@ -168,6 +175,7 @@ we'll move on to trying to perform maintenance tasks.  We'll discuss adding
 a dependency, upgrading a dependency, adding a script, adding an arbitrary
 file, and working with unreleased packages.
 
+.. _`Zope Toolkit`: https://github.com/zopefoundation/zopetoolkit
 .. _`requirements file`: https://pip.pypa.io/en/stable/reference/pip_install/#requirements-file-format
 .. _`constraints file`: https://pip.pypa.io/en/stable/user_guide/#constraints-files
 
@@ -244,7 +252,7 @@ Let's suppose that we want to add the "lazr.foo" package as a dependency.
     ``pip download`` doesn't consider what's currently installed and so is
     liable to download too much otherwise.
 
-5.  Add the new versions to the ``constraints.txt`` file, still using the
+5.  Add the new versions to ``requirements/launchpad.txt``, still using the
     requirements specifier syntax::
 
         lazr.foo==1.1.2
