@@ -30,7 +30,6 @@ from storm.locals import (
     Reference,
     )
 import transaction
-from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.services.database import bulk
@@ -44,7 +43,6 @@ from lp.services.job.interfaces.job import (
     JobStatus,
     JobType,
     )
-from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 UTC = pytz.timezone('UTC')
