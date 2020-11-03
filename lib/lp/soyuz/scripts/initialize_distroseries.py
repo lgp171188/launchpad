@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Initialize a distroseries from its parent distroseries."""
@@ -295,6 +295,7 @@ class InitializeDistroSeries:
         self._copy_packages()
         self._copy_packagesets()
         self._copy_pocket_permissions()
+        self._copy_base_images()
         self._create_dsds()
         self._set_initialized()
         transaction.commit()
@@ -786,3 +787,27 @@ class InitializeDistroSeries:
                     """ % sqlvalues(
                         self.distroseries.main_archive, self.distroseries.id,
                         parent.id))
+
+    def _copy_base_images(self):
+        """Copy base images (`PocketChroot`s) from the parent series."""
+        log.info("Copying base images from parents.")
+        for parent in self.derivation_parents:
+            if self.distroseries.distribution == parent.distribution:
+                self._store.execute("""
+                    INSERT INTO PocketChroot
+                    (distroarchseries, pocket, chroot, image_type)
+                    SELECT
+                        newdas.id AS distroarchseries,
+                        pocket, chroot, image_type
+                    FROM PocketChroot AS pc
+                    LEFT JOIN DistroArchSeries AS olddas ON
+                        pc.distroarchseries = olddas.id
+                    LEFT JOIN DistroArchSeries AS newdas ON
+                        newdas.distroseries = %s
+                        AND newdas.architecturetag = olddas.architecturetag
+                    WHERE
+                        pc.chroot IS NOT NULL
+                        AND olddas.distroseries = %s
+                        AND olddas.enabled
+                        AND newdas.id IS NOT NULL
+                    """ % sqlvalues(self.distroseries.id, parent.id))

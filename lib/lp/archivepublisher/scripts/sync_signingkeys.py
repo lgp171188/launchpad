@@ -245,14 +245,23 @@ class SyncSigningKeysScript(LaunchpadScript):
                     secret_key_path, SigningKeyType.OPENPGP)
                 self.injectGPG(archive, secret_key_path)
 
+    def _maybeCommit(self, count):
+        if self.options.dry_run:
+            transaction.abort()
+        else:
+            self.logger.info(
+                "%d %s processed; committing.",
+                count, "archive" if count == 1 else "archives")
+            transaction.commit()
+
     def main(self):
-        archives = list(self.getArchives())
-        for i, archive in enumerate(archives):
+        total = 0
+        for i, archive in enumerate(self.getArchives()):
+            if i != 0 and i % 100 == 0:
+                self._maybeCommit(i)
             self.logger.debug(
                 "#%s - Processing keys for archive %s.", i, archive.reference)
             self.processArchive(archive)
-            if self.options.dry_run:
-                transaction.abort()
-            else:
-                transaction.commit()
+            total = i + 1
+        self._maybeCommit(total)
         self.logger.info("Finished processing archives injections.")
