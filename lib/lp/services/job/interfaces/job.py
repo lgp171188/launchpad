@@ -133,9 +133,6 @@ class IJob(Interface):
         description=_("What type of job this is, only used for jobs that "
             "do not have their own tables."))
 
-    def setOriginalClass(class_name):
-        """Set the originating class name for logging and stats purposes."""
-
     def acquireLease(duration=300):
         """Acquire the lease for this Job, or raise LeaseHeld."""
 

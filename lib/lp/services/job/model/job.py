@@ -94,11 +94,6 @@ class Job(SQLBase):
 
     base_job_type = EnumCol(enum=JobType, dbName='job_type')
 
-    original_class_name = 'UNKNOWN'
-
-    def setOriginalClass(self, class_name):
-        self.original_class_name = class_name
-
     # Mapping of valid target states from a given state.
     _valid_transitions = {
         JobStatus.WAITING:
@@ -180,10 +175,6 @@ class Job(SQLBase):
         self.date_started = datetime.datetime.now(UTC)
         self.date_finished = None
         self.attempt_count += 1
-        statsd = getUtility(IStatsdClient)
-        statsd.incr('job.start_count,type={},env={}'.format(
-            self.original_class_name,
-            statsd.lp_environment))
         if manage_transaction:
             transaction.commit()
 
@@ -194,10 +185,6 @@ class Job(SQLBase):
             transaction.commit()
         self._set_status(JobStatus.COMPLETED)
         self.date_finished = datetime.datetime.now(UTC)
-        statsd = getUtility(IStatsdClient)
-        statsd.incr('job.complete_count,type={},env={}'.format(
-            self.original_class_name,
-            statsd.lp_environment))
         if manage_transaction:
             transaction.commit()
 
@@ -207,10 +194,6 @@ class Job(SQLBase):
             transaction.abort()
         self._set_status(JobStatus.FAILED)
         self.date_finished = datetime.datetime.now(UTC)
-        statsd = getUtility(IStatsdClient)
-        statsd.incr('job.fail_count,type={},env={}'.format(
-            self.original_class_name,
-            statsd.lp_environment))
         if manage_transaction:
             transaction.commit()
 
