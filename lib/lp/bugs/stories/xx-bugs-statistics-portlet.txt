@@ -84,7 +84,7 @@ The content includes a link to the distribution CVE report.
 Distribution Series
 -------------------
 
-    >>> path = 'debian/+series/woody'
+    >>> path = 'debian/woody'
 
 If the user is not logged-in general stats are shown. There is also a
 link to review nominations.
@@ -147,7 +147,7 @@ reported bugs.
 The content includes a link to the distribution CVE report.
 
     >>> print(user_browser.getLink('CVE report').url)
-    http://bugs.launchpad.test/debian/+series/woody/+cve
+    http://bugs.launchpad.test/debian/woody/+cve
 
 
 Distribution Source Package
@@ -224,7 +224,7 @@ source packages do not have a CVE reports page.
 Source Package in Distribution Series
 -------------------------------------
 
-    >>> path = 'debian/+series/woody/+source/mozilla-firefox'
+    >>> path = 'debian/woody/+source/mozilla-firefox'
 
 If the user is not logged-in general stats are shown. There is no
 option to subscribe to bug mail.

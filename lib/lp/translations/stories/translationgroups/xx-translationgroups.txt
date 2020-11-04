@@ -750,7 +750,7 @@ Southern Sotho. We expect them to see a readonly form:
     ...     'Authorization', 'Basic no-priv@canonical.com:test')
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/st/+translate')
     >>> print(browser.url)
     http://.../ubuntu/.../evolution/+pots/evolution-2.2/st/+translate
@@ -772,7 +772,7 @@ directly.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/cy/19/+translate')
     >>> print(browser.url)
     http://.../ubuntu/.../evolution/+pots/evolution-2.2/cy/19/+translate
@@ -863,7 +863,7 @@ suggestions.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/')
 
     >>> print_menu_option(browser.contents, 'edit')
@@ -874,7 +874,7 @@ suggestions.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/st/+translate')
 
     >>> print(find_translation_input_label(browser.contents))
@@ -906,7 +906,7 @@ will only accept suggestions.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/st/+translate')
 
     >>> print(find_translation_input_label(browser.contents))
@@ -946,7 +946,7 @@ as well as to upload files.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/cy/+translate')
 
     >>> print_menu_option(browser.contents, 'upload')
@@ -957,7 +957,7 @@ not yet translated.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/cy/8/+translate')
 
     >>> print(get_detail_tag(browser, 'translation-managers'))
@@ -1079,8 +1079,8 @@ First, make sure we can see the page.
 Try to get the page when unauthenticated.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/af/+upload')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/' +
+    ...         'evolution/+pots/evolution-2.2/af/+upload')
     Traceback (most recent call last):
     ...
     Unauthorized:...
@@ -1088,17 +1088,17 @@ Try to get the page when unauthenticated.
 And now with valid credentials.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/af/+upload')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/' +
+    ...         'evolution/+pots/evolution-2.2/af/+upload')
     >>> print(admin_browser.url)
-    http://.../ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
+    http://.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
 Now hit the upload button, but without giving a file for upload. We get
 an error message back.
 
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
-    http://.../ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
+    http://.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
     ...     print(tag.renderContents())
@@ -1138,7 +1138,7 @@ cannot be handled.
     >>> upload.add_file(BytesIO(af_file), 'application/msword', 'af.doc')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
+    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
     ...     print(tag.renderContents())
@@ -1151,7 +1151,7 @@ With all the correct information, a file can be uploaded.
     >>> upload.add_file(BytesIO(af_file), 'application/x-po', 'af.po')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
+    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(tag.renderContents())
@@ -1197,7 +1197,7 @@ Let's add a new suggestion as a person without privileges.
     >>> browser.addHeader("Authorization", "Basic no-priv@canonical.com:test")
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/+series/hoary/+source/evolution/'
+    ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/es/+translate')
     >>> browser.getControl(
     ...     name='msgset_134_es_translation_0_new_checkbox').value = True

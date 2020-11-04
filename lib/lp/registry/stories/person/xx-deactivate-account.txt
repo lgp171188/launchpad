@@ -10,8 +10,7 @@ demonstrate this, we'll assign a bug to the user that we're going to
 deactivate.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> edit_bug_url = (
-    ...     "http://bugs.launchpad.test/debian/+series/sarge/+source/"
+    >>> edit_bug_url = ("http://bugs.launchpad.test/debian/sarge/+source/"
     ...     "mozilla-firefox/+bug/3/+editstatus")
     >>> browser.open(edit_bug_url)
     >>> bugwatch_control = browser.getControl(

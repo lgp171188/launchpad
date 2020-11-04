@@ -39,8 +39,7 @@ Some distributions have listings of major versions, for example Debian:
 If we add another milestone the list is well formatted using English grammar
 rules.
 
-    >>> admin_browser.open(
-    ...     "http://launchpad.test/debian/+series/woody/+addmilestone")
+    >>> admin_browser.open("http://launchpad.test/debian/woody/+addmilestone")
     >>> admin_browser.getControl("Name:").value = "testmilestone"
     >>> admin_browser.getControl("Register Milestone").click()
 
@@ -54,10 +53,10 @@ rules.
 Each series and milestone are links that take you to that
 series and milestone page.
 
-    >>> anon_browser.getLink(url='/debian/+series/sarge').text
+    >>> anon_browser.getLink(url='/debian/sarge').text
     '3.1 \xe2\x80\x9cSarge\xe2\x80\x9d series'
 
-    >>> anon_browser.getLink(url='/debian/+series/woody').text
+    >>> anon_browser.getLink(url='/debian/woody').text
     '3.0 \xe2\x80\x9cWoody\xe2\x80\x9d series'
 
     >>> anon_browser.getLink(url='/debian/+milestone/3.1').text
@@ -124,7 +123,7 @@ If there is a development series alias, it becomes a redirect.
     >>> from lp.testing import celebrity_logged_in
     >>> from zope.component import getUtility
 
-    >>> anon_browser.open("http://launchpad.test/ubuntu/+series/devel")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/devel")
     Traceback (most recent call last):
     ...
     NotFound: Object: <Distribution ...>, name: u'devel'
@@ -132,12 +131,12 @@ If there is a development series alias, it becomes a redirect.
     >>> with celebrity_logged_in("admin"):
     ...     ubuntu = getUtility(IDistributionSet).getByName(u"ubuntu")
     ...     ubuntu.development_series_alias = "devel"
-    >>> anon_browser.open("http://launchpad.test/ubuntu/+series/devel")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/devel")
     >>> print(anon_browser.url)
-    http://launchpad.test/ubuntu/+series/hoary
-    >>> anon_browser.open("http://launchpad.test/ubuntu/+series/devel/+builds")
+    http://launchpad.test/ubuntu/hoary
+    >>> anon_browser.open("http://launchpad.test/ubuntu/devel/+builds")
     >>> print(anon_browser.url)
-    http://launchpad.test/ubuntu/+series/hoary/+builds
+    http://launchpad.test/ubuntu/hoary/+builds
 
 
 Registration information

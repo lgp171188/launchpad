@@ -17,7 +17,7 @@ Then the user click the "Delete Link" button in the first tab. The
 deletion succeeds and the usual informational message is displayed.
 
     >>> link = first_browser.getLink(
-    ...     url='/ubuntu/+series/warty/+source/alsa-utils/+remove-packaging')
+    ...     url='/ubuntu/warty/+source/alsa-utils/+remove-packaging')
     >>> link.click()
     >>> first_browser.getControl('Unlink').click()
     >>> content = first_browser.contents
@@ -33,9 +33,8 @@ second tab, and clicks the "Delete Link" button again.
 The packaging object has been deleted already, so this action cannot
 succeed.
 
-    >>> link = second_browser.getLink(
-    ...     url='/ubuntu/+series/warty/+source/alsa-utils/+remove-packaging')
-    >>> link.click()
+    >>> second_browser.getLink(
+    ...     url='/ubuntu/warty/+source/alsa-utils/+remove-packaging').click()
     >>> content = second_browser.contents
     >>> for tag in find_tags_by_class(content, 'informational'):
     ...     print(extract_text(tag))

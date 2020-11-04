@@ -812,7 +812,7 @@ input.translate {width: 90%; max-width: 60em;}
 /* Templates listing.
  *
  * Examples:
- *   https://translations.launchpad.test/ubuntu/+series/hoary/+templates
+ *   https://translations.launchpad.test/ubuntu/hoary/+templates
  *   https://translations.launchpad.test/evolution/trunk/+templates
  */
 .inactive-template td {
@@ -823,7 +823,7 @@ input.translate {width: 90%; max-width: 60em;}
 /* Translations statistics and legend.
  *
  * Examples:
- *   https://translations.launchpad.test/ubuntu/+series/hoary/+lang/es
+ *   https://translations.launchpad.test/ubuntu/hoary/+lang/es
  *   https://translations.launchpad.test/evolution/trunk/+lang/es
  */
 
@@ -857,9 +857,9 @@ table.translation-stats tfoot td {
 /* Translations help links.
  *
  * Examples:
- *   https://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/
- *   https://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+translations
- *   https://translations.launchpad.test/ubuntu/+series/hoary/
+ *   https://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/
+ *   https://translations.launchpad.test/ubuntu/hoary/+source/evolution/+translations
+ *   https://translations.launchpad.test/ubuntu/hoary/
  *
  */
 div.translation-help-links a {

@@ -20,7 +20,7 @@ Getting source packages
 We can get source packages that are bound to a distribution series from the
 distribution series.
 
-    >>> my_series = webservice.get('/my-distro/+series/my-series').jsonBody()
+    >>> my_series = webservice.get('/my-distro/my-series').jsonBody()
     >>> evolution = webservice.named_get(
     ...     my_series['self_link'], 'getSourcePackage',
     ...     name='evolution').jsonBody()
@@ -31,13 +31,13 @@ distribution series.
     bug_reporting_guidelines: None
     displayname: 'evolution in My-distro My-series'
     distribution_link: 'http://.../my-distro'
-    distroseries_link: 'http://.../my-distro/+series/my-series'
+    distroseries_link: 'http://.../my-distro/my-series'
     latest_published_component_name: None
     name: 'evolution'
     official_bug_tags: []
     productseries_link: None
     resource_type_link: ...
-    self_link: 'http://api.../my-distro/+series/my-series/+source/evolution'
+    self_link: 'http://api.../my-distro/my-series/+source/evolution'
     web_link: 'http://.../+source/evolution'
 
 

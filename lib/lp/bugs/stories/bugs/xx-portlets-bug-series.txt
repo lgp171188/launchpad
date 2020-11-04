@@ -23,8 +23,7 @@ Change debian to track bugs in Launchpad and the portlet becomes visible.
   2
   woody
 
-  >>> anon_browser.open(
-  ...     "http://bugs.launchpad.test/debian/+series/sarge/+bugs")
+  >>> anon_browser.open("http://bugs.launchpad.test/debian/sarge/+bugs")
   >>> portlet = find_portlet(anon_browser.contents, "Series-targeted bugs")
   >>> print(extract_text(portlet))
   Series-targeted bugs
@@ -43,7 +42,7 @@ Change debian to track bugs in Launchpad and the portlet becomes visible.
   warty
 
   >>> print(anon_browser.getLink("hoary").url)
-  http://bugs.launchpad.test/ubuntu/+series/hoary/+bugs
+  http://bugs.launchpad.test/ubuntu/hoary/+bugs
 
 The same portlet is also available for project and project series
 listings and homepages:

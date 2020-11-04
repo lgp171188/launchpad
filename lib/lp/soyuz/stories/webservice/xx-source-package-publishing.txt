@@ -129,7 +129,7 @@ publication to play with first.
     date_removed: None
     date_superseded: None
     display_name: 'testwebservice 666 in breezy-autotest'
-    distro_series_link: 'http://.../ubuntutest/+series/breezy-autotest'
+    distro_series_link: 'http://.../ubuntutest/breezy-autotest'
     package_creator_link: 'http://.../beta/~name16'
     package_maintainer_link: 'http://.../beta/~name16'
     package_signer_link: 'http://.../beta/~name16'

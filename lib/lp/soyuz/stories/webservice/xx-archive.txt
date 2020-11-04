@@ -478,7 +478,7 @@ component.
 We can use ``checkUpload`` to verify that a person can upload a
 sourcepackage.
 
-    >>> grumpy = user_webservice.get("/ubuntu/+series/grumpy").jsonBody()
+    >>> grumpy = user_webservice.get("/ubuntu/grumpy").jsonBody()
     >>> response = user_webservice.named_get(
     ...     ubuntu['main_archive_link'], 'checkUpload',
     ...     distroseries=grumpy['self_link'],
@@ -506,7 +506,7 @@ And we can see that it's gone:
 
 And ``checkUpload`` now also no longer passes:
 
-    >>> grumpy = user_webservice.get("/ubuntu/+series/grumpy").jsonBody()
+    >>> grumpy = user_webservice.get("/ubuntu/grumpy").jsonBody()
     >>> response = user_webservice.named_get(
     ...     ubuntu['main_archive_link'], 'checkUpload',
     ...     distroseries=grumpy['self_link'],
@@ -664,7 +664,7 @@ newPocketUploader adds a new permission for a person to upload to a pocket.
 
 The person named in the permission can upload a package to this pocket.
 
-    >>> grumpy = user_webservice.get("/ubuntu/+series/grumpy").jsonBody()
+    >>> grumpy = user_webservice.get("/ubuntu/grumpy").jsonBody()
     >>> response = user_webservice.named_get(
     ...     ubuntu['main_archive_link'], 'checkUpload',
     ...     distroseries=grumpy['self_link'],
@@ -745,7 +745,7 @@ It can also grant series-specific pocket queue admin permissions.
 
     >>> ubuntu_owner_ws = ubuntu_owner_webservice.get(
     ...     "/~ubuntu-owner").jsonBody()
-    >>> hoary = user_webservice.get("/ubuntu/+series/hoary").jsonBody()
+    >>> hoary = user_webservice.get("/ubuntu/hoary").jsonBody()
     >>> new_permissions = []
     >>> for series in hoary, grumpy:
     ...     response = ubuntu_owner_webservice.named_post(
