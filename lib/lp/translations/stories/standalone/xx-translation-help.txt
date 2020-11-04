@@ -16,7 +16,7 @@ pages.  Namely, on a Distribution and DistroSeries pages:
     >>> browser.getLink(id='link-to-translations-help').url
     'https://help.launchpad.net/Translations'
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/+series/hoary')
+    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary')
     >>> browser.getLink(id='link-to-translations-help').url
     'https://help.launchpad.net/Translations'
 

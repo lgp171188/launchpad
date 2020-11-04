@@ -16,10 +16,10 @@ number of queries issued is relatively low.  Mileage may vary, but consider
 this test a tripwire for the number potentially getting out of hand.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
+    ...     '+pots/evolution-2.2/es/+translate')
     >>> anon_browser.url
-    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
+    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
     >>> print(anon_browser.contents)
     <...
     >>> statement_count = query_counter.count
@@ -33,10 +33,10 @@ option to make suggestions, but existing suggestions as well.  It takes more
 queries, but it still shouldn't run in the hundreds.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
+    ...     '+pots/evolution-2.2/es/+translate')
     >>> admin_browser.url
-    'http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
+    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
 
 XXX: JeroenVermeulen 2008-06-20 bug=241394: This has just started
 failing in PQM.  May be something to do with the introduction of Storm.

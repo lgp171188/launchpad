@@ -17,10 +17,10 @@ To get to the listing of all templates, one needs to use the link
 from the distribution series translations page.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary')
+    ...     'http://translations.launchpad.test/ubuntu/hoary')
     >>> user_browser.getLink('full list of templates').click()
     >>> print(user_browser.url)
-    http://translations.launchpad.test/ubuntu/+series/hoary/+templates
+    http://translations.launchpad.test/ubuntu/hoary/+templates
 
 
 Templates view for DistroSeries
@@ -30,7 +30,7 @@ Full template listing for a distribution series is reached by following
 a link from the distribution series translations page.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary')
+    ...     'http://translations.launchpad.test/ubuntu/hoary')
     >>> anon_browser.getLink('full list of templates').click()
 
 Full listing of templates shows priority, source package name, template name
@@ -46,7 +46,7 @@ length, languages and the date of last update for this distribution series.
 Logged-in users see a link to all the active translation templates
 on a distribution series translation page.
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary')
+    ...     'http://translations.launchpad.test/ubuntu/hoary')
     >>> user_browser.getLink('full list of templates').click()
 
 Regular users only see the option to download translations for each of
@@ -61,7 +61,7 @@ the active templates.
 Administrator can see all editing options.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary')
+    ...     'http://translations.launchpad.test/ubuntu/hoary')
     >>> admin_browser.getLink('full list of templates').click()
 
 The page shows a table of all templates and links to their subpages.
@@ -84,18 +84,16 @@ appropriate page.
 
     >>> utc_browser = setupDTCBrowser()
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
-    ...     '+templates')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/evolution-2.2/+edit').click()
     >>> print(utc_browser.url)
-    http://.../ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/+edit
+    http://.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+edit
 
 Administration page is inaccessible.
 
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
-    ...     '+templates')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/evolution-2.2/+admin')
     Traceback (most recent call last):
@@ -105,18 +103,16 @@ Administration page is inaccessible.
 Trying to edit disabled templates brings them to the appropriate page.
 
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
-    ...     '+templates')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/disabled-template/+edit').click()
     >>> print(utc_browser.url)
-    http://.../ubuntu/+series/hoary/+source/evolution/+pots/disabled-template/+edit
+    http://.../ubuntu/hoary/+source/evolution/+pots/disabled-template/+edit
 
 Administration page is inaccessible.
 
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
-    ...     '+templates')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/disabled-template/+admin')
     Traceback (most recent call last):
@@ -132,14 +128,13 @@ page.
 
     >>> admin_browser.getLink('pmount').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.test/ubuntu/+series/hoary/+source/pmount/+pots/pmount
+    http://translations.launchpad.test/ubuntu/hoary/+source/pmount/+pots/pmount
 
 Clicking on 'Edit' will take the user to the page to edit the template
 details. Likewise for the other links for each template.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
-    ...     '+templates')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> admin_browser.getLink('Edit', index=1).click()
     >>> print(admin_browser.url)
     http://translations.../evolution/+pots/disabled-template/+edit

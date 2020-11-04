@@ -44,7 +44,7 @@ And here's our subset.
     ...     distroseries=hoary, sourcepackagename=sourcepackagename)
 
     >>> canonical_url(potemplatesubset)
-    u'http://launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots'
+    u'http://launchpad.test/ubuntu/hoary/+source/evolution/+pots'
 
 We can get a particular PO template for this source package by its PO template
 name.
@@ -140,7 +140,7 @@ Distribution and distribution series default to the main vhost.
     >>> distroseries = factory.makeDistroSeries(
     ...     name='bah', distribution=distribution)
     >>> canonical_url(distroseries)
-    u'http://launchpad.test/boo/+series/bah'
+    u'http://launchpad.test/boo/bah'
 
 DistroSeriesLanguage objects have their URLs on translations vhost.
 
@@ -152,7 +152,7 @@ DistroSeriesLanguage objects have their URLs on translations vhost.
     >>> boo_bah_serbian = getUtility(IDistroSeriesLanguageSet).getDummy(
     ...     distroseries, serbian)
     >>> canonical_url(boo_bah_serbian)
-    u'http://translations.launchpad.test/boo/+series/bah/+lang/sr'
+    u'http://translations.launchpad.test/boo/bah/+lang/sr'
 
 Product, ProductSeries and ProductSeriesLanguage
 ---------------------------------------------------

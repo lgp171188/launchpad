@@ -208,7 +208,7 @@ autonomously.
     >>> translation_group = factory.makeTranslationGroup(group_owner)
     >>> ubuntu.translationgroup = translation_group
     >>> template_admin_url = str(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/%s/+pots/%s/+admin' % (
     ...         dsp.sourcepackagename.name, template.name))
     >>> logout()

@@ -10,7 +10,7 @@ IP address, since we'll use that later.
     >>> anon_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution')
     >>> anon_browser.title
     'Hoary (5.04) : Translations : ...evolution...package : Ubuntu'

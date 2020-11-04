@@ -267,7 +267,7 @@ class TestBingSearchService(TestCase):
         self.assertEqual(25, matches.total)
         self.assertEqual(5, len(matches))
         self.assertEqual([
-            'http://bugs.launchpad.test/ubuntu/+series/hoary/+bug/2',
+            'http://bugs.launchpad.test/ubuntu/hoary/+bug/2',
             'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/2',
             'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/3',
             'http://bugs.launchpad.test/bugs/bugtrackers',

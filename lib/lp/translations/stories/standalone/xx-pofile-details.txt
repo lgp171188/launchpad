@@ -161,7 +161,7 @@ We'll create two new accounts to demonstrate this.
 
     >>> browser.open(
     ...     ("http://translations.launchpad.test/"
-    ...     "ubuntu/+series/hoary/+source/%s/+pots/%s/%s/+details") % (
+    ...     "ubuntu/hoary/+source/%s/+pots/%s/%s/+details") % (
     ...     package.name, template.name, language_code))
     >>> main_text = extract_text(find_main_content(browser.contents))
     >>> print(main_text)

@@ -21,7 +21,7 @@ into account any overrides applied since the package was uploaded.
 Series and versions are linkified.
 
     >>> print(browser.getLink('Hoary').url)
-    http://bugs.launchpad.test/ubuntu/+series/hoary/+source/alsa-utils
+    http://bugs.launchpad.test/ubuntu/hoary/+source/alsa-utils
     >>> print(browser.getLink('1.0.9a-4').url)
     http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4
 

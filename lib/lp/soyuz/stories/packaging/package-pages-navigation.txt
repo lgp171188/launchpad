@@ -85,7 +85,7 @@ A distribution series source package inherits its distribution source
 package's facets.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+series/hoary/+source/alsa-utils')
+    ...     'http://launchpad.test/ubuntu/hoary/+source/alsa-utils')
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package
     Tabs:
@@ -103,7 +103,7 @@ package's facets.
 Distribution series architectures pages inherit facets from the
 distribution.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/+series/hoary/i386')
+    >>> anon_browser.open('http://launchpad.test/ubuntu/hoary/i386')
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > Hoary (5.04) > i386
     Tabs:
@@ -121,8 +121,7 @@ distribution.
 The distribution series architecture binary packages page inherits Code,
 Bugs, Blueprints and Translations from the distribution.
 
-    >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+series/hoary/i386/pmount')
+    >>> anon_browser.open('http://launchpad.test/ubuntu/hoary/i386/pmount')
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > Hoary (5.04) > i386 > pmount
     Tabs:
@@ -141,7 +140,7 @@ Distribution series architecture binary package releases pages inherit
 facets from the distribution.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+series/hoary/i386/pmount/0.1-1')
+    ...     'http://launchpad.test/ubuntu/hoary/i386/pmount/0.1-1')
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > Hoary (5.04) > i386 > pmount > 0.1-1
     Tabs:

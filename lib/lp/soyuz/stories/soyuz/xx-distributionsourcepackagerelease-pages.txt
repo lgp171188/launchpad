@@ -116,7 +116,7 @@ uploaded to.
     http://launchpad.test/~name16
 
     >>> print(anon_browser.getLink('Breezy Badger Autotest').url)
-    http://launchpad.test/ubuntutest/+series/breezy-autotest
+    http://launchpad.test/ubuntutest/breezy-autotest
 
     >>> print(anon_browser.getLink('Maintainer').url)
     http://launchpad.test/~maintainer
@@ -242,7 +242,7 @@ produced by this source. Each binary links to its specific
     No description available for foo-bin in ubuntutest breezy-autotest.
 
     >>> print(anon_browser.getLink('foo-bin').url)
-    http://launchpad.test/ubuntutest/+series/breezy-autotest/+package/foo-bin
+    http://launchpad.test/ubuntutest/breezy-autotest/+package/foo-bin
 
 The binary package summary and description are retrieved from the
 package caches (see doc/package-cache.txt).

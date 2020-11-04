@@ -460,7 +460,7 @@ class InlineMultiCheckboxWidget(WidgetBase):
         :param attribute_type: The attribute type. Currently only "reference"
             is supported. Used to determine whether to linkify the selected
             checkbox item values. So ubuntu/hoary becomes
-            http://launchpad.net/devel/api/ubuntu/+series/hoary
+            http://launchpad.net/devel/api/ubuntu/hoary
         :param vocabulary: The name of the vocabulary which provides the
             items or a vocabulary instance.
         :param header: The text to display as the title of the popup form.

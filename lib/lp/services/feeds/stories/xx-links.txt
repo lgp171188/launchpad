@@ -257,11 +257,11 @@ Only bug feeds should be linked to on bugs.launchpad.test.
 On the distroseries page on bugs.launchpad.test, we should
 show a link to the atom feed for that distroseries' latest bugs.
 
-    >>> browser.open('http://bugs.launchpad.test/ubuntu/+series/hoary')
+    >>> browser.open('http://bugs.launchpad.test/ubuntu/hoary')
     >>> soup = BeautifulSoup(browser.contents)
     >>> soup.head.findAll('link', type='application/atom+xml')
     [<link
-        href="http://feeds.launchpad.test/ubuntu/+series/hoary/latest-bugs.atom"
+        href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for Hoary"
         type="application/atom+xml"/>]
 

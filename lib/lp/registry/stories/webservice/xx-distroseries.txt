@@ -14,10 +14,10 @@ Via all the available series:
     ...     ubuntu['series_collection_link']).jsonBody()
     >>> for entry in all_series['entries']:
     ...     print(entry['self_link'])
-    http://.../ubuntu/+series/breezy-autotest
-    http://.../ubuntu/+series/grumpy
-    http://.../ubuntu/+series/hoary
-    http://.../ubuntu/+series/warty
+    http://.../ubuntu/breezy-autotest
+    http://.../ubuntu/grumpy
+    http://.../ubuntu/hoary
+    http://.../ubuntu/warty
 
 The series are available to the anonymous API user too:
 
@@ -25,17 +25,17 @@ The series are available to the anonymous API user too:
     ...     ubuntu['series_collection_link']).jsonBody()
     >>> for entry in all_series['entries']:
     ...     print(entry['self_link'])
-    http://.../ubuntu/+series/breezy-autotest
-    http://.../ubuntu/+series/grumpy
-    http://.../ubuntu/+series/hoary
-    http://.../ubuntu/+series/warty
+    http://.../ubuntu/breezy-autotest
+    http://.../ubuntu/grumpy
+    http://.../ubuntu/hoary
+    http://.../ubuntu/warty
 
 Via the current series:
 
     >>> current_series = webservice.get(
     ...     ubuntu['current_series_link']).jsonBody()
     >>> print(current_series['self_link'])
-    http://.../ubuntu/+series/hoary
+    http://.../ubuntu/hoary
 
 Via the collection of development series:
 
@@ -43,7 +43,7 @@ Via the collection of development series:
     ...     ubuntu['self_link'], 'getDevelopmentSeries').jsonBody()
     >>> for entry in sorted(dev_series['entries']):
     ...     print(entry['self_link'])
-    http://.../ubuntu/+series/hoary
+    http://.../ubuntu/hoary
 
 And via a direct query of a named series:
 
@@ -51,7 +51,7 @@ And via a direct query of a named series:
     ...     ubuntu['self_link'], 'getSeries',
     ...     name_or_version='hoary').jsonBody()
     >>> print(series['self_link'])
-    http://.../ubuntu/+series/hoary
+    http://.../ubuntu/hoary
 
 For distroseries we publish a subset of its attributes.
 
@@ -59,12 +59,10 @@ For distroseries we publish a subset of its attributes.
     >>> pprint_entry(current_series)
     active: True
     active_milestones_collection_link:
-        'http://.../ubuntu/+series/hoary/active_milestones'
+        'http://.../ubuntu/hoary/active_milestones'
     advertise_by_hash: False
-    all_milestones_collection_link:
-        'http://.../ubuntu/+series/hoary/all_milestones'
-    architectures_collection_link:
-        'http://.../ubuntu/+series/hoary/architectures'
+    all_milestones_collection_link: 'http://.../ubuntu/hoary/all_milestones'
+    architectures_collection_link: 'http://.../ubuntu/hoary/architectures'
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
     changeslist: 'hoary-changes@ubuntu.com'
@@ -75,21 +73,21 @@ For distroseries we publish a subset of its attributes.
     displayname: 'Hoary'
     distribution_link: 'http://.../ubuntu'
     driver_link: None
-    drivers_collection_link: 'http://.../ubuntu/+series/hoary/drivers'
+    drivers_collection_link: 'http://.../ubuntu/hoary/drivers'
     fullseriesname: 'Ubuntu Hoary'
     include_long_descriptions: True
     index_compressors: [u'gzip', u'bzip2']
     language_pack_full_export_requested: False
     main_archive_link: 'http://.../ubuntu/+archive/primary'
     name: 'hoary'
-    nominatedarchindep_link: 'http://.../ubuntu/+series/hoary/i386'
+    nominatedarchindep_link: 'http://.../ubuntu/hoary/i386'
     official_bug_tags: []
     owner_link: 'http://.../~ubuntu-team'
-    parent_series_link: 'http://.../ubuntu/+series/warty'
+    parent_series_link: 'http://.../ubuntu/warty'
     publish_by_hash: False
     registrant_link: 'http://.../~mark'
     resource_type_link: ...
-    self_link: 'http://.../ubuntu/+series/hoary'
+    self_link: 'http://.../ubuntu/hoary'
     status: 'Active Development'
     suite_names:
         [u'Release', u'Security', u'Updates', u'Proposed', u'Backports']
@@ -97,7 +95,7 @@ For distroseries we publish a subset of its attributes.
     supported: False
     title: 'The Hoary Hedgehog Release'
     version: '5.04'
-    web_link: 'http://launchpad.../ubuntu/+series/hoary'
+    web_link: 'http://launchpad.../ubuntu/hoary'
 
 
 Getting the previous series
@@ -107,25 +105,25 @@ In the beta version of the API the previous series is obtained via
 parent_series_link:
 
     >>> current_series_beta = webservice.get(
-    ...     "/ubuntu/+series/hoary", api_version="beta").jsonBody()
+    ...     "/ubuntu/hoary", api_version="beta").jsonBody()
     >>> current_series_beta["parent_series_link"]
-    u'http://.../ubuntu/+series/warty'
+    u'http://.../ubuntu/warty'
 
 In the 1.0 version of the API the previous series is obtained via
 parent_series_link:
 
     >>> current_series_1_0 = webservice.get(
-    ...     "/ubuntu/+series/hoary", api_version="1.0").jsonBody()
+    ...     "/ubuntu/hoary", api_version="1.0").jsonBody()
     >>> current_series_1_0["parent_series_link"]
-    u'http://.../ubuntu/+series/warty'
+    u'http://.../ubuntu/warty'
 
 In the devel version of the API the previous series is obtained via
 parent_series_link:
 
     >>> current_series_devel = webservice.get(
-    ...     "/ubuntu/+series/hoary", api_version="devel").jsonBody()
+    ...     "/ubuntu/hoary", api_version="devel").jsonBody()
     >>> current_series_devel["previous_series_link"]
-    u'http://.../ubuntu/+series/warty'
+    u'http://.../ubuntu/warty'
 
 
 Creating a milestone on the distroseries

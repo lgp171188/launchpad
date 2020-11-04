@@ -61,7 +61,7 @@ SourcePackage page:
 
   >>> browser.getLink("The Warty Warthog Release").click()
   >>> browser.url
-  'http://launchpad.test/ubuntu/+series/warty/+source/mozilla-firefox'
+  'http://launchpad.test/ubuntu/warty/+source/mozilla-firefox'
 
 Any user can see the package summary.
 
@@ -107,7 +107,7 @@ Let's check the link to the binary package built on i386 architecture,
 a DistroArchSeriesBinaryPackage:
 
   >>> print(browser.getLink("i386").url)
-  http://launchpad.test/ubuntu/+series/warty/i386/mozilla-firefox
+  http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
 
 More information about this page can be found at
 17-distroarchseries-binpackages.txt.
@@ -115,7 +115,7 @@ More information about this page can be found at
 Move back to the SourcePackage page to continue the tests:
 
   >>> browser.open(
-  ...     'http://launchpad.test/ubuntu/+series/breezy-autotest/+source/'
+  ...     'http://launchpad.test/ubuntu/breezy-autotest/+source/'
   ...     'commercialpackage')
 
 PackageRelationships, 'builddepends', 'builddependsindep', 'builddependsarch',
@@ -154,7 +154,7 @@ keeping the page format constant.
 Let's inspect a page with non-empty relationships.
 
   >>> browser.open(
-  ...     'http://launchpad.test/ubuntu/+series/warty/+source/mozilla-firefox')
+  ...     'http://launchpad.test/ubuntu/warty/+source/mozilla-firefox')
 
   >>> depends_section = find_tag_by_id(browser.contents, 'depends')
   >>> parse_relationship_section(str(depends_section))
@@ -163,13 +163,13 @@ Let's inspect a page with non-empty relationships.
   TEXT: "gcc-3.4-base"
   TEXT: "libc6 (>= 2.3.2.ds1-4)"
   TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/+series/warty/+package/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/+package/pmount
 
   >>> dependsindep_section = find_tag_by_id(browser.contents, 'dependsindep')
   >>> parse_relationship_section(str(dependsindep_section))
   TEXT: "bacula-common (= 1.34.6-2)"
   TEXT: "bacula-director-common (= 1.34.6-2)"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/+series/warty/+package/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/+package/pmount
   TEXT: "postgresql-client (>= 7.4)"
 
   >>> dependsarch_section = find_tag_by_id(browser.contents, 'dependsarch')
@@ -179,13 +179,13 @@ Let's inspect a page with non-empty relationships.
   >>> conflicts_section = find_tag_by_id(browser.contents, 'conflicts')
   >>> parse_relationship_section(str(conflicts_section))
   TEXT: "gcc-4.0"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/+series/warty/+package/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/+package/pmount
 
   >>> conflictsindep_section = find_tag_by_id(
   ...     browser.contents, 'conflictsindep')
   >>> parse_relationship_section(str(conflictsindep_section))
   TEXT: "gcc-4.0-base"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/+series/warty/+package/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/+package/pmount
 
   >>> conflictsarch_section = find_tag_by_id(
   ...     browser.contents, 'conflictsarch')
@@ -210,7 +210,7 @@ for each published version.
 
   >>> browser.getLink("View changelog").click()
   >>> browser.url
-  'http://launchpad.test/ubuntu/+series/warty/+source/mozilla-firefox/+changelog'
+  'http://launchpad.test/ubuntu/warty/+source/mozilla-firefox/+changelog'
 
   >>> tag = find_tag_by_id(browser.contents, 'mozilla-firefox_0.9')
   >>> print(extract_text(tag))
@@ -220,7 +220,7 @@ for each published version.
 Back to the SourcePackage page:
 
   >>> browser.open(
-  ...     'http://launchpad.test/ubuntu/+series/warty/+source/mozilla-firefox')
+  ...     'http://launchpad.test/ubuntu/warty/+source/mozilla-firefox')
 
 Any user can see the copyright for the most recent source package release.
 
@@ -247,8 +247,7 @@ Any user can see the copyright for the most recent source package release.
     Copyright 2010 Ford Prefect.
 
     >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/+series/warty/+source/'
-    ...     'mozilla-firefox')
+    ...     'http://launchpad.test/ubuntu/warty/+source/mozilla-firefox')
 
 
 We can visit a specific published release of "mozilla-firefox", this
@@ -262,8 +261,7 @@ The deprecated DistroSeriesSourcePackageRelease page redirects to the
 same place.
 
   >>> browser.open(
-  ...     'http://launchpad.test/ubuntu/+series/warty/+source/'
-  ...     'mozilla-firefox/0.9')
+  ...     'http://launchpad.test/ubuntu/warty/+source/mozilla-firefox/0.9')
   >>> browser.url
   'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9'
 
@@ -334,7 +332,7 @@ Their page functionality is identical to regular packages, which is described
 in the previous section of this page.
 
     >>> browser.open(
-    ...   "http://launchpad.test/ubuntu/+series/breezy-autotest/"
+    ...   "http://launchpad.test/ubuntu/breezy-autotest/"
     ...   "+source/commercialpackage")
 
 This page provides its versions publications organised by pocket.
@@ -371,7 +369,7 @@ Let's check the link to the binary package built on i386 architecture,
 a DistroArchSeriesBinaryPackage:
 
     >>> print(browser.getLink("i386").url)
-    http://launchpad.test/ubuntu/+series/breezy-autotest/i386/commercialpackage
+    http://launchpad.test/ubuntu/breezy-autotest/i386/commercialpackage
 
 More information about this page can be found at
 17-distroarchseries-binpackages.txt.
@@ -393,7 +391,7 @@ for each published version.
 
     >>> browser.getLink("View changelog").click()
     >>> browser.url
-    'http://launchpad.test/ubuntu/+series/breezy-autotest/+source/commercialpackage/+changelog'
+    'http://launchpad.test/ubuntu/breezy-autotest/+source/commercialpackage/+changelog'
 
     >>> tag = find_tag_by_id(browser.contents, 'commercialpackage_1.0-1')
     >>> print(extract_text(tag))
@@ -403,7 +401,7 @@ for each published version.
 Back to the SourcePackage page:
 
     >>> browser.open(
-    ...     "http://launchpad.test/ubuntu/+series/breezy-autotest/+source/"
+    ...     "http://launchpad.test/ubuntu/breezy-autotest/+source/"
     ...     "commercialpackage")
 
 We can visit a specific published release of "commercialpackage", this

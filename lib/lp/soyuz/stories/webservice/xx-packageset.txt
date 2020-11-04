@@ -256,7 +256,7 @@ Every package set is associated with a distro series.
     ...     '/package-sets', 'getByName', {}, distroseries='/ubuntu/hoary',
     ...     name=u'mozilla').jsonBody()
     >>> print(mozilla['distroseries_link'])
-    http://api.launchpad.test/beta/ubuntu/+series/hoary
+    http://api.launchpad.test/beta/ubuntu/hoary
 
     >>> print(mozilla['self_link'])
     http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
@@ -280,9 +280,9 @@ Related package sets
 When adding a package set we can specify that is to be related to another set
 that exists already.
 
-    >>> grumpy = webservice.get("/ubuntu/+series/grumpy").jsonBody()
+    >>> grumpy = webservice.get("/ubuntu/grumpy").jsonBody()
     >>> print(grumpy['self_link'])
-    http://api.launchpad.test/beta/ubuntu/+series/grumpy
+    http://api.launchpad.test/beta/ubuntu/grumpy
 
 We are adding a new 'mozilla' package set to the 'grumpy' distro series and
 it is related to 'mozilla' in 'hoary'.
@@ -300,7 +300,7 @@ it is related to 'mozilla' in 'hoary'.
     ...     '/package-sets', 'getByName', {}, name=u'mozilla',
     ...     distroseries=grumpy['self_link']).jsonBody()
     >>> print(grumpy_mozilla['distroseries_link'])
-    http://api.launchpad.test/beta/ubuntu/+series/grumpy
+    http://api.launchpad.test/beta/ubuntu/grumpy
 
     >>> print(grumpy_mozilla['self_link'])
     http://api.launchpad.test/beta/package-sets/ubuntu/grumpy/mozilla
@@ -729,10 +729,10 @@ The following query (note the additional 'distroseries' parameter) is
 thus equivalent:
 
     >>> print(ubuntu['current_series_link'])
-    http://api.launchpad.test/beta/ubuntu/+series/hoary
-    >>> hoary = webservice.get("/ubuntu/+series/hoary").jsonBody()
+    http://api.launchpad.test/beta/ubuntu/hoary
+    >>> hoary = webservice.get("/ubuntu/hoary").jsonBody()
     >>> print(hoary['self_link'])
-    http://api.launchpad.test/beta/ubuntu/+series/hoary
+    http://api.launchpad.test/beta/ubuntu/hoary
 
     >>> response = webservice.named_get(
     ...     ubuntu['main_archive_link'], 'isSourceUploadAllowed',

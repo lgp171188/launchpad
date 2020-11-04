@@ -47,9 +47,7 @@ bogus.
 
     >>> owner_browser.getLink('All packages').click()
     >>> link = owner_browser.getLink(
-    ...     url=(
-    ...         '/ubuntu/+series/warty/+source/mozilla-firefox/'
-    ...         '+remove-packaging'))
+    ...     url='/ubuntu/warty/+source/mozilla-firefox/+remove-packaging')
     >>> link.click()
     >>> owner_browser.getControl('Unlink').click()
 

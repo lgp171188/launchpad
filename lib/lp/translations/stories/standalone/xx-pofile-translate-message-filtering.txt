@@ -45,7 +45,7 @@ No Privileges Person visits the evolution-2.2 package in Ubuntu Hoary to
 review the state of the translation.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution/+pots/evolution-2.2/es/+translate')
     >>> print(user_browser.title)
     Spanish (es) : Template ...evolution-2.2... :
@@ -120,7 +120,7 @@ decides to use the 'Untranslated' filter to locate messages that need
 translations into Australian English.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution/+pots/evolution-2.2/en_AU/+translate')
     >>> user_browser.getControl(name='show', index=1).value = ['untranslated']
     >>> user_browser.getControl('Change').click()
@@ -229,7 +229,7 @@ No Privileges Person can see entries which have changed in Ubuntu.
 There is only one message in the batch.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution/+pots/evolution-2.2/es/+translate')
     >>> user_browser.getControl(name='show', index=1).displayValue = [
     ...     'changed in Ubuntu']
@@ -270,7 +270,7 @@ submitted after they were last reviewed. There is only one message in
 the batch.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution/+pots/evolution-2.2/es/+translate')
     >>> user_browser.getControl(name='show', index=1).displayValue = [
     ...     'with new suggestions']
@@ -310,7 +310,7 @@ There was once a filter option called need_review.  It no longer exists,
 but is quietly accepted.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution/+pots/evolution-2.2/es/+translate'
     ...     '?show=need_review')
 
@@ -329,7 +329,7 @@ the batch header when they switch the filter to show 'untranslated'
 message; they are seeing the first batch.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution/+pots/evolution-2.2/es/+translate')
     >>> user_browser.getLink('Last').click()
     >>> contents = find_main_content(user_browser.contents)
@@ -407,7 +407,7 @@ message filters with alternative suggestion languages. No Privileges
 Person submits Chinese translations using Spanish suggestions.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution/+pots/evolution-2.2/zh_CN/+translate')
     >>> user_browser.getControl(name='show', index=1).value = ['untranslated']
     >>> user_browser.getControl('Change').click()

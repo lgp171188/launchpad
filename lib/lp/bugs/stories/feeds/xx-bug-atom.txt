@@ -263,25 +263,24 @@ This feed gets the latest bugs for a distribution series, and has the same
 type of content as the latest bugs feed for a product.
 
     >>> browser.open(
-    ...     'http://feeds.launchpad.test/ubuntu/+series/hoary/'
-    ...     'latest-bugs.atom')
+    ...     'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in Hoary']
     >>> browser.url
-    'http://feeds.launchpad.test/ubuntu/+series/hoary/latest-bugs.atom'
+    'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom'
 
     >>> soup = BeautifulSoup(
     ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
-    tag:launchpad.net,2006-10-16:/bugs/ubuntu/+series/hoary
+    tag:launchpad.net,2006-10-16:/bugs/ubuntu/hoary
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/ubuntu/+series/hoary/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))

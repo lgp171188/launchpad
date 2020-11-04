@@ -208,8 +208,7 @@ in the release task.
     LinkNotFoundError...
 
     >>> ubuntu_hoary_edit_url = (
-    ...     'http://bugs.launchpad.test/ubuntu/+series/hoary/+bug/2/'
-    ...     '+editstatus')
+    ...     'http://bugs.launchpad.test/ubuntu/hoary/+bug/2/+editstatus')
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url) is not None
     True
 

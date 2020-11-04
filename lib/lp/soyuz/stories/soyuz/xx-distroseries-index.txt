@@ -4,11 +4,11 @@ a given name.
 As it's main functionality this page allow users to search for binary
 packages within the distroseries in context:
 
-    >>> anon_browser.open("http://launchpad.test/ubuntu/+series/warty")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/warty")
     >>> anon_browser.getControl(name="text").value = "a"
     >>> anon_browser.getControl("Find a Package").click()
     >>> anon_browser.url
-    'http://launchpad.test/ubuntu/+series/warty/+search?text=a'
+    'http://launchpad.test/ubuntu/warty/+search?text=a'
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'search-results'),
     ...     formatter='html'))
@@ -34,7 +34,7 @@ Each entry contains:
    the upload was done.
 
   >>> anon_browser.open(
-  ...     "http://launchpad.test/ubuntu/+series/warty/+portlet-latestuploads")
+  ...     "http://launchpad.test/ubuntu/warty/+portlet-latestuploads")
   >>> latest_uploads = str(find_tag_by_id(anon_browser.contents,
   ...                      "latest-uploads"))
   >>> 'mozilla-firefox 0.9' in latest_uploads
@@ -54,7 +54,7 @@ Empty results are also presented properly (even if they are quite rare
 in production environment):
 
   >>> anon_browser.open(
-  ...     "http://launchpad.test/ubuntutest/+series/breezy-autotest/"
+  ...     "http://launchpad.test/ubuntutest/breezy-autotest/"
   ...     "+portlet-latestuploads")
   >>> find_tag_by_id(anon_browser.contents, 'no-latest-uploads') is not None
   True
