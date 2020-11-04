@@ -423,7 +423,7 @@ class TestRedirectionView(TestCase):
         view = RedirectionView("http://canonical.com", request)
         expected_msg = (
             "RedirectionView.context is only supported for URLs served by the "
-            "main Launchpad application.")
+            "main Launchpad application, not 'http://canonical.com'.")
         self.assertRaisesWithContent(
             AttributeError, expected_msg, getattr, view, "context")
 

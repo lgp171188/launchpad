@@ -1143,7 +1143,7 @@ class RedirectionView(URLDereferencingMixin):
         if parsed_target[:2] not in supported_roots:
             raise AttributeError(
                 "RedirectionView.context is only supported for URLs served "
-                "by the main Launchpad application.")
+                "by the main Launchpad application, not '%s'." % self.target)
         return self.dereference_url_as_object(self.target)
 
 
