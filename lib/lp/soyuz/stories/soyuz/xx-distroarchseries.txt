@@ -44,7 +44,7 @@ considering partial string matches as well (fti).
     >>> anon_browser.getControl(name="text").value = "firefox"
     >>> anon_browser.getControl("Search Packages").click()
     >>> anon_browser.url
-    'http://launchpad.test/ubuntu/+series/warty/i386/+index?text=firefox'
+    'http://launchpad.test/ubuntu/warty/i386/+index?text=firefox'
 
 Searching for "firefox" finds several binary packages. Each search
 result is displayed as the binary package name followed by the binary
@@ -84,7 +84,7 @@ page. The builds page is described in 23-builds-page.txt.
 Only administrators can edit ('administer', in fact) the
 distroarchseries details.
 
-    >>> admin_browser.open("http://launchpad.test/ubuntu/+series/warty/i386/")
+    >>> admin_browser.open("http://launchpad.test/ubuntu/warty/i386/")
     >>> print(extract_text(
     ...     find_tag_by_id(admin_browser.contents, 'global-actions')))
     Administer
@@ -93,8 +93,7 @@ distroarchseries details.
 Non privileged access to the admin page results in a 'Unauthorized'
 error.
 
-    >>> user_browser.open(
-    ...     "http://launchpad.test/ubuntu/+series/warty/i386/+admin")
+    >>> user_browser.open("http://launchpad.test/ubuntu/warty/i386/+admin")
     Traceback (most recent call last):
     ...
     Unauthorized...
@@ -112,7 +111,7 @@ The page presents a cancellation link that returns the user back to the
 DistroArchSeries page if clicked:
 
     >>> print(admin_browser.getLink("Cancel").url)
-    http://launchpad.test/ubuntu/+series/warty/i386
+    http://launchpad.test/ubuntu/warty/i386
 
 Removing the official support for this DistroArchSeries.
 
@@ -123,7 +122,7 @@ DistroArchSeries page.
 
     >>> admin_browser.getControl("Change").click()
     >>> print(admin_browser.url)
-    http://launchpad.test/ubuntu/+series/warty/i386
+    http://launchpad.test/ubuntu/warty/i386
 
 There's also a notification message announcing the success of the change:
 
@@ -175,7 +174,7 @@ current distroseries architecture list.
 Users with administrative privileges on a DistroSeries can open new
 architectures in this DistroSeries.
 
-    >>> admin_browser.open("http://launchpad.test/ubuntu/+series/hoary")
+    >>> admin_browser.open("http://launchpad.test/ubuntu/hoary")
     >>> admin_browser.getLink("Add architecture").click()
     >>> print(admin_browser.title)
     Add a port of The Hoary Hedgehog...
@@ -216,7 +215,7 @@ I will address it one 1.1.12 is gone.
 An administrator can open new distinct architecture, for instance,
 'amd64'.
 
-    >>> admin_browser.open("http://launchpad.test/ubuntu/+series/hoary")
+    >>> admin_browser.open("http://launchpad.test/ubuntu/hoary")
     >>> admin_browser.getLink("Add architecture").click()
 
     >>> admin_browser.getControl("Architecture Tag").value = 'amd64'

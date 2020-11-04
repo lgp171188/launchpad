@@ -95,9 +95,8 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
         view = create_initialized_view(
             other_productseries, '+ubuntupkg', form=form)
         view_errors = [
-            'The '
-            '<a href="http://launchpad.test/ubuntu/+series/hoary/+source/hot">'
-            'hot</a> package in Hoary is already linked to another series.']
+            'The <a href="http://launchpad.test/ubuntu/hoary/+source/hot">'
+             'hot</a> package in Hoary is already linked to another series.']
         self.assertEqual(view_errors, view.errors)
 
     def test_sourcepackagename_required(self):
@@ -191,7 +190,7 @@ class TestBrowserDeletePackaging(TestCaseWithFactory):
         user_browser = self.user_browser
         user_browser.open('http://launchpad.test/ubuntu/+source/alsa-utils')
         link = user_browser.getLink(
-            url='/ubuntu/+series/warty/+source/alsa-utils/+remove-packaging')
+            url='/ubuntu/warty/+source/alsa-utils/+remove-packaging')
         link.click()
         user_browser.getControl('Unlink').click()
         # Check that the change was committed.

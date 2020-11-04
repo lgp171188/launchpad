@@ -76,28 +76,26 @@ first be approved.
 
   >>> import six
   >>> result = six.text_type(http(r"""
-  ... GET /ubuntu/+series/hoary/+specs HTTP/1.1
+  ... GET /ubuntu/hoary/+specs HTTP/1.1
   ... """))
   >>> '<td>CD Media Integrity Check' not in result
   True
 
 However, we can expect to find it on the approvals page.
 
-  >>> user_browser.open(
-  ...     'http://blueprints.launchpad.test/ubuntu/+series/grumpy/+specs')
+  >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy/+specs')
   >>> "CD Media Integrity Check" in user_browser.contents
   False
 
 We will accept it:
 
-  >>> admin_browser.open(
-  ...     'http://blueprints.launchpad.test/ubuntu/+series/grumpy/+setgoals')
+  >>> admin_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy/+setgoals')
   >>> 'CD Media Integrity' in admin_browser.contents
   True
   >>> admin_browser.getControl('CD Media Integrity Check').selected = True
   >>> admin_browser.getControl('Accept').click()
   >>> admin_browser.url
-  'http://blueprints.launchpad.test/ubuntu/+series/grumpy'
+  'http://blueprints.launchpad.test/ubuntu/grumpy'
   >>> 'Accepted 1 specification(s)' in admin_browser.contents
   True
 

@@ -16,7 +16,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=299009
 
     >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/+series/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1')
 
 We can see that the message we are interested in is not translated.
@@ -41,7 +41,7 @@ answer should have exactly those strings.
     ...     name='msgset_149_es_translation_0_new').value = '\r\nfoo\r\n\r\n'
     >>> browser.getControl(name='submit_translations').click()
     >>> print(browser.url)
-    http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1
+    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1
     >>> print(find_tag_by_id(
     ...     browser.contents, 'msgset_149_es_translation_0_new'))
     <textarea ... name="msgset_149_es_translation_0_new"...>
@@ -60,7 +60,7 @@ change the test, to be 100% sure that the textarea content is the right one.
     >>> browser.getControl(name='msgset_149_es_translation_0_new').value = 'foo'
     >>> browser.getControl(name='submit_translations').click()
     >>> print(browser.url)
-    http://translations.launchpad.test/ubuntu/+series/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1
+    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1
     >>> print(find_tag_by_id(
     ...     browser.contents,
     ...     'msgset_149_es_translation_0_new')) #doctest: -NORMALIZE_WHITESPACE

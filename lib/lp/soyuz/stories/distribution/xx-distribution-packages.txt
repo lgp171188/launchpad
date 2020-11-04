@@ -45,7 +45,7 @@ here first:
 
     >>> browser.open(
     ...     'http://localhost'
-    ...     '/ubuntu/+series/breezy-autotest/+package/mozilla-firefox')
+    ...     '/ubuntu/breezy-autotest/+package/mozilla-firefox')
     >>> print(browser.title)
     mozilla-firefox : Breezy Badger Autotest (6.6.6) : Ubuntu
 
@@ -248,7 +248,7 @@ As can be seen, the packaging is not linked yet.  We can do that now using the
 
     >>> user_browser.getLink("Set upstream link").click()
     >>> print(user_browser.url)
-    http://launchpad.test/ubuntu/+series/warty/+source/iceweasel/+edit-packaging
+    http://launchpad.test/ubuntu/warty/+source/iceweasel/+edit-packaging
 
 In step one the project is specified.
 

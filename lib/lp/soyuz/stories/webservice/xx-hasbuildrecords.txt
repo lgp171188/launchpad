@@ -107,7 +107,7 @@ DistroSeries builds
 
 DistroSeries, like ubuntu/hoary, allow users to call browse builds.
 
-    >>> hoary = webservice.get("/ubuntu/+series/hoary").jsonBody()
+    >>> hoary = webservice.get("/ubuntu/hoary").jsonBody()
     >>> hoary_builds = webservice.named_get(
     ...     hoary['self_link'], 'getBuildRecords').jsonBody()
 

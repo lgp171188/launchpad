@@ -223,8 +223,7 @@ Milestones are also presented as badges on bugs, and linked to the
 relevant listings:
 
     >>> browser.open(
-    ...     'http://bugs.launchpad.test/debian/+series/sarge/+source/'
-    ...     'mozilla-firefox')
+    ...     'http://bugs.launchpad.test/debian/sarge/+source/mozilla-firefox')
     >>> milestone = find_tags_by_class(browser.contents, 'sprite milestone')
     >>> print(milestone[0])
     <a alt="milestone 3.1" class="sprite milestone"

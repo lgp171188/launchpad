@@ -18,8 +18,7 @@ Let's make the sample user the owner of Ubuntu and alsa-utils for this test.
 
 We can set the summary while creating a milestone for a Distribution.
 
-    >>> test_browser.open(
-    ...     'http://launchpad.test/ubuntu/+series/hoary/+addmilestone')
+    >>> test_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
     >>> test_browser.getControl('Name').value = 'milestone1'
     >>> test_browser.getControl('Summary').value = (
     ...     "Summary of first Ubuntu milestone.")
