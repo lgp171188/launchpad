@@ -121,9 +121,18 @@
         <div tal:replace="structure context/@@++diff-stats" />
       </td>
     </tr>
-    <tal:comment condition="nothing">
-      <!-- XXX cjwatson 2015-04-18: Add merge instructions for Git. -->
-    </tal:comment>
+    <tr id="git-remote-add" tal:condition="python: view.user">
+      <th>Merge guidelines:</th>
+      <td>git remote add -f <span tal:content="string:${context/target_git_repository/owner/name} ${view/git_ssh_url}"/></td>
+    </tr>
+    <tr id="git-remote-update" tal:condition="python: view.user">
+      <th></th>
+      <td>git remote update <span tal:content="context/target_git_repository/owner/name"/></td>
+    </tr>
+    <tr id="git-merge-cmd" tal:condition="python: view.user">
+      <th></th>
+      <td>git merge <span tal:content="string:${context/target_git_repository/owner/name}/${context/merge_source/name}"/></td>
+    </tr>
     <tr id="summary-row-merge-instruction"
         tal:condition="context/source_branch">
       <th>To merge this branch:</th>
