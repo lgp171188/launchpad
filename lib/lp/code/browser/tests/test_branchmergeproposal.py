@@ -70,13 +70,14 @@ from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
     )
+from lp.code.interfaces.branchjob import IBranchScanJobSource
 from lp.code.interfaces.branchmergeproposal import (
     IBranchMergeProposal,
     IMergeProposalNeedsReviewEmailJobSource,
     IMergeProposalUpdatedEmailJobSource,
     )
-from lp.code.interfaces.branchjob import IBranchScanJobSource
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.branchmergeproposaljob import UpdatePreviewDiffJob
 from lp.code.model.diff import PreviewDiff
 from lp.code.tests.helpers import (
@@ -1754,6 +1755,10 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
+    def setUp(self):
+        super(TestBranchMergeProposalBrowserView, self).setUp()
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+
     def test_prerequisite_bzr(self):
         # A prerequisite branch is rendered in the Bazaar case.
         branch = self.factory.makeProductBranch()
@@ -1810,6 +1815,60 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
                     }),
                 ]),
             ))
+
+    def test_merge_guidelines_package(self):
+        # Repository is the default for a package
+        mint = self.factory.makeDistribution(name="mint")
+        eric = self.factory.makePerson(name="eric")
+        other_user = self.factory.makePerson()
+
+        mint_choc = self.factory.makeDistributionSourcePackage(
+            distribution=mint, sourcepackagename="choc")
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=mint_choc, name="choc-repo")
+        other_repository = self.factory.makeGitRepository(
+            owner=other_user, target=mint_choc, name="choc-repo")
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+                                         paths=["refs/heads/branch"])
+        dsp = repository.target
+        self.repository_set = getUtility(IGitRepositorySet)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, dsp, repository, repository.owner)
+            self.repository_set.setDefaultRepository(dsp, repository)
+        bmp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=other_ref,
+            target_ref=ref)
+        login_person(other_user)
+        view = create_initialized_view(bmp, "+index", principal=other_user)
+        git_add_remote_match = HTMLContains(
+            Tag(
+                'Git remote add text', 'tt',
+                attrs={"id": "remote-add"},
+                text=("git remote add -f %s "
+                      "git+ssh://%s@git.launchpad.test/%s/+source/%s"
+                      ) % (other_user.name,
+                           other_user.name,
+                           mint.name,
+                           mint_choc.name)))
+        git_remote_update_match = HTMLContains(
+            Tag(
+                'Git remote update text', 'tt',
+                attrs={"id": "remote-update"},
+                text=("git remote update %s" % other_user.name)))
+        git_merge_match = HTMLContains(
+            Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"},
+                text="git merge %s/branch" % other_user.name))
+
+        with person_logged_in(other_user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_add_remote_match)
+            self.assertThat(rendered_view, git_remote_update_match)
+            self.assertThat(rendered_view, git_merge_match)
 
 
 class TestBranchMergeProposalChangeStatusView(TestCaseWithFactory):
