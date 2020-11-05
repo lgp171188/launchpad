@@ -70,6 +70,7 @@ from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
     )
+from lp.code.errors import InvalidBranchMergeProposal
 from lp.code.interfaces.branchjob import IBranchScanJobSource
 from lp.code.interfaces.branchmergeproposal import (
     IBranchMergeProposal,
@@ -1869,6 +1870,111 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
             self.assertThat(rendered_view, git_add_remote_match)
             self.assertThat(rendered_view, git_remote_update_match)
             self.assertThat(rendered_view, git_merge_match)
+
+    def test_merge_guidelines_project(self):
+        # Repository is the default for a project
+        eric = self.factory.makePerson(name="eric")
+        other_user = self.factory.makePerson()
+        fooix = self.factory.makeProduct(name="fooix", owner=eric)
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=fooix, name="fooix-repo")
+        other_repository = self.factory.makeGitRepository(
+            owner=other_user, target=fooix, name="fooix-repo")
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+                                         paths=["refs/heads/branch"])
+
+        self.repository_set = getUtility(IGitRepositorySet)
+        with person_logged_in(fooix.owner) as user:
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, fooix, repository, user)
+            self.repository_set.setDefaultRepository(fooix, repository)
+        bmp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=other_ref,
+            target_ref=ref)
+        login_person(other_user)
+        view = create_initialized_view(bmp, "+index", principal=other_user)
+        git_add_remote_match = HTMLContains(
+            Tag(
+                'Git remote add text', 'tt',
+                attrs={"id": "remote-add"},
+                text=("git remote add -f %s git+ssh://%s@git.launchpad.test/%s"
+                      % (other_user.name,
+                         other_user.name,
+                         fooix.name))))
+        git_remote_update_match = HTMLContains(
+            Tag(
+                'Git remote update text', 'tt',
+                attrs={"id": "remote-update"},
+                text=("git remote update %s" % other_user.name)))
+        git_merge_match = HTMLContains(
+            Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"},
+                text="git merge %s/branch" % other_user.name))
+
+        with person_logged_in(other_user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_add_remote_match)
+            self.assertThat(rendered_view, git_remote_update_match)
+            self.assertThat(rendered_view, git_merge_match)
+
+    def test_merge_guidelines_anonymous_view(self):
+        # Merge guidelines are mainly intended for maintainers merging
+        # contributions, they might be a bit noisy otherwise, therefore
+        # we do not show them on anonymous views.
+        # There is of course the permissions aspect involved here that you can
+        # do a local merge using only read permissions on the source branch.
+        team = self.factory.makeTeam()
+        other_user = self.factory.makePerson()
+        fooix = self.factory.makeProduct(name="fooix")
+        repository = self.factory.makeGitRepository(
+            owner=team, target=fooix, name="fooix-repo")
+        other_repository = self.factory.makeGitRepository(
+            owner=other_user, target=fooix, name="fooix-repo")
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+                                         paths=["refs/heads/branch"])
+        bmp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=other_ref,
+            target_ref=ref)
+        with person_logged_in(self.user):
+            view = create_initialized_view(bmp, "+index", principal=other_user)
+        git_add_remote_match = HTMLContains(
+            Tag(
+                'Git remote add text', 'tt',
+                attrs={"id": "remote-add"}))
+        git_remote_update_match = HTMLContains(
+            Tag(
+                'Git remote update text', 'tt',
+                attrs={"id": "remote-update"}))
+        git_merge_match = HTMLContains(
+            Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"}))
+
+        rendered_view = view.render()
+        self.assertThat(rendered_view, Not(git_add_remote_match))
+        self.assertThat(rendered_view, Not(git_remote_update_match))
+        self.assertThat(rendered_view, Not(git_merge_match))
+
+    def test_merge_guidelines_personal(self):
+        # Attempting to create an MP between personal projects
+        # will fail.
+        repository = self.factory.makeGitRepository(
+            owner=self.user, target=self.user)
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        other_user = self.factory.makePerson()
+        other_repository = self.factory.makeGitRepository(
+            owner=other_user, target=other_user)
+        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+                                         paths=["refs/heads/branch"])
+        self.assertRaises(InvalidBranchMergeProposal,
+                          self.factory.makeBranchMergeProposalForGit,
+                          source_ref=other_ref, target_ref=ref)
 
 
 class TestBranchMergeProposalChangeStatusView(TestCaseWithFactory):
