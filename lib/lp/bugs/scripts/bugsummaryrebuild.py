@@ -1,4 +1,4 @@
-# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -69,9 +69,9 @@ def get_bugsummary_targets():
 def get_bugtask_targets():
     """Get the current set of targets represented in BugTask."""
     new_targets = set(IStore(BugTask).find(
-        (BugTask.productID, BugTask.productseriesID,
-         BugTask.distributionID, BugTask.distroseriesID,
-         BugTask.sourcepackagenameID)).config(distinct=True))
+        (BugTask.product_id, BugTask.productseries_id,
+         BugTask.distribution_id, BugTask.distroseries_id,
+         BugTask.sourcepackagename_id)).config(distinct=True))
     # BugSummary counts package tasks in the packageless totals, so
     # ensure that there's also a packageless total for each distro(series).
     new_targets.update(set(

@@ -1821,7 +1821,7 @@ class Person(
                 Bug.id,
                 tables=(
                     Bug,
-                    Join(BugTask, BugTask.bugID == Bug.id)),
+                    Join(BugTask, BugTask.bug_id == Bug.id)),
                 where=And(Bug.information_type.is_in(
                     PRIVATE_INFORMATION_TYPES),
                     BugTask.assignee == self.id)),

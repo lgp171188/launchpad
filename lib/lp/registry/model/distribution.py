@@ -1473,7 +1473,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         distributionID = self.id
 
         def weight_function(bugtask):
-            if bugtask.distributionID == distributionID:
+            if bugtask.distribution_id == distributionID:
                 return OrderedBugTask(1, bugtask.id, bugtask)
             return OrderedBugTask(2, bugtask.id, bugtask)
 

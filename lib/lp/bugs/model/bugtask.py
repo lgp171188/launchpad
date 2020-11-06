@@ -51,6 +51,12 @@ from storm.expr import (
     Sum,
     )
 from storm.info import ClassAlias
+from storm.properties import (
+    DateTime,
+    Int,
+    Unicode,
+    )
+from storm.references import Reference
 from storm.store import (
     EmptyResultSet,
     Store,
@@ -126,7 +132,10 @@ from lp.services.database.bulk import (
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import (
+    DBEnum,
+    EnumCol,
+    )
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
@@ -136,6 +145,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
 from lp.services.searchbuilder import any
@@ -269,12 +279,6 @@ def validate_conjoined_attribute(self, attr, value):
     if isinstance(value, PassthroughValue):
         return value.value
 
-    # Check to see if the object is being instantiated.  This test is specific
-    # to SQLBase.  Checking for specific attributes (like self.bug) is
-    # insufficient and fragile.
-    if self._SO_creating:
-        return value
-
     # If this is a conjoined slave then call setattr on the master.
     # Effectively this means that making a change to the slave will
     # actually make the change to the master (which will then be passed
@@ -282,13 +286,15 @@ def validate_conjoined_attribute(self, attr, value):
     # people try to update the conjoined slave via the API.
     conjoined_master = self.conjoined_master
     if conjoined_master is not None:
-        setattr(conjoined_master, attr, value)
+        if getattr(conjoined_master, attr) != value:
+            setattr(conjoined_master, attr, value)
         return value
 
     # If there is a conjoined slave, update that.
     conjoined_bugtask = self.conjoined_slave
     if conjoined_bugtask:
-        setattr(conjoined_bugtask, attr, PassthroughValue(value))
+        if getattr(conjoined_bugtask, attr) != value:
+            setattr(conjoined_bugtask, attr, value)
 
     return value
 
@@ -409,13 +415,13 @@ def validate_new_target(bug, target, check_source_package=True):
 
 
 @implementer(IBugTask)
-class BugTask(SQLBase):
+class BugTask(StormBase):
     """See `IBugTask`."""
-    _table = "BugTask"
+    __storm_table__ = "BugTask"
     _defaultOrder = ['distribution', 'product', 'productseries',
                      'distroseries', 'milestone', 'sourcepackagename']
     _CONJOINED_ATTRIBUTES = (
-        "_status", "importance", "assigneeID", "milestoneID",
+        "_status", "importance", "assignee_id", "milestone_id",
         "date_assigned", "date_confirmed", "date_inprogress",
         "date_closed", "date_incomplete", "date_left_new",
         "date_triaged", "date_fix_committed", "date_fix_released",
@@ -424,66 +430,82 @@ class BugTask(SQLBase):
 
     _inhibit_target_check = False
 
-    bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    product = ForeignKey(
-        dbName='product', foreignKey='Product',
-        notNull=False, default=None)
-    productseries = ForeignKey(
-        dbName='productseries', foreignKey='ProductSeries',
-        notNull=False, default=None)
-    sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', foreignKey='SourcePackageName',
-        notNull=False, default=None)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution',
-        notNull=False, default=None)
-    distroseries = ForeignKey(
-        dbName='distroseries', foreignKey='DistroSeries',
-        notNull=False, default=None)
-    milestone = ForeignKey(
-        dbName='milestone', foreignKey='Milestone',
-        notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    _status = EnumCol(
-        dbName='status', notNull=True,
-        schema=(BugTaskStatus, BugTaskStatusSearch),
+    id = Int(primary=True)
+
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    product_id = Int(name="product", allow_none=True)
+    product = Reference(product_id, 'Product.id')
+
+    productseries_id = Int(name="productseries", allow_none=True)
+    productseries = Reference(productseries_id, 'ProductSeries.id')
+
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+
+    distribution_id = Int(name="distribution", allow_none=True)
+    distribution = Reference(distribution_id, "Distribution.id")
+
+    distroseries_id = Int(name="distroseries", allow_none=True)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+
+    milestone_id = Int(name="milestone", allow_none=True)
+    milestone = Reference(milestone_id, "Milestone.id")
+
+    _status = DBEnum(
+        name='status', allow_none=False,
+        enum=(BugTaskStatus, BugTaskStatusSearch),
         default=BugTaskStatus.NEW,
-        storm_validator=validate_status)
-    importance = EnumCol(
-        dbName='importance', notNull=True,
-        schema=BugTaskImportance,
+        validator=validate_status)
+    importance = DBEnum(
+        name='importance', allow_none=False,
+        enum=BugTaskImportance,
         default=BugTaskImportance.UNDECIDED,
-        storm_validator=validate_conjoined_attribute)
-    assignee = ForeignKey(
-        dbName='assignee', foreignKey='Person',
-        storm_validator=validate_assignee,
-        notNull=False, default=None)
-    bugwatch = ForeignKey(dbName='bugwatch', foreignKey='BugWatch',
-        notNull=False, default=None)
-    date_assigned = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    datecreated = UtcDateTimeCol(notNull=False, default=UTC_NOW)
-    date_confirmed = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_inprogress = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_closed = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_incomplete = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_left_new = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_triaged = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_fix_committed = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_fix_released = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    date_left_closed = UtcDateTimeCol(notNull=False, default=None,
-        storm_validator=validate_conjoined_attribute)
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        validator=validate_conjoined_attribute)
+
+    assignee_id = Int(
+        name="assignee", allow_none=True, validator=validate_assignee)
+    assignee = Reference(assignee_id, "Person.id")
+
+    bugwatch_id = Int(name="bugwatch", allow_none=True)
+    bugwatch = Reference(bugwatch_id, "BugWatch.id")
+
+    date_assigned = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    datecreated = DateTime(tzinfo=pytz.UTC, allow_none=True, default=UTC_NOW)
+    date_confirmed = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_inprogress = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_closed = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_incomplete = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_left_new = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_triaged = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_fix_committed = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_fix_released = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+    date_left_closed = DateTime(
+        tzinfo=pytz.UTC, allow_none=True, default=None,
+        validator=validate_conjoined_attribute)
+
+    owner_id = Int(
+        name="owner", allow_none=False, validator=validate_public_person)
+    owner = Reference(owner_id, "Person.id")
     # The targetnamecache is a value that is only supposed to be set
     # when a bugtask is created/modified or by the
     # update-bugtask-targetnamecaches cronscript. For this reason it's
@@ -492,8 +514,8 @@ class BugTask(SQLBase):
     #
     # This field is actually incorrectly named, since it currently
     # stores the bugtargetdisplayname.
-    targetnamecache = StringCol(
-        dbName='targetnamecache', notNull=False, default=None)
+    targetnamecache = Unicode(
+        name='targetnamecache', allow_none=True, default=None)
 
     @property
     def status(self):
@@ -596,6 +618,9 @@ class BugTask(SQLBase):
                 "Cannot delete only bugtask affecting: %s."
                 % self.target.bugtargetdisplayname)
 
+    def destroySelf(self):
+        Store.of(self).remove(self)
+
     def delete(self, who=None):
         """See `IBugTask`."""
         if who is None:
@@ -644,7 +669,7 @@ class BugTask(SQLBase):
             matching_bugtasks, user, limit)
 
         # Make sure to exclude the bug of the current bugtask.
-        return [bug for bug in matching_bugs if bug.id != self.bugID]
+        return [bug for bug in matching_bugs if bug.id != self.bug_id]
 
     def subscribe(self, person, subscribed_by):
         """See `IBugTask`."""
@@ -716,7 +741,7 @@ class BugTask(SQLBase):
                 'A product should always have a development series.')
             devel_focusID = self.product.development_focusID
             for bugtask in bugtasks:
-                if bugtask.productseriesID == devel_focusID:
+                if bugtask.productseries_id == devel_focusID:
                     conjoined_master = bugtask
                     break
 
@@ -776,7 +801,7 @@ class BugTask(SQLBase):
             # Bypass our checks that prevent setting attributes on
             # conjoined masters by calling the underlying sqlobject
             # setter methods directly.
-            setattr(self, synched_attr, PassthroughValue(slave_attr_value))
+            setattr(self, synched_attr, slave_attr_value)
 
     def transitionToMilestone(self, new_milestone, user):
         """See `IBugTask`."""
@@ -1089,8 +1114,8 @@ class BugTask(SQLBase):
                 # series have tasks on this bug.
                 if not Store.of(self).find(
                     BugTask,
-                    BugTask.bugID == self.bugID,
-                    BugTask.distroseriesID == DistroSeries.id,
+                    BugTask.bug_id == self.bug_id,
+                    BugTask.distroseries_id == DistroSeries.id,
                     DistroSeries.distributionID.is_in(
                         distro.id for distro in distros if distro),
                     ).is_empty():
@@ -1324,7 +1349,7 @@ class BugTask(SQLBase):
         return self.userHasBugSupervisorPrivilegesContext(self.target, user)
 
     def __repr__(self):
-        return "<BugTask for bug %s on %r>" % (self.bugID, self.target)
+        return "<BugTask for bug %s on %r>" % (self.bug_id, self.target)
 
 
 @implementer(IBugTaskSet)
@@ -1346,9 +1371,8 @@ class BugTaskSet:
         # XXX: JSK: 2007-12-19: This method should probably return
         # None when task_id is not present. See:
         # https://bugs.launchpad.net/launchpad/+bug/123592
-        try:
-            bugtask = BugTask.get(task_id)
-        except SQLObjectNotFound:
+        bugtask = IStore(BugTask).find(BugTask, BugTask.id == task_id).one()
+        if bugtask is None:
             raise NotFoundError("BugTask with ID %s does not exist." %
                                 str(task_id))
         return bugtask
@@ -1358,7 +1382,7 @@ class BugTaskSet:
         # Import locally to avoid circular imports.
         from lp.bugs.model.bug import Bug, BugTag
         bugtask_ids = set(bugtask.id for bugtask in bugtasks)
-        bug_ids = set(bugtask.bugID for bugtask in bugtasks)
+        bug_ids = set(bugtask.bug_id for bugtask in bugtasks)
         tags = IStore(BugTag).find(
             (BugTag.tag, BugTask.id),
             BugTask.bug == Bug.id,
@@ -1375,7 +1399,7 @@ class BugTaskSet:
         # Avoid circular imports.
         from lp.registry.interfaces.person import IPersonSet
         people_ids = set(
-            [bugtask.assigneeID for bugtask in bugtasks] +
+            [bugtask.assignee_id for bugtask in bugtasks] +
             [bugtask.bug.ownerID for bugtask in bugtasks])
         people = getUtility(IPersonSet).getPrecachedPersonsFromIDs(people_ids)
         return dict(
@@ -1387,7 +1411,7 @@ class BugTaskSet:
         from lp.bugs.model.bug import Bug
         from lp.bugs.model.bugbranch import BugBranch
 
-        bug_ids = set(bugtask.bugID for bugtask in bugtasks)
+        bug_ids = set(bugtask.bug_id for bugtask in bugtasks)
         bug_ids_with_specifications = set(
             int(id) for _, id in getUtility(IXRefSet).findFromMany(
                 [(u'bug', six.text_type(bug_id)) for bug_id in bug_ids],
@@ -1397,7 +1421,7 @@ class BugTaskSet:
         # Badging looks up milestones too : eager load into the storm cache.
         milestoneset = getUtility(IMilestoneSet)
         # And trigger a load:
-        milestone_ids = set(map(attrgetter('milestoneID'), bugtasks))
+        milestone_ids = set(map(attrgetter('milestone_id'), bugtasks))
         milestone_ids.discard(None)
         if milestone_ids:
             list(milestoneset.getByIds(milestone_ids))
@@ -1415,7 +1439,7 @@ class BugTaskSet:
 
         badge_properties = {}
         for bugtask in bugtasks:
-            bug = bugs[bugtask.bugID]
+            bug = bugs[bugtask.bug_id]
             badge_properties[bugtask] = {
                 'has_specification':
                     bug.id in bug_ids_with_specifications,
@@ -1486,12 +1510,12 @@ class BugTaskSet:
             eager_load = None
         else:
             def eager_load(rows):
-                load_related(Bug, rows, ['bugID'])
-                load_related(Product, rows, ['productID'])
-                load_related(ProductSeries, rows, ['productseriesID'])
-                load_related(Distribution, rows, ['distributionID'])
-                load_related(DistroSeries, rows, ['distroseriesID'])
-                load_related(SourcePackageName, rows, ['sourcepackagenameID'])
+                load_related(Bug, rows, ['bug_id'])
+                load_related(Product, rows, ['product_id'])
+                load_related(ProductSeries, rows, ['productseries_id'])
+                load_related(Distribution, rows, ['distribution_id'])
+                load_related(DistroSeries, rows, ['distroseries_id'])
+                load_related(SourcePackageName, rows, ['sourcepackagename_id'])
         return search_bugs(eager_load, (params,) + args)
 
     def searchBugIds(self, params):
@@ -1757,7 +1781,7 @@ class BugTaskSet:
             ids = ids[:limit]
 
         return DecoratedResultSet(
-            ids, lambda id: BugTask.get(id),
+            ids, lambda id: getUtility(IBugTaskSet).get(id),
             pre_iter_hook=lambda rows: load(BugTask, rows))
 
     def _getTargetJoinAndClause(self, target):
@@ -1946,12 +1970,12 @@ class BugTaskSet:
         # for the milestone vocabulary
         for task in bugtasks:
             task = removeSecurityProxy(task)
-            distro_ids.add(task.distributionID)
-            distro_series_ids.add(task.distroseriesID)
-            product_ids.add(task.productID)
+            distro_ids.add(task.distribution_id)
+            distro_series_ids.add(task.distroseries_id)
+            product_ids.add(task.product_id)
             if task.productseries:
                 product_ids.add(task.productseries.productID)
-            product_series_ids.add(task.productseriesID)
+            product_series_ids.add(task.productseries_id)
 
         distro_ids.discard(None)
         distro_series_ids.discard(None)

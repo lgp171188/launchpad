@@ -659,14 +659,14 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.registry.model.productseries import ProductSeries
         from lp.registry.model.sourcepackagename import SourcePackageName
         store = Store.of(self)
-        tasks = list(store.find(BugTask, BugTask.bugID == self.id))
+        tasks = list(store.find(BugTask, BugTask.bug_id == self.id))
         # The bugtasks attribute is iterated in the API and web
         # services, so it needs to preload all related data otherwise
         # late evaluation is triggered in both places. Separately,
         # bugtask_sort_key requires the related products, series,
         # distros, distroseries and source package names to be loaded.
-        ids = set(map(operator.attrgetter('assigneeID'), tasks))
-        ids.update(map(operator.attrgetter('ownerID'), tasks))
+        ids = set(map(operator.attrgetter('assignee_id'), tasks))
+        ids.update(map(operator.attrgetter('owner_id'), tasks))
         ids.discard(None)
         if ids:
             list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
@@ -678,11 +678,11 @@ class Bug(SQLBase, InformationTypeMixin):
             if not ids:
                 return
             list(store.find(klass, klass.id.is_in(ids)))
-        load_something('productID', Product)
-        load_something('productseriesID', ProductSeries)
-        load_something('distributionID', Distribution)
-        load_something('distroseriesID', DistroSeries)
-        load_something('sourcepackagenameID', SourcePackageName)
+        load_something('product_id', Product)
+        load_something('productseries_id', ProductSeries)
+        load_something('distribution_id', Distribution)
+        load_something('distroseries_id', DistroSeries)
+        load_something('sourcepackagename_id', SourcePackageName)
         list(store.find(BugWatch, BugWatch.bugID == self.id))
         return sorted(tasks, key=bugtask_sort_key)
 
@@ -692,7 +692,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.registry.model.product import Product
         return Store.of(self).using(
                 BugTask,
-                LeftJoin(Product, Product.id == BugTask.productID)
+                LeftJoin(Product, Product.id == BugTask.product_id)
             ).find(
                 BugTask, bug=self
             ).order_by(
@@ -2619,10 +2619,10 @@ class BugSubscriptionInfo:
         """
         if self.bugtask is None:
             assignees = load_people(
-                Person.id.is_in(Select(BugTask.assigneeID,
+                Person.id.is_in(Select(BugTask.assignee_id,
                     BugTask.bug == self.bug)))
         else:
-            assignees = load_people(Person.id == self.bugtask.assigneeID)
+            assignees = load_people(Person.id == self.bugtask.assignee_id)
         if self.bug.private:
             return IStore(Person).find(Person,
                 Person.id.is_in([a.id for a in assignees]),
