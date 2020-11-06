@@ -653,7 +653,7 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
     def source_git_ssh_url(self):
         """The git+ssh:// URL for the source repository,
         adjusted for this user."""
-        base_url = urlsplit(self.context.target_git_repository.git_ssh_url)
+        base_url = urlsplit(self.context.source_git_repository.git_ssh_url)
         url = list(base_url)
         url[1] = "{}@{}".format(self.user.name, base_url.hostname)
         return urlunsplit(url)

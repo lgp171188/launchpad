@@ -1844,16 +1844,16 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
             target_ref=ref)
         login_person(other_user)
         view = create_initialized_view(bmp, "+index", principal=other_user)
-        git_add_remote_match = HTMLContains(
-            Tag(
-                'Git remote add text', 'tt',
-                attrs={"id": "remote-add"},
-                text=("git remote add -f %s "
-                      "git+ssh://%s@git.launchpad.test/%s/+source/%s"
-                      ) % (other_user.name,
-                           other_user.name,
-                           mint.name,
-                           mint_choc.name)))
+        git_add_remote_match = HTMLContains(Tag(
+            'Git remote add text', 'tt',
+            attrs={"id": "remote-add"},
+            text=("git remote add -f %s "
+                  "git+ssh://%s@git.launchpad.test/~%s/%s/+source/choc/+git/%s"
+                  ) % (other_user.name,
+                       other_user.name,
+                       other_user.name,
+                       mint.name,
+                       repository.name)))
         git_remote_update_match = HTMLContains(
             Tag(
                 'Git remote update text', 'tt',
@@ -1895,14 +1895,16 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
             target_ref=ref)
         login_person(other_user)
         view = create_initialized_view(bmp, "+index", principal=other_user)
-        git_add_remote_match = HTMLContains(
-            Tag(
-                'Git remote add text', 'tt',
-                attrs={"id": "remote-add"},
-                text=("git remote add -f %s git+ssh://%s@git.launchpad.test/%s"
-                      % (other_user.name,
-                         other_user.name,
-                         fooix.name))))
+        git_add_remote_match = HTMLContains(Tag(
+            'Git remote add text', 'tt',
+            attrs={"id": "remote-add"},
+            text=("git remote add -f %s "
+                  "git+ssh://%s@git.launchpad.test/~%s/%s/+git/%s"
+                  ) % (other_user.name,
+                       other_user.name,
+                       other_user.name,
+                       fooix.name,
+                       repository.name)))
         git_remote_update_match = HTMLContains(
             Tag(
                 'Git remote update text', 'tt',
@@ -1971,7 +1973,7 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
         other_repository = self.factory.makeGitRepository(
             owner=other_user, target=other_user)
         [other_ref] = self.factory.makeGitRefs(repository=other_repository,
-                                         paths=["refs/heads/branch"])
+                                               paths=["refs/heads/branch"])
         self.assertRaises(InvalidBranchMergeProposal,
                           self.factory.makeBranchMergeProposalForGit,
                           source_ref=other_ref, target_ref=ref)

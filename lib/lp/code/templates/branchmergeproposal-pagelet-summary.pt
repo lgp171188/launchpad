@@ -122,14 +122,14 @@
       </td>
     </tr>
     <tr id="summary-row-merge-instruction-git" tal:condition="python: view.user and context.source_git_repository">
-        <th>Merge guidelines:</th>
-        <td>
-          <tt id="remote-add" class="command" tal:content="string:git remote add -f ${context/source_git_repository/owner/name} ${view/source_git_ssh_url}" />
-          <br />
-          <tt id="remote-update" class="command" tal:content="string:git remote update ${context/source_git_repository/owner/name}" />
-          <br />
-          <tt id="merge-cmd" class="command" tal:content="string:git merge ${context/source_git_repository/owner/name}/${context/merge_source/name}" />
-        </td>
+      <th>Merge guidelines:</th>
+      <td>
+        <tt id="remote-add" class="command" tal:content="string:git remote add -f ${context/source_git_repository/owner/name} ${view/source_git_ssh_url}" />
+        <br />
+        <tt id="remote-update" class="command" tal:content="string:git remote update ${context/source_git_repository/owner/name}" />
+        <br />
+        <tt id="merge-cmd" class="command" tal:content="string:git merge ${context/source_git_repository/owner/name}/${context/merge_source/name}" />
+      </td>
     </tr>
 
     <tr id="summary-row-merge-instruction"
