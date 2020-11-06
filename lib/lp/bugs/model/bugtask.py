@@ -33,11 +33,6 @@ import re
 from lazr.lifecycle.event import ObjectDeletedEvent
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Cast,
@@ -130,19 +125,13 @@ from lp.services.database.bulk import (
     load_related,
     )
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import (
-    DBEnum,
-    EnumCol,
-    )
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
-    block_implicit_flushes,
     cursor,
     quote,
-    SQLBase,
     sqlvalues,
     )
 from lp.services.database.stormbase import StormBase
@@ -271,7 +260,6 @@ class PassthroughValue:
         self.value = value
 
 
-@block_implicit_flushes
 def validate_conjoined_attribute(self, attr, value):
     # If the value has been wrapped in a _PassthroughValue instance,
     # then we are being updated by our conjoined master: pass the
