@@ -957,9 +957,9 @@ def _build_exclude_conjoined_clause(milestone):
         current_series = milestone.distribution.currentseries
         join = LeftJoin(
             ConjoinedMaster,
-            And(ConjoinedMaster.bugID == BugTaskFlat.bug_id,
+            And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
                 BugTaskFlat.distribution_id == milestone.distribution.id,
-                ConjoinedMaster.distroseriesID == current_series.id,
+                ConjoinedMaster.distroseries_id == current_series.id,
                 Not(ConjoinedMaster._status.is_in(
                         BugTask._NON_CONJOINED_STATUSES))))
         join_tables = [(ConjoinedMaster, join)]
@@ -974,8 +974,8 @@ def _build_exclude_conjoined_clause(milestone):
                 LeftJoin(Product, BugTaskFlat.product_id == Product.id),
                 LeftJoin(
                     ConjoinedMaster,
-                    And(ConjoinedMaster.bugID == BugTaskFlat.bug_id,
-                        ConjoinedMaster.productseriesID
+                    And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
+                        ConjoinedMaster.productseries_id
                             == Product.development_focusID,
                         Not(ConjoinedMaster._status.is_in(
                                 BugTask._NON_CONJOINED_STATUSES)))),
@@ -987,9 +987,9 @@ def _build_exclude_conjoined_clause(milestone):
                 milestone.product.development_focusID)
             join = LeftJoin(
                 ConjoinedMaster,
-                And(ConjoinedMaster.bugID == BugTaskFlat.bug_id,
+                And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
                     BugTaskFlat.product_id == milestone.product.id,
-                    ConjoinedMaster.productseriesID == dev_focus_id,
+                    ConjoinedMaster.productseries_id == dev_focus_id,
                     Not(ConjoinedMaster._status.is_in(
                             BugTask._NON_CONJOINED_STATUSES))))
             join_tables = [(ConjoinedMaster, join)]

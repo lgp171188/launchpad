@@ -253,36 +253,29 @@ def BugTaskToBugAdapter(bugtask):
     return bugtask.bug
 
 
-class PassthroughValue:
-    """A wrapper to allow setting values on conjoined bug tasks."""
-
-    def __init__(self, value):
-        self.value = value
-
-
 def validate_conjoined_attribute(self, attr, value):
-    # If the value has been wrapped in a _PassthroughValue instance,
-    # then we are being updated by our conjoined master: pass the
-    # value through without any checking.
-    if isinstance(value, PassthroughValue):
-        return value.value
-
     # If this is a conjoined slave then call setattr on the master.
     # Effectively this means that making a change to the slave will
     # actually make the change to the master (which will then be passed
     # down to the slave, of course). This helps to prevent OOPSes when
     # people try to update the conjoined slave via the API.
+    nothing = object()
+    if self.passthrough_attrs.get(attr, nothing) is value:
+        # If this attribute and value is a passthrough, do not try to set it
+        # again.
+        return value
+
     conjoined_master = self.conjoined_master
     if conjoined_master is not None:
-        if getattr(conjoined_master, attr) != value:
-            setattr(conjoined_master, attr, value)
+        conjoined_master.passthrough_attrs[attr] = value
+        setattr(conjoined_master, attr, value)
         return value
 
     # If there is a conjoined slave, update that.
     conjoined_bugtask = self.conjoined_slave
     if conjoined_bugtask:
-        if getattr(conjoined_bugtask, attr) != value:
-            setattr(conjoined_bugtask, attr, value)
+        conjoined_bugtask.passthrough_attrs[attr] = value
+        setattr(conjoined_bugtask, attr, value)
 
     return value
 
@@ -504,6 +497,15 @@ class BugTask(StormBase):
     # stores the bugtargetdisplayname.
     targetnamecache = Unicode(
         name='targetnamecache', allow_none=True, default=None)
+
+    # A wrapper to allow setting values on conjoined bug tasks.
+    _passthrough_attrs = None
+
+    @property
+    def passthrough_attrs(self):
+        if self._passthrough_attrs is None:
+            self._passthrough_attrs = {}
+        return self._passthrough_attrs
 
     @property
     def status(self):
@@ -786,9 +788,9 @@ class BugTask(StormBase):
 
         for synched_attr in self._CONJOINED_ATTRIBUTES:
             slave_attr_value = getattr(conjoined_slave, synched_attr)
-            # Bypass our checks that prevent setting attributes on
-            # conjoined masters by calling the underlying sqlobject
-            # setter methods directly.
+            # Add the attribute to our passthrough_attrs dict, so we skip
+            # the conjoined validation.
+            self.passthrough_attrs[synched_attr] = slave_attr_value
             setattr(self, synched_attr, slave_attr_value)
 
     def transitionToMilestone(self, new_milestone, user):

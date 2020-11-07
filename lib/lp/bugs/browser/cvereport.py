@@ -122,7 +122,7 @@ class CVEReportView(LaunchpadView):
 
         # The page contains links to the bug task assignees:
         # Pre-load the related Person and ValidPersonCache records
-        assignee_ids = [task.assigneeID for task in bugtasks]
+        assignee_ids = [task.assignee_id for task in bugtasks]
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             assignee_ids, need_validity=True))
 

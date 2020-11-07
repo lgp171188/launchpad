@@ -67,7 +67,7 @@ def filter_bugtasks_by_context(context, bugtasks):
 
     bug_mapping = defaultdict(list)
     for task in bugtasks:
-        bug_mapping[task.bugID].append(weight_calculator(task))
+        bug_mapping[task.bug_id].append(weight_calculator(task))
 
     filtered = [sorted(tasks)[0].task for tasks in six.itervalues(bug_mapping)]
-    return sorted(filtered, key=attrgetter('bugID'))
+    return sorted(filtered, key=attrgetter('bug_id'))
