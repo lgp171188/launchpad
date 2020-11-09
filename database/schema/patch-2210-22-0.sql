@@ -31,7 +31,18 @@ ALTER TABLE BugTaskFlat
 
 ALTER TABLE BugSummary
     ADD COLUMN ociproject integer REFERENCES ociproject,
-    ADD COLUMN ociprojectseries integer REFERENCES ociprojectseries;
+    ADD COLUMN ociprojectseries integer REFERENCES ociprojectseries,
+    DROP CONSTRAINT bugtask_assignment_checks,
+    ADD CONSTRAINT bugtask_assignment_checks CHECK (
+        CASE
+            WHEN product IS NOT NULL THEN productseries IS NULL AND distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN productseries IS NOT NULL THEN distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN distribution IS NOT NULL THEN distroseries IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN distroseries IS NOT NULL THEN ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL
+            WHEN ociprojectseries IS NOT NULL THEN true
+            ELSE false
+        END);
 
 ALTER INDEX bugsummary__unique
     RENAME TO old__bugsummary__unique;
