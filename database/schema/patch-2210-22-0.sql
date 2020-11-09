@@ -53,7 +53,6 @@ ALTER TABLE BugSummaryJournal
 
 -- Functions
 
-DROP FUNCTION bugtask_flatten;
 CREATE OR REPLACE FUNCTION bugtask_flatten(task_id integer, check_only boolean)
     RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
@@ -164,6 +163,70 @@ BEGIN
     END IF;
 END;
 $$;
+
+
+CREATE OR REPLACE FUNCTION bug_summary_inc(d bugsummary) RETURNS VOID
+LANGUAGE plpgsql AS
+$$
+BEGIN
+    -- Shameless adaption from postgresql manual
+    LOOP
+        -- first try to update the row
+        UPDATE BugSummary SET count = count + d.count
+        WHERE
+            ((product IS NULL AND $1.product IS NULL)
+                OR product = $1.product)
+            AND ((productseries IS NULL AND $1.productseries IS NULL)
+                OR productseries = $1.productseries)
+            AND ((distribution IS NULL AND $1.distribution IS NULL)
+                OR distribution = $1.distribution)
+            AND ((distroseries IS NULL AND $1.distroseries IS NULL)
+                OR distroseries = $1.distroseries)
+            AND ((sourcepackagename IS NULL AND $1.sourcepackagename IS NULL)
+                OR sourcepackagename = $1.sourcepackagename)
+            AND ((ociproject IS NULL AND $1.ociproject IS NULL)
+                OR ociproject = $1.ociproject)
+            AND ((ociprojectseries IS NULL AND $1.ociprojectseries IS NULL)
+                OR ociprojectseries = $1.ociprojectseries)
+            AND ((viewed_by IS NULL AND $1.viewed_by IS NULL)
+                OR viewed_by = $1.viewed_by)
+            AND ((tag IS NULL AND $1.tag IS NULL)
+                OR tag = $1.tag)
+            AND status = $1.status
+            AND ((milestone IS NULL AND $1.milestone IS NULL)
+                OR milestone = $1.milestone)
+            AND importance = $1.importance
+            AND has_patch = $1.has_patch
+            AND access_policy IS NOT DISTINCT FROM $1.access_policy;
+        IF found THEN
+            RETURN;
+        END IF;
+        -- not there, so try to insert the key
+        -- if someone else inserts the same key concurrently,
+        -- we could get a unique-key failure
+        BEGIN
+            INSERT INTO BugSummary(
+                count, product, productseries, distribution,
+                distroseries, sourcepackagename,
+                ociproject, ociprojectseries,
+                viewed_by, tag,
+                status, milestone, importance, has_patch, access_policy)
+            VALUES (
+                d.count, d.product, d.productseries, d.distribution,
+                d.distroseries, d.sourcepackagename,
+                d.ociproject, d.ociprojectseries,
+                d.viewed_by, d.tag,
+                d.status, d.milestone, d.importance, d.has_patch,
+                d.access_policy);
+            RETURN;
+        EXCEPTION WHEN unique_violation THEN
+            -- do nothing, and loop to try the UPDATE again
+        END;
+    END LOOP;
+END;
+
+$$;
+
 
 CREATE OR REPLACE FUNCTION bugtask_maintain_bugtaskflat_trig()
     RETURNS trigger
