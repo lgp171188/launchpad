@@ -2203,6 +2203,11 @@ class TestValidateTransitionToTarget(TestCaseWithFactory):
             self.factory.makeProduct(),
             self.factory.makeDistributionSourcePackage())
 
+    def test_product_to_ociproject_works(self):
+        self.assertTransitionWorks(
+            self.factory.makeProduct(),
+            self.factory.makeOCIProject())
+
     def test_distribution_to_distribution_works(self):
         self.assertTransitionWorks(
             self.factory.makeDistribution(),
@@ -2429,13 +2434,18 @@ class TestTransitionToTarget(TestCaseWithFactory):
         self.assertEqual(milestone, task.milestone)
 
     def test_targetnamecache_updated(self):
-        new_product = self.factory.makeProduct()
-        task = self.factory.makeBugTask()
-        with person_logged_in(task.owner):
-            task.transitionToTarget(new_product, task.owner)
-        self.assertEqual(
-            new_product.bugtargetdisplayname,
-            removeSecurityProxy(task).targetnamecache)
+        new_targets = [
+            self.factory.makeProduct(),
+            self.factory.makeDistribution(),
+            self.factory.makeOCIProject()]
+        # Test it with a different target types.
+        for new_target in new_targets:
+            task = self.factory.makeBugTask()
+            with person_logged_in(task.owner):
+                task.transitionToTarget(new_target, task.owner)
+            self.assertEqual(
+                new_target.bugtargetdisplayname,
+                removeSecurityProxy(task).targetnamecache)
 
     def test_cached_recipients_cleared(self):
         # The bug's notification recipients caches are cleared when
@@ -3082,12 +3092,15 @@ class TestBugTaskUserHasBugSupervisorPrivileges(TestCaseWithFactory):
     def test_ociproject_pillar_bug_supervisor(self):
         # The pillar bug supervisor has privileges.
         bugsupervisor = self.factory.makePerson()
+        someone_else = self.factory.makePerson()
         target = self.factory.makeOCIProject()
         with admin_logged_in():
             target.pillar.bug_supervisor = bugsupervisor
         bugtask = self.factory.makeBugTask(target=target)
         self.assertTrue(
             bugtask.userHasBugSupervisorPrivileges(bugsupervisor))
+        self.assertFalse(
+            bugtask.userHasBugSupervisorPrivileges(someone_else))
 
     def test_productseries_driver_is_allowed(self):
         # The series driver has privileges.
@@ -3134,6 +3147,10 @@ class TestBugTaskUserHasBugSupervisorPrivilegesContext(TestCaseWithFactory):
     def test_distribution(self):
         distribution = self.factory.makeDistribution()
         self.assert_userHasBugSupervisorPrivilegesContext(distribution)
+
+    def test_ociproject(self):
+        ociproject = self.factory.makeOCIProject()
+        self.assert_userHasBugSupervisorPrivilegesContext(ociproject)
 
     def test_distributionsourcepackage(self):
         dsp = self.factory.makeDistributionSourcePackage()
