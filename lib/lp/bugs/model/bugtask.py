@@ -103,6 +103,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.milestone import IMilestoneSet
 from lp.registry.interfaces.milestonetag import IProjectGroupMilestoneTag
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     validate_person,
     validate_public_person,
@@ -183,7 +184,7 @@ def bugtask_sort_key(bugtask):
 
 
 def bug_target_from_key(product, productseries, distribution, distroseries,
-                        sourcepackagename):
+                        sourcepackagename, ociproject):
     """Returns the IBugTarget defined by the given DB column values."""
     if product:
         return product
@@ -201,6 +202,8 @@ def bug_target_from_key(product, productseries, distribution, distroseries,
                 sourcepackagename)
         else:
             return distroseries
+    elif ociproject:
+        return ociproject
     else:
         raise AssertionError("Unable to determine bugtask target.")
 
@@ -213,6 +216,7 @@ def bug_target_to_key(target):
                 distribution=None,
                 distroseries=None,
                 sourcepackagename=None,
+                ociproject=None,
                 )
     if IProduct.providedBy(target):
         values['product'] = target
@@ -228,6 +232,8 @@ def bug_target_to_key(target):
     elif ISourcePackage.providedBy(target):
         values['distroseries'] = target.distroseries
         values['sourcepackagename'] = target.sourcepackagename
+    elif IOCIProject.providedBy(target):
+        values['ociproject'] = target
     else:
         raise AssertionError("Not an IBugTarget.")
     return values
@@ -422,6 +428,9 @@ class BugTask(StormBase):
     product_id = Int(name="product", allow_none=True)
     product = Reference(product_id, 'Product.id')
 
+    ociproject_id = Int(name="ociproject", allow_none=True)
+    ociproject = Reference(ociproject_id, 'OCIProject.id')
+
     productseries_id = Int(name="productseries", allow_none=True)
     productseries = Reference(productseries_id, 'ProductSeries.id')
 
@@ -541,7 +550,7 @@ class BugTask(StormBase):
         """See `IBugTask`."""
         return bug_target_from_key(
             self.product, self.productseries, self.distribution,
-            self.distroseries, self.sourcepackagename)
+            self.distroseries, self.sourcepackagename, self.ociproject)
 
     @property
     def related_tasks(self):
@@ -1612,13 +1621,14 @@ class BugTaskSet:
         values = [
             (bug, owner, key['product'], key['productseries'],
              key['distribution'], key['distroseries'],
-             key['sourcepackagename'], status, importance, assignee,
-             milestone)
+             key['sourcepackagename'], key['ociproject'],
+             status, importance, assignee, milestone)
             for key in target_keys]
         tasks = create(
             (BugTask.bug, BugTask.owner, BugTask.product,
              BugTask.productseries, BugTask.distribution,
-             BugTask.distroseries, BugTask.sourcepackagename, BugTask._status,
+             BugTask.distroseries, BugTask.sourcepackagename,
+             BugTask.ociproject, BugTask._status,
              BugTask.importance, BugTask.assignee, BugTask.milestone),
             values, get_objects=True)
 

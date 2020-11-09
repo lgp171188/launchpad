@@ -17,6 +17,7 @@ from lp.bugs.model.bugtask import (
     )
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -34,9 +35,10 @@ from lp.services.looptuner import (
 target_columns = (
     BugTask.product_id, BugTask.productseries_id, BugTask.distribution_id,
     BugTask.distroseries_id, BugTask.sourcepackagename_id,
-    BugTask.targetnamecache)
+    BugTask.ociproject_id, BugTask.targetnamecache)
 target_classes = (
-    Product, ProductSeries, Distribution, DistroSeries, SourcePackageName)
+    Product, ProductSeries, Distribution, DistroSeries, SourcePackageName,
+    OCIProject)
 
 
 @implementer(ITunableLoop)

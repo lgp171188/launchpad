@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -2037,6 +2037,14 @@ class TestAutoConfirmBugTasksFlagForDistributionSourcePackage(
         return self.factory.makeDistributionSourcePackage()
 
 
+class TestAutoConfirmBugTasksFlagForOCIProject(
+    TestAutoConfirmBugTasksFlagForDistribution):
+    """Tests for auto-confirming bug tasks."""
+
+    def makeTarget(self):
+        return self.factory.makeOCIProject()
+
+
 class TestAutoConfirmBugTasksTransitionToTarget(TestCaseWithFactory):
     """Tests for auto-confirming bug tasks."""
     # Tests for making sure that switching a task from one project that
@@ -2606,6 +2614,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=None,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_productseries(self):
@@ -2618,6 +2627,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=None,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_distribution(self):
@@ -2630,6 +2640,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=distro,
                 distroseries=None,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_distroseries(self):
@@ -2642,6 +2653,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=distroseries,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_distributionsourcepackage(self):
@@ -2654,6 +2666,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=dsp.distribution,
                 distroseries=None,
                 sourcepackagename=dsp.sourcepackagename,
+                ociproject=None,
                 ))
 
     def test_sourcepackage(self):
@@ -2666,6 +2679,20 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=sp.distroseries,
                 sourcepackagename=sp.sourcepackagename,
+                ociproject=None,
+                ))
+
+    def test_ociproject(self):
+        ociproject = self.factory.makeOCIProject()
+        self.assertTargetKeyWorks(
+            ociproject,
+            dict(
+                product=None,
+                productseries=None,
+                distribution=None,
+                distroseries=None,
+                sourcepackagename=None,
+                ociproject=ociproject,
                 ))
 
     def test_no_key_for_non_targets(self):
@@ -2674,7 +2701,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
 
     def test_no_target_for_bad_keys(self):
         self.assertRaises(
-            AssertionError, bug_target_from_key, None, None, None, None, None)
+            AssertionError, bug_target_from_key,
+            None, None, None, None, None, None)
 
 
 class ValidateTargetMixin:
@@ -2759,6 +2787,23 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
             IllegalTarget,
             "A fix for this bug has already been requested for %s"
             % p.displayname,
+            validate_target, task.bug, p)
+
+    def test_new_ociproject_is_allowed(self):
+        # A new product not on the bug is OK.
+        p1 = self.factory.makeOCIProject()
+        task = self.factory.makeBugTask(target=p1)
+        p2 = self.factory.makeOCIProject()
+        validate_target(task.bug, p2)
+
+    def test_same_ociproject_is_forbidden(self):
+        # A product with an existing task is not.
+        p = self.factory.makeOCIProject()
+        task = self.factory.makeBugTask(target=p)
+        self.assertRaisesWithContent(
+            IllegalTarget,
+            "A fix for this bug has already been requested for %s"
+            % p.bugtargetdisplayname,
             validate_target, task.bug, p)
 
     def test_new_distribution_is_allowed(self):
@@ -2914,6 +2959,12 @@ class TestValidateNewTarget(TestCaseWithFactory, ValidateTargetMixin):
         # Used for ValidateTargetMixin.
         return validate_new_target
 
+    def test_ociprojects_are_ok(self):
+        p1 = self.factory.makeOCIProject()
+        task = self.factory.makeBugTask(target=p1)
+        p2 = self.factory.makeOCIProject()
+        validate_new_target(task.bug, p2)
+
     def test_products_are_ok(self):
         p1 = self.factory.makeProduct()
         task = self.factory.makeBugTask(target=p1)
@@ -3025,6 +3076,16 @@ class TestBugTaskUserHasBugSupervisorPrivileges(TestCaseWithFactory):
         bugsupervisor = self.factory.makePerson()
         pillar = self.factory.makeProduct(bug_supervisor=bugsupervisor)
         bugtask = self.factory.makeBugTask(target=pillar)
+        self.assertTrue(
+            bugtask.userHasBugSupervisorPrivileges(bugsupervisor))
+
+    def test_ociproject_pillar_bug_supervisor(self):
+        # The pillar bug supervisor has privileges.
+        bugsupervisor = self.factory.makePerson()
+        target = self.factory.makeOCIProject()
+        with admin_logged_in():
+            target.pillar.bug_supervisor = bugsupervisor
+        bugtask = self.factory.makeBugTask(target=target)
         self.assertTrue(
             bugtask.userHasBugSupervisorPrivileges(bugsupervisor))
 

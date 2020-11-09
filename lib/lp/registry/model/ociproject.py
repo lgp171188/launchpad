@@ -125,8 +125,17 @@ class OCIProject(BugTargetBase, StormBase):
         return "OCI project %s for %s" % (
             self.ociprojectname.name, self.pillar.display_name)
 
+    displayname = display_name
     bugtargetname = display_name
     bugtargetdisplayname = display_name
+
+    @property
+    def driver(self):
+        return self.pillar.driver
+
+    @property
+    def bug_supervisor(self):
+        return self.pillar.bug_supervisor
 
     def newRecipe(self, name, registrant, owner, git_ref,
                   build_file, description=None, build_daily=False,

@@ -29,7 +29,10 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from six.moves import http_client
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Datetime,
@@ -43,7 +46,11 @@ from zope.security.interfaces import Unauthorized
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
-from lp.bugs.interfaces.bugtarget import IBugTarget
+from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
+from lp.bugs.interfaces.bugtarget import (
+    IBugTarget,
+    IHasExpirableBugs,
+    )
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
@@ -82,6 +89,8 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     display_name = exported(TextLine(
         title=_("Display name for this OCI project."),
         required=True, readonly=True))
+
+    displayname = Attribute(_("Display name for this OCI project."))
 
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
@@ -189,7 +198,8 @@ class IOCIProjectLegitimate(Interface):
 @exported_as_webservice_entry(
     publish_web_link=True, as_of="devel", singular_name="oci_project")
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
-                  IOCIProjectEditableAttributes, IOCIProjectLegitimate):
+                  IOCIProjectEditableAttributes, IOCIProjectLegitimate,
+                  IHasBugSupervisor, IHasExpirableBugs):
     """A project containing Open Container Initiative recipes."""
 
 
@@ -198,7 +208,7 @@ class IOCIProjectSet(Interface):
 
     def new(registrant, pillar, name, date_created=None, description=None,
             bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
-            bugfiling_duplicate_search=False):
+            bugfiling_duplicate_search=False, bug_supervisor=None):
         """Create an `IOCIProject`."""
 
     def getByPillarAndName(pillar, name):
