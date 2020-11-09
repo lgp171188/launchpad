@@ -224,7 +224,72 @@ BEGIN
         END;
     END LOOP;
 END;
+$$;
 
+
+CREATE OR REPLACE FUNCTION bugsummary_rollup_journal(batchsize integer=NULL)
+RETURNS VOID
+LANGUAGE plpgsql VOLATILE
+CALLED ON NULL INPUT
+SECURITY DEFINER SET search_path TO public AS
+$$
+DECLARE
+    d bugsummary%ROWTYPE;
+    max_id integer;
+BEGIN
+    -- Lock so we don't content with other invokations of this
+    -- function. We can happily lock the BugSummary table for writes
+    -- as this function is the only thing that updates that table.
+    -- BugSummaryJournal remains unlocked so nothing should be blocked.
+    LOCK TABLE BugSummary IN ROW EXCLUSIVE MODE;
+
+    IF batchsize IS NULL THEN
+        SELECT MAX(id) INTO max_id FROM BugSummaryJournal;
+    ELSE
+        SELECT MAX(id) INTO max_id FROM (
+            SELECT id FROM BugSummaryJournal ORDER BY id LIMIT batchsize
+            ) AS Whatever;
+    END IF;
+
+    FOR d IN
+        SELECT
+            NULL as id,
+            SUM(count),
+            product,
+            productseries,
+            distribution,
+            distroseries,
+            sourcepackagename,
+            viewed_by,
+            tag,
+            status,
+            milestone,
+            importance,
+            has_patch,
+            access_policy,
+            ociproject,
+            ociprojectseries
+        FROM BugSummaryJournal
+        WHERE id <= max_id
+        GROUP BY
+            product, productseries, distribution, distroseries,
+            sourcepackagename, ociproject, ociprojectseries,
+            viewed_by, tag, status, milestone,
+            importance, has_patch, access_policy
+        HAVING sum(count) <> 0
+    LOOP
+        IF d.count < 0 THEN
+            PERFORM bug_summary_dec(d);
+        ELSIF d.count > 0 THEN
+            PERFORM bug_summary_inc(d);
+        END IF;
+    END LOOP;
+
+    -- Clean out any counts we reduced to 0.
+    DELETE FROM BugSummary WHERE count=0;
+    -- Clean out the journal entries we have handled.
+    DELETE FROM BugSummaryJournal WHERE id <= max_id;
+END;
 $$;
 
 
