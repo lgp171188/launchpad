@@ -147,9 +147,9 @@ class BugsFeedBase(FeedBase):
         """
         bug_ids = []
         for task in tasks:
-            if task.bugID in bug_ids:
+            if task.bug_id in bug_ids:
                 continue
-            bug_ids.append(task.bugID)
+            bug_ids.append(task.bug_id)
             if len(bug_ids) >= self.quantity:
                 break
         # XXX: BradCrittenden 2008-03-26 bug=TBD:

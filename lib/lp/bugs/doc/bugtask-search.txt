@@ -6,14 +6,20 @@ method accepts a single parameter; an BugTaskSearchParams instance.
 
     >>> from lp.bugs.interfaces.bugtask import IBugTaskSet
     >>> from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
+    >>> from lp.services.database.interfaces import IStore
     >>> bugtask_set = getUtility(IBugTaskSet)
     >>> all_public = BugTaskSearchParams(user=None)
     >>> found_bugtasks = bugtask_set.search(all_public)
 
+    >>> from lp.app.enums import InformationType
+    >>> from lp.bugs.model.bug import Bug
     >>> from lp.bugs.model.bugtask import BugTask
-    >>> all_public_bugtasks = BugTask.select(
-    ...     "BugTask.bug = Bug.id AND Bug.information_type IN (1, 2)",
-    ...     clauseTables=['Bug'])
+    >>> store = IStore(BugTask)
+    >>> info_types = [InformationType.PUBLIC, InformationType.PUBLICSECURITY]
+    >>> all_public_bugtasks = store.find(
+    ...     BugTask,
+    ...     BugTask.bug_id == Bug.id,
+    ...     Bug.information_type.is_in(info_types))
     >>> found_bugtasks.count() == all_public_bugtasks.count()
     True
 

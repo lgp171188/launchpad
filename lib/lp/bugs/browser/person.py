@@ -132,7 +132,7 @@ class RelevantMilestonesMixin:
         """Return data used to render the milestone checkboxes."""
         tasks = self.searchUnbatched()
         milestones = sorted(
-            load_related(Milestone, tasks, ['milestoneID']),
+            load_related(Milestone, tasks, ['milestone_id']),
             key=milestone_sort_key, reverse=True)
         return [
             dict(title=milestone.title, value=milestone.id, checked=False)

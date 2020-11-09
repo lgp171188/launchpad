@@ -472,7 +472,9 @@ Running the script
 There are no Expired Bugtasks in sampledata, from the tests above.
 
     >>> from lp.bugs.model.bugtask import BugTask
-    >>> BugTask.selectBy(status=BugTaskStatus.EXPIRED).count()
+    >>> from lp.services.database.interfaces import IStore
+    >>> store = IStore(BugTask)
+    >>> store.find(BugTask, BugTask.status == BugTaskStatus.EXPIRED).count()
     0
 
 We want to check the hoary bugtask messages later.
@@ -510,7 +512,7 @@ config.malone.expiration_dbuser.
     >>> process.returncode
     0
 
-    >>> bugtasks = [BugTask.get(bugtask.id) for bugtask in bugtasks]
+    >>> bugtasks = [bugtaskset.get(bugtask.id) for bugtask in bugtasks]
 
 
 After the script has run

@@ -1447,7 +1447,7 @@ class BugTaskSet:
         task_ids = [int(task_id) for task_id in task_ids]
         # Query the database, returning the results in a dictionary:
         if len(task_ids) > 0:
-            tasks = BugTask.select('id in %s' % sqlvalues(task_ids))
+            tasks = IStore(BugTask).find(BugTask, BugTask.id.is_in(task_ids))
             return dict([(task.id, task) for task in tasks])
         else:
             return {}

@@ -374,7 +374,7 @@ class IllegalTarget(Exception):
 
 class IBugTaskDelete(Interface):
     """An interface for operations allowed with the Delete permission."""
-    def destroySelf(self):
+    def destroySelf():
         """Removes this BugTask from the database."""
 
     @export_destructor_operation()

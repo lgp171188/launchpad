@@ -10,6 +10,7 @@ Launchpad. We'll use this implementation for demonstration purposes:
     ...     IBugTask,
     ...     IBugTaskSet,
     ...     )
+    >>> from lp.services.database.interfaces import IStore
     >>> task_set = getUtility(IBugTaskSet)
 
 
@@ -45,8 +46,9 @@ single operation. To demonstrate, we'll begin by generating a list of
 sample bug tasks:
 
     >>> from lp.bugs.model.bugtask import BugTask
+    >>> store = IStore(BugTask)
     >>> sample_task_count = 10
-    >>> sample_tasks = BugTask.select(limit=sample_task_count)
+    >>> sample_tasks = store.find(BugTask)[:sample_task_count]
     >>> sample_task_ids = [task.id for task in sample_tasks]
 
 When given a sequence of bug task IDs, the method returns a dictionary
