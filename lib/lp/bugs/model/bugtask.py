@@ -132,8 +132,8 @@ from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
     cursor,
     quote,
-    sqlvalues,
-    )
+    sqlvalues, block_implicit_flushes,
+)
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
@@ -253,6 +253,7 @@ def BugTaskToBugAdapter(bugtask):
     return bugtask.bug
 
 
+@block_implicit_flushes
 def validate_conjoined_attribute(self, attr, value):
     # If this is a conjoined slave then call setattr on the master.
     # Effectively this means that making a change to the slave will
@@ -263,6 +264,7 @@ def validate_conjoined_attribute(self, attr, value):
     if self.passthrough_attrs.get(attr, nothing) is value:
         # If this attribute and value is a passthrough, do not try to set it
         # again.
+        del self.passthrough_attrs[attr]
         return value
 
     conjoined_master = self.conjoined_master
@@ -431,7 +433,9 @@ class BugTask(StormBase):
     distroseries_id = Int(name="distroseries", allow_none=True)
     distroseries = Reference(distroseries_id, "DistroSeries.id")
 
-    milestone_id = Int(name="milestone", allow_none=True)
+    milestone_id = Int(
+        name="milestone", allow_none=True,
+        validator=validate_conjoined_attribute)
     milestone = Reference(milestone_id, "Milestone.id")
 
     _status = DBEnum(
