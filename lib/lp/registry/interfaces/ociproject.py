@@ -92,6 +92,10 @@ class IOCIProjectView(IHasGitRepositories, Interface):
 
     displayname = Attribute(_("Display name for this OCI project."))
 
+    driver = Attribute(_("The driver for this OCI project."))
+
+    bug_supervisor = Attribute(_("The bug supervisor for this OCI Project."))
+
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
 
@@ -208,7 +212,7 @@ class IOCIProjectSet(Interface):
 
     def new(registrant, pillar, name, date_created=None, description=None,
             bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
-            bugfiling_duplicate_search=False, bug_supervisor=None):
+            bugfiling_duplicate_search=False):
         """Create an `IOCIProject`."""
 
     def getByPillarAndName(pillar, name):

@@ -131,10 +131,12 @@ class OCIProject(BugTargetBase, StormBase):
 
     @property
     def driver(self):
+        """See `IOCIProject`."""
         return self.pillar.driver
 
     @property
     def bug_supervisor(self):
+        """See `IOCIProject`."""
         return self.pillar.bug_supervisor
 
     def newRecipe(self, name, registrant, owner, git_ref,

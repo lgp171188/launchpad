@@ -35,6 +35,7 @@ from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.series import ISeriesMixin
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -63,7 +64,8 @@ def get_bugsummary_targets():
     return set(IStore(RawBugSummary).find(
         (RawBugSummary.product_id, RawBugSummary.productseries_id,
          RawBugSummary.distribution_id, RawBugSummary.distroseries_id,
-         RawBugSummary.sourcepackagename_id)).config(distinct=True))
+         RawBugSummary.sourcepackagename_id, RawBugSummary.ociproject_id
+         )).config(distinct=True))
 
 
 def get_bugtask_targets():
@@ -71,24 +73,26 @@ def get_bugtask_targets():
     new_targets = set(IStore(BugTask).find(
         (BugTask.product_id, BugTask.productseries_id,
          BugTask.distribution_id, BugTask.distroseries_id,
-         BugTask.sourcepackagename_id)).config(distinct=True))
+         BugTask.sourcepackagename_id, BugTask.ociproject_id
+         )).config(distinct=True))
     # BugSummary counts package tasks in the packageless totals, so
     # ensure that there's also a packageless total for each distro(series).
     new_targets.update(set(
-        (p, ps, d, ds, None) for (p, ps, d, ds, spn) in new_targets))
+        (p, ps, d, ds, None, ocip)
+        for (p, ps, d, ds, spn, ocip) in new_targets))
     return new_targets
 
 
-def load_target(pid, psid, did, dsid, spnid):
+def load_target(pid, psid, did, dsid, spnid, ociproject_id):
     store = IStore(Product)
-    p, ps, d, ds, spn = map(
+    p, ps, d, ds, spn, ociproject = map(
         lambda cls_id: (
             store.get(cls_id[0], cls_id[1]) if cls_id[1] is not None
             else None),
         zip((Product, ProductSeries, Distribution, DistroSeries,
-             SourcePackageName),
-            (pid, psid, did, dsid, spnid)))
-    return bug_target_from_key(p, ps, d, ds, spn)
+             SourcePackageName, OCIProject),
+            (pid, psid, did, dsid, spnid, ociproject_id)))
+    return bug_target_from_key(p, ps, d, ds, spn, ociproject)
 
 
 def format_target(target):
@@ -187,11 +191,11 @@ def apply_bugsummary_changes(target, added, updated, removed):
     target_key = tuple(map(
         bits.__getitem__,
         ('product_id', 'productseries_id', 'distribution_id',
-         'distroseries_id', 'sourcepackagename_id')))
+         'distroseries_id', 'sourcepackagename_id', 'ociproject_id')))
     target_cols = (
         RawBugSummary.product_id, RawBugSummary.productseries_id,
         RawBugSummary.distribution_id, RawBugSummary.distroseries_id,
-        RawBugSummary.sourcepackagename_id)
+        RawBugSummary.sourcepackagename_id, RawBugSummary.ociproject_id)
     key_cols = (
         RawBugSummary.status, RawBugSummary.milestone_id,
         RawBugSummary.importance, RawBugSummary.has_patch,

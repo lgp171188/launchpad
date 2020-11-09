@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """BugSummary interfaces."""
@@ -8,7 +8,6 @@ __all__ = [
     'IBugSummary',
     'IBugSummaryDimension',
     ]
-
 
 from zope.interface import Interface
 from zope.schema import (
@@ -27,6 +26,7 @@ from lp.bugs.interfaces.bugtask import (
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.milestone import IMilestone
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.productseries import IProductSeries
@@ -57,6 +57,9 @@ class IBugSummary(Interface):
 
     sourcepackagename_id = Int(readonly=True)
     sourcepackagename = Object(ISourcePackageName, readonly=True)
+
+    ociproject_id = Int(readonly=True)
+    ociproject = Object(IOCIProject, readonly=True)
 
     milestone_id = Int(readonly=True)
     milestone = Object(IMilestone, readonly=True)

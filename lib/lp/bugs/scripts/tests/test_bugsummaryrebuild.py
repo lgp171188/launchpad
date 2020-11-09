@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -48,18 +48,22 @@ def create_tasks(factory):
     sp = factory.makeSourcePackage(publish=True)
 
     bug = factory.makeBug(target=product)
+    ocip = factory.makeOCIProject()
+
     getUtility(IBugTaskSet).createManyTasks(
-        bug, bug.owner, [sp, sp.distribution_sourcepackage, ps])
+        bug, bug.owner, [sp, sp.distribution_sourcepackage, ps, ocip])
+
 
     # There'll be a target for each task, plus a packageless one for
     # each package task.
     expected_targets = [
-        (ps.product.id, None, None, None, None),
-        (None, ps.id, None, None, None),
-        (None, None, sp.distribution.id, None, None),
-        (None, None, sp.distribution.id, None, sp.sourcepackagename.id),
-        (None, None, None, sp.distroseries.id, None),
-        (None, None, None, sp.distroseries.id, sp.sourcepackagename.id)
+        (ps.product.id, None, None, None, None, None),
+        (None, ps.id, None, None, None, None),
+        (None, None, sp.distribution.id, None, None, None),
+        (None, None, sp.distribution.id, None, sp.sourcepackagename.id, None),
+        (None, None, None, sp.distroseries.id, None, None),
+        (None, None, None, sp.distroseries.id, sp.sourcepackagename.id, None),
+        (None, None, None, None, None, ocip.id)
         ]
     return expected_targets
 
@@ -146,9 +150,14 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
 
     def test_script(self):
         product = self.factory.makeProduct()
+        ociproject = self.factory.makeOCIProject()
         self.factory.makeBug(target=product)
+        self.factory.makeBug(target=ociproject)
+
         self.assertEqual(0, get_bugsummary_rows(product).count())
+        self.assertEqual(0, get_bugsummary_rows(ociproject).count())
         self.assertEqual(1, get_bugsummaryjournal_rows(product).count())
+        self.assertEqual(1, get_bugsummaryjournal_rows(ociproject).count())
         transaction.commit()
 
         exit_code, out, err = run_script('scripts/bugsummary-rebuild.py')
@@ -158,6 +167,7 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
 
         transaction.commit()
         self.assertEqual(1, get_bugsummary_rows(product).count())
+        self.assertEqual(1, get_bugsummary_rows(ociproject).count())
         self.assertEqual(0, get_bugsummaryjournal_rows(product).count())
 
 
