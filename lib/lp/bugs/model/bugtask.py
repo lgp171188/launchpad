@@ -130,10 +130,11 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
+    block_implicit_flushes,
     cursor,
     quote,
-    sqlvalues, block_implicit_flushes,
-)
+    sqlvalues,
+    )
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
