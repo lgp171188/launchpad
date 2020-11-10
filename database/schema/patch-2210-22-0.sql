@@ -434,4 +434,52 @@ CREATE OR REPLACE FUNCTION bugsummary_insert_journals(
         HAVING SUM(count) != 0;
 $$;
 
+
+-- Views
+
+-- Combined view so we don't have to manually collate rows from both tables.
+-- Note that we flip the sign of the id column of BugSummaryJournal to avoid
+-- clashes. This is enough to keep Storm happy as it never needs to update
+-- this table, and there are no other suitable primary keys.
+-- We don't SUM() rows here to ensure PostgreSQL has the most hope of
+-- generating good query plans when we query this view.
+CREATE OR REPLACE VIEW CombinedBugSummary AS (
+    SELECT
+        id,
+        count,
+        product,
+        productseries,
+        distribution,
+        distroseries,
+        sourcepackagename,
+        viewed_by,
+        tag,
+        status,
+        milestone,
+        importance,
+        has_patch,
+        access_policy,
+        ociproject,
+        ociprojectseries
+    FROM bugsummary
+    UNION ALL
+    SELECT
+        -id AS id, count,
+        product,
+        productseries,
+        distribution,
+        distroseries,
+        sourcepackagename,
+        viewed_by,
+        tag,
+        status,
+        milestone,
+        importance,
+        has_patch,
+        access_policy,
+        ociproject,
+        ociprojectseries
+   FROM bugsummaryjournal
+);
+
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 22, 0);
