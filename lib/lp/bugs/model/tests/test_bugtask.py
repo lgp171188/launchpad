@@ -2800,14 +2800,14 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
             validate_target, task.bug, p)
 
     def test_new_ociproject_is_allowed(self):
-        # A new product not on the bug is OK.
+        # A new oci project not on the bug is OK.
         p1 = self.factory.makeOCIProject()
         task = self.factory.makeBugTask(target=p1)
         p2 = self.factory.makeOCIProject()
         validate_target(task.bug, p2)
 
     def test_same_ociproject_is_forbidden(self):
-        # A product with an existing task is not.
+        # An oci project with an existing task is not.
         p = self.factory.makeOCIProject()
         task = self.factory.makeBugTask(target=p)
         self.assertRaisesWithContent(

@@ -169,6 +169,7 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
         self.assertEqual(1, get_bugsummary_rows(product).count())
         self.assertEqual(1, get_bugsummary_rows(ociproject).count())
         self.assertEqual(0, get_bugsummaryjournal_rows(product).count())
+        self.assertEqual(0, get_bugsummaryjournal_rows(ociproject).count())
 
 
 class TestGetBugSummaryRows(TestCaseWithFactory):
