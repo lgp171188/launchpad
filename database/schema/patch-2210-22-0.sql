@@ -20,7 +20,7 @@ ALTER TABLE BugTask
             WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL
             WHEN ociprojectseries IS NOT NULL THEN true
             ELSE false
-        END);
+        END) NOT VALID;
 
 ALTER INDEX bugtask_distinct_sourcepackage_assignment
     RENAME TO old__bugtask_distinct_sourcepackage_assignment;
@@ -42,7 +42,7 @@ ALTER TABLE BugSummary
             WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL
             WHEN ociprojectseries IS NOT NULL THEN true
             ELSE false
-        END);
+        END) NOT VALID;
 
 ALTER INDEX bugsummary__unique
     RENAME TO old__bugsummary__unique;
