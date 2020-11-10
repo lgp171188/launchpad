@@ -10,6 +10,7 @@ __all__ = ['NumberCruncher']
 
 import logging
 
+import transaction
 from twisted.application import service
 from twisted.internet import (
     defer,
@@ -79,6 +80,7 @@ class NumberCruncher(service.Service):
                 self.logger.debug("{}: {}".format(gauge_name, value[0]))
                 self.statsd_client.gauge(gauge_name, value[0])
         self.logger.debug("Build queue stats update complete.")
+        transaction.abort()
 
     def _updateBuilderCounts(self):
         """Update statsd with the builder statuses.
@@ -117,6 +119,7 @@ class NumberCruncher(service.Service):
         """Statistics that require builder knowledge to be updated."""
         self.builder_factory.update()
         self._updateBuilderCounts()
+        transaction.abort()
 
     def startService(self):
         self.logger.info("Starting number-cruncher service.")

@@ -20,6 +20,7 @@ from lp.buildmaster.enums import BuilderCleanStatus
 from lp.buildmaster.interactor import BuilderSlave
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.mock_slaves import OkSlave
+from lp.services.database.isolation import is_transaction_in_progress
 from lp.services.statsd.numbercruncher import NumberCruncher
 from lp.services.statsd.tests import StatsMixin
 from lp.testing import TestCaseWithFactory
@@ -46,6 +47,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         manager.builder_factory.update()
         manager.updateBuilderStats()
 
+        self.assertFalse(is_transaction_in_progress())
         self.assertEqual(8, self.stats_client.gauge.call_count)
         for call in self.stats_client.mock.gauge.call_args_list:
             self.assertIn('386', call[0][0])
@@ -61,6 +63,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         manager.builder_factory.update()
         manager.updateBuilderStats()
 
+        self.assertFalse(is_transaction_in_progress())
         self.assertEqual(12, self.stats_client.gauge.call_count)
         i386_calls = [c for c in self.stats_client.gauge.call_args_list
                       if '386' in c[0][0]]
@@ -80,6 +83,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         manager.builder_factory.update()
         manager.updateBuilderStats()
 
+        self.assertFalse(is_transaction_in_progress())
         self.assertEqual(12, self.stats_client.gauge.call_count)
         calls = [c[0] for c in self.stats_client.gauge.call_args_list
                  if 'amd64' in c[0][0]]
@@ -113,6 +117,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         manager.builder_factory.update()
         manager.updateBuilderQueues()
 
+        self.assertFalse(is_transaction_in_progress())
         self.assertEqual(2, self.stats_client.gauge.call_count)
         self.assertThat(
             [x[0] for x in self.stats_client.gauge.call_args_list],
