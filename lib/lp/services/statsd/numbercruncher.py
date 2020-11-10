@@ -10,6 +10,7 @@ __all__ = ['NumberCruncher']
 
 import logging
 
+import transaction
 from twisted.application import service
 from twisted.internet import (
     defer,
@@ -68,7 +69,10 @@ class NumberCruncher(service.Service):
         return loop, stopping_deferred
 
     def updateBuilderQueues(self):
-        """Update statsd with the build queue lengths."""
+        """Update statsd with the build queue lengths.
+
+        This aborts the current transaction before returning.
+        """
         self.logger.debug("Updating build queue stats.")
         queue_details = getUtility(IBuilderSet).getBuildQueueSizes()
         for queue_type, contents in queue_details.items():
@@ -79,6 +83,7 @@ class NumberCruncher(service.Service):
                 self.logger.debug("{}: {}".format(gauge_name, value[0]))
                 self.statsd_client.gauge(gauge_name, value[0])
         self.logger.debug("Build queue stats update complete.")
+        transaction.abort()
 
     def _updateBuilderCounts(self):
         """Update statsd with the builder statuses.
@@ -114,9 +119,13 @@ class NumberCruncher(service.Service):
         self.logger.debug("Builder stats update complete.")
 
     def updateBuilderStats(self):
-        """Statistics that require builder knowledge to be updated."""
+        """Statistics that require builder knowledge to be updated.
+
+        This aborts the current transaction before returning.
+        """
         self.builder_factory.update()
         self._updateBuilderCounts()
+        transaction.abort()
 
     def startService(self):
         self.logger.info("Starting number-cruncher service.")
