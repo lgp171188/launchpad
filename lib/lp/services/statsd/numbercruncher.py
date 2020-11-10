@@ -69,7 +69,10 @@ class NumberCruncher(service.Service):
         return loop, stopping_deferred
 
     def updateBuilderQueues(self):
-        """Update statsd with the build queue lengths."""
+        """Update statsd with the build queue lengths.
+
+        This aborts the current transaction before returning.
+        """
         self.logger.debug("Updating build queue stats.")
         queue_details = getUtility(IBuilderSet).getBuildQueueSizes()
         for queue_type, contents in queue_details.items():
@@ -116,7 +119,10 @@ class NumberCruncher(service.Service):
         self.logger.debug("Builder stats update complete.")
 
     def updateBuilderStats(self):
-        """Statistics that require builder knowledge to be updated."""
+        """Statistics that require builder knowledge to be updated.
+
+        This aborts the current transaction before returning.
+        """
         self.builder_factory.update()
         self._updateBuilderCounts()
         transaction.abort()
