@@ -1,4 +1,5 @@
-= Searching BugTasks =
+Searching BugTasks
+*******************
 
 BugTasks are usually searched through an IBugTarget's searchTasks()
 method, but they all delegate the search to IBugTaskSet.search(). That
@@ -24,7 +25,8 @@ method accepts a single parameter; an BugTaskSearchParams instance.
     True
 
 
-== Searching using bug full-text index ==
+Searching using bug full-text index
+************************************
 
 The searchtext parameter does an extensive and expensive search (it
 looks through the bug's full text index, bug comments, bugtask
@@ -55,7 +57,8 @@ But if we put that word in the bug #4 description, it will be found.
     ...     print("#%s" % bugtask.bug.id)
     #4
 
-=== BugTaskSearchParams' parameters searchtext and fast_searchtext ===
+BugTaskSearchParams' parameters searchtext and fast_searchtext
+***************************************************************
 
 Normally, the parameter searchtext should be used. The alternative
 parameter fast_searchtext requires a syntactically correct tsquery
@@ -113,7 +116,8 @@ Passing invalid tsquery expressions as fast_searchtext raises an exception.
     >>> transaction.abort()
 
 
-== Bugs with partner packages ==
+Bugs with partner packages
+***************************
 
 Bugs may also be targeted to partner packages.  First turn "cdrkit" into
 a partner package:
@@ -147,12 +151,14 @@ We can file a bug against it and see that show up in a search:
     1
 
 
-== Ordering search results ==
+Ordering search results
+************************
 
 The result returned by bugtask searches can come sorted by a specified order
 
 
-=== Ordering by number of duplicates ===
+Ordering by number of duplicates
+*********************************
 
 It is possible to sort the results by the number of duplicates each bag has.
 
@@ -200,7 +206,8 @@ a duplicate.
     cdrkit (Ubuntu) Bug to be fixed in trunk
 
 
-=== Ordering by number of comments ===
+Ordering by number of comments
+*******************************
 
 It is also possible to sort the results by the number of comments on a bug.
 
@@ -219,7 +226,8 @@ Here is the list of bugs for Ubuntu, sorted by their number of comments.
     Bug to be fixed in trunk [1 comments]
 
 
-=== Ordering by bug heat ===
+Ordering by bug heat
+*********************
 
 Another way of sorting searches is by bug heat.
 
@@ -242,7 +250,8 @@ Another way of sorting searches is by bug heat.
     Firefox does not support SVG [heat: 1]
 
 
-=== Ordering by patch age ===
+Ordering by patch age
+**********************
 
 We can also sort search results by the creation time of the youngest
 patch attached to a bug.
