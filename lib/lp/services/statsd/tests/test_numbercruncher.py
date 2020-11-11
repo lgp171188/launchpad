@@ -21,6 +21,8 @@ from lp.buildmaster.interactor import BuilderSlave
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.mock_slaves import OkSlave
 from lp.services.database.isolation import is_transaction_in_progress
+from lp.services.database.policy import DatabaseBlockedPolicy
+from lp.services.log.logger import BufferLogger
 from lp.services.statsd.numbercruncher import NumberCruncher
 from lp.services.statsd.tests import StatsMixin
 from lp.testing import TestCaseWithFactory
@@ -103,6 +105,18 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
                      'virtualized=True,env=test', 1))
                  ]))
 
+    def test_updateBuilderStats_error(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.logger = BufferLogger()
+        with DatabaseBlockedPolicy():
+            cruncher.updateBuilderStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertIn(
+            "Failure while updating builder stats:",
+            cruncher.logger.getLogBuffer())
+
     def test_updateBuilderQueues(self):
         builder = self.factory.makeBuilder(
             processors=[getUtility(IProcessorSet).getByName('amd64')])
@@ -126,6 +140,18 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
                     build.processor.name), 1)),
                  Equals(('buildqueue,virtualized=False,arch=386,env=test', 1))
                  ]))
+
+    def test_updateBuilderQueues_error(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.logger = BufferLogger()
+        with DatabaseBlockedPolicy():
+            cruncher.updateBuilderQueues()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertIn(
+            "Failure while updating build queue stats:",
+            cruncher.logger.getLogBuffer())
 
     def test_startService_starts_update_queues_loop(self):
         clock = task.Clock()
