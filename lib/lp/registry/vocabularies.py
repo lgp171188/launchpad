@@ -128,6 +128,7 @@ from lp.registry.interfaces.milestone import (
     IMilestoneSet,
     IProjectGroupMilestone,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -155,6 +156,7 @@ from lp.registry.model.featuredproject import FeaturedProject
 from lp.registry.model.karma import KarmaCategory
 from lp.registry.model.mailinglist import MailingList
 from lp.registry.model.milestone import Milestone
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.person import (
     get_person_visibility_terms,
     IrcID,
@@ -213,6 +215,7 @@ from lp.services.webapp.vocabulary import (
     NamedSQLObjectVocabulary,
     NamedStormHugeVocabulary,
     SQLObjectVocabularyBase,
+    StormVocabularyBase,
     VocabularyFilter,
     )
 from lp.soyuz.model.archive import Archive
@@ -2205,3 +2208,31 @@ class DistributionSourcePackageVocabulary(FilteredVocabularyBase):
             return self.toTerm((dsp, binary_names))
 
         return CountableIterator(results.count(), results, make_term)
+
+
+@implementer(IHugeVocabulary)
+class OCIProjectVocabulary(StormVocabularyBase):
+    """All OCI Projects."""
+
+    _table = OCIProject
+    displayname = 'Select an OCI project'
+    step_title = 'Search'
+
+    def toTerm(self, ociproject):
+        token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
+        title = "%s" % token
+        return SimpleTerm(ociproject, token, title)
+
+    def getTermByToken(self, token):
+        pillar_name, name = token.split('/')
+        ociproject = getUtility(IOCIProjectSet).getByPillarAndName(
+            pillar_name, name)
+        if ociproject is None:
+            raise LookupError(token)
+        return self.toTerm(ociproject)
+
+    def search(self, query, vocab_filter=None):
+        return getUtility(IOCIProjectSet).findByName(query)
+
+    def _entries(self):
+        return getUtility(IOCIProjectSet).findByName('')

@@ -12,7 +12,13 @@ __all__ = [
     ]
 
 import pytz
+import six
 from six import text_type
+from storm.expr import (
+    Join,
+    LeftJoin,
+    Or,
+    )
 from storm.locals import (
     Bool,
     DateTime,
@@ -263,18 +269,46 @@ class OCIProjectSet:
 
     def getByPillarAndName(self, pillar, name):
         """See `IOCIProjectSet`."""
-        target = IStore(OCIProject).find(
-            OCIProject,
-            self._get_pillar_attribute(pillar) == pillar,
-            OCIProject.ociprojectname == OCIProjectName.id,
-            OCIProjectName.name == name).one()
-        return target
+        from lp.registry.model.product import Product
+        from lp.registry.model.distribution import Distribution
+
+        # If pillar is not an string, we expect it to be either an
+        # IDistribution or IProduct.
+        if not isinstance(pillar, six.string_types):
+            return IStore(OCIProject).find(
+                OCIProject,
+                self._get_pillar_attribute(pillar) == pillar,
+                OCIProject.ociprojectname == OCIProjectName.id,
+                OCIProjectName.name == name).one()
+        else:
+            # If we got a pillar name instead, we need to join with both
+            # Distribution and Product tables, to find out which one has the
+            # provided name.
+            tables = [
+                OCIProject,
+                Join(OCIProjectName,
+                     OCIProject.ociprojectname == OCIProjectName.id),
+                LeftJoin(Distribution,
+                         OCIProject.distribution == Distribution.id),
+                LeftJoin(Product,
+                         OCIProject.project == Product.id)
+            ]
+            return IStore(OCIProject).using(*tables).find(
+                OCIProject,
+                Or(Distribution.name == pillar, Product.name == pillar),
+                OCIProjectName.name == name).one()
 
     def findByPillarAndName(self, pillar, name_substring):
         """See `IOCIProjectSet`."""
         return IStore(OCIProject).find(
             OCIProject,
             self._get_pillar_attribute(pillar) == pillar,
+            OCIProject.ociprojectname == OCIProjectName.id,
+            OCIProjectName.name.contains_string(name_substring))
+
+    def findByName(self, name_substring):
+        return IStore(OCIProject).find(
+            OCIProject,
             OCIProject.ociprojectname == OCIProjectName.id,
             OCIProjectName.name.contains_string(name_substring))
 
