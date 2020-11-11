@@ -1822,16 +1822,17 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
         mint = self.factory.makeDistribution(name="mint")
         eric = self.factory.makePerson(name="eric")
         other_user = self.factory.makePerson()
+        source_owner = self.factory.makePerson()
 
         mint_choc = self.factory.makeDistributionSourcePackage(
             distribution=mint, sourcepackagename="choc")
         repository = self.factory.makeGitRepository(
             owner=eric, target=mint_choc, name="choc-repo")
-        other_repository = self.factory.makeGitRepository(
-            owner=other_user, target=mint_choc, name="choc-repo")
+        source_repository = self.factory.makeGitRepository(
+            owner=source_owner, target=mint_choc, name="choc-repo")
         [ref] = self.factory.makeGitRefs(repository=repository,
                                          paths=["refs/heads/master"])
-        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+        [source_ref] = self.factory.makeGitRefs(repository=source_repository,
                                          paths=["refs/heads/branch"])
         dsp = repository.target
         self.repository_set = getUtility(IGitRepositorySet)
@@ -1840,49 +1841,57 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
                 repository.owner, dsp, repository, repository.owner)
             self.repository_set.setDefaultRepository(dsp, repository)
         bmp = self.factory.makeBranchMergeProposalForGit(
-            source_ref=other_ref,
+            source_ref=source_ref,
             target_ref=ref)
         login_person(other_user)
         view = create_initialized_view(bmp, "+index", principal=other_user)
         git_add_remote_match = HTMLContains(Tag(
             'Git remote add text', 'tt',
             attrs={"id": "remote-add"},
-            text=("git remote add -f %s "
+            text=("git remote add %s "
                   "git+ssh://%s@git.launchpad.test/~%s/%s/+source/choc/+git/%s"
-                  ) % (other_user.name,
+                  ) % (source_owner.name,
                        other_user.name,
-                       other_user.name,
+                       source_owner.name,
                        mint.name,
                        repository.name)))
         git_remote_update_match = HTMLContains(
             Tag(
                 'Git remote update text', 'tt',
                 attrs={"id": "remote-update"},
-                text=("git remote update %s" % other_user.name)))
+                text=("git remote update %s" % source_owner.name)))
+        git_checkout_match = HTMLContains(
+            Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "checkout-cmd"},
+                text="git checkout %s/%s" % (source_owner.name,
+                                             bmp.merge_target.name)))
         git_merge_match = HTMLContains(
             Tag(
                 'Merge command text', 'tt',
                 attrs={"id": "merge-cmd"},
-                text="git merge %s/branch" % other_user.name))
+                text="git merge %s/branch" % source_owner.name))
 
         with person_logged_in(other_user):
             rendered_view = view.render()
             self.assertThat(rendered_view, git_add_remote_match)
             self.assertThat(rendered_view, git_remote_update_match)
+            self.assertThat(rendered_view, git_checkout_match)
             self.assertThat(rendered_view, git_merge_match)
 
     def test_merge_guidelines_project(self):
         # Repository is the default for a project
         eric = self.factory.makePerson(name="eric")
         other_user = self.factory.makePerson()
+        source_owner = self.factory.makePerson()
         fooix = self.factory.makeProduct(name="fooix", owner=eric)
         repository = self.factory.makeGitRepository(
             owner=eric, target=fooix, name="fooix-repo")
-        other_repository = self.factory.makeGitRepository(
-            owner=other_user, target=fooix, name="fooix-repo")
+        source_repository = self.factory.makeGitRepository(
+            owner=source_owner, target=fooix, name="fooix-repo")
         [ref] = self.factory.makeGitRefs(repository=repository,
                                          paths=["refs/heads/master"])
-        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+        [source_ref] = self.factory.makeGitRefs(repository=source_repository,
                                          paths=["refs/heads/branch"])
 
         self.repository_set = getUtility(IGitRepositorySet)
@@ -1891,35 +1900,42 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
                 repository.owner, fooix, repository, user)
             self.repository_set.setDefaultRepository(fooix, repository)
         bmp = self.factory.makeBranchMergeProposalForGit(
-            source_ref=other_ref,
+            source_ref=source_ref,
             target_ref=ref)
         login_person(other_user)
         view = create_initialized_view(bmp, "+index", principal=other_user)
         git_add_remote_match = HTMLContains(Tag(
             'Git remote add text', 'tt',
             attrs={"id": "remote-add"},
-            text=("git remote add -f %s "
+            text=("git remote add %s "
                   "git+ssh://%s@git.launchpad.test/~%s/%s/+git/%s"
-                  ) % (other_user.name,
+                  ) % (source_owner.name,
                        other_user.name,
-                       other_user.name,
+                       source_owner.name,
                        fooix.name,
                        repository.name)))
         git_remote_update_match = HTMLContains(
             Tag(
                 'Git remote update text', 'tt',
                 attrs={"id": "remote-update"},
-                text=("git remote update %s" % other_user.name)))
+                text=("git remote update %s" % source_owner.name)))
+        git_checkout_match = HTMLContains(
+            Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "checkout-cmd"},
+                text="git checkout %s/%s" % (source_owner.name,
+                                             bmp.merge_target.name)))
         git_merge_match = HTMLContains(
             Tag(
                 'Merge command text', 'tt',
                 attrs={"id": "merge-cmd"},
-                text="git merge %s/branch" % other_user.name))
+                text="git merge %s/branch" % source_owner.name))
 
         with person_logged_in(other_user):
             rendered_view = view.render()
             self.assertThat(rendered_view, git_add_remote_match)
             self.assertThat(rendered_view, git_remote_update_match)
+            self.assertThat(rendered_view, git_checkout_match)
             self.assertThat(rendered_view, git_merge_match)
 
     def test_merge_guidelines_anonymous_view(self):
@@ -1929,20 +1945,21 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
         # There is of course the permissions aspect involved here that you can
         # do a local merge using only read permissions on the source branch.
         team = self.factory.makeTeam()
+        source_owner = self.factory.makePerson()
         other_user = self.factory.makePerson()
         fooix = self.factory.makeProduct(name="fooix")
         repository = self.factory.makeGitRepository(
             owner=team, target=fooix, name="fooix-repo")
-        other_repository = self.factory.makeGitRepository(
+        source_repository = self.factory.makeGitRepository(
             owner=other_user, target=fooix, name="fooix-repo")
         [ref] = self.factory.makeGitRefs(repository=repository,
                                          paths=["refs/heads/master"])
-        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+        [source_ref] = self.factory.makeGitRefs(repository=source_repository,
                                          paths=["refs/heads/branch"])
         bmp = self.factory.makeBranchMergeProposalForGit(
-            source_ref=other_ref,
+            source_ref=source_ref,
             target_ref=ref)
-        with person_logged_in(self.user):
+        with person_logged_in(other_user):
             view = create_initialized_view(bmp, "+index", principal=other_user)
         git_add_remote_match = HTMLContains(
             Tag(
@@ -1952,6 +1969,12 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
             Tag(
                 'Git remote update text', 'tt',
                 attrs={"id": "remote-update"}))
+        git_checkout_match = HTMLContains(
+            Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "checkout-cmd"},
+                text="git checkout %s/%s" % (source_owner.name,
+                                             bmp.merge_target.name)))
         git_merge_match = HTMLContains(
             Tag(
                 'Merge command text', 'tt',
@@ -1960,6 +1983,7 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
         rendered_view = view.render()
         self.assertThat(rendered_view, Not(git_add_remote_match))
         self.assertThat(rendered_view, Not(git_remote_update_match))
+        self.assertThat(rendered_view, Not(git_checkout_match))
         self.assertThat(rendered_view, Not(git_merge_match))
 
     def test_merge_guidelines_personal(self):
