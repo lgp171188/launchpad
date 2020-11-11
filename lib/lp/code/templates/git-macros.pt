@@ -39,7 +39,7 @@
   <div id="merge-instructions" tal:condition="python:kind == 'branch' and view.user">
     <dt>Merge guidelines:</dt>
     <dd>
-      <tt id="remote-add" class="command" tal:content="string:git remote add -f ${context/repository/owner/name} ${view/git_ssh_url}" />
+      <tt id="remote-add" class="command" tal:content="string:git remote add ${context/repository/owner/name} ${view/git_ssh_url}" />
       <br />
       <tt id="remote-update" class="command" tal:content="string:git remote update ${context/repository/owner/name}" />
       <br />
