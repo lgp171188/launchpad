@@ -24,6 +24,10 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
+    ServiceUsage,
+    )
 from lp.bugs.model.bugtarget import BugTargetBase
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
@@ -92,6 +96,13 @@ class OCIProject(BugTargetBase, StormBase):
     enable_bugfiling_duplicate_search = Bool(
         name="enable_bugfiling_duplicate_search")
 
+    answers_usage = ServiceUsage.NOT_APPLICABLE
+    blueprints_usage = ServiceUsage.NOT_APPLICABLE
+    codehosting_usage = ServiceUsage.NOT_APPLICABLE
+    translations_usage = ServiceUsage.NOT_APPLICABLE
+    bug_tracking_usage = ServiceUsage.LAUNCHPAD
+    uses_launchpad = True
+
     @property
     def name(self):
         return self.ociprojectname.name
@@ -128,6 +139,11 @@ class OCIProject(BugTargetBase, StormBase):
     displayname = display_name
     bugtargetname = display_name
     bugtargetdisplayname = display_name
+    title = display_name
+
+    def _customizeSearchParams(self, search_params):
+        """Customize `search_params` for this OCI project."""
+        search_params.setOCIProject(self)
 
     @property
     def driver(self):
@@ -138,6 +154,10 @@ class OCIProject(BugTargetBase, StormBase):
     def bug_supervisor(self):
         """See `IOCIProject`."""
         return self.pillar.bug_supervisor
+
+    def getAllowedBugInformationTypes(self):
+        """See `IDistribution.`"""
+        return FREE_INFORMATION_TYPES
 
     def newRecipe(self, name, registrant, owner, git_ref,
                   build_file, description=None, build_daily=False,

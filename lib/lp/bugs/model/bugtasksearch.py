@@ -321,6 +321,7 @@ def _build_query(params):
         BugTaskFlat.importance: params.importance,
         BugTaskFlat.product: params.product,
         BugTaskFlat.distribution: params.distribution,
+        BugTaskFlat.ociproject: params.ociproject,
         BugTaskFlat.distroseries: params.distroseries,
         BugTaskFlat.productseries: params.productseries,
         BugTaskFlat.assignee: params.assignee,

@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for searching bug tasks. Mostly used with IBugTaskSet."""
@@ -172,7 +172,7 @@ class BugTaskSearchParams:
                  created_since=None, exclude_conjoined_tasks=False, cve=None,
                  upstream_target=None, milestone_dateexpected_before=None,
                  milestone_dateexpected_after=None, created_before=None,
-                 information_type=None, ignore_privacy=False):
+                 information_type=None, ignore_privacy=False, ociproject=None):
 
         self.bug = bug
         self.searchtext = searchtext
@@ -223,6 +223,7 @@ class BugTaskSearchParams:
         else:
             self.information_type = None
         self.ignore_privacy = ignore_privacy
+        self.ociproject = ociproject
 
     def setProduct(self, product):
         """Set the upstream context on which to filter the search."""
@@ -281,6 +282,10 @@ class BugTaskSearchParams:
             self.distribution = sourcepackage.distribution
         self.sourcepackagename = sourcepackage.sourcepackagename
 
+    def setOCIProject(self, ociproject):
+        """Set the distribution context on which to filter the search."""
+        self.ociproject = ociproject
+
     def setTarget(self, target):
         """Constrain the search to only return items in target.
 
@@ -303,6 +308,7 @@ class BugTaskSearchParams:
         from lp.registry.interfaces.sourcepackage import ISourcePackage
         from lp.registry.interfaces.distributionsourcepackage import \
             IDistributionSourcePackage
+        from lp.registry.interfaces.ociproject import IOCIProject
         if isinstance(target, (any, all)):
             assert len(target.query_values), \
                 'cannot determine target with no targets'
@@ -325,6 +331,8 @@ class BugTaskSearchParams:
             self.setSourcePackage(target)
         elif IProjectGroup.providedBy(instance):
             self.setProjectGroup(target)
+        elif IOCIProject.providedBy(instance):
+            self.setOCIProject(instance)
         else:
             raise AssertionError("unknown target type %r" % target)
 
@@ -362,7 +370,8 @@ class BugTaskSearchParams:
                        linked_merge_proposals=None, linked_blueprints=None,
                        structural_subscriber=None,
                        modified_since=None, created_since=None,
-                       created_before=None, information_type=None):
+                       created_before=None, information_type=None,
+                       ociproject=None):
         """Create and return a new instance using the parameter list."""
         search_params = cls(user=user, orderby=order_by)
 
@@ -377,6 +386,7 @@ class BugTaskSearchParams:
         search_params.owner = owner
         search_params.affected_user = affected_user
         search_params.distribution = distribution
+        search_params.ociproject = ociproject
         if has_patch:
             # Import this here to avoid circular imports
             from lp.bugs.interfaces.bugattachment import (
