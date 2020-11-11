@@ -73,9 +73,24 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         self.assertEqual(4, len(amd64_calls))
 
     def test_correct_values_counts(self):
-        builder = self.factory.makeBuilder(
+        for _ in range(2):
+            cleaning_builder = self.factory.makeBuilder(
+                processors=[getUtility(IProcessorSet).getByName('amd64')])
+            cleaning_builder.setCleanStatus(BuilderCleanStatus.CLEANING)
+        for _ in range(3):
+            idle_builder = self.factory.makeBuilder(
+                processors=[getUtility(IProcessorSet).getByName('amd64')])
+            idle_builder.setCleanStatus(BuilderCleanStatus.CLEAN)
+            old_build = self.factory.makeSnapBuild()
+            old_build.queueBuild()
+            old_build.buildqueue_record.markAsBuilding(builder=idle_builder)
+            old_build.buildqueue_record.destroySelf()
+        building_builder = self.factory.makeBuilder(
             processors=[getUtility(IProcessorSet).getByName('amd64')])
-        builder.setCleanStatus(BuilderCleanStatus.CLEANING)
+        building_builder.setCleanStatus(BuilderCleanStatus.CLEAN)
+        build = self.factory.makeSnapBuild()
+        build.queueBuild()
+        build.buildqueue_record.markAsBuilding(builder=building_builder)
         self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
         transaction.commit()
         clock = task.Clock()
@@ -93,13 +108,13 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
                     'virtualized=True,env=test', 0)),
                  Equals((
                      'builders,status=building,arch=amd64,'
-                     'virtualized=True,env=test', 0)),
+                     'virtualized=True,env=test', 1)),
                  Equals((
                      'builders,status=idle,arch=amd64,'
-                     'virtualized=True,env=test', 0)),
+                     'virtualized=True,env=test', 3)),
                  Equals((
                      'builders,status=cleaning,arch=amd64,'
-                     'virtualized=True,env=test', 1))
+                     'virtualized=True,env=test', 2))
                  ]))
 
     def test_updateBuilderStats_error(self):
