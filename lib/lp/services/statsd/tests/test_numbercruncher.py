@@ -10,6 +10,7 @@ __metaclass__ = type
 from testtools.matchers import (
     Equals,
     MatchesListwise,
+    Not,
     )
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
@@ -153,6 +154,57 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
             "Failure while updating build queue stats:",
             cruncher.logger.getLogBuffer())
 
+    def test_updateLibrarianStats(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.updateLibrarianStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertEqual(2, self.stats_client.gauge.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.gauge.call_args_list],
+            MatchesListwise([
+                MatchesListwise([
+                    Equals('librarian.total_files,env=test'),
+                    Not(Equals(0)),
+                    ]),
+                MatchesListwise([
+                    Equals('librarian.total_filesize,env=test'),
+                    Not(Equals(0)),
+                    ]),
+                ]))
+        total_files = self.stats_client.gauge.call_args_list[0][0][1]
+        total_filesize = self.stats_client.gauge.call_args_list[1][0][1]
+
+        self.factory.makeLibraryFileAlias(content=b'x' * 1000, db_only=True)
+        self.factory.makeLibraryFileAlias(content=b'x' * 2000, db_only=True)
+        self.stats_client.gauge.reset_mock()
+        cruncher.updateLibrarianStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertEqual(2, self.stats_client.gauge.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.gauge.call_args_list],
+            MatchesListwise([
+                Equals(('librarian.total_files,env=test', total_files + 2)),
+                Equals((
+                    'librarian.total_filesize,env=test',
+                    total_filesize + 3000,
+                    )),
+                ]))
+
+    def test_updateLibrarianStats_error(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.logger = BufferLogger()
+        with DatabaseBlockedPolicy():
+            cruncher.updateLibrarianStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertIn(
+            "Failure while updating librarian stats:",
+            cruncher.logger.getLogBuffer())
+
     def test_startService_starts_update_queues_loop(self):
         clock = task.Clock()
         cruncher = NumberCruncher(clock=clock)
@@ -174,3 +226,14 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         advance = NumberCruncher.BUILDER_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(0, cruncher.updateBuilderStats.call_count)
+
+    def test_startService_starts_update_librarian_loop(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+
+        cruncher.updateLibrarianStats = FakeMethod()
+
+        cruncher.startService()
+        advance = NumberCruncher.LIBRARIAN_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, cruncher.updateLibrarianStats.call_count)

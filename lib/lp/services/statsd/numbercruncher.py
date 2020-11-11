@@ -10,6 +10,10 @@ __all__ = ['NumberCruncher']
 
 import logging
 
+from storm.expr import (
+    Count,
+    Sum,
+    )
 import transaction
 from twisted.application import service
 from twisted.internet import (
@@ -26,6 +30,8 @@ from lp.buildmaster.enums import (
     )
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.manager import PrefetchedBuilderFactory
+from lp.services.database.interfaces import IStore
+from lp.services.librarian.model import LibraryFileContent
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 NUMBER_CRUNCHER_LOG_NAME = "number-cruncher"
@@ -137,6 +143,29 @@ class NumberCruncher(service.Service):
             self.logger.exception("Failure while updating builder stats:")
         transaction.abort()
 
+    def updateLibrarianStats(self):
+        """Update librarian statistics.
+
+        This aborts the current transaction before returning.
+        """
+        try:
+            self.logger.debug("Updating librarian stats.")
+            store = IStore(LibraryFileContent)
+            total_files, total_filesize = store.find(
+                (Count(), Sum(LibraryFileContent.filesize))).one()
+            self._sendGauge(
+                "librarian.total_files,env={}".format(
+                    self.statsd_client.lp_environment),
+                total_files)
+            self._sendGauge(
+                "librarian.total_filesize,env={}".format(
+                    self.statsd_client.lp_environment),
+                total_filesize)
+            self.logger.debug("Librarian stats update complete.")
+        except Exception:
+            self.logger.exception("Failure while updating librarian stats:")
+        transaction.abort()
+
     def startService(self):
         self.logger.info("Starting number-cruncher service.")
         self.loops = []
@@ -144,6 +173,7 @@ class NumberCruncher(service.Service):
         for interval, callback in (
                 (self.QUEUE_INTERVAL, self.updateBuilderQueues),
                 (self.BUILDER_INTERVAL, self.updateBuilderStats),
+                (self.LIBRARIAN_INTERVAL, self.updateLibrarianStats),
                 ):
             loop, stopping_deferred = self._startLoop(interval, callback)
             self.loops.append(loop)
