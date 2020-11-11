@@ -46,7 +46,6 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         transaction.commit()
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)
-        manager.builder_factory.update()
         manager.updateBuilderStats()
 
         self.assertFalse(is_transaction_in_progress())
@@ -62,7 +61,6 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         transaction.commit()
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)
-        manager.builder_factory.update()
         manager.updateBuilderStats()
 
         self.assertFalse(is_transaction_in_progress())
@@ -82,7 +80,6 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         transaction.commit()
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)
-        manager.builder_factory.update()
         manager.updateBuilderStats()
 
         self.assertFalse(is_transaction_in_progress())
@@ -128,7 +125,6 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)
         manager._updateBuilderCounts = FakeMethod()
-        manager.builder_factory.update()
         manager.updateBuilderQueues()
 
         self.assertFalse(is_transaction_in_progress())
