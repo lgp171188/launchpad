@@ -51,6 +51,7 @@ from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtarget import (
     IBugTarget,
     IHasExpirableBugs,
+    IHasOfficialBugTags,
     )
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
@@ -68,7 +69,8 @@ from lp.services.fields import (
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 
-class IOCIProjectView(IHasGitRepositories, IServiceUsage, Interface):
+class IOCIProjectView(IHasGitRepositories, IServiceUsage,
+                      IHasOfficialBugTags, Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)

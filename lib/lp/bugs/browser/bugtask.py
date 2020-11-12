@@ -154,6 +154,7 @@ from lp.registry.interfaces.distroseries import (
     IDistroSeries,
     IDistroSeriesSet,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.productseries import IProductSeries
@@ -1655,26 +1656,28 @@ def bugtask_sort_key(bugtask):
     Designed to make sense when bugtargetdisplayname is shown.
     """
     if IDistribution.providedBy(bugtask.target):
-        key = (None, bugtask.target.displayname, None, None, None)
+        key = (None, bugtask.target.displayname, None, None, None, None)
     elif IDistroSeries.providedBy(bugtask.target):
         key = (
             None, bugtask.target.distribution.displayname,
-            bugtask.target.name, None, None)
+            bugtask.target.name, None, None, None)
     elif IDistributionSourcePackage.providedBy(bugtask.target):
         key = (
             bugtask.target.sourcepackagename.name,
-            bugtask.target.distribution.displayname, None, None, None)
+            bugtask.target.distribution.displayname, None, None, None, None)
     elif ISourcePackage.providedBy(bugtask.target):
         key = (
             bugtask.target.sourcepackagename.name,
             bugtask.target.distribution.displayname,
-            Version(bugtask.target.distroseries.version), None, None)
+            Version(bugtask.target.distroseries.version), None, None, None)
     elif IProduct.providedBy(bugtask.target):
-        key = (None, None, None, bugtask.target.displayname, None)
+        key = (None, None, None, bugtask.target.displayname, None, None)
     elif IProductSeries.providedBy(bugtask.target):
         key = (
             None, None, None, bugtask.target.product.displayname,
-            bugtask.target.name)
+            bugtask.target.name, None)
+    elif IOCIProject.providedBy(bugtask.target):
+        key = (None, None, None, None, None, bugtask.target.displayname)
     else:
         raise AssertionError("No sort key for %r" % bugtask.target)
 

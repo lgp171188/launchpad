@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -43,7 +43,8 @@ from lp.services.webapp.interfaces import (
 
 @implementer(IAlwaysSubmittedWidget, IMultiLineWidgetLayout, IInputWidget)
 class LaunchpadTargetWidget(BrowserWidget, InputWidget):
-    """Widget for selecting a product, distribution or package target."""
+    """Widget for selecting a product, distribution, package target or OCI
+    project."""
 
     template = ViewPageTemplateFile('templates/launchpad-target.pt')
     default_option = "package"

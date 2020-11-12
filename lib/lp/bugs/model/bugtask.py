@@ -157,6 +157,7 @@ def bugtask_sort_key(bugtask):
     distribution_name = ''
     distroseries_name = ''
     sourcepackage_name = ''
+    ociproject = ''
 
     if bugtask.product:
         product_name = bugtask.product.name
@@ -180,7 +181,7 @@ def bugtask_sort_key(bugtask):
 
     return (
         bugtask.bug.id, distribution_name, product_name, productseries_name,
-        distroseries_name, sourcepackage_name)
+        distroseries_name, sourcepackage_name, ociproject)
 
 
 def bug_target_from_key(product, productseries, distribution, distroseries,

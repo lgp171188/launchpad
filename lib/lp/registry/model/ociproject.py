@@ -159,6 +159,19 @@ class OCIProject(BugTargetBase, StormBase):
         """See `IDistribution.`"""
         return FREE_INFORMATION_TYPES
 
+    def getBugSummaryContextWhereClause(self):
+        """See BugTargetBase."""
+        # Circular fail.
+        from lp.bugs.model.bugsummary import BugSummary
+        return BugSummary.ociproject_id == self.id
+
+    def _getOfficialTagClause(self):
+        return self.pillar._getOfficialTagClause()
+
+    @property
+    def official_bug_tags(self):
+        return self.pillar.official_bug_tags
+
     def newRecipe(self, name, registrant, owner, git_ref,
                   build_file, description=None, build_daily=False,
                   require_virtualized=True, build_args=None):

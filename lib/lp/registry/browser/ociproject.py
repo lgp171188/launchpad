@@ -26,6 +26,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
+from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
@@ -115,7 +116,8 @@ class OCIProjectFormatterAPI(CustomizableFormatter):
         return {'displayname': displayname}
 
 
-class OCIProjectNavigation(TargetDefaultVCSNavigationMixin, Navigation):
+class OCIProjectNavigation(TargetDefaultVCSNavigationMixin,
+                           BugTargetTraversalMixin, Navigation):
 
     usedfor = IOCIProject
 
