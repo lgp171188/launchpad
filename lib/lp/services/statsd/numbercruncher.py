@@ -20,10 +20,7 @@ from twisted.internet.task import LoopingCall
 from twisted.python import log
 from zope.component import getUtility
 
-from lp.buildmaster.enums import (
-    BuilderCleanStatus,
-    BuildQueueStatus,
-    )
+from lp.buildmaster.enums import BuilderCleanStatus
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.manager import PrefetchedBuilderFactory
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
@@ -109,8 +106,7 @@ class NumberCruncher(service.Service):
                     counts['disabled'] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEANING:
                     counts['cleaning'] += 1
-                elif (builder.build_queue and
-                      builder.build_queue.status == BuildQueueStatus.RUNNING):
+                elif builder.build_queue:
                     counts['building'] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEAN:
                     counts['idle'] += 1
