@@ -2232,7 +2232,7 @@ class OCIProjectVocabulary(StormVocabularyBase):
         return self.toTerm(ociproject)
 
     def search(self, query, vocab_filter=None):
-        return getUtility(IOCIProjectSet).findByName(query)
+        return getUtility(IOCIProjectSet).searchByName(query)
 
     def _entries(self):
-        return getUtility(IOCIProjectSet).findByName('')
+        return getUtility(IOCIProjectSet).searchByName('')

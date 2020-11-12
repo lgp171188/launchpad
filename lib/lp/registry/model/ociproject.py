@@ -13,6 +13,7 @@ __all__ = [
 
 import pytz
 import six
+from lp.services.database.stormexpr import fti_search
 from six import text_type
 from storm.expr import (
     Join,
@@ -306,11 +307,14 @@ class OCIProjectSet:
             OCIProject.ociprojectname == OCIProjectName.id,
             OCIProjectName.name.contains_string(name_substring))
 
-    def findByName(self, name_substring):
-        return IStore(OCIProject).find(
+    def searchByName(self, name_substring):
+        query = IStore(OCIProject).find(
             OCIProject,
-            OCIProject.ociprojectname == OCIProjectName.id,
-            OCIProjectName.name.contains_string(name_substring))
+            OCIProject.ociprojectname == OCIProjectName.id)
+        if name_substring:
+            query = query.find(
+                fti_search(OCIProjectName, name_substring, True))
+        return query
 
     def preloadDataForOCIProjects(self, oci_projects):
         """See `IOCIProjectSet`."""
