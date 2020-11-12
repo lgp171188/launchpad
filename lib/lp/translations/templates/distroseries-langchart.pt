@@ -86,7 +86,7 @@
           <tal:count condition="not: drlang/contributor_count">
             &mdash;
           </tal:count>
-        </td>        
+        </td>
       </tr>
       </tal:loop>
     </tbody>

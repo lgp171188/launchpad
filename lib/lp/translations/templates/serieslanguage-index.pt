@@ -65,7 +65,7 @@
     <table class="listing sortable translation-stats">
       <thead>
         <tr>
-          <th>Template Name</th>         
+          <th>Template Name</th>
           <th>Status</th>
           <th>Untranslated</th>
           <th>Need review</th>
@@ -83,7 +83,7 @@
                tal:content="entry/potemplate/name">
                apache2-dev
             </a>
-          </td>          
+          </td>
           <td>
             <tal:comment condition="nothing">
               This text is used for the sorting.
@@ -157,7 +157,7 @@
             <tal:block condition="not: entry/date_changed">
                 &mdash;
             </tal:block>
-          </td>          
+          </td>
           <td tal:attributes="id string:${entry/potemplate/name}-person">
             <tal:block condition="entry/lasttranslator">
               <a tal:condition="entry/lasttranslator"
@@ -171,7 +171,7 @@
         </tr>
         <tfoot>
           <tr>
-            <th>Overall statistics:</th>            
+            <th>Overall statistics:</th>
             <td>
               <span style="white-space: nowrap"
                     tal:content="structure context/@@+barchart">--</span>
