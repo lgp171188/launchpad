@@ -33,6 +33,7 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import (
@@ -44,17 +45,25 @@ from lp.services.webapp.interfaces import (
 @implementer(IAlwaysSubmittedWidget, IMultiLineWidgetLayout, IInputWidget)
 class LaunchpadTargetWidget(BrowserWidget, InputWidget):
     """Widget for selecting a product, distribution, package target or OCI
-    project."""
+    project (the last is disabled by default).
+
+    To enable OCIProject as target, subclass LaunchpadTargetWidget and set
+    `show_ociproject` to True.
+    """
 
     template = ViewPageTemplateFile('templates/launchpad-target.pt')
     default_option = "package"
     _widgets_set_up = False
+    show_ociproject = False
 
     def getDistributionVocabulary(self):
         return 'Distribution'
 
     def getProductVocabulary(self):
         return 'Product'
+
+    def getOCIProjectVocabulary(self):
+        return 'OCIProject'
 
     def setUpSubWidgets(self):
         if self._widgets_set_up:
@@ -77,6 +86,10 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
                 __name__='package', title=u"Package",
                 required=False, vocabulary=package_vocab),
             ]
+        if self.show_ociproject:
+            fields.append(Choice(
+                __name__='ociproject', title=u"OCI project",
+                required=False, vocabulary=self.getOCIProjectVocabulary()))
         self.distribution_widget = CustomWidgetFactory(
             LaunchpadDropdownWidget)
         for field in fields:
@@ -87,7 +100,10 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
     def setUpOptions(self):
         """Set up options to be rendered."""
         self.options = {}
-        for option in ['package', 'product']:
+        option_names = ['package', 'product']
+        if self.show_ociproject:
+            option_names.append('ociproject')
+        for option in option_names:
             attributes = dict(
                 type='radio', name=self.name, value=option,
                 id='%s.option.%s' % (self.name, option))
@@ -130,6 +146,24 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
                     self.name, self.label,
                     LaunchpadValidationError(
                         "There is no project named '%s' registered in"
+                        " Launchpad" % entered_name))
+                raise self._error
+        if form_value == 'ociproject':
+            try:
+                return self.ociproject_widget.getInputValue()
+            except MissingInputError:
+                self._error = WidgetInputError(
+                    self.name, self.label,
+                    LaunchpadValidationError(
+                        'Please enter an OCI project name'))
+                raise self._error
+            except ConversionError:
+                entered_name = self.request.form_ng.getOne(
+                    "%s.ociproject" % self.name)
+                self._error = WidgetInputError(
+                    self.name, self.label,
+                    LaunchpadValidationError(
+                        "There is no OCI project named '%s' registered in"
                         " Launchpad" % entered_name))
                 raise self._error
         elif form_value == 'package':
@@ -187,6 +221,9 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
             self.default_option = 'package'
             self.distribution_widget.setRenderedValue(value.distribution)
             self.package_widget.setRenderedValue(value.sourcepackagename)
+        elif IOCIProject.providedBy(value):
+            self.default_option = 'ociproject'
+            self.ociproject_widget.setRenderedValue(value)
         else:
             raise AssertionError('Not a valid value: %r' % value)
 

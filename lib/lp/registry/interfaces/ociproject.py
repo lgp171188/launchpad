@@ -53,6 +53,9 @@ from lp.bugs.interfaces.bugtarget import (
     IHasExpirableBugs,
     IHasOfficialBugTags,
     )
+from lp.bugs.interfaces.structuralsubscription import (
+    IStructuralSubscriptionTarget,
+    )
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
@@ -70,7 +73,8 @@ OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 
 class IOCIProjectView(IHasGitRepositories, IServiceUsage,
-                      IHasOfficialBugTags, Interface):
+                      IHasOfficialBugTags, IStructuralSubscriptionTarget,
+                      Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)

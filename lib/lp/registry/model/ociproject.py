@@ -13,7 +13,6 @@ __all__ = [
 
 import pytz
 import six
-from lp.services.database.stormexpr import fti_search
 from six import text_type
 from storm.expr import (
     Join,
@@ -36,6 +35,9 @@ from lp.app.enums import (
     ServiceUsage,
     )
 from lp.bugs.model.bugtarget import BugTargetBase
+from lp.bugs.model.structuralsubscription import (
+    StructuralSubscriptionTargetMixin,
+    )
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
@@ -59,6 +61,7 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import fti_search
 
 
 def oci_project_modified(oci_project, event):
@@ -73,7 +76,7 @@ def oci_project_modified(oci_project, event):
 
 
 @implementer(IOCIProject)
-class OCIProject(BugTargetBase, StormBase):
+class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
     """See `IOCIProject` and `IOCIProjectSet`."""
 
     __storm_table__ = "OCIProject"
@@ -143,10 +146,13 @@ class OCIProject(BugTargetBase, StormBase):
         return "OCI project %s for %s" % (
             self.ociprojectname.name, self.pillar.display_name)
 
-    displayname = display_name
-    bugtargetname = display_name
-    bugtargetdisplayname = display_name
-    title = display_name
+    @property
+    def displayname(self):
+        return "%s (%s)" % (self.name, self.pillar.display_name)
+
+    bugtargetname = displayname
+    bugtargetdisplayname = displayname
+    title = displayname
 
     def _customizeSearchParams(self, search_params):
         """Customize `search_params` for this OCI project."""

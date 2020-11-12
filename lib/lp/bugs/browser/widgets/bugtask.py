@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Widgets related to IBugTask."""
@@ -468,6 +468,7 @@ class BugTaskBugWatchWidget(RadioWidget):
 
 
 class BugTaskTargetWidget(LaunchpadTargetWidget):
+    show_ociproject = True
 
     def getDistributionVocabulary(self):
         distro = self.context.context.distribution
