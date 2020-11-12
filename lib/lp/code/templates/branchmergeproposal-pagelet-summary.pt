@@ -128,7 +128,7 @@
         <br />
         <tt id="remote-update" class="command" tal:content="string:git remote update ${context/source_git_repository/owner/name}" />
         <br />
-        <tt id="checkout-cmd" class="command" tal:content="string:git checkout ${context/source_git_repository/owner/name}/${context/merge_target/name}"/>
+        <tt id="checkout-cmd" class="command" tal:content="string:git checkout ${context/merge_target/name}"/>
         <br />
         <tt id="merge-cmd" class="command" tal:content="string:git merge ${context/source_git_repository/owner/name}/${context/merge_source/name}" />
       </td>

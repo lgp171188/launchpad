@@ -1864,8 +1864,7 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
             Tag(
                 'Checkout command text', 'tt',
                 attrs={"id": "checkout-cmd"},
-                text="git checkout %s/%s" % (source_owner.name,
-                                             bmp.merge_target.name)))
+                text="git checkout %s" % bmp.merge_target.name))
         git_merge_match = HTMLContains(
             Tag(
                 'Merge command text', 'tt',
@@ -1923,8 +1922,7 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
             Tag(
                 'Checkout command text', 'tt',
                 attrs={"id": "checkout-cmd"},
-                text="git checkout %s/%s" % (source_owner.name,
-                                             bmp.merge_target.name)))
+                text="git checkout %s" % bmp.merge_target.name))
         git_merge_match = HTMLContains(
             Tag(
                 'Merge command text', 'tt',
@@ -1973,8 +1971,7 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
             Tag(
                 'Checkout command text', 'tt',
                 attrs={"id": "checkout-cmd"},
-                text="git checkout %s/%s" % (source_owner.name,
-                                             bmp.merge_target.name)))
+                text="git checkout %s" % bmp.merge_target.name))
         git_merge_match = HTMLContains(
             Tag(
                 'Merge command text', 'tt',
