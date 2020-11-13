@@ -1589,7 +1589,7 @@ class TestOCIProjectOfProductBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     def initTarget(self):
         product = self.factory.makeProduct()
         self.target = self.factory.makeOCIProject(pillar=product)
-        self.structural_label_subscriber = 'Product subscriber'
+        self.structural_label_subscriber = 'Series subscriber'
 
     def test_structural_subscriber_label(self):
         self._assert_structural_subscriber_label(

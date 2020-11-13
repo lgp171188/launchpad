@@ -49,6 +49,7 @@ respective bug task.
     Distribution
     ...
     Project (Find…)
+    OCI project (Find...)
     Status  Importance  Milestone
     New...  Low...      (nothing selected)...
     Assigned to... Mark Shuttleworth (mark)
