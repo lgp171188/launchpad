@@ -39,7 +39,9 @@ from lp.services.timeout import set_default_timeout_function
 
 
 opener_policies = {
-    "anything": lambda rcstype, target_rcstype: AcceptAnythingPolicy(),
+    "anything": (
+        lambda rcstype, target_rcstype, exclude_hosts=None:
+        AcceptAnythingPolicy()),
     "default": CodeImportBranchOpenPolicy,
     }
 
@@ -89,7 +91,8 @@ class CodeImportWorker:
             raise AssertionError(
                 'unknown rcstype %r' % source_details.rcstype)
         opener_policy = opener_policies[self.options.access_policy](
-            source_details.rcstype, source_details.target_rcstype)
+            source_details.rcstype, source_details.target_rcstype,
+            exclude_hosts=source_details.exclude_hosts)
         if source_details.target_rcstype == 'bzr':
             import_worker = import_worker_cls(
                 source_details,
