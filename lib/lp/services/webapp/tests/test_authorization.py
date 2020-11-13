@@ -5,9 +5,9 @@
 
 __metaclass__ = type
 
+import io
 from itertools import count
 from random import getrandbits
-import StringIO
 
 import transaction
 from zope.interface import (
@@ -229,7 +229,7 @@ class TestCheckPermissionCaching(TestCase):
 
     def makeRequest(self):
         """Construct an arbitrary `LaunchpadBrowserRequest` object."""
-        data = StringIO.StringIO()
+        data = io.BytesIO()
         env = {}
         return LaunchpadBrowserRequest(data, env)
 
