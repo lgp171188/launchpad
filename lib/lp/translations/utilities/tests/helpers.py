@@ -72,10 +72,10 @@ def import_pofile_or_potemplate(file_contents, person,
 
 
 def is_valid_mofile(mofile):
-    """Test whether a string is a valid MO file."""
+    """Test whether a byte string is a valid MO file."""
     # There are different magics for big- and little-endianness, so we
     # test for both.
-    be_magic = '\x95\x04\x12\xde'
-    le_magic = '\xde\x12\x04\x95'
+    be_magic = b'\x95\x04\x12\xde'
+    le_magic = b'\xde\x12\x04\x95'
 
     return mofile[:len(be_magic)] in (be_magic, le_magic)
