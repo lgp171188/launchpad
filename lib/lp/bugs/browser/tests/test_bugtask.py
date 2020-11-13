@@ -1577,6 +1577,37 @@ class TestDistributionBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         self._assert_shouldShowStructuralSubscriberWidget()
 
 
+class TestOCIProjectOfProductBugs(TestCaseWithFactory, BugTaskViewTestMixin):
+    """Test the bugs overview page for OCI project based on project."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIProjectOfProductBugs, self).setUp()
+        self.initTarget()
+
+    def initTarget(self):
+        product = self.factory.makeProduct()
+        self.target = self.factory.makeOCIProject(pillar=product)
+        self.structural_label_subscriber = 'Product subscriber'
+
+    def test_structural_subscriber_label(self):
+        self._assert_structural_subscriber_label(
+            self.structural_label_subscriber)
+
+    def test_shouldShowStructuralSubscriberWidget(self):
+        self._assert_shouldShowStructuralSubscriberWidget()
+
+
+class TestOCIProjectOfDistributionBugs(TestOCIProjectOfProductBugs):
+    """Test the bugs overview page for OCI project based on distribution."""
+
+    def initTarget(self):
+        distro = self.factory.makeDistribution()
+        self.target = self.factory.makeOCIProject(pillar=distro)
+        self.structural_label_subscriber = 'Package or series subscriber'
+
+
 class TestDistroSeriesBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     """Test the bugs overview page for distro series."""
 

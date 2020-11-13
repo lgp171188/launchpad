@@ -1533,15 +1533,20 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
 
     @property
     def structural_subscriber_label(self):
-        if IDistribution.providedBy(self.context):
+        if IOCIProject.providedBy(self.context):
+            target = self.context.pillar
+        else:
+            target = self.context
+
+        if IDistribution.providedBy(target):
             return 'Package or series subscriber'
-        elif IDistroSeries.providedBy(self.context):
+        elif IDistroSeries.providedBy(target):
             return 'Package subscriber'
-        elif IProduct.providedBy(self.context):
+        elif IProduct.providedBy(target):
             return 'Series subscriber'
-        elif IProjectGroup.providedBy(self.context):
+        elif IProjectGroup.providedBy(target):
             return 'Project or series subscriber'
-        elif IPerson.providedBy(self.context):
+        elif IPerson.providedBy(target):
             return 'Project, distribution, package, or series subscriber'
         else:
             return None
@@ -1553,7 +1558,12 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         """
         # It doesn't make sense to show the target name when viewing product
         # bugs.
-        if IProduct.providedBy(self.context):
+        if IOCIProject.providedBy(self.context):
+            target = self.context.pillar
+        else:
+            target = self.context
+
+        if IProduct.providedBy(target):
             return False
         else:
             return True
