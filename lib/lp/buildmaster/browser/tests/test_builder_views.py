@@ -17,6 +17,7 @@ from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
+from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobSource,
     InconsistentBuildFarmJobError,
@@ -29,8 +30,8 @@ from lp.testing import (
     celebrity_logged_in,
     record_two_runs,
     StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+    TestCaseWithFactory, BrowserTestCase, admin_logged_in, login_person,
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import ADMIN_EMAIL
@@ -157,6 +158,74 @@ class BuildCreationMixin(object):
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         self.markAsBuilt(build, builder)
         return build
+
+
+class TestBuilderView(BrowserTestCase):
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestBuilderView, self).setUp()
+        self.builder = getUtility(IBuilderSet)['bob']
+
+    def test_builder_change_details_buildd_admin(self):
+        person = self.factory.makePerson()
+        badmins = getUtility(IPersonSet).getByName('launchpad-buildd-admins')
+        with admin_logged_in():
+            badmins.addMember(person, badmins)
+
+        login_person(person)
+
+        browser = self.getViewBrowser(self.builder, user=person)
+        browser.getLink("Change details").click()
+        self.assertEqual(browser.getControl(name="field.name").value, 'bob')
+        self.assertEqual(browser.getControl(
+            name="field.title").value, 'Bob The Builder')
+        self.assertEqual(browser.getControl(
+            name="field.processors").value, ['386'])
+        self.assertEqual(browser.getControl(
+            name="field.owner").value, 'launchpad-buildd-admins')
+        self.assertEqual(browser.getControl('Manual Mode').selected, False)
+        self.assertEqual(browser.getControl(name="field.vm_host").value, '')
+        self.assertEqual(browser.getControl(
+            name="field.builderok").value, True)
+        self.assertEqual(browser.getControl(name="field.failnotes").value, '')
+        self.assertEqual(browser.getControl(name="field.active").value, True)
+
+        self.builder.builderok = True
+
+    def test_builder_change_details_registry_expert(self):
+        person = self.factory.makePerson()
+        reg_expert = getUtility(IPersonSet).getByName('registry')
+        with admin_logged_in():
+            reg_expert.addMember(person, reg_expert)
+        login_person(person)
+
+        # browser = self.getViewBrowser(self.builder, user=person)
+        # browser.getLink("Change details").click()
+        # self.assertEqual(browser.getControl(name="field.name").value, 'bob')
+        #
+        # title = browser.getControl(
+        #     name="field.title").value, 'Bob The Builder'
+        # title[0] = 'Changed title'
+        # title[1] = u'Changed title'
+        # browser.getLink("Change").click()
+        # self.assertEqual(browser.title, 'Changed title')
+        self.builder.builderok = True
+        # self.builder.title = 'Changed title'
+
+        #
+        # self.assertEqual(browser.getControl(
+        #     name="field.title").value, 'Bob The Builder')
+        # self.assertEqual(browser.getControl(
+        #     name="field.processors").value, ['386'])
+        # self.assertEqual(browser.getControl(
+        #     name="field.owner").value, 'launchpad-buildd-admins')
+        # self.assertEqual(browser.getControl('Manual Mode').selected, False)
+        # self.assertEqual(browser.getControl(name="field.vm_host").value, '')
+        # self.assertEqual(browser.getControl(
+        #     name="field.builderok").value, True)
+        # self.assertEqual(browser.getControl(name="field.failnotes").value, '')
+        # self.assertEqual(browser.getControl(name="field.active").value, True)
 
 
 class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):

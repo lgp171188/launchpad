@@ -23,6 +23,7 @@ from datetime import (
 from itertools import groupby
 import operator
 
+from lazr.restful.interface import copy_field, use_template
 from lazr.restful.utils import smartquote
 import pytz
 import six
@@ -30,6 +31,7 @@ from zope.component import getUtility
 from zope.event import notify
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextWidget
+from zope.interface import Interface
 from zope.lifecycleevent import ObjectCreatedEvent
 
 from lp import _
@@ -43,8 +45,8 @@ from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.app.widgets.owner import HiddenUserWidget
 from lp.buildmaster.interfaces.builder import (
     IBuilder,
-    IBuilderSet,
-    )
+    IBuilderSet, IBuilderView, IBuilderEdit, IBuilderModerateAttributes,
+)
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildSource,
     )
@@ -412,16 +414,36 @@ class BuilderSetAddView(LaunchpadFormView):
         return canonical_url(self.context)
 
 
-class BuilderEditView(LaunchpadEditFormView):
+class BuilderEditViewAdmins(LaunchpadEditFormView):
     """View class for changing builder details."""
 
-    schema = IBuilder
+    field_names = None
 
-    field_names = [
-        'name', 'title', 'processors', 'url', 'manual', 'owner',
-        'virtualized', 'builderok', 'failnotes', 'vm_host',
-        'vm_reset_protocol', 'active',
-        ]
+    @cachedproperty
+    def schema(self):
+        class BuilderEditSchema(Interface):
+            """Defines the fields for the edit form.
+
+            This is necessary to make various fields editable that are not
+            normally editable through the interface.
+            """
+
+            name = copy_field(IBuilder["name"], readonly=False)
+            title = copy_field(IBuilder["title"], readonly=False)
+            processors = copy_field(IBuilder["processors"], readonly=False)
+            url = copy_field(IBuilder["url"], readonly=False)
+            owner = copy_field(IBuilder["owner"], readonly=False)
+            virtualized = copy_field(IBuilder["virtualized"], readonly=False)
+            vm_host = copy_field(IBuilder["vm_host"], readonly=False)
+            vm_reset_protocol = copy_field(IBuilder["vm_reset_protocol"], readonly=False)
+            active = copy_field(IBuilder["active"], readonly=False)
+
+            use_template(IBuilder, include=["builderok"])
+            use_template(IBuilder, include=["manual"])
+            use_template(IBuilder, include=["failnotes"])
+
+        return BuilderEditSchema
+
     custom_widget_processors = LabeledMultiCheckBoxWidget
 
     @action(_('Change'), name='update')
