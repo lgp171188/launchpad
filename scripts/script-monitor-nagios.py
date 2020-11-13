@@ -18,6 +18,8 @@ As such, it was felt more appropriate to separate out the scripts,
 even though there is some code duplication.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = ['check_script']
 
@@ -54,8 +56,7 @@ def main():
     (options, args) = parser.parse_args()
 
     if len(args) < 2:
-        print "Must specify time in minutes and " \
-            "at least one host and script"
+        print("Must specify time in minutes and at least one host and script")
         return 3
 
     # First argument is the number of minutes into the past
@@ -73,12 +74,11 @@ def main():
             try:
                 hostname, scriptname = arg.split(':')
             except TypeError:
-                print "%r is not in the format 'host:scriptname'" % arg
+                print("%r is not in the format 'host:scriptname'" % arg)
                 return 3
             hosts_scripts.append((hostname, scriptname))
     except ValueError:
-        print "Must specify time in minutes and " \
-            "at least one host and script"
+        print("Must specify time in minutes and at least one host and script")
         return 3
 
     log = logger(options)
@@ -96,16 +96,16 @@ def main():
                 error_found = True
         if error_found:
             # Construct our return message
-            print "Scripts failed to run: %s" % ', '.join(msg)
+            print("Scripts failed to run: %s" % ', '.join(msg))
             return 2
         else:
             # Construct our return message
-            print "All scripts ran as expected"
+            print("All scripts ran as expected")
             return 0
     except Exception as e:
         # Squeeze the exception type and stringification of the exception
         # value on to one line.
-        print "Unhandled exception: %s %r" % (e.__class__.__name__, str(e))
+        print("Unhandled exception: %s %r" % (e.__class__.__name__, str(e)))
         return 3
 
 if __name__ == '__main__':
