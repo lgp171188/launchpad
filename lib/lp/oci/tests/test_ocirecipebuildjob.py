@@ -57,6 +57,7 @@ from lp.services.job.tests import (
     block_on_job,
     pop_remote_notifications,
     )
+from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
@@ -201,7 +202,8 @@ class MultiArchRecipeMixin:
         return build_request
 
 
-class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
+class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
+                               StatsMixin):
 
     layer = LaunchpadZopelessLayer
 
@@ -212,6 +214,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
             OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
             OCI_RECIPE_ALLOW_CREATE: 'on'
             }))
+        self.setUpStats()
 
     def makeOCIRecipeBuild(self, **kwargs):
         ocibuild = self.factory.makeOCIRecipeBuild(
@@ -291,6 +294,14 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
         self.assertIsNone(job.errors)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(ocibuild, ["Pending", "Uploaded"], logger)
+        self.assertEqual(4, self.stats_client.incr.call_count)
+        calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
+        self.assertThat(calls, MatchesListwise([
+            Equals('job.start_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals(
+                'job.complete_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
+            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test')]))
 
     def test_run_multiple_architectures(self):
         build_request = self.makeBuildRequest()
@@ -323,6 +334,15 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin):
             [((build_request, set(builds[:1])), {}),
              ((build_request, set(builds)), {})],
             client.uploadManifestList.calls)
+        calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
+        self.assertThat(calls, MatchesListwise([
+            Equals('job.start_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals(
+                'job.complete_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
+            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test'),
+            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
+            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test')]))
 
     def test_failing_upload_does_not_retries_automatically(self):
         build_request = self.makeBuildRequest(include_i386=False)

@@ -61,6 +61,7 @@ from twisted.python import (
     failure,
     log,
     )
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services import scripts
@@ -78,6 +79,7 @@ from lp.services.mail.sendmail import (
     MailController,
     set_immediate_mail_delivery,
     )
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.timeout import (
     get_default_timeout_function,
     set_default_timeout_function,
@@ -319,6 +321,30 @@ class BaseRunnableJob(BaseRunnableJobSource):
         self.job.queue(
             manage_transaction, abort_transaction,
             add_commit_hook=self.celeryRunOnCommit)
+
+    def start(self, manage_transaction=False):
+        """See `IJob`."""
+        self.job.start(manage_transaction=manage_transaction)
+        statsd = getUtility(IStatsdClient)
+        statsd.incr('job.start_count,type={},env={}'.format(
+            self.__class__.__name__,
+            statsd.lp_environment))
+
+    def complete(self, manage_transaction=False):
+        """See `IJob`."""
+        self.job.complete(manage_transaction=manage_transaction)
+        statsd = getUtility(IStatsdClient)
+        statsd.incr('job.complete_count,type={},env={}'.format(
+            self.__class__.__name__,
+            statsd.lp_environment))
+
+    def fail(self, manage_transaction=False):
+        """See `IJob`."""
+        self.job.fail(manage_transaction=manage_transaction)
+        statsd = getUtility(IStatsdClient)
+        statsd.incr('job.fail_count,type={},env={}'.format(
+            self.__class__.__name__,
+            statsd.lp_environment))
 
 
 class BaseJobRunner(LazrJobRunner):
