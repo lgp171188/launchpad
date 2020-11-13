@@ -4,6 +4,8 @@
 
 """Output memcached statistics."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = []
 
@@ -42,29 +44,29 @@ def get_summary(all_raw_stats):
 
 def print_stats(stats):
     """Output human readable statistics."""
-    print dedent('''\
+    print(dedent('''\
             Sets:          %(cmd_set)s
             Hits:          %(get_hits)s
             Misses:        %(get_misses)s
             Evictions:     %(evictions)s
             Bytes read:    %(bytes_read)s
             Bytes written: %(bytes_written)s
-            ''' % stats)
+            ''' % stats))
 
 
 def print_summary(all_raw_stats):
     """Output the summary in a human readable format."""
     summary = get_summary(all_raw_stats)
-    print "Totals\n======\n"
+    print("Totals\n======\n")
     print_stats(summary)
 
 
 def print_full(all_raw_stats):
     """Output stats for individual servers in a human readable format."""
     for server, stats in all_raw_stats:
-        print server
-        print "="*len(server)
-        print
+        print(server)
+        print("=" * len(server))
+        print()
         print_stats(stats)
 
 
@@ -73,15 +75,15 @@ def print_cricket(all_raw_stats):
     summary = get_summary(all_raw_stats)
     now = time.time()
     for key in INTERESTING_KEYS:
-        print 'memcached_total_%s:%s@%d' % (
-            key, summary[key], now)
+        print('memcached_total_%s:%s@%d' % (
+            key, summary[key], now))
     for server, stats in all_raw_stats:
         # Convert the '127.0.0.1:11217 (1)' style server string to a
         # cricket key.
         server = server.split()[0].replace(':','_').replace('.','_')
         for key in INTERESTING_KEYS:
-            print 'memcached_%s_%s:%s@%d' % (
-                server, key, stats[key], now)
+            print('memcached_%s_%s:%s@%d' % (
+                server, key, stats[key], now))
 
 
 def main():
