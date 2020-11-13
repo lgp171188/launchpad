@@ -7,6 +7,7 @@
 import pickle
 
 from paste.auth.cookie import AuthCookieHandler
+import six
 
 
 class SessionHandler(object):
@@ -47,7 +48,8 @@ class SessionHandler(object):
         pickle.
         """
         if self.session_var in environ:
-            session = pickle.loads(environ[self.session_var])
+            session = pickle.loads(six.ensure_binary(
+                environ[self.session_var], encoding="ISO-8859-1"))
         else:
             session = {}
         existed = bool(session)
