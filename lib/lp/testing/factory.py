@@ -435,7 +435,7 @@ class ObjectFactory(
     _unique_int_counter = count(100000)
 
     def getUniqueEmailAddress(self):
-        return "%s@example.com" % self.getUniqueString('email')
+        return "%s@example.com" % self.getUniqueUnicode('email')
 
     def getUniqueInteger(self):
         """Return an integer unique to this factory instance.
