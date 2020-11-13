@@ -47,7 +47,7 @@ To get a TranslationFileData, we use the GettextPOImporter class.
     ...
     ...     msgid "foo"
     ...     msgstr "bar"
-    ...     '''
+    ...     '''.encode('UTF-8')
     >>> translation_file_es = parser.parse(file_content)
     >>> translation_file_es.path = 'foo/es.po'
     >>> translation_file_es.language_code = 'es'
@@ -62,7 +62,7 @@ When we export a single file, we get a .mo file as output.
     >>> storage = ExportFileStorage()
     >>> exporter.exportTranslationFile(translation_file_es, storage)
     >>> exported_file = storage.export()
-    >>> print exported_file.content_type
+    >>> print(exported_file.content_type)
     application/x-gmo
     >>> is_valid_mofile(exported_file.read())
     True
@@ -80,7 +80,7 @@ When we export more than one file, we get a tarball.
     >>> exported_file = translation_exporter.exportTranslationFiles(
     ...     [translation_file_es, translation_file_sr],
     ...     target_format=TranslationFileFormat.MO)
-    >>> print exported_file.content_type
+    >>> print(exported_file.content_type)
     application/x-gtar
     >>> file_content = exported_file.read()
     >>> is_valid_mofile(file_content)
@@ -94,7 +94,7 @@ When we export more than one file, we get a tarball.
     ...         desc = 'dir'
     ...     else:
     ...         desc = 'unknown'
-    ...     print "| %9s | %s" % (desc, member.name)
+    ...     print("| %9s | %s" % (desc, member.name))
     | dir       | es
     | dir       | es/LC_MESSAGES
     | non-empty | es/LC_MESSAGES/foo.mo
@@ -116,7 +116,7 @@ the binary form.
 POCompiler.compile gets a string with .po file content and gives you
 a .mo file binary stream.
 
-    >>> mofile_content = compiler.compile('''
+    >>> mofile_content = compiler.compile(b'''
     ... msgid "foo"
     ... msgstr "bar"
     ... ''')
@@ -126,7 +126,7 @@ a .mo file binary stream.
 Though, if we provide it with something that is not a .po file content, we
 get an export error exception:
 
-    >>> mofile = compiler.compile('''
+    >>> mofile = compiler.compile(b'''
     ... blah
     ... ''')
     Traceback (most recent call last):
