@@ -657,6 +657,13 @@ class TestBugTasksTableView(TestCaseWithFactory):
         self.view.initialize()
         self.assertIs(None, self.view.getTargetLinkTitle(bug_task.target))
 
+    def test_getTargetLinkTitle_ociproject(self):
+        # The target link title is always none for ociprojects.
+        target = self.factory.makeOCIProject()
+        bug_task = self.factory.makeBugTask(bug=self.bug, target=target)
+        self.view.initialize()
+        self.assertIs(None, self.view.getTargetLinkTitle(bug_task.target))
+
     def test_getTargetLinkTitle_unpublished_distributionsourcepackage(self):
         # The target link title states that the package is not published
         # in the current release.
@@ -782,6 +789,7 @@ class TestBugTasksTableView(TestCaseWithFactory):
         # Product tasks come first, sorted by product then series.
         # Distro tasks follow, sorted by package, distribution, then
         # series (by version in the case of distribution series).
+        # OCI projects comes after their pillars.
         foo = self.factory.makeProduct(displayname='Foo')
         self.factory.makeProductSeries(product=foo, name='2.0')
         self.factory.makeProductSeries(product=foo, name='1.0')
@@ -801,9 +809,14 @@ class TestBugTasksTableView(TestCaseWithFactory):
         foo_spn = self.factory.makeSourcePackageName('foo')
         bar_spn = self.factory.makeSourcePackageName('bar')
 
+        foo_ociproject = self.factory.makeOCIProject(pillar=foo)
+        barix_ociproject = self.factory.makeOCIProject(pillar=barix)
+
         expected_targets = [
             bar, bar.getSeries('0.0'),
-            foo, foo.getSeries('1.0'), foo.getSeries('2.0'),
+            foo, foo_ociproject,
+            foo.getSeries('1.0'), foo.getSeries('2.0'),
+            barix_ociproject,
             barix.getSourcePackage(bar_spn),
             barix.getSeries('beta').getSourcePackage(bar_spn),
             barix.getSeries('aaa-release').getSourcePackage(bar_spn),

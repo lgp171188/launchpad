@@ -1677,7 +1677,14 @@ def bugtask_sort_key(bugtask):
             None, None, None, bugtask.target.product.displayname,
             bugtask.target.name, None)
     elif IOCIProject.providedBy(bugtask.target):
-        key = (None, None, None, None, None, bugtask.target.displayname)
+        ociproject = bugtask.target
+        pillar = ociproject.pillar
+        key = [None, None, None, None, None, ociproject.displayname]
+        if IDistribution.providedBy(pillar):
+            key[1] = pillar.displayname
+        elif IProduct.providedBy(pillar):
+            key[3] = pillar.displayname
+        key = tuple(key)
     else:
         raise AssertionError("No sort key for %r" % bugtask.target)
 
@@ -1996,6 +2003,8 @@ class BugTasksTableView(LaunchpadView):
             # fake one.
             if ISeriesBugTarget.providedBy(bugtask.target):
                 parent = bugtask.target.bugtarget_parent
+            elif IOCIProject.providedBy(bugtask.target):
+                latest_parent = parent = bugtask.target.pillar
             else:
                 latest_parent = parent = bugtask.target
 
