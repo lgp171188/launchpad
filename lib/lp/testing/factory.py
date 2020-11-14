@@ -4490,7 +4490,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if date_fulfilled is None:
             date_fulfilled = UTC_NOW
         if diff_content is None:
-            diff_content = self.getUniqueString("packagediff")
+            diff_content = self.getUniqueBytes("packagediff")
         lfa = self.makeLibraryFileAlias(
             filename=diff_filename, content=diff_content)
         return ProxyFactory(
