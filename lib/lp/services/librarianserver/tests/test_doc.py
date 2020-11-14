@@ -5,6 +5,8 @@
 Run the doctests and pagetests.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import os
@@ -91,7 +93,7 @@ def upload_request(request):
     from twisted.python import log
 
     def log_observer(x):
-        print >> sys.stderr, x
+        print(x, file=sys.stderr)
         if 'failure' in x:
             x['failure'].printTraceback(file=sys.stderr)
 
@@ -116,15 +118,15 @@ def upload_request(request):
     server.dataReceived(request.replace('\n', '\r\n'))
 
     # Report on what happened
-    print "reply: %r" % server.transport.bytesWritten.rstrip('\r\n')
+    print("reply: %r" % server.transport.bytesWritten.rstrip('\r\n'))
 
     if server.transport.connectionLost:
-        print 'connection closed'
+        print('connection closed')
 
     mockFile = server.fileLibrary.file
     if mockFile is not None and mockFile.stored:
-        print "file %r stored as %s, contents: %r" % (
-                mockFile.name, mockFile.mimetype, mockFile.bytes)
+        print("file %r stored as %s, contents: %r" %
+              (mockFile.name, mockFile.mimetype, mockFile.bytes))
 
     # Cleanup: remove the observer.
     log.removeObserver(log_observer)
