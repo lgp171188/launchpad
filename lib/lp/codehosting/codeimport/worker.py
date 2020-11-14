@@ -111,9 +111,10 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
 
     allowed_schemes = ['http', 'https', 'svn', 'git', 'ftp', 'bzr']
 
-    def __init__(self, rcstype, target_rcstype):
+    def __init__(self, rcstype, target_rcstype, exclude_hosts=None):
         self.rcstype = rcstype
         self.target_rcstype = target_rcstype
+        self.exclude_hosts = list(exclude_hosts or [])
 
     def should_follow_references(self):
         """See `BranchOpenPolicy.should_follow_references`.
@@ -142,6 +143,12 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
             uri = URI(url)
         except InvalidURIError:
             raise BadUrl(url)
+        for hostname in self.exclude_hosts:
+            if uri.underDomain(hostname):
+                raise BadUrl(url)
+        # XXX cjwatson 2020-10-20: These hostname checks require tight
+        # coupling with Launchpad.  Remove them once the scheduler always
+        # passes exclusions via --exclude-host arguments.
         if self.rcstype == self.target_rcstype:
             launchpad_domain = config.vhost.mainsite.hostname
             if uri.underDomain(launchpad_domain):
@@ -307,11 +314,13 @@ class CodeImportSourceDetails:
         is stacked on, if any.
     :ivar macaroon: A macaroon granting authority to push to the target
         repository if target_rcstype == 'git', None otherwise.
+    :ivar exclude_hosts: A list of host names from which we should not
+        mirror branches, or None.
     """
 
     def __init__(self, target_id, rcstype, target_rcstype, url=None,
                  cvs_root=None, cvs_module=None, stacked_on_url=None,
-                 macaroon=None):
+                 macaroon=None, exclude_hosts=None):
         self.target_id = target_id
         self.rcstype = rcstype
         self.target_rcstype = target_rcstype
@@ -320,6 +329,7 @@ class CodeImportSourceDetails:
         self.cvs_module = cvs_module
         self.stacked_on_url = stacked_on_url
         self.macaroon = macaroon
+        self.exclude_hosts = exclude_hosts
 
     @classmethod
     def fromArguments(cls, arguments):
@@ -346,6 +356,9 @@ class CodeImportSourceDetails:
             help=(
                 'Macaroon authorising push (only valid for target_rcstype '
                 'git)'))
+        parser.add_argument(
+            '--exclude-host', action='append', dest='exclude_hosts',
+            help='Refuse to mirror branches from this host')
         args = parser.parse_args(arguments)
         target_id = args.target_id
         rcstype = args.rcstype
@@ -374,7 +387,7 @@ class CodeImportSourceDetails:
             macaroon = args.macaroon
         return cls(
             target_id, rcstype, target_rcstype, url, cvs_root, cvs_module,
-            stacked_on_url, macaroon)
+            stacked_on_url, macaroon, exclude_hosts=args.exclude_hosts)
 
 
 class ImportDataStore:

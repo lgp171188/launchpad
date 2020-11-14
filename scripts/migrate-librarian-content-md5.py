@@ -5,6 +5,8 @@
 
 """Script to generate SQL to add MD5 sums for existing librarian files."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import _pythonpath
@@ -44,4 +46,4 @@ if __name__ == '__main__':
     else:
         minimumID = 0
     for databaseID, md5sum in main(sys.argv[1], minimumID):
-        print SQL % (md5sum, databaseID)
+        print(SQL % (md5sum, databaseID))

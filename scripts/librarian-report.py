@@ -5,6 +5,8 @@
 
 """Report a breakdown of Librarian disk space usage."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = []
 
@@ -96,7 +98,7 @@ def main():
 
     for total_bytes, tab_name, formatted_size, num_files in sorted(
         totals, reverse=True):
-        print '%-10s %s in %d files' % (formatted_size, tab_name, num_files)
+        print('%-10s %s in %d files' % (formatted_size, tab_name, num_files))
 
     return 0
 

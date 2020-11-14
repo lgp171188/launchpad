@@ -12,7 +12,7 @@ __all__ = [
     ]
 
 from datetime import datetime
-import StringIO
+import io
 
 from pymacaroons import Macaroon
 from pytz import UTC
@@ -1067,10 +1067,10 @@ class TestCodeImportJobWorkflowFinishJob(TestCaseWithFactory,
 
         job = self.makeRunningJob()
 
-        log_data = 'several\nlines\nof\nlog data'
+        log_data = b'several\nlines\nof\nlog data'
         log_alias_id = getUtility(ILibrarianClient).addFile(
            'import_log.txt', len(log_data),
-           StringIO.StringIO(log_data), 'text/plain')
+           io.BytesIO(log_data), 'text/plain')
         transaction.commit()
         log_alias = getUtility(ILibraryFileAliasSet)[log_alias_id]
         result = self.getResultForJob(job, log_alias=log_alias)
