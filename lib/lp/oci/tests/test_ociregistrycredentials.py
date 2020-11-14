@@ -56,7 +56,8 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertThat(oci_credentials._credentials, MatchesDict({
             "username": Equals("foo"),
             "credentials_encrypted": AfterPreprocessing(
-                lambda value: json.loads(container.decrypt(value)),
+                lambda value: json.loads(
+                    container.decrypt(value).decode("UTF-8")),
                 Equals({"password": "bar"})),
             }))
 
@@ -93,7 +94,8 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
             self.assertThat(oci_credentials._credentials, MatchesDict({
                 "username": Equals("test"),
                 "credentials_encrypted": AfterPreprocessing(
-                    lambda value: json.loads(container.decrypt(value)),
+                    lambda value: json.loads(
+                        container.decrypt(value).decode("UTF-8")),
                     Equals({})),
                 }))
 
@@ -108,7 +110,8 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         with person_logged_in(owner):
             self.assertThat(oci_credentials._credentials, MatchesDict({
                 "credentials_encrypted": AfterPreprocessing(
-                    lambda value: json.loads(container.decrypt(value)),
+                    lambda value: json.loads(
+                        container.decrypt(value).decode("UTF-8")),
                     Equals({"password": "bar"}))}))
 
     def test_credentials_set_encrypts_other_data(self):
@@ -124,7 +127,8 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
             self.assertThat(oci_credentials._credentials, MatchesDict({
                 "username": Equals("foo"),
                 "credentials_encrypted": AfterPreprocessing(
-                    lambda value: json.loads(container.decrypt(value)),
+                    lambda value: json.loads(
+                        container.decrypt(value).decode("UTF-8")),
                     Equals({"password": "bar", "other": "baz"}))}))
 
 
