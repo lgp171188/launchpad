@@ -442,3 +442,17 @@ class DistributionDefaultTraversalPolicy(DBEnumeratedType):
         The default traversal from a distribution is used for series of that
         distribution.
         """)
+
+    SOURCE_PACKAGE = DBItem(1, """
+        Source package
+
+        The default traversal from a distribution is used for source
+        packages in that distribution.
+        """)
+
+    OCI_PROJECT = DBItem(2, """
+        OCI project
+
+        The default traversal from a distribution is used for OCI projects
+        in that distribution.
+        """)

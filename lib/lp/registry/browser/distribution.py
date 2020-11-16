@@ -159,11 +159,25 @@ class DistributionNavigation(
 
     @stepthrough('+source')
     def traverse_sources(self, name):
-        return self.context.getSourcePackage(name)
+        dsp = self.context.getSourcePackage(name)
+        policy = self.context.default_traversal_policy
+        if (policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE and
+                not self.context.redirect_default_traversal):
+            return self.redirectSubTree(
+                canonical_url(dsp, request=self.request), status=303)
+        else:
+            return dsp
 
     @stepthrough('+oci')
     def traverse_oci(self, name):
-        return self.context.getOCIProject(name)
+        oci_project = self.context.getOCIProject(name)
+        policy = self.context.default_traversal_policy
+        if (policy == DistributionDefaultTraversalPolicy.OCI_PROJECT and
+                not self.context.redirect_default_traversal):
+            return self.redirectSubTree(
+                canonical_url(oci_project, request=self.request), status=303)
+        else:
+            return oci_project
 
     @stepthrough('+milestone')
     def traverse_milestone(self, name):
@@ -203,19 +217,25 @@ class DistributionNavigation(
             return series
 
     def traverse(self, name):
-        series, redirect = self._resolveSeries(name)
-        if series is None:
-            return None
-        if not redirect:
-            policy = self.context.default_traversal_policy
-            if (policy == DistributionDefaultTraversalPolicy.SERIES and
-                    self.context.redirect_default_traversal):
-                redirect = True
-        if redirect:
-            return self.redirectSubTree(
-                canonical_url(series, request=self.request), status=303)
+        policy = self.context.default_traversal_policy
+        if policy == DistributionDefaultTraversalPolicy.SERIES:
+            obj, redirect = self._resolveSeries(name)
+        elif policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE:
+            obj = self.context.getSourcePackage(name)
+            redirect = False
+        elif policy == DistributionDefaultTraversalPolicy.OCI_PROJECT:
+            obj = self.context.getOCIProject(name)
+            redirect = False
         else:
-            return series
+            raise AssertionError(
+                "Unknown default traversal policy %r" % policy)
+        if obj is None:
+            return None
+        if redirect or self.context.redirect_default_traversal:
+            return self.redirectSubTree(
+                canonical_url(obj, request=self.request), status=303)
+        else:
+            return obj
 
 
 class DistributionSetNavigation(Navigation):
