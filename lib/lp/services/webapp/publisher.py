@@ -1134,13 +1134,19 @@ class RedirectionView(URLDereferencingMixin):
             raise AttributeError(
                 "RedirectionView.context is not supported for URLs with "
                 "query strings.")
+        # Normalize default ports.
+        if (parsed_target.scheme, parsed_target.port) in {
+                ("http", 80), ("https", 443)}:
+            target_root = (parsed_target.scheme, parsed_target.hostname)
+        else:
+            target_root = (parsed_target.scheme, parsed_target.netloc)
         # This only supports the canonical root hostname/port for each site,
         # not any althostnames, but we assume that internally-generated
         # redirections always use the canonical hostname/port.
         supported_roots = {
             urlparse(section.rooturl)[:2]
             for section in allvhosts.configs.values()}
-        if parsed_target[:2] not in supported_roots:
+        if target_root not in supported_roots:
             raise AttributeError(
                 "RedirectionView.context is only supported for URLs served "
                 "by the main Launchpad application, not '%s'." % self.target)
