@@ -186,7 +186,12 @@ def bugtask_sort_key(bugtask):
 def bug_target_from_key(product, productseries, distribution, distroseries,
                         sourcepackagename, ociproject):
     """Returns the IBugTarget defined by the given DB column values."""
-    if product:
+    if ociproject:
+        # We must check ociproject first, since its pillar is denormalized
+        # in the database table (that is, ociproject-based BugTask will have
+        # either the distribution or the product column filled too).
+        return ociproject
+    elif product:
         return product
     elif productseries:
         return productseries
@@ -202,8 +207,6 @@ def bug_target_from_key(product, productseries, distribution, distroseries,
                 sourcepackagename)
         else:
             return distroseries
-    elif ociproject:
-        return ociproject
     else:
         raise AssertionError("Unable to determine bugtask target.")
 
@@ -233,6 +236,17 @@ def bug_target_to_key(target):
         values['distroseries'] = target.distroseries
         values['sourcepackagename'] = target.sourcepackagename
     elif IOCIProject.providedBy(target):
+        # De-normalize the ociproject, including also the ociproject's
+        # pillar (distribution or product).
+        pillar = target.pillar
+        if IDistribution.providedBy(pillar):
+            values["distribution"] = pillar
+        elif IProduct.providedBy(pillar):
+            values["product"] = pillar
+        else:
+            raise AssertionError(
+                "Bugs for OCI projects based in %s is not supported yet" %
+                pillar.__class__.__name__.lower())
         values['ociproject'] = target
     else:
         raise AssertionError("Not an IBugTarget.")
