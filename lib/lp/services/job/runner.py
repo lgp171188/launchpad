@@ -326,25 +326,20 @@ class BaseRunnableJob(BaseRunnableJobSource):
         """See `IJob`."""
         self.job.start(manage_transaction=manage_transaction)
         statsd = getUtility(IStatsdClient)
-        statsd.incr('job.start_count,type={},env={}'.format(
-            self.__class__.__name__,
-            statsd.lp_environment))
+        statsd.incr('job.start_count,type={}'.format(self.__class__.__name__))
 
     def complete(self, manage_transaction=False):
         """See `IJob`."""
         self.job.complete(manage_transaction=manage_transaction)
         statsd = getUtility(IStatsdClient)
-        statsd.incr('job.complete_count,type={},env={}'.format(
-            self.__class__.__name__,
-            statsd.lp_environment))
+        statsd.incr('job.complete_count,type={}'.format(
+            self.__class__.__name__))
 
     def fail(self, manage_transaction=False):
         """See `IJob`."""
         self.job.fail(manage_transaction=manage_transaction)
         statsd = getUtility(IStatsdClient)
-        statsd.incr('job.fail_count,type={},env={}'.format(
-            self.__class__.__name__,
-            statsd.lp_environment))
+        statsd.incr('job.fail_count,type={}'.format(self.__class__.__name__))
 
 
 class BaseJobRunner(LazrJobRunner):
