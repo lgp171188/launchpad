@@ -21,11 +21,11 @@
     <thead>
       <tr>
         <th>Language</th>
-        <th>Contributors</th>
         <th>Status</th>
         <th>Untranslated</th>
         <th>Need review</th>
         <th>Changed</th>
+        <th>Contributors</th>
       </tr>
     </thead>
 
@@ -47,15 +47,6 @@
              tal:content="drlang/language/englishname">
              Language Name
           </a>
-        </td>
-        <td>
-          <span class="sortkey" tal:content="drlang/contributor_count">0</span>
-          <tal:count
-            tal:condition="drlang/contributor_count"
-            tal:replace="drlang/contributor_count">0</tal:count>
-          <tal:count condition="not: drlang/contributor_count">
-            &mdash;
-          </tal:count>
         </td>
         <td style="white-space: nowrap">
           <div tal:replace="structure drlang/@@+barchart" />
@@ -84,6 +75,15 @@
             tal:condition="drlang/updatesCount"
             tal:replace="drlang/updatesCount">0</tal:count>
           <tal:count condition="not: drlang/updatesCount">
+            &mdash;
+          </tal:count>
+        </td>
+        <td>
+          <span class="sortkey" tal:content="drlang/contributor_count">0</span>
+          <tal:count
+            tal:condition="drlang/contributor_count"
+            tal:replace="drlang/contributor_count">0</tal:count>
+          <tal:count condition="not: drlang/contributor_count">
             &mdash;
           </tal:count>
         </td>

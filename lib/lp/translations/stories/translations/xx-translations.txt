@@ -237,7 +237,6 @@ Looking at the Spanish language overview page, we can see that there are
     >>> evolution_line = find_tag_by_id(browser.contents, 'evolution-2.2')
     >>> print(extract_text(evolution_line))
     evolution-2.2
-    ...
     15 1 1
     ...
 
