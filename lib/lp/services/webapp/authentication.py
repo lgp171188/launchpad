@@ -14,7 +14,8 @@ __all__ = [
 
 import binascii
 
-from contrib.oauth import OAuthRequest
+from oauthlib import oauth1
+from oauthlib.oauth1.rfc5849.utils import parse_authorization_header
 import six
 from zope.authentication.interfaces import ILoginPassword
 from zope.component import getUtility
@@ -274,6 +275,15 @@ class LaunchpadPrincipal:
             return self.title
 
 
+def _parse_oauth_authorization_header(header):
+    # http://oauth.net/core/1.0/#encoding_parameters says "Text names
+    # and values MUST be encoded as UTF-8 octets before percent-encoding
+    # them", so we can reasonably fail if this hasn't been done.
+    return dict(oauth1.rfc5849.signature.collect_parameters(
+        headers={"Authorization": six.ensure_text(header)},
+        exclude_oauth_signature=False))
+
+
 def get_oauth_authorization(request):
     """Retrieve OAuth authorization information from a request.
 
@@ -286,10 +296,7 @@ def get_oauth_authorization(request):
     """
     header = request._auth
     if header is not None and header.startswith("OAuth "):
-        # http://oauth.net/core/1.0/#encoding_parameters says "Text names
-        # and values MUST be encoded as UTF-8 octets before percent-encoding
-        # them", so we can reasonably fail if this hasn't been done.
-        return OAuthRequest._split_header(six.ensure_text(header))
+        return _parse_oauth_authorization_header(header)
     else:
         return request.form
 
