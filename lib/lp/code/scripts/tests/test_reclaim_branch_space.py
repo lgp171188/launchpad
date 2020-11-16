@@ -7,12 +7,14 @@ import datetime
 import os
 import shutil
 
+from breezy.transport import get_transport
 import transaction
 
 from lp.code.model.branchjob import (
     BranchJob,
     BranchJobType,
     )
+from lp.codehosting.vfs import branch_id_to_path
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.scripts.tests import run_script
@@ -23,6 +25,20 @@ from lp.testing.layers import ZopelessAppServerLayer
 class TestReclaimBranchSpaceScript(TestCaseWithFactory):
 
     layer = ZopelessAppServerLayer
+
+    @staticmethod
+    def getBranchPath(branch, base):
+        """Return the path of the branch in the mirrored area.
+
+        This always uses the configured mirrored area, ignoring whatever
+        server might be providing lp-mirrored: urls.
+        """
+        # XXX gary 2009-5-28 bug 381325
+        # This is a work-around for some failures on PQM, arguably caused by
+        # relying on test set-up that is happening in the Makefile rather than
+        # the actual test set-up.
+        get_transport(base).create_prefix()
+        return os.path.join(base, branch_id_to_path(branch.id))
 
     def test_reclaimbranchspace_script(self):
         # When the reclaimbranchspace script is run, it removes from the file
