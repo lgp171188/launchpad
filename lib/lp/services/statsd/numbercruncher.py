@@ -88,8 +88,7 @@ class NumberCruncher(service.Service):
                 virt = queue_type == 'virt'
                 for arch, value in contents.items():
                     gauge_name = (
-                        "buildqueue,virtualized={},arch={},env={}".format(
-                            virt, arch, self.statsd_client.lp_environment))
+                        "buildqueue,virtualized={},arch={}".format(virt, arch))
                     self._sendGauge(gauge_name, value[0])
             self.logger.debug("Build queue stats update complete.")
         except Exception:
@@ -122,8 +121,8 @@ class NumberCruncher(service.Service):
                     counts['idle'] += 1
         for processor, counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
-                gauge_name = "builders,status={},arch={},env={}".format(
-                    count_name, processor, self.statsd_client.lp_environment)
+                gauge_name = "builders,status={},arch={}".format(
+                    count_name, processor)
                 self._sendGauge(gauge_name, count_value)
         self.logger.debug("Builder stats update complete.")
 
@@ -149,14 +148,8 @@ class NumberCruncher(service.Service):
             store = IStore(LibraryFileContent)
             total_files, total_filesize = store.find(
                 (Count(), Sum(LibraryFileContent.filesize))).one()
-            self._sendGauge(
-                "librarian.total_files,env={}".format(
-                    self.statsd_client.lp_environment),
-                total_files)
-            self._sendGauge(
-                "librarian.total_filesize,env={}".format(
-                    self.statsd_client.lp_environment),
-                total_filesize)
+            self._sendGauge("librarian.total_files", total_files)
+            self._sendGauge("librarian.total_filesize", total_filesize)
             self.logger.debug("Librarian stats update complete.")
         except Exception:
             self.logger.exception("Failure while updating librarian stats:")
