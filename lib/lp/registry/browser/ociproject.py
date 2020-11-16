@@ -26,6 +26,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
+from lp.app.interfaces.headings import IHeadingBreadcrumb
 from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
@@ -129,7 +130,7 @@ class OCIProjectNavigation(TargetDefaultVCSNavigationMixin,
         return series
 
 
-@implementer(IMultiFacetedBreadcrumb)
+@implementer(IMultiFacetedBreadcrumb, IHeadingBreadcrumb)
 class OCIProjectBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `IOCIProject`."""
 
@@ -144,7 +145,22 @@ class OCIProjectFacets(StandardLaunchpadFacets):
     enable_only = [
         'overview',
         'branches',
+        'bugs',
         ]
+
+    def makeLink(self, text, context, view_name, site):
+        site = 'mainsite' if self.mainsite_only else site
+        target = canonical_url(context, view_name=view_name, rootsite=site)
+        return Link(target, text, site=site)
+
+    def branches(self):
+        return self.makeLink('Code', self.context.pillar, '+branches', 'code')
+
+    def bugs(self):
+        """Override bugs link to show the OCIProject's bug page, instead of
+        the pillar's bug page.
+        """
+        return self.makeLink('Bugs', self.context, '+bugs', 'bugs')
 
 
 class OCIProjectNavigationMenu(NavigationMenu):
