@@ -90,9 +90,9 @@
     </browser:pages>
     <browser:page
         name="+edit"
-        for="lp.buildmaster.interfaces.builder.IBuilderModerateAttributes"
-        class="lp.buildmaster.browser.builder.BuilderEditViewAdmins"
-        permission="launchpad.Moderate"
+        for="lp.buildmaster.interfaces.builder.IBuilder"
+        class="lp.buildmaster.browser.builder.BuilderEditView"
+        permission="launchpad.Edit"
         template="../templates/builder-edit.pt"/>
     <browser:menus
         classes="BuilderSetOverviewMenu"

@@ -63,7 +63,7 @@ from lp.buildmaster.interfaces.builder import (
     IBuilder,
     IBuilderModerateAttributes,
     IBuilderSet,
-)
+    )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.code.interfaces.branch import (
@@ -1971,23 +1971,18 @@ class AdminBuilder(AdminByBuilddAdmin):
     usedfor = IBuilder
 
 
-class EditBuilder(AuthorizationBase):
+class EditBuilder(AdminByBuilddAdmin):
     permission = 'launchpad.Edit'
     usedfor = IBuilder
 
-    def checkAuthenticated(self, user):
-        return (user.in_admin
-                or user.in_buildd_admin)
 
-
-class ModerateEditBuilder(EditBuilder):
+class ModerateBuilder(EditBuilder):
     permission = 'launchpad.Moderate'
     usedfor = IBuilderModerateAttributes
 
     def checkAuthenticated(self, user):
-        return (user.in_admin
-                or user.in_registry_experts
-                or user.in_buildd_admin)
+        return (user.in_registry_experts or
+                super(ModerateBuilder, self).checkAuthenticated(user))
 
 
 class AdminBuildRecord(AdminByBuilddAdmin):

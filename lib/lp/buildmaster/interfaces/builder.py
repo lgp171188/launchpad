@@ -106,7 +106,8 @@ class IBuilderModerateAttributes(Interface):
 
     builderok = exported(Bool(
         title=_('Builder State OK'), required=True, default=True,
-        description=_('Whether or not the builder is ok')))
+        description=_('Whether or not the builder is ok')),
+        as_of='devel')
 
     failnotes = exported(Text(
         title=_('Failure Notes'), required=False,
