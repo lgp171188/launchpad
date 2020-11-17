@@ -106,10 +106,6 @@ class GitRefWidget(BrowserWidget, InputWidget):
     # If True, only allow reference paths to be branches (refs/heads/*).
     require_branch = False
 
-    def __init__(self, *args, **kwargs):
-        super(GitRefWidget, self).__init__(*args, **kwargs)
-        self.setUpSubWidgets()
-
     def setUpSubWidgets(self):
         if self._widgets_set_up:
             return
@@ -117,10 +113,11 @@ class GitRefWidget(BrowserWidget, InputWidget):
         fields = [
             GitRepositoryField(
                 __name__="repository", title=u"Git repository",
-                required=True, vocabulary="GitRepository",
+                required=self.context.required, vocabulary="GitRepository",
                 allow_external=self.allow_external),
             Choice(
-                __name__="path", title=u"Git branch", required=True,
+                __name__="path", title=u"Git branch",
+                required=self.context.required,
                 vocabulary=path_vocabulary),
             ]
         for field in fields:
