@@ -5,7 +5,6 @@
 
 __metaclass__ = type
 
-
 from datetime import datetime
 import logging
 import os
@@ -198,6 +197,15 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
     def test_notfound(self):
         d = self._createProberAndProbe(self.urls['404'])
+        return assert_fails_with(d, BadResponseCode)
+
+    def test_multiple_failures(self):
+        """Avoid defer.AlreadyCalledError when failWithTimeoutError is still
+        scheduled after we already have the HTTP response.
+        """
+        prober = ProberFactory(self.urls['500'])
+        d = prober.probe()
+        reactor.callLater(0, prober.failWithTimeoutError)
         return assert_fails_with(d, BadResponseCode)
 
     def test_config_no_https_proxy(self):
