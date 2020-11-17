@@ -26,9 +26,11 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
-class TestGitRefVocabularyMixin:
+class TestGitRefVocabulary(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
+
+    vocabulary_class = GitRefVocabulary
 
     def test_getTermByToken(self):
         [ref] = self.factory.makeGitRefs()
@@ -37,11 +39,6 @@ class TestGitRefVocabularyMixin:
         self.assertEqual(term.token, vocab.getTermByToken(ref.name).token)
         self.assertEqual(term.token, vocab.getTermByToken(ref.path).token)
         self.assertRaises(LookupError, vocab.getTermByToken, "nonexistent")
-
-
-class TestGitRefVocabulary(TestGitRefVocabularyMixin, TestCaseWithFactory):
-
-    vocabulary_class = GitRefVocabulary
 
     def test_provides_IHugeVocabulary(self):
         vocab = self.vocabulary_class(self.factory.makeGitRepository())
@@ -129,16 +126,26 @@ class TestGitRefVocabulary(TestGitRefVocabularyMixin, TestCaseWithFactory):
         self.assertEqual(4, len(self.vocabulary_class(ref_master.repository)))
 
 
-class TestGitBranchVocabulary(TestGitRefVocabularyMixin, TestCaseWithFactory):
+class TestGitBranchVocabulary(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
 
     vocabulary_class = GitBranchVocabulary
+
+    def test_getTermByToken(self):
+        [ref] = self.factory.makeGitRefs()
+        vocab = self.vocabulary_class(ref.repository)
+        term = SimpleTerm(ref, ref.name, ref.name)
+        self.assertEqual(term.token, vocab.getTermByToken(ref.name).token)
+        self.assertEqual(term.token, vocab.getTermByToken(ref.path).token)
+        self.assertRaises(LookupError, vocab.getTermByToken, "nonexistent")
 
     def test_toTerm(self):
         [ref] = self.factory.makeGitRefs()
         self.assertThat(
             self.vocabulary_class(ref.repository).toTerm(ref),
             MatchesStructure.byEquality(
-                value=ref, token=ref.path, title=ref.name))
+                value=ref, token=ref.name, title=ref.name))
 
     def test_searchForTerms(self):
         ref_master, ref_next, ref_next_squared, _ = (

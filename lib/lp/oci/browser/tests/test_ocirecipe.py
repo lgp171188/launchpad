@@ -195,9 +195,9 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Create OCI recipe").click()
 
         content = find_main_content(browser.contents)
@@ -230,9 +230,9 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Build-time ARG variables").value = (
             "VAR1=10\nVAR2=20")
         browser.getControl("Create OCI recipe").click()
@@ -291,9 +291,9 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         processors = browser.getControl(name="field.processors")
         processors.value = ["386", "amd64"]
         browser.getControl(name="field.name").value = "recipe-name"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Create OCI recipe").click()
         login_person(self.person)
         recipe = getUtility(IOCIRecipeSet).getByName(
@@ -409,9 +409,9 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Owner").value = ["new-team"]
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Description").value = "New description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             new_git_ref.repository.identity)
-        browser.getControl("Git branch").value = new_git_ref.path
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Build file path").value = "Dockerfile-2"
         browser.getControl("Build directory context").value = "apath"
         browser.getControl("Build daily").selected = True
