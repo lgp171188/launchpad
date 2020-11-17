@@ -123,6 +123,12 @@ class GitRefVocabulary(StormVocabularyBase):
             results = self.emptySelectResults()
         return CountableIterator(results.count(), results, self.toTerm)
 
+    def getTerm(self, value):
+        # remote refs aren't database backed
+        if zope_isinstance(value, GitRefRemote):
+            return self.toTerm(value)
+        return super(GitRefVocabulary, self).getTerm(value)
+
     def __len__(self):
         """See `IVocabulary`."""
         return self.searchForTerms().count()
