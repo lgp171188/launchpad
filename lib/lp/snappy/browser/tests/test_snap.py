@@ -733,9 +733,9 @@ class TestSnapEditView(BaseTestSnapView):
         browser.getControl(name="field.store_distro_series").value = [
             "ubuntu/%s/%s" % (new_series.name, new_snappy_series.name)]
         browser.getControl("Git", index=0).click()
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             new_git_ref.repository.identity)
-        browser.getControl("Git branch").value = new_git_ref.path
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Build source tarball").selected = True
         browser.getControl(
             "Automatically build when branch changes").selected = True
@@ -952,8 +952,9 @@ class TestSnapEditView(BaseTestSnapView):
         private_ref_path = private_ref.path
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl("Git repository").value = private_ref_identity
-        browser.getControl("Git branch").value = private_ref_path
+        browser.getControl(name="field.git_ref.repository").value = (
+            private_ref_identity)
+        browser.getControl(name="field.git_ref.path").value = private_ref_path
         browser.getControl("Update snap package").click()
         self.assertEqual(
             "A public snap cannot have a private repository.",
@@ -973,8 +974,9 @@ class TestSnapEditView(BaseTestSnapView):
             git_ref=old_ref, store_series=snappy_series)
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl("Git repository").value = new_repository_url
-        browser.getControl("Git branch").value = new_path
+        browser.getControl(
+            name="field.git_ref.repository").value = new_repository_url
+        browser.getControl(name="field.git_ref.path").value = new_path
         browser.getControl("Update snap package").click()
         login_person(self.person)
         content = find_main_content(browser.contents)

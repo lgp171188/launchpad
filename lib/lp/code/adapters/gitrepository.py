@@ -1,14 +1,16 @@
 # Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Components related to Git repositories."""
+"""Components and adapters related to Git repositories."""
 
 __metaclass__ = type
 __all__ = [
     "GitRepositoryDelta",
+    "git_repository_for_snap",
     ]
 
 from lazr.lifecycle.objectdelta import ObjectDelta
+from zope.component.interfaces import ComponentLookupError
 from zope.interface import implementer
 
 from lp.code.interfaces.gitrepository import (
@@ -56,3 +58,10 @@ class GitRepositoryDelta:
             return GitRepositoryDelta(**changes)
         else:
             return None
+
+
+def git_repository_for_snap(snap):
+    """Adapt a snap package to a Git repository."""
+    if snap.git_repository is None:
+        raise ComponentLookupError
+    return snap.git_repository

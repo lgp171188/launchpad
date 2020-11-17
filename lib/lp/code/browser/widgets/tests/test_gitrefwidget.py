@@ -194,7 +194,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         [ref] = self.factory.makeGitRefs()
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
-            "field.git_ref.path": "non-existent",
+            "field.git_ref.path": u"non-existent",
             }
         self.assertGetInputValueError(
             form,

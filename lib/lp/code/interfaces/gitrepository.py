@@ -13,6 +13,7 @@ __all__ = [
     'IGitRepository',
     'IGitRepositoryDelta',
     'IGitRepositorySet',
+    'IHasGitRepositoryURL',
     'user_has_special_git_repository_access',
     ]
 
@@ -1225,6 +1226,13 @@ class GitIdentityMixin:
             for default in self.getRepositoryDefaults()]
         identities.append((self.unique_name, self))
         return identities
+
+
+class IHasGitRepositoryURL(Interface):
+    """Marker interface for objects that have a Git repository URL."""
+
+    git_repository_url = Attribute(
+        "The Git repository URL (possibly external)")
 
 
 def user_has_special_git_repository_access(user, repository=None):
