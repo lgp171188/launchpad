@@ -402,8 +402,8 @@ def validate_new_target(bug, target, check_source_package=True):
 class BugTask(StormBase):
     """See `IBugTask`."""
     __storm_table__ = "BugTask"
-    _defaultOrder = ['distribution', 'product', 'productseries',
-                     'distroseries', 'milestone', 'sourcepackagename']
+    __storm_order__ = ['distribution', 'product', 'productseries',
+                       'distroseries', 'milestone', 'sourcepackagename']
     _CONJOINED_ATTRIBUTES = (
         "_status", "importance", "assignee_id", "milestone_id",
         "date_assigned", "date_confirmed", "date_inprogress",
