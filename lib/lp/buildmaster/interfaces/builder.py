@@ -13,6 +13,7 @@ __all__ = [
     'CannotFetchFile',
     'CannotResumeHost',
     'IBuilder',
+    'IBuilderModerateAttributes',
     'IBuilderSet',
     ]
 
