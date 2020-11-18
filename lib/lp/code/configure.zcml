@@ -841,10 +841,6 @@
       for="lp.code.interfaces.gitrepository.IGitRepository"
       provides="lp.services.webapp.interfaces.ILaunchpadContainer"
       factory="lp.code.publisher.LaunchpadGitRepositoryContainer"/>
-  <adapter
-      for="lp.snappy.interfaces.snap.ISnap"
-      provides="lp.code.interfaces.gitrepository.IGitRepository"
-      factory="lp.code.adapters.gitrepository.git_repository_for_snap"/>
   <subscriber
       for="lp.code.interfaces.gitrepository.IGitRepository zope.lifecycleevent.interfaces.IObjectModifiedEvent"
       handler="lp.code.model.gitrepository.git_repository_modified"/>

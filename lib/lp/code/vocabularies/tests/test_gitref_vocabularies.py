@@ -44,13 +44,6 @@ class TestGitRefVocabulary(TestCaseWithFactory):
         vocab = self.vocabulary_class(self.factory.makeGitRepository())
         self.assertProvides(vocab, IHugeVocabulary)
 
-    def test_init_snap(self):
-        # A vocabulary may be instantiated with anything that can be adapted
-        # to an IGitRepository, such as a Snap configured to build from one.
-        [ref] = self.factory.makeGitRefs()
-        vocab = self.vocabulary_class(self.factory.makeSnap(git_ref=ref))
-        self.assertEqual(ref.repository, vocab.repository)
-
     def test_init_no_repository(self):
         # The repository is None if the context cannot be adapted to a
         # repository.
