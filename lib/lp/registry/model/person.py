@@ -1496,8 +1496,8 @@ class Person(
             elif distroseries is not None:
                 candidate = None
                 for possible_slave in tasks:
-                    sourcepackagename_id = possible_slave.sourcepackagenameID
-                    if sourcepackagename_id == task.sourcepackagenameID:
+                    sourcepackagename_id = possible_slave.sourcepackagename_id
+                    if sourcepackagename_id == task.sourcepackagename_id:
                         candidate = possible_slave
                 # Distribution.currentseries is expensive to run for every
                 # bugtask (as it goes through every series of that
