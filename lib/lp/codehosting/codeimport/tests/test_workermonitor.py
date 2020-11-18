@@ -650,17 +650,6 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
         return self.factory.makeCodeImport(
             cvs_root=cvs_server.getRoot(), cvs_module=u'trunk')
 
-    def makeSVNCodeImport(self):
-        """Make a `CodeImport` that points to a real Subversion repository."""
-        self.subversion_server = SubversionServer(self.repo_path)
-        self.subversion_server.start_server()
-        self.addCleanup(self.subversion_server.stop_server)
-        url = self.subversion_server.makeBranch(
-            'trunk', [('README', b'contents')])
-        self.foreign_commit_count = 2
-
-        return self.factory.makeCodeImport(svn_branch_url=url)
-
     def makeBzrSvnCodeImport(self):
         """Make a `CodeImport` that points to a real Subversion repository."""
         self.subversion_server = SubversionServer(
@@ -802,16 +791,6 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
     def test_import_cvs(self):
         # Create a CVS CodeImport and import it.
         job = self.getStartedJobForImport(self.makeCVSCodeImport())
-        code_import_id = job.code_import.id
-        job_id = job.id
-        self.layer.txn.commit()
-        yield self.performImport(job_id)
-        self.assertImported(code_import_id)
-
-    @defer.inlineCallbacks
-    def test_import_subversion(self):
-        # Create a Subversion CodeImport and import it.
-        job = self.getStartedJobForImport(self.makeSVNCodeImport())
         code_import_id = job.code_import.id
         job_id = job.id
         self.layer.txn.commit()
