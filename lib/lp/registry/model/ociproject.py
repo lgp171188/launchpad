@@ -308,13 +308,10 @@ class OCIProjectSet:
             OCIProjectName.name.contains_string(name_substring))
 
     def searchByName(self, name_substring):
-        query = IStore(OCIProject).find(
+        return IStore(OCIProject).find(
             OCIProject,
-            OCIProject.ociprojectname == OCIProjectName.id)
-        if name_substring:
-            query = query.find(
-                fti_search(OCIProjectName, name_substring, True))
-        return query
+            OCIProject.ociprojectname == OCIProjectName.id,
+            OCIProjectName.name.contains_string(name_substring))
 
     def preloadDataForOCIProjects(self, oci_projects):
         """See `IOCIProjectSet`."""
