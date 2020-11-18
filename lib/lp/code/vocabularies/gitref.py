@@ -12,6 +12,7 @@ __all__ = [
     ]
 
 from lazr.restful.interfaces import IReference
+from storm.databases.postgres import Case
 from storm.expr import (
     Desc,
     Like,
@@ -32,7 +33,6 @@ from lp.code.model.gitref import (
     GitRefRemote,
     )
 from lp.services.database.interfaces import IStore
-from storm.databases.postgres import Case
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,

@@ -24,6 +24,7 @@ from zope.formlib.widget import (
 from zope.interface import implementer
 from zope.schema import Choice
 from zope.schema.interfaces import IChoice
+
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.popup import VocabularyPickerWidget
