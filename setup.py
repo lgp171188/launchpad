@@ -199,6 +199,7 @@ setup(
         'meliae',
         'mock',
         'oauth',
+        'oauthlib',
         'oops',
         'oops_amqp',
         'oops_datedir_repo',

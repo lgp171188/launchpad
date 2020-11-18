@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Tests for constructing bug notification emails for sending."""
 
@@ -10,13 +10,12 @@ from datetime import (
     datetime,
     timedelta,
     )
-import logging
 import re
 from smtplib import SMTPException
 import unittest
 
+from fixtures import FakeLogger
 import pytz
-import six
 from testtools.matchers import (
     MatchesRegex,
     Not,
@@ -54,6 +53,7 @@ from lp.bugs.interfaces.bugnotification import IBugNotificationSet
 from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
+    IBugTaskSet,
     )
 from lp.bugs.mail.bugnotificationrecipients import BugNotificationRecipients
 from lp.bugs.model.bugnotification import (
@@ -62,7 +62,6 @@ from lp.bugs.model.bugnotification import (
     BugNotificationRecipient,
     )
 from lp.bugs.model.bugsubscriptionfilter import BugSubscriptionFilterMute
-from lp.bugs.model.bugtask import BugTask
 from lp.bugs.scripts.bugnotification import (
     construct_email_notifications,
     get_activity_key,
@@ -120,34 +119,9 @@ class MockBug:
     def title(self):
         return "Mock Bug #%s" % self.id
 
-    def getBugNotificationRecipients(self, level=None):
-        recipients = BugNotificationRecipients()
-        no_priv = getUtility(IPersonSet).getByEmail(
-            'no-priv@canonical.com')
-        recipients.addDirectSubscriber(no_priv)
-        return recipients
-
     def __eq__(self, other):
         """Compare by id to make different subclasses of MockBug be equal."""
         return self.id == other.id
-
-
-class ExceptionBug(MockBug):
-    """A bug which causes an exception to be raised."""
-
-    def getBugNotificationRecipients(self, level=None):
-        raise Exception('FUBAR')
-
-
-class DBExceptionBug(MockBug):
-    """A bug which causes a DB constraint to be triggered."""
-
-    def getBugNotificationRecipients(self, level=None):
-        # Trigger a DB constraint, resulting in the transaction being
-        # unusable.
-        firefox = getUtility(IProductSet).getByName('firefox')
-        bug_one = getUtility(IBugSet).get(1)
-        BugTask(bug=bug_one, product=firefox, owner=self.owner)
 
 
 class MockBugNotificationRecipient:
@@ -172,8 +146,31 @@ class MockBugNotification:
         self.bug = bug
         self.is_comment = is_comment
         self.date_emailed = date_emailed
-        self.recipients = [MockBugNotificationRecipient()]
         self.activity = None
+
+    @property
+    def recipients(self):
+        return [MockBugNotificationRecipient()]
+
+
+class ExceptionBugNotification(MockBugNotification):
+    """A bug notification which causes an exception to be raised."""
+
+    @property
+    def recipients(self):
+        raise Exception('FUBAR')
+
+
+class DBExceptionBugNotification(MockBugNotification):
+    """A bug notification which causes a DB constraint to be triggered."""
+
+    @property
+    def recipients(self):
+        # Trigger a DB constraint, resulting in the transaction being
+        # unusable.
+        firefox = getUtility(IProductSet).getByName('firefox')
+        bug_one = getUtility(IBugSet).get(1)
+        getUtility(IBugTaskSet).createTask(bug_one, self.bug.owner, firefox)
 
 
 class FakeNotification:
@@ -277,15 +274,15 @@ class TestGetEmailNotifications(TestCase):
         # A comment notification for bug one which raises an exception.
         msg = getUtility(IMessageSet).fromText(
             'Subject', "Comment on bug 1", owner=sample_person)
-        self.bug_one_exception_notification = MockBugNotification(
-            message=msg, bug=ExceptionBug(1, sample_person),
+        self.bug_one_exception_notification = ExceptionBugNotification(
+            message=msg, bug=MockBug(1, sample_person),
             is_comment=True, date_emailed=None)
 
         # A comment notification for bug one which raises a DB exception.
         msg = getUtility(IMessageSet).fromText(
             'Subject', "Comment on bug 1", owner=sample_person)
-        self.bug_one_dbexception_notification = MockBugNotification(
-            message=msg, bug=DBExceptionBug(1, sample_person),
+        self.bug_one_dbexception_notification = DBExceptionBugNotification(
+            message=msg, bug=MockBug(1, sample_person),
             is_comment=True, date_emailed=None)
 
         # We need to commit the transaction, since the error handling
@@ -297,6 +294,8 @@ class TestGetEmailNotifications(TestCase):
         sm.unregisterUtility(self._original_utility)
         self._fake_utility = FakeBugNotificationSetUtility()
         sm.registerUtility(self._fake_utility)
+
+        self.logger = self.useFixture(FakeLogger())
 
     def tearDown(self):
         super(TestGetEmailNotifications, self).tearDown()
@@ -339,7 +338,8 @@ class TestGetEmailNotifications(TestCase):
             ]
         sent_notifications = self._getAndCheckSentNotifications(
             notifications_to_send)
-        self.assertEqual(sent_notifications, notifications_to_send)
+        self.assertEqual(sent_notifications, [self.bug_one_notification])
+        self.assertIn('Exception: FUBAR', self.logger.output)
 
     def test_catch_simple_exception_in_the_middle(self):
         # Make sure that the first and last notifications are sent even
@@ -353,7 +353,8 @@ class TestGetEmailNotifications(TestCase):
             notifications_to_send)
         self.assertEqual(
             sent_notifications,
-            notifications_to_send)
+            [self.bug_one_notification, self.bug_one_another_notification])
+        self.assertIn('Exception: FUBAR', self.logger.output)
 
     def test_catch_db_exception_last(self):
         # Make sure that the first notification is sent even if the
@@ -365,7 +366,11 @@ class TestGetEmailNotifications(TestCase):
             ]
         sent_notifications = self._getAndCheckSentNotifications(
             notifications_to_send)
-        self.assertEqual(sent_notifications, notifications_to_send)
+        self.assertEqual(sent_notifications, [self.bug_one_notification])
+        self.assertIn(
+            'IllegalTarget: A fix for this bug has already been requested for '
+            'Mozilla Firefox',
+            self.logger.output)
 
         # The transaction should have been rolled back and restarted
         # properly, so getting something from the database shouldn't
@@ -385,7 +390,12 @@ class TestGetEmailNotifications(TestCase):
         sent_notifications = self._getAndCheckSentNotifications(
             notifications_to_send)
         self.assertEqual(
-            sent_notifications, notifications_to_send)
+            sent_notifications,
+            [self.bug_one_notification, self.bug_one_another_notification])
+        self.assertIn(
+            'IllegalTarget: A fix for this bug has already been requested for '
+            'Mozilla Firefox',
+            self.logger.output)
 
         # The transaction should have been rolled back and restarted
         # properly, so getting something from the database shouldn't
@@ -400,13 +410,6 @@ class TestGetEmailNotifications(TestCase):
         # a try/except and logging it, leading to bug 994694.  This test
         # verifies that the fix for that bug (re-raising the exception) stays
         # in place.
-
-        # Set up logging so we can later assert that no exceptions are logged.
-        log_output = six.StringIO()
-        logger = logging.getLogger()
-        log_handler = logging.StreamHandler(log_output)
-        logger.addHandler(logging.StreamHandler(log_output))
-        self.addCleanup(logger.removeHandler, log_handler)
 
         # Make some data to feed to get_email_notifications.
         person = getUtility(IPersonSet).getByEmail('test@canonical.com')
@@ -429,7 +432,7 @@ class TestGetEmailNotifications(TestCase):
         email_notifications.close()
 
         # Verify that no "Error while building email notifications." is logged.
-        self.assertEqual('', log_output.getvalue())
+        self.assertEqual('', self.logger.output)
 
 
 class TestNotificationCommentBatches(unittest.TestCase):

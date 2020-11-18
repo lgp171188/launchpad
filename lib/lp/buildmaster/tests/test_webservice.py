@@ -12,6 +12,7 @@ from json import dumps
 from testtools.matchers import Equals
 from zope.component import getUtility
 
+from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import OAuthPermission
@@ -135,17 +136,21 @@ class TestBuilderEntry(TestCaseWithFactory):
         self.webservice = LaunchpadWebServiceCaller()
 
     def test_security(self):
-        # Attributes can only be set by buildd admins.
+        # Most builder attributes can only be set by buildd admins.
+        # We've introduced registry_experts privileges on 3 attributes
+        # for builder reset, tested in next method.
+
         builder = self.factory.makeBuilder()
         user = self.factory.makePerson()
         user_webservice = webservice_for_person(
             user, permission=OAuthPermission.WRITE_PUBLIC)
-        patch = dumps({'clean_status': 'Cleaning'})
+        clean_status_patch = dumps({'clean_status': 'Cleaning'})
         logout()
 
         # A normal user is unauthorized.
         response = user_webservice.patch(
-            api_url(builder), 'application/json', patch, api_version='devel')
+            api_url(builder), 'application/json',
+            clean_status_patch, api_version='devel')
         self.assertEqual(401, response.status)
 
         # But a buildd admin can set the attribute.
@@ -154,9 +159,37 @@ class TestBuilderEntry(TestCaseWithFactory):
                 'launchpad-buildd-admins')
             buildd_admins.addMember(user, buildd_admins.teamowner)
         response = user_webservice.patch(
-            api_url(builder), 'application/json', patch, api_version='devel')
+            api_url(builder), 'application/json',
+            clean_status_patch, api_version='devel')
         self.assertEqual(209, response.status)
         self.assertEqual('Cleaning', response.jsonBody()['clean_status'])
+
+    def test_security_builder_reset(self):
+        builder = getUtility(IBuilderSet)['bob']
+        person = self.factory.makePerson()
+        user_webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        change_patch = dumps({'builderok': False, 'manual': False,
+                              'failnotes': 'test notes'})
+        logout()
+
+        # A normal user is unauthorized.
+        response = user_webservice.patch(
+            api_url(builder), 'application/json', change_patch,
+            api_version='devel')
+        self.assertEqual(401, response.status)
+
+        # But a registry expert can set the attributes.
+        with admin_logged_in():
+            reg_expert = getUtility(IPersonSet).getByName('registry')
+            reg_expert.addMember(person, reg_expert)
+        response = user_webservice.patch(
+            api_url(builder), 'application/json', change_patch,
+            api_version='devel')
+        self.assertEqual(209, response.status)
+        self.assertEqual(False, response.jsonBody()['builderok'])
+        self.assertEqual(False, response.jsonBody()['manual'])
+        self.assertEqual('test notes', response.jsonBody()['failnotes'])
 
     def test_exports_processor(self):
         processor = self.factory.makeProcessor('s1')
