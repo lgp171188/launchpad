@@ -61,7 +61,6 @@ from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.bugs.model.bugtasksearch import get_bug_privacy_filter
 from lp.buildmaster.interfaces.builder import (
     IBuilder,
-    IBuilderModerateAttributes,
     IBuilderSet,
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
@@ -1978,7 +1977,7 @@ class EditBuilder(AdminByBuilddAdmin):
 
 class ModerateBuilder(EditBuilder):
     permission = 'launchpad.Moderate'
-    usedfor = IBuilderModerateAttributes
+    usedfor = IBuilder
 
     def checkAuthenticated(self, user):
         return (user.in_registry_experts or
