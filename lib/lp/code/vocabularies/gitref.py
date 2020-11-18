@@ -148,7 +148,8 @@ class GitBranchVocabulary(GitRefVocabulary):
 
     def _makePattern(self, query=None):
         parts = []
-        # XXX allow HEAD?
+        if query and query.lower() == "head":
+            raise ValueError("HEAD is not a valid search query")
         if query is None or not query.startswith("refs/heads/"):
             parts.append("refs/heads/".translate(like_escape))
         parts.append("%")
