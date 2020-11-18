@@ -125,7 +125,7 @@ class GitRefWidget(BrowserWidget, InputWidget):
                 self, field.__name__, field, IInputWidget, prefix=self.name)
         self._widgets_set_up = True
 
-    def setRenderedValue(self, value, no_path=False):
+    def setRenderedValue(self, value, with_path=True):
         """See `IWidget`."""
         self.setUpSubWidgets()
         if value is not None:
@@ -135,7 +135,7 @@ class GitRefWidget(BrowserWidget, InputWidget):
                 self.repository_widget.setRenderedValue(value.repository)
             # if we're only talking about branches, we can deal in the
             # name, rather than the full ref/heads/* path
-            if not no_path:
+            if with_path:
                 if self.require_branch:
                     self.path_widget.setRenderedValue(value.name)
                 else:
