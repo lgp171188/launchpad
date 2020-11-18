@@ -87,7 +87,10 @@ class GitRefVocabulary(StormVocabularyBase):
         rank = Case(
             cases=[(self._table.path == self.repository.default_branch, 2)],
             default=1)
-        return [Desc(rank), Desc(self._table.committer_date)]
+        return [
+            Desc(rank),
+            Desc(self._table.committer_date),
+            Desc(self._table.path)]
 
     def toTerm(self, ref):
         """See `StormVocabularyBase`."""
