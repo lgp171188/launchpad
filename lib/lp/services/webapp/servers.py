@@ -1286,7 +1286,7 @@ class WebServicePublication(WebServicePublicationMixin,
         consumers = getUtility(IOAuthConsumerSet)
         consumer = consumers.getByKey(consumer_key)
         token_key = form.get('oauth_token')
-        anonymous_request = (token_key == '')
+        anonymous_request = not token_key
 
         if consumer_key is None:
             # Either the client's OAuth implementation is broken, or
