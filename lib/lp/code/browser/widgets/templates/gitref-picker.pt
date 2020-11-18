@@ -16,13 +16,10 @@
               // now, since we just want to tell the difference between
               // internal and external repositories.
               if (repository_value.indexOf('://') !== -1) {
-                  // XXX cjwatson 2017-07-24: Is throwing an exception too
-                  // much here?  This currently bubbles up to the browser
-                  // console on e.g. Snap:+edit.
-                  throw (
-                      'Searching for branches in external repositories is ' +
-                      'not available.  Enter the branch name directly ' +
-                      'instead.');
+                  // XXX twom 2020-11-18
+                  // This just closes the picker, not ideal.
+                  // but would need some refactoring of picker_patcher.js
+                  return null;
               }
               return '/' + repository_value;
           };
