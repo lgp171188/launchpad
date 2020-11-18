@@ -185,12 +185,10 @@ class GitRefWidget(BrowserWidget, InputWidget):
             # involved, or changing from a bzr branch to a git repo, so there
             # is no existing repository set up. We need to set this so we
             # can compare the ref against the 'new' repo.
-            from zope.security.proxy import removeSecurityProxy
-            unsecure_vocab = removeSecurityProxy(self.path_widget.vocabulary)
             if IGitRepository.providedBy(repository):
-                unsecure_vocab.setRepository(repository)
+                self.path_widget.vocabulary.setRepository(repository)
             else:
-                unsecure_vocab.setRepositoryURL(repository)
+                self.path_widget.vocabulary.setRepositoryURL(repository)
             try:
                 ref = self.path_widget.getInputValue()
             except ConversionError:

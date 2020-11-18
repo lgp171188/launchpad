@@ -97,6 +97,7 @@
 
   <class class=".gitref.GitRefVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
+    <allow interface=".gitref.IRepositoryManagerGitRefVocabulary"/>
   </class>
 
   <securedutility
@@ -108,6 +109,7 @@
 
   <class class=".gitref.GitBranchVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
+    <allow interface=".gitref.IRepositoryManagerGitRefVocabulary"/>
   </class>
 
 </configure>

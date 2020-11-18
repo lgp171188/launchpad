@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+
 __metaclass__ = type
 __all__ = [
     "GitBranchVocabulary",
@@ -19,7 +20,10 @@ from storm.expr import (
     like_escape,
     )
 from zope.component import getUtility
-from zope.interface import implementer
+from zope.interface import (
+    implementer,
+    Interface,
+    )
 from zope.schema.vocabulary import SimpleTerm
 from zope.security.proxy import isinstance as zope_isinstance
 
@@ -40,7 +44,17 @@ from lp.services.webapp.vocabulary import (
     )
 
 
+class IRepositoryManagerGitRefVocabulary(Interface):
+
+    def setRepository(self, repository):
+        """Set the repository after the vocabulary was instantiated."""
+
+    def setRepositoryURL(self, repository_url):
+        """Set the repository URL after the vocabulary was instantiated."""
+
+
 @implementer(IHugeVocabulary)
+@implementer(IRepositoryManagerGitRefVocabulary)
 class GitRefVocabulary(StormVocabularyBase):
     """A vocabulary for references in a given Git repository."""
 
@@ -67,12 +81,12 @@ class GitRefVocabulary(StormVocabularyBase):
             self.repository_url = None
 
     def setRepository(self, repository):
-        """Set the repository after the vocabulary was instantiated."""
+        """See `IRepositoryManagerGitRefVocabulary`."""
         self.repository = repository
         self.repository_url = None
 
     def setRepositoryURL(self, repository_url):
-        """Set the repository URL after the vocabulary was instantiated."""
+        """See `IRepositoryManagerGitRefVocabulary`."""
         self.repository = None
         self.repository_url = repository_url
 
