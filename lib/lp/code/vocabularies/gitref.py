@@ -49,7 +49,7 @@ class GitRefVocabulary(StormVocabularyBase):
     # more general reference such as refs/tags/foo, but experience suggests
     # that people find talking about references in the web UI to be
     # baffling, so we tell a white lie here.
-    displayname = "Select a branch"
+    displayname = "Select a branch or tag"
     step_title = "Search"
 
     def __init__(self, context):
@@ -148,6 +148,8 @@ class GitRefVocabulary(StormVocabularyBase):
 
 class GitBranchVocabulary(GitRefVocabulary):
     """A vocabulary for branches in a given Git repository."""
+
+    displayname = "Select a branch"
 
     def _makePattern(self, query=None):
         parts = []
