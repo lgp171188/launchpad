@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IPerson browser views related to bugs."""
@@ -132,7 +132,7 @@ class RelevantMilestonesMixin:
         """Return data used to render the milestone checkboxes."""
         tasks = self.searchUnbatched()
         milestones = sorted(
-            load_related(Milestone, tasks, ['milestoneID']),
+            load_related(Milestone, tasks, ['milestone_id']),
             key=milestone_sort_key, reverse=True)
         return [
             dict(title=milestone.title, value=milestone.id, checked=False)

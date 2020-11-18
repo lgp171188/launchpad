@@ -203,7 +203,7 @@ class CveSet:
 
     def getBugCvesForBugTasks(self, bugtasks, cve_mapper=None):
         """See ICveSet."""
-        bugs = bulk.load_related(Bug, bugtasks, ('bugID', ))
+        bugs = bulk.load_related(Bug, bugtasks, ('bug_id', ))
         if len(bugs) == 0:
             return []
         store = Store.of(bugtasks[0])

@@ -1477,8 +1477,8 @@ class Person(
         tasks = list(getUtility(IBugTaskSet).search(search_params))
         # Eager load the things we need that are not already eager loaded by
         # BugTaskSet.search().
-        bulk.load_related(Person, tasks, ['assigneeID'])
-        bulk.load_related(Milestone, tasks, ['milestoneID'])
+        bulk.load_related(Person, tasks, ['assignee_id'])
+        bulk.load_related(Milestone, tasks, ['milestone_id'])
 
         for task in tasks:
             # We skip masters (instead of slaves) from conjoined relationships
@@ -1821,7 +1821,7 @@ class Person(
                 Bug.id,
                 tables=(
                     Bug,
-                    Join(BugTask, BugTask.bugID == Bug.id)),
+                    Join(BugTask, BugTask.bug_id == Bug.id)),
                 where=And(Bug.information_type.is_in(
                     PRIVATE_INFORMATION_TYPES),
                     BugTask.assignee == self.id)),

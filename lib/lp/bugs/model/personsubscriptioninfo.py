@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -184,8 +184,8 @@ class PersonSubscriptions(object):
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             [bug.ownerID for bug in bugs]))
         all_tasks = [task for task in bug.bugtasks for bug in bugs]
-        load_related(Product, all_tasks, ['productID'])
-        load_related(Distribution, all_tasks, ['distributionID'])
+        load_related(Product, all_tasks, ['product_id'])
+        load_related(Distribution, all_tasks, ['distribution_id'])
         for bug in bugs:
             # indicate the reporter and bug_supervisor
             duplicates.annotateReporter(bug, bug.owner)

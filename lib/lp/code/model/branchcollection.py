@@ -550,7 +550,7 @@ class GenericBranchCollection:
             store = IStore(BugBranch)
             rs = store.using(
                 BugBranch,
-                Join(BugTask, BugTask.bugID == BugBranch.bug_id),
+                Join(BugTask, BugTask.bug_id == BugBranch.bug_id),
             ).find(
                 (BugTask, BugBranch),
                 BugBranch.bug_id.is_in(bug_ids),

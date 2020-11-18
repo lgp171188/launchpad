@@ -1,4 +1,4 @@
-# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Models for `IProductSeries`."""
@@ -575,9 +575,9 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
         productID = self.productID
 
         def weight_function(bugtask):
-            if bugtask.productseriesID == seriesID:
+            if bugtask.productseries_id == seriesID:
                 return OrderedBugTask(1, bugtask.id, bugtask)
-            elif bugtask.productID == productID:
+            elif bugtask.product_id == productID:
                 return OrderedBugTask(2, bugtask.id, bugtask)
             else:
                 return OrderedBugTask(3, bugtask.id, bugtask)

@@ -235,7 +235,7 @@ def close_account(username, log):
 
     # Reassign their bugs
     table_notification('BugTask')
-    store.find(BugTask, BugTask.assigneeID == person.id).set(assigneeID=None)
+    store.find(BugTask, BugTask.assignee_id == person.id).set(assignee_id=None)
 
     # Reassign questions assigned to the user, and close all their questions
     # in non-final states since nobody else can.
