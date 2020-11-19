@@ -852,6 +852,15 @@ class TestActualImportMixin:
         Override this in your subclass if you need it.
         """
 
+    def test_exclude_hosts(self):
+        details = CodeImportSourceDetails.fromArguments(
+            self.makeWorkerArguments(
+                'trunk', [('README', b'Original contents')]) +
+            ['--exclude-host', 'bad.example.com',
+             '--exclude-host', 'worse.example.com'])
+        self.assertEqual(
+            ['bad.example.com', 'worse.example.com'], details.exclude_hosts)
+
     def test_import(self):
         # Running the worker on a branch that hasn't been imported yet imports
         # the branch.
@@ -1464,6 +1473,14 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertBadUrl("unknown-scheme://devpad/")
         self.assertGoodUrl("git://git.example.com/repo")
         self.assertBadUrl("git://git.launchpad.test/example")
+
+    def test_check_one_url_exclude_hosts(self):
+        self.policy = CodeImportBranchOpenPolicy(
+            "bzr", "bzr",
+            exclude_hosts=["bad.example.com", "worse.example.com"])
+        self.assertGoodUrl("git://good.example.com/repo")
+        self.assertBadUrl("git://bad.example.com/repo")
+        self.assertBadUrl("git://worse.example.com/repo")
 
 
 class RedirectTests(http_utils.TestCaseWithRedirectedWebserver, TestCase):

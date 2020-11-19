@@ -8,9 +8,10 @@ __metaclass__ = type
 
 import unittest
 
-from contrib.oauth import OAuthRequest
-
-from lp.services.webapp.authentication import check_oauth_signature
+from lp.services.webapp.authentication import (
+    _parse_oauth_authorization_header,
+    check_oauth_signature,
+    )
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     TestCase,
@@ -31,20 +32,21 @@ class TestOAuthParsing(TestCase):
 
     def test_split_oauth(self):
         # OAuth headers are parsed correctly: see bug 314507.
-        # This was really a bug in the underlying contrib/oauth.py module, but
-        # it has no standalone test case.
+        # This was originally a bug in the underlying contrib/oauth.py
+        # module, but it's useful to test that parsing works as we expect
+        # for whatever OAuth library we're currently using.
         #
         # Note that the 'realm' parameter is not returned, because it's not
         # included in the OAuth calculations.
-        headers = OAuthRequest._split_header(
+        headers = _parse_oauth_authorization_header(
             'OAuth realm="foo", oauth_consumer_key="justtesting"')
         self.assertEqual(headers,
             {'oauth_consumer_key': 'justtesting'})
-        headers = OAuthRequest._split_header(
+        headers = _parse_oauth_authorization_header(
             'OAuth oauth_consumer_key="justtesting"')
         self.assertEqual(headers,
             {'oauth_consumer_key': 'justtesting'})
-        headers = OAuthRequest._split_header(
+        headers = _parse_oauth_authorization_header(
             'OAuth oauth_consumer_key="justtesting", realm="realm"')
         self.assertEqual(headers,
             {'oauth_consumer_key': 'justtesting'})

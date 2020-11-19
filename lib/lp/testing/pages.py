@@ -27,13 +27,8 @@ from bs4.element import (
     ProcessingInstruction,
     Tag,
     )
-from contrib.oauth import (
-    OAuthConsumer,
-    OAuthRequest,
-    OAuthSignatureMethod_PLAINTEXT,
-    OAuthToken,
-    )
 from lazr.restful.testing.webservice import WebServiceCaller
+from oauthlib import oauth1
 import six
 from six.moves.urllib.parse import urljoin
 from soupsieve import escape as css_escape
@@ -147,20 +142,17 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
         calls.
         """
         if oauth_consumer_key is not None and oauth_access_key is not None:
-            # XXX cjwatson 2016-01-25: Callers should be updated to pass
-            # Unicode directly, but that's a big change.
-            oauth_consumer_key = six.ensure_text(oauth_consumer_key)
-            self.consumer = OAuthConsumer(oauth_consumer_key, u'')
             if oauth_access_secret is None:
                 oauth_access_secret = SAMPLEDATA_ACCESS_SECRETS.get(
                     oauth_access_key, u'')
-            self.access_token = OAuthToken(
-                oauth_access_key, oauth_access_secret)
-            # This shouldn't be here, but many old tests expect it.
+            self.oauth_client = oauth1.Client(
+                oauth_consumer_key,
+                resource_owner_key=oauth_access_key,
+                resource_owner_secret=oauth_access_secret,
+                signature_method=oauth1.SIGNATURE_PLAINTEXT)
             logout()
         else:
-            self.consumer = None
-            self.access_token = None
+            self.oauth_client = None
         self.handle_errors = handle_errors
         if default_api_version is not None:
             self.default_api_version = default_api_version
@@ -169,13 +161,9 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
     default_api_version = "beta"
 
     def addHeadersTo(self, full_url, full_headers):
-        if self.consumer is not None and self.access_token is not None:
-            request = OAuthRequest.from_consumer_and_token(
-                self.consumer, self.access_token, http_url=full_url)
-            request.sign_request(
-                OAuthSignatureMethod_PLAINTEXT(), self.consumer,
-                self.access_token)
-            oauth_headers = request.to_header(OAUTH_REALM)
+        if self.oauth_client is not None:
+            _, oauth_headers, _ = self.oauth_client.sign(
+                full_url, realm=OAUTH_REALM)
             full_headers.update({
                 wsgi_native_string(key): wsgi_native_string(value)
                 for key, value in oauth_headers.items()})

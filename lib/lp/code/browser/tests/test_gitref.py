@@ -283,7 +283,7 @@ class TestGitRefView(BrowserTestCase):
             soupmatchers.Tag(
                 'Git remote add text', 'tt',
                 attrs={"id": "remote-add"},
-                text=("git remote add -f %s "
+                text=("git remote add %s "
                       "git+ssh://%s@git.launchpad.test/~%s/+git/%s"
                       ) % (self.user.name,
                            self.user.name,
@@ -328,7 +328,7 @@ class TestGitRefView(BrowserTestCase):
             soupmatchers.Tag(
                 'Git remote add text', 'tt',
                 attrs={"id": "remote-add"},
-                text=("git remote add -f %s "
+                text=("git remote add %s "
                       "git+ssh://%s@git.launchpad.test/%s/+source/%s"
                       ) % (eric.name,
                            self.user.name,
@@ -370,7 +370,7 @@ class TestGitRefView(BrowserTestCase):
             soupmatchers.Tag(
                 'Git remote add text', 'tt',
                 attrs={"id": "remote-add"},
-                text=("git remote add -f %s git+ssh://%s@git.launchpad.test/%s"
+                text=("git remote add %s git+ssh://%s@git.launchpad.test/%s"
                       % (eric.name,
                          self.user.name,
                          fooix.name))))

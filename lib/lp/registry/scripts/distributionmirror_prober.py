@@ -401,6 +401,12 @@ class ProberFactory(protocol.ClientFactory):
         self._deferred.callback(status)
 
     def failed(self, reason):
+        if isinstance(reason, ProberTimeout) and self._deferred.called:
+            msg = (
+                "Prober %s for url %s tried to fail with timeout after it has "
+                "already received a response.")
+            self.logger.info(msg, self, self.url)
+            return
         self._deferred.errback(reason)
 
     def _cancelTimeout(self, result):

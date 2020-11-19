@@ -12,7 +12,7 @@ __all__ = [
     ]
 
 from datetime import datetime
-import StringIO
+import io
 
 from pymacaroons import Macaroon
 from pytz import UTC
@@ -129,7 +129,9 @@ class TestCodeImportJob(TestCaseWithFactory):
         self.assertArgumentsMatch(
             code_import, Equals([
                 str(code_import.branch.id), 'bzr', 'bzr',
-                'http://example.com/foo']))
+                'http://example.com/foo',
+                '--exclude-host', 'launchpad.test',
+                ]))
 
     def test_git_arguments(self):
         code_import = self.factory.makeCodeImport(
@@ -152,7 +154,9 @@ class TestCodeImportJob(TestCaseWithFactory):
                 Equals('git'), Equals('git'),
                 Equals('git://git.example.com/project.git'),
                 Equals('--macaroon'),
-                CodeImportJobMacaroonVerifies(code_import)]),
+                CodeImportJobMacaroonVerifies(code_import),
+                Equals('--exclude-host'), Equals('launchpad.test'),
+                ]),
             # Start the job so that the macaroon can be verified.
             start_job=True)
 
@@ -183,7 +187,9 @@ class TestCodeImportJob(TestCaseWithFactory):
                 str(code_import.branch.id), 'bzr', 'bzr',
                 'bzr://bzr.example.com/foo',
                 '--stacked-on',
-                compose_public_url('http', branch_id_alias(devfocus))]))
+                compose_public_url('http', branch_id_alias(devfocus)),
+                '--exclude-host', 'launchpad.test',
+                ]))
 
     def test_bzr_stacked_private(self):
         # Code imports can't be stacked on private branches.
@@ -196,7 +202,23 @@ class TestCodeImportJob(TestCaseWithFactory):
         branch.stacked_on = devfocus
         self.assertArgumentsMatch(
             code_import, Equals([
-                str(branch.id), 'bzr', 'bzr', 'bzr://bzr.example.com/foo']))
+                str(branch.id), 'bzr', 'bzr', 'bzr://bzr.example.com/foo',
+                '--exclude-host', 'launchpad.test',
+                ]))
+
+    def test_blacklisted_hostnames(self):
+        # Additional blacklisted hostnames are passed as --exclude-host
+        # options.
+        self.pushConfig(
+            'codehosting', blacklisted_hostnames='localhost,127.0.0.1')
+        code_import = self.factory.makeCodeImport(
+            git_repo_url="git://git.example.com/project.git")
+        self.assertArgumentsMatch(
+            code_import, Equals([
+                str(code_import.branch.id), 'git', 'bzr',
+                'git://git.example.com/project.git',
+                '--exclude-host', 'localhost', '--exclude-host', '127.0.0.1',
+                ]))
 
 
 class TestCodeImportJobSet(TestCaseWithFactory):
@@ -1067,10 +1089,10 @@ class TestCodeImportJobWorkflowFinishJob(TestCaseWithFactory,
 
         job = self.makeRunningJob()
 
-        log_data = 'several\nlines\nof\nlog data'
+        log_data = b'several\nlines\nof\nlog data'
         log_alias_id = getUtility(ILibrarianClient).addFile(
            'import_log.txt', len(log_data),
-           StringIO.StringIO(log_data), 'text/plain')
+           io.BytesIO(log_data), 'text/plain')
         transaction.commit()
         log_alias = getUtility(ILibraryFileAliasSet)[log_alias_id]
         result = self.getResultForJob(job, log_alias=log_alias)

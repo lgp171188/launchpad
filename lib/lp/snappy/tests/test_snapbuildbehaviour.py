@@ -286,7 +286,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
 
 class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10)
+        timeout=30)
 
     @defer.inlineCallbacks
     def setUp(self):

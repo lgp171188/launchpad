@@ -13,6 +13,7 @@ __all__ = [
     'CannotFetchFile',
     'CannotResumeHost',
     'IBuilder',
+    'IBuilderModerateAttributes',
     'IBuilderSet',
     ]
 
@@ -98,6 +99,22 @@ class BuildSlaveFailure(BuildDaemonError):
     """The build slave has suffered an error and cannot be used."""
 
 
+class IBuilderModerateAttributes(Interface):
+    manual = exported(Bool(
+        title=_('Manual Mode'), required=False, default=False,
+        description=_('The auto-build system does not dispatch '
+                      'jobs automatically for slaves in manual mode.')))
+
+    builderok = exported(Bool(
+        title=_('Builder State OK'), required=True, default=True,
+        description=_('Whether or not the builder is ok')),
+        as_of='devel')
+
+    failnotes = exported(Text(
+        title=_('Failure Notes'), required=False,
+        description=_('The reason for a builder not being ok')))
+
+
 class IBuilderView(IHasBuildRecords, IHasOwner):
 
     id = Attribute("Builder identifier")
@@ -145,19 +162,6 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
         title=_('Virtualized'), required=True, default=False,
         description=_('Whether or not the builder is a virtual Xen '
                       'instance.')))
-
-    manual = exported(Bool(
-        title=_('Manual Mode'), required=False, default=False,
-        description=_('The auto-build system does not dispatch '
-                      'jobs automatically for slaves in manual mode.')))
-
-    builderok = exported(Bool(
-        title=_('Builder State OK'), required=True, default=True,
-        description=_('Whether or not the builder is ok')))
-
-    failnotes = exported(Text(
-        title=_('Failure Notes'), required=False,
-        description=_('The reason for a builder not being ok')))
 
     vm_host = exported(TextLine(
         title=_('VM host'), required=False,
@@ -220,7 +224,7 @@ class IBuilderEdit(Interface):
 
 
 @exported_as_webservice_entry()
-class IBuilder(IBuilderEdit, IBuilderView):
+class IBuilder(IBuilderEdit, IBuilderView, IBuilderModerateAttributes):
     """Build-slave information and state.
 
     Builder instance represents a single builder slave machine within the

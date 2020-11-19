@@ -43,14 +43,17 @@ class StatsdClient:
         self._make_client()
 
     def __getattr__(self, name):
-        # This is a convenience to keep all statsd client related
-        # items on the client. Having this separate from prefix
-        # allows us to use it as a label, rather than as part of the
-        # gauge name
-        if name == 'lp_environment':
-            return config.statsd.environment
         if self._client is not None:
-            return getattr(self._client, name)
+            wrapped = getattr(self._client, name)
+            if name in ("timer", "timing", "incr", "decr", "gauge", "set"):
+                def wrapper(stat, *args, **kwargs):
+                    return wrapped(
+                        "%s,env=%s" % (stat, config.statsd.environment),
+                        *args, **kwargs)
+
+                return wrapper
+            else:
+                return wrapped
         else:
             # Prevent unnecessary network traffic if this Launchpad instance
             # has no statsd configuration.

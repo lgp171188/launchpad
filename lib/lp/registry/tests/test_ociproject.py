@@ -16,6 +16,7 @@ from testtools.matchers import (
     )
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
+from zope.schema.vocabulary import getVocabularyRegistry
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
@@ -313,3 +314,54 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
                 owner=other_user))
 
         self.assertCanCreateOCIProject(distro, self.person)
+
+
+class TestOCIProjectVocabulary(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def createOCIProjects(self, name_tpl="my-ociproject-%s", count=5):
+        return [self.factory.makeOCIProject(ociprojectname=name_tpl % i)
+                for i in range(count)]
+
+    def getVocabulary(self, context=None):
+        vocabulary_registry = getVocabularyRegistry()
+        return vocabulary_registry.get(context, "OCIProject")
+
+    def assertContainsSameOCIProjects(self, ociprojects, search_result):
+        """Asserts that the search result contains only the given list of OCI
+        projects.
+        """
+        naked = removeSecurityProxy
+        self.assertEqual(
+            set(naked(ociproject).id for ociproject in ociprojects),
+            set(naked(term.value).id for term in search_result))
+
+    def test_search_with_name_substring(self):
+        vocabulary = self.getVocabulary()
+        projects = self.createOCIProjects("test-project-%s", 10)
+        self.createOCIProjects("another-pattern-%s", 10)
+
+        search_result = vocabulary.searchForTerms("test-project")
+        self.assertContainsSameOCIProjects(projects, search_result)
+
+    def test_search_without_name_substring(self):
+        vocabulary = self.getVocabulary()
+        projects = self.createOCIProjects()
+        search_result = vocabulary.searchForTerms("")
+        self.assertContainsSameOCIProjects(projects, search_result)
+
+    def test_to_term(self):
+        vocabulary = self.getVocabulary()
+        ociproject = self.factory.makeOCIProject()
+        term = removeSecurityProxy(vocabulary).toTerm(ociproject)
+
+        expected_token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
+        self.assertEqual(expected_token, term.title)
+        self.assertEqual(expected_token, term.token)
+
+    def test_getTermByToken(self):
+        vocabulary = self.getVocabulary()
+        ociproject = self.factory.makeOCIProject()
+        token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
+        term = removeSecurityProxy(vocabulary).getTermByToken(token)
+        self.assertEqual(ociproject, term.value)

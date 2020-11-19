@@ -104,7 +104,7 @@ class ListTestCase(ProtocolTestCase):
         self._args = args
 
     def run(self, result):
-        with tempfile.NamedTemporaryFile() as test_list_file:
+        with tempfile.NamedTemporaryFile(mode='w+') as test_list_file:
             for test_id in self._test_ids:
                 test_list_file.write(test_id + '\n')
             test_list_file.flush()

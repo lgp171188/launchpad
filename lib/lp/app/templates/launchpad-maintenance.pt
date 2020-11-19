@@ -1,8 +1,13 @@
-<p
+<div
   xmlns:tal="http://xml.zope.org/namespaces/tal"
   xmlns:metal="http://xml.zope.org/namespaces/metal"
-  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
-  class="warning message">
-  Launchpad will be going offline for maintenance
-  <tal:soon replace="view/timelefttext">in 3 minutes</tal:soon>.
-</p>
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  <p class="warning message"
+     tal:condition="view/timelefttext">
+    Launchpad will be going offline for maintenance
+    <tal:soon replace="view/timelefttext">in 3 minutes</tal:soon>.
+  </p>
+  <p class="warning message"
+     tal:condition="view/featuretext"
+     tal:content="structure view/featuretext" />
+</div>

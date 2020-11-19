@@ -1069,7 +1069,7 @@ class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
         # The text printed to stderr should be like this:
         # (we need the prefix text later for extracting the oopsid)
         expected_fault_text_prefix = """
-        <Fault 380: 'An unexpected error has occurred while updating a
+        <OopsOccurred 380: 'An unexpected error has occurred while updating a
         Launchpad branch. Please report a Launchpad bug and quote:"""
         expected_fault_text = expected_fault_text_prefix + " OOPS-.*'>"
 
