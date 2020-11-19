@@ -15,10 +15,13 @@
               // URL parser available to us at the moment.  This will do for
               // now, since we just want to tell the difference between
               // internal and external repositories.
+              // XXX twom 2020-11-18
+              // This just closes the picker, not ideal.
+              // but would need some refactoring of picker_patcher.js
               if (repository_value.indexOf('://') !== -1) {
-                  // XXX twom 2020-11-18
-                  // This just closes the picker, not ideal.
-                  // but would need some refactoring of picker_patcher.js
+                  return null;
+              }
+              else if (repository_value.indexOf('git@') !== -1) {
                   return null;
               }
               return '/' + repository_value;
