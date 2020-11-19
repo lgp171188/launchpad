@@ -48,14 +48,18 @@ def create_tasks(factory):
     sp = factory.makeSourcePackage(publish=True)
 
     bug = factory.makeBug(target=product)
-    ocip = factory.makeOCIProject()
+
+    ocip_distro = factory.makeOCIProject(pillar=factory.makeDistribution())
+    ocip_product = factory.makeOCIProject(pillar=factory.makeProduct())
 
     getUtility(IBugTaskSet).createManyTasks(
-        bug, bug.owner, [sp, sp.distribution_sourcepackage, ps, ocip])
+        bug, bug.owner,
+        [sp, sp.distribution_sourcepackage, ps, ocip_distro, ocip_product])
 
 
     # There'll be a target for each task, plus a packageless one for
     # each package task.
+    # For OCI projects, the pillar (distro or product) is denormalized.
     expected_targets = [
         (ps.product.id, None, None, None, None, None),
         (None, ps.id, None, None, None, None),
@@ -63,7 +67,8 @@ def create_tasks(factory):
         (None, None, sp.distribution.id, None, sp.sourcepackagename.id, None),
         (None, None, None, sp.distroseries.id, None, None),
         (None, None, None, sp.distroseries.id, sp.sourcepackagename.id, None),
-        (None, None, None, None, None, ocip.id)
+        (None, None, ocip_distro.pillar.id, None, None, ocip_distro.id),
+        (ocip_product.pillar.id, None, None, None, None, ocip_product.id),
         ]
     return expected_targets
 

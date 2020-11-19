@@ -186,6 +186,42 @@ class TestBugTaskCreation(TestCaseWithFactory):
         self.assertEqual(distro_series_task.distroseries, warty)
         self.assertEqual(distro_series_task.target, warty)
 
+    def test_ociproject_from_product_bug(self):
+        """A bug that needs to be fixed in a specific oci project with a
+        product pillar.
+        """
+        bugtaskset = getUtility(IBugTaskSet)
+        bug = self.factory.makeBug()
+        person = self.factory.makePerson()
+        pillar = self.factory.makeProduct()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
+
+        bugtask = bugtaskset.createTask(
+            bug, person, ociproject,
+            status=BugTaskStatus.NEW,
+            importance=BugTaskImportance.MEDIUM)
+
+        self.assertEqual(bugtask.target, ociproject)
+        self.assertEqual(bugtask.product, pillar)
+
+    def test_ociproject_from_distro_bug(self):
+        """A bug that needs to be fixed in a specific oci project with a
+        distribution pillar.
+        """
+        bugtaskset = getUtility(IBugTaskSet)
+        bug = self.factory.makeBug()
+        person = self.factory.makePerson()
+        pillar = self.factory.makeDistribution()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
+
+        bugtask = bugtaskset.createTask(
+            bug, person, ociproject,
+            status=BugTaskStatus.NEW,
+            importance=BugTaskImportance.MEDIUM)
+
+        self.assertEqual(bugtask.target, ociproject)
+        self.assertEqual(bugtask.distribution, pillar)
+
     def test_createmany_bugtasks(self):
         """We can create a set of bugtasks around different targets"""
         bugtaskset = getUtility(IBugTaskSet)
@@ -2692,12 +2728,27 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 ociproject=None,
                 ))
 
-    def test_ociproject(self):
-        ociproject = self.factory.makeOCIProject()
+    def test_ociproject_based_in_distro(self):
+        pillar = self.factory.makeDistribution()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
         self.assertTargetKeyWorks(
             ociproject,
             dict(
                 product=None,
+                productseries=None,
+                distribution=pillar,
+                distroseries=None,
+                sourcepackagename=None,
+                ociproject=ociproject,
+            ))
+
+    def test_ociproject_based_in_product(self):
+        pillar = self.factory.makeProduct()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
+        self.assertTargetKeyWorks(
+            ociproject,
+            dict(
+                product=pillar,
                 productseries=None,
                 distribution=None,
                 distroseries=None,
