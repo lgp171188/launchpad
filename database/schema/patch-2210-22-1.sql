@@ -93,6 +93,15 @@ CREATE UNIQUE INDEX bugtask_distinct_sourcepackage_assignment
 DROP INDEX old__bugtask_distinct_sourcepackage_assignment;
 
 
+CREATE UNIQUE INDEX bugtask__product__bug__key
+    ON BugTask (product, bug)
+    WHERE
+        product IS NOT NULL
+        AND ociproject IS NULL
+        AND ociprojectseries IS NULL;
+DROP INDEX old__bugtask__product__bug__key;
+
+
 CREATE UNIQUE INDEX bugsummary__unique
     ON BugSummary (
         COALESCE(product, -1),
