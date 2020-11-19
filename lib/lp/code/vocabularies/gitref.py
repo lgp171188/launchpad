@@ -100,7 +100,7 @@ class GitRefVocabulary(StormVocabularyBase):
         return [
             Desc(rank),
             Desc(self._table.committer_date),
-            Desc(self._table.path)]
+            self._table.path]
 
     def toTerm(self, ref):
         """See `StormVocabularyBase`."""
@@ -163,8 +163,6 @@ class GitBranchVocabulary(GitRefVocabulary):
 
     def _makePattern(self, query=None):
         parts = []
-        if query and query.lower() == "head":
-            raise ValueError("HEAD is not a valid search query")
         if query is None or not query.startswith("refs/heads/"):
             parts.append("refs/heads/".translate(like_escape))
         parts.append("%")

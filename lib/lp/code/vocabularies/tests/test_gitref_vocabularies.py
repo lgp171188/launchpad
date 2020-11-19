@@ -182,13 +182,6 @@ class TestGitBranchVocabulary(TestCaseWithFactory):
             [term.title for term in vocab.searchForTerms("master")],
             ["master", "master-old", "master-older"])
 
-    def test_head_is_disallowed(self):
-        [ref] = self.factory.makeGitRefs()
-        self.assertRaises(
-            ValueError,
-            self.vocabulary_class(ref.repository).searchForTerms,
-            "head")
-
     def test_len(self):
         ref_master, _, _, _ = self.factory.makeGitRefs(paths=[
             "refs/heads/master", "refs/heads/next",
