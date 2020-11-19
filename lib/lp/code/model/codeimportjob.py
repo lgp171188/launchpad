@@ -36,7 +36,10 @@ from lp.code.enums import (
     GitRepositoryType,
     RevisionControlSystems,
     )
-from lp.code.interfaces.branch import IBranch
+from lp.code.interfaces.branch import (
+    get_blacklisted_hostnames,
+    IBranch,
+    )
 from lp.code.interfaces.codehosting import (
     branch_id_alias,
     compose_public_url,
@@ -165,6 +168,13 @@ class CodeImportJob(StormBase):
             # XXX cjwatson 2016-10-12: Consider arranging for this to be
             # passed to worker processes in the environment instead.
             result.extend(['--macaroon', macaroon.serialize()])
+        # Refuse pointless self-mirroring.
+        if rcs_type == target_rcs_type:
+            result.extend(['--exclude-host', config.vhost.mainsite.hostname])
+        # Refuse to import from configured hostnames, typically localhost
+        # and similar.
+        for hostname in get_blacklisted_hostnames():
+            result.extend(['--exclude-host', hostname])
         return result
 
     def destroySelf(self):

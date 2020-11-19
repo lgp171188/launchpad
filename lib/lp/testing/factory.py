@@ -435,7 +435,7 @@ class ObjectFactory(
     _unique_int_counter = count(100000)
 
     def getUniqueEmailAddress(self):
-        return "%s@example.com" % self.getUniqueString('email')
+        return "%s@example.com" % self.getUniqueUnicode('email')
 
     def getUniqueInteger(self):
         """Return an integer unique to this factory instance.
@@ -4490,7 +4490,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if date_fulfilled is None:
             date_fulfilled = UTC_NOW
         if diff_content is None:
-            diff_content = self.getUniqueString("packagediff")
+            diff_content = self.getUniqueBytes("packagediff")
         lfa = self.makeLibraryFileAlias(
             filename=diff_filename, content=diff_content)
         return ProxyFactory(

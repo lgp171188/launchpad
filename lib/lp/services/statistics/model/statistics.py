@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes that implement LaunchpadStatistics."""
@@ -29,6 +29,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.product import Product
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
@@ -102,7 +103,8 @@ class LaunchpadStatisticSet:
         self.update('bug_count', Bug.select().count())
         ztm.commit()
 
-        self.update('bugtask_count', BugTask.select().count())
+        store = IStore(BugTask)
+        self.update('bugtask_count', store.find(BugTask).count())
         ztm.commit()
 
         self.update(

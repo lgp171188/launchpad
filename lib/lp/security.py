@@ -1975,6 +1975,15 @@ class EditBuilder(AdminByBuilddAdmin):
     usedfor = IBuilder
 
 
+class ModerateBuilder(EditBuilder):
+    permission = 'launchpad.Moderate'
+    usedfor = IBuilder
+
+    def checkAuthenticated(self, user):
+        return (user.in_registry_experts or
+                super(ModerateBuilder, self).checkAuthenticated(user))
+
+
 class AdminBuildRecord(AdminByBuilddAdmin):
     usedfor = IBuildFarmJob
 

@@ -78,8 +78,9 @@ def parse_charset(string_to_parse, is_escaped=True):
     # Default to UTF-8 if the header still has the default value or
     # is unknown.
     charset = default_charset
-    match = re.search(pattern, string_to_parse)
-    if match is not None and match.group(1) != 'CHARSET':
+    match = re.search(
+        pattern, six.ensure_text(string_to_parse, 'UTF-8', 'replace'))
+    if match is not None and match.group(1) != b'CHARSET':
         charset = match.group(1).strip()
         try:
             codecs.getencoder(charset)
@@ -507,19 +508,22 @@ class POParser(object):
         # We don't know what charset the data is in, so we parse it one line
         # at a time until we have the header, and then we'll know how to
         # treat the rest of the data.
-        parts = re.split(r'\n|\r\n|\r', self._pending_chars, 1)
+        parts = re.split(br'\n|\r\n|\r', self._pending_chars, 1)
         if len(parts) == 1:
             # only one line
             return None
         line, self._pending_chars = parts
         return line.strip()
 
-    def parse(self, content_text):
+    def parse(self, content_bytes):
         """Parse string as a PO file."""
+        if not isinstance(content_bytes, bytes):
+            raise TypeError(
+                "context_bytes must be bytes, not %s" % type(content_bytes))
         # Initialize the parser.
         self._translation_file = TranslationFileData()
         self._messageids = set()
-        self._pending_chars = content_text
+        self._pending_chars = content_bytes
         self._pending_unichars = u''
         self._lineno = 0
         # Message specific variables.
@@ -529,8 +533,8 @@ class POParser(object):
         self._plural_case = None
         self._parsed_content = u''
 
-        # First thing to do is to get the charset used in the content_text.
-        charset = parse_charset(content_text)
+        # First thing to do is to get the charset used in the content_bytes.
+        charset = parse_charset(content_bytes)
 
         # Now, parse the header, inefficiently. It ought to be short, so
         # this isn't disastrous.

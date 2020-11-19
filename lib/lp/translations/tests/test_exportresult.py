@@ -6,8 +6,8 @@
 __metaclass__ = type
 
 import hashlib
+import io
 import os.path
-from StringIO import StringIO
 
 from lp.services.librarianserver.testing.fake import FakeLibrarian
 from lp.services.log.logger import DevNullLogger
@@ -25,7 +25,7 @@ class FakeExportedTranslationFile:
         self.file_extension = ext
         self.size = len(content)
         self.content = content
-        self.file = StringIO(content)
+        self.file = io.BytesIO(content)
         self.content_type = content_type
 
     def read(self, *args, **kwargs):
@@ -50,8 +50,8 @@ class TestExportResult(TestCaseWithFactory):
         return ExportResult(requester, request, logger)
 
     def makeExportedTranslationFile(self):
-        filename = self.factory.getUniqueString()
-        content = self.factory.getUniqueString()
+        filename = self.factory.getUniqueUnicode()
+        content = self.factory.getUniqueBytes()
         mime_type = "text/plain"
         return FakeExportedTranslationFile(filename, content, mime_type)
 

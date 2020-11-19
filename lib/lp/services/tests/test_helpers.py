@@ -37,7 +37,7 @@ def make_test_tarball_1():
             b'la la',
         'uberfrob-0.1/uberfrob.py':
             b'import sys\n'
-            b'print "Frob!"\n',
+            b'print("Frob!")\n',
         })
 
 
@@ -56,8 +56,9 @@ def make_test_tarball_2():
     Check the contents.
 
     >>> f = tarball.extractfile('test/cy.po')
-    >>> f.readline()
-    '# Test PO file.\n'
+    >>> print(f.readline().decode('UTF-8'))
+    # Test PO file.
+    <BLANKLINE>
     '''
 
     pot = dedent("""
@@ -91,7 +92,7 @@ def test_shortlist_returns_all_elements():
     ...         category = 'UserWarning'
     ...     else:
     ...         category = category.__class__.__name__
-    ...     print "%s: %s" % (category, message)
+    ...     print("%s: %s" % (category, message))
 
     >>> old_warn = warnings.warn
     >>> warnings.warn = warn
@@ -150,10 +151,10 @@ def test_english_list():
 
     It does not convert non-string elements:
 
-        >>> english_list(range(3))
+        >>> english_list(range(3))  # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
-        TypeError: sequence item 0: expected string, int found
+        TypeError: sequence item 0: expected str..., int found
 
     The conjunction can be changed:
 

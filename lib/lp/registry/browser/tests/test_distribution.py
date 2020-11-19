@@ -127,7 +127,11 @@ class TestDistributionNavigation(TestCaseWithFactory):
             distroseries.distribution.name, distroseries.name)
         self.assertDereferences(
             distroseries_url, distroseries,
-            environ={"HTTPS": "on", "SERVER_URL": None})
+            environ={
+                "HTTPS": "on",
+                "HTTP_HOST": "api.launchpad.test:443",
+                "SERVER_URL": None,
+                })
 
         # Objects subordinate to the redirected series work too.
         distroarchseries = self.factory.makeDistroArchSeries(
@@ -138,7 +142,11 @@ class TestDistributionNavigation(TestCaseWithFactory):
             distroarchseries.architecturetag)
         self.assertDereferences(
             distroarchseries_url, distroarchseries,
-            environ={"HTTPS": "on", "SERVER_URL": None})
+            environ={
+                "HTTPS": "on",
+                "HTTP_HOST": "api.launchpad.test:443",
+                "SERVER_URL": None,
+                })
 
 
 class TestDistributionPage(TestCaseWithFactory):

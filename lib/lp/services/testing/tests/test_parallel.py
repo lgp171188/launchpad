@@ -5,6 +5,7 @@
 
 __metaclass__ = type
 
+import io
 import subprocess
 import tempfile
 from textwrap import dedent
@@ -41,7 +42,7 @@ class TestListTestCase(TestCase, TestWithFixtures):
             with open(load_list, 'rt') as testlist:
                 contents = testlist.readlines()
             self.assertEqual(['foo\n', 'bar\n'], contents)
-            return {'stdout': six.StringIO(), 'stdin': six.StringIO()}
+            return {'stdout': io.BytesIO(), 'stdin': io.BytesIO()}
         popen = self.useFixture(PopenFixture(check_list_file))
         case = ListTestCase(['foo', 'bar'], ['bin/test'])
         self.assertEqual([], popen.procs)
@@ -76,7 +77,7 @@ class TestUtilities(TestCase, TestWithFixtures):
             prepare_argv(['bin/test', '--load-list', 'Foo', 'foo']))
 
     def test_find_tests_honours_list_list_equals(self):
-        with tempfile.NamedTemporaryFile() as listfile:
+        with tempfile.NamedTemporaryFile(mode='w+') as listfile:
             listfile.write('foo\nbar\n')
             listfile.flush()
             self.assertEqual(
@@ -85,7 +86,7 @@ class TestUtilities(TestCase, TestWithFixtures):
                     ['bin/test', '--load-list=%s' % listfile.name, 'foo']))
 
     def test_find_tests_honours_list_list_two_arg_form(self):
-        with tempfile.NamedTemporaryFile() as listfile:
+        with tempfile.NamedTemporaryFile(mode='w+') as listfile:
             listfile.write('foo\nbar\n')
             listfile.flush()
             self.assertEqual(
@@ -104,8 +105,8 @@ class TestUtilities(TestCase, TestWithFixtures):
                 ['bin/test', '-vt', 'filter', '--list-tests', '--subunit'],
                 args['args'])
             return {
-                'stdin': six.StringIO(),
-                'stdout': six.StringIO(six.ensure_str(dedent("""\
+                'stdin': io.BytesIO(),
+                'stdout': io.BytesIO(six.ensure_binary(dedent("""\
                     test: quux
                     successful: quux
                     test: glom

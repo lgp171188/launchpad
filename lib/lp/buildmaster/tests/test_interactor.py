@@ -503,7 +503,7 @@ class TestSlave(TestCase):
     real slave server.
     """
 
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSlave, self).setUp()

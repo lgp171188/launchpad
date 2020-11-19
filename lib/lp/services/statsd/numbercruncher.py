@@ -10,6 +10,10 @@ __all__ = ['NumberCruncher']
 
 import logging
 
+from storm.expr import (
+    Count,
+    Sum,
+    )
 import transaction
 from twisted.application import service
 from twisted.internet import (
@@ -20,12 +24,11 @@ from twisted.internet.task import LoopingCall
 from twisted.python import log
 from zope.component import getUtility
 
-from lp.buildmaster.enums import (
-    BuilderCleanStatus,
-    BuildQueueStatus,
-    )
+from lp.buildmaster.enums import BuilderCleanStatus
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.manager import PrefetchedBuilderFactory
+from lp.services.database.interfaces import IStore
+from lp.services.librarian.model import LibraryFileContent
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 NUMBER_CRUNCHER_LOG_NAME = "number-cruncher"
@@ -36,6 +39,7 @@ class NumberCruncher(service.Service):
 
     QUEUE_INTERVAL = 60
     BUILDER_INTERVAL = 60
+    LIBRARIAN_INTERVAL = 3600
 
     def __init__(self, clock=None, builder_factory=None):
         if clock is None:
@@ -68,6 +72,10 @@ class NumberCruncher(service.Service):
         stopping_deferred = loop.start(interval)
         return loop, stopping_deferred
 
+    def _sendGauge(self, gauge_name, value):
+        self.logger.debug("{}: {}".format(gauge_name, value))
+        self.statsd_client.gauge(gauge_name, value)
+
     def updateBuilderQueues(self):
         """Update statsd with the build queue lengths.
 
@@ -80,10 +88,8 @@ class NumberCruncher(service.Service):
                 virt = queue_type == 'virt'
                 for arch, value in contents.items():
                     gauge_name = (
-                        "buildqueue,virtualized={},arch={},env={}".format(
-                            virt, arch, self.statsd_client.lp_environment))
-                    self.logger.debug("{}: {}".format(gauge_name, value[0]))
-                    self.statsd_client.gauge(gauge_name, value[0])
+                        "buildqueue,virtualized={},arch={}".format(virt, arch))
+                    self._sendGauge(gauge_name, value[0])
             self.logger.debug("Build queue stats update complete.")
         except Exception:
             self.logger.exception("Failure while updating build queue stats:")
@@ -109,17 +115,15 @@ class NumberCruncher(service.Service):
                     counts['disabled'] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEANING:
                     counts['cleaning'] += 1
-                elif (builder.build_queue and
-                      builder.build_queue.status == BuildQueueStatus.RUNNING):
+                elif builder.build_queue:
                     counts['building'] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEAN:
                     counts['idle'] += 1
         for processor, counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
-                gauge_name = "builders,status={},arch={},env={}".format(
-                    count_name, processor, self.statsd_client.lp_environment)
-                self.logger.debug("{}: {}".format(gauge_name, count_value))
-                self.statsd_client.gauge(gauge_name, count_value)
+                gauge_name = "builders,status={},arch={}".format(
+                    count_name, processor)
+                self._sendGauge(gauge_name, count_value)
         self.logger.debug("Builder stats update complete.")
 
     def updateBuilderStats(self):
@@ -134,20 +138,37 @@ class NumberCruncher(service.Service):
             self.logger.exception("Failure while updating builder stats:")
         transaction.abort()
 
+    def updateLibrarianStats(self):
+        """Update librarian statistics.
+
+        This aborts the current transaction before returning.
+        """
+        try:
+            self.logger.debug("Updating librarian stats.")
+            store = IStore(LibraryFileContent)
+            total_files, total_filesize = store.find(
+                (Count(), Sum(LibraryFileContent.filesize))).one()
+            self._sendGauge("librarian.total_files", total_files)
+            self._sendGauge("librarian.total_filesize", total_filesize)
+            self.logger.debug("Librarian stats update complete.")
+        except Exception:
+            self.logger.exception("Failure while updating librarian stats:")
+        transaction.abort()
+
     def startService(self):
         self.logger.info("Starting number-cruncher service.")
-        self.update_queues_loop, self.update_queues_deferred = (
-            self._startLoop(self.QUEUE_INTERVAL, self.updateBuilderQueues))
-        self.update_builder_loop, self.update_builder_deferred = (
-            self._startLoop(self.BUILDER_INTERVAL, self.updateBuilderStats))
+        self.loops = []
+        self.stopping_deferreds = []
+        for interval, callback in (
+                (self.QUEUE_INTERVAL, self.updateBuilderQueues),
+                (self.BUILDER_INTERVAL, self.updateBuilderStats),
+                (self.LIBRARIAN_INTERVAL, self.updateLibrarianStats),
+                ):
+            loop, stopping_deferred = self._startLoop(interval, callback)
+            self.loops.append(loop)
+            self.stopping_deferreds.append(stopping_deferred)
 
     def stopService(self):
-        deferreds = []
-        deferreds.append(self.update_queues_deferred)
-        deferreds.append(self.update_builder_deferred)
-
-        self.update_queues_loop.stop()
-        self.update_builder_loop.stop()
-
-        d = defer.DeferredList(deferreds, consumeErrors=True)
-        return d
+        for loop in self.loops:
+            loop.stop()
+        return defer.DeferredList(self.stopping_deferreds, consumeErrors=True)

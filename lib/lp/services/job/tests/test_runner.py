@@ -45,6 +45,7 @@ from lp.services.job.runner import (
     )
 from lp.services.log.logger import BufferLogger
 from lp.services.scripts.logger import OopsHandler
+from lp.services.statsd.tests import StatsMixin
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
     get_default_timeout_function,
@@ -158,10 +159,14 @@ class RaisingRetryJob(NullJob):
         raise RetryError()
 
 
-class TestJobRunner(TestCaseWithFactory):
+class TestJobRunner(StatsMixin, TestCaseWithFactory):
     """Ensure JobRunner behaves as expected."""
 
     layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super(TestJobRunner, self).setUp()
+        self.setUpStats()
 
     def makeTwoJobs(self):
         """Test fixture.  Create two jobs."""
@@ -174,6 +179,12 @@ class TestJobRunner(TestCaseWithFactory):
         runner.runJob(job_1, None)
         self.assertEqual(JobStatus.COMPLETED, job_1.job.status)
         self.assertEqual([job_1], runner.completed_jobs)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('job.start_count,type=NullJob,env=test',))
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[1][0],
+            ('job.complete_count,type=NullJob,env=test',))
 
     def test_runAll(self):
         """Ensure runAll works in the normal case."""
@@ -219,6 +230,12 @@ class TestJobRunner(TestCaseWithFactory):
         oops = self.oopses[-1]
         self.assertIn('Fake exception.  Foobar, I say!', oops['tb_text'])
         self.assertEqual(["{'foo': 'bar'}"], oops['req_vars'].values())
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ('job.start_count,type=NullJob,env=test',))
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[1][0],
+            ('job.fail_count,type=NullJob,env=test',))
 
     def test_oops_messages_used_when_handling(self):
         """Oops messages should appear even when exceptions are handled."""
