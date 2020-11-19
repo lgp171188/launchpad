@@ -1477,8 +1477,8 @@ class Person(
         tasks = list(getUtility(IBugTaskSet).search(search_params))
         # Eager load the things we need that are not already eager loaded by
         # BugTaskSet.search().
-        bulk.load_related(Person, tasks, ['assigneeID'])
-        bulk.load_related(Milestone, tasks, ['milestoneID'])
+        bulk.load_related(Person, tasks, ['assignee_id'])
+        bulk.load_related(Milestone, tasks, ['milestone_id'])
 
         for task in tasks:
             # We skip masters (instead of slaves) from conjoined relationships
@@ -1496,8 +1496,8 @@ class Person(
             elif distroseries is not None:
                 candidate = None
                 for possible_slave in tasks:
-                    sourcepackagename_id = possible_slave.sourcepackagenameID
-                    if sourcepackagename_id == task.sourcepackagenameID:
+                    sourcepackagename_id = possible_slave.sourcepackagename_id
+                    if sourcepackagename_id == task.sourcepackagename_id:
                         candidate = possible_slave
                 # Distribution.currentseries is expensive to run for every
                 # bugtask (as it goes through every series of that
@@ -1821,7 +1821,7 @@ class Person(
                 Bug.id,
                 tables=(
                     Bug,
-                    Join(BugTask, BugTask.bugID == Bug.id)),
+                    Join(BugTask, BugTask.bug_id == Bug.id)),
                 where=And(Bug.information_type.is_in(
                     PRIVATE_INFORMATION_TYPES),
                     BugTask.assignee == self.id)),

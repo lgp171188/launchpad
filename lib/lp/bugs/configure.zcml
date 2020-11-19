@@ -167,9 +167,9 @@
             <allow
                 attributes="
                     id
-                    assigneeID
+                    assignee_id
                     bug
-                    bugID
+                    bug_id
                     target
                     date_assigned
                     datecreated
@@ -182,12 +182,12 @@
                     date_fix_released
                     date_left_closed
                     date_closed
-                    distributionID
-                    distroseriesID
-                    milestoneID
-                    productID
-                    productseriesID
-                    sourcepackagenameID
+                    distribution_id
+                    distroseries_id
+                    milestone_id
+                    product_id
+                    productseries_id
+                    sourcepackagename_id
                     task_age
                     bug_subscribers
                     is_complete

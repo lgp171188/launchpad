@@ -957,9 +957,9 @@ def _build_exclude_conjoined_clause(milestone):
         current_series = milestone.distribution.currentseries
         join = LeftJoin(
             ConjoinedMaster,
-            And(ConjoinedMaster.bugID == BugTaskFlat.bug_id,
+            And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
                 BugTaskFlat.distribution_id == milestone.distribution.id,
-                ConjoinedMaster.distroseriesID == current_series.id,
+                ConjoinedMaster.distroseries_id == current_series.id,
                 Not(ConjoinedMaster._status.is_in(
                         BugTask._NON_CONJOINED_STATUSES))))
         join_tables = [(ConjoinedMaster, join)]
@@ -974,8 +974,8 @@ def _build_exclude_conjoined_clause(milestone):
                 LeftJoin(Product, BugTaskFlat.product_id == Product.id),
                 LeftJoin(
                     ConjoinedMaster,
-                    And(ConjoinedMaster.bugID == BugTaskFlat.bug_id,
-                        ConjoinedMaster.productseriesID
+                    And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
+                        ConjoinedMaster.productseries_id
                             == Product.development_focusID,
                         Not(ConjoinedMaster._status.is_in(
                                 BugTask._NON_CONJOINED_STATUSES)))),
@@ -987,9 +987,9 @@ def _build_exclude_conjoined_clause(milestone):
                 milestone.product.development_focusID)
             join = LeftJoin(
                 ConjoinedMaster,
-                And(ConjoinedMaster.bugID == BugTaskFlat.bug_id,
+                And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
                     BugTaskFlat.product_id == milestone.product.id,
-                    ConjoinedMaster.productseriesID == dev_focus_id,
+                    ConjoinedMaster.productseries_id == dev_focus_id,
                     Not(ConjoinedMaster._status.is_in(
                             BugTask._NON_CONJOINED_STATUSES))))
             join_tables = [(ConjoinedMaster, join)]
@@ -1054,9 +1054,9 @@ def _build_pending_bugwatch_elsewhere_clause(params):
         # Restrict the target to params.upstream_target.
         target = params.upstream_target
         if IProduct.providedBy(target):
-            target_col = RelatedBugTask.productID
+            target_col = RelatedBugTask.product_id
         elif IDistribution.providedBy(target):
-            target_col = RelatedBugTask.distributionID
+            target_col = RelatedBugTask.distribution_id
         else:
             raise AssertionError(
                 'params.upstream_target must be a Distribution or '
@@ -1070,10 +1070,10 @@ def _build_pending_bugwatch_elsewhere_clause(params):
         extra_joins = [
             LeftJoin(
                 OtherDistribution,
-                OtherDistribution.id == RelatedBugTask.distributionID),
+                OtherDistribution.id == RelatedBugTask.distribution_id),
             LeftJoin(
                 OtherProduct,
-                OtherProduct.id == RelatedBugTask.productID),
+                OtherProduct.id == RelatedBugTask.product_id),
             ]
         target_clause = Or(
             OtherDistribution.official_malone == False,
@@ -1091,9 +1091,9 @@ def _build_pending_bugwatch_elsewhere_clause(params):
         1,
         tables=[RelatedBugTask] + extra_joins,
         where=And(
-            RelatedBugTask.bugID == BugTaskFlat.bug_id,
+            RelatedBugTask.bug_id == BugTaskFlat.bug_id,
             task_match_clause,
-            RelatedBugTask.bugwatchID == None,
+            RelatedBugTask.bugwatch_id == None,
             RelatedBugTask._status != BugTaskStatus.INVALID,
             target_clause)))
 
@@ -1102,18 +1102,18 @@ def _build_no_upstream_bugtask_clause(params):
     """Return a clause for BugTaskSearchParams.has_no_upstream_bugtask."""
     OtherBugTask = ClassAlias(BugTask)
     if params.upstream_target is None:
-        target = OtherBugTask.productID != None
+        target = OtherBugTask.product_id != None
     elif IProduct.providedBy(params.upstream_target):
-        target = OtherBugTask.productID == params.upstream_target.id
+        target = OtherBugTask.product_id == params.upstream_target.id
     elif IDistribution.providedBy(params.upstream_target):
-        target = OtherBugTask.distributionID == params.upstream_target.id
+        target = OtherBugTask.distribution_id == params.upstream_target.id
     else:
         raise AssertionError(
             'params.upstream_target must be a Distribution or '
             'a Product')
     return Not(Exists(Select(
         1, tables=[OtherBugTask],
-        where=And(OtherBugTask.bugID == BugTaskFlat.bug_id, target))))
+        where=And(OtherBugTask.bug_id == BugTaskFlat.bug_id, target))))
 
 
 def _build_open_or_resolved_upstream_clause(params,
@@ -1128,12 +1128,12 @@ def _build_open_or_resolved_upstream_clause(params,
         RelatedBugTask._status, any(*statuses_for_upstream_tasks))
     if params.upstream_target is None:
         watch_target_clause = True
-        no_watch_target_clause = RelatedBugTask.productID != None
+        no_watch_target_clause = RelatedBugTask.product_id != None
     else:
         if IProduct.providedBy(params.upstream_target):
-            target_col = RelatedBugTask.productID
+            target_col = RelatedBugTask.product_id
         elif IDistribution.providedBy(params.upstream_target):
-            target_col = RelatedBugTask.distributionID
+            target_col = RelatedBugTask.distribution_id
         else:
             raise AssertionError(
                 'params.upstream_target must be a Distribution or '
@@ -1144,14 +1144,14 @@ def _build_open_or_resolved_upstream_clause(params,
         1,
         tables=[RelatedBugTask],
         where=And(
-            RelatedBugTask.bugID == BugTaskFlat.bug_id,
+            RelatedBugTask.bug_id == BugTaskFlat.bug_id,
             RelatedBugTask.id != BugTaskFlat.bugtask_id,
             Or(
                 And(watch_target_clause,
-                    RelatedBugTask.bugwatchID != None,
+                    RelatedBugTask.bugwatch_id != None,
                     watch_status_clause),
                 And(no_watch_target_clause,
-                    RelatedBugTask.bugwatchID == None,
+                    RelatedBugTask.bugwatch_id == None,
                     no_watch_status_clause)))))
 
 

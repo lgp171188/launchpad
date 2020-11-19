@@ -1470,7 +1470,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         productID = self.id
 
         def weight_function(bugtask):
-            if bugtask.productID == productID:
+            if bugtask.product_id == productID:
                 return OrderedBugTask(1, bugtask.id, bugtask)
             return OrderedBugTask(2, bugtask.id, bugtask)
 

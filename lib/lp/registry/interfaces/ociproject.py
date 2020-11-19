@@ -204,7 +204,8 @@ class IOCIProjectSet(Interface):
     def getByPillarAndName(pillar, name):
         """Get the OCIProjects for a given distribution or project.
 
-        :param pillar: An instance of Distribution or Product.
+        :param pillar: An instance of Distribution or Product, or the
+            respective pillar name.
         :param name: The OCIProject name to find.
         :return: The OCIProject found.
         """
@@ -212,6 +213,9 @@ class IOCIProjectSet(Interface):
     def findByPillarAndName(pillar, name_substring):
         """Find OCIProjects for a given pillar that contain the provided
         name."""
+
+    def searchByName(name_substring):
+        """Search OCIProjects that contain the provided name."""
 
     def preloadDataForOCIProjects(oci_projects):
         """Preload data for the given list of OCIProject objects."""

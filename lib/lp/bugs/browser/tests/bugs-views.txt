@@ -22,8 +22,11 @@ Launchpad currently.
 
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> from lp.bugs.model.bugtask import BugTask
+    >>> from lp.services.database.interfaces import IStore
+    >>> store = IStore(BugTask)
     >>> [bugtask.bug.id
-    ...  for bugtask in BugTask.selectBy(_status=BugTaskStatus.FIXRELEASED)]
+    ...  for bugtask in store.find(
+    ...     BugTask, BugTask._status == BugTaskStatus.FIXRELEASED)]
     [8]
     >>> for bug in bugs_view.most_recently_fixed_bugs:
     ...     print("%s: %s" % (bug.id, bug.title))

@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes that implement SourcePackage items."""
@@ -774,14 +774,14 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
         distributionID = self.distroseries.distributionID
 
         def weight_function(bugtask):
-            if bugtask.sourcepackagenameID == sourcepackagenameID:
-                if bugtask.distroseriesID == seriesID:
+            if bugtask.sourcepackagename_id == sourcepackagenameID:
+                if bugtask.distroseries_id == seriesID:
                     return OrderedBugTask(1, bugtask.id, bugtask)
-                elif bugtask.distributionID == distributionID:
+                elif bugtask.distribution_id == distributionID:
                     return OrderedBugTask(2, bugtask.id, bugtask)
-            elif bugtask.distroseriesID == seriesID:
+            elif bugtask.distroseries_id == seriesID:
                 return OrderedBugTask(3, bugtask.id, bugtask)
-            elif bugtask.distributionID == distributionID:
+            elif bugtask.distribution_id == distributionID:
                 return OrderedBugTask(4, bugtask.id, bugtask)
             # Catch the default case, and where there is a task for the same
             # sourcepackage on a different distro.
