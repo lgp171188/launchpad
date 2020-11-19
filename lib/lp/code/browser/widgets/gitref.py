@@ -113,11 +113,11 @@ class GitRefWidget(BrowserWidget, InputWidget):
         path_vocabulary = "GitBranch" if self.require_branch else "GitRef"
         fields = [
             GitRepositoryField(
-                __name__="repository", title=u"Git repository",
+                __name__="repository", title=u"Repository",
                 required=self.context.required, vocabulary="GitRepository",
                 allow_external=self.allow_external),
             Choice(
-                __name__="path", title=u"Git branch",
+                __name__="path", title=u"Branch",
                 required=self.context.required,
                 vocabulary=path_vocabulary),
             ]
