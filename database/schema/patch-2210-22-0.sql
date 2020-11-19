@@ -13,12 +13,12 @@ ALTER TABLE BugTask
     DROP CONSTRAINT bugtask_assignment_checks,
     ADD CONSTRAINT bugtask_assignment_checks CHECK (
         CASE
-            WHEN product IS NOT NULL THEN productseries IS NULL AND distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN product IS NOT NULL THEN productseries IS NULL AND distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL
             WHEN productseries IS NOT NULL THEN distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
-            WHEN distribution IS NOT NULL THEN distroseries IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN distribution IS NOT NULL THEN distroseries IS NULL
             WHEN distroseries IS NOT NULL THEN ociproject IS NULL AND ociprojectseries IS NULL
-            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL
-            WHEN ociprojectseries IS NOT NULL THEN true
+            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
+            WHEN ociprojectseries IS NOT NULL THEN ociproject IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
             ELSE false
         END) NOT VALID;
 
@@ -35,12 +35,12 @@ ALTER TABLE BugSummary
     DROP CONSTRAINT bugtask_assignment_checks,
     ADD CONSTRAINT bugtask_assignment_checks CHECK (
         CASE
-            WHEN product IS NOT NULL THEN productseries IS NULL AND distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN product IS NOT NULL THEN productseries IS NULL AND distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL
             WHEN productseries IS NOT NULL THEN distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
-            WHEN distribution IS NOT NULL THEN distroseries IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
+            WHEN distribution IS NOT NULL THEN distroseries IS NULL
             WHEN distroseries IS NOT NULL THEN ociproject IS NULL AND ociprojectseries IS NULL
-            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL
-            WHEN ociprojectseries IS NOT NULL THEN true
+            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
+            WHEN ociprojectseries IS NOT NULL THEN ociproject IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
             ELSE false
         END) NOT VALID;
 
