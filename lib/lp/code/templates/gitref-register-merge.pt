@@ -12,11 +12,11 @@
         <metal:formbody fill-slot="widgets">
           <table class="form">
 
-            <tal:widget define="widget nocall:view/widgets/target_git_repository">
+            <tal:widget define="widget nocall:view/widgets/target_git_ref">
               <metal:block use-macro="context/@@launchpad_form/widget_row" />
             </tal:widget>
 
-            <tal:widget define="widget nocall:view/widgets/target_git_path">
+            <tal:widget define="widget nocall:view/widgets/prerequisite_git_ref">
               <metal:block use-macro="context/@@launchpad_form/widget_row" />
             </tal:widget>
 
@@ -37,14 +37,6 @@
             </tal:widget>
 
             <tal:widget define="widget nocall:view/widgets/needs_review">
-              <metal:block use-macro="context/@@launchpad_form/widget_row" />
-            </tal:widget>
-
-            <tal:widget define="widget nocall:view/widgets/prerequisite_git_repository">
-              <metal:block use-macro="context/@@launchpad_form/widget_row" />
-            </tal:widget>
-
-            <tal:widget define="widget nocall:view/widgets/prerequisite_git_path">
               <metal:block use-macro="context/@@launchpad_form/widget_row" />
             </tal:widget>
 
