@@ -59,10 +59,6 @@ class GitRefVocabulary(StormVocabularyBase):
     """A vocabulary for references in a given Git repository."""
 
     _table = GitRef
-    # In the base case (i.e. not GitBranchVocabulary) this may also be a
-    # more general reference such as refs/tags/foo, but experience suggests
-    # that people find talking about references in the web UI to be
-    # baffling, so we tell a white lie here.
     displayname = "Select a branch or tag"
     step_title = "Search"
 
