@@ -25,6 +25,9 @@ ALTER TABLE BugTask
 ALTER INDEX bugtask_distinct_sourcepackage_assignment
     RENAME TO old__bugtask_distinct_sourcepackage_assignment;
 
+ALTER INDEX bugtask__product__bug__key
+    RENAME TO old__bugtask__product__bug__key;
+
 ALTER TABLE BugTaskFlat
     ADD COLUMN ociproject integer,
     ADD COLUMN ociprojectseries integer;
