@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An SFTP server that backs on to a special kind of Bazaar Transport.
@@ -166,6 +166,7 @@ class TransportSFTPFile:
         return self.transport.put_bytes(self._escaped_path, b'')
 
     @with_sftp_error
+    @defer.inlineCallbacks
     def writeChunk(self, offset, data):
         """See `ISFTPFile`."""
         if not self._shouldWrite():
@@ -173,43 +174,30 @@ class TransportSFTPFile:
                 filetransfer.FX_PERMISSION_DENIED,
                 "%r was opened read-only." % self._unescaped_relpath)
         if self._shouldTruncate():
-            deferred = self._truncateFile()
-        else:
-            deferred = defer.succeed(None)
+            yield self._truncateFile()
         self._written = True
         if self._shouldAppend():
-            deferred.addCallback(
-                lambda ignored:
-                self.transport.append_bytes(self._escaped_path, data))
+            yield self.transport.append_bytes(self._escaped_path, data)
         else:
-            deferred.addCallback(
-                lambda ignored:
-                self.transport.writeChunk(self._escaped_path, offset, data))
-        return deferred
+            yield self.transport.writeChunk(self._escaped_path, offset, data)
 
     @with_sftp_error
+    @defer.inlineCallbacks
     def readChunk(self, offset, length):
         """See `ISFTPFile`."""
-        deferred = self.transport.readv(
-            self._escaped_path, [(offset, length)])
-
-        def get_first_chunk(read_things):
-            return next(read_things)[1]
-
-        def handle_short_read(failure):
-            """Handle short reads by reading what was available.
-
-            Doing things this way around, by trying to read all the data
-            requested and then handling the short read error, might be a bit
-            inefficient, but the breezy sftp transport doesn't read past the
-            end of files, so we don't need to worry too much about performance
-            here.
-            """
-            failure.trap(bzr_errors.ShortReadvError)
-            return self.readChunk(failure.value.offset, failure.value.actual)
-
-        deferred.addCallback(get_first_chunk)
-        return deferred.addErrback(handle_short_read)
+        try:
+            read_things = yield self.transport.readv(
+                self._escaped_path, [(offset, length)])
+            chunk = next(read_things)[1]
+        except bzr_errors.ShortReadvError as e:
+            # Handle short reads by reading what was available.
+            # Doing things this way around, by trying to read all the data
+            # requested and then handling the short read error, might be a
+            # bit inefficient, but the breezy sftp transport doesn't read
+            # past the end of files, so we don't need to worry too much
+            # about performance here.
+            chunk = yield self.readChunk(e.offset, e.actual)
+        defer.returnValue(chunk)
 
     def setAttrs(self, attrs):
         """See `ISFTPFile`.
@@ -225,21 +213,19 @@ class TransportSFTPFile:
         """See `ISFTPFile`."""
         return self._server.getAttrs(self._unescaped_relpath, False)
 
+    @defer.inlineCallbacks
     def close(self):
         """See `ISFTPFile`."""
         if self._written or not self._shouldCreate():
-            return defer.succeed(None)
+            return
 
         if self._shouldTruncate():
-            return self._truncateFile()
+            yield self._truncateFile()
+            return
 
-        deferred = self.transport.has(self._escaped_path)
-
-        def maybe_create_file(already_exists):
-            if not already_exists:
-                return self._truncateFile()
-
-        return deferred.addCallback(maybe_create_file)
+        already_exists = yield self.transport.has(self._escaped_path)
+        if not already_exists:
+            yield self._truncateFile()
 
 
 def _get_transport_for_dir(directory):
@@ -311,48 +297,38 @@ class TransportSFTPServer:
             yield (shortname, longname, attr_dict)
 
     @with_sftp_error
+    @defer.inlineCallbacks
     def openDirectory(self, path):
         """See `ISFTPServer`."""
         escaped_path = urlutils.escape(path)
-        deferred = self.transport.list_dir(escaped_path)
-
-        def produce_entries_from_file_list(file_list):
-            stats_deferred = self._stat_files_in_list(file_list, escaped_path)
-            stats_deferred.addCallback(
-                self._format_directory_entries, file_list)
-            return stats_deferred
-
-        return deferred.addCallback(
-            produce_entries_from_file_list).addCallback(DirectoryListing)
+        file_list = yield self.transport.list_dir(escaped_path)
+        stat_results = yield self._stat_files_in_list(file_list, escaped_path)
+        entries = self._format_directory_entries(stat_results, file_list)
+        defer.returnValue(DirectoryListing(entries))
 
     @with_sftp_error
+    @defer.inlineCallbacks
     def openFile(self, path, flags, attrs):
         """See `ISFTPServer`."""
         directory = os.path.dirname(path)
-        deferred = self.transport.stat(directory)
-
-        def open_file(stat_result):
-            if stat.S_ISDIR(stat_result.st_mode):
-                return TransportSFTPFile(self.transport, path, flags, self)
-            else:
-                raise filetransfer.SFTPError(
-                    filetransfer.FX_NO_SUCH_FILE, directory)
-
-        return deferred.addCallback(open_file)
+        stat_result = yield self.transport.stat(directory)
+        if stat.S_ISDIR(stat_result.st_mode):
+            defer.returnValue(
+                TransportSFTPFile(self.transport, path, flags, self))
+        else:
+            raise filetransfer.SFTPError(
+                filetransfer.FX_NO_SUCH_FILE, directory)
 
     def readLink(self, path):
         """See `ISFTPServer`."""
         raise NotImplementedError()
 
+    @defer.inlineCallbacks
     def realPath(self, relpath):
         """See `ISFTPServer`."""
-        deferred = self.transport.local_realPath(urlutils.escape(relpath))
-
-        def unescape_path(path):
-            unescaped_path = urlutils.unescape(path)
-            return unescaped_path.encode('utf-8')
-
-        return deferred.addCallback(unescape_path)
+        path = yield self.transport.local_realPath(urlutils.escape(relpath))
+        unescaped_path = urlutils.unescape(path)
+        defer.returnValue(unescaped_path.encode('utf-8'))
 
     def setAttrs(self, path, attrs):
         """See `ISFTPServer`.
@@ -378,13 +354,14 @@ class TransportSFTPServer:
         }
 
     @with_sftp_error
+    @defer.inlineCallbacks
     def getAttrs(self, path, followLinks):
         """See `ISFTPServer`.
 
         This just delegates to TransportSFTPFile's implementation.
         """
-        deferred = self.transport.stat(urlutils.escape(path))
-        return deferred.addCallback(self._translate_stat)
+        stat_result = yield self.transport.stat(urlutils.escape(path))
+        defer.returnValue(self._translate_stat(stat_result))
 
     def gotVersion(self, otherVersion, extensionData):
         """See `ISFTPServer`."""
