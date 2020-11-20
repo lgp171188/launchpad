@@ -25,6 +25,7 @@ from lp.registry.browser.sourcepackage import (
     PackageUpstreamTracking,
     SourcePackageOverviewMenu,
     )
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import (
     IDistroSeries,
@@ -142,7 +143,11 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
             sourcepackagename=Faker(name='foo'),
             distroseries=FakeDistroSeries(
                 name='walrus',
-                distribution=FakeDistribution(name='zoobuntu')),
+                distribution=FakeDistribution(
+                    name='zoobuntu',
+                    default_traversal_policy=(
+                        DistributionDefaultTraversalPolicy.SERIES),
+                    redirect_default_traversal=False)),
             releases=[releases],
             currentrelease=Faker(homepage=None),
             )
