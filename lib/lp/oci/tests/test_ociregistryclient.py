@@ -542,7 +542,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                     MatchesStructure(errors=Is(None))))))
 
     @responses.activate
-    def test_multi_arch_manifest_upload(self):
+    def test_multi_arch_manifest_upload_new_manifest(self):
         """Ensure that multi-arch manifest upload works and tags correctly
         the uploaded image."""
         # Creates a build request with 2 builds.
@@ -576,15 +576,21 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            status=404)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        responses.add(
             "GET", "{}/v2/".format(push_rule.registry_url), status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
         # Let's try to generate the manifest for just 2 of the 3 builds:
         self.client.uploadManifestList(build_request, [build1, build2])
-        self.assertEqual(2, len(responses.calls))
-        auth_call, manifest_call = responses.calls
+        self.assertEqual(3, len(responses.calls))
+        auth_call, get_manifest_call, send_manifest_call = responses.calls
         self.assertEndsWith(
-            manifest_call.request.url,
+            send_manifest_call.request.url,
             "/v2/%s/manifests/edge" % push_rule.image_name)
         self.assertEqual({
             "schemaVersion": 2,
@@ -603,7 +609,99 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "digest": "build2digest",
                 "size": 321
             }]
-        }, json.loads(manifest_call.request.body))
+        }, json.loads(send_manifest_call.request.body))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_update_manifest(self):
+        """Makes sure we update only new architectures if there is already
+        a manifest file in registry.
+        """
+        current_manifest = {
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "386"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-386-digest",
+                "size": 110
+            }, {
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-amd64-digest",
+                "size": 220
+            }]
+        }
+
+        # Creates a build request with 2 builds: amd64 (which is already in
+        # the manifest) and hppa (that should be added)
+        recipe = self.build.recipe
+        build1 = self.build
+        build2 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe)
+        naked_build1 = removeSecurityProxy(build1)
+        naked_build2 = removeSecurityProxy(build2)
+        naked_build1.processor = getUtility(IProcessorSet).getByName('amd64')
+        naked_build2.processor = getUtility(IProcessorSet).getByName('hppa')
+
+        # Creates a mock IOCIRecipeRequestBuildsJobSource, as it was created
+        # by the celery job and triggered the 3 registry uploads already.
+        job = mock.Mock()
+        job.builds = [build1, build2]
+        job.uploaded_manifests = {
+            build1.id: {"digest": "new-build1-digest", "size": 1111},
+            build2.id: {"digest": "new-build2-digest", "size": 2222},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            json=current_manifest,
+            status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.client.uploadManifestList(build_request, [build1, build2])
+        self.assertEqual(3, len(responses.calls))
+        auth_call, get_manifest_call, send_manifest_call = responses.calls
+        self.assertEndsWith(
+            send_manifest_call.request.url,
+            "/v2/%s/manifests/edge" % push_rule.image_name)
+        self.assertEqual({
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "386"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-386-digest",
+                "size": 110
+            }, {
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "new-build1-digest",
+                "size": 1111
+            }, {
+                "platform": {"os": "linux", "architecture": "hppa"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "new-build2-digest",
+                "size": 2222
+            }]
+        }, json.loads(send_manifest_call.request.body))
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
