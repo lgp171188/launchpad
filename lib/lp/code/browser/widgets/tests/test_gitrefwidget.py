@@ -17,6 +17,7 @@ from zope.interface import (
     implementer,
     Interface,
     )
+from zope.schema import ValidationError
 
 from lp.app.validators import LaunchpadValidationError
 from lp.code.browser.widgets.gitref import GitRefWidget
@@ -149,6 +150,12 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         self.assertEqual(LaunchpadValidationError(message), e.errors)
         self.assertEqual(html_escape(message), self.widget.error())
 
+    def assertValidationError(self, form, message):
+        self.widget.request = LaunchpadTestRequest(form=form)
+        e = self.assertRaises(WidgetInputError, self.widget.getInputValue)
+        self.assertIsInstance(e.errors, ValidationError)
+        self.assertEqual(html_escape(message), self.widget.error())
+
     def test_getInputValue_repository_missing(self):
         # An error is raised when the repository field is missing.
         form = {
@@ -186,7 +193,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
             "field.git_ref.repository": repository.unique_name,
             "field.git_ref.path": "",
             }
-        self.assertGetInputValueError(form, "Please enter a Git branch path.")
+        self.assertValidationError(form, "Required input is missing.")
 
     def test_getInputValue_path_invalid(self):
         # An error is raised when the branch path does not identify a
