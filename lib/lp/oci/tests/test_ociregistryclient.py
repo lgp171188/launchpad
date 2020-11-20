@@ -703,6 +703,61 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             }]
         }, json.loads(send_manifest_call.request.body))
 
+    @responses.activate
+    def test_multi_arch_manifest_upload_invalid_current_manifest(self):
+        """Makes sure we update only new architectures if there is already
+        a manifest file in registry.
+        """
+        current_manifest = {'schemaVersion': 1, 'layers': []}
+
+        # Creates a build request with 1 build for amd64.
+        recipe = self.build.recipe
+        build1 = self.build
+        naked_build1 = removeSecurityProxy(build1)
+        naked_build1.processor = getUtility(IProcessorSet).getByName('amd64')
+
+        job = mock.Mock()
+        job.builds = [build1]
+        job.uploaded_manifests = {
+            build1.id: {"digest": "new-build1-digest", "size": 1111},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            json=current_manifest,
+            status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.client.uploadManifestList(build_request, [build1])
+        self.assertEqual(3, len(responses.calls))
+        auth_call, get_manifest_call, send_manifest_call = responses.calls
+        self.assertEndsWith(
+            send_manifest_call.request.url,
+            "/v2/%s/manifests/edge" % push_rule.image_name)
+        self.assertEqual({
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "new-build1-digest",
+                "size": 1111
+            }]
+        }, json.loads(send_manifest_call.request.body))
+
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                              TestCaseWithFactory):
