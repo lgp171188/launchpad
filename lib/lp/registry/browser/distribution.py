@@ -95,6 +95,7 @@ from lp.registry.browser.pillar import (
     PillarNavigationMixin,
     PillarViewMixin,
     )
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionMirrorMenuMarker,
@@ -189,13 +190,28 @@ class DistributionNavigation(
 
     @stepthrough('+series')
     def traverse_series(self, name):
-        series, _ = self._resolveSeries(name)
-        return self.redirectSubTree(
-            canonical_url(series, request=self.request), status=303)
+        series, redirect = self._resolveSeries(name)
+        if not redirect:
+            policy = self.context.default_traversal_policy
+            if (policy == DistributionDefaultTraversalPolicy.SERIES and
+                    not self.context.redirect_default_traversal):
+                redirect = True
+        if redirect:
+            return self.redirectSubTree(
+                canonical_url(series, request=self.request), status=303)
+        else:
+            return series
 
     def traverse(self, name):
-        series, is_alias = self._resolveSeries(name)
-        if is_alias:
+        series, redirect = self._resolveSeries(name)
+        if series is None:
+            return None
+        if not redirect:
+            policy = self.context.default_traversal_policy
+            if (policy == DistributionDefaultTraversalPolicy.SERIES and
+                    self.context.redirect_default_traversal):
+                redirect = True
+        if redirect:
             return self.redirectSubTree(
                 canonical_url(series, request=self.request), status=303)
         else:
@@ -965,6 +981,8 @@ class DistributionEditView(RegistryEditFormView,
         'translations_usage',
         'answers_usage',
         'translation_focus',
+        'default_traversal_policy',
+        'redirect_default_traversal',
         ]
 
     custom_widget_icon = CustomWidgetFactory(

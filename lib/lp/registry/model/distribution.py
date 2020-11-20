@@ -88,6 +88,7 @@ from lp.code.interfaces.seriessourcepackagebranch import (
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
+    DistributionDefaultTraversalPolicy,
     SpecificationSharingPolicy,
     VCSType,
     )
@@ -262,6 +263,10 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     redirect_release_uploads = BoolCol(notNull=True, default=False)
     development_series_alias = StringCol(notNull=False, default=None)
     vcs = EnumCol(enum=VCSType, notNull=False)
+    default_traversal_policy = EnumCol(
+        enum=DistributionDefaultTraversalPolicy, notNull=False,
+        default=DistributionDefaultTraversalPolicy.SERIES)
+    redirect_default_traversal = BoolCol(notNull=False, default=False)
 
     def __repr__(self):
         display_name = self.display_name.encode('ASCII', 'backslashreplace')
