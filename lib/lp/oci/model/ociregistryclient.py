@@ -241,7 +241,9 @@ class OCIRegistryClient:
         """
         tag = cls._calculateTag(None, push_rule)
         url = "/manifests/{}".format(tag)
-        response = http_client.requestPath(url, method="GET")
+        accept = "application/vnd.docker.distribution.manifest.list.v2+json"
+        response = http_client.requestPath(
+            url, method="GET", headers={"Accept": accept})
         return response.json()
 
     @classmethod
@@ -379,7 +381,13 @@ class OCIRegistryClient:
         try:
             current_manifest = cls._getCurrentRegistryManifest(
                 http_client, push_rule)
+            # Check if the current manifest is not an incompatible version.
+            version = current_manifest.get("schemaVersion", 1)
+            if version < 2 or "manifests" not in current_manifest:
+                current_manifest = None
         except HTTPError:
+            current_manifest = None
+        if current_manifest is None:
             current_manifest = {
                 "schemaVersion": 2,
                 "mediaType": ("application/"
