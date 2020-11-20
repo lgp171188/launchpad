@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import base64
+from datetime import timedelta
 from functools import partial
 import io
 import json
@@ -38,7 +39,11 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.oci.interfaces.ocirecipebuild import (
+    OCIRecipeBuildRegistryUploadStatus,
+    )
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
@@ -55,6 +60,7 @@ from lp.oci.model.ociregistryclient import (
     RegistryHTTPClient,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.compat import mock
 from lp.testing import TestCaseWithFactory
 from lp.testing.fixture import ZopeUtilityFixture
@@ -210,6 +216,29 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             "mediaType": Equals(
                 "application/vnd.docker.distribution.manifest.v2+json")
         }))
+
+    @responses.activate
+    def test_upload_ignores_superseded_builds(self):
+        recipe = self.build.recipe
+        processor = self.build.processor
+        distribution = recipe.oci_project.distribution
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=processor.name,
+            processor=processor)
+
+        # Creates another build, more recent.
+        self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distro_arch_series,
+            date_created=self.build.date_created + timedelta(seconds=1))
+
+        self.client.upload(self.build)
+        self.assertEqual(BuildStatus.SUPERSEDED, self.build.status)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.SUPERSEDED,
+            self.build.registry_upload_status)
+        self.assertEqual(0, len(responses.calls))
 
     @responses.activate
     def test_upload_formats_credentials(self):
@@ -540,6 +569,31 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                         str,
                         Equals(expected_msg)),
                     MatchesStructure(errors=Is(None))))))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_skips_superseded_builds(self):
+        recipe = self.build.recipe
+        processor = self.build.processor
+        distribution = recipe.oci_project.distribution
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=processor.name,
+            processor=processor)
+
+        # Creates another build for the same arch and recipe, more recent.
+        self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distro_arch_series,
+            date_created=self.build.date_created + timedelta(seconds=1))
+
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+        self.client.uploadManifestList(build_request, [self.build])
+
+        self.assertEqual(BuildStatus.SUPERSEDED, self.build.status)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.SUPERSEDED,
+            self.build.registry_upload_status)
+        self.assertEqual(0, len(responses.calls))
 
     @responses.activate
     def test_multi_arch_manifest_upload_new_manifest(self):
