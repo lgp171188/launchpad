@@ -88,4 +88,28 @@
     <allow interface="zope.schema.interfaces.IVocabularyTokenized"/>
   </class>
 
+  <securedutility
+    name="GitRef"
+    component=".gitref.GitRefVocabulary"
+    provides="zope.schema.interfaces.IVocabularyFactory">
+    <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
+  </securedutility>
+
+  <class class=".gitref.GitRefVocabulary">
+    <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
+    <allow interface=".gitref.IRepositoryManagerGitRefVocabulary"/>
+  </class>
+
+  <securedutility
+    name="GitBranch"
+    component=".gitref.GitBranchVocabulary"
+    provides="zope.schema.interfaces.IVocabularyFactory">
+    <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
+  </securedutility>
+
+  <class class=".gitref.GitBranchVocabulary">
+    <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
+    <allow interface=".gitref.IRepositoryManagerGitRefVocabulary"/>
+  </class>
+
 </configure>
