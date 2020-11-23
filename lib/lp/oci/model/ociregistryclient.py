@@ -392,9 +392,10 @@ class OCIRegistryClient:
                 # manifest file.
                 current_manifest = None
                 msg_tpl = (
-                    "No multi-arch manifest file found for %s. Uploading a "
-                    "new one.")
-                log.info(msg_tpl % (push_rule, ))
+                    "No multi-arch manifest on registry %s (image name: %s). "
+                    "Uploading a new one.")
+                log.info(msg_tpl % (
+                    push_rule.registry_url, push_rule.image_name))
             else:
                 raise
         if current_manifest is None:
