@@ -385,8 +385,18 @@ class OCIRegistryClient:
             version = current_manifest.get("schemaVersion", 1)
             if version < 2 or "manifests" not in current_manifest:
                 current_manifest = None
-        except HTTPError:
-            current_manifest = None
+        except HTTPError as e:
+            if e.response.status_code == 404:
+                # If there is no manifest file (or it doesn't follow the
+                # multi-arch spec), we should proceed adding our own
+                # manifest file.
+                current_manifest = None
+                msg_tpl = (
+                    "No multi-arch manifest file found for %s. Uploading a "
+                    "new one.")
+                log.info(msg_tpl % (push_rule, ))
+            else:
+                raise
         if current_manifest is None:
             current_manifest = {
                 "schemaVersion": 2,

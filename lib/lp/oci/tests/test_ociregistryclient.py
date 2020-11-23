@@ -705,8 +705,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
     @responses.activate
     def test_multi_arch_manifest_upload_invalid_current_manifest(self):
-        """Makes sure we update only new architectures if there is already
-        a manifest file in registry.
+        """Makes sure we create a new multi-arch manifest if existing manifest
+        file is using another unknown format.
         """
         current_manifest = {'schemaVersion': 1, 'layers': []}
 
@@ -757,6 +757,37 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "size": 1111
             }]
         }, json.loads(send_manifest_call.request.body))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_registry_error_fetching_current(self):
+        """Makes sure we abort the image upload if we get an error that is
+        not 404 when fetching the current manifest file.
+        """
+        job = mock.Mock()
+        job.builds = [self.build]
+        job.uploaded_manifests = {
+            self.build.id: {"digest": "new-build1-digest", "size": 1111},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(self.build.recipe, -1)
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            json={"error": "Unknown"},
+            status=503)
+
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.assertRaises(
+            HTTPError, self.client.uploadManifestList,
+            build_request, [self.build])
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
