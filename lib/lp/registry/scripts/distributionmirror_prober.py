@@ -582,6 +582,32 @@ class UnknownURLSchemeAfterRedirect(UnknownURLScheme):
                 "to check this kind of URL." % self.url)
 
 
+class CallChain:
+    """Keep track of the callbacks chain that a deferred tried to call,
+    so we can postpone them to after the reactor is done.
+    """
+    def __init__(self, mirror, series):
+        self.mirror = mirror
+        self.series = series
+        self.calls = []
+
+    def enqueue(self, method, *args, **kwargs):
+        def callback(result):
+            self.calls.append((result, method, args, kwargs))
+            return result
+        return callback
+
+    def run(self):
+        """Runs all the delayed calls, passing forward the result from one
+        callback to the next.
+        """
+        null = object()
+        last_result = null
+        for result, method, args, kwargs in self.calls:
+            result = result if last_result is null else last_result
+            last_result = method(result, *args, **kwargs)
+
+
 class ArchiveMirrorProberCallbacks(LoggingMixin):
 
     expected_failures = (
@@ -851,6 +877,8 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger,
     sources_paths = mirror.getExpectedSourcesPaths()
     all_paths = itertools.chain(packages_paths, sources_paths)
     request_manager = RequestManager(max_parallel, max_parallel_per_host)
+
+    call_chains = []
     for series, pocket, component, path in all_paths:
         url = urljoin(base_url, path)
         callbacks = ArchiveMirrorProberCallbacks(
@@ -860,14 +888,19 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger,
         # them here too.
         prober = RedirectAwareProberFactory(url)
 
+        chain = CallChain(mirror, series)
+        call_chains.append(chain)
         deferred = request_manager.run(prober.request_host, prober.probe)
         deferred.addCallbacks(
-            callbacks.ensureMirrorSeries, callbacks.deleteMirrorSeries)
+            chain.enqueue(callbacks.ensureMirrorSeries),
+            chain.enqueue(callbacks.deleteMirrorSeries))
 
-        deferred.addCallback(callbacks.updateMirrorFreshness, request_manager)
-        deferred.addErrback(logger.error)
+        deferred.addCallback(
+            chain.enqueue(callbacks.updateMirrorFreshness, request_manager))
+        deferred.addErrback(chain.enqueue(logger.error))
 
         deferred.addBoth(checkComplete, url, unchecked_keys)
+    return call_chains
 
 
 def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
@@ -894,6 +927,7 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
         logger.error(e)
         return
 
+    call_chains = []
     for series, flavour, paths in cdimage_paths:
         callbacks = MirrorCDImageProberCallbacks(
             mirror, series, flavour, logfile)
@@ -902,18 +936,23 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
         unchecked_keys.append(mirror_key)
         deferredList = []
         request_manager = RequestManager(max_parallel, max_parallel_per_host)
+        chain = CallChain(mirror, series)
+        call_chains.append(chain)
         for path in paths:
             url = urljoin(base_url, path)
             # Use a RedirectAwareProberFactory because CD mirrors are allowed
             # to redirect, and we need to cope with that.
             prober = RedirectAwareProberFactory(url)
             deferred = request_manager.run(prober.request_host, prober.probe)
-            deferred.addErrback(callbacks.logMissingURL, url)
+            deferred.addErrback(
+                chain.enqueue(callbacks.logMissingURL, url))
             deferredList.append(deferred)
 
         deferredList = defer.DeferredList(deferredList, consumeErrors=True)
-        deferredList.addCallback(callbacks.ensureOrDeleteMirrorCDImageSeries)
+        deferredList.addCallback(
+            chain.enqueue(callbacks.ensureOrDeleteMirrorCDImageSeries))
         deferredList.addCallback(checkComplete, mirror_key, unchecked_keys)
+    return call_chains
 
 
 def should_skip_host(host):
@@ -1029,6 +1068,7 @@ class DistroMirrorProber:
         logfiles = {}
         probed_mirrors = []
 
+        all_call_chains = []
         for mirror_id in mirror_ids:
             mirror = mirror_set[mirror_id]
             if not self._sanity_check_mirror(mirror):
@@ -1047,12 +1087,18 @@ class DistroMirrorProber:
             probed_mirrors.append(mirror)
             logfile = six.StringIO()
             logfiles[mirror_id] = logfile
-            probe_function(mirror, logfile, unchecked_keys, self.logger,
-                           max_parallel, max_parallel_per_host)
+            probe_call_chains = probe_function(
+                mirror, logfile, unchecked_keys, self.logger,
+                max_parallel, max_parallel_per_host)
+            all_call_chains += probe_call_chains
 
         if probed_mirrors:
             reactor.run()
             self.logger.info('Probed %d mirrors.' % len(probed_mirrors))
+            self.logger.info(
+                'Starting to update mirrors statuses outside reactor now.')
+            for call_chain in all_call_chains:
+                call_chain.run()
         else:
             self.logger.info('No mirrors to probe.')
 
