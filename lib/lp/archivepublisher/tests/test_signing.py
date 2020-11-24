@@ -1929,7 +1929,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             SigningKeyType.FIT: SigningMode.ATTACHED,
             }
         expected_signed_contents = [
-            b"signed with key_type=%s mode=%s" % (k.name, modes[k].name)
+            ("signed with key_type=%s mode=%s" % (
+                k.name, modes[k].name)).encode("UTF-8")
             for k in key_types]
         self.assertItemsEqual(expected_signed_contents, contents)
 
