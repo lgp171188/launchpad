@@ -594,8 +594,8 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             'affects|description|security vulnerability|information type|'
             'summary|tags|visibility|bug task deleted')
         bugtask_change_re = (
-            '[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?: '
-            '(assignee|importance|milestone|status)')
+            r'[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?: '
+            r'(assignee|importance|milestone|status)')
         interesting_match = re.compile(
             "^(%s|%s)$" % (bug_change_re, bugtask_change_re)).match
 
@@ -2467,12 +2467,12 @@ class BugActivityItem:
         # Turn the strings of newvalue and oldvalue into sets so we
         # can work out the differences.
         if self.newvalue != '':
-            new_tags = set(re.split('\s+', self.newvalue))
+            new_tags = set(re.split(r'\s+', self.newvalue))
         else:
             new_tags = set()
 
         if self.oldvalue != '':
-            old_tags = set(re.split('\s+', self.oldvalue))
+            old_tags = set(re.split(r'\s+', self.oldvalue))
         else:
             old_tags = set()
 
