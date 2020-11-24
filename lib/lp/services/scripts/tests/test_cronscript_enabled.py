@@ -24,7 +24,7 @@ class TestCronscriptEnabled(TestCase):
 
     def makeConfig(self, body):
         tempfile = NamedTemporaryFile(suffix='.ini')
-        tempfile.write(body)
+        tempfile.write(body.encode('UTF-8'))
         tempfile.flush()
         # Ensure a reference is kept until the test is over.
         # tempfile will then clean itself up.
