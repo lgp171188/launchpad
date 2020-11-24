@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """FAQ document models."""
@@ -133,13 +133,13 @@ class FAQ(SQLBase):
         assert not (product and distribution), (
             'only one of product or distribution should be provided')
         if product:
-            target_constraint = 'product = %s' % sqlvalues(product)
+            target_constraint = (FAQ.product == product)
         elif distribution:
-            target_constraint = 'distribution = %s' % sqlvalues(distribution)
+            target_constraint = (FAQ.distribution == distribution)
         else:
             raise AssertionError('must provide product or distribution')
 
-        phrases = nl_phrase_search(summary, FAQ, target_constraint)
+        phrases = nl_phrase_search(summary, FAQ, [target_constraint])
         if not phrases:
             # No useful words to search on in that summary.
             return FAQ.select('1 = 2')
