@@ -47,7 +47,6 @@ __all__ = [
     'TestCaseWithFactory',
     'time_counter',
     'unlink_source_packages',
-    'validate_mock_class',
     'verifyObject',
     'with_anonymous_login',
     'with_celebrity_logged_in',
@@ -63,12 +62,6 @@ from datetime import (
     )
 from fnmatch import fnmatchcase
 from functools import partial
-from inspect import (
-    getargspec,
-    getmro,
-    isclass,
-    ismethod,
-    )
 import logging
 import os
 import re
@@ -1428,79 +1421,6 @@ def set_feature_flag(name, value, scope=u'default', priority=1):
     store.add(flag)
     # Make sure that the feature is saved into the db right now.
     store.flush()
-
-
-def validate_mock_class(mock_class):
-    """Validate method signatures in mock classes derived from real classes.
-
-    We often use mock classes in tests which are derived from real
-    classes.
-
-    This function ensures that methods redefined in the mock
-    class have the same signature as the corresponding methods of
-    the base class.
-
-    >>> class A:
-    ...
-    ...     def method_one(self, a):
-    ...         pass
-
-    >>>
-    >>> class B(A):
-    ...     def method_one(self, a):
-    ...        pass
-    >>> validate_mock_class(B)
-
-    If a class derived from A defines method_one with a different
-    signature, we get an AssertionError.
-
-    >>> class C(A):
-    ...     def method_one(self, a, b):
-    ...        pass
-    >>> validate_mock_class(C)
-    Traceback (most recent call last):
-    ...
-    AssertionError: Different method signature for method_one:...
-
-    Even a parameter name must not be modified.
-
-    >>> class D(A):
-    ...     def method_one(self, b):
-    ...        pass
-    >>> validate_mock_class(D)
-    Traceback (most recent call last):
-    ...
-    AssertionError: Different method signature for method_one:...
-
-    If validate_mock_class() for anything but a class, we get an
-    AssertionError.
-
-    >>> validate_mock_class('a string')
-    Traceback (most recent call last):
-    ...
-    AssertionError: validate_mock_class() must be called for a class
-    """
-    assert isclass(mock_class), (
-        "validate_mock_class() must be called for a class")
-    base_classes = getmro(mock_class)
-    # Don't use inspect.getmembers() here because it fails on __provides__, a
-    # descriptor added by zope.interface as part of its caching strategy. See
-    # http://comments.gmane.org/gmane.comp.python.zope.interface/241.
-    for name in dir(mock_class):
-        if name == '__provides__':
-            continue
-        obj = getattr(mock_class, name)
-        if ismethod(obj):
-            for base_class in base_classes[1:]:
-                if name in base_class.__dict__:
-                    mock_args = getargspec(obj)
-                    real_args = getargspec(base_class.__dict__[name])
-                    if mock_args != real_args:
-                        raise AssertionError(
-                            'Different method signature for %s: %r %r' % (
-                            name, mock_args, real_args))
-                    else:
-                        break
 
 
 def ws_object(launchpad, obj):
