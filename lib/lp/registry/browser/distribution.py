@@ -1073,6 +1073,8 @@ class DistributionAdminView(LaunchpadEditFormView):
         'official_packages',
         'supports_ppas',
         'supports_mirrors',
+        'default_traversal_policy',
+        'redirect_default_traversal',
         ]
 
     @property
