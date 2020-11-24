@@ -933,6 +933,7 @@ class GitRefRemote(GitRefMixin):
 
     def __eq__(self, other):
         return (
+            other is not None and
             self.repository_url == other.repository_url and
             self.path == other.path)
 

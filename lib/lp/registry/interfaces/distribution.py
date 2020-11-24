@@ -73,7 +73,10 @@ from lp.bugs.interfaces.bugtarget import (
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
-from lp.registry.enums import VCSType
+from lp.registry.enums import (
+    DistributionDefaultTraversalPolicy,
+    VCSType,
+    )
 from lp.registry.interfaces.announcement import IMakesAnnouncements
 from lp.registry.interfaces.distributionmirror import IDistributionMirror
 from lp.registry.interfaces.distroseries import DistroSeriesNameField
@@ -389,6 +392,20 @@ class IDistributionPublic(
             vocabulary=VCSType,
             description=_(
                 "Version control system for this distribution's code.")))
+
+    default_traversal_policy = exported(Choice(
+        title=_("Default traversal policy"),
+        description=_(
+            "The type of object that /{distro}/{name} URLs for this "
+            "distribution resolve to."),
+        vocabulary=DistributionDefaultTraversalPolicy,
+        readonly=False, required=False))
+    redirect_default_traversal = exported(Bool(
+        title=_("Redirect the default traversal"),
+        description=_(
+            "If true, the default traversal is for migration and redirects "
+            "to a different canonical URL."),
+        readonly=False, required=False))
 
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().

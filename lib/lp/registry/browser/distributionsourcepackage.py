@@ -13,6 +13,7 @@ __all__ = [
     'DistributionSourcePackageNavigation',
     'DistributionSourcePackageOverviewMenu',
     'DistributionSourcePackagePublishingHistoryView',
+    'DistributionSourcePackageURL',
     'DistributionSourcePackageView',
     'PublishingHistoryViewMixin',
     ]
@@ -53,6 +54,7 @@ from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.registry.browser import add_subscribe_link
 from lp.registry.browser.pillar import PillarBugsMenu
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
@@ -69,7 +71,10 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+from lp.services.webapp.interfaces import (
+    ICanonicalUrlData,
+    IMultiFacetedBreadcrumb,
+    )
 from lp.services.webapp.menu import (
     ApplicationMenu,
     enabled_with_permission,
@@ -87,6 +92,34 @@ from lp.soyuz.interfaces.packagediff import IPackageDiffSet
 from lp.translations.browser.customlanguagecode import (
     HasCustomLanguageCodesTraversalMixin,
     )
+
+
+@implementer(ICanonicalUrlData)
+class DistributionSourcePackageURL:
+    """Distribution source package URL creation rules.
+
+    The canonical URL for a distribution source package depends on the
+    values of `default_traversal_policy` and `redirect_default_traversal` on
+    the context distribution.
+    """
+
+    rootsite = None
+
+    def __init__(self, context):
+        self.context = context
+
+    @property
+    def inside(self):
+        return self.context.distribution
+
+    @property
+    def path(self):
+        policy = self.context.distribution.default_traversal_policy
+        if (policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE and
+                not self.context.distribution.redirect_default_traversal):
+            return self.context.name
+        else:
+            return u"+source/%s" % self.context.name
 
 
 class DistributionSourcePackageFormatterAPI(CustomizableFormatter):

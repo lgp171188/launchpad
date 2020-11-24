@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the code import worker."""
@@ -771,7 +771,7 @@ class TestGitImportWorker(WorkerTest):
             new_branch.repository._transport.get('git/git-cache').read())
 
 
-def clean_up_default_stores_for_import(source_details):
+def clean_up_default_stores_for_import(target_id):
     """Clean up the default branch and foreign tree stores for an import.
 
     This checks for an existing branch and/or other import data corresponding
@@ -783,13 +783,13 @@ def clean_up_default_stores_for_import(source_details):
     :source_details: A `CodeImportSourceDetails` describing the import.
     """
     tree_transport = get_transport(config.codeimport.foreign_tree_store)
-    prefix = '%08x' % source_details.target_id
+    prefix = '%08x' % target_id
     if tree_transport.has('.'):
         for filename in tree_transport.list_dir('.'):
             if filename.startswith(prefix):
                 tree_transport.delete(filename)
     branchstore = get_default_bazaar_branch_store()
-    branch_name = '%08x' % source_details.target_id
+    branch_name = '%08x' % target_id
     if branchstore.transport.has(branch_name):
         branchstore.transport.delete_tree(branch_name)
 
@@ -898,7 +898,7 @@ class TestActualImportMixin:
             'trunk', [('README', b'Original contents')])
         source_details = CodeImportSourceDetails.fromArguments(arguments)
 
-        clean_up_default_stores_for_import(source_details)
+        clean_up_default_stores_for_import(source_details.target_id)
 
         script_path = os.path.join(
             config.root, 'scripts', 'code-import-worker.py')
@@ -916,7 +916,8 @@ class TestActualImportMixin:
         self.assertPositive(output.tell())
 
         self.addCleanup(
-            lambda: clean_up_default_stores_for_import(source_details))
+            lambda: clean_up_default_stores_for_import(
+                source_details.target_id))
 
         tree_path = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(tree_path))
@@ -936,7 +937,7 @@ class TestActualImportMixin:
             'trunk', [('README', b'Original contents')])
         source_details = CodeImportSourceDetails.fromArguments(arguments)
 
-        clean_up_default_stores_for_import(source_details)
+        clean_up_default_stores_for_import(source_details.target_id)
 
         script_path = os.path.join(
             config.root, 'scripts', 'code-import-worker.py')
@@ -1456,7 +1457,6 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertGoodUrl("http://user:password@svn.example/branches/trunk")
         self.assertBadUrl("svn+ssh://svn.example.com/bla")
         self.assertGoodUrl("bzr://bzr.example.com/somebzrurl/")
-        self.assertBadUrl("bzr://bazaar.launchpad.test/example")
 
     def test_check_one_url_git_to_bzr(self):
         self.policy = CodeImportBranchOpenPolicy("git", "bzr")
@@ -1464,7 +1464,6 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertBadUrl("file:///etc/passwd")
         self.assertBadUrl("unknown-scheme://devpad/")
         self.assertGoodUrl("git://git.example.com/repo")
-        self.assertGoodUrl("git://git.launchpad.test/example")
 
     def test_check_one_url_git_to_git(self):
         self.policy = CodeImportBranchOpenPolicy("git", "git")
@@ -1472,7 +1471,6 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertBadUrl("file:///etc/passwd")
         self.assertBadUrl("unknown-scheme://devpad/")
         self.assertGoodUrl("git://git.example.com/repo")
-        self.assertBadUrl("git://git.launchpad.test/example")
 
     def test_check_one_url_exclude_hosts(self):
         self.policy = CodeImportBranchOpenPolicy(

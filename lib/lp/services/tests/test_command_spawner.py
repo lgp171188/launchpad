@@ -97,7 +97,7 @@ class TestCommandSpawner(TestCase):
     def test_start_adds_a_process(self):
         spawner, process = self._makeSpawnerAndProcess()
         spawner.start("/bin/true")
-        self.assertEqual([process], spawner.running_processes.keys())
+        self.assertEqual([process], list(spawner.running_processes))
 
     def test_start_runs_its_command(self):
         spawner, process = self._makeSpawnerAndProcess()

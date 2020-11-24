@@ -12,6 +12,7 @@ __all__ = [
     'OCIProjectFacets',
     'OCIProjectNavigation',
     'OCIProjectNavigationMenu',
+    'OCIProjectURL',
     ]
 
 from zope.component import getUtility
@@ -28,6 +29,7 @@ from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
@@ -55,7 +57,38 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+from lp.services.webapp.interfaces import (
+    ICanonicalUrlData,
+    IMultiFacetedBreadcrumb,
+    )
+
+
+@implementer(ICanonicalUrlData)
+class OCIProjectURL:
+    """OCI project URL creation rules.
+
+    The canonical URL for an OCI project in a distribution depends on the
+    values of `default_traversal_policy` and `redirect_default_traversal` on
+    the context distribution.
+    """
+
+    rootsite = None
+
+    def __init__(self, context):
+        self.context = context
+
+    @property
+    def inside(self):
+        return self.context.pillar
+
+    @property
+    def path(self):
+        if self.context.distribution is not None:
+            policy = self.context.distribution.default_traversal_policy
+            if (policy == DistributionDefaultTraversalPolicy.OCI_PROJECT and
+                    not self.context.distribution.redirect_default_traversal):
+                return self.context.name
+        return u"+oci/%s" % self.context.name
 
 
 def getPillarFieldName(pillar):

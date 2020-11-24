@@ -85,7 +85,6 @@ from breezy.controldir import (
     ControlDir,
     format_registry,
     )
-from breezy.transport import get_transport
 import fixtures
 from lazr.restful.testing.tales import test_tales
 from lazr.restful.testing.webservice import FakeRequest
@@ -126,10 +125,7 @@ from zope.security.proxy import (
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
-from lp.codehosting.vfs import (
-    branch_id_to_path,
-    get_rw_server,
-    )
+from lp.codehosting.vfs import get_rw_server
 from lp.registry.interfaces.packaging import IPackagingUtil
 from lp.services import features
 from lp.services.config import config
@@ -932,20 +928,6 @@ class TestCaseWithFactory(TestCase):
             naked_branch = removeSecurityProxy(db_branch)
             naked_branch.last_scanned_id = bzr_branch.last_revision()
         return bzr_branch
-
-    @staticmethod
-    def getBranchPath(branch, base):
-        """Return the path of the branch in the mirrored area.
-
-        This always uses the configured mirrored area, ignoring whatever
-        server might be providing lp-mirrored: urls.
-        """
-        # XXX gary 2009-5-28 bug 381325
-        # This is a work-around for some failures on PQM, arguably caused by
-        # relying on test set-up that is happening in the Makefile rather than
-        # the actual test set-up.
-        get_transport(base).create_prefix()
-        return os.path.join(base, branch_id_to_path(branch.id))
 
     def useTempBzrHome(self):
         self.useTempDir()

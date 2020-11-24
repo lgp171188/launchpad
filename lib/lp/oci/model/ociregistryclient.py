@@ -235,6 +235,18 @@ class OCIRegistryClient:
         return "{}".format("edge")
 
     @classmethod
+    def _getCurrentRegistryManifest(cls, http_client, push_rule):
+        """Get the current manifest for the given push rule. If manifest
+        doesn't exist, raises HTTPError.
+        """
+        tag = cls._calculateTag(None, push_rule)
+        url = "/manifests/{}".format(tag)
+        accept = "application/vnd.docker.distribution.manifest.list.v2+json"
+        response = http_client.requestPath(
+            url, method="GET", headers={"Accept": accept})
+        return response.json()
+
+    @classmethod
     def _uploadRegistryManifest(cls, http_client, registry_manifest,
                                 push_rule, build=None):
         """Uploads the build manifest, returning its content information.
@@ -353,11 +365,46 @@ class OCIRegistryClient:
             raise MultipleOCIRegistryError(exceptions)
 
     @classmethod
-    def makeMultiArchManifest(cls, build_request, uploaded_builds):
+    def makeMultiArchManifest(cls, http_client, push_rule, build_request,
+                              uploaded_builds):
         """Returns the multi-arch manifest content including all uploaded
         builds of the given build_request.
         """
-        manifests = []
+        def get_manifest_for_architecture(manifests, arch):
+            """Find, in the manifests list, the manifest for the given arch."""
+            expected_platform = {"architecture": arch, "os": "linux"}
+            for m in manifests:
+                if m["platform"] == expected_platform:
+                    return m
+            return None
+
+        try:
+            current_manifest = cls._getCurrentRegistryManifest(
+                http_client, push_rule)
+            # Check if the current manifest is not an incompatible version.
+            version = current_manifest.get("schemaVersion", 1)
+            if version < 2 or "manifests" not in current_manifest:
+                current_manifest = None
+        except HTTPError as e:
+            if e.response.status_code == 404:
+                # If there is no manifest file (or it doesn't follow the
+                # multi-arch spec), we should proceed adding our own
+                # manifest file.
+                current_manifest = None
+                msg_tpl = (
+                    "No multi-arch manifest on registry %s (image name: %s). "
+                    "Uploading a new one.")
+                log.info(msg_tpl % (
+                    push_rule.registry_url, push_rule.image_name))
+            else:
+                raise
+        if current_manifest is None:
+            current_manifest = {
+                "schemaVersion": 2,
+                "mediaType": ("application/"
+                              "vnd.docker.distribution.manifest.list.v2+json"),
+                "manifests": []}
+        manifests = current_manifest["manifests"]
         for build in uploaded_builds:
             build_manifest = build_request.uploaded_manifests.get(build.id)
             if not build_manifest:
@@ -365,28 +412,33 @@ class OCIRegistryClient:
             digest = build_manifest["digest"]
             size = build_manifest["size"]
             arch = build.processor.name
-            manifests.append({
-                "mediaType": ("application/"
-                              "vnd.docker.distribution.manifest.v2+json"),
-                "size": size,
-                "digest": digest,
-                "platform": {"architecture": arch, "os": "linux"}
-            })
-        return {
-          "schemaVersion": 2,
-          "mediaType": ("application/"
-                        "vnd.docker.distribution.manifest.list.v2+json"),
-          "manifests": manifests}
+
+            manifest = get_manifest_for_architecture(manifests, arch)
+            if manifest is None:
+                manifest = {
+                    "mediaType": ("application/"
+                                  "vnd.docker.distribution.manifest.v2+json"),
+                    "size": size,
+                    "digest": digest,
+                    "platform": {"architecture": arch, "os": "linux"}
+                }
+                manifests.append(manifest)
+            else:
+                manifest["digest"] = digest
+                manifest["size"] = size
+                manifest["platform"]["architecture"] = arch
+
+        return current_manifest
 
     @classmethod
     def uploadManifestList(cls, build_request, uploaded_builds):
         """Uploads to all build_request.recipe.push_rules the manifest list
         for the builds in the given build_request.
         """
-        multi_manifest_content = cls.makeMultiArchManifest(
-            build_request, uploaded_builds)
         for push_rule in build_request.recipe.push_rules:
             http_client = RegistryHTTPClient.getInstance(push_rule)
+            multi_manifest_content = cls.makeMultiArchManifest(
+                http_client, push_rule, build_request, uploaded_builds)
             cls._uploadRegistryManifest(
                 http_client, multi_manifest_content, push_rule, build=None)
 

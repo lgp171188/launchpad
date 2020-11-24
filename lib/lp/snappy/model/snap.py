@@ -46,7 +46,10 @@ from zope.component import (
     getUtility,
     )
 from zope.event import notify
-from zope.interface import implementer
+from zope.interface import (
+    directlyProvides,
+    implementer,
+    )
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
@@ -82,7 +85,10 @@ from lp.code.interfaces.gitref import (
     IGitRef,
     IGitRefRemoteSet,
     )
-from lp.code.interfaces.gitrepository import IGitRepository
+from lp.code.interfaces.gitrepository import (
+    IGitRepository,
+    IHasGitRepositoryURL,
+    )
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
 from lp.code.model.gitcollection import GenericGitCollection
@@ -440,6 +446,10 @@ class Snap(Storm, WebhookTargetMixin):
             self.git_repository = None
             self.git_repository_url = None
             self.git_path = None
+        if self.git_repository_url is not None:
+            directlyProvides(self, IHasGitRepositoryURL)
+        else:
+            directlyProvides(self)
 
     @property
     def source(self):

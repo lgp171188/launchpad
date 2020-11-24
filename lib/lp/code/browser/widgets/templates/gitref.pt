@@ -1,18 +1,3 @@
-<table>
-  <tr>
-    <td>
-      <tal:widget define="widget nocall:view/repository_widget">
-        <metal:block
-            use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-      </tal:widget>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <tal:widget define="widget nocall:view/path_widget">
-        <metal:block
-            use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-      </tal:widget>
-    </td>
-  </tr>
-</table>
+<label tal:attributes="for view/repository_widget/name" tal:content="string:${view/repository_widget/label}:">Label</label><span title="Repository" tal:content="structure view/repository_widget" />
+&nbsp;
+<label tal:attributes="for view/path_widget/name" tal:content="string:${view/path_widget/label}:">Label</label><span title="Branch" tal:content="structure view/path_widget" />

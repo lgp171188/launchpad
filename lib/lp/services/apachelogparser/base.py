@@ -4,6 +4,7 @@
 from datetime import datetime
 import gzip
 import os
+import struct
 
 from contrib import apachelog
 from lazr.uri import (
@@ -35,7 +36,7 @@ def get_files_to_parse(file_paths):
     file_paths = sorted(file_paths, key=lambda path: os.stat(path).st_mtime)
     for file_path in file_paths:
         fd, file_size = get_fd_and_file_size(file_path)
-        first_line = six.ensure_text(fd.readline())
+        first_line = six.ensure_text(fd.readline(), errors='replace')
         parsed_file = store.find(ParsedApacheLog, first_line=first_line).one()
         position = 0
         if parsed_file is not None:
@@ -56,8 +57,8 @@ def get_files_to_parse(file_paths):
 def get_fd_and_file_size(file_path):
     """Return a file descriptor and the file size for the given file path.
 
-    The file descriptor will have the default mode ('r') and will be seeked to
-    the beginning.
+    The file descriptor will be read-only, opened in binary mode, and with
+    its position set to the beginning of the file.
 
     The file size returned is that of the uncompressed file, in case the given
     file_path points to a gzipped file.
@@ -68,11 +69,10 @@ def get_fd_and_file_size(file_path):
         # module in Python 2.6.
         fd = gzip.open(file_path)
         fd.fileobj.seek(-4, os.SEEK_END)
-        isize = gzip.read32(fd.fileobj)   # may exceed 2GB
-        file_size = isize & 0xffffffffL
+        file_size = struct.unpack('<I', fd.fileobj.read(4))[0]
         fd.fileobj.seek(0)
     else:
-        fd = open(file_path)
+        fd = open(file_path, 'rb')
         file_size = os.path.getsize(file_path)
     return fd, file_size
 
@@ -106,6 +106,7 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
             break
 
         line = next_line
+        line_text = six.ensure_text(line, errors='replace')
 
         # Always skip the last line as it may be truncated since we're
         # rsyncing live logs, unless there is only one line for us to
@@ -122,7 +123,7 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
             parsed_lines += 1
             parsed_bytes += len(line)
             host, date, status, request = get_host_date_status_and_request(
-                line)
+                line_text)
 
             if status != '200':
                 continue
@@ -158,7 +159,7 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
             # successfully, log this as an error and break the loop so that
             # we return.
             parsed_bytes -= len(line)
-            logger.error('Error (%s) while parsing "%s"' % (e, line))
+            logger.error('Error (%s) while parsing "%s"' % (e, line_text))
             break
 
     if parsed_lines > 0:
@@ -170,7 +171,7 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
 
 def create_or_update_parsedlog_entry(first_line, parsed_bytes):
     """Create or update the ParsedApacheLog with the given first_line."""
-    first_line = six.ensure_text(first_line)
+    first_line = six.ensure_text(first_line, errors='replace')
     parsed_file = IStore(ParsedApacheLog).find(
         ParsedApacheLog, first_line=first_line).one()
     if parsed_file is None:
