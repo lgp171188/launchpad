@@ -1289,7 +1289,7 @@ class TestDistroMirrorProberFunctional(TestCaseWithFactory):
         log_lines = record.log_file.read()
 
         # Make sure that prober output seems reasonable.
-        self.assertEqual(81, len(log_lines.split("\n")))
+        self.assertEqual(85, len(log_lines.split("\n")))
         url = "http://fake-url.invalid/dists/"
         self.assertEqual(40, len(re.findall(
             (r"Ensuring MirrorDistroSeries of .* with url %s" % url) +
@@ -1298,4 +1298,10 @@ class TestDistroMirrorProberFunctional(TestCaseWithFactory):
         self.assertEqual(40, len(re.findall(
             (r"Ensuring MirrorDistroArchSeries of .* with url %s" % url) +
             r".* exists in the database",
+            log_lines)))
+        self.assertEqual(1, len(re.findall(
+            r"Updating MirrorDistroArchSeries of .* freshness to Up to date",
+            log_lines)))
+        self.assertEqual(3, len(re.findall(
+            r"Updating MirrorDistroSeries of .* freshness to Up to date",
             log_lines)))

@@ -582,18 +582,27 @@ class UnknownURLSchemeAfterRedirect(UnknownURLScheme):
                 "to check this kind of URL." % self.url)
 
 
-class CallChain:
-    """Keep track of the callbacks chain that a deferred tried to call,
+class CallScheduler:
+    """Keep track of the calls done as callback of deferred or directly,
     so we can postpone them to after the reactor is done.
+
+    The main limitation for deferred callbacks is that we don't deal with
+    errors here. You should do error handling synchronously on the methods
+    scheduled.
     """
     def __init__(self, mirror, series):
         self.mirror = mirror
         self.series = series
+        # A list of tuples with the format:
+        # (is_a_callback, callback_result, method, args, kwargs)
         self.calls = []
 
-    def enqueue(self, method, *args, **kwargs):
+    def sched(self, method, *args, **kwargs):
+        self.calls.append((False, None, method, args, kwargs))
+
+    def schedCallback(self, method, *args, **kwargs):
         def callback(result):
-            self.calls.append((result, method, args, kwargs))
+            self.calls.append((True, result, method, args, kwargs))
             return result
         return callback
 
@@ -603,9 +612,15 @@ class CallChain:
         """
         null = object()
         last_result = null
-        for result, method, args, kwargs in self.calls:
-            result = result if last_result is null else last_result
-            last_result = method(result, *args, **kwargs)
+        for is_callback, result, method, args, kwargs in self.calls:
+            if is_callback:
+                # If it was scheduled as a callback, take care of previous
+                # result.
+                result = result if last_result is null else last_result
+                last_result = method(result, *args, **kwargs)
+            else:
+                # If it was scheduled as a sync call, just execute the method.
+                method(*args, **kwargs)
 
 
 class ArchiveMirrorProberCallbacks(LoggingMixin):
@@ -618,13 +633,15 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         InvalidHTTPSCertificateSkipped,
         )
 
-    def __init__(self, mirror, series, pocket, component, url, log_file):
+    def __init__(self, mirror, series, pocket, component, url, log_file,
+                 call_sched=None):
         self.mirror = mirror
         self.series = series
         self.pocket = pocket
         self.component = component
         self.url = url
         self.log_file = log_file
+        self.call_sched = call_sched
         if IDistroArchSeries.providedBy(series):
             self.mirror_class_name = 'MirrorDistroArchSeries'
             self.deleteMethod = self.mirror.deleteMirrorDistroArchSeries
@@ -687,23 +704,28 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
             # this host and thus should skip it, so it's better to delete this
             # MirrorDistroArchSeries/MirrorDistroSeriesSource than to keep
             # it with an UNKNOWN freshness.
-            self.deleteMethod(self.series, self.pocket, self.component)
+            self.call_sched.sched(
+                self.deleteMethod, self.series, self.pocket, self.component)
             return
 
         deferredList = []
         # We start setting the freshness to unknown, and then we move on
         # trying to find one of the recently published packages mirrored
         # there.
-        arch_or_source_mirror.freshness = MirrorFreshness.UNKNOWN
+        self.call_sched.sched(
+            self.setMirrorFreshnessUnknown, arch_or_source_mirror)
         for freshness, url in freshness_url_map.items():
             prober = RedirectAwareProberFactory(url)
             deferred = request_manager.run(prober.request_host, prober.probe)
-            deferred.addCallback(
-                self.setMirrorFreshness, arch_or_source_mirror, freshness,
-                url)
             deferred.addErrback(self.logError, url)
+            deferred.addCallback(self.call_sched.schedCallback(
+                self.setMirrorFreshness, arch_or_source_mirror,
+                freshness, url))
             deferredList.append(deferred)
         return defer.DeferredList(deferredList)
+
+    def setMirrorFreshnessUnknown(self, arch_or_source_mirror):
+        arch_or_source_mirror.freshness = MirrorFreshness.UNKNOWN
 
     def setMirrorFreshness(
             self, http_status, arch_or_source_mirror, freshness, url):
@@ -714,9 +736,11 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         """
         if freshness < arch_or_source_mirror.freshness:
             msg = ('Found that %s exists. Updating %s of %s freshness to '
-                   '%s.\n' % (url, self.mirror_class_name,
-                              self._getSeriesPocketAndComponentDescription(),
-                              freshness.title))
+                   '%s.\n')
+            msg = msg % (
+                url, self.mirror_class_name,
+                self._getSeriesPocketAndComponentDescription(),
+                freshness.title)
             self.logMessage(msg)
             arch_or_source_mirror.freshness = freshness
 
@@ -887,29 +911,33 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger,
     all_paths = itertools.chain(packages_paths, sources_paths)
     request_manager = RequestManager(max_parallel, max_parallel_per_host)
 
-    call_chains = []
+    call_scheds = []
     for series, pocket, component, path in all_paths:
+        sched = CallScheduler(mirror, series)
+        call_scheds.append(sched)
         url = urljoin(base_url, path)
         callbacks = ArchiveMirrorProberCallbacks(
-            mirror, series, pocket, component, url, logfile)
+            mirror, series, pocket, component, url, logfile, sched)
         unchecked_keys.append(url)
         # APT has supported redirects since 0.7.21 (2009-04-14), so allow
         # them here too.
         prober = RedirectAwareProberFactory(url)
 
-        chain = CallChain(mirror, series)
-        call_chains.append(chain)
         deferred = request_manager.run(prober.request_host, prober.probe)
-        deferred.addCallbacks(
-            chain.enqueue(callbacks.ensureMirrorSeries),
-            chain.enqueue(callbacks.deleteMirrorSeries))
 
+        # XXX pappacena 2020-11-25: This will do some database operation
+        # inside reactor, which might cause problems like timeouts when
+        # running HTTP requests. This should be the next optimization point:
+        # run {ensure|delete}MirrorSeries and gather all mirror freshness URLs
+        # synchronously here, and ask reactor to run just the HTTP requests.
+        deferred.addCallbacks(
+            callbacks.ensureMirrorSeries, callbacks.deleteMirrorSeries)
         deferred.addCallback(
-            chain.enqueue(callbacks.updateMirrorFreshness, request_manager))
-        deferred.addErrback(chain.enqueue(logger.error))
+            callbacks.updateMirrorFreshness, request_manager)
+        deferred.addErrback(logger.error)
 
         deferred.addBoth(checkComplete, url, unchecked_keys)
-    return call_chains
+    return call_scheds
 
 
 def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
@@ -936,7 +964,7 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
         logger.error(e)
         return
 
-    call_chains = []
+    call_scheds = []
     for series, flavour, paths in cdimage_paths:
         callbacks = MirrorCDImageProberCallbacks(
             mirror, series, flavour, logfile)
@@ -949,19 +977,21 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
             url = urljoin(base_url, path)
             # Use a RedirectAwareProberFactory because CD mirrors are allowed
             # to redirect, and we need to cope with that.
-            chain = CallChain(mirror, series)
-            call_chains.append(chain)
+            sched = CallScheduler(mirror, series)
+            call_scheds.append(sched)
             prober = RedirectAwareProberFactory(url)
             deferred = request_manager.run(prober.request_host, prober.probe)
-            deferred.addErrback(chain.enqueue(callbacks.urlCallback, url))
+            deferred.addErrback(
+                sched.schedCallback(callbacks.urlCallback, url))
             deferredList.append(deferred)
 
-        chain = CallChain(mirror, series)
-        call_chains.append(chain)
+        sched = CallScheduler(mirror, series)
+        call_scheds.append(sched)
         deferredList = defer.DeferredList(deferredList, consumeErrors=True)
-        deferredList.addCallback(chain.enqueue(callbacks.finalResultCallback))
+        deferredList.addCallback(
+            sched.schedCallback(callbacks.finalResultCallback))
         deferredList.addCallback(checkComplete, mirror_key, unchecked_keys)
-    return call_chains
+    return call_scheds
 
 
 def should_skip_host(host):
@@ -1077,7 +1107,7 @@ class DistroMirrorProber:
         logfiles = {}
         probed_mirrors = []
 
-        all_call_chains = []
+        all_scheduled_calls = []
         for mirror_id in mirror_ids:
             mirror = mirror_set[mirror_id]
             if not self._sanity_check_mirror(mirror):
@@ -1096,18 +1126,18 @@ class DistroMirrorProber:
             probed_mirrors.append(mirror)
             logfile = six.StringIO()
             logfiles[mirror_id] = logfile
-            probe_call_chains = probe_function(
+            prob_scheduled_calls = probe_function(
                 mirror, logfile, unchecked_keys, self.logger,
                 max_parallel, max_parallel_per_host)
-            all_call_chains += probe_call_chains
+            all_scheduled_calls += prob_scheduled_calls
 
         if probed_mirrors:
             reactor.run()
             self.logger.info('Probed %d mirrors.' % len(probed_mirrors))
             self.logger.info(
                 'Starting to update mirrors statuses outside reactor now.')
-            for call_chain in all_call_chains:
-                call_chain.run()
+            for sched_calls in all_scheduled_calls:
+                sched_calls.run()
         else:
             self.logger.info('No mirrors to probe.')
 
