@@ -1257,15 +1257,12 @@ class TestBranchMergeProposalResubmitViewGit(
     def _getFormValues(source_branch, target_branch, prerequisite_branch,
                        extras):
         values = {
-            'source_git_repository': source_branch.repository,
-            'source_git_path': source_branch.path,
-            'target_git_repository': target_branch.repository,
-            'target_git_path': target_branch.path,
+            'source_git_ref': source_branch,
+            'target_git_ref': target_branch
             }
         if prerequisite_branch is not None:
             values.update({
-                'prerequisite_git_repository': prerequisite_branch.repository,
-                'prerequisite_git_path': prerequisite_branch.path,
+                'prerequisite_git_ref': prerequisite_branch
                 })
         else:
             values.update({
