@@ -595,7 +595,7 @@ class BugWatchSet:
         # * /tracker/(index.php) (index.php part is optional)
         # * /tracker2/(index.php) (index.php part is optional)
         sf_path_re = re.compile(
-            '^\/(support\/tracker\.php|tracker2?\/(index\.php)?)$')
+            r'^\/(support\/tracker\.php|tracker2?\/(index\.php)?)$')
         if (sf_path_re.match(path) is None):
             return None
         if not query.get('aid'):
@@ -682,7 +682,7 @@ class BugWatchSet:
             return None
 
         google_code_url_expression = re.compile(
-            "(?P<base_path>\/p\/[a-z][-a-z0-9]+/issues)/detail")
+            r"(?P<base_path>\/p\/[a-z][-a-z0-9]+/issues)/detail")
 
         path_match = google_code_url_expression.match(path)
         if path_match is None:

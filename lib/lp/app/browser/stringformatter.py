@@ -269,7 +269,7 @@ def parse_diff(text):
             yield 'diff-header text', row, None, None, line
         elif line.startswith('@@'):
             try:
-                hunk = hunk_from_header(line + '\n')
+                hunk = hunk_from_header((line + '\n').encode('UTF-8'))
                 # The positions indicate the per-file line numbers of
                 # the next row.
                 orig_row = hunk.orig_pos

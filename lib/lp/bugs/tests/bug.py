@@ -18,18 +18,13 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.bugs.interfaces.bug import (
-    CreateBugParams,
-    IBugSet,
-    )
+from lp.bugs.interfaces.bug import CreateBugParams
 from lp.bugs.interfaces.bugtask import (
     BugTaskStatus,
     IBugTaskSet,
     )
 from lp.bugs.interfaces.bugwatch import IBugWatchSet
-from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
-from lp.registry.interfaces.product import IProductSet
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.testing.pages import (
@@ -158,42 +153,6 @@ def extract_bugtasks(text, show_heat=None):
             row_items.append(heat)
         rows.append(' '.join(row_items))
     return rows
-
-
-def create_task_from_strings(bug, owner, product, watchurl=None):
-    """Create a task, optionally linked to a watch."""
-    bug = getUtility(IBugSet).get(bug)
-    product = getUtility(IProductSet).getByName(product)
-    owner = getUtility(IPersonSet).getByName(owner)
-    task = getUtility(IBugTaskSet).createTask(bug, owner, product)
-    if watchurl:
-        [watch] = getUtility(IBugWatchSet).fromText(watchurl, bug, owner)
-        task.bugwatch = watch
-    return task
-
-
-def create_bug_from_strings(
-    distribution, sourcepackagename, owner, summary, description,
-    status=None):
-    """Create and return a bug."""
-    distroset = getUtility(IDistributionSet)
-    distribution = distroset.getByName(distribution)
-
-    personset = getUtility(IPersonSet)
-    owner = personset.getByName(owner)
-
-    bugset = getUtility(IBugSet)
-    params = CreateBugParams(
-        owner, summary, description, status=status,
-        target=distribution.getSourcePackage(sourcepackagename))
-    return bugset.createBug(params)
-
-
-def update_task_status(task_id, person, status):
-    """Update a bugtask status."""
-    task = getUtility(IBugTaskSet).get(task_id)
-    person = getUtility(IPersonSet).getByName(person)
-    task.transitionToStatus(status, person)
 
 
 def create_old_bug(

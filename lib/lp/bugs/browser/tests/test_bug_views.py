@@ -609,7 +609,7 @@ class TestBugTextViewPrivateTeams(TestCaseWithFactory):
         self.assertIn(
             "assignee: %s" % assignee.unique_displayname, view_text)
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            "subscribers:\n.*%s \(%s\)"
+            "subscribers:\n.*%s \\(%s\\)"
             % (naked_subscriber.displayname, naked_subscriber.name),
             view_text)
 

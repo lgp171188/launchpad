@@ -3,6 +3,8 @@
 
 """Module docstring goes here."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from doctest import DocTestSuite
@@ -57,7 +59,7 @@ class MockHTTPApplicationResponse:
         """Just report the redirection to the doctest"""
         if status is None:
             status = 302
-        print '%d: %s' % (status, location)
+        print('%d: %s' % (status, location))
 
 
 def adaptNotificationRequestToResponse(request):

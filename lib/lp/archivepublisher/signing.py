@@ -583,7 +583,7 @@ class SigningUpload(CustomUpload):
         old_mask = os.umask(0o077)
         try:
             with tempfile.NamedTemporaryFile(suffix='.keygen') as tf:
-                print(genkey_text, file=tf)
+                tf.write(genkey_text.encode('UTF-8'))
 
                 # Close out the underlying file so we know it is complete.
                 tf.file.close()
