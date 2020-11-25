@@ -10,6 +10,7 @@ from zope.component import getUtility
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.browser.distribution import DistributionPublisherConfigView
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
@@ -273,23 +274,33 @@ class TestDistributionAdminView(TestCaseWithFactory):
             form={
                 'field.official_packages': 'on', 'field.supports_ppas': 'on',
                 'field.supports_mirrors': 'on',
+                'field.default_traversal_policy': 'SERIES',
+                'field.redirect_default_traversal': 'on',
                 'field.actions.change': 'change'})
         self.assertThat(
             distribution,
             MatchesStructure.byEquality(
                 official_packages=True, supports_ppas=True,
-                supports_mirrors=True))
+                supports_mirrors=True,
+                default_traversal_policy=(
+                    DistributionDefaultTraversalPolicy.SERIES),
+                redirect_default_traversal=True))
         create_initialized_view(
             distribution, '+admin', principal=admin,
             form={
                 'field.official_packages': '', 'field.supports_ppas': '',
                 'field.supports_mirrors': '',
+                'field.default_traversal_policy': 'OCI_PROJECT',
+                'field.redirect_default_traversal': '',
                 'field.actions.change': 'change'})
         self.assertThat(
             distribution,
             MatchesStructure.byEquality(
                 official_packages=False, supports_ppas=False,
-                supports_mirrors=False))
+                supports_mirrors=False,
+                default_traversal_policy=(
+                    DistributionDefaultTraversalPolicy.OCI_PROJECT),
+                redirect_default_traversal=False))
 
 
 class TestDistroReassignView(TestCaseWithFactory):
