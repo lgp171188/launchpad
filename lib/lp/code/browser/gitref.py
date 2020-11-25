@@ -249,7 +249,11 @@ class GitRefRegisterMergeProposalSchema(Interface):
         IBranchMergeProposal['target_git_ref'], required=True)
 
     prerequisite_git_ref = copy_field(
-        IBranchMergeProposal['prerequisite_git_ref'], required=False)
+        IBranchMergeProposal['prerequisite_git_ref'], required=False,
+        description=_("If the target branch is based on a different branch, "
+                      "you can add this as a prerequisite. "
+                      "The changes from that branch will not show "
+                      "in the diff."))
 
     comment = Text(
         title=_('Description of the change'), required=False,
