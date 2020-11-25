@@ -37,6 +37,7 @@ from sqlobject import (
 from storm.expr import LeftJoin
 from storm.locals import (
     And,
+    ClassAlias,
     Desc,
     Int,
     Join,
@@ -972,8 +973,9 @@ class QuestionSearch:
         joins = [
             LeftJoin(
                 QuestionMessage,
-                QuestionMessage.question == Question.id,
-                QuestionMessage.owner == person),
+                And(
+                    QuestionMessage.question == Question.id,
+                    QuestionMessage.owner == person)),
             ]
         if self.projectgroup:
             joins.extend(self.getProductJoins())
@@ -1075,20 +1077,23 @@ class QuestionSearch:
         from lp.registry.model.person import Person
         from lp.registry.model.product import Product
 
-        prejoin_by_name = {
-            'owner': LeftJoin(Person, Question.owner == Person.id),
-            'product': LeftJoin(Product, Question.product == Product.id),
-            'distribution': LeftJoin(
-                Distribution, Question.distribution == Distribution.id),
-            'sourcepackagename': LeftJoin(
-                SourcePackageName,
-                Question.sourcepackagename == SourcePackageName.id),
-            }
         prejoin_table_by_name = {
-            'owner': Person,
-            'product': Product,
-            'distribution': Distribution,
-            'sourcepackagename': SourcePackageName,
+            'owner': ClassAlias(Person, 'prejoin_owner'),
+            'product': ClassAlias(Product, 'prejoin_product'),
+            'distribution': ClassAlias(Distribution, 'prejoin_distribution'),
+            'sourcepackagename': ClassAlias(
+                SourcePackageName, 'prejoin_sourcepackagename'),
+            }
+        prejoin_condition_by_name = {
+            'owner': Question.owner == prejoin_table_by_name['owner'].id,
+            'product': (
+                Question.product == prejoin_table_by_name['product'].id),
+            'distribution': (
+                Question.distribution ==
+                prejoin_table_by_name['distribution'].id),
+            'sourcepackagename': (
+                Question.sourcepackagename ==
+                prejoin_table_by_name['sourcepackagename'].id),
             }
 
         constraints = self.getConstraints()
@@ -1101,7 +1106,11 @@ class QuestionSearch:
                         Question.id, where=And(*constraints),
                         tables=[Question] + joins)),
                     ]
-        prejoins = [prejoin_by_name[prejoin] for prejoin in self.getPrejoins()]
+        prejoins = [
+            LeftJoin(
+                prejoin_table_by_name[prejoin],
+                prejoin_condition_by_name[prejoin])
+            for prejoin in self.getPrejoins()]
         prejoin_tables = [
             prejoin_table_by_name[prejoin] for prejoin in self.getPrejoins()]
         rows = IStore(Question).using(Question, *prejoins).find(
@@ -1226,12 +1235,21 @@ class QuestionPersonSearch(QuestionSearch):
             joins.append(
                 LeftJoin(
                     QuestionSubscription,
-                    QuestionSubscription.question == Question.id,
-                    QuestionSubscription.person == self.person))
+                    And(
+                        QuestionSubscription.question == Question.id,
+                        QuestionSubscription.person == self.person)))
 
         if QuestionParticipation.COMMENTER in self.participation:
+            def join_properties(join):
+                # Return the essential properties of a join, so that we can
+                # check whether we already have it in the list.
+                return (join.left, join.right, join.on)
+
+            all_join_properties = [join_properties(join) for join in joins]
             message_joins = self.getMessageJoins(self.person)
-            joins.extend([join for join in message_joins if join not in joins])
+            joins.extend([
+                join for join in message_joins
+                if join_properties(join) not in all_join_properties])
 
         return joins
 
