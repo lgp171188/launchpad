@@ -149,7 +149,7 @@ class IBranchMergeProposalPublic(IPrivacy):
     source_git_commit_sha1 = TextLine(
         title=_('Source Git commit SHA-1'), required=False, readonly=True)
     source_git_ref = Reference(
-        title=_('Source Git reference'),
+        title=_('Source Git branch'),
         schema=IGitRef, required=False, readonly=True)
 
     target_branch = exported(
