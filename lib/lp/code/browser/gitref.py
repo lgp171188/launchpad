@@ -311,23 +311,21 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
             context=context)
 
         if not self.widgets['target_git_ref'].hasInput():
-            if IPerson.providedBy(self.context.repository.target):
-                default_ref = self.context.repository.getRefByPath(
-                    self.context.repository.default_branch)
-                with_path = False
-            else:
+            if self.context.repository.namespace.has_defaults:
                 repo_set = getUtility(IGitRepositorySet)
                 default_repo = repo_set.getDefaultRepository(
                     self.context.repository.target)
-                if not default_repo:
-                    default_repo = self.context.repository
-                if default_repo.default_branch:
-                    default_ref = default_repo.getRefByPath(
-                        default_repo.default_branch)
-                    with_path = True
-                else:
-                    default_ref = self.context
-                    with_path = False
+            else:
+                default_repo = None
+            if not default_repo:
+                default_repo = self.context.repository
+            if default_repo.default_branch:
+                default_ref = default_repo.getRefByPath(
+                    default_repo.default_branch)
+                with_path = True
+            else:
+                default_ref = self.context
+                with_path = False
             self.widgets["target_git_ref"].setRenderedValue(
                 default_ref, with_path=with_path)
 
