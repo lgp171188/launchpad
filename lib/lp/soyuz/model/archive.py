@@ -1054,7 +1054,7 @@ class Archive(SQLBase):
         from lp.soyuz.model.distroseriespackagecache import (
             DistroSeriesPackageCache)
         # Compiled regexp to remove puntication.
-        clean_text = re.compile('(,|;|:|\.|\?|!)')
+        clean_text = re.compile(r'(,|;|:|\.|\?|!)')
 
         # XXX cprov 20080402 bug=207969: The set() is only used because we
         # have a limitation in our FTI setup, it only indexes the first 2500

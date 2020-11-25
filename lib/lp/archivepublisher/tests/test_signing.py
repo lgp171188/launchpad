@@ -746,7 +746,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('Kmod', upload.openssl_config_kmod)
 
         id_re = re.compile(r'^# KMOD OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+Kmod')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + r'\s+Kmod')
         eku_re = re.compile(
             r'\bextendedKeyUsage\s*=\s*'
             r'codeSigning,1.3.6.1.4.1.2312.16.1.2\s*\b')
@@ -832,7 +832,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('Opal', upload.openssl_config_opal)
 
         id_re = re.compile(r'^# OPAL OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+Opal')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + r'\s+Opal')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))
@@ -915,7 +915,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('SIPL', upload.openssl_config_sipl)
 
         id_re = re.compile(r'^# SIPL OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+SIPL')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + r'\s+SIPL')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))

@@ -385,7 +385,7 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
             # Check the presence of the link to remove the notification.
             soupmatchers.Tag(
                 'no remove notification link', 'a',
-                text=re.compile('\s*Remove notification\s*'),
+                text=re.compile(r'\s*Remove notification\s*'),
                 attrs={'class': re.compile('remove-notification')}),
             # Check the presence of the error message.
             soupmatchers.Tag(
@@ -406,7 +406,7 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
             # Check the absence of the link remove the notification.
             soupmatchers.Tag(
                 'no remove notification link', 'a',
-                text=re.compile('\s*Remove notification\s*'),
+                text=re.compile(r'\s*Remove notification\s*'),
                 attrs={'class': re.compile('remove-notification')}),
             )
         self.assertThat(html, Not(packages_not_matches))
@@ -431,7 +431,7 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
             # Check the absence of the link remove the notification.
             soupmatchers.Tag(
                 'remove notification link', 'a',
-                text=re.compile('\s*Remove notification\s*'),
+                text=re.compile(r'\s*Remove notification\s*'),
                 attrs={'class': re.compile('remove-notification')}),
             )
         self.assertThat(html, packages_matches)
