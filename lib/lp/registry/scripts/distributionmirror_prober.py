@@ -805,6 +805,15 @@ class MirrorCDImageProberCallbacks(LoggingMixin):
             "Failed %s: %s\n" % (url, failure.getErrorMessage()))
         return failure
 
+    def urlCallback(self, result, url):
+        """The callback to be called for each URL."""
+        if isinstance(result, Failure):
+            self.logMissingURL(result, url)
+
+    def finalResultCallback(self, result):
+        """The callback to be called once all URLs have been probed."""
+        return self.ensureOrDeleteMirrorCDImageSeries(result)
+
 
 def _get_cdimage_file_list():
     url = config.distributionmirrorprober.cdimage_file_list_url
@@ -936,21 +945,21 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
         unchecked_keys.append(mirror_key)
         deferredList = []
         request_manager = RequestManager(max_parallel, max_parallel_per_host)
-        chain = CallChain(mirror, series)
-        call_chains.append(chain)
         for path in paths:
             url = urljoin(base_url, path)
             # Use a RedirectAwareProberFactory because CD mirrors are allowed
             # to redirect, and we need to cope with that.
+            chain = CallChain(mirror, series)
+            call_chains.append(chain)
             prober = RedirectAwareProberFactory(url)
             deferred = request_manager.run(prober.request_host, prober.probe)
-            deferred.addErrback(
-                chain.enqueue(callbacks.logMissingURL, url))
+            deferred.addErrback(chain.enqueue(callbacks.urlCallback, url))
             deferredList.append(deferred)
 
+        chain = CallChain(mirror, series)
+        call_chains.append(chain)
         deferredList = defer.DeferredList(deferredList, consumeErrors=True)
-        deferredList.addCallback(
-            chain.enqueue(callbacks.ensureOrDeleteMirrorCDImageSeries))
+        deferredList.addCallback(chain.enqueue(callbacks.finalResultCallback))
         deferredList.addCallback(checkComplete, mirror_key, unchecked_keys)
     return call_chains
 
