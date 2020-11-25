@@ -821,6 +821,7 @@ class TestRegisterBranchMergeProposalViewBzr(
                         target_branch.unique_name},
                 **extra)
             request.setPrincipal(owner)
+            transaction.commit()
             view = create_initialized_view(
                 target_branch,
                 name='+register-merge',
@@ -858,10 +859,7 @@ class TestRegisterBranchMergeProposalViewGit(
 
     @staticmethod
     def _getFormValues(target_branch, extras):
-        values = {
-            'target_git_repository': target_branch.repository,
-            'target_git_path': target_branch.path,
-            }
+        values = {'target_git_ref': target_branch}
         values.update(extras)
         return values
 
@@ -873,17 +871,19 @@ class TestRegisterBranchMergeProposalViewGit(
         view = self._createView()
         self.assertEqual(
             target_branch.repository.default_branch.split('/')[-1],
-            view.widgets['target_git_path']._getCurrentValue())
+            view.widgets['target_git_ref'].path_widget._getCurrentValue())
 
     def test_default_branch_no_default_set(self):
         with admin_logged_in():
             self._makeTargetBranch(target_default=True)
         view = self._createView()
-        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
+        self.assertIsNone(
+            view.widgets['target_git_ref'].path_widget._getCurrentValue())
 
     def test_default_branch_no_target(self):
         view = self._createView()
-        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
+        self.assertIsNone(
+            view.widgets['target_git_ref'].path_widget._getCurrentValue())
 
     def test_register_ajax_request_with_confirmation(self):
         # Ajax submits return json data containing info about what the visible
@@ -929,9 +929,9 @@ class TestRegisterBranchMergeProposalViewGit(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository':
+                    'field.target_git_ref.repository':
                         target_branch.repository.unique_name,
-                    'field.target_git_path': target_branch.path,
+                    'field.target_git_ref.path': target_branch.path,
                     },
                 **extra)
             request.setPrincipal(owner)
@@ -944,7 +944,7 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.target_git_path':
+                'field.target_git_ref':
                     ('The target repository and path together cannot be the '
                      'same as the source repository and path.')},
             'form_wide_errors': []},
@@ -959,9 +959,9 @@ class TestRegisterBranchMergeProposalViewGit(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository': '',
-                    'field.target_git_repository-empty-marker': '1',
-                    'field.target_git_path': 'master',
+                    'field.target_git_ref.repository': '',
+                    'field.target_git_ref.repository-empty-marker': '1',
+                    'field.target_git_ref.path': 'master',
                     },
                 **extra)
             request.setPrincipal(owner)
@@ -974,7 +974,7 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.target_git_repository': 'Required input is missing.',
+                'field.target_git_ref': 'Required input is missing.',
                 },
             'form_wide_errors': []},
             simplejson.loads(view.form_result))
@@ -984,13 +984,14 @@ class TestRegisterBranchMergeProposalViewGit(
         owner = self.factory.makePerson()
         target_branch = self._makeTargetBranch(
             owner=owner, information_type=InformationType.USERDATA)
+        transaction.commit()
         extra = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
         with person_logged_in(owner):
             request = LaunchpadTestRequest(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository':
+                    'field.target_git_ref.repository':
                         target_branch.repository.unique_name,
                     },
                 **extra)
@@ -1004,9 +1005,8 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.target_git_path':
-                    ('The target path must be the path of a reference in the '
-                     'target repository.')},
+                'field.target_git_ref':
+                    'Please enter a Git branch path.'},
             'form_wide_errors': []},
             simplejson.loads(view.form_result))
 
@@ -1018,16 +1018,17 @@ class TestRegisterBranchMergeProposalViewGit(
             owner=owner, information_type=InformationType.USERDATA)
         prerequisite_branch = self._makeTargetBranch(
             owner=owner, information_type=InformationType.USERDATA)
+        transaction.commit()
         extra = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
         with person_logged_in(owner):
             request = LaunchpadTestRequest(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository':
+                    'field.target_git_ref.repository':
                         target_branch.repository.unique_name,
-                    'field.target_git_path': target_branch.path,
-                    'field.prerequisite_git_repository':
+                    'field.target_git_ref.path': target_branch.path,
+                    'field.prerequisite_git_ref.repository':
                         prerequisite_branch.repository.unique_name,
                     },
                 **extra)
@@ -1041,9 +1042,8 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.prerequisite_git_path':
-                    ('The prerequisite path must be the path of a reference '
-                     'in the prerequisite repository.')},
+                'field.prerequisite_git_ref':
+                    'Please enter a Git branch path.'},
             'form_wide_errors': []},
             simplejson.loads(view.form_result))
 
