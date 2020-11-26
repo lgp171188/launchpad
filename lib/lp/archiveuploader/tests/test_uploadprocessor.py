@@ -11,9 +11,9 @@ __all__ = [
     "TestUploadProcessorBase",
     ]
 
+import io
 import os
 import shutil
-from StringIO import StringIO
 import tempfile
 
 from fixtures import MonkeyPatch
@@ -290,10 +290,10 @@ class TestUploadProcessorBase(TestCaseWithFactory):
 
         self.switchToUploader()
 
-    def addMockFile(self, filename, content="anything"):
+    def addMockFile(self, filename, content=b"anything"):
         """Return a librarian file."""
         return getUtility(ILibraryFileAliasSet).create(
-            filename, len(content), StringIO(content),
+            filename, len(content), io.BytesIO(content),
             'application/x-gtar')
 
     def queueUpload(self, upload_name, relative_path="", test_files_dir=None,
