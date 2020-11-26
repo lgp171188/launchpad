@@ -234,8 +234,8 @@ class Question(SQLBase, BugLinkTargetMixin):
     # ReferenceSets, so use a list() property instead.
     _messages = ReferenceSet(
         'id', 'QuestionMessage.question_id', order_by='QuestionMessage.id')
-    reopenings = SQLMultipleJoin('QuestionReopening', orderBy='datecreated',
-        joinColumn='question')
+    reopenings = ReferenceSet(
+        'id', 'QuestionReopening.question_id', order_by='datecreated')
 
     @property
     def messages(self):
