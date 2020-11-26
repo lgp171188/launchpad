@@ -282,7 +282,7 @@ class Diff(SQLBase):
         for patch in patches:
             if not isinstance(patch, Patch):
                 continue
-            path = patch.newname.split('\t')[0]
+            path = patch.newname.decode('UTF-8', 'replace').split('\t')[0]
             if strip_prefix_segments:
                 path = path.split('/', strip_prefix_segments)[-1]
             file_stats[path] = tuple(patch.stats_values()[:2])

@@ -54,6 +54,7 @@ __all__ = ['Dominator']
 
 from collections import defaultdict
 from datetime import timedelta
+from functools import cmp_to_key
 from operator import (
     attrgetter,
     itemgetter,
@@ -198,14 +199,16 @@ class GeneralizedPublication:
             self.getPackageVersion(pub1), self.getPackageVersion(pub2))
 
         if version_comparison == 0:
-            # Use dates as tie breaker.
-            return cmp(pub1.datecreated, pub2.datecreated)
+            # Use dates as tie breaker (idiom equivalent to Python 2's cmp).
+            return (
+                (pub1.datecreated > pub2.datecreated) -
+                (pub1.datecreated < pub2.datecreated))
         else:
             return version_comparison
 
     def sortPublications(self, publications):
         """Sort publications from most to least current versions."""
-        return sorted(publications, cmp=self.compare, reverse=True)
+        return sorted(publications, key=cmp_to_key(self.compare), reverse=True)
 
 
 def find_live_source_versions(sorted_pubs):
@@ -417,7 +420,8 @@ class Dominator:
             len(sorted_pubs), live_versions)
 
         # Verify that the publications are really sorted properly.
-        check_order = OrderingCheck(cmp=generalization.compare, reverse=True)
+        check_order = OrderingCheck(
+            key=cmp_to_key(generalization.compare), reverse=True)
 
         current_dominant = None
         dominant_version = None

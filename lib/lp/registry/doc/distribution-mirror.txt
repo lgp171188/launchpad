@@ -341,10 +341,11 @@ up on the public mirror listings.
     >>> transaction.commit()
 
     >>> import email
+    >>> from operator import itemgetter
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
     2
-    >>> stub.test_emails.sort(lambda a, b: cmp(a[1], b[1])) # sort by to_addr
+    >>> stub.test_emails.sort(key=itemgetter(1))  # sort by to_addr
     >>> from_addr, to_addr, raw_message = stub.test_emails.pop()
     >>> msg = email.message_from_string(raw_message)
     >>> msg['To']
