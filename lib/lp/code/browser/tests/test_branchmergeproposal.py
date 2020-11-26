@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -1322,17 +1326,17 @@ class TestResubmitBrowserGit(GitHostingClientMixin, BrowserTestCase):
         """The text of the resubmit page is as expected."""
         bmp = self.factory.makeBranchMergeProposalForGit(registrant=self.user)
         text = self.getMainText(bmp, '+resubmit')
-        expected = (
-            'Resubmit proposal to merge.*'
-            'Source Git repository:.*'
-            'Source Git branch path:.*'
-            'Target Git repository:.*'
-            'Target Git branch path:.*'
-            'Prerequisite Git repository:.*'
-            'Prerequisite Git branch path:.*'
-            'Description.*'
-            'Start afresh.*')
-        self.assertTextMatchesExpressionIgnoreWhitespace(expected, text)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
+            Resubmit proposal to merge.*
+            Source Git branch:.*
+            Repository: \(Find…\) Branch: \(Find…\)
+            Target Git branch:.*
+            Repository: \(Find…\) Branch: \(Find…\)
+            Prerequisite Git branch:.*
+            Repository: \(Find…\) Branch: \(Find…\)
+            Description.*
+            Start afresh.*
+            """, text)
 
     def test_resubmit_controls(self):
         """Proposals can be resubmitted using the browser."""
