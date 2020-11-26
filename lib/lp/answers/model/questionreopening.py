@@ -8,6 +8,7 @@ __metaclass__ = type
 __all__ = ['QuestionReopening',
            'create_questionreopening']
 
+import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.locals import (
     DateTime,
@@ -37,14 +38,14 @@ class QuestionReopening(StormBase):
     question_id = Int(name='question', allow_none=False)
     question = Reference(question_id, 'Question.id')
     datecreated = DateTime(
-        name='datecreated', allow_none=False, default=DEFAULT)
+        name='datecreated', allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
     reopener_id = Int(
         name='reopener', allow_none=False, validator=validate_public_person)
     reopener = Reference(reopener_id, 'Person.id')
     answerer_id = Int(name='answerer', allow_none=True, default=None,
                       validator=validate_public_person)
     answerer = Reference(answerer_id, 'Person.id')
-    date_solved = DateTime(allow_none=True, default=None)
+    date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
     priorstate = DBEnum(
         name="priorstate", enum=QuestionStatus, allow_none=False)
 
