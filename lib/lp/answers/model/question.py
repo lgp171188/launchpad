@@ -26,18 +26,14 @@ from lazr.lifecycle.event import (
     ObjectModifiedEvent,
     )
 from lazr.lifecycle.snapshot import Snapshot
+from lp.services.database.stormbase import StormBase
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import LeftJoin
 from storm.locals import (
     And,
     ClassAlias,
+    DateTime,
     Desc,
     Int,
     Join,
@@ -46,6 +42,7 @@ from storm.locals import (
     Reference,
     Select,
     Store,
+    Unicode,
     )
 from storm.references import ReferenceSet
 from zope.component import getUtility
@@ -111,14 +108,12 @@ from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
     cursor,
-    SQLBase,
     sqlvalues,
     )
 from lp.services.database.stormexpr import (
@@ -177,50 +172,50 @@ class notify_question_modified:
 
 
 @implementer(IQuestion, IBugLinkTarget)
-class Question(SQLBase, BugLinkTargetMixin):
+class Question(StormBase, BugLinkTargetMixin):
     """See `IQuestion`."""
 
-    _table = 'Question'
+    __storm_table__ = 'Question'
     _defaultOrder = ['-priority', 'datecreated']
 
     # db field names
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    title = StringCol(notNull=True)
-    description = StringCol(notNull=True)
-    language = ForeignKey(
-        dbName='language', notNull=True, foreignKey='Language')
-    status = EnumCol(
-        schema=QuestionStatus, notNull=True, default=QuestionStatus.OPEN)
-    priority = EnumCol(
-        schema=QuestionPriority, notNull=True,
-        default=QuestionPriority.NORMAL)
-    assignee = ForeignKey(
-        dbName='assignee', notNull=False, foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
-    answerer = ForeignKey(
-        dbName='answerer', notNull=False, foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+    id = Int(primary=True)
+    owner_id = Int(name='owner', allow_none=False,
+                   validator=validate_public_person)
+    owner = Reference(owner_id, 'Person.id')
+    title = Unicode(allow_none=False)
+    description = Unicode(allow_none=False)
+    language_id = Int(name="language", allow_none=False)
+    language = Reference(language_id, 'Language.id')
+    status = DBEnum(name="status", enum=QuestionStatus, allow_none=False,
+                    default=QuestionStatus.OPEN)
+    priority = DBEnum(name="priority", enum=QuestionPriority,
+                     allow_none=False, default=QuestionPriority.NORMAL)
+    assignee_id = Int(name="assignee", allow_none=True,
+                      validator=validate_public_person, default=None)
+    assignee = Reference(assignee_id, 'Person.id')
+    answerer_id = Int(name="answerer", allow_none=True,
+                      validator=validate_public_person, default=None)
+    answerer = Reference(answerer_id, 'Person.id')
     answer_id = Int(name='answer', allow_none=True, default=None)
     answer = Reference(answer_id, 'QuestionMessage.id')
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    datedue = UtcDateTimeCol(notNull=False, default=None)
-    datelastquery = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    datelastresponse = UtcDateTimeCol(notNull=False, default=None)
-    date_solved = UtcDateTimeCol(notNull=False, default=None)
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=False, default=None)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=False,
-        default=None)
-    sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', foreignKey='SourcePackageName',
-        notNull=False, default=None)
-    whiteboard = StringCol(notNull=False, default=None)
+    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datedue = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    datelastquery = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datelastresponse = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    product_id = Int(name='product', allow_none=True, default=None)
+    product = Reference(product_id, 'Product.id')
+    distribution_id = Int(name='distribution', allow_none=True, default=None)
+    distribution = Reference(distribution_id, 'Distribution.id')
+    sourcepackagename_id = Int(
+        name='sourcepackagename', allow_none=True, default=None)
+    sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
+    whiteboard = Unicode(allow_none=True, default=None)
 
-    faq = ForeignKey(
-        dbName='faq', foreignKey='FAQ', notNull=False, default=None)
+    faq_id = Int(name='faq', allow_none=True, default=None)
+    faq = Reference(faq_id, 'FAQ.id')
 
     # useful joins
     subscriptions = ReferenceSet(
@@ -237,6 +232,18 @@ class Question(SQLBase, BugLinkTargetMixin):
     reopenings = ReferenceSet(
         'id', 'QuestionReopening.question_id',
         order_by='QuestionReopening.datecreated')
+
+    def __init__(self, title, description, owner, product, distribution,
+                 language, sourcepackagename, datecreated, datelastquery):
+        self.title = title
+        self.description = description
+        self.owner = owner
+        self.product = product
+        self.distribution = distribution
+        self.sourcepackagename = sourcepackagename
+        self.datecreated = datecreated
+        self.language = language
+        self.datelastquery = datelastquery
 
     @property
     def messages(self):
@@ -830,10 +837,9 @@ class QuestionSet:
 
     def get(self, question_id, default=None):
         """See `IQuestionSet`."""
-        try:
-            return Question.get(question_id)
-        except SQLObjectNotFound:
-            return default
+        store = IStore(Question)
+        question = store.get(Question, question_id)
+        return question or default
 
     def getOpenQuestionCountByPackages(self, packages):
         """See `IQuestionSet`."""
@@ -1024,7 +1030,7 @@ class QuestionSearch:
                     QuestionMessage.owner == self.needs_attention_from)))
 
         if self.language:
-            constraints.append(Question.languageID.is_in(
+            constraints.append(Question.language_id.is_in(
                 [language.id for language in self.language]))
 
         return constraints
@@ -1161,7 +1167,7 @@ class QuestionTargetSearch(QuestionSearch):
             supported_languages = (
                 self.unsupported_target.getSupportedLanguages())
             constraints.append(
-                Not(Question.languageID.is_in(
+                Not(Question.language_id.is_in(
                     [language.id for language in supported_languages])))
 
         return constraints
@@ -1327,9 +1333,9 @@ class QuestionTargetMixin:
 
     def getQuestion(self, question_id):
         """See `IQuestionTarget`."""
-        try:
-            question = Question.get(question_id)
-        except SQLObjectNotFound:
+        store = Store.of(self)
+        question = store.get(Question, question_id)
+        if not question:
             return None
         # Verify that the question is actually for this target.
         if not self.questionIsForTarget(question):

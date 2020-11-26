@@ -2387,11 +2387,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if target is None:
             target = self.makeProduct()
         if title is None:
-            title = self.getUniqueString('title')
+            title = self.getUniqueUnicode('title')
         if owner is None:
             owner = target.owner
         if description is None:
-            description = self.getUniqueString('description')
+            description = self.getUniqueUnicode('description')
         with person_logged_in(owner):
             question = target.newQuestion(
                 owner=owner, title=title, description=description, **kwargs)
