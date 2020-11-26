@@ -8,13 +8,11 @@ __metaclass__ = type
 __all__ = ['QuestionReopening',
            'create_questionreopening']
 
-import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.locals import (
     DateTime,
     Int,
     Reference,
-    Unicode,
     )
 from zope.event import notify
 from zope.interface import implementer
@@ -24,7 +22,6 @@ from lp.answers.enums import QuestionStatus
 from lp.answers.interfaces.questionreopening import IQuestionReopening
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 
