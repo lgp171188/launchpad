@@ -876,10 +876,10 @@ class QuestionSet:
                 AND Question.sourcepackagename IN %(package_names)s
                 AND Question.distribution = %(distribution)s
             GROUP BY Question.distribution, Question.sourcepackagename
-            """,
-            open_statuses=open_statuses,
-            package_names=package_name_ids,
-            distribution=distribution)
+            """ % sqlvalues(
+                open_statuses=open_statuses,
+                package_names=package_name_ids,
+                distribution=distribution))
         sourcepackagename_set = getUtility(ISourcePackageNameSet)
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
@@ -1352,18 +1352,14 @@ class QuestionTargetMixin:
 
     def getQuestionLanguages(self):
         """See `IQuestionTarget`."""
-        constraints = ['Language.id = Question.language']
-        targets = self.getTargetTypes()
-        for column, target in targets.items():
+        query = [Language.id == Question.language_id]
+        for column, target in self.getTargetTypes().items():
             if target is None:
-                constraint = "Question." + column + " IS NULL"
+                query.append(getattr(Question, column) is None)
             else:
-                constraint = "Question." + column + " = %s" % sqlvalues(
-                    target)
-            constraints.append(constraint)
-        return set(Language.select(
-            ' AND '.join(constraints),
-            clauseTables=['Question'], distinct=True))
+                query.append(getattr(Question, column) is target)
+        results = IStore(Language).find(Question, query).config(distinct=True)
+        return results
 
     @property
     def _store(self):
