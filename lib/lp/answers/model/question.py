@@ -236,7 +236,7 @@ class Question(SQLBase, BugLinkTargetMixin):
         'id', 'QuestionMessage.question_id', order_by='QuestionMessage.id')
     reopenings = ReferenceSet(
         'id', 'QuestionReopening.question_id',
-        'Question.id', 'QuestionReopening.question_id', order_by='datecreated')
+        order_by='QuestionReopening.datecreated')
 
     @property
     def messages(self):
