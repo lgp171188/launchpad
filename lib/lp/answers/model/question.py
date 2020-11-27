@@ -187,7 +187,7 @@ class Question(StormBase, BugLinkTargetMixin):
     status = DBEnum(name="status", enum=QuestionStatus, allow_none=False,
                     default=QuestionStatus.OPEN)
     priority = DBEnum(name="priority", enum=QuestionPriority,
-                     allow_none=False, default=QuestionPriority.NORMAL)
+                      allow_none=False, default=QuestionPriority.NORMAL)
     assignee_id = Int(name="assignee", allow_none=True,
                       validator=validate_public_person, default=None)
     assignee = Reference(assignee_id, 'Person.id')
