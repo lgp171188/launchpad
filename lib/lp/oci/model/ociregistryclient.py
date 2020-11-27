@@ -20,6 +20,7 @@ try:
 except ImportError:
     JSONDecodeError = ValueError
 import logging
+import re
 import tarfile
 
 import boto3
@@ -611,8 +612,6 @@ class AWSAuthenticator:
             boto_config = Config()
         auth = self.push_rule.registry_credentials.getCredentials()
         username, password = auth['username'], auth.get('password')
-        if ":::" in username:
-            username = username.split(":::", 1)[1]
         region = self._getRegion()
         log.info("Trying to authenticate with AWS in region %s" % region)
         return dict(
@@ -645,18 +644,16 @@ class AWSAuthenticator:
 
     def _getRegion(self):
         """Returns the region from the push URL domain."""
-        if self.should_use_aws_extra_model:
-            cred = self.push_rule.registry_credentials.getCredentials()
-            username = cred['username']
-            if ":::" in username:
-                # Either the user is using our deep temporary secret on how to
-                # encode the region in the username, or they did a big
-                # mistake.
-                return username.split(":::", 1)[0]
-        # The domain format should be something like
+        push_rule = self.push_rule
+        region = push_rule.registry_credentials.getCredentialsValue("region")
+        if region is not None:
+            return region
+        # Try to gess from the domain. The format should be something like
         # 'xxx.dkr.ecr.sa-east-1.amazonaws.com'. 'sa-east-1' is the region.
         domain = urlparse(self.push_rule.registry_url).netloc
-        return domain.split(".")[-3]
+        if re.match(r'.+\.dkr\.ecr\..+\.amazonaws\.com', domain):
+            return domain.split(".")[-3]
+        raise OCIRegistryAuthenticationError("Unknown AWS region.")
 
     @cachedproperty
     def credentials(self):
