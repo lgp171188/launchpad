@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -477,27 +477,31 @@ class ValidateTeamEmailView(ValidateEmailView):
         self.context.requester.setContactAddress(email)
 
 
-class MergePeopleView(BaseTokenView, LaunchpadView):
+class MergePeopleView(BaseTokenView, LaunchpadFormView):
+
+    schema = Interface
+    field_names = []
     expected_token_types = (LoginTokenType.ACCOUNTMERGE,)
     mergeCompleted = False
     label = 'Merge Launchpad accounts'
+
+    @property
+    def default_next_url(self):
+        return canonical_url(self.context.requester)
 
     def initialize(self):
         self.redirectIfInvalidOrConsumedToken()
         self.dupe = getUtility(IPersonSet).getByEmail(
             self.context.email, filter_status=False)
+        super(MergePeopleView, self).initialize()
 
-    def success(self, message):
-        # We're not a GeneralFormView, so we need to do the redirect
-        # ourselves.
-        BaseTokenView.success(self, message)
-        self.request.response.redirect(canonical_url(self.context.requester))
+    @action(_('Cancel'), name='cancel', validator='validate_cancel')
+    def cancel_action(self, action, data):
+        self._cancel()
 
-    def processForm(self):
+    @action(_('Confirm'), name='confirm')
+    def confirm_action(self, action, data):
         """Perform the merge."""
-        if self.request.method != "POST":
-            return
-
         # Merge requests must have a valid user account (one with a preferred
         # email) as requester.
         assert self.context.requester.preferredemail is not None
