@@ -29,11 +29,11 @@ from requests.exceptions import (
     ConnectionError,
     HTTPError,
     )
+from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import (
     parse_http_list,
     parse_keqv_list,
     )
-from six.moves.urllib.parse import urlparse
 from tenacity import (
     before_log,
     retry,
@@ -43,14 +43,14 @@ from tenacity import (
     )
 from zope.interface import implementer
 
-from lp.services.config import config as lp_config
-from lp.services.features import getFeatureFlag
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     IOCIRegistryClient,
-    MultipleOCIRegistryError,
     ManifestUploadFailed,
+    MultipleOCIRegistryError,
     )
+from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.timeout import urlfetch
 
@@ -604,10 +604,10 @@ class AWSAuthenticatorMixin:
     """
 
     def _getClientParameters(self):
-        if lp_config.launchpad.http_proxy:
+        if config.launchpad.http_proxy:
             boto_config = Config(proxies={
-                'http': lp_config.launchpad.http_proxy,
-                'https': lp_config.launchpad.http_proxy})
+                'http': config.launchpad.http_proxy,
+                'https': config.launchpad.http_proxy})
         else:
             boto_config = Config()
         auth = self.push_rule.registry_credentials.getCredentials()

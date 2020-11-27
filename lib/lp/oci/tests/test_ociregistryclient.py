@@ -889,10 +889,10 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.useFixture(FeatureFixture({
             OCI_RECIPE_ALLOW_CREATE: 'on',
             OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: (
-                'foo.domain.com fake.domain.com'),
+                'foo.example.com fake.example.com'),
         }))
         credentials = self.factory.makeOCIRegistryCredentials(
-            url="https://fake.domain.com",
+            url="https://fake.example.com",
             credentials={
                 'username': 'aws_access_key_id',
                 'password': "aws_secret_access_key"})
@@ -907,7 +907,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
     @responses.activate
     def test_aws_credentials(self):
-        self.pushConfig('launchpad', http_proxy='http://proxy.local.com:123')
+        self.pushConfig('launchpad', http_proxy='http://proxy.example.com:123')
         boto_patch = self.useFixture(
             MockPatch('lp.oci.model.ociregistryclient.boto3'))
         boto = boto_patch.mock
@@ -943,8 +943,8 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 boto.client.call_args)
             config = boto.client.call_args[-1]['config']
             self.assertEqual({
-                u'http': u'http://proxy.local.com:123',
-                u'https': u'http://proxy.local.com:123'}, config.proxies)
+                u'http': u'http://proxy.example.com:123',
+                u'https': u'http://proxy.example.com:123'}, config.proxies)
 
     @responses.activate
     def test_aws_malformed_url_region(self):
@@ -1144,7 +1144,7 @@ class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_get_region_from_credential(self):
         cred = self.factory.makeOCIRegistryCredentials(
-            url="https://any.com", credentials={"region": "sa-east-1"})
+            url="https://example.com", credentials={"region": "sa-east-1"})
         push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
 
         with admin_logged_in():
@@ -1164,7 +1164,7 @@ class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_get_region_invalid_url(self):
         cred = self.factory.makeOCIRegistryCredentials(
-            url="https://something.invalid")
+            url="https://something.example.com")
         push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
 
         with admin_logged_in():
@@ -1174,9 +1174,9 @@ class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_should_use_extra_model(self):
         self.setConfig({
-            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.aws.com'})
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
         cred = self.factory.makeOCIRegistryCredentials(
-            url="https://myregistry.bearertoken.aws.com")
+            url="https://myregistry.bearertoken.example.com")
         push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
 
         with admin_logged_in():
@@ -1186,7 +1186,7 @@ class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_should_not_use_extra_model(self):
         self.setConfig({
-            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.aws.com'})
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
         cred = self.factory.makeOCIRegistryCredentials(
             url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com")
         push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
