@@ -112,10 +112,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
-from lp.services.database.sqlbase import (
-    cursor,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
@@ -742,7 +739,9 @@ class QuestionSet:
         # This query joins to bugtasks that are not BugTaskStatus.INVALID
         # because there are many bugtasks to one question. A question is
         # included when BugTask.status IS NULL.
-        return Question.select("""
+        store = IStore(Question)
+        result = store.execute(
+            """
             id in (SELECT Question.id
                 FROM Question
                 LEFT OUTER JOIN XRef ON (
@@ -761,10 +760,10 @@ class QuestionSet:
                             AT TIME ZONE 'UTC' - interval '%s days')
                     AND Question.assignee IS NULL
                     AND BugTask.status IS NULL)
-            """ % sqlvalues(
-                BugTaskStatus.INVALID,
-                QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-                days_before_expiration, days_before_expiration))
+            """, (BugTaskStatus.INVALID,
+                  QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
+                  days_before_expiration, days_before_expiration))
+        return result.get_all()
 
     def searchQuestions(self, search_text=None, language=None,
                       status=QUESTION_STATUS_DEFAULT_SEARCH, sort=None):
@@ -780,8 +779,8 @@ class QuestionSet:
 
     def getMostActiveProjects(self, limit=5):
         """See `IQuestionSet`."""
-        cur = cursor()
-        cur.execute("""
+
+        results = IStore(Question).execute("""
             SELECT product, distribution, count(*) AS "question_count"
             FROM (
                 SELECT product, distribution
@@ -800,12 +799,12 @@ class QuestionSet:
             ORDER BY question_count DESC
             LIMIT %s
             """ % sqlvalues(
-                    ServiceUsage.LAUNCHPAD, ServiceUsage.LAUNCHPAD, limit))
+                ServiceUsage.LAUNCHPAD, ServiceUsage.LAUNCHPAD, limit))
 
         projects = []
         product_set = getUtility(IProductSet)
         distribution_set = getUtility(IDistributionSet)
-        for product_id, distribution_id, ignored in cur.fetchall():
+        for product_id, distribution_id, ignored in results.get_all():
             if product_id:
                 projects.append(product_set.get(product_id))
             elif distribution_id:
@@ -867,7 +866,8 @@ class QuestionSet:
             package.sourcepackagename.id for package in packages]
         open_statuses = [QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]
 
-        query = """
+        results = IStore(Question).execute(
+            """
             SELECT Question.distribution,
                    Question.sourcepackagename,
                    COUNT(*) AS open_questions
@@ -876,18 +876,15 @@ class QuestionSet:
                 AND Question.sourcepackagename IN %(package_names)s
                 AND Question.distribution = %(distribution)s
             GROUP BY Question.distribution, Question.sourcepackagename
-            """ % sqlvalues(
-                open_statuses=open_statuses,
-                package_names=package_name_ids,
-                distribution=distribution,
-                )
-        cur = cursor()
-        cur.execute(query)
+            """,
+            open_statuses=open_statuses,
+            package_names=package_name_ids,
+            distribution=distribution)
         sourcepackagename_set = getUtility(ISourcePackageNameSet)
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
         counts = dict((package, 0) for package in packages)
-        for distro_id, spn_id, open_questions in cur.fetchall():
+        for distro_id, spn_id, open_questions in results.get_all():
             # The SourcePackageNames here should already be pre-fetched,
             # so that .get(spn_id) won't issue a DB query.
             sourcepackagename = sourcepackagename_set.get(spn_id)
