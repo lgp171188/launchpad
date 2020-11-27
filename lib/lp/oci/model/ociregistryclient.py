@@ -597,7 +597,7 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
             raise
 
 
-class AWSAuthenticator:
+class AWSAuthenticatorMixin:
     """Basic class to override the way we get credentials, exchanging
     registered aws_access_key_id and aws_secret_access_key with the
     temporary token got from AWS API.
@@ -648,7 +648,7 @@ class AWSAuthenticator:
         region = push_rule.registry_credentials.getCredentialsValue("region")
         if region is not None:
             return region
-        # Try to gess from the domain. The format should be something like
+        # Try to guess from the domain. The format should be something like
         # 'xxx.dkr.ecr.sa-east-1.amazonaws.com'. 'sa-east-1' is the region.
         domain = urlparse(self.push_rule.registry_url).netloc
         if re.match(r'.+\.dkr\.ecr\..+\.amazonaws\.com', domain):
@@ -680,16 +680,13 @@ class AWSAuthenticator:
                 (self.push_rule.registry_url, e))
 
 
-class AWSRegistryHTTPClient(AWSAuthenticator, RegistryHTTPClient):
-    """AWS registry client with authentication flow based on basic auth
-    (private ECR, for example).
-    """
+class AWSRegistryHTTPClient(AWSAuthenticatorMixin, RegistryHTTPClient):
+    """AWS registry client with authentication flow based on basic auth."""
     pass
 
 
 class AWSRegistryBearerTokenClient(
-        AWSAuthenticator, BearerTokenRegistryClient):
-    """AWS registry client with authentication flow based on bearer token
-    flow (public ECR, for example).
+        AWSAuthenticatorMixin, BearerTokenRegistryClient):
+    """AWS registry client with authentication flow based on bearer token flow.
     """
     pass

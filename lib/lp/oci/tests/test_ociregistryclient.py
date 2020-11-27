@@ -48,6 +48,7 @@ from lp.oci.interfaces.ociregistryclient import (
     )
 from lp.oci.model.ocirecipe import OCIRecipeBuildRequest
 from lp.oci.model.ociregistryclient import (
+    AWSAuthenticatorMixin,
     AWSRegistryBearerTokenClient,
     AWSRegistryHTTPClient,
     BearerTokenRegistryClient,
@@ -60,7 +61,10 @@ from lp.oci.model.ociregistryclient import (
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    admin_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
@@ -1129,3 +1133,65 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin,
 
         self.assertRaises(OCIRegistryAuthenticationError,
                           client.authenticate, previous_request)
+
+
+class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestAWSAuthenticator, self).setUp()
+        self.setConfig()
+
+    def test_get_region_from_credential(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://any.com", credentials={"region": "sa-east-1"})
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertEqual("sa-east-1", auth._getRegion())
+
+    def test_get_region_from_url(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertEqual("sa-west-1", auth._getRegion())
+
+    def test_get_region_invalid_url(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://something.invalid")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertRaises(OCIRegistryAuthenticationError, auth._getRegion)
+
+    def test_should_use_extra_model(self):
+        self.setConfig({
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.aws.com'})
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://myregistry.bearertoken.aws.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertTrue(auth.should_use_aws_extra_model)
+
+    def test_should_not_use_extra_model(self):
+        self.setConfig({
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.aws.com'})
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertFalse(auth.should_use_aws_extra_model)

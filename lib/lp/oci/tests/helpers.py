@@ -23,7 +23,7 @@ from lp.services.features.testing import FeatureFixture
 
 class OCIConfigHelperMixin:
 
-    def setConfig(self):
+    def setConfig(self, feature_flags=None):
         self.private_key = PrivateKey.generate()
         self.pushConfig(
             "oci",
@@ -34,7 +34,9 @@ class OCIConfigHelperMixin:
             registry_secrets_private_key=base64.b64encode(
                 bytes(self.private_key)).decode("UTF-8"))
         # Default feature flags for our tests
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        feature_flags = feature_flags or {}
+        feature_flags.update({OCI_RECIPE_ALLOW_CREATE: 'on'})
+        self.useFixture(FeatureFixture(feature_flags))
 
 
 class MatchesOCIRegistryCredentials(MatchesAll):
