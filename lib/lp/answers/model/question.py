@@ -102,6 +102,7 @@ from lp.registry.interfaces.product import (
     IProductSet,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
 from lp.services.database.constants import (
@@ -1357,7 +1358,7 @@ class QuestionTargetMixin:
             if target is None:
                 query.append(getattr(Question, column) is None)
             else:
-                query.append(getattr(Question, column) is target)
+                query.append(getattr(Question, column) == target)
         results = IStore(Language).find(Question, query).config(distinct=True)
         return results
 
@@ -1460,44 +1461,34 @@ class QuestionTargetMixin:
         Store.of(answer_contact).flush()
         return True
 
-    def _selectPersonFromAnswerContacts(self, constraints, clause_tables):
-        """Return the Persons or Teams who are AnswerContacts."""
-        constraints.append("""Person.id = AnswerContact.person""")
-        clause_tables.append('AnswerContact')
-        # Avoid a circular import of Person, which imports the mixin.
-        from lp.registry.model.person import Person
-        return Person.select(
-            " AND ".join(constraints), clauseTables=clause_tables,
-            orderBy=['display_name'], distinct=True)
-
     def getAnswerContactsForLanguage(self, language):
         """See `IQuestionTarget`."""
+        from lp.registry.model.person import PersonLanguage, Person
         assert language is not None, (
             "The language cannot be None when selecting answer contacts.")
-        constraints = []
+        query = []
         targets = self.getTargetTypes()
         for column, target in targets.items():
             if target is None:
-                constraint = "AnswerContact." + column + " IS NULL"
+                query.append(getattr(AnswerContact, column) is None)
             else:
-                constraint = "AnswerContact." + column + " = %s" % sqlvalues(
-                    target)
-            constraints.append(constraint)
-
-        constraints.append("""
-            AnswerContact.person = PersonLanguage.person AND
-            PersonLanguage.Language = Language.id""")
+                query.append(getattr(AnswerContact, column) == target)
+        query.append(
+            And(
+                AnswerContact.person == PersonLanguage.person_id,
+                PersonLanguage.language_id == Language.id))
         # XXX sinzui 2007-07-12 bug=125545:
         # Using a LIKE constraint is suboptimal. We would not need this
         # if-else clause if variant languages knew their parent language.
         if language.code == 'en':
-            constraints.append("""
-                Language.code LIKE %s""" % sqlvalues('%s%%' % language.code))
+            query.append(Language.code.like(language.code))
         else:
-            constraints.append("""
-                Language.id = %s""" % sqlvalues(language))
-        return list((self._selectPersonFromAnswerContacts(
-            constraints, ['PersonLanguage', 'Language'])))
+            query.append(Language.id == language.id)
+
+        query.append(AnswerContact.person == Person.id)
+        results = IStore(Person).find(
+            Person, query).config(distinct=True).order_by("Person.displayname")
+        return results
 
     def getAnswerContactRecipients(self, language):
         """See `IQuestionTarget`."""
