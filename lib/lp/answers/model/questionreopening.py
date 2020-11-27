@@ -8,8 +8,13 @@ __metaclass__ = type
 __all__ = ['QuestionReopening',
            'create_questionreopening']
 
+import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
-from sqlobject import ForeignKey
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    )
 from zope.event import notify
 from zope.interface import implementer
 from zope.security.proxy import ProxyFactory
@@ -18,28 +23,40 @@ from lp.answers.enums import QuestionStatus
 from lp.answers.interfaces.questionreopening import IQuestionReopening
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IQuestionReopening)
-class QuestionReopening(SQLBase):
+class QuestionReopening(StormBase):
     """A table recording each time a question is re-opened."""
 
-    _table = 'QuestionReopening'
+    __storm_table__ = 'QuestionReopening'
 
-    question = ForeignKey(
-        dbName='question', foreignKey='Question', notNull=True)
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    reopener = ForeignKey(
-        dbName='reopener', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    answerer = ForeignKey(
-        dbName='answerer', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=False, default=None)
-    date_solved = UtcDateTimeCol(notNull=False, default=None)
-    priorstate = EnumCol(schema=QuestionStatus, notNull=True)
+    id = Int(primary=True)
+
+    question_id = Int(name='question', allow_none=False)
+    question = Reference(question_id, 'Question.id')
+    datecreated = DateTime(
+        name='datecreated', allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    reopener_id = Int(
+        name='reopener', allow_none=False, validator=validate_public_person)
+    reopener = Reference(reopener_id, 'Person.id')
+    answerer_id = Int(name='answerer', allow_none=True, default=None,
+                      validator=validate_public_person)
+    answerer = Reference(answerer_id, 'Person.id')
+    date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    priorstate = DBEnum(
+        name="priorstate", enum=QuestionStatus, allow_none=False)
+
+    def __init__(self, question, reopener, datecreated,
+                 answerer, date_solved, priorstate):
+        self.question = question
+        self.reopener = reopener
+        self.datecreated = datecreated
+        self.answerer = answerer
+        self.date_solved = date_solved
+        self.priorstate = priorstate
 
 
 def create_questionreopening(
