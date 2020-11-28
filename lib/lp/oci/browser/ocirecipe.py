@@ -344,7 +344,9 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         super(OCIRecipeEditPushRulesView, self).setUpFields()
         image_name_fields = []
         url_fields = []
+        region_fields = []
         private_url_fields = []
+        private_region_fields = []
         username_fields = []
         private_username_fields = []
         password_fields = []
@@ -361,6 +363,13 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                         __name__=self._getFieldName('url', elem.id),
                         default=elem.registry_credentials.url,
                         required=True, readonly=True))
+                region = elem.registry_credentials.getCredentialsValue(
+                    'region')
+                region_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('region', elem.id),
+                        default=region,
+                        required=False, readonly=True))
                 username_fields.append(
                     TextLine(
                         __name__=self._getFieldName('username', elem.id),
@@ -379,6 +388,10 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                 private_url_fields.append(
                     TextLine(
                         __name__=self._getFieldName('url', elem.id),
+                        default='', required=True, readonly=True))
+                private_region_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('region', elem.id),
                         default='', required=True, readonly=True))
                 private_username_fields.append(
                     TextLine(
@@ -405,6 +418,10 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             TextLine(
                 __name__=u'add_url',
                 required=False, readonly=False))
+        region_fields.append(
+            TextLine(
+                __name__=u'add_region',
+                required=False, readonly=False))
         username_fields.append(
             TextLine(
                 __name__=u'add_username',
@@ -423,6 +440,10 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             FormFields(*url_fields) +
             FormFields(
                 *private_url_fields,
+                custom_widget=InvisibleCredentialsWidget) +
+            FormFields(*region_fields) +
+            FormFields(
+                *private_region_fields,
                 custom_widget=InvisibleCredentialsWidget) +
             FormFields(*username_fields) +
             FormFields(
@@ -453,6 +474,8 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         widgets_by_name = {widget.name: widget for widget in self.widgets}
         url_field_name = (
                 "field." + self._getFieldName("url", rule.id))
+        region_field_name = (
+                "field." + self._getFieldName("region", rule.id))
         image_field_name = (
                 "field." + self._getFieldName("image_name", rule.id))
         username_field_name = (
@@ -461,6 +484,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                 "field." + self._getFieldName("delete", rule.id))
         return {
             "url": widgets_by_name[url_field_name],
+            "region": widgets_by_name[region_field_name],
             "image_name": widgets_by_name[image_field_name],
             "username": widgets_by_name[username_field_name],
             "delete": widgets_by_name[delete_field_name],
@@ -473,6 +497,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             "existing_credentials":
                 widgets_by_name["field.existing_credentials"],
             "url": widgets_by_name["field.add_url"],
+            "region": widgets_by_name["field.add_region"],
             "username": widgets_by_name["field.add_username"],
             "password": widgets_by_name["field.add_password"],
             "confirm_password": widgets_by_name["field.add_confirm_password"],
@@ -483,18 +508,20 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         parsed_data = {}
         add_image_name = data.get("add_image_name")
         add_url = data.get("add_url")
+        add_region = data.get("add_region")
         add_username = data.get("add_username")
         add_password = data.get("add_password")
         add_confirm_password = data.get("add_confirm_password")
         add_existing_credentials = data.get("existing_credentials")
 
         # parse data from the Add new rule section of the form
-        if (add_url or add_username or add_password or
+        if (add_url or add_region or add_username or add_password or
                 add_confirm_password or add_image_name or
                 add_existing_credentials):
             parsed_data.setdefault(None, {
                 "image_name": add_image_name,
                 "url": add_url,
+                "region": add_region,
                 "username": add_username,
                 "password": add_password,
                 "confirm_password": add_confirm_password,
@@ -523,6 +550,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         add_data = parsed_data[None]
         image_name = add_data.get("image_name")
         url = add_data.get("url")
+        region = add_data.get("region")
         password = add_data.get("password")
         confirm_password = add_data.get("confirm_password")
         username = add_data.get("username")
@@ -550,9 +578,12 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
 
             credentials_set = getUtility(IOCIRegistryCredentialsSet)
             try:
+                credential_data = {'username': username, 'password': password}
+                if region is not None:
+                    credential_data['region'] = region
                 credentials = credentials_set.getOrCreate(
                     registrant=self.user, owner=self.context.owner, url=url,
-                    credentials={'username': username, 'password': password})
+                    credentials=credential_data)
             except OCIRegistryCredentialsAlreadyExist:
                 self.setFieldError(
                     "add_url",
