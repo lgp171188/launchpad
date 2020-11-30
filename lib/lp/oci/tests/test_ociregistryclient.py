@@ -39,6 +39,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
@@ -47,8 +48,11 @@ from lp.oci.interfaces.ociregistryclient import (
     )
 from lp.oci.model.ocirecipe import OCIRecipeBuildRequest
 from lp.oci.model.ociregistryclient import (
+    AWSAuthenticatorMixin,
+    AWSRegistryBearerTokenClient,
     AWSRegistryHTTPClient,
     BearerTokenRegistryClient,
+    OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG,
     OCIRegistryAuthenticationError,
     OCIRegistryClient,
     proxy_urlfetch,
@@ -56,7 +60,11 @@ from lp.oci.model.ociregistryclient import (
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.compat import mock
-from lp.testing import TestCaseWithFactory
+from lp.services.features.testing import FeatureFixture
+from lp.testing import (
+    admin_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
@@ -861,7 +869,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
     @responses.activate
-    def test_get_aws_client_instance(self):
+    def test_get_aws_basic_auth_client_instance(self):
         credentials = self.factory.makeOCIRegistryCredentials(
             url="https://123456789.dkr.ecr.sa-east-1.amazonaws.com",
             credentials={
@@ -873,10 +881,33 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         instance = RegistryHTTPClient.getInstance(push_rule)
         self.assertEqual(AWSRegistryHTTPClient, type(instance))
+        self.assertFalse(instance.should_use_aws_extra_model)
+        self.assertIsInstance(instance, RegistryHTTPClient)
+
+    @responses.activate
+    def test_get_aws_bearer_token_auth_client_instance(self):
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: 'on',
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: (
+                'foo.example.com fake.example.com'),
+        }))
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://fake.example.com",
+            credentials={
+                'username': 'aws_access_key_id',
+                'password': "aws_secret_access_key"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="ecr-test"))
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(AWSRegistryBearerTokenClient, type(instance))
+        self.assertTrue(instance.should_use_aws_extra_model)
         self.assertIsInstance(instance, RegistryHTTPClient)
 
     @responses.activate
     def test_aws_credentials(self):
+        self.pushConfig('launchpad', http_proxy='http://proxy.example.com:123')
         boto_patch = self.useFixture(
             MockPatch('lp.oci.model.ociregistryclient.boto3'))
         boto = boto_patch.mock
@@ -908,8 +939,12 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             self.assertEqual(mock.call(
                 'ecr', aws_access_key_id="my_aws_access_key_id",
                 aws_secret_access_key="my_aws_secret_access_key",
-                region_name="sa-east-1"),
+                region_name="sa-east-1", config=mock.ANY),
                 boto.client.call_args)
+            config = boto.client.call_args[-1]['config']
+            self.assertEqual({
+                u'http': u'http://proxy.example.com:123',
+                u'https': u'http://proxy.example.com:123'}, config.proxies)
 
     @responses.activate
     def test_aws_malformed_url_region(self):
@@ -1098,3 +1133,65 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin,
 
         self.assertRaises(OCIRegistryAuthenticationError,
                           client.authenticate, previous_request)
+
+
+class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestAWSAuthenticator, self).setUp()
+        self.setConfig()
+
+    def test_get_region_from_credential(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://example.com", credentials={"region": "sa-east-1"})
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertEqual("sa-east-1", auth._getRegion())
+
+    def test_get_region_from_url(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertEqual("sa-west-1", auth._getRegion())
+
+    def test_get_region_invalid_url(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://something.example.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertRaises(OCIRegistryAuthenticationError, auth._getRegion)
+
+    def test_should_use_extra_model(self):
+        self.setConfig({
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://myregistry.bearertoken.example.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertTrue(auth.should_use_aws_extra_model)
+
+    def test_should_not_use_extra_model(self):
+        self.setConfig({
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertFalse(auth.should_use_aws_extra_model)

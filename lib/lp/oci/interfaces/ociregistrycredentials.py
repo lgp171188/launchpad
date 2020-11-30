@@ -57,6 +57,9 @@ class IOCIRegistryCredentialsView(Interface):
     def getCredentials():
         """Get the saved credentials."""
 
+    def getCredentialsValue(key):
+        """Gets the credential value for a specific key."""
+
     username = TextLine(
         title=_("Username"),
         description=_("The username for the credentials, if available."),
