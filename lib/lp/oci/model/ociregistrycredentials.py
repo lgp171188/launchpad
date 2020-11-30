@@ -119,6 +119,9 @@ class OCIRegistryCredentials(Storm):
             data["username"] = username
         self._credentials = data
 
+    def getCredentialsValue(self, key):
+        return self.getCredentials().get(key)
+
     @property
     def username(self):
         return self._credentials.get('username')
