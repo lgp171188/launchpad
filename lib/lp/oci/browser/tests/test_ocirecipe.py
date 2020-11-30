@@ -1111,6 +1111,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                                      text=soupmatchers._not_passed)),
                 soupmatchers.Within(
                     row,
+                    soupmatchers.Tag("Region", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
                     soupmatchers.Tag("Username", "td",
                                      text=soupmatchers._not_passed)),
                 soupmatchers.Within(
@@ -1330,6 +1334,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl(name="field.add_image_name").value = "imagename3"
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "somewhere-02"
         browser.getControl(name="field.add_username").value = "username"
         browser.getControl(name="field.add_password").value = "password"
         browser.getControl(
@@ -1347,8 +1352,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                 url=url,
                 username="username")))
         with person_logged_in(self.person):
-            self.assertEqual(
-                {"username": "username", "password": "password"},
+            self.assertEqual({
+                "username": "username", "password": "password",
+                "region": "somewhere-02"},
                 rule.registry_credentials.getCredentials())
 
     def test_add_oci_push_rules_existing_credentials_duplicate(self):
@@ -1494,6 +1500,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getLink("Edit OCI registry credentials").click()
 
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "new_region1"
         browser.getControl(name="field.add_username").value = "new_username"
         browser.getControl(name="field.add_password").value = "password"
         browser.getControl(name="field.add_confirm_password"
@@ -1508,8 +1515,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             self.assertEqual(url, creds[1].url)
             self.assertThat(
                 (creds[1]).getCredentials(),
-                MatchesDict({"username": Equals("new_username"),
-                             "password": Equals("password")}))
+                MatchesDict({
+                    "username": Equals("new_username"),
+                    "password": Equals("password"),
+                    "region": Equals("new_region1")}))
 
 
 class TestOCIProjectRecipesView(BaseTestOCIRecipeView):

@@ -46,6 +46,12 @@
           <tr>
             <th class="push-rule-image-name">Image name</th>
             <th class="push-rule-url">Registry URL</th>
+            <th class="push-rule-region">
+              Region (optional)
+              <img height="14" width="14" alt=""
+                   title="For AWS ECR, insert the AWS region of the repository. Leave blank otherwise."
+                   src="/@@/question" />
+            </th>
             <th class="push-rule-username">Username</th>
             <th class="push-rule-password">Password</th>
             <th class="push-rule-confirm-password">Confirm password</th>
@@ -64,6 +70,10 @@
                 </td>
                 <td class="push-rule-url"
                     tal:define="widget nocall:rule_widgets/url">
+                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+                </td>
+                <td class="push-rule-region"
+                    tal:define="widget nocall:rule_widgets/region">
                   <metal:widget use-macro="context/@@launchpad_form/widget_div" />
                 </td>
                 <td class="push-rule-username"
@@ -113,6 +123,10 @@
               </td>
               <td class="push-rule-url"
                   tal:define="widget nocall:new_rule_widgets/url">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+              </td>
+              <td class="push-rule-region"
+                  tal:define="widget nocall:new_rule_widgets/region">
                 <metal:widget use-macro="context/@@launchpad_form/widget_div" />
               </td>
               <td class="push-rule-username"
