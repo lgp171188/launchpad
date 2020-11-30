@@ -33,6 +33,7 @@ from storm.expr import LeftJoin
 from storm.locals import (
     And,
     ClassAlias,
+    Count,
     DateTime,
     Desc,
     Int,
@@ -102,7 +103,6 @@ from lp.registry.interfaces.product import (
     IProductSet,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
-
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
 from lp.services.database.constants import (
@@ -867,25 +867,17 @@ class QuestionSet:
             package.sourcepackagename.id for package in packages]
         open_statuses = [QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]
 
-        results = IStore(Question).execute(
-            """
-            SELECT Question.distribution,
-                   Question.sourcepackagename,
-                   COUNT(*) AS open_questions
-            FROM Question
-            WHERE Question.status IN %(open_statuses)s
-                AND Question.sourcepackagename IN %(package_names)s
-                AND Question.distribution = %(distribution)s
-            GROUP BY Question.distribution, Question.sourcepackagename
-            """ % sqlvalues(
-                open_statuses=open_statuses,
-                package_names=package_name_ids,
-                distribution=distribution))
+        results = IStore(Question).find(
+            (Question.distribution_id, Question.sourcepackagename_id, Count()),
+            Question.status.is_in(open_statuses),
+            Question.sourcepackagename_id.is_in(package_name_ids),
+            Question.distribution == distribution,
+        ).group_by(Question.distribution_id, Question.sourcepackagename_id)
         sourcepackagename_set = getUtility(ISourcePackageNameSet)
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
         counts = dict((package, 0) for package in packages)
-        for distro_id, spn_id, open_questions in results.get_all():
+        for distro_id, spn_id, open_questions in results:
             # The SourcePackageNames here should already be pre-fetched,
             # so that .get(spn_id) won't issue a DB query.
             sourcepackagename = sourcepackagename_set.get(spn_id)
