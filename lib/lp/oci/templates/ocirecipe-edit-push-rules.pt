@@ -46,7 +46,12 @@
           <tr>
             <th class="push-rule-image-name">Image name</th>
             <th class="push-rule-url">Registry URL</th>
-            <th class="push-rule-region">Region</th>
+            <th class="push-rule-region">
+              Region (optional)
+              <img height="14" width="14" alt=""
+                   title="For AWS ECR, insert the AWS region of the repository. Leave blank otherwise."
+                   src="/@@/question" />
+            </th>
             <th class="push-rule-username">Username</th>
             <th class="push-rule-password">Password</th>
             <th class="push-rule-confirm-password">Confirm password</th>

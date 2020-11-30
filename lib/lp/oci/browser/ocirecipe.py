@@ -392,7 +392,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                 private_region_fields.append(
                     TextLine(
                         __name__=self._getFieldName('region', elem.id),
-                        default='', required=True, readonly=True))
+                        default='', required=False, readonly=True))
                 private_username_fields.append(
                     TextLine(
                         __name__=self._getFieldName('username', elem.id),
