@@ -87,6 +87,10 @@ class OCIRegistryCredentials(Storm):
 
     _credentials = JSON(name="credentials", allow_none=True)
 
+    # The list of dict keys that should not be encrypted when storing
+    # _credentials attribute.
+    UNENCRYPTED_CREDENTIALS_FIELDS = ['username', 'region']
+
     def __init__(self, owner, url, credentials):
         self.owner = owner
         self.url = url
@@ -111,16 +115,20 @@ class OCIRegistryCredentials(Storm):
     def setCredentials(self, value):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         copy = value.copy()
-        username = copy.pop("username", None)
+        # Remove fields that should not be encrypted.
+        unencrypted_fields = {}
+        for field in self.UNENCRYPTED_CREDENTIALS_FIELDS:
+            unencrypted_fields[field] = copy.pop(field, None)
+        # Encrypt the rest of the dict.
         data = {
             "credentials_encrypted": removeSecurityProxy(
                 container.encrypt(json.dumps(copy).encode('UTF-8')))}
-        if username is not None:
-            data["username"] = username
+        # Put back the fields that shouldn't be encrypted.
+        for field in self.UNENCRYPTED_CREDENTIALS_FIELDS:
+            value = unencrypted_fields[field]
+            if value is not None:
+                data[field] = value
         self._credentials = data
-
-    def getCredentialsValue(self, key):
-        return self.getCredentials().get(key)
 
     @property
     def username(self):
@@ -129,6 +137,14 @@ class OCIRegistryCredentials(Storm):
     @username.setter
     def username(self, value):
         self._credentials['username'] = value
+
+    @property
+    def region(self):
+        return self._credentials.get('region')
+
+    @region.setter
+    def region(self, value):
+        self._credentials['region'] = value
 
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""
