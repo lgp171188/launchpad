@@ -645,7 +645,7 @@ class AWSAuthenticatorMixin:
     def _getRegion(self):
         """Returns the region from the push URL domain."""
         push_rule = self.push_rule
-        region = push_rule.registry_credentials.getCredentialsValue("region")
+        region = push_rule.registry_credentials.region
         if region is not None:
             return region
         # Try to guess from the domain. The format should be something like
