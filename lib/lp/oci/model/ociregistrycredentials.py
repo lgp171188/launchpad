@@ -89,7 +89,7 @@ class OCIRegistryCredentials(Storm):
 
     # The list of dict keys that should not be encrypted when storing
     # _credentials attribute.
-    UNENCRYPTED_CREDENTIALS_FIELDS = ['username', 'region']
+    _UNENCRYPTED_CREDENTIALS_FIELDS = ['username', 'region']
 
     def __init__(self, owner, url, credentials):
         self.owner = owner
@@ -117,14 +117,14 @@ class OCIRegistryCredentials(Storm):
         copy = value.copy()
         # Remove fields that should not be encrypted.
         unencrypted_fields = {}
-        for field in self.UNENCRYPTED_CREDENTIALS_FIELDS:
+        for field in self._UNENCRYPTED_CREDENTIALS_FIELDS:
             unencrypted_fields[field] = copy.pop(field, None)
         # Encrypt the rest of the dict.
         data = {
             "credentials_encrypted": removeSecurityProxy(
                 container.encrypt(json.dumps(copy).encode('UTF-8')))}
         # Put back the fields that shouldn't be encrypted.
-        for field in self.UNENCRYPTED_CREDENTIALS_FIELDS:
+        for field in self._UNENCRYPTED_CREDENTIALS_FIELDS:
             value = unencrypted_fields[field]
             if value is not None:
                 data[field] = value
