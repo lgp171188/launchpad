@@ -1,6 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from datetime import datetime
@@ -67,6 +69,10 @@ class FileUploadProtocol(basic.LineReceiver):
 
     def lineReceived(self, line):
         try:
+            try:
+                line = line.decode('UTF-8')
+            except UnicodeDecodeError:
+                raise ProtocolViolation('Non-data lines must be in UTF-8')
             getattr(self, 'line_' + self.state, self.badLine)(line)
         except ProtocolViolation as e:
             self.sendError(e.msg)
@@ -156,11 +162,6 @@ class FileUploadProtocol(basic.LineReceiver):
     def command_STORE(self, args):
         try:
             size, name = args.split(None, 1)
-            try:
-                name = name.decode('utf-8')
-            except:
-                raise ProtocolViolation(
-                    "STORE command expects the filename to be in UTF-8")
             size = int(size)
         except ValueError:
             raise ProtocolViolation(
