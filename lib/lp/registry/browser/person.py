@@ -3740,7 +3740,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
         region = TextLine(
             __name__=self._getFieldName('region', id),
-            default=credentials.getCredentialsValue("region"),
+            default=credentials.region,
             required=False, readonly=False)
 
         delete = Bool(
@@ -3918,11 +3918,8 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             credentials.url = parsed_credentials["url"]
         elif parsed_credentials["url"] != credentials.url:
             credentials.url = parsed_credentials["url"]
-        if credentials.getCredentialsValue('region') != region:
-            credentials_data = removeSecurityProxy(
-                credentials.getCredentials())
-            credentials_data["region"] = region
-            credentials.setCredentials(credentials_data)
+        if credentials.region != region:
+            removeSecurityProxy(credentials).region = region
         if owner != credentials.owner:
             credentials.owner = owner
 

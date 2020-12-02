@@ -57,13 +57,16 @@ class IOCIRegistryCredentialsView(Interface):
     def getCredentials():
         """Get the saved credentials."""
 
-    def getCredentialsValue(key):
-        """Gets the credential value for a specific key."""
-
     username = TextLine(
         title=_("Username"),
         description=_("The username for the credentials, if available."),
         required=True,
+        readonly=True)
+
+    region = TextLine(
+        title=_("Region"),
+        description=_("The registry region, if available."),
+        required=False,
         readonly=True)
 
 

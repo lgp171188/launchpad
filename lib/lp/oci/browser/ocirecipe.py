@@ -363,8 +363,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                         __name__=self._getFieldName('url', elem.id),
                         default=elem.registry_credentials.url,
                         required=True, readonly=True))
-                region = elem.registry_credentials.getCredentialsValue(
-                    'region')
+                region = elem.registry_credentials.region
                 region_fields.append(
                     TextLine(
                         __name__=self._getFieldName('region', elem.id),
