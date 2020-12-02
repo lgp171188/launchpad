@@ -90,6 +90,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.buglink import IBugLinkTarget
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.model.buglinktarget import BugLinkTargetMixin
+from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -116,7 +117,6 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
-from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
@@ -133,6 +133,7 @@ from lp.services.worlddata.helpers import is_english_variant
 from lp.services.worlddata.interfaces.language import ILanguage
 from lp.services.worlddata.model.language import Language
 from lp.services.xref.interfaces import IXRefSet
+from lp.services.xref.model import XRef
 
 
 class notify_question_modified:
@@ -743,34 +744,28 @@ class QuestionSet:
         # This query joins to bugtasks that are not BugTaskStatus.INVALID
         # because there are many bugtasks to one question. A question is
         # included when BugTask.status IS NULL.
-        store = IStore(Question)
-        old_result = store.execute(
-            """
-            id in (SELECT Question.id
-                FROM Question
-                LEFT OUTER JOIN XRef ON (
-                    XRef.from_type = 'question'
-                    AND XRef.from_id_int = Question.id
-                    AND XRef.to_type = 'bug')
-                LEFT OUTER JOIN BugTask ON (
-                    BugTask.bug = XRef.to_id_int
-                    AND BugTask.status != %s)
-                WHERE
-                    Question.status IN (%s, %s)
-                    AND (Question.datelastresponse IS NULL
-                         OR Question.datelastresponse < (CURRENT_TIMESTAMP
-                            AT TIME ZONE 'UTC' - interval '%s days'))
-                    AND Question.datelastquery < (CURRENT_TIMESTAMP
-                            AT TIME ZONE 'UTC' - interval '%s days')
-                    AND Question.assignee IS NULL
-                    AND BugTask.status IS NULL)
-            """ % sqlvalues(BugTaskStatus.INVALID,
-                  QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-                  days_before_expiration, days_before_expiration))
-
-        result = store.find(Question)
-
-        return old_result.get_all()
+        origin = [
+            Question,
+            LeftJoin(XRef, And(
+                XRef.from_type == u'question',
+                XRef.from_id_int == Question.id,
+                XRef.to_type == u'bug')),
+            LeftJoin(BugTask, And(
+                BugTask.bug == XRef.to_id_int,
+                BugTask.status != BugTaskStatus.INVALID)),
+            ]
+        expiry = datetime.now(
+            pytz.timezone('UTC')) - timedelta(days=days_before_expiration)
+        return IStore(Question).using(*origin).find(
+            Question,
+            Question.status.is_in(
+                (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO)),
+            Or(
+                Question.datelastresponse == None,
+                Question.datelastresponse < expiry),
+            Question.datelastquery < expiry,
+            Question.assignee == None,
+            BugTask._status == None).config(distinct=True)
 
     def searchQuestions(self, search_text=None, language=None,
                       status=QUESTION_STATUS_DEFAULT_SEARCH, sort=None):
