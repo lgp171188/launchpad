@@ -105,10 +105,12 @@ XXX cprov 20051209: need to build a broken upload to test it properly
 
 Confirm we can now find ed published in hoary.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> from lp.soyuz.model.publishing import SourcePackagePublishingHistory
-    >>> for release in SourcePackagePublishingHistory.selectBy(
-    ...     distroseries=hoary, status=PackagePublishingStatus.PENDING):
+    >>> for release in IStore(SourcePackagePublishingHistory).find(
+    ...         SourcePackagePublishingHistory,
+    ...         distroseries=hoary, status=PackagePublishingStatus.PENDING):
     ...     if release.sourcepackagerelease.sourcepackagename.name == "ed":
     ...         print(release.sourcepackagerelease.version)
     0.2-20
