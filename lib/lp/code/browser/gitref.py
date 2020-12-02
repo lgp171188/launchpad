@@ -250,7 +250,7 @@ class GitRefRegisterMergeProposalSchema(Interface):
 
     prerequisite_git_ref = copy_field(
         IBranchMergeProposal['prerequisite_git_ref'], required=False,
-        description=_("If the target branch is based on a different branch, "
+        description=_("If the source branch is based on a different branch, "
                       "you can add this as a prerequisite. "
                       "The changes from that branch will not show "
                       "in the diff."))
