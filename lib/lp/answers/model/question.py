@@ -13,7 +13,7 @@ __all__ = [
     'QuestionTargetMixin',
     ]
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.utils import make_msgid
 import operator
 
@@ -29,7 +29,10 @@ from lazr.lifecycle.snapshot import Snapshot
 from lp.services.database.stormbase import StormBase
 import pytz
 import six
-from storm.expr import LeftJoin
+from storm.expr import (
+    Alias,
+    LeftJoin,
+    )
 from storm.locals import (
     And,
     ClassAlias,
@@ -741,7 +744,7 @@ class QuestionSet:
         # because there are many bugtasks to one question. A question is
         # included when BugTask.status IS NULL.
         store = IStore(Question)
-        result = store.execute(
+        old_result = store.execute(
             """
             id in (SELECT Question.id
                 FROM Question
@@ -761,10 +764,13 @@ class QuestionSet:
                             AT TIME ZONE 'UTC' - interval '%s days')
                     AND Question.assignee IS NULL
                     AND BugTask.status IS NULL)
-            """, (BugTaskStatus.INVALID,
+            """ % sqlvalues(BugTaskStatus.INVALID,
                   QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
                   days_before_expiration, days_before_expiration))
-        return result.get_all()
+
+        result = store.find(Question)
+
+        return old_result.get_all()
 
     def searchQuestions(self, search_text=None, language=None,
                       status=QUESTION_STATUS_DEFAULT_SEARCH, sort=None):
@@ -781,31 +787,31 @@ class QuestionSet:
     def getMostActiveProjects(self, limit=5):
         """See `IQuestionSet`."""
 
-        results = IStore(Question).execute("""
-            SELECT product, distribution, count(*) AS "question_count"
-            FROM (
-                SELECT product, distribution
-                FROM Question
-                    LEFT OUTER JOIN Product ON (Question.product = Product.id)
-                    LEFT OUTER JOIN Distribution ON (
-                        Question.distribution = Distribution.id)
-                WHERE
-                    ((Product.answers_usage = %s AND Product.active)
-                    OR Distribution.answers_usage = %s)
-                    AND Question.datecreated > (
-                        current_timestamp -interval '60 days')
-                LIMIT 5000
-            ) AS "RecentQuestions"
-            GROUP BY product, distribution
-            ORDER BY question_count DESC
-            LIMIT %s
-            """ % sqlvalues(
-                ServiceUsage.LAUNCHPAD, ServiceUsage.LAUNCHPAD, limit))
+        from lp.registry.model.product import Product
+        from lp.registry.model.distribution import Distribution
+
+        time_cutoff = datetime.now(pytz.timezone('UTC')) - timedelta(days=60)
+        question_count = Alias(Count())
+        results = IStore(Question).using(
+                Question,
+                LeftJoin(Product, Question.product_id == Product.id),
+                LeftJoin(Distribution,
+                         Question.distribution_id == Distribution.id)
+                ).find(
+            (Question.product_id, Question.distribution_id, question_count),
+            Or(
+                And(Product._answers_usage == ServiceUsage.LAUNCHPAD,
+                    Product.active),
+                Distribution._answers_usage == ServiceUsage.LAUNCHPAD),
+            Question.datecreated > time_cutoff
+            ).group_by(
+                Question.product_id, Question.distribution_id
+            ).order_by(Desc(question_count))[:limit]
 
         projects = []
         product_set = getUtility(IProductSet)
         distribution_set = getUtility(IDistributionSet)
-        for product_id, distribution_id, ignored in results.get_all():
+        for product_id, distribution_id, _ in results:
             if product_id:
                 projects.append(product_set.get(product_id))
             elif distribution_id:
