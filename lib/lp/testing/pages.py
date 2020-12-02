@@ -238,7 +238,7 @@ def find_portlet(content, name):
     ending whitespace is also ignored, as are non-text elements such as
     images.
     """
-    whitespace_re = re.compile('\s+')
+    whitespace_re = re.compile(r'\s+')
     name = whitespace_re.sub(' ', name.strip())
     for portlet in find_tags_by_class(content, 'portlet'):
         if portlet.find('h2'):
@@ -439,7 +439,7 @@ def parse_relationship_section(content):
     """
     soup = BeautifulSoup(content)
     section = soup.find('ul')
-    whitespace_re = re.compile('\s+')
+    whitespace_re = re.compile(r'\s+')
     if section is None:
         print('EMPTY SECTION')
         return

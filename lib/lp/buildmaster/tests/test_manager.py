@@ -1006,8 +1006,8 @@ class TestSlaveScannerWithoutDB(TestCase):
 
         with ExpectedException(
                 BuildDaemonIsolationError,
-                "Allegedly clean slave not idle "
-                "\(u'BuilderStatus.BUILDING' instead\)"):
+                r"Allegedly clean slave not idle "
+                r"\(u'BuilderStatus.BUILDING' instead\)"):
             yield scanner.scan()
         self.assertEqual(['status'], slave.call_log)
 

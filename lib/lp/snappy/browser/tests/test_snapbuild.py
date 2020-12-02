@@ -198,7 +198,7 @@ class TestSnapBuildView(TestCaseWithFactory):
                 soupmatchers.Within(
                     soupmatchers.Tag(
                         "store upload error message", "li",
-                        text=re.compile(".*Scan failed\..*")),
+                        text=re.compile(r".*Scan failed\..*")),
                     soupmatchers.Tag(
                         "store upload error link", "a",
                         attrs={"href": "link1"}, text="(?)")))))
@@ -210,7 +210,7 @@ class TestSnapBuildView(TestCaseWithFactory):
                 soupmatchers.Within(
                     soupmatchers.Tag(
                         "store upload error message", "li",
-                        text=re.compile(".*Classic not allowed\..*")),
+                        text=re.compile(r".*Classic not allowed\..*")),
                     soupmatchers.Tag(
                         "store upload error link", "a",
                         attrs={"href": "link2"}, text="(?)")))))

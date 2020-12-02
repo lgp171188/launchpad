@@ -39,10 +39,10 @@ from lp.services.config import config
 TEST = os.path.join(config.root, "bin/test")
 
 # Regular expression to match numbered stories.
-STORY_RE = re.compile("(.*)/\d{2}-.*")
+STORY_RE = re.compile(r"(.*)/\d{2}-.*")
 
 # Regular expression to remove terminal color escapes.
-COLOR_RE = re.compile("\x1b[[][0-9;]+m")
+COLOR_RE = re.compile(r"\x1b[[][0-9;]+m")
 
 
 def decolorize(text):
