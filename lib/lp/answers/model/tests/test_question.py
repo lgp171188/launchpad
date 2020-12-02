@@ -2,9 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
-from datetime import datetime, timedelta
-from lp.services import database
+from datetime import (
+    datetime,
+    timedelta,
+    )
+
 import pytz
+
+from lp.services import database
+
 
 __metaclass__ = type
 

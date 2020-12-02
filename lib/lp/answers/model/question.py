@@ -13,7 +13,10 @@ __all__ = [
     'QuestionTargetMixin',
     ]
 
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta,
+    )
 from email.utils import make_msgid
 import operator
 
@@ -26,7 +29,6 @@ from lazr.lifecycle.event import (
     ObjectModifiedEvent,
     )
 from lazr.lifecycle.snapshot import Snapshot
-from lp.services.database.stormbase import StormBase
 import pytz
 import six
 from storm.expr import (
@@ -117,6 +119,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
