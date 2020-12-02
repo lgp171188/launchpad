@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Archive Domination class.
@@ -79,10 +79,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.orderingcheck import OrderingCheck
 from lp.soyuz.enums import (
     BinaryPackageFormat,
@@ -95,6 +92,7 @@ from lp.soyuz.interfaces.publishing import (
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
@@ -537,34 +535,31 @@ class Dominator:
             # Attempt to find all binaries of this
             # SourcePackageRelease which are/have been in this
             # distroseries...
-            considered_binaries = BinaryPackagePublishingHistory.select("""
-            binarypackagepublishinghistory.distroarchseries =
-                distroarchseries.id AND
-            binarypackagepublishinghistory.scheduleddeletiondate IS NULL AND
-            binarypackagepublishinghistory.dateremoved IS NULL AND
-            binarypackagepublishinghistory.archive = %s AND
-            binarypackagebuild.source_package_release = %s AND
-            distroarchseries.distroseries = %s AND
-            binarypackagepublishinghistory.binarypackagerelease =
-            binarypackagerelease.id AND
-            binarypackagerelease.build = binarypackagebuild.id AND
-            binarypackagepublishinghistory.pocket = %s
-            """ % sqlvalues(self.archive, srcpkg_release,
-                            pub_record.distroseries, pub_record.pocket),
-            clauseTables=['DistroArchSeries', 'BinaryPackageRelease',
-                          'BinaryPackageBuild'])
+            considered_binaries = IStore(BinaryPackagePublishingHistory).find(
+                BinaryPackagePublishingHistory.distroarchseries ==
+                    DistroArchSeries.id,
+                BinaryPackagePublishingHistory.scheduleddeletiondate == None,
+                BinaryPackagePublishingHistory.dateremoved == None,
+                BinaryPackagePublishingHistory.archive == self.archive,
+                BinaryPackageBuild.source_package_release == srcpkg_release,
+                DistroArchSeries.distroseries == pub_record.distroseries,
+                BinaryPackagePublishingHistory.binarypackagerelease ==
+                    BinaryPackageRelease.id,
+                BinaryPackageRelease.build == BinaryPackageBuild.id,
+                BinaryPackagePublishingHistory.pocket == pub_record.pocket)
 
             # There is at least one non-removed binary to consider
             if not considered_binaries.is_empty():
                 # However we can still remove *this* record if there's
                 # at least one other PUBLISHED for the spr. This happens
                 # when a package is moved between components.
-                published = SourcePackagePublishingHistory.selectBy(
+                published = IStore(SourcePackagePublishingHistory).find(
+                    SourcePackagePublishingHistory,
                     distroseries=pub_record.distroseries,
                     pocket=pub_record.pocket,
                     status=PackagePublishingStatus.PUBLISHED,
                     archive=self.archive,
-                    sourcepackagereleaseID=srcpkg_release.id)
+                    sourcepackagerelease=srcpkg_release)
                 # Zero PUBLISHED for this spr, so nothing to take over
                 # for us, so leave it for consideration next time.
                 if published.is_empty():
@@ -857,30 +852,27 @@ class Dominator:
 
     def judge(self, distroseries, pocket):
         """Judge superseded sources and binaries."""
-        sources = SourcePackagePublishingHistory.select("""
-            sourcepackagepublishinghistory.distroseries = %s AND
-            sourcepackagepublishinghistory.archive = %s AND
-            sourcepackagepublishinghistory.pocket = %s AND
-            sourcepackagepublishinghistory.status IN %s AND
-            sourcepackagepublishinghistory.scheduleddeletiondate is NULL AND
-            sourcepackagepublishinghistory.dateremoved is NULL
-            """ % sqlvalues(
-                distroseries, self.archive, pocket,
-                inactive_publishing_status))
-
-        binaries = BinaryPackagePublishingHistory.select("""
-            binarypackagepublishinghistory.distroarchseries =
-                distroarchseries.id AND
-            distroarchseries.distroseries = %s AND
-            binarypackagepublishinghistory.archive = %s AND
-            binarypackagepublishinghistory.pocket = %s AND
-            binarypackagepublishinghistory.status IN %s AND
-            binarypackagepublishinghistory.scheduleddeletiondate is NULL AND
-            binarypackagepublishinghistory.dateremoved is NULL
-            """ % sqlvalues(
-                distroseries, self.archive, pocket,
+        sources = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.distroseries == distroseries,
+            SourcePackagePublishingHistory.archive == self.archive,
+            SourcePackagePublishingHistory.pocket == pocket,
+            SourcePackagePublishingHistory.status.is_in(
                 inactive_publishing_status),
-            clauseTables=['DistroArchSeries'])
+            SourcePackagePublishingHistory.scheduleddeletiondate == None,
+            SourcePackagePublishingHistory.dateremoved == None)
+
+        binaries = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                DistroArchSeries.id,
+            DistroArchSeries.distroseries == distroseries,
+            BinaryPackagePublishingHistory.archive == self.archive,
+            BinaryPackagePublishingHistory.pocket == pocket,
+            BinaryPackagePublishingHistory.status.is_in(
+                inactive_publishing_status),
+            BinaryPackagePublishingHistory.scheduleddeletiondate == None,
+            BinaryPackagePublishingHistory.dateremoved == None)
 
         self._judgeSuperseded(sources, binaries)
 
