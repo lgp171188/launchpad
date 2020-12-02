@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build views."""
@@ -247,6 +247,38 @@ class TestSnapBuildOperations(BrowserTestCase):
         self.requester = self.build.requester
         self.buildd_admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+
+    def test_retry_build(self):
+        # The requester of a build can retry it.
+        self.build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        transaction.commit()
+        browser = self.getViewBrowser(self.build, user=self.requester)
+        browser.getLink("Retry this build").click()
+        self.assertEqual(self.build_url, browser.getLink("Cancel").url)
+        browser.getControl("Retry build").click()
+        self.assertEqual(self.build_url, browser.url)
+        login(ANONYMOUS)
+        self.assertEqual(BuildStatus.NEEDSBUILD, self.build.status)
+
+    def test_retry_build_random_user(self):
+        # An unrelated non-admin user cannot retry a build.
+        self.build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        transaction.commit()
+        user = self.factory.makePerson()
+        browser = self.getViewBrowser(self.build, user=user)
+        self.assertRaises(
+            LinkNotFoundError, browser.getLink, "Retry this build")
+        self.assertRaises(
+            Unauthorized, self.getUserBrowser, self.build_url + "/+retry",
+            user=user)
+
+    def test_retry_build_wrong_state(self):
+        # If the build isn't in an unsuccessful terminal state, you can't
+        # retry it.
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        browser = self.getViewBrowser(self.build, user=self.requester)
+        self.assertRaises(
+            LinkNotFoundError, browser.getLink, "Retry this build")
 
     def test_cancel_build(self):
         # The requester of a build can cancel it.

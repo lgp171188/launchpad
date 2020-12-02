@@ -1,4 +1,4 @@
-<!-- Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -110,6 +110,12 @@
             permission="launchpad.View"
             name="+index"
             template="../templates/snapbuild-index.pt" />
+        <browser:page
+            for="lp.snappy.interfaces.snapbuild.ISnapBuild"
+            class="lp.snappy.browser.snapbuild.SnapBuildRetryView"
+            permission="launchpad.Edit"
+            name="+retry"
+            template="../templates/snapbuild-retry.pt" />
         <browser:page
             for="lp.snappy.interfaces.snapbuild.ISnapBuild"
             class="lp.snappy.browser.snapbuild.SnapBuildCancelView"
