@@ -53,7 +53,7 @@ def get_potmsgset_key(potmsgset):
     """
     potmsgset = removeSecurityProxy(potmsgset)
     return (
-        potmsgset.msgid_singularID, potmsgset.msgid_pluralID,
+        potmsgset.msgid_singular_id, potmsgset.msgid_plural_id,
         potmsgset.context)
 
 
