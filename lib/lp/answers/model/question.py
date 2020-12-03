@@ -755,7 +755,7 @@ class QuestionSet:
                 XRef.to_type == u'bug')),
             LeftJoin(BugTask, And(
                 BugTask.bug == XRef.to_id_int,
-                BugTask.status != BugTaskStatus.INVALID)),
+                BugTask._status != BugTaskStatus.INVALID)),
             ]
         expiry = datetime.now(pytz.UTC) - timedelta(
             days=days_before_expiration)
@@ -790,12 +790,13 @@ class QuestionSet:
 
         time_cutoff = datetime.now(pytz.UTC) - timedelta(days=60)
         question_count = Alias(Count())
-        results = IStore(Question).using(
-                Question,
-                LeftJoin(Product, Question.product_id == Product.id),
-                LeftJoin(Distribution,
-                         Question.distribution_id == Distribution.id)
-                ).find(
+
+        origin = (Question,
+                  LeftJoin(Product, Question.product_id == Product.id),
+                  LeftJoin(Distribution,
+                           Question.distribution_id == Distribution.id))
+
+        results = IStore(Question).using(*origin).find(
             (Question.product_id, Question.distribution_id, question_count),
             Or(
                 And(Product._answers_usage == ServiceUsage.LAUNCHPAD,
@@ -1309,7 +1310,7 @@ class QuestionTargetMixin:
             datecreated=bug.datecreated)
         # Give the datelastresponse a current datetime, otherwise the
         # Launchpad Janitor would quickly expire questions made from old bugs.
-        question.datelastresponse = datetime.now(pytz.UTC))
+        question.datelastresponse = datetime.now(pytz.UTC)
         # Directly create the BugLink so that users do not receive duplicate
         # messages about the bug.
         question.createBugLink(bug)
@@ -1326,8 +1327,8 @@ class QuestionTargetMixin:
 
     def getQuestion(self, question_id):
         """See `IQuestionTarget`."""
-        store = Store.of(self)
-        question = store.get(Question, question_id)
+        question = IStore(Question).find(
+            Question, Question.id == question_id).one()
         if not question:
             return None
         # Verify that the question is actually for this target.
@@ -1350,11 +1351,8 @@ class QuestionTargetMixin:
         """See `IQuestionTarget`."""
         query = [Language.id == Question.language_id]
         for column, target in self.getTargetTypes().items():
-            if target is None:
-                query.append(getattr(Question, column) is None)
-            else:
-                query.append(getattr(Question, column) == target)
-        results = IStore(Language).find(Question, query).config(distinct=True)
+            query.append(getattr(Question, column) == target)
+        results = IStore(Question).find(Language, *query).config(distinct=True)
         return results
 
     @property
@@ -1464,10 +1462,7 @@ class QuestionTargetMixin:
         query = []
         targets = self.getTargetTypes()
         for column, target in targets.items():
-            if target is None:
-                query.append(getattr(AnswerContact, column) is None)
-            else:
-                query.append(getattr(AnswerContact, column) == target)
+            query.append(getattr(AnswerContact, column) == target)
         query.append(
             And(
                 AnswerContact.person == PersonLanguage.person_id,
@@ -1476,13 +1471,14 @@ class QuestionTargetMixin:
         # Using a LIKE constraint is suboptimal. We would not need this
         # if-else clause if variant languages knew their parent language.
         if language.code == 'en':
-            query.append(Language.code.like(language.code))
+            query.append(Language.code.startswith(language.code))
         else:
             query.append(Language.id == language.id)
 
         query.append(AnswerContact.person == Person.id)
         results = IStore(Person).find(
-            Person, query).config(distinct=True).order_by("Person.displayname")
+            Person, *query).config(distinct=True).order_by(
+                "Person.displayname")
         return results
 
     def getAnswerContactRecipients(self, language):
