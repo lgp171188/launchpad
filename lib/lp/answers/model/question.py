@@ -757,8 +757,8 @@ class QuestionSet:
                 BugTask.bug == XRef.to_id_int,
                 BugTask.status != BugTaskStatus.INVALID)),
             ]
-        expiry = datetime.now(
-            pytz.timezone('UTC')) - timedelta(days=days_before_expiration)
+        expiry = datetime.now(pytz.UTC) - timedelta(
+            days=days_before_expiration)
         return IStore(Question).using(*origin).find(
             Question,
             Question.status.is_in(
@@ -788,7 +788,7 @@ class QuestionSet:
         from lp.registry.model.product import Product
         from lp.registry.model.distribution import Distribution
 
-        time_cutoff = datetime.now(pytz.timezone('UTC')) - timedelta(days=60)
+        time_cutoff = datetime.now(pytz.UTC) - timedelta(days=60)
         question_count = Alias(Count())
         results = IStore(Question).using(
                 Question,
@@ -1309,7 +1309,7 @@ class QuestionTargetMixin:
             datecreated=bug.datecreated)
         # Give the datelastresponse a current datetime, otherwise the
         # Launchpad Janitor would quickly expire questions made from old bugs.
-        question.datelastresponse = datetime.now(pytz.timezone('UTC'))
+        question.datelastresponse = datetime.now(pytz.UTC))
         # Directly create the BugLink so that users do not receive duplicate
         # messages about the bug.
         question.createBugLink(bug)
