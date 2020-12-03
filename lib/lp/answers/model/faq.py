@@ -96,7 +96,7 @@ class FAQ(SQLBase):
             return self.distribution
 
     def destroySelf(self):
-        if self.related_questions:
+        if not self.related_questions.is_empty():
             raise CannotDeleteFAQ(
                "Cannot delete FAQ: questions must be unlinked first.")
         super(FAQ, self).destroySelf()
