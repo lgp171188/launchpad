@@ -592,7 +592,7 @@ Users without launchpad.Moderator privileges cannot set the assignee.
     >>> question.assignee = sample_person
     Traceback (most recent call last):
       ...
-    Unauthorized: (<Question ...>, 'assignee', 'launchpad.Append')
+    Unauthorized: (<lp.answers.model.question.Question ...>, 'assignee', 'launchpad.Append')
 
 
 Events

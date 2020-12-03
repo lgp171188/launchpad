@@ -20,6 +20,7 @@ from sqlobject import (
     StringCol,
     )
 from storm.expr import And
+from storm.references import ReferenceSet
 from zope.event import notify
 from zope.interface import implementer
 
@@ -83,8 +84,8 @@ class FAQ(SQLBase):
         dbName='distribution', foreignKey='Distribution', notNull=False,
         default=None)
 
-    related_questions = SQLMultipleJoin(
-        'Question', joinColumn='faq', orderBy=['Question.datecreated'])
+    related_questions = ReferenceSet(
+        'id', 'Question.faq_id', order_by=('Question.datecreated'))
 
     @property
     def target(self):
