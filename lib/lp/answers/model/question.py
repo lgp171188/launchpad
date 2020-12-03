@@ -841,8 +841,11 @@ class QuestionSet:
 
     def get(self, question_id, default=None):
         """See `IQuestionSet`."""
-        store = IStore(Question)
-        question = store.get(Question, question_id)
+        # search views produce strings, not integers
+        question_id = int(question_id)
+        question = IStore(Question).find(
+            Question,
+            Question.id == question_id).one()
         return question or default
 
     def getOpenQuestionCountByPackages(self, packages):
