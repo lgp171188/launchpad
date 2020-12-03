@@ -239,7 +239,7 @@ class Question(StormBase, BugLinkTargetMixin):
         order_by='QuestionReopening.datecreated')
 
     def __init__(self, title, description, owner, product, distribution,
-                 language, sourcepackagename, datecreated, datelastquery):
+                 language, sourcepackagename, datecreated):
         self.title = title
         self.description = description
         self.owner = owner
@@ -248,7 +248,7 @@ class Question(StormBase, BugLinkTargetMixin):
         self.sourcepackagename = sourcepackagename
         self.datecreated = datecreated
         self.language = language
-        self.datelastquery = datelastquery
+        self.datelastquery = datecreated
 
     @property
     def messages(self):
@@ -831,8 +831,7 @@ class QuestionSet:
         question = Question(
             title=title, description=description, owner=owner,
             product=product, distribution=distribution, language=language,
-            sourcepackagename=sourcepackagename, datecreated=datecreated,
-            datelastquery=datecreated)
+            sourcepackagename=sourcepackagename, datecreated=datecreated)
 
         # Subscribe the submitter
         question.subscribe(owner)
