@@ -3909,14 +3909,16 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                         "confirm_password", credentials.id),
                     "Passwords do not match.")
             else:
-                credentials.setCredentials(
-                    {"username": username,
-                     "password": password})
-                credentials.url = parsed_credentials["url"]
+                raw_credentials = {
+                    "username": username,
+                    "password": password,
+                    }
+                if region:
+                    raw_credentials["region"] = region
+                credentials.setCredentials(raw_credentials)
         elif username != credentials.username:
             removeSecurityProxy(credentials).username = username
-            credentials.url = parsed_credentials["url"]
-        elif parsed_credentials["url"] != credentials.url:
+        if parsed_credentials["url"] != credentials.url:
             credentials.url = parsed_credentials["url"]
         if credentials.region != region:
             removeSecurityProxy(credentials).region = region
@@ -3969,6 +3971,8 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                         "username.")
             else:
                 credentials = {'username': username}
+                if region:
+                    credentials["region"] = region
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
                         registrant=self.user, owner=owner, url=url,

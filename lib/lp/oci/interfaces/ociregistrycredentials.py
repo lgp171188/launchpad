@@ -42,7 +42,8 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
 
     def __init__(self):
         super(OCIRegistryCredentialsAlreadyExist, self).__init__(
-            "Credentials already exist with the same URL and username.")
+            "Credentials already exist with the same URL, username, and "
+            "region.")
 
 
 @error_status(http_client.UNAUTHORIZED)
