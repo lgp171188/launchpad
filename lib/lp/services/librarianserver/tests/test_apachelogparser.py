@@ -1,6 +1,8 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from datetime import datetime
 import io
 import os
@@ -35,52 +37,52 @@ class TestRequestParsing(TestCase):
     def assertMethodAndFileIDAreCorrect(self, request):
         method, path = get_method_and_path(request)
         file_id = get_library_file_id(path)
-        self.assertEqual(method, 'GET')
+        self.assertEqual(method, b'GET')
         self.assertEqual(file_id, '8196569')
 
     def test_return_value(self):
-        request = 'GET /8196569/mediumubuntulogo.png HTTP/1.1'
+        request = b'GET /8196569/mediumubuntulogo.png HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_return_value_for_http_path(self):
-        request = ('GET http://launchpadlibrarian.net/8196569/'
-                   'mediumubuntulogo.png HTTP/1.1')
+        request = (b'GET http://launchpadlibrarian.net/8196569/'
+                   b'mediumubuntulogo.png HTTP/1.1')
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_extra_slashes_are_ignored(self):
-        request = 'GET http://launchpadlibrarian.net//8196569//foo HTTP/1.1'
+        request = b'GET http://launchpadlibrarian.net//8196569//foo HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
-        request = 'GET //8196569//foo HTTP/1.1'
+        request = b'GET //8196569//foo HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_multiple_consecutive_white_spaces(self):
         # Some request strings might have multiple consecutive white spaces,
         # but they're parsed just like if they didn't have the extra spaces.
-        request = 'GET /8196569/mediumubuntulogo.png  HTTP/1.1'
+        request = b'GET /8196569/mediumubuntulogo.png  HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_return_value_for_https_path(self):
-        request = ('GET https://launchpadlibrarian.net/8196569/'
-                   'mediumubuntulogo.png HTTP/1.1')
+        request = (b'GET https://launchpadlibrarian.net/8196569/'
+                   b'mediumubuntulogo.png HTTP/1.1')
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_return_value_for_request_missing_http_version(self):
         # HTTP 1.0 requests might omit the HTTP version so we must cope with
         # them.
-        request = 'GET https://launchpadlibrarian.net/8196569/foo.png'
+        request = b'GET https://launchpadlibrarian.net/8196569/foo.png'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_requests_for_paths_that_are_not_of_an_lfa_return_none(self):
-        request = 'GET https://launchpadlibrarian.net/ HTTP/1.1'
+        request = b'GET https://launchpadlibrarian.net/ HTTP/1.1'
         self.assertEqual(
             get_library_file_id(get_method_and_path(request)[1]), None)
 
-        request = 'GET /robots.txt HTTP/1.1'
+        request = b'GET /robots.txt HTTP/1.1'
         self.assertEqual(
             get_library_file_id(get_method_and_path(request)[1]), None)
 
-        request = 'GET /@@person HTTP/1.1'
+        request = b'GET /@@person HTTP/1.1'
         self.assertEqual(
             get_library_file_id(get_method_and_path(request)[1]), None)
 

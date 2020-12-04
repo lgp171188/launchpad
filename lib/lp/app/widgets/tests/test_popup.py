@@ -147,8 +147,8 @@ class TestVocabularyPickerWidget(TestCaseWithFactory):
         self.assertIn(
             "Y.DOM.byId('field.test_valid.item-suggestions')", markup)
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            'Y.lp.app.picker.connect_select_menu\( '
-            'select_menu, text_input\);',
+            r'Y.lp.app.picker.connect_select_menu\( '
+            r'select_menu, text_input\);',
             markup)
 
     def test_widget_extra_buttons(self):

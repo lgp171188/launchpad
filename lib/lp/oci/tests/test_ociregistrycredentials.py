@@ -206,6 +206,29 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
 
         self.assertEqual(new.id, existing.id)
 
+    def test_getOrCreate_existing_by_region(self):
+        owner = self.factory.makePerson()
+        url = self.factory.getUniqueURL()
+        west_credentials = {
+            'username': 'foo', 'password': 'bar', 'region': 'west',
+            }
+        west = getUtility(IOCIRegistryCredentialsSet).new(
+            registrant=owner, owner=owner, url=url,
+            credentials=west_credentials)
+        east_credentials = {
+            'username': 'foo', 'password': 'bar', 'region': 'east',
+            }
+        east = getUtility(IOCIRegistryCredentialsSet).new(
+            registrant=owner, owner=owner, url=url,
+            credentials=east_credentials)
+        self.assertNotEqual(west.id, east.id)
+
+        existing_west = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+            registrant=owner, owner=owner, url=url,
+            credentials=west_credentials)
+
+        self.assertEqual(west.id, existing_west.id)
+
     def test_getOrCreate_new(self):
         owner = self.factory.makePerson()
         url = self.factory.getUniqueURL()

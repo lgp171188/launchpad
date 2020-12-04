@@ -1534,7 +1534,7 @@ class Bug(SQLBase, InformationTypeMixin):
     @cachedproperty
     def _question_from_bug(self):
         for question in self.questions:
-            if (question.ownerID == self.ownerID
+            if (question.owner_id == self.ownerID
                 and question.datecreated == self.datecreated):
                 return question
         return None

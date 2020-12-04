@@ -148,7 +148,7 @@ class parser:
             
             self._names.append(self.alias(element))
             
-            subpattern = '(\S*)'
+            subpattern = r'(\S*)'
             
             if hasquotes:
                 if element == '%r' or findreferreragent.search(element):

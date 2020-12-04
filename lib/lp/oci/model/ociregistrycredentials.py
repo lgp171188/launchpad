@@ -169,7 +169,8 @@ class OCIRegistryCredentialsSet:
         for existing in self.findByOwner(owner):
             url_match = existing.url == url
             username_match = existing.username == credentials.get('username')
-            if (url_match and username_match):
+            region_match = existing.region == credentials.get('region')
+            if url_match and username_match and region_match:
                 return existing
         return None
 

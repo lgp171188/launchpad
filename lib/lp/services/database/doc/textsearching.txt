@@ -689,9 +689,12 @@ rows will be excluded from the final search.
 
 More than 50% of the questions matches firefox:
 
-    >>> question_count = Question.select().count()
-    >>> firefox_questions = Question.select(
-    ...     'fti @@ ftq(%s)' % quote('firefox')).count()
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.database.stormexpr import fti_search
+    >>> question_count = IStore(Question).find(Question).count()
+    >>> firefox_questions = IStore(Question).find(
+    ...     Question,
+    ...     fti_search(Question, "firefox")).count()
     >>> float(firefox_questions) / question_count > 0.50
     True
 
@@ -732,10 +735,11 @@ considered a stop word by tsearch2).
     >>> from lp.registry.model.product import Product
     >>> firefox_product = getUtility(IProductSet).getByName('firefox')
 
-    >>> firefox_count = Question.select(
-    ...     'product = %s' % firefox_product.id).count()
-    >>> get_questions = Question.select(
-    ...     'fti @@ ftq(%s)' % quote('get')).count()
+    >>> firefox_count = IStore(Question).find(
+    ...     Question, Question.product_id == firefox_product.id).count()
+    >>> get_questions = IStore(Question).find(
+    ...     Question,
+    ...     fti_search(Question, "get")).count()
     >>> float(get_questions) / firefox_count > 0.50
     True
 
@@ -754,7 +758,7 @@ string:
 When there are no candidate rows, only stemming and stop words removal
 is done.
 
-    >>> Question.select('product = -1').count()
+    >>> IStore(Question).find(Question, Question.product_id == -1).count()
     0
     >>> nl_phrase_search('firefox is very slow on flickr', Question,
     ...                  [Question.product == -1])
@@ -776,16 +780,19 @@ mozilla-firefox source package.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     >>> firefox_package = ubuntu.getSourcePackage('mozilla-firefox')
-    >>> firefox_package_questions = Question.select(
-    ...     'distribution = %s AND sourcepackagename = %s' % sqlvalues(
-    ...     ubuntu, firefox_package.sourcepackagename))
+    >>> firefox_package_id =firefox_package.sourcepackagename.id
+    >>> firefox_package_questions = IStore(Question).find(
+    ...     Question,
+    ...     Question.distribution_id == ubuntu.id,
+    ...     Question.sourcepackagename_id == firefox_package_id)
     >>> firefox_package_questions.count() < 5
     True
 
 And more than half of these contain the keyword "firefox" in them:
 
-    >>> firefox_questions = Question.select(
-    ...     'fti @@ ftq(%s)' % quote('firefox')).count()
+    >>> firefox_questions = IStore(Question).find(
+    ...     Question,
+    ...     fti_search(Question, "firefox"))
     >>> float(get_questions) / firefox_package_questions.count() > 0.50
     True
 

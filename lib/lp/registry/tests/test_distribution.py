@@ -805,7 +805,7 @@ class TestDistributionWebservice(TestCaseWithFactory):
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution()
             self.factory.makeQuestion(
-                title="Crash with %s" % oopsid, target=distro)
+                title=u"Crash with %s" % oopsid, target=distro)
             distro_url = api_url(distro)
 
         now = datetime.datetime.now(tz=pytz.utc)
@@ -830,7 +830,7 @@ class TestDistributionWebservice(TestCaseWithFactory):
         # check the filter is tight enough - other contexts should not work.
         oopsid = "OOPS-abcdef1234"
         with person_logged_in(self.person):
-            self.factory.makeQuestion(title="Crash with %s" % oopsid)
+            self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
             distro = self.factory.makeDistribution()
             distro_url = api_url(distro)
         now = datetime.datetime.now(tz=pytz.utc)

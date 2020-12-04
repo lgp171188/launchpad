@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -1424,13 +1428,13 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: lp://dev/~test-person/\\+junk/snap-branch
+            Source: lp://dev/~test-person/\+junk/snap-branch
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1452,13 +1456,13 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: ~test-person/\\+git/snap-repository:master
+            Source: ~test-person/\+git/snap-repository:master
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1480,7 +1484,7 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
@@ -1514,7 +1518,7 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Successfully built 30 minutes ago buildlog \(.*\) i386
@@ -1541,7 +1545,7 @@ class TestSnapView(BaseTestSnapView):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Needs building in .* \(estimated\) i386
@@ -1573,7 +1577,7 @@ class TestSnapView(BaseTestSnapView):
         job.job._status = JobStatus.FAILED
         job.job.date_finished = datetime.now(pytz.UTC) - timedelta(hours=1)
         job.error_message = "Boom"
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Failed build request 1 hour ago \(Boom\)
@@ -1761,7 +1765,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
 
     def test_request_builds_page(self):
         # The +request-builds page is sane.
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Request builds for snap-name
             Snap packages
             snap-name
@@ -1769,7 +1773,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Source archive:
             Primary Archive for Ubuntu Linux
             PPA
-            \(Find\u2026\)
+            \(Find…\)
             Architectures:
             amd64
             i386

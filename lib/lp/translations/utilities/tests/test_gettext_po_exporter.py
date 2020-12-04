@@ -391,9 +391,9 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # first of the two messages is exported.
         template = self.factory.makePOTemplate()
         self.factory.makePOTMsgSet(
-            template, singular='%d foo', plural='%d foos', sequence=1)
+            template, singular=u'%d foo', plural=u'%d foos', sequence=1)
         self.factory.makePOTMsgSet(
-            template, singular='%d foo', plural='%d foox', sequence=2)
+            template, singular=u'%d foo', plural=u'%d foox', sequence=2)
 
         exported_file = template.export()
 
@@ -417,9 +417,9 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # non-obsolete one is exported.
         template = self.factory.makePOTemplate()
         obsolete_message = self.factory.makePOTMsgSet(
-            template, singular='%d goo', plural='%d goos', sequence=0)
+            template, singular=u'%d goo', plural=u'%d goos', sequence=0)
         current_message = self.factory.makePOTMsgSet(
-            template, singular='%d goo', plural='%d gooim', sequence=1)
+            template, singular=u'%d goo', plural=u'%d gooim', sequence=1)
 
         pofile = self.factory.makePOFile(
             potemplate=template, language_code='nl')

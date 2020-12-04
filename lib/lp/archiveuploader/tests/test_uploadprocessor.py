@@ -63,6 +63,7 @@ from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import (
     BufferLogger,
@@ -1022,8 +1023,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.publishPackage("foocomm", "1.0-1", archive=partner_archive)
 
         # Check the publishing record's archive and component.
-        foocomm_spph = SourcePackagePublishingHistory.selectOneBy(
-            sourcepackagerelease=foocomm_spr)
+        foocomm_spph = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            sourcepackagerelease=foocomm_spr).one()
         self.assertEqual(foocomm_spph.archive.description,
             'Partner archive')
         self.assertEqual(foocomm_spph.component.name,
@@ -1066,8 +1068,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.publishPackage("foocomm", "1.0-1", source=False)
 
         # Check the publishing record's archive and component.
-        foocomm_bpph = BinaryPackagePublishingHistory.selectOneBy(
-            binarypackagerelease=foocomm_bpr)
+        foocomm_bpph = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            binarypackagerelease=foocomm_bpr).one()
         self.assertEqual(foocomm_bpph.archive.description,
             'Partner archive')
         self.assertEqual(foocomm_bpph.component.name,

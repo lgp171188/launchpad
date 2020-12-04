@@ -4,6 +4,7 @@ SourcePackagePublishingHistory
 
 This class provides public access to publishing records via a SQL view.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.publishing import (
     ...     BinaryPackagePublishingHistory,
     ...     SourcePackagePublishingHistory,
@@ -12,7 +13,8 @@ This class provides public access to publishing records via a SQL view.
 Select a publishing record from the sampledata (pmount is a
 interesting one):
 
-    >>> spph = SourcePackagePublishingHistory.get(8)
+    >>> spph = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, 8)
     >>> spph.sourcepackagerelease.name, spph.distroseries.name
     (u'pmount', u'hoary')
 
@@ -312,7 +314,8 @@ Retrieve any SourcePackagePublishingHistory entry.
     ...     ISourcePackageReleaseFile)
     >>> from lp.soyuz.interfaces.publishing import (
     ...     IBinaryPackagePublishingHistory)
-    >>> spph = SourcePackagePublishingHistory.get(10)
+    >>> spph = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, 10)
 
     >>> print(spph.displayname)
     alsa-utils 1.0.8-1ubuntu1 in warty
@@ -483,10 +486,13 @@ archive index.
 Let's retrieve the 'insecure' corresponding publishing records since
 only they provide the API we are interested in.
 
-    >>> copied_source = SourcePackagePublishingHistory.get(copied_source.id)
+    >>> copied_source = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, copied_source.id)
 
-    >>> copied_binaries = [BinaryPackagePublishingHistory.get(bin.id)
-    ...                    for bin in copied_binaries]
+    >>> copied_binaries = [
+    ...     IStore(BinaryPackagePublishingHistory).get(
+    ...         BinaryPackagePublishingHistory, bin.id)
+    ...     for bin in copied_binaries]
 
 When we call createMissingBuilds method on the copied sources it won't
 create any builds since the binaries were copied over too.
@@ -740,8 +746,8 @@ Perform the source-only copy.
     >>> ppa_copied_source = ppa_source.copyTo(
     ...     hoary_test, PackagePublishingPocket.RELEASE, cprov.archive)
 
-    >>> ppa_copied_source = SourcePackagePublishingHistory.get(
-    ...     ppa_copied_source.id)
+    >>> ppa_copied_source = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, ppa_copied_source.id)
 
 createMissingBuilds will not create any builds because this is an
 intra-archive copy:
@@ -810,7 +816,8 @@ Let's perform the copy of the source and its i386 binary.
 
 The source and binary are present in hoary-test:
 
-    >>> copied_source = SourcePackagePublishingHistory.get(copied_source.id)
+    >>> copied_source = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, copied_source.id)
     >>> print(copied_source.displayname)
     mno 999 in hoary-test
 
@@ -879,7 +886,8 @@ BinaryPackageFile and IBinaryPackagePublishingHistory
     >>> from lp.soyuz.interfaces.files import (
     ...     IBinaryPackageFile)
 
-    >>> bpph = BinaryPackagePublishingHistory.get(15)
+    >>> bpph = IStore(BinaryPackagePublishingHistory).get(
+    ...     BinaryPackagePublishingHistory, 15)
     >>> print(bpph.displayname)
     mozilla-firefox 0.9 in woody i386
 

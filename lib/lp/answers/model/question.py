@@ -13,7 +13,10 @@ __all__ = [
     'QuestionTargetMixin',
     ]
 
-from datetime import datetime
+from datetime import (
+    datetime,
+    timedelta,
+    )
 from email.utils import make_msgid
 import operator
 
@@ -28,16 +31,15 @@ from lazr.lifecycle.event import (
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
+from storm.expr import (
+    Alias,
+    LeftJoin,
     )
-from storm.expr import LeftJoin
 from storm.locals import (
     And,
     ClassAlias,
+    Count,
+    DateTime,
     Desc,
     Int,
     Join,
@@ -46,6 +48,7 @@ from storm.locals import (
     Reference,
     Select,
     Store,
+    Unicode,
     )
 from storm.references import ReferenceSet
 from zope.component import getUtility
@@ -89,6 +92,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.buglink import IBugLinkTarget
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.model.buglinktarget import BugLinkTargetMixin
+from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -111,16 +115,11 @@ from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
-from lp.services.database.sqlbase import (
-    cursor,
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
@@ -137,6 +136,7 @@ from lp.services.worlddata.helpers import is_english_variant
 from lp.services.worlddata.interfaces.language import ILanguage
 from lp.services.worlddata.model.language import Language
 from lp.services.xref.interfaces import IXRefSet
+from lp.services.xref.model import XRef
 
 
 class notify_question_modified:
@@ -177,50 +177,50 @@ class notify_question_modified:
 
 
 @implementer(IQuestion, IBugLinkTarget)
-class Question(SQLBase, BugLinkTargetMixin):
+class Question(StormBase, BugLinkTargetMixin):
     """See `IQuestion`."""
 
-    _table = 'Question'
+    __storm_table__ = 'Question'
     _defaultOrder = ['-priority', 'datecreated']
 
     # db field names
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    title = StringCol(notNull=True)
-    description = StringCol(notNull=True)
-    language = ForeignKey(
-        dbName='language', notNull=True, foreignKey='Language')
-    status = EnumCol(
-        schema=QuestionStatus, notNull=True, default=QuestionStatus.OPEN)
-    priority = EnumCol(
-        schema=QuestionPriority, notNull=True,
-        default=QuestionPriority.NORMAL)
-    assignee = ForeignKey(
-        dbName='assignee', notNull=False, foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
-    answerer = ForeignKey(
-        dbName='answerer', notNull=False, foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+    id = Int(primary=True)
+    owner_id = Int(name='owner', allow_none=False,
+                   validator=validate_public_person)
+    owner = Reference(owner_id, 'Person.id')
+    title = Unicode(allow_none=False)
+    description = Unicode(allow_none=False)
+    language_id = Int(name="language", allow_none=False)
+    language = Reference(language_id, 'Language.id')
+    status = DBEnum(name="status", enum=QuestionStatus, allow_none=False,
+                    default=QuestionStatus.OPEN)
+    priority = DBEnum(name="priority", enum=QuestionPriority,
+                      allow_none=False, default=QuestionPriority.NORMAL)
+    assignee_id = Int(name="assignee", allow_none=True,
+                      validator=validate_public_person, default=None)
+    assignee = Reference(assignee_id, 'Person.id')
+    answerer_id = Int(name="answerer", allow_none=True,
+                      validator=validate_public_person, default=None)
+    answerer = Reference(answerer_id, 'Person.id')
     answer_id = Int(name='answer', allow_none=True, default=None)
     answer = Reference(answer_id, 'QuestionMessage.id')
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    datedue = UtcDateTimeCol(notNull=False, default=None)
-    datelastquery = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    datelastresponse = UtcDateTimeCol(notNull=False, default=None)
-    date_solved = UtcDateTimeCol(notNull=False, default=None)
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=False, default=None)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=False,
-        default=None)
-    sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', foreignKey='SourcePackageName',
-        notNull=False, default=None)
-    whiteboard = StringCol(notNull=False, default=None)
+    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datedue = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    datelastquery = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datelastresponse = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    product_id = Int(name='product', allow_none=True, default=None)
+    product = Reference(product_id, 'Product.id')
+    distribution_id = Int(name='distribution', allow_none=True, default=None)
+    distribution = Reference(distribution_id, 'Distribution.id')
+    sourcepackagename_id = Int(
+        name='sourcepackagename', allow_none=True, default=None)
+    sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
+    whiteboard = Unicode(allow_none=True, default=None)
 
-    faq = ForeignKey(
-        dbName='faq', foreignKey='FAQ', notNull=False, default=None)
+    faq_id = Int(name='faq', allow_none=True, default=None)
+    faq = Reference(faq_id, 'FAQ.id')
 
     # useful joins
     subscriptions = ReferenceSet(
@@ -237,6 +237,18 @@ class Question(SQLBase, BugLinkTargetMixin):
     reopenings = ReferenceSet(
         'id', 'QuestionReopening.question_id',
         order_by='QuestionReopening.datecreated')
+
+    def __init__(self, title, description, owner, product, distribution,
+                 language, sourcepackagename, datecreated):
+        self.title = title
+        self.description = description
+        self.owner = owner
+        self.product = product
+        self.distribution = distribution
+        self.sourcepackagename = sourcepackagename
+        self.datecreated = datecreated
+        self.language = language
+        self.datelastquery = datecreated
 
     @property
     def messages(self):
@@ -735,29 +747,28 @@ class QuestionSet:
         # This query joins to bugtasks that are not BugTaskStatus.INVALID
         # because there are many bugtasks to one question. A question is
         # included when BugTask.status IS NULL.
-        return Question.select("""
-            id in (SELECT Question.id
-                FROM Question
-                LEFT OUTER JOIN XRef ON (
-                    XRef.from_type = 'question'
-                    AND XRef.from_id_int = Question.id
-                    AND XRef.to_type = 'bug')
-                LEFT OUTER JOIN BugTask ON (
-                    BugTask.bug = XRef.to_id_int
-                    AND BugTask.status != %s)
-                WHERE
-                    Question.status IN (%s, %s)
-                    AND (Question.datelastresponse IS NULL
-                         OR Question.datelastresponse < (CURRENT_TIMESTAMP
-                            AT TIME ZONE 'UTC' - interval '%s days'))
-                    AND Question.datelastquery < (CURRENT_TIMESTAMP
-                            AT TIME ZONE 'UTC' - interval '%s days')
-                    AND Question.assignee IS NULL
-                    AND BugTask.status IS NULL)
-            """ % sqlvalues(
-                BugTaskStatus.INVALID,
-                QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-                days_before_expiration, days_before_expiration))
+        origin = [
+            Question,
+            LeftJoin(XRef, And(
+                XRef.from_type == u'question',
+                XRef.from_id_int == Question.id,
+                XRef.to_type == u'bug')),
+            LeftJoin(BugTask, And(
+                BugTask.bug == XRef.to_id_int,
+                BugTask._status != BugTaskStatus.INVALID)),
+            ]
+        expiry = datetime.now(pytz.UTC) - timedelta(
+            days=days_before_expiration)
+        return IStore(Question).using(*origin).find(
+            Question,
+            Question.status.is_in(
+                (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO)),
+            Or(
+                Question.datelastresponse == None,
+                Question.datelastresponse < expiry),
+            Question.datelastquery < expiry,
+            Question.assignee == None,
+            BugTask._status == None).config(distinct=True)
 
     def searchQuestions(self, search_text=None, language=None,
                       status=QUESTION_STATUS_DEFAULT_SEARCH, sort=None):
@@ -773,32 +784,33 @@ class QuestionSet:
 
     def getMostActiveProjects(self, limit=5):
         """See `IQuestionSet`."""
-        cur = cursor()
-        cur.execute("""
-            SELECT product, distribution, count(*) AS "question_count"
-            FROM (
-                SELECT product, distribution
-                FROM Question
-                    LEFT OUTER JOIN Product ON (Question.product = Product.id)
-                    LEFT OUTER JOIN Distribution ON (
-                        Question.distribution = Distribution.id)
-                WHERE
-                    ((Product.answers_usage = %s AND Product.active)
-                    OR Distribution.answers_usage = %s)
-                    AND Question.datecreated > (
-                        current_timestamp -interval '60 days')
-                LIMIT 5000
-            ) AS "RecentQuestions"
-            GROUP BY product, distribution
-            ORDER BY question_count DESC
-            LIMIT %s
-            """ % sqlvalues(
-                    ServiceUsage.LAUNCHPAD, ServiceUsage.LAUNCHPAD, limit))
+
+        from lp.registry.model.product import Product
+        from lp.registry.model.distribution import Distribution
+
+        time_cutoff = datetime.now(pytz.UTC) - timedelta(days=60)
+        question_count = Alias(Count())
+
+        origin = (Question,
+                  LeftJoin(Product, Question.product_id == Product.id),
+                  LeftJoin(Distribution,
+                           Question.distribution_id == Distribution.id))
+
+        results = IStore(Question).using(*origin).find(
+            (Question.product_id, Question.distribution_id, question_count),
+            Or(
+                And(Product._answers_usage == ServiceUsage.LAUNCHPAD,
+                    Product.active),
+                Distribution._answers_usage == ServiceUsage.LAUNCHPAD),
+            Question.datecreated > time_cutoff
+            ).group_by(
+                Question.product_id, Question.distribution_id
+            ).order_by(Desc(question_count))[:limit]
 
         projects = []
         product_set = getUtility(IProductSet)
         distribution_set = getUtility(IDistributionSet)
-        for product_id, distribution_id, ignored in cur.fetchall():
+        for product_id, distribution_id, _ in results:
             if product_id:
                 projects.append(product_set.get(product_id))
             elif distribution_id:
@@ -820,8 +832,7 @@ class QuestionSet:
         question = Question(
             title=title, description=description, owner=owner,
             product=product, distribution=distribution, language=language,
-            sourcepackagename=sourcepackagename, datecreated=datecreated,
-            datelastquery=datecreated)
+            sourcepackagename=sourcepackagename, datecreated=datecreated)
 
         # Subscribe the submitter
         question.subscribe(owner)
@@ -830,10 +841,12 @@ class QuestionSet:
 
     def get(self, question_id, default=None):
         """See `IQuestionSet`."""
-        try:
-            return Question.get(question_id)
-        except SQLObjectNotFound:
-            return default
+        # search views produce strings, not integers
+        question_id = int(question_id)
+        question = IStore(Question).find(
+            Question,
+            Question.id == question_id).one()
+        return question or default
 
     def getOpenQuestionCountByPackages(self, packages):
         """See `IQuestionSet`."""
@@ -861,27 +874,17 @@ class QuestionSet:
             package.sourcepackagename.id for package in packages]
         open_statuses = [QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]
 
-        query = """
-            SELECT Question.distribution,
-                   Question.sourcepackagename,
-                   COUNT(*) AS open_questions
-            FROM Question
-            WHERE Question.status IN %(open_statuses)s
-                AND Question.sourcepackagename IN %(package_names)s
-                AND Question.distribution = %(distribution)s
-            GROUP BY Question.distribution, Question.sourcepackagename
-            """ % sqlvalues(
-                open_statuses=open_statuses,
-                package_names=package_name_ids,
-                distribution=distribution,
-                )
-        cur = cursor()
-        cur.execute(query)
+        results = IStore(Question).find(
+            (Question.distribution_id, Question.sourcepackagename_id, Count()),
+            Question.status.is_in(open_statuses),
+            Question.sourcepackagename_id.is_in(package_name_ids),
+            Question.distribution == distribution,
+        ).group_by(Question.distribution_id, Question.sourcepackagename_id)
         sourcepackagename_set = getUtility(ISourcePackageNameSet)
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
         counts = dict((package, 0) for package in packages)
-        for distro_id, spn_id, open_questions in cur.fetchall():
+        for distro_id, spn_id, open_questions in results:
             # The SourcePackageNames here should already be pre-fetched,
             # so that .get(spn_id) won't issue a DB query.
             sourcepackagename = sourcepackagename_set.get(spn_id)
@@ -1024,7 +1027,7 @@ class QuestionSearch:
                     QuestionMessage.owner == self.needs_attention_from)))
 
         if self.language:
-            constraints.append(Question.languageID.is_in(
+            constraints.append(Question.language_id.is_in(
                 [language.id for language in self.language]))
 
         return constraints
@@ -1161,7 +1164,7 @@ class QuestionTargetSearch(QuestionSearch):
             supported_languages = (
                 self.unsupported_target.getSupportedLanguages())
             constraints.append(
-                Not(Question.languageID.is_in(
+                Not(Question.language_id.is_in(
                     [language.id for language in supported_languages])))
 
         return constraints
@@ -1310,7 +1313,7 @@ class QuestionTargetMixin:
             datecreated=bug.datecreated)
         # Give the datelastresponse a current datetime, otherwise the
         # Launchpad Janitor would quickly expire questions made from old bugs.
-        question.datelastresponse = datetime.now(pytz.timezone('UTC'))
+        question.datelastresponse = datetime.now(pytz.UTC)
         # Directly create the BugLink so that users do not receive duplicate
         # messages about the bug.
         question.createBugLink(bug)
@@ -1327,9 +1330,9 @@ class QuestionTargetMixin:
 
     def getQuestion(self, question_id):
         """See `IQuestionTarget`."""
-        try:
-            question = Question.get(question_id)
-        except SQLObjectNotFound:
+        question = IStore(Question).find(
+            Question, Question.id == question_id).one()
+        if not question:
             return None
         # Verify that the question is actually for this target.
         if not self.questionIsForTarget(question):
@@ -1349,18 +1352,11 @@ class QuestionTargetMixin:
 
     def getQuestionLanguages(self):
         """See `IQuestionTarget`."""
-        constraints = ['Language.id = Question.language']
-        targets = self.getTargetTypes()
-        for column, target in targets.items():
-            if target is None:
-                constraint = "Question." + column + " IS NULL"
-            else:
-                constraint = "Question." + column + " = %s" % sqlvalues(
-                    target)
-            constraints.append(constraint)
-        return set(Language.select(
-            ' AND '.join(constraints),
-            clauseTables=['Question'], distinct=True))
+        query = [Language.id == Question.language_id]
+        for column, target in self.getTargetTypes().items():
+            query.append(getattr(Question, column) == target)
+        results = IStore(Question).find(Language, *query).config(distinct=True)
+        return results
 
     @property
     def _store(self):
@@ -1461,44 +1457,32 @@ class QuestionTargetMixin:
         Store.of(answer_contact).flush()
         return True
 
-    def _selectPersonFromAnswerContacts(self, constraints, clause_tables):
-        """Return the Persons or Teams who are AnswerContacts."""
-        constraints.append("""Person.id = AnswerContact.person""")
-        clause_tables.append('AnswerContact')
-        # Avoid a circular import of Person, which imports the mixin.
-        from lp.registry.model.person import Person
-        return Person.select(
-            " AND ".join(constraints), clauseTables=clause_tables,
-            orderBy=['display_name'], distinct=True)
-
     def getAnswerContactsForLanguage(self, language):
         """See `IQuestionTarget`."""
+        from lp.registry.model.person import PersonLanguage, Person
         assert language is not None, (
             "The language cannot be None when selecting answer contacts.")
-        constraints = []
+        query = []
         targets = self.getTargetTypes()
         for column, target in targets.items():
-            if target is None:
-                constraint = "AnswerContact." + column + " IS NULL"
-            else:
-                constraint = "AnswerContact." + column + " = %s" % sqlvalues(
-                    target)
-            constraints.append(constraint)
-
-        constraints.append("""
-            AnswerContact.person = PersonLanguage.person AND
-            PersonLanguage.Language = Language.id""")
+            query.append(getattr(AnswerContact, column) == target)
+        query.append(
+            And(
+                AnswerContact.person == PersonLanguage.person_id,
+                PersonLanguage.language_id == Language.id))
         # XXX sinzui 2007-07-12 bug=125545:
         # Using a LIKE constraint is suboptimal. We would not need this
         # if-else clause if variant languages knew their parent language.
         if language.code == 'en':
-            constraints.append("""
-                Language.code LIKE %s""" % sqlvalues('%s%%' % language.code))
+            query.append(Language.code.startswith(language.code))
         else:
-            constraints.append("""
-                Language.id = %s""" % sqlvalues(language))
-        return list((self._selectPersonFromAnswerContacts(
-            constraints, ['PersonLanguage', 'Language'])))
+            query.append(Language.id == language.id)
+
+        query.append(AnswerContact.person == Person.id)
+        results = IStore(Person).find(
+            Person, *query).config(distinct=True).order_by(
+                "Person.displayname")
+        return results
 
     def getAnswerContactRecipients(self, language):
         """See `IQuestionTarget`."""

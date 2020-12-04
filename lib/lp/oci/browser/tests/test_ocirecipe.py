@@ -817,7 +817,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         build = self.makeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago buildlog \(.*\) 386
@@ -834,7 +834,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture
             Needs building in .* \(estimated\) 386

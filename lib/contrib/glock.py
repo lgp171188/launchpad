@@ -101,7 +101,7 @@ class GlobalLock:
            std module msvcrt.locking(), because global lock is OK, but
            blocks also for 2 calls from the same thread!
     '''
-    RE_ERROR_MSG = re.compile ("^\[Errno ([0-9]+)\]")
+    RE_ERROR_MSG = re.compile (r"^\[Errno ([0-9]+)\]")
 
     def __init__(self, fpath, lockInitially=False, logger=None):
         ''' Creates (or opens) a global lock.

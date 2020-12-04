@@ -2387,11 +2387,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if target is None:
             target = self.makeProduct()
         if title is None:
-            title = self.getUniqueString('title')
+            title = self.getUniqueUnicode('title')
         if owner is None:
             owner = target.owner
         if description is None:
-            description = self.getUniqueString('description')
+            description = self.getUniqueUnicode('description')
         with person_logged_in(owner):
             question = target.newQuestion(
                 owner=owner, title=title, description=description, **kwargs)
@@ -3247,7 +3247,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if potemplate is None:
             potemplate = self.makePOTemplate()
         if singular is None and plural is None:
-            singular = self.getUniqueString()
+            singular = self.getUniqueUnicode()
         if sequence is None:
             sequence = self.getUniqueInteger()
         potmsgset = potemplate.createMessageSetFromText(
@@ -3270,8 +3270,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         if with_plural:
             if msgid is None:
-                msgid = self.getUniqueString()
-            plural = self.getUniqueString()
+                msgid = self.getUniqueUnicode()
+            plural = self.getUniqueUnicode()
         else:
             plural = None
 

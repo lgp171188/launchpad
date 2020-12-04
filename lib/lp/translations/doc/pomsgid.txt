@@ -1,15 +1,15 @@
-POMsgID.byMsgid()
-=================
+POMsgID.getByMsgid()
+====================
 
-Test that byMsgid is working:
+Test that getByMsgid is working:
 
 >>> from lp.translations.model.pomsgid import POMsgID
->>> created = POMsgID(msgid="This is a launchpad test")
->>> got = POMsgID.byMsgid("This is a launchpad test")
+>>> created = POMsgID.new("This is a launchpad test")
+>>> got = POMsgID.getByMsgid("This is a launchpad test")
 >>> got == created
 True
 
->>> created = POMsgID(msgid="This is a very \t\n\b'?'\\ odd test")
->>> got = POMsgID.byMsgid("This is a very \t\n\b'?'\\ odd test")
+>>> created = POMsgID.new("This is a very \t\n\b'?'\\ odd test")
+>>> got = POMsgID.getByMsgid("This is a very \t\n\b'?'\\ odd test")
 >>> got == created
 True
