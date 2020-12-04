@@ -586,8 +586,8 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             except OCIRegistryCredentialsAlreadyExist:
                 self.setFieldError(
                     "add_url",
-                    "Credentials already exist with the same URL and "
-                    "username.")
+                    "Credentials already exist with the same URL, username, "
+                    "and region.")
                 return
             except ValidationError:
                 self.setFieldError("add_url", "Not a valid URL.")
