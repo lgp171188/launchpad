@@ -236,6 +236,7 @@ Then, supersede all pmount publications in warty for pmount (this sets
 us up to demonstrate bug 208233).
 
     >>> switch_dbuser('archivepublisher')
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
@@ -245,10 +246,11 @@ us up to demonstrate bug 208233).
     >>> pmount_name = BinaryPackageName.selectOneBy(name="pmount")
     >>> pmount_warty_i386 = DistroArchSeriesBinaryPackage(warty_i386,
     ...                                                      pmount_name)
-    >>> pubs = BinaryPackagePublishingHistory.selectBy(
-    ...          archive=1,
-    ...          distroarchseries=warty_i386,
-    ...          status=PackagePublishingStatus.PUBLISHED)
+    >>> pubs = IStore(BinaryPackagePublishingHistory).find(
+    ...     BinaryPackagePublishingHistory,
+    ...     archive=1,
+    ...     distroarchseries=warty_i386,
+    ...     status=PackagePublishingStatus.PUBLISHED)
     >>> for p in pubs:
     ...      if p.binarypackagerelease.binarypackagename == pmount_name:
     ...          s = p.supersede()

@@ -2846,19 +2846,20 @@ class ArchiveSet:
 
     def getLatestPPASourcePublicationsForDistribution(self, distribution):
         """See `IArchiveSet`."""
-        query = """
-            SourcePackagePublishingHistory.archive = Archive.id AND
-            SourcePackagePublishingHistory.distroseries =
-                DistroSeries.id AND
-            Archive.private = FALSE AND
-            Archive.enabled = TRUE AND
-            DistroSeries.distribution = %s AND
-            Archive.purpose = %s
-        """ % sqlvalues(distribution, ArchivePurpose.PPA)
+        # Circular import.
+        from lp.registry.model.distroseries import DistroSeries
 
-        return SourcePackagePublishingHistory.select(
-            query, limit=5, clauseTables=['Archive', 'DistroSeries'],
-            orderBy=['-datecreated', '-id'])
+        return IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.archive == Archive.id,
+            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
+            Archive._private == False,
+            Archive._enabled == True,
+            DistroSeries.distribution == distribution,
+            Archive.purpose == ArchivePurpose.PPA,
+            ).order_by(
+                Desc(SourcePackagePublishingHistory.datecreated),
+                Desc(SourcePackagePublishingHistory.id))[:5]
 
     def getMostActivePPAsForDistribution(self, distribution):
         """See `IArchiveSet`."""

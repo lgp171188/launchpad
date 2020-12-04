@@ -45,6 +45,7 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     quote,
     sqlvalues,
@@ -711,18 +712,17 @@ class SourcePackagePublisher:
 
     def _checkPublishing(self, sourcepackagerelease):
         """Query for the publishing entry"""
-        ret = SourcePackagePublishingHistory.select("""
-            sourcepackagerelease = %s AND
-            distroseries = %s AND
-            archive = %s AND
-            status in %s""" % sqlvalues(
-                sourcepackagerelease, self.distroseries,
-                self.distroseries.main_archive, active_publishing_status),
-            orderBy=["-datecreated"])
-        ret = list(ret)
-        if ret:
-            return ret[0]
-        return None
+        return IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.sourcepackagerelease ==
+                sourcepackagerelease,
+            SourcePackagePublishingHistory.distroseries ==
+                self.distroseries,
+            SourcePackagePublishingHistory.archive ==
+                self.distroseries.main_archive,
+            SourcePackagePublishingHistory.status.is_in(
+                active_publishing_status),
+            ).order_by(SourcePackagePublishingHistory).last()
 
 
 class BinaryPackageHandler:
@@ -965,15 +965,14 @@ class BinaryPackagePublisher:
 
     def _checkPublishing(self, binarypackage):
         """Query for the publishing entry"""
-        ret = BinaryPackagePublishingHistory.select("""
-            binarypackagerelease = %s AND
-            distroarchseries = %s AND
-            archive = %s AND
-            status in %s""" % sqlvalues(
-                binarypackage, self.distroarchseries,
-                self.distroarchseries.main_archive, active_publishing_status),
-            orderBy=["-datecreated"])
-        ret = list(ret)
-        if ret:
-            return ret[0]
-        return None
+        return IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.binarypackagerelease ==
+                binarypackage,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                self.distroarchseries,
+            BinaryPackagePublishingHistory.archive ==
+                self.distroarchseries.main_archive,
+            BinaryPackagePublishingHistory.status.is_in(
+                active_publishing_status),
+            ).order_by(BinaryPackagePublishingHistory.datecreated).last()
