@@ -167,7 +167,7 @@ class POFileMixIn(RosettaStats):
         # Like in findPOTMsgSetsContaining(), to avoid seqscans on
         # POTranslation table, we do ILIKE comparison on them in a subselect
         # which is first filtered by the POFile.
-        msgstr_column_name = "msgstr%dID" % plural_form
+        msgstr_column_name = "msgstr%d_id" % plural_form
         tm_ids = ClassAlias(TranslationMessage, "tm_ids")
         return Select(
             TranslationMessage.potmsgsetID,
