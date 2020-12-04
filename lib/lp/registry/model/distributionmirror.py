@@ -848,8 +848,8 @@ class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
 
         if deb_only:
             clauses.extend([
-                BinaryPackagePublishingHistory.binarypackagerelease ==
-                    BinaryPackageFile.binarypackagerelease,
+                BinaryPackagePublishingHistory.binarypackagereleaseID ==
+                    BinaryPackageFile.binarypackagereleaseID,
                 BinaryPackageFile.filetype == BinaryPackageFileType.DEB,
                 ])
 
