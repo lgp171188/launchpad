@@ -153,6 +153,7 @@ def close_account(username, log):
         ('specification', 'goal_decider'),
         ('specification', 'goal_proposer'),
         ('specification', 'last_changed_by'),
+        ('specification', 'owner'),
         ('specification', 'starter'),
         ('structuralsubscription', 'subscribed_by'),
         ('teammembership', 'acknowledged_by'),

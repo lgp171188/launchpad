@@ -602,6 +602,17 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertEqual(person, code_imports[0].registrant)
         self.assertEqual(person, code_imports[1].registrant)
 
+    def test_skips_specification(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        specification = self.factory.makeSpecification(drafter=person)
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertEqual(person, specification.drafter)
+
     def test_handles_login_token(self):
         person = self.factory.makePerson()
         email = '%s@another-domain.test' % person.name
