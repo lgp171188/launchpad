@@ -199,12 +199,12 @@ def extract_bug_numbers(text):
     unique_bug_matches = dict()
 
     line_matches = re.finditer(
-        'LP:\s*(?P<buglist>(.+?[^,]))($|\n)', text,
+        r'LP:\s*(?P<buglist>(.+?[^,]))($|\n)', text,
         re.DOTALL | re.IGNORECASE)
 
     for line_match in line_matches:
         bug_matches = re.finditer(
-            '\s*((?P<bug>#(?P<bugnum>\d+)),?\s*)',
+            r'\s*((?P<bug>#(?P<bugnum>\d+)),?\s*)',
             line_match.group('buglist'))
 
         for bug_match in bug_matches:
@@ -467,7 +467,7 @@ class FormattersAPI:
             # 'leader' is the 'LP: ' bit at the beginning.
             bug_parts = []
             # Split the bug numbers into multiple bugs.
-            splitted = re.split("(,(?:\s|<br\s*/>)+)",
+            splitted = re.split(r"(,(?:\s|<br\s*/>)+)",
                     match.group("bugnumbers")) + [""]
             for bug_id, spacer in zip(splitted[::2], splitted[1::2]):
                 bug_parts.append(FormattersAPI._linkify_bug_number(
@@ -620,7 +620,7 @@ class FormattersAPI:
         \blp:(?:///|/)?
         (?P<branch>%(unreserved)s(?:%(unreserved)s|/)*)
       )
-    ''' % {'unreserved': "(?:[-a-zA-Z0-9._~%!$'()*+,;=]|&amp;|&\#x27;)"},
+    ''' % {'unreserved': r"(?:[-a-zA-Z0-9._~%!$'()*+,;=]|&amp;|&\#x27;)"},
                              re.IGNORECASE | re.VERBOSE)
 
     # There is various punctuation that can occur at the end of a link that

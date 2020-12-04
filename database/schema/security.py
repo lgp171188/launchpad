@@ -54,8 +54,8 @@ POSTGRES_ACL_MAP = {
 # PostgreSQL's putid emits an unquoted string if every character in the role
 # name isalnum or is _. Otherwise the name is enclosed in double quotes, and
 # any embedded double quotes are doubled.
-QUOTED_STRING_RE = '(?:([A-Za-z0-9_]+)|"([^"]*(?:""[^"]*)*)")?'
-ACLITEM_RE = re.compile('^%(qs)s=([\w*]*)/%(qs)s$' % {'qs': QUOTED_STRING_RE})
+QUOTED_STRING_RE = r'(?:([A-Za-z0-9_]+)|"([^"]*(?:""[^"]*)*)")?'
+ACLITEM_RE = re.compile(r'^%(qs)s=([\w*]*)/%(qs)s$' % {'qs': QUOTED_STRING_RE})
 
 
 def _split_postgres_aclitem(aclitem):
