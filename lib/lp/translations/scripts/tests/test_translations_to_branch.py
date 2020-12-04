@@ -73,7 +73,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
             path='po/messages.pot')
         template = removeSecurityProxy(template)
         potmsgset = self.factory.makePOTMsgSet(
-            template, singular='Hello World', sequence=1)
+            template, singular=u'Hello World', sequence=1)
         pofile = self.factory.makePOFile(
             'nl', potemplate=template, owner=product.owner)
         self.factory.makeCurrentTranslationMessage(

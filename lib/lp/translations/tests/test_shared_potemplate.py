@@ -1,6 +1,8 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from storm.exceptions import DataError
@@ -137,7 +139,7 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         naked_potemplate = removeSecurityProxy(self.devel_potemplate)
 
         # Let's create a new POTMsgSet.
-        singular_text = self.factory.getUniqueString()
+        singular_text = self.factory.getUniqueUnicode()
         msgid_singular = naked_potemplate.getOrCreatePOMsgID(singular_text)
         potmsgset = self.devel_potemplate.createPOTMsgSetFromMsgIDs(
             msgid_singular=msgid_singular)
@@ -157,7 +159,7 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
 
     def test_getOrCreateSharedPOTMsgSet(self):
         # Let's create a new POTMsgSet.
-        singular_text = self.factory.getUniqueString()
+        singular_text = self.factory.getUniqueUnicode()
         potmsgset = self.devel_potemplate.getOrCreateSharedPOTMsgSet(
             singular_text, None)
 
@@ -176,7 +178,7 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
     def test_getOrCreateSharedPOTMsgSet_initializes_file_references(self):
         # When creating a POTMsgSet, getOrCreateSharedPOTMsgSet
         # initializes its filereferences to initial_file_references.
-        singular = self.factory.getUniqueString()
+        singular = self.factory.getUniqueUnicode()
         file_references = self.factory.getUniqueString()
         potmsgset = self.devel_potemplate.getOrCreateSharedPOTMsgSet(
             singular, None, initial_file_references=file_references)
@@ -199,7 +201,7 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
     def test_getOrCreateSharedPOTMsgSet_initializes_source_comment(self):
         # When creating a POTMsgSet, getOrCreateSharedPOTMsgSet
         # initializes its sourcecomment to initial_source_comment.
-        singular = self.factory.getUniqueString()
+        singular = self.factory.getUniqueUnicode()
         source_comment = self.factory.getUniqueString()
         potmsgset = self.devel_potemplate.getOrCreateSharedPOTMsgSet(
             singular, None, initial_source_comment=source_comment)

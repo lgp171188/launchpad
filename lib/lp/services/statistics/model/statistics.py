@@ -175,7 +175,7 @@ class LaunchpadStatisticSet:
         ztm.commit()
         self.update('pofile_count', POFile.select().count())
         ztm.commit()
-        self.update('pomsgid_count', POMsgID.select().count())
+        self.update('pomsgid_count', IStore(POMsgID).find(POMsgID).count())
         ztm.commit()
         self.update('language_count', Language.select(
             "POFile.language=Language.id",

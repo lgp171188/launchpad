@@ -210,8 +210,7 @@ class POFileMixIn(RosettaStats):
             # To avoid seqscans on POMsgID table (which LIKE usually does),
             # we do ILIKE comparison on them in a subselect first filtered
             # by this POTemplate.
-            msgid_column = getattr(POTMsgSet, column_name)
-            msgid_columnID = getattr(POTMsgSet, column_name + "ID")
+            msgid_column_id = getattr(POTMsgSet, column_name + "_id")
             return Select(
                 POTMsgSet.id,
                 tables=(
@@ -223,12 +222,12 @@ class POFileMixIn(RosettaStats):
                             TranslationTemplateItem.potemplate ==
                                 self.potemplate))),
                 where=And(
-                    msgid_column != None,
-                    msgid_columnID.is_in(Select(
+                    msgid_column_id != None,
+                    msgid_column_id.is_in(Select(
                         POMsgID.id,
                         And(
                             POMsgID.id.is_in(Select(
-                                msgid_columnID,
+                                msgid_column_id,
                                 tables=(
                                     POTMsgSet,
                                     Join(

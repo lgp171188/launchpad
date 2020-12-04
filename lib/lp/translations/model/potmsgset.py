@@ -15,11 +15,7 @@ import logging
 import re
 
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
+from sqlobject import StringCol
 from storm.expr import (
     And,
     Coalesce,
@@ -33,6 +29,10 @@ from storm.expr import (
     Table,
     With,
     )
+from storm.locals import (
+    Int,
+    Reference,
+    )
 from storm.store import (
     EmptyResultSet,
     Store,
@@ -41,6 +41,7 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT
@@ -140,10 +141,11 @@ class POTMsgSet(SQLBase):
     _table = 'POTMsgSet'
 
     context = StringCol(dbName='context', notNull=False)
-    msgid_singular = ForeignKey(foreignKey='POMsgID', dbName='msgid_singular',
-        notNull=True)
-    msgid_plural = ForeignKey(foreignKey='POMsgID', dbName='msgid_plural',
-        notNull=False, default=DEFAULT)
+    msgid_singular_id = Int(name='msgid_singular', allow_none=False)
+    msgid_singular = Reference(msgid_singular_id, 'POMsgID.id')
+    msgid_plural_id = Int(
+        name='msgid_plural', allow_none=True, default=DEFAULT)
+    msgid_plural = Reference(msgid_plural_id, 'POMsgID.id')
     commenttext = StringCol(dbName='commenttext', notNull=False)
     filereferences = StringCol(dbName='filereferences', notNull=False)
     sourcecomment = StringCol(dbName='sourcecomment', notNull=False)
@@ -1200,9 +1202,9 @@ class POTMsgSet(SQLBase):
         else:
             # Store the given plural form.
             try:
-                pomsgid = POMsgID.byMsgid(plural_form_text)
-            except SQLObjectNotFound:
-                pomsgid = POMsgID(msgid=plural_form_text)
+                pomsgid = POMsgID.getByMsgid(plural_form_text)
+            except NotFoundError:
+                pomsgid = POMsgID.new(plural_form_text)
             self.msgid_plural = pomsgid
 
     def setTranslationCreditsToTranslated(self, pofile):

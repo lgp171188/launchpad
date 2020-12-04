@@ -3247,7 +3247,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if potemplate is None:
             potemplate = self.makePOTemplate()
         if singular is None and plural is None:
-            singular = self.getUniqueString()
+            singular = self.getUniqueUnicode()
         if sequence is None:
             sequence = self.getUniqueInteger()
         potmsgset = potemplate.createMessageSetFromText(
@@ -3270,8 +3270,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         if with_plural:
             if msgid is None:
-                msgid = self.getUniqueString()
-            plural = self.getUniqueString()
+                msgid = self.getUniqueUnicode()
+            plural = self.getUniqueUnicode()
         else:
             plural = None
 
