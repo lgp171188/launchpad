@@ -483,15 +483,11 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     def hasMoreRecentBuild(self):
         """See `IOCIRecipeBuild`."""
-        status = [
-            BuildStatus.NEEDSBUILD, BuildStatus.FULLYBUILT,
-            BuildStatus.BUILDING, BuildStatus.UPLOADING
-        ]
         recent_builds = IStore(self).find(
             OCIRecipeBuild,
             OCIRecipeBuild.recipe == self.recipe,
             OCIRecipeBuild.processor == self.processor,
-            OCIRecipeBuild.status.is_in(status),
+            OCIRecipeBuild.status == BuildStatus.FULLYBUILT,
             OCIRecipeBuild.date_created > self.date_created)
         return not recent_builds.is_empty()
 

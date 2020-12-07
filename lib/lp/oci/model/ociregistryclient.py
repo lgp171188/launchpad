@@ -425,7 +425,7 @@ class OCIRegistryClient:
     @classmethod
     def updateSupersededBuilds(cls, build):
         """Checks if the given build was superseded by another build,
-        updating it's status in case it should have been superseded.
+        updating its status in case it should have been superseded.
 
         :return: True if the build was superseded.
         """

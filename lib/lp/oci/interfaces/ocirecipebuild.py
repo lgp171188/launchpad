@@ -97,7 +97,7 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
     SUPERSEDED = Item("""
         Superseded
 
-        The upload has been canceled because another build will upload a
+        The upload has been cancelled because another build will upload a
         more recent version.
     """)
 
