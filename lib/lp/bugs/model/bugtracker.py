@@ -602,7 +602,7 @@ class BugTracker(SQLBase):
         """See `IBugTracker`."""
         return Store.of(self).find(
             BugMessage,
-            BugMessage.bugwatchID == BugWatch.id,
+            BugMessage.bugwatch_id == BugWatch.id,
             BugWatch.bugtrackerID == self.id).order_by(BugMessage.id)
 
     def getLinkedPersonByName(self, name):
