@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -733,9 +737,9 @@ class TestSnapEditView(BaseTestSnapView):
         browser.getControl(name="field.store_distro_series").value = [
             "ubuntu/%s/%s" % (new_series.name, new_snappy_series.name)]
         browser.getControl("Git", index=0).click()
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             new_git_ref.repository.identity)
-        browser.getControl("Git branch").value = new_git_ref.path
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Build source tarball").selected = True
         browser.getControl(
             "Automatically build when branch changes").selected = True
@@ -952,8 +956,9 @@ class TestSnapEditView(BaseTestSnapView):
         private_ref_path = private_ref.path
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl("Git repository").value = private_ref_identity
-        browser.getControl("Git branch").value = private_ref_path
+        browser.getControl(name="field.git_ref.repository").value = (
+            private_ref_identity)
+        browser.getControl(name="field.git_ref.path").value = private_ref_path
         browser.getControl("Update snap package").click()
         self.assertEqual(
             "A public snap cannot have a private repository.",
@@ -973,8 +978,9 @@ class TestSnapEditView(BaseTestSnapView):
             git_ref=old_ref, store_series=snappy_series)
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl("Git repository").value = new_repository_url
-        browser.getControl("Git branch").value = new_path
+        browser.getControl(
+            name="field.git_ref.repository").value = new_repository_url
+        browser.getControl(name="field.git_ref.path").value = new_path
         browser.getControl("Update snap package").click()
         login_person(self.person)
         content = find_main_content(browser.contents)
@@ -1422,13 +1428,13 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: lp://dev/~test-person/\\+junk/snap-branch
+            Source: lp://dev/~test-person/\+junk/snap-branch
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1450,13 +1456,13 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: ~test-person/\\+git/snap-repository:master
+            Source: ~test-person/\+git/snap-repository:master
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1478,7 +1484,7 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
@@ -1512,7 +1518,7 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Successfully built 30 minutes ago buildlog \(.*\) i386
@@ -1539,7 +1545,7 @@ class TestSnapView(BaseTestSnapView):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Needs building in .* \(estimated\) i386
@@ -1571,7 +1577,7 @@ class TestSnapView(BaseTestSnapView):
         job.job._status = JobStatus.FAILED
         job.job.date_finished = datetime.now(pytz.UTC) - timedelta(hours=1)
         job.error_message = "Boom"
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Failed build request 1 hour ago \(Boom\)
@@ -1759,7 +1765,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
 
     def test_request_builds_page(self):
         # The +request-builds page is sane.
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Request builds for snap-name
             Snap packages
             snap-name
@@ -1767,7 +1773,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Source archive:
             Primary Archive for Ubuntu Linux
             PPA
-            \(Find\u2026\)
+            \(Find…\)
             Architectures:
             amd64
             i386

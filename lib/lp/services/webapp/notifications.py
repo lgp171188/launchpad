@@ -12,6 +12,8 @@ to do this correctly is by passing a token in the URL to identify the
 browser window the request came from.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from datetime import datetime
@@ -126,7 +128,7 @@ class NotificationResponse:
     True
 
     >>> for notification in response.notifications:
-    ...     print "%d -- %s" % (notification.level, notification.message)
+    ...     print("%d -- %s" % (notification.level, notification.message))
     20 -- <b>&lt;Fnord&gt;</b>
     10 -- Whatever
     10 -- Debug
@@ -141,7 +143,7 @@ class NotificationResponse:
     are stored in the session
 
     >>> for notification in ISession(request)[SESSION_KEY]['notifications']:
-    ...     print "%d -- %s" % (notification.level, notification.message)
+    ...     print("%d -- %s" % (notification.level, notification.message))
     ...     break
     20 -- <b>&lt;Fnord&gt;</b>
 
@@ -261,7 +263,7 @@ class NotificationList(list):
     >>> notifications.append(Notification(error, u'An error'))
     >>> notifications.append(Notification(debug, u'A debug message'))
     >>> for notification in notifications:
-    ...     print repr(notification.message)
+    ...     print(repr(notification.message))
     u'An error'
     u'A debug message'
 
@@ -270,7 +272,7 @@ class NotificationList(list):
     notification level.
 
     >>> for notification in notifications['debug']:
-    ...     print repr(notification.message)
+    ...     print(repr(notification.message))
     u'A debug message'
     """
 

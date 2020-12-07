@@ -95,6 +95,7 @@ from lp.registry.browser.pillar import (
     PillarNavigationMixin,
     PillarViewMixin,
     )
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionMirrorMenuMarker,
@@ -158,11 +159,25 @@ class DistributionNavigation(
 
     @stepthrough('+source')
     def traverse_sources(self, name):
-        return self.context.getSourcePackage(name)
+        dsp = self.context.getSourcePackage(name)
+        policy = self.context.default_traversal_policy
+        if (policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE and
+                not self.context.redirect_default_traversal):
+            return self.redirectSubTree(
+                canonical_url(dsp, request=self.request), status=303)
+        else:
+            return dsp
 
     @stepthrough('+oci')
     def traverse_oci(self, name):
-        return self.context.getOCIProject(name)
+        oci_project = self.context.getOCIProject(name)
+        policy = self.context.default_traversal_policy
+        if (policy == DistributionDefaultTraversalPolicy.OCI_PROJECT and
+                not self.context.redirect_default_traversal):
+            return self.redirectSubTree(
+                canonical_url(oci_project, request=self.request), status=303)
+        else:
+            return oci_project
 
     @stepthrough('+milestone')
     def traverse_milestone(self, name):
@@ -189,17 +204,38 @@ class DistributionNavigation(
 
     @stepthrough('+series')
     def traverse_series(self, name):
-        series, _ = self._resolveSeries(name)
-        return self.redirectSubTree(
-            canonical_url(series, request=self.request), status=303)
-
-    def traverse(self, name):
-        series, is_alias = self._resolveSeries(name)
-        if is_alias:
+        series, redirect = self._resolveSeries(name)
+        if not redirect:
+            policy = self.context.default_traversal_policy
+            if (policy == DistributionDefaultTraversalPolicy.SERIES and
+                    not self.context.redirect_default_traversal):
+                redirect = True
+        if redirect:
             return self.redirectSubTree(
                 canonical_url(series, request=self.request), status=303)
         else:
             return series
+
+    def traverse(self, name):
+        policy = self.context.default_traversal_policy
+        if policy == DistributionDefaultTraversalPolicy.SERIES:
+            obj, redirect = self._resolveSeries(name)
+        elif policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE:
+            obj = self.context.getSourcePackage(name)
+            redirect = False
+        elif policy == DistributionDefaultTraversalPolicy.OCI_PROJECT:
+            obj = self.context.getOCIProject(name)
+            redirect = False
+        else:
+            raise AssertionError(
+                "Unknown default traversal policy %r" % policy)
+        if obj is None:
+            return None
+        if redirect or self.context.redirect_default_traversal:
+            return self.redirectSubTree(
+                canonical_url(obj, request=self.request), status=303)
+        else:
+            return obj
 
 
 class DistributionSetNavigation(Navigation):
@@ -965,6 +1001,8 @@ class DistributionEditView(RegistryEditFormView,
         'translations_usage',
         'answers_usage',
         'translation_focus',
+        'default_traversal_policy',
+        'redirect_default_traversal',
         ]
 
     custom_widget_icon = CustomWidgetFactory(
@@ -1035,6 +1073,8 @@ class DistributionAdminView(LaunchpadEditFormView):
         'official_packages',
         'supports_ppas',
         'supports_mirrors',
+        'default_traversal_policy',
+        'redirect_default_traversal',
         ]
 
     @property

@@ -42,7 +42,8 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
 
     def __init__(self):
         super(OCIRegistryCredentialsAlreadyExist, self).__init__(
-            "Credentials already exist with the same URL and username.")
+            "Credentials already exist with the same URL, username, and "
+            "region.")
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -61,6 +62,12 @@ class IOCIRegistryCredentialsView(Interface):
         title=_("Username"),
         description=_("The username for the credentials, if available."),
         required=True,
+        readonly=True)
+
+    region = TextLine(
+        title=_("Region"),
+        description=_("The registry region, if available."),
+        required=False,
         readonly=True)
 
 

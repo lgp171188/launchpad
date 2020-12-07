@@ -149,7 +149,7 @@ class IBranchMergeProposalPublic(IPrivacy):
     source_git_commit_sha1 = TextLine(
         title=_('Source Git commit SHA-1'), required=False, readonly=True)
     source_git_ref = Reference(
-        title=_('Source Git reference'),
+        title=_('Source Git branch'),
         schema=IGitRef, required=False, readonly=True)
 
     target_branch = exported(
@@ -174,7 +174,7 @@ class IBranchMergeProposalPublic(IPrivacy):
     target_git_commit_sha1 = TextLine(
         title=_('Target Git commit SHA-1'), required=False, readonly=True)
     target_git_ref = Reference(
-        title=_('Target Git reference'),
+        title=_('Target Git branch'),
         schema=IGitRef, required=False, readonly=True)
 
     prerequisite_branch = exported(
@@ -205,7 +205,7 @@ class IBranchMergeProposalPublic(IPrivacy):
         title=_('Prerequisite Git commit SHA-1'),
         required=False, readonly=True)
     prerequisite_git_ref = Reference(
-        title=_('Prerequisite Git reference'),
+        title=_('Prerequisite Git branch'),
         schema=IGitRef, required=False, readonly=True)
 
     merge_source = Attribute(

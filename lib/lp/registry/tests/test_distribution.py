@@ -31,6 +31,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
+    DistributionDefaultTraversalPolicy,
     EXCLUSIVE_TEAM_POLICY,
     INCLUSIVE_TEAM_POLICY,
     )
@@ -344,6 +345,31 @@ class TestDistribution(TestCaseWithFactory):
         result = distro.searchOCIProjects(text=u'partial')
         self.assertEqual(1, result.count())
         self.assertEqual(first_project, result[0])
+
+    def test_default_traversal(self):
+        # By default, a distribution's default traversal refers to its
+        # series.
+        distro = self.factory.makeDistribution()
+        self.assertEqual(
+            DistributionDefaultTraversalPolicy.SERIES,
+            distro.default_traversal_policy)
+        self.assertFalse(distro.redirect_default_traversal)
+
+    def test_default_traversal_permissions(self):
+        # Only distribution owners can change the default traversal
+        # behaviour.
+        distro = self.factory.makeDistribution()
+        with person_logged_in(self.factory.makePerson()):
+            self.assertRaises(
+                Unauthorized, setattr, distro, 'default_traversal_policy',
+                DistributionDefaultTraversalPolicy.SERIES)
+            self.assertRaises(
+                Unauthorized, setattr, distro, 'redirect_default_traversal',
+                True)
+        with person_logged_in(distro.owner):
+            distro.default_traversal_policy = (
+                DistributionDefaultTraversalPolicy.SERIES)
+            distro.redirect_default_traversal = True
 
 
 class TestDistributionCurrentSourceReleases(
@@ -779,7 +805,7 @@ class TestDistributionWebservice(TestCaseWithFactory):
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution()
             self.factory.makeQuestion(
-                title="Crash with %s" % oopsid, target=distro)
+                title=u"Crash with %s" % oopsid, target=distro)
             distro_url = api_url(distro)
 
         now = datetime.datetime.now(tz=pytz.utc)
@@ -804,7 +830,7 @@ class TestDistributionWebservice(TestCaseWithFactory):
         # check the filter is tight enough - other contexts should not work.
         oopsid = "OOPS-abcdef1234"
         with person_logged_in(self.person):
-            self.factory.makeQuestion(title="Crash with %s" % oopsid)
+            self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
             distro = self.factory.makeDistribution()
             distro_url = api_url(distro)
         now = datetime.datetime.now(tz=pytz.utc)

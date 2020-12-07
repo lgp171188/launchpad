@@ -1455,13 +1455,16 @@ class TestPersonOCIRegistryCredentialsView(
                         "password": Equals("bar"),
                         })))
 
-        # change only the registry url
+        # change only the registry url and region
         browser = self.getViewBrowser(
             self.owner, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
         url_control = browser.getControl(
             name="field.url.%d" % registry_credentials_id)
         url_control.value = newurl
+        url_control = browser.getControl(
+            name="field.region.%d" % registry_credentials_id)
+        url_control.value = 'us-west-2'
         browser.getControl("Save").click()
         with person_logged_in(self.user):
             self.assertThat(
@@ -1470,6 +1473,7 @@ class TestPersonOCIRegistryCredentialsView(
                     MatchesDict({
                         "username": Equals("different_username"),
                         "password": Equals("bar"),
+                        "region": Equals("us-west-2"),
                         })))
 
         # change only the password
@@ -1484,7 +1488,7 @@ class TestPersonOCIRegistryCredentialsView(
         self.assertIn(
             "Passwords do not match.", six.ensure_text(browser.contents))
 
-        # change all fields with one edit action
+        # change all fields (except region) with one edit action
         username_control = browser.getControl(
             name="field.username.%d" % registry_credentials_id)
         username_control.value = 'third_different_username'
@@ -1506,6 +1510,7 @@ class TestPersonOCIRegistryCredentialsView(
                     MatchesDict({
                         "username": Equals("third_different_username"),
                         "password": Equals("third_newpassword"),
+                        "region": Equals("us-west-2"),
                         })))
 
     def test_add_oci_registry_credentials(self):
@@ -1530,6 +1535,7 @@ class TestPersonOCIRegistryCredentialsView(
             [owner_name], browser.getControl(name="field.add_owner").value)
 
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "sa-east-1"
         browser.getControl(name="field.add_owner").value = [new_owner_name]
         browser.getControl(name="field.add_username").value = "new_username"
         browser.getControl(name="field.add_password").value = "password"
@@ -1555,6 +1561,7 @@ class TestPersonOCIRegistryCredentialsView(
                         MatchesDict({
                             "username": Equals("new_username"),
                             "password": Equals("password"),
+                            "region": Equals("sa-east-1"),
                             }))))
 
     def test_delete_oci_registry_credentials(self):

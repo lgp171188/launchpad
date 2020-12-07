@@ -1054,7 +1054,7 @@ class Archive(SQLBase):
         from lp.soyuz.model.distroseriespackagecache import (
             DistroSeriesPackageCache)
         # Compiled regexp to remove puntication.
-        clean_text = re.compile('(,|;|:|\.|\?|!)')
+        clean_text = re.compile(r'(,|;|:|\.|\?|!)')
 
         # XXX cprov 20080402 bug=207969: The set() is only used because we
         # have a limitation in our FTI setup, it only indexes the first 2500
@@ -2846,19 +2846,20 @@ class ArchiveSet:
 
     def getLatestPPASourcePublicationsForDistribution(self, distribution):
         """See `IArchiveSet`."""
-        query = """
-            SourcePackagePublishingHistory.archive = Archive.id AND
-            SourcePackagePublishingHistory.distroseries =
-                DistroSeries.id AND
-            Archive.private = FALSE AND
-            Archive.enabled = TRUE AND
-            DistroSeries.distribution = %s AND
-            Archive.purpose = %s
-        """ % sqlvalues(distribution, ArchivePurpose.PPA)
+        # Circular import.
+        from lp.registry.model.distroseries import DistroSeries
 
-        return SourcePackagePublishingHistory.select(
-            query, limit=5, clauseTables=['Archive', 'DistroSeries'],
-            orderBy=['-datecreated', '-id'])
+        return IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.archive == Archive.id,
+            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
+            Archive._private == False,
+            Archive._enabled == True,
+            DistroSeries.distribution == distribution,
+            Archive.purpose == ArchivePurpose.PPA,
+            ).order_by(
+                Desc(SourcePackagePublishingHistory.datecreated),
+                Desc(SourcePackagePublishingHistory.id))[:5]
 
     def getMostActivePPAsForDistribution(self, distribution):
         """See `IArchiveSet`."""

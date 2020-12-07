@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functional tests for process-death-row.py script.
@@ -26,6 +26,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.testing import TestCaseWithFactory
@@ -148,25 +149,28 @@ class TestProcessDeathRow(TestCaseWithFactory):
 
     def probePublishingStatus(self, pubrec_ids, status):
         """Check if all source publishing records match the given status."""
+        store = IStore(SourcePackagePublishingHistory)
         for pubrec_id in pubrec_ids:
-            spph = SourcePackagePublishingHistory.get(pubrec_id)
+            spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertEqual(
                 spph.status, status, "ID %s -> %s (expected %s)" % (
                 spph.id, spph.status.title, status.title))
 
     def probeRemoved(self, pubrec_ids):
         """Check if all source publishing records were removed."""
+        store = IStore(SourcePackagePublishingHistory)
         right_now = datetime.datetime.now(pytz.timezone('UTC'))
         for pubrec_id in pubrec_ids:
-            spph = SourcePackagePublishingHistory.get(pubrec_id)
+            spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertTrue(
                 spph.dateremoved < right_now,
                 "ID %s -> not removed" % (spph.id))
 
     def probeNotRemoved(self, pubrec_ids):
         """Check if all source publishing records were not removed."""
+        store = IStore(SourcePackagePublishingHistory)
         for pubrec_id in pubrec_ids:
-            spph = SourcePackagePublishingHistory.get(pubrec_id)
+            spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertTrue(
                 spph.dateremoved is None,
                 "ID %s -> removed" % (spph.id))

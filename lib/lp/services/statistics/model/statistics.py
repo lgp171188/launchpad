@@ -175,7 +175,7 @@ class LaunchpadStatisticSet:
         ztm.commit()
         self.update('pofile_count', POFile.select().count())
         ztm.commit()
-        self.update('pomsgid_count', POMsgID.select().count())
+        self.update('pomsgid_count', IStore(POMsgID).find(POMsgID).count())
         ztm.commit()
         self.update('language_count', Language.select(
             "POFile.language=Language.id",
@@ -207,19 +207,20 @@ class LaunchpadStatisticSet:
         ztm.commit()
 
     def _updateQuestionStatistics(self, ztm):
-        self.update('question_count', Question.select().count())
+        store = IStore(Question)
+        self.update('question_count', store.find(Question).count())
         ztm.commit()
 
         self.update(
             'answered_question_count',
-            Question.select(
-              'status = %s' % sqlvalues(QuestionStatus.ANSWERED)).count())
+            store.find(
+                Question, Question.status == QuestionStatus.ANSWERED).count())
         ztm.commit()
 
         self.update(
             'solved_question_count',
-            Question.select(
-              'status = %s' % sqlvalues(QuestionStatus.SOLVED)).count())
+            store.find(
+                Question, Question.status == QuestionStatus.SOLVED).count())
         ztm.commit()
 
         cur = cursor()

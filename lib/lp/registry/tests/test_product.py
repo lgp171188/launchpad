@@ -2145,7 +2145,7 @@ class TestWebService(WebServiceTestCase):
         # The product layer provides the context restriction, so we need to
         # check we can access context filtered references - e.g. on question.
         oopsid = "OOPS-abcdef1234"
-        question = self.factory.makeQuestion(title="Crash with %s" % oopsid)
+        question = self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
         product = question.product
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)
@@ -2163,7 +2163,7 @@ class TestWebService(WebServiceTestCase):
         # The product layer provides the context restriction, so we need to
         # check the filter is tight enough - other contexts should not work.
         oopsid = "OOPS-abcdef1234"
-        self.factory.makeQuestion(title="Crash with %s" % oopsid)
+        self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
         product = self.factory.makeProduct()
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)

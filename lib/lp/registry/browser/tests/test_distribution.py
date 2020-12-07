@@ -25,7 +25,10 @@ from zope.schema.vocabulary import SimpleVocabulary
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
-from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
+from lp.registry.enums import (
+    DistributionDefaultTraversalPolicy,
+    EXCLUSIVE_TEAM_POLICY,
+    )
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import OCI_PROJECT_ALLOW_CREATE
 from lp.registry.interfaces.series import SeriesStatus
@@ -72,6 +75,42 @@ class TestDistributionNavigation(TestCaseWithFactory):
             "http://launchpad.test/%s/%s" % (
                 distroseries.distribution.name, distroseries.name))
 
+    def test_classic_series_url_redirects(self):
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.redirect_default_traversal = True
+        self.assertRedirects(
+            "http://launchpad.test/%s/%s" % (
+                distroseries.distribution.name, distroseries.name),
+            "http://launchpad.test/%s/+series/%s" % (
+                distroseries.distribution.name, distroseries.name))
+
+    def test_classic_series_url_with_alias_redirects(self):
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.redirect_default_traversal = True
+        distroseries.distribution.development_series_alias = "devel"
+        self.assertRedirects(
+            "http://launchpad.test/%s/devel" % distroseries.distribution.name,
+            "http://launchpad.test/%s/+series/%s" % (
+                distroseries.distribution.name, distroseries.name))
+
+    def test_new_series_url(self):
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.redirect_default_traversal = True
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/+series/%s" % (
+                distroseries.distribution.name, distroseries.name))
+        self.assertEqual(distroseries, obj)
+
+    def test_new_series_url_with_alias(self):
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.redirect_default_traversal = True
+        distroseries.distribution.development_series_alias = "devel"
+        self.assertRedirects(
+            "http://launchpad.test/%s/+series/devel" % (
+                distroseries.distribution.name),
+            "http://launchpad.test/%s/+series/%s" % (
+                distroseries.distribution.name, distroseries.name))
+
     def test_new_series_url_redirects(self):
         distroseries = self.factory.makeDistroSeries()
         self.assertRedirects(
@@ -96,6 +135,54 @@ class TestDistributionNavigation(TestCaseWithFactory):
         marshaller = getMultiAdapter((field, request), IFieldMarshaller)
         self.assertIsInstance(marshaller.dereference_url(url), RedirectionView)
         self.assertEqual(expected_obj, marshaller.marshall_from_json_data(url))
+
+    def test_classic_series_url_supports_object_lookup(self):
+        # Classic series URLs (without +series) are compatible with
+        # webservice object lookup, even if the distribution is configured
+        # to redirect the default traversal.
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.redirect_default_traversal = True
+        distroseries_url = "/%s/%s" % (
+            distroseries.distribution.name, distroseries.name)
+        self.assertDereferences(distroseries_url, distroseries)
+
+        # Objects subordinate to the redirected series work too.
+        distroarchseries = self.factory.makeDistroArchSeries(
+            distroseries=distroseries)
+        distroarchseries_url = "/%s/%s/%s" % (
+            distroarchseries.distroseries.distribution.name,
+            distroarchseries.distroseries.name,
+            distroarchseries.architecturetag)
+        self.assertDereferences(distroarchseries_url, distroarchseries)
+
+    def test_classic_series_url_supports_object_lookup_https(self):
+        # Classic series URLs (without +series) are compatible with
+        # webservice object lookup, even if the distribution is configured
+        # to redirect the default traversal and the vhost is configured to
+        # use HTTPS.  "SERVER_URL": None exposes a bug in lazr.restful <
+        # 0.22.2.
+        self.addCleanup(allvhosts.reload)
+        self.pushConfig("vhosts", use_https=True)
+        allvhosts.reload()
+
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.distribution.redirect_default_traversal = True
+        distroseries_url = "/%s/%s" % (
+            distroseries.distribution.name, distroseries.name)
+        self.assertDereferences(
+            distroseries_url, distroseries,
+            environ={"HTTPS": "on", "SERVER_URL": None})
+
+        # Objects subordinate to the redirected series work too.
+        distroarchseries = self.factory.makeDistroArchSeries(
+            distroseries=distroseries)
+        distroarchseries_url = "/%s/%s/%s" % (
+            distroarchseries.distroseries.distribution.name,
+            distroarchseries.distroseries.name,
+            distroarchseries.architecturetag)
+        self.assertDereferences(
+            distroarchseries_url, distroarchseries,
+            environ={"HTTPS": "on", "SERVER_URL": None})
 
     def test_new_series_url_supports_object_lookup(self):
         # New-style +series URLs are compatible with webservice object
@@ -147,6 +234,105 @@ class TestDistributionNavigation(TestCaseWithFactory):
                 "HTTP_HOST": "api.launchpad.test:443",
                 "SERVER_URL": None,
                 })
+
+    def test_short_source_url(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        dsp.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.SOURCE_PACKAGE)
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/%s" % (
+                dsp.distribution.name, dsp.name))
+        self.assertEqual(dsp, obj)
+
+    def test_short_source_url_redirects(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        dsp.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.SOURCE_PACKAGE)
+        dsp.distribution.redirect_default_traversal = True
+        self.assertRedirects(
+            "http://launchpad.test/%s/%s" % (
+                dsp.distribution.name, dsp.name),
+            "http://launchpad.test/%s/+source/%s" % (
+                dsp.distribution.name, dsp.name))
+
+    def test_long_non_default_source_url(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/+source/%s" % (
+                dsp.distribution.name, dsp.name))
+        self.assertEqual(dsp, obj)
+
+    def test_long_default_source_url(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        dsp.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.SOURCE_PACKAGE)
+        dsp.distribution.redirect_default_traversal = True
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/+source/%s" % (
+                dsp.distribution.name, dsp.name))
+        self.assertEqual(dsp, obj)
+
+    def test_long_default_source_url_redirects(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        dsp.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.SOURCE_PACKAGE)
+        self.assertRedirects(
+            "http://launchpad.test/%s/+source/%s" % (
+                dsp.distribution.name, dsp.name),
+            "http://launchpad.test/%s/%s" % (
+                dsp.distribution.name, dsp.name))
+
+    def test_short_oci_url(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.factory.makeDistribution())
+        oci_project.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.OCI_PROJECT)
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/%s" % (
+                oci_project.distribution.name, oci_project.name))
+        self.assertEqual(oci_project, obj)
+
+    def test_short_oci_url_redirects(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.factory.makeDistribution())
+        oci_project.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.OCI_PROJECT)
+        oci_project.distribution.redirect_default_traversal = True
+        self.assertRedirects(
+            "http://launchpad.test/%s/%s" % (
+                oci_project.distribution.name, oci_project.name),
+            "http://launchpad.test/%s/+oci/%s" % (
+                oci_project.distribution.name, oci_project.name))
+
+    def test_long_non_default_oci_url(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.factory.makeDistribution())
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/+oci/%s" % (
+                oci_project.distribution.name, oci_project.name))
+        self.assertEqual(oci_project, obj)
+
+    def test_long_default_oci_url(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.factory.makeDistribution())
+        oci_project.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.OCI_PROJECT)
+        oci_project.distribution.redirect_default_traversal = True
+        obj, _, _ = test_traverse(
+            "http://launchpad.test/%s/+oci/%s" % (
+                oci_project.distribution.name, oci_project.name))
+        self.assertEqual(oci_project, obj)
+
+    def test_long_default_oci_url_redirects(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.factory.makeDistribution())
+        oci_project.distribution.default_traversal_policy = (
+            DistributionDefaultTraversalPolicy.OCI_PROJECT)
+        self.assertRedirects(
+            "http://launchpad.test/%s/+oci/%s" % (
+                oci_project.distribution.name, oci_project.name),
+            "http://launchpad.test/%s/%s" % (
+                oci_project.distribution.name, oci_project.name))
 
 
 class TestDistributionPage(TestCaseWithFactory):

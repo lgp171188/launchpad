@@ -153,6 +153,7 @@ def close_account(username, log):
         ('specification', 'goal_decider'),
         ('specification', 'goal_proposer'),
         ('specification', 'last_changed_by'),
+        ('specification', 'owner'),
         ('specification', 'starter'),
         ('structuralsubscription', 'subscribed_by'),
         ('teammembership', 'acknowledged_by'),
@@ -240,9 +241,10 @@ def close_account(username, log):
     # Reassign questions assigned to the user, and close all their questions
     # in non-final states since nobody else can.
     table_notification('Question')
-    store.find(Question, Question.assigneeID == person.id).set(assigneeID=None)
+    store.find(Question, Question.assignee_id == person.id).set(
+        assignee_id=None)
     owned_non_final_questions = store.find(
-        Question, Question.ownerID == person.id,
+        Question, Question.owner_id == person.id,
         Question.status.is_in([
             QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
             QuestionStatus.ANSWERED,
@@ -250,7 +252,7 @@ def close_account(username, log):
     owned_non_final_questions.set(
         status=QuestionStatus.SOLVED,
         whiteboard=(
-            'Closed by Launchpad due to owner requesting account removal'))
+            u'Closed by Launchpad due to owner requesting account removal'))
     skip.add(('question', 'owner'))
 
     # Remove rows from tables in simple cases in the given order

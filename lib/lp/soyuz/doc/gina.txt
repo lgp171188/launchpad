@@ -7,6 +7,7 @@ quiet mode over it.
 
 Get the current counts of stuff in the database:
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.identity.model.emailaddress import EmailAddress
     >>> from lp.soyuz.interfaces.publishing import active_publishing_status
     >>> from lp.soyuz.model.publishing import (
@@ -454,8 +455,9 @@ We check that the binary package publishing override facility works:
     >>> n = BinaryPackageName.selectOneBy(name="libdb1-compat")
     >>> db1 = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
     ...         version="2.1.3-7")
-    >>> for pub in BinaryPackagePublishingHistory.selectBy(
-    ...     binarypackagereleaseID=db1.id, orderBy='distroarchseries'):
+    >>> for pub in IStore(BinaryPackagePublishingHistory).find(
+    ...         BinaryPackagePublishingHistory,
+    ...         binarypackagerelease=db1).order_by('distroarchseries'):
     ...     print("%s %s %s" % (
     ...         pub.distroarchseries.distroseries.name, pub.priority,
     ...         pub.archive.purpose.name))

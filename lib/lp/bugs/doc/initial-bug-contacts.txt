@@ -157,12 +157,10 @@ track why daf received the email. The rational is repeated in the footer
 of the email with the bug title and URL.
 
     >>> import email
-
-    >>> def by_to_addrs(a, b):
-    ...        return cmp(a[1], b[1])
+    >>> from operator import itemgetter
 
     >>> test_emails = list(stub.test_emails)
-    >>> test_emails.sort(by_to_addrs)
+    >>> test_emails.sort(key=itemgetter(1))
 
     >>> len(test_emails)
     1

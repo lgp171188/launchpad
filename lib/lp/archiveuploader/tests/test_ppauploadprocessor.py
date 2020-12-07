@@ -28,6 +28,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.soyuz.enums import (
     PackagePublishingStatus,
@@ -329,7 +330,8 @@ class TestPPAUploadProcessor(TestPPAUploadProcessorBase):
 
         for binary_package in build.binarypackages:
             self.assertEqual(binary_package.component.name, "universe")
-            [binary_pub] = BinaryPackagePublishingHistory.selectBy(
+            [binary_pub] = IStore(BinaryPackagePublishingHistory).find(
+                BinaryPackagePublishingHistory,
                 binarypackagerelease=binary_package,
                 archive=self.name16.archive)
             self.assertEqual(binary_pub.component.name, "main")

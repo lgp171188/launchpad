@@ -5,9 +5,13 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from datetime import timedelta
+from datetime import (
+    datetime,
+    timedelta,
+    )
 
 from fixtures import FakeLogger
+import pytz
 import six
 from testtools.matchers import (
     ContainsDict,
@@ -47,6 +51,7 @@ from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
+    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -144,17 +149,60 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
             self.build.getLayerFileByDigest,
             'missing')
 
+    def test_can_be_retried(self):
+        ok_cases = [
+            BuildStatus.FAILEDTOBUILD,
+            BuildStatus.MANUALDEPWAIT,
+            BuildStatus.CHROOTWAIT,
+            BuildStatus.FAILEDTOUPLOAD,
+            BuildStatus.CANCELLED,
+            BuildStatus.SUPERSEDED,
+            ]
+        for status in BuildStatus.items:
+            build = self.factory.makeOCIRecipeBuild(status=status)
+            if status in ok_cases:
+                self.assertTrue(build.can_be_retried)
+            else:
+                self.assertFalse(build.can_be_retried)
+
+    def test_can_be_retried_obsolete_series(self):
+        # Builds for obsolete series cannot be retried.
+        distroseries = self.factory.makeDistroSeries(
+            status=SeriesStatus.OBSOLETE)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeOCIRecipeBuild(distro_arch_series=das)
+        self.assertFalse(build.can_be_retried)
+
     def test_can_be_cancelled(self):
         # For all states that can be cancelled, can_be_cancelled returns True.
         ok_cases = [
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
             ]
-        for status in BuildStatus:
+        for status in BuildStatus.items:
+            build = self.factory.makeOCIRecipeBuild()
+            build.queueBuild()
+            build.updateStatus(status)
             if status in ok_cases:
-                self.assertTrue(self.build.can_be_cancelled)
+                self.assertTrue(build.can_be_cancelled)
             else:
-                self.assertFalse(self.build.can_be_cancelled)
+                self.assertFalse(build.can_be_cancelled)
+
+    def test_retry_resets_state(self):
+        # Retrying a build resets most of the state attributes, but does
+        # not modify the first dispatch time.
+        now = datetime.now(pytz.UTC)
+        build = self.factory.makeOCIRecipeBuild()
+        build.updateStatus(BuildStatus.BUILDING, date_started=now)
+        build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        build.gotFailure()
+        with person_logged_in(build.recipe.owner):
+            build.retry()
+        self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
+        self.assertEqual(now, build.date_first_dispatched)
+        self.assertIsNone(build.log)
+        self.assertIsNone(build.upload_log)
+        self.assertEqual(0, build.failure_count)
 
     def test_cancel_not_in_progress(self):
         # The cancel() method for a pending build leaves it in the CANCELLED

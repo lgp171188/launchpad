@@ -1012,7 +1012,7 @@ class LaunchpadRootNavigation(Navigation):
             return None
 
         # If the request is for a bug then redirect straight to that bug.
-        bug_match = re.match("/bugs/(\d+)$", self.request['PATH_INFO'])
+        bug_match = re.match(r"/bugs/(\d+)$", self.request['PATH_INFO'])
         if bug_match:
             bug_number = bug_match.group(1)
             bug_set = getUtility(IBugSet)

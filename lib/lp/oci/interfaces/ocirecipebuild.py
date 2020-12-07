@@ -173,6 +173,11 @@ class IOCIRecipeBuildView(IPackageBuild):
         required=True, readonly=True,
         description=_("Whether this build record can be rescored manually.")))
 
+    can_be_retried = exported(Bool(
+        title=_("Can be retried"),
+        required=True, readonly=True,
+        description=_("Whether this build record can be retried.")))
+
     can_be_cancelled = exported(Bool(
         title=_("Can be cancelled"),
         required=True, readonly=True,
@@ -240,6 +245,15 @@ class IOCIRecipeBuildEdit(Interface):
 
         :raises CannotScheduleRegistryUpload: if the build is not in a state
             where an upload can be scheduled.
+        """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def retry():
+        """Restore the build record to its initial state.
+
+        Build record loses its history, is moved to NEEDSBUILD and a new
+        non-scored BuildQueue entry is created for it.
         """
 
     def cancel():

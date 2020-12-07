@@ -195,9 +195,9 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Create OCI recipe").click()
 
         content = find_main_content(browser.contents)
@@ -230,9 +230,9 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Build-time ARG variables").value = (
             "VAR1=10\nVAR2=20")
         browser.getControl("Create OCI recipe").click()
@@ -291,9 +291,9 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         processors = browser.getControl(name="field.processors")
         processors.value = ["386", "amd64"]
         browser.getControl(name="field.name").value = "recipe-name"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Create OCI recipe").click()
         login_person(self.person)
         recipe = getUtility(IOCIRecipeSet).getByName(
@@ -409,9 +409,9 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Owner").value = ["new-team"]
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Description").value = "New description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             new_git_ref.repository.identity)
-        browser.getControl("Git branch").value = new_git_ref.path
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Build file path").value = "Dockerfile-2"
         browser.getControl("Build directory context").value = "apath"
         browser.getControl("Build daily").selected = True
@@ -817,7 +817,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         build = self.makeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago buildlog \(.*\) 386
@@ -834,7 +834,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture
             Needs building in .* \(estimated\) 386
@@ -1111,6 +1111,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                                      text=soupmatchers._not_passed)),
                 soupmatchers.Within(
                     row,
+                    soupmatchers.Tag("Region", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
                     soupmatchers.Tag("Username", "td",
                                      text=soupmatchers._not_passed)),
                 soupmatchers.Within(
@@ -1330,6 +1334,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl(name="field.add_image_name").value = "imagename3"
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "somewhere-02"
         browser.getControl(name="field.add_username").value = "username"
         browser.getControl(name="field.add_password").value = "password"
         browser.getControl(
@@ -1347,8 +1352,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                 url=url,
                 username="username")))
         with person_logged_in(self.person):
-            self.assertEqual(
-                {"username": "username", "password": "password"},
+            self.assertEqual({
+                "username": "username", "password": "password",
+                "region": "somewhere-02"},
                 rule.registry_credentials.getCredentials())
 
     def test_add_oci_push_rules_existing_credentials_duplicate(self):
@@ -1494,6 +1500,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getLink("Edit OCI registry credentials").click()
 
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "new_region1"
         browser.getControl(name="field.add_username").value = "new_username"
         browser.getControl(name="field.add_password").value = "password"
         browser.getControl(name="field.add_confirm_password"
@@ -1508,8 +1515,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             self.assertEqual(url, creds[1].url)
             self.assertThat(
                 (creds[1]).getCredentials(),
-                MatchesDict({"username": Equals("new_username"),
-                             "password": Equals("password")}))
+                MatchesDict({
+                    "username": Equals("new_username"),
+                    "password": Equals("password"),
+                    "region": Equals("new_region1")}))
 
 
 class TestOCIProjectRecipesView(BaseTestOCIRecipeView):

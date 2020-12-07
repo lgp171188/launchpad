@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """FAQ document models."""
@@ -20,6 +20,7 @@ from sqlobject import (
     StringCol,
     )
 from storm.expr import And
+from storm.references import ReferenceSet
 from zope.event import notify
 from zope.interface import implementer
 
@@ -83,8 +84,8 @@ class FAQ(SQLBase):
         dbName='distribution', foreignKey='Distribution', notNull=False,
         default=None)
 
-    related_questions = SQLMultipleJoin(
-        'Question', joinColumn='faq', orderBy=['Question.datecreated'])
+    related_questions = ReferenceSet(
+        'id', 'Question.faq_id', order_by=('Question.datecreated'))
 
     @property
     def target(self):
@@ -95,7 +96,7 @@ class FAQ(SQLBase):
             return self.distribution
 
     def destroySelf(self):
-        if self.related_questions:
+        if not self.related_questions.is_empty():
             raise CannotDeleteFAQ(
                "Cannot delete FAQ: questions must be unlinked first.")
         super(FAQ, self).destroySelf()
@@ -133,13 +134,13 @@ class FAQ(SQLBase):
         assert not (product and distribution), (
             'only one of product or distribution should be provided')
         if product:
-            target_constraint = 'product = %s' % sqlvalues(product)
+            target_constraint = (FAQ.product == product)
         elif distribution:
-            target_constraint = 'distribution = %s' % sqlvalues(distribution)
+            target_constraint = (FAQ.distribution == distribution)
         else:
             raise AssertionError('must provide product or distribution')
 
-        phrases = nl_phrase_search(summary, FAQ, target_constraint)
+        phrases = nl_phrase_search(summary, FAQ, [target_constraint])
         if not phrases:
             # No useful words to search on in that summary.
             return FAQ.select('1 = 2')

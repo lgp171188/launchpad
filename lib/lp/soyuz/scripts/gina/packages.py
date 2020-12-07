@@ -105,8 +105,8 @@ def get_dsc_path(name, version, component, archive_root):
 def unpack_dsc(package, version, component, distro_name, archive_root):
     dsc_name, dsc_path, component = get_dsc_path(package, version,
                                                  component, archive_root)
-    version = re.sub("^\d+:", "", version)
-    version = re.sub("-[^-]+$", "", version)
+    version = re.sub(r"^\d+:", "", version)
+    version = re.sub(r"-[^-]+$", "", version)
     source_dir = "%s-%s" % (package, version)
     try:
         extract_dpkg_source(dsc_path, ".", vendor=distro_name)

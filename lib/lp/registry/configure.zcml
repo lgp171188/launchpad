@@ -1820,6 +1820,7 @@
             set_attributes="
                 bug_reported_acknowledgement
                 bug_reporting_guidelines
+                default_traversal_policy
                 description
                 development_series_alias
                 display_name
@@ -1837,6 +1838,7 @@
                 official_malone
                 owner
                 package_derivatives_email
+                redirect_default_traversal
                 redirect_release_uploads
                 summary
                 vcs

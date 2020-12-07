@@ -689,9 +689,12 @@ rows will be excluded from the final search.
 
 More than 50% of the questions matches firefox:
 
-    >>> question_count = Question.select().count()
-    >>> firefox_questions = Question.select(
-    ...     'fti @@ ftq(%s)' % quote('firefox')).count()
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.database.stormexpr import fti_search
+    >>> question_count = IStore(Question).find(Question).count()
+    >>> firefox_questions = IStore(Question).find(
+    ...     Question,
+    ...     fti_search(Question, "firefox")).count()
     >>> float(firefox_questions) / question_count > 0.50
     True
 
@@ -722,29 +725,28 @@ Short queries are expanded more simply:
 Using other constraints
 .......................
 
-You can pass a third parameter to the function that will be use as
-an additional constraint to determine the total number of rows that
+You can pass a third parameter to the function that will be used as
+additional constraints to determine the total number of rows that
 could be matched. For example, when searching questions on the firefox
 product more than 50% have the word 'get' in (which surprisingly isn't
-considered a stop word by tsearch2). If the constraint uses any
-additional tables, you can pass in list of names of these tables as a
-forth parameter:
+considered a stop word by tsearch2).
 
     >>> from lp.registry.interfaces.product import IProductSet
+    >>> from lp.registry.model.product import Product
     >>> firefox_product = getUtility(IProductSet).getByName('firefox')
 
-    >>> firefox_count = Question.select(
-    ...     'product = %s' % firefox_product.id).count()
-    >>> get_questions = Question.select(
-    ...     'fti @@ ftq(%s)' % quote('get')).count()
+    >>> firefox_count = IStore(Question).find(
+    ...     Question, Question.product_id == firefox_product.id).count()
+    >>> get_questions = IStore(Question).find(
+    ...     Question,
+    ...     fti_search(Question, "get")).count()
     >>> float(get_questions) / firefox_count > 0.50
     True
 
     >>> nl_phrase_search(
     ...     'firefox gets very slow on flickr', Question,
-    ...     "Question.product = %s AND Product.active = 't'"
-    ...     % firefox_product.id,
-    ...     ['Product'], fast_enabled=False)
+    ...     [Question.product == firefox_product, Product.active],
+    ...     fast_enabled=False)
     u'slow|flickr'
 
 When the query only has stop words in it, the returned query will be the empty
@@ -756,10 +758,10 @@ string:
 When there are no candidate rows, only stemming and stop words removal
 is done.
 
-    >>> Question.select('product = -1').count()
+    >>> IStore(Question).find(Question, Question.product_id == -1).count()
     0
     >>> nl_phrase_search('firefox is very slow on flickr', Question,
-    ...                  'product = -1')
+    ...                  [Question.product == -1])
     u'(firefox&flickr&slow)|(flickr&slow)|(firefox&slow)|(firefox&flickr)'
 
 
@@ -778,16 +780,19 @@ mozilla-firefox source package.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     >>> firefox_package = ubuntu.getSourcePackage('mozilla-firefox')
-    >>> firefox_package_questions = Question.select(
-    ...     'distribution = %s AND sourcepackagename = %s' % sqlvalues(
-    ...     ubuntu, firefox_package.sourcepackagename))
+    >>> firefox_package_id =firefox_package.sourcepackagename.id
+    >>> firefox_package_questions = IStore(Question).find(
+    ...     Question,
+    ...     Question.distribution_id == ubuntu.id,
+    ...     Question.sourcepackagename_id == firefox_package_id)
     >>> firefox_package_questions.count() < 5
     True
 
 And more than half of these contain the keyword "firefox" in them:
 
-    >>> firefox_questions = Question.select(
-    ...     'fti @@ ftq(%s)' % quote('firefox')).count()
+    >>> firefox_questions = IStore(Question).find(
+    ...     Question,
+    ...     fti_search(Question, "firefox"))
     >>> float(get_questions) / firefox_package_questions.count() > 0.50
     True
 
@@ -796,6 +801,6 @@ questions:
 
     >>> nl_phrase_search(
     ...     'firefox is slow', Question,
-    ...     'distribution = %s AND sourcepackagename = %s' % sqlvalues(
-    ...     ubuntu, firefox_package.sourcepackagename))
+    ...     [Question.distribution == ubuntu,
+    ...      Question.sourcepackagename == firefox_package.sourcepackagename])
     u'firefox|slow'

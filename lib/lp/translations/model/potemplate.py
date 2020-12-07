@@ -25,7 +25,6 @@ from sqlobject import (
     ForeignKey,
     IntCol,
     SQLMultipleJoin,
-    SQLObjectNotFound,
     StringCol,
     )
 from storm.expr import (
@@ -458,16 +457,16 @@ class POTemplate(SQLBase, RosettaStats):
         """See `IPOTemplate`."""
         # Find a message ID with the given text.
         try:
-            singular_msgid = POMsgID.byMsgid(singular_text)
-        except SQLObjectNotFound:
+            singular_msgid = POMsgID.getByMsgid(singular_text)
+        except NotFoundError:
             return None
 
         # Find a message ID for the plural string.
         plural_msgid = None
         if plural_text is not None:
             try:
-                plural_msgid = POMsgID.byMsgid(plural_text)
-            except SQLObjectNotFound:
+                plural_msgid = POMsgID.getByMsgid(plural_text)
+            except NotFoundError:
                 return None
 
         # Find a message set with the given message ID.
@@ -500,7 +499,7 @@ class POTemplate(SQLBase, RosettaStats):
         if prefetch:
             def prefetch_msgids(rows):
                 load_related(
-                    POMsgID, rows, ['msgid_singularID', 'msgid_pluralID'])
+                    POMsgID, rows, ['msgid_singular_id', 'msgid_plural_id'])
             return DecoratedResultSet(result, pre_iter_hook=prefetch_msgids)
         else:
             return result
@@ -864,12 +863,12 @@ class POTemplate(SQLBase, RosettaStats):
     def getOrCreatePOMsgID(text):
         """Creates or returns existing POMsgID for given `text`."""
         try:
-            msgid = POMsgID.byMsgid(text)
-        except SQLObjectNotFound:
+            msgid = POMsgID.getByMsgid(text)
+        except NotFoundError:
             # If there are no existing message ids, create a new one.
             # We do not need to check whether there is already a message set
             # with the given text in this template.
-            msgid = POMsgID(msgid=text)
+            msgid = POMsgID.new(text)
         return msgid
 
     def createMessageSetFromText(self, singular_text, plural_text,
@@ -1020,8 +1019,8 @@ class POTemplate(SQLBase, RosettaStats):
         Plural = ClassAlias(POMsgID)
 
         SingularJoin = LeftJoin(
-            Singular, Singular.id == POTMsgSet.msgid_singularID)
-        PluralJoin = LeftJoin(Plural, Plural.id == POTMsgSet.msgid_pluralID)
+            Singular, Singular.id == POTMsgSet.msgid_singular_id)
+        PluralJoin = LeftJoin(Plural, Plural.id == POTMsgSet.msgid_plural_id)
 
         source = Store.of(self).using(
             TranslationTemplateItem, POTMsgSet, SingularJoin, PluralJoin)

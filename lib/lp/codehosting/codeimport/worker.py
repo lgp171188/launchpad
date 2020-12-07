@@ -83,7 +83,6 @@ from six.moves.urllib.parse import (
     urlunsplit,
     )
 
-from lp.code.interfaces.branch import get_blacklisted_hostnames
 from lp.codehosting.codeimport.foreigntree import CVSWorkingTree
 from lp.codehosting.codeimport.tarball import (
     create_tarball,
@@ -144,16 +143,6 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
         except InvalidURIError:
             raise BadUrl(url)
         for hostname in self.exclude_hosts:
-            if uri.underDomain(hostname):
-                raise BadUrl(url)
-        # XXX cjwatson 2020-10-20: These hostname checks require tight
-        # coupling with Launchpad.  Remove them once the scheduler always
-        # passes exclusions via --exclude-host arguments.
-        if self.rcstype == self.target_rcstype:
-            launchpad_domain = config.vhost.mainsite.hostname
-            if uri.underDomain(launchpad_domain):
-                raise BadUrl(url)
-        for hostname in get_blacklisted_hostnames():
             if uri.underDomain(hostname):
                 raise BadUrl(url)
         if uri.scheme not in self.allowed_schemes:

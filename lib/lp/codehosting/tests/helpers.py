@@ -11,7 +11,6 @@ __all__ = [
     'create_branch_with_one_revision',
     'force_stacked_on_url',
     'LoomTestMixin',
-    'make_bazaar_branch_and_tree',
     'TestResultWrapper',
     ]
 
@@ -25,9 +24,6 @@ from breezy.tests import (
     )
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 
-from lp.code.enums import BranchType
-from lp.codehosting.vfs import branch_id_to_path
-from lp.services.config import config
 from lp.testing import TestCase
 
 
@@ -86,17 +82,6 @@ class LoomTestMixin:
         loom_tree.unlock()
         loom_tree.branch.record_loom('sample loom')
         return loom_tree
-
-
-def make_bazaar_branch_and_tree(db_branch):
-    """Make a dummy Bazaar branch and working tree from a database Branch."""
-    assert db_branch.branch_type == BranchType.HOSTED, (
-        "Can only create branches for HOSTED branches: %r"
-        % db_branch)
-    branch_dir = os.path.join(
-        config.codehosting.mirrored_branches_root,
-        branch_id_to_path(db_branch.id))
-    return create_branch_with_one_revision(branch_dir)
 
 
 def create_branch_with_one_revision(branch_dir, format=None):
