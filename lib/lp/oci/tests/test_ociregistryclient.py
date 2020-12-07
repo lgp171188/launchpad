@@ -239,6 +239,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         # Creates another build, more recent.
         self.factory.makeOCIRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series,
+            status=BuildStatus.FULLYBUILT,
             date_created=self.build.date_created + timedelta(seconds=1))
 
         self.client.upload(self.build)
@@ -592,6 +593,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         # Creates another build for the same arch and recipe, more recent.
         self.factory.makeOCIRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series,
+            status=BuildStatus.FULLYBUILT,
             date_created=self.build.date_created + timedelta(seconds=1))
 
         build_request = OCIRecipeBuildRequest(recipe, -1)
