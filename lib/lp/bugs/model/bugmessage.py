@@ -97,14 +97,12 @@ class BugMessageSet:
     def get(self, bugmessageid):
         """See `IBugMessageSet`."""
         store = IStore(BugMessage)
-        return store.find(BugMessage, BugMessage.id == bugmessageid).one()
+        return store.get(BugMessage, bugmessageid)
 
     def getByBugAndMessage(self, bug, message):
         """See`IBugMessageSet`."""
         store = IStore(BugMessage)
-        return store.find(
-            BugMessage,
-            BugMessage.bug == bug, BugMessage.message == message).one()
+        return store.find(BugMessage, bug=bug, message=message).one()
 
     def getImportedBugMessages(self, bug):
         """See IBugMessageSet."""

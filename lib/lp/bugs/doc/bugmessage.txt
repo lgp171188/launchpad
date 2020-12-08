@@ -118,7 +118,7 @@ Note that although the watch was created when the Message was added to
 the bug, the message and the watch are not linked because the message
 was not imported by the bug watch.
 
-    >>> bug_message = list(bug_one.bug_messages)[-1]
+    >>> bug_message = bug_one.bug_messages.last()
     >>> print(bug_message.message == test_message)
     True
     >>> print(bug_message.bugwatch)
