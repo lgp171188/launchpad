@@ -408,7 +408,7 @@ class BugTaskNavigation(Navigation):
         """Traverse to a nomination by id."""
         if not nomination_id.isdigit():
             return None
-        return getUtility(IBugNominationSet).get(nomination_id)
+        return getUtility(IBugNominationSet).get(int(nomination_id))
 
     @redirection('references')
     def redirect_references(self):
@@ -1973,7 +1973,7 @@ class BugTasksTableView(LaunchpadView):
         nominations = list(bug.getNominations())
         # Eager load validity for all the persons we know of that will be
         # displayed.
-        ids = set(map(attrgetter('ownerID'), nominations))
+        ids = set(map(attrgetter('owner_id'), nominations))
         ids.discard(None)
         if ids:
             list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(

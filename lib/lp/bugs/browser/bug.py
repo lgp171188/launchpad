@@ -193,7 +193,7 @@ class BugNavigation(Navigation):
         """Traverse to a nomination by id."""
         if nomination_id.isdigit():
             try:
-                return getUtility(IBugNominationSet).get(nomination_id)
+                return getUtility(IBugNominationSet).get(int(nomination_id))
             except NotFoundError:
                 return None
 
