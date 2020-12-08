@@ -127,6 +127,7 @@ from lp.bugs.interfaces.bugattachment import (
 from lp.bugs.interfaces.bugmessage import IBugMessageSet
 from lp.bugs.interfaces.bugnomination import (
     BugNominationStatus,
+    IBugNominationSet,
     NominationError,
     NominationSeriesObsoleteError,
     )
@@ -1676,16 +1677,7 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def getNominationFor(self, target):
         """See `IBug`."""
-        if IDistroSeries.providedBy(target):
-            filter_args = dict(distroseriesID=target.id)
-        elif IProductSeries.providedBy(target):
-            filter_args = dict(productseriesID=target.id)
-        elif ISourcePackage.providedBy(target):
-            filter_args = dict(distroseriesID=target.series.id)
-        else:
-            return None
-
-        nomination = BugNomination.selectOneBy(bugID=self.id, **filter_args)
+        nomination = getUtility(IBugNominationSet).getByBugTarget(self, target)
 
         if nomination is None:
             raise NotFoundError(
@@ -1702,7 +1694,7 @@ class Bug(SQLBase, InformationTypeMixin):
             return nomination.target.bugtargetdisplayname.lower()
 
         if nominations is None:
-            nominations = BugNomination.selectBy(bugID=self.id)
+            nominations = getUtility(IBugNominationSet).findByBug(self)
         if IProduct.providedBy(target):
             filtered_nominations = []
             for nomination in shortlist(nominations):

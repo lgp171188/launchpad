@@ -802,7 +802,7 @@
                     productseries
                     bug
                     owner
-                    ownerID
+                    owner_id
                     decider
                     target
                     status
