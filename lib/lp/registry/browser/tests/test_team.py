@@ -1,5 +1,7 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -39,6 +41,7 @@ from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.enums import ArchiveStatus
 from lp.testing import (
+    admin_logged_in,
     ANONYMOUS,
     login,
     login_celebrity,
@@ -967,3 +970,28 @@ class TestPersonIndexVisibilityView(TestCaseWithFactory):
             'private team link', 'a',
             attrs={'href': '/~private-team', 'class': 'sprite team private'},
             text='Private Team'))
+
+
+class TestTeamContactAddressView(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_team_change_contact_address_to_existing_address(self):
+        # Test that a team can change the contact address.
+        someone_email = "someone@canonical.com"
+        someone = self.factory.makePerson(
+            displayname="Unicode Person \xc9", email=someone_email)
+        someone_url = canonical_url(someone)
+        team = self.factory.makeTeam(email="team@canonical.com")
+        with admin_logged_in():
+            form = {
+                'field.contact_method': 'EXTERNAL_ADDRESS',
+                'field.contact_address': 'someone@canonical.com',
+                'field.actions.change': 'Change',
+            }
+            view = create_initialized_view(team, '+contactaddress', form=form)
+            expected_msg = (
+                '%s is already registered in Launchpad and is associated '
+                'with <a href="%s">Unicode Person \xc9</a>.')
+            expected_msg %= (someone_email, someone_url)
+            self.assertEqual([expected_msg], view.errors)
