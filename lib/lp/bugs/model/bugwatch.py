@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -261,6 +261,8 @@ class BugWatch(SQLBase):
 
     def hasComment(self, comment_id):
         """See `IBugWatch`."""
+        if comment_id is not None:
+            comment_id = six.ensure_text(comment_id)
         store = Store.of(self)
         bug_messages = store.find(
             BugMessage,

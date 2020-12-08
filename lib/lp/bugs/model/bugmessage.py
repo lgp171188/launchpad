@@ -6,6 +6,7 @@ __all__ = ['BugMessage', 'BugMessageSet']
 
 from email.utils import make_msgid
 
+import six
 from storm.properties import (
     Int,
     Unicode,
@@ -64,7 +65,9 @@ class BugMessage(StormBase):
         self.index = index
         self.message = message
         self.bug = bug
-        self.remote_comment_id = remote_comment_id
+        self.remote_comment_id = (
+            six.ensure_text(remote_comment_id) if remote_comment_id is not None
+            else None)
         self.bugwatch = bugwatch
 
     def __repr__(self):
