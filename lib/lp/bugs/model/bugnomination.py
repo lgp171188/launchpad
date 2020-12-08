@@ -76,10 +76,9 @@ class BugNomination(StormBase):
         name='status', allow_none=False, enum=BugNominationStatus,
         default=BugNominationStatus.PROPOSED)
 
-    def __init__(self, owner=None, decider=None, date_created=UTC_NOW,
+    def __init__(self, bug, owner, decider=None, date_created=UTC_NOW,
                  date_decided=None, distroseries=None,
-                 productseries=None, bug=None,
-                 status=BugNominationStatus.PROPOSED):
+                 productseries=None, status=BugNominationStatus.PROPOSED):
         self.owner = owner
         self.decider = decider
         self.date_created = date_created
@@ -182,9 +181,11 @@ class BugNomination(StormBase):
                     return True
         return False
 
+    def destroySelf(self):
+        IStore(self).remove(self)
+
     def __repr__(self):
-        return "<BugNomination at 0x%x bug=%s owner=%s>" % (
-            id(self), self.bug_id, self.owner_id)
+        return "<BugNomination bug=%s owner=%s>" % (self.bug_id, self.owner_id)
 
 
 @implementer(IBugNominationSet)
