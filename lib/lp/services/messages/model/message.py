@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -108,7 +108,7 @@ class Message(SQLBase):
     parent = ForeignKey(foreignKey='Message', dbName='parent',
         notNull=False, default=None)
     rfc822msgid = StringCol(notNull=True)
-    bugs = SQLRelatedJoin('Bug', joinColumn='message', otherColumn='bug',
+    bugs = SQLRelatedJoin('Bug', joinColumn='message_id', otherColumn='bug_id',
         intermediateTable='BugMessage')
     _chunks = SQLMultipleJoin('MessageChunk', joinColumn='message')
 
