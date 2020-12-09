@@ -20,6 +20,7 @@ from lp.buildmaster.enums import (
     )
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.model.builder import Builder
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
@@ -96,6 +97,20 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
         build = self.factory.makeSnapBuild()
         url = (
             "http://api.launchpad.test/devel/builders/+snapbuild/%s" %
+            build.id)
+        expected_url = (
+            "http://api.launchpad.test/devel" +
+            canonical_url(build, path_only_if_possible=True))
+        logout()
+        browser = setupBrowser()
+        browser.open(url)
+        self.assertEqual(expected_url, browser.url)
+
+    def test_oci_recipe_build_api_redirects(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        build = self.factory.makeOCIRecipeBuild()
+        url = (
+            "http://api.launchpad.test/devel/builders/+ocirecipebuild/%s" %
             build.id)
         expected_url = (
             "http://api.launchpad.test/devel" +
