@@ -546,10 +546,6 @@ class TranslationMessageSet:
         except SQLObjectNotFound:
             return None
 
-    def selectDirect(self, where=None, order_by=None):
-        """See `ITranslationMessageSet`."""
-        return TranslationMessage.select(where, orderBy=order_by)
-
     def preloadDetails(self, messages, pofile=None, need_pofile=False,
                        need_potemplate=False, need_potemplate_context=False,
                        need_potranslation=False, need_potmsgset=False,
