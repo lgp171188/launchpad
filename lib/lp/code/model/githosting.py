@@ -33,7 +33,6 @@ from lp.code.errors import (
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
     GitTargetError,
-    NoSuchGitReference,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.services.config import config
@@ -309,3 +308,8 @@ class GitHostingClient:
                 raise GitReferenceDeletionFault(
                     "Error deleting %s from repo %s: HTTP %s" %
                     (ref, path, e.response.status_code))
+
+    def repackRepository(self, path):
+        """See `IGitHostingClient`."""
+        url = "/repo/%s/repack" % path
+        self._post(url)

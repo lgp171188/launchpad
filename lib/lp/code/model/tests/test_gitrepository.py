@@ -3389,6 +3389,7 @@ class TestGitRepositorySet(TestCaseWithFactory):
         # getByPath returns a repository matching the path that it's given.
         a = self.factory.makeGitRepository()
         self.factory.makeGitRepository()
+
         repository = self.repository_set.getByPath(a.owner, a.shortened_path)
         self.assertEqual(a, repository)
 
@@ -3823,6 +3824,21 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     """Tests for the webservice."""
 
     layer = DatabaseFunctionalLayer
+
+    def test_repackRepository(self):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        owner_url = api_url(owner_db)
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        repo_path = repository_db.shortened_path
+        webservice = webservice_for_person(
+            owner_db, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "repackRepository", user=owner_url, path=repo_path)
+        self.assertEqual(200, response.status)
+        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")

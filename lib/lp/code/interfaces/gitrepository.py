@@ -1161,6 +1161,32 @@ class IGitRepositorySet(Interface):
             Projects that do not have default repositories are omitted.
         """
 
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(
+        path=TextLine(title=_("Repository path"), required=True))
+    @export_read_operation()
+    @operation_for_version("devel")
+    def repackRepository(user, path):
+        """Trigger a repack repository operation.
+
+        :param path: The repository path.
+
+        Any of these forms may be used::
+
+            Unique names:
+                ~OWNER/PROJECT/+git/NAME
+                ~OWNER/DISTRO/+source/SOURCE/+git/NAME
+                ~OWNER/+git/NAME
+            Owner-target default aliases:
+                ~OWNER/PROJECT
+                ~OWNER/DISTRO/+source/SOURCE
+            Official aliases:
+                PROJECT
+                DISTRO/+source/SOURCE
+
+        Return None if no match was found.
+        """
+
 
 class IGitRepositoryDelta(Interface):
     """The quantitative changes made to a Git repository that was edited or

@@ -1925,6 +1925,13 @@ class GitRepositorySet:
         """See `IGitRepositorySet`."""
         return []
 
+    def repackRepository(self, user, path):
+        repository, extra_path = getUtility(IGitLookup).getByPath(path)
+        if repository is None:
+            return None
+        repository_path = repository.getInternalPath()
+        getUtility(IGitHostingClient).repackRepository(repository_path)
+
     @staticmethod
     def preloadDefaultRepositoriesForProjects(projects):
         repositories = bulk.load_referencing(
