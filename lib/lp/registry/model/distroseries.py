@@ -178,7 +178,6 @@ from lp.translations.model.hastranslationtemplates import (
     )
 from lp.translations.model.languagepack import LanguagePack
 from lp.translations.model.pofile import POFile
-from lp.translations.model.pofiletranslator import POFileTranslator
 from lp.translations.model.potemplate import (
     POTemplate,
     TranslationTemplatesCollection,
@@ -1362,6 +1361,9 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getPOFileContributorsByLanguage(self, language):
         """See `IDistroSeries`."""
+        # Circular import.
+        from lp.translations.model.pofiletranslator import POFileTranslator
+
         contributors = IStore(Person).find(
             Person,
             POFileTranslator.personID == Person.id,

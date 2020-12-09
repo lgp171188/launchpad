@@ -542,7 +542,7 @@ class POTemplate(SQLBase, RosettaStats):
 
     def getPOFileByPath(self, path):
         """See `IPOTemplate`."""
-        return POFile.selectOneBy(potemplate=self, path=path)
+        return IStore(POFile).find(POFile, potemplate=self, path=path).one()
 
     def getPOFileByLang(self, language_code):
         """See `IPOTemplate`."""
@@ -1281,17 +1281,18 @@ class POTemplateSet:
 
     def __iter__(self):
         """See `IPOTemplateSet`."""
-        res = POTemplate.select()
-        for potemplate in res:
+        for potemplate in IStore(POTemplate).find(POTemplate):
             yield potemplate
 
     def getAllByName(self, name):
         """See `IPOTemplateSet`."""
-        return POTemplate.selectBy(name=name, orderBy=['name', 'id'])
+        return IStore(POTemplate).find(POTemplate, name=name).order_by(
+            POTemplate.name, POTemplate.id)
 
     def getAllOrderByDateLastUpdated(self):
         """See `IPOTemplateSet`."""
-        return POTemplate.select(orderBy=['-date_last_updated'])
+        return IStore(POTemplate).find(POTemplate).order_by(
+            Desc(POTemplate.date_last_updated))
 
     def getSubset(self, distroseries=None, sourcepackagename=None,
                   productseries=None, iscurrent=None,

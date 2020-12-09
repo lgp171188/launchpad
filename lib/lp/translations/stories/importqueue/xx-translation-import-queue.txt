@@ -294,12 +294,13 @@ Ubuntu uploads
 As a special case, the owners of Ubuntu's translation group are allowed
 to manage Ubuntu uploads.
 
-    >>> from lp.registry.model.distribution import Distribution
+    >>> from zope.component import getUtility
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.translations.model.translationimportqueue import (
     ...     TranslationImportQueue)
     >>> login('admin@canonical.com')
     >>> queue = TranslationImportQueue()
-    >>> ubuntu = Distribution.selectOneBy(name='ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
     >>> hoary = ubuntu['hoary']
 
 There is a translation group for Ubuntu.  Its owner has no special
@@ -307,17 +308,16 @@ privileges or roles other than running the group.
 
 Somebody else has uploaded a translation template for an Ubuntu package.
 
-    >>> login(ANONYMOUS)
-
     >>> package = factory.makeSourcePackageName()
     >>> group_owner = factory.makePerson(
     ...     email='go@example.com', name='groupowner')
     >>> uploader = factory.makePerson()
     >>> ubuntu.translationgroup = factory.makeTranslationGroup(group_owner)
+
+    >>> login(ANONYMOUS)
     >>> ubuntu_upload = queue.addOrUpdateEntry(
     ...     'messages.pot', b'(content)', False, uploader,
     ...     sourcepackagename=package, distroseries=hoary)
-
     >>> logout()
 
 The owner of Ubuntu's translation group, despite not being the owner or

@@ -36,7 +36,7 @@ translation, we get two POFileTranslator records for each of the POFiles.
     # We need to be able to create persons and projects so let's just use
     # a global 'postgres' permission which allows everything.
     >>> switch_dbuser('postgres')
-    >>> from lp.services.database.sqlbase import sqlvalues
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.testing.factory import LaunchpadObjectFactory
     >>> from lp.translations.model.pofiletranslator import POFileTranslator
@@ -62,7 +62,8 @@ translation, we get two POFileTranslator records for each of the POFiles.
     ...     pofile=devel_sr_pofile,
     ...     potmsgset=potmsgset,
     ...     translations=[u"blah"])
-    >>> print(POFileTranslator.select(
-    ...     "pofile IN (%s, %s)"
-    ...     % sqlvalues(devel_sr_pofile, stable_sr_pofile)).count())
+    >>> print(IStore(POFileTranslator).find(
+    ...     POFileTranslator,
+    ...     POFileTranslator.pofileID.is_in(
+    ...         (devel_sr_pofile.id, stable_sr_pofile.id))).count())
     2
