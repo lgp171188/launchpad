@@ -127,6 +127,7 @@ from lp.bugs.interfaces.bugattachment import (
 from lp.bugs.interfaces.bugmessage import IBugMessageSet
 from lp.bugs.interfaces.bugnomination import (
     BugNominationStatus,
+    IBugNominationSet,
     NominationError,
     NominationSeriesObsoleteError,
     )
@@ -368,13 +369,13 @@ class Bug(SQLBase, InformationTypeMixin):
 
     # useful Joins
     activity = SQLMultipleJoin('BugActivity', joinColumn='bug', orderBy='id')
-    messages = SQLRelatedJoin('Message', joinColumn='bug',
-                           otherColumn='message',
+    messages = SQLRelatedJoin('Message', joinColumn='bug_id',
+                           otherColumn='message_id',
                            intermediateTable='BugMessage',
                            prejoins=['owner'],
                            orderBy=['datecreated', 'id'])
-    bug_messages = SQLMultipleJoin(
-        'BugMessage', joinColumn='bug', orderBy='index')
+    bug_messages = ReferenceSet(
+        'id', BugMessage.bug_id, order_by=BugMessage.index)
     watches = SQLMultipleJoin(
         'BugWatch', joinColumn='bug', orderBy=['bugtracker', 'remotebug'])
     duplicates = SQLMultipleJoin('Bug', joinColumn='duplicateof', orderBy='id')
@@ -617,25 +618,25 @@ class Bug(SQLBase, InformationTypeMixin):
                 Message,
                 Join(
                     BugMessage,
-                    BugMessage.messageID == Message.id),
+                    BugMessage.message_id == Message.id),
                 LeftJoin(
                     Join(
                         ParentMessage,
                         ParentBugMessage,
-                        ParentMessage.id == ParentBugMessage.messageID),
+                        ParentMessage.id == ParentBugMessage.message_id),
                     And(
                         Message.parent == ParentMessage.id,
-                        ParentBugMessage.bugID == self.id)),
+                        ParentBugMessage.bug_id == self.id)),
                 ]
             results = store.using(*tables).find(
                 (Message, ParentMessage, BugMessage),
-                BugMessage.bugID == self.id,
+                BugMessage.bug_id == self.id,
                 )
         else:
             lookup = Message, BugMessage
             results = store.find(lookup,
-                BugMessage.bugID == self.id,
-                BugMessage.messageID == Message.id,
+                BugMessage.bug_id == self.id,
+                BugMessage.message_id == Message.id,
                 )
         results.order_by(BugMessage.index)
         return DecoratedResultSet(results, index_message,
@@ -1578,7 +1579,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # query seems fine as we have to join out from bugmessage anyway.
         result = Store.of(self).find((BugMessage, Message, MessageChunk),
             Message.id == MessageChunk.messageID,
-            BugMessage.messageID == Message.id,
+            BugMessage.message_id == Message.id,
             BugMessage.bug == self.id, *ranges)
         result.order_by(BugMessage.index, MessageChunk.sequence)
 
@@ -1676,16 +1677,7 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def getNominationFor(self, target):
         """See `IBug`."""
-        if IDistroSeries.providedBy(target):
-            filter_args = dict(distroseriesID=target.id)
-        elif IProductSeries.providedBy(target):
-            filter_args = dict(productseriesID=target.id)
-        elif ISourcePackage.providedBy(target):
-            filter_args = dict(distroseriesID=target.series.id)
-        else:
-            return None
-
-        nomination = BugNomination.selectOneBy(bugID=self.id, **filter_args)
+        nomination = getUtility(IBugNominationSet).getByBugTarget(self, target)
 
         if nomination is None:
             raise NotFoundError(
@@ -1702,7 +1694,7 @@ class Bug(SQLBase, InformationTypeMixin):
             return nomination.target.bugtargetdisplayname.lower()
 
         if nominations is None:
-            nominations = BugNomination.selectBy(bugID=self.id)
+            nominations = getUtility(IBugNominationSet).findByBug(self)
         if IProduct.providedBy(target):
             filtered_nominations = []
             for nomination in shortlist(nominations):
