@@ -177,6 +177,7 @@ from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import (
     ILaunchBag,
     IMultiFacetedBreadcrumb,
+    IStructuredString,
     )
 from lp.snappy.browser.hassnaps import HasSnapsMenuMixin
 
@@ -522,7 +523,7 @@ class TeamContactAddressView(MailingListTeamBaseView):
                     # markup is preserved.  Note that this puts the
                     # responsibility for security on the exception thrower.
                     msg = error.args[0]
-                    if not isinstance(msg, structured):
+                    if not IStructuredString.providedBy(msg):
                         msg = structured(six.text_type(msg))
                     self.setFieldError('contact_address', msg)
         elif data['contact_method'] == TeamContactMethod.HOSTED_LIST:

@@ -977,7 +977,8 @@ class TestTeamContactAddressView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_team_change_contact_address_to_existing_address(self):
-        # Test that a team can change the contact address.
+        # Test that the error message about changing email to an existing
+        # one doesn't break when there are non-ASCII characters in the message.
         someone_email = "someone@canonical.com"
         someone = self.factory.makePerson(
             displayname="Unicode Person \xc9", email=someone_email)
