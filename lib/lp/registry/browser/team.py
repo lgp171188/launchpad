@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -43,6 +43,7 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import smartquote
 import pytz
 import simplejson
+import six
 from six.moves.urllib.parse import unquote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -176,6 +177,7 @@ from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import (
     ILaunchBag,
     IMultiFacetedBreadcrumb,
+    IStructuredString,
     )
 from lp.snappy.browser.hassnaps import HasSnapsMenuMixin
 
@@ -520,8 +522,10 @@ class TeamContactAddressView(MailingListTeamBaseView):
                     # We need to wrap this in structured, so that the
                     # markup is preserved.  Note that this puts the
                     # responsibility for security on the exception thrower.
-                    self.setFieldError('contact_address',
-                                       structured(str(error)))
+                    msg = error.args[0]
+                    if not IStructuredString.providedBy(msg):
+                        msg = structured(six.text_type(msg))
+                    self.setFieldError('contact_address', msg)
         elif data['contact_method'] == TeamContactMethod.HOSTED_LIST:
             mailing_list = getUtility(IMailingListSet).get(self.context.name)
             if mailing_list is None or not mailing_list.is_usable:
