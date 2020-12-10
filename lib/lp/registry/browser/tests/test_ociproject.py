@@ -107,6 +107,44 @@ class TestOCIProjectView(BrowserTestCase):
             Name: oci-name
             """, self.getMainText(oci_project))
 
+    def test_git_repo_hint(self):
+        owner = self.factory.makePerson(name="a-usr")
+        pillar = self.factory.makeProduct(name="a-pillar")
+        oci_project = self.factory.makeOCIProject(
+            pillar=pillar, registrant=owner, ociprojectname="oci-name")
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            OCI project oci-name for A-pillar
+            .*
+            You can create a git repositories for this OCI project in order
+            to build your OCI recipes by using the following commands:
+            git remote add origin
+            git\+ssh://a-usr@git.launchpad.net/~a-usr/a-pillar/\+oci/oci-name
+            git push --set-upstream origin master
+
+            OCI project information
+            Project: A-pillar
+            Name: oci-name
+            """, self.getMainText(oci_project))
+
+    def test_shows_existing_git_repo(self):
+        owner = self.factory.makePerson(name="a-usr")
+        pillar = self.factory.makeProduct(name="a-pillar")
+        oci_project = self.factory.makeOCIProject(
+            pillar=pillar, registrant=owner, ociprojectname="oci-name")
+        self.factory.makeGitRepository(
+            name=oci_project.name,
+            target=oci_project, owner=owner, registrant=owner)
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            OCI project oci-name for A-pillar
+            .*
+            The default git repository for this project is
+            lp:~a-usr/a-pillar/\+oci/oci-name/\+git/oci-name.
+
+            OCI project information
+            Project: A-pillar
+            Name: oci-name
+            """, self.getMainText(oci_project))
+
 
 class TestOCIProjectEditView(BrowserTestCase):
 

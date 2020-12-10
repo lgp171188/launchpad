@@ -620,7 +620,7 @@
     <browser:page
         name="+index"
         for="lp.registry.interfaces.ociproject.IOCIProject"
-        class="lp.services.webapp.LaunchpadView"
+        class="lp.registry.browser.ociproject.OCIProjectIndexView"
         permission="launchpad.View"
         template="../templates/ociproject-index.pt"
         />
