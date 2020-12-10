@@ -25,6 +25,7 @@ __all__ = [
     'CannotDeleteGitRepository',
     'CannotHaveLinkedBranch',
     'CannotModifyNonHostedGitRepository',
+    'CannotRepackRepository',
     'CannotUpgradeBranch',
     'CannotUpgradeNonHosted',
     'CodeImportAlreadyRequested',
@@ -488,6 +489,11 @@ class GitRepositoryBlobUnsupportedRemote(Exception):
     def __str__(self):
         return "Cannot fetch blob from external Git repository at %s" % (
             self.repository_url)
+
+
+@error_status(http_client.FORBIDDEN)
+class CannotRepackRepository(Exception):
+    """Tried to repack a repository."""
 
 
 class GitRepositoryDeletionFault(Exception):

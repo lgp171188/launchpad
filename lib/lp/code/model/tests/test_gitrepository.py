@@ -139,7 +139,10 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
-from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.person import (
+    IPerson,
+    IPersonSet,
+    )
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
@@ -195,6 +198,7 @@ from lp.testing.pages import (
     LaunchpadWebServiceCaller,
     webservice_for_person,
     )
+from lp.testing.sampledata import ADMIN_EMAIL
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
 
@@ -3389,7 +3393,6 @@ class TestGitRepositorySet(TestCaseWithFactory):
         # getByPath returns a repository matching the path that it's given.
         a = self.factory.makeGitRepository()
         self.factory.makeGitRepository()
-
         repository = self.repository_set.getByPath(a.owner, a.shortened_path)
         self.assertEqual(a, repository)
 
@@ -3828,17 +3831,42 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_repackRepository(self):
         hosting_fixture = self.useFixture(GitHostingFixture())
         owner_db = self.factory.makePerson()
-        owner_url = api_url(owner_db)
         repository_db = self.factory.makeGitRepository(
             owner=owner_db, name="repository")
         repo_path = repository_db.shortened_path
+        webservice_user = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
+        admin_url = api_url(webservice_user)
+        webservice = webservice_for_person(
+            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "repackRepository", user=admin_url, path=repo_path)
+        self.assertEqual(200, response.status)
+        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+
+        with person_logged_in(ANONYMOUS):
+            user_url = api_url(owner_db)
         webservice = webservice_for_person(
             owner_db, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(
-            "/+git", "repackRepository", user=owner_url, path=repo_path)
-        self.assertEqual(200, response.status)
+            "/+git", "repackRepository", user=user_url, path=repo_path)
+        self.assertEqual(403, response.status)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+
+        logout()
+        with admin_logged_in():
+            person = self.factory.makePerson()
+            reg_expert = getUtility(IPersonSet).getByName('registry')
+            reg_expert.addMember(person, reg_expert)
+            reg_expert_url = api_url(reg_expert)
+        webservice = webservice_for_person(
+            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "repackRepository", user=reg_expert_url, path=repo_path)
+        self.assertEqual(200, response.status)
+        self.assertEqual(2, hosting_fixture.repackRepository.call_count)
 
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")

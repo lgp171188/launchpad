@@ -102,6 +102,7 @@ from lp.code.enums import (
 from lp.code.errors import (
     CannotDeleteGitRepository,
     CannotModifyNonHostedGitRepository,
+    CannotRepackRepository,
     GitDefaultConflict,
     GitTargetError,
     NoSuchGitReference,
@@ -172,6 +173,7 @@ from lp.registry.model.accesspolicy import (
     reconcile_access_for_artifact,
     )
 from lp.registry.model.person import Person
+from lp.registry.model.personroles import PersonRoles
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
 from lp.services.database import bulk
@@ -1926,11 +1928,16 @@ class GitRepositorySet:
         return []
 
     def repackRepository(self, user, path):
-        repository, extra_path = getUtility(IGitLookup).getByPath(path)
-        if repository is None:
-            return None
-        repository_path = repository.getInternalPath()
-        getUtility(IGitHostingClient).repackRepository(repository_path)
+        roles = PersonRoles(user)
+        if roles.in_admin or roles.in_registry_experts:
+            repository, extra_path = getUtility(IGitLookup).getByPath(path)
+            if repository is None:
+                return None
+            repository_path = repository.getInternalPath()
+            getUtility(IGitHostingClient).repackRepository(repository_path)
+        else:
+            raise CannotRepackRepository(
+                "Only admins and registry experts can repack repositories")
 
     @staticmethod
     def preloadDefaultRepositoriesForProjects(projects):
