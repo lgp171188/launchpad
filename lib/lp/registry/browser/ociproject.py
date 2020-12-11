@@ -28,7 +28,6 @@ from lp.app.browser.launchpadform import (
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
-from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistribution
@@ -216,16 +215,11 @@ class OCIProjectContextMenu(ContextMenu):
 class OCIProjectIndexView(LaunchpadView):
     @property
     def git_repository(self):
-        namespace = getUtility(IGitNamespaceSet).get(
-            self.context.registrant, oci_project=self.context)
-        return namespace.getByName(self.context.name)
+        return self.context.getDefaultGitRepository()
 
     @property
     def git_repository_path(self):
-        """The default git repository path, regardless if it exists or not."""
-        namespace = getUtility(IGitNamespaceSet).get(
-            self.context.registrant, oci_project=self.context)
-        return namespace.name
+        return self.context.getDefaultGitRepositoryPath()
 
 
 class OCIProjectEditView(LaunchpadEditFormView):

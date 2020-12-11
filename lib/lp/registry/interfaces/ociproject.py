@@ -98,6 +98,14 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getOfficialRecipe():
         """Gets the official recipe for this OCI project."""
 
+    def getDefaultGitRepository(self):
+        """Returns the default git repository for this OCI Project"""
+
+    def getDefaultGitRepositoryPath(self):
+        """Returns the default git repository path for this OCI Project,
+        regardless if the repository exists or not.
+        """
+
 
 class IOCIProjectEditableAttributes(IBugTarget):
     """IOCIProject attributes that can be edited.
