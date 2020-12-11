@@ -778,7 +778,9 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         oci project's git repository, if possible.
         """
         path = self.context.getDefaultGitRepositoryPath()
-        self.widgets["git_ref"].repository_widget.setRenderedValue(path)
+        widget = self.widgets["git_ref"]
+        widget.setUpSubWidgets()
+        widget.repository_widget.setRenderedValue(path)
         default_repo = self.context.getDefaultGitRepository()
         if default_repo is None:
             msg = (
