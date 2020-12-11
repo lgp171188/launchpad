@@ -230,7 +230,7 @@ class OCIProject(BugTargetBase, StormBase):
     def getDefaultGitRepositoryPath(self):
         namespace = getUtility(IGitNamespaceSet).get(
             self.registrant, oci_project=self)
-        return namespace.name
+        return '%s/+git/%s' % (namespace.name, self.name)
 
 
 @implementer(IOCIProjectSet)
