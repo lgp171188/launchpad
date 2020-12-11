@@ -3828,7 +3828,24 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def test_repackRepository(self):
+    def test_repackRepository_owner(self):
+        # Repository owner cannot repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        repo_path = repository_db.shortened_path
+        user_url = api_url(owner_db)
+        webservice = webservice_for_person(
+            owner_db, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "repackRepository", user=user_url, path=repo_path)
+        self.assertEqual(403, response.status)
+        self.assertEqual(0, hosting_fixture.repackRepository.call_count)
+
+    def test_repackRepository_admin(self):
+        # Admins can trigger a repack
         hosting_fixture = self.useFixture(GitHostingFixture())
         owner_db = self.factory.makePerson()
         repository_db = self.factory.makeGitRepository(
@@ -3844,29 +3861,41 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
-        with person_logged_in(ANONYMOUS):
-            user_url = api_url(owner_db)
-        webservice = webservice_for_person(
-            owner_db, permission=OAuthPermission.WRITE_PUBLIC)
-        webservice.default_api_version = "devel"
-        response = webservice.named_get(
-            "/+git", "repackRepository", user=user_url, path=repo_path)
-        self.assertEqual(403, response.status)
-        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+    def test_repackRepository_registry_expert(self):
+        # Registry experts can trigger a repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        admin = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
 
-        logout()
+        person = self.factory.makePerson()
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        repo_path = repository_db.shortened_path
         with admin_logged_in():
-            person = self.factory.makePerson()
-            reg_expert = getUtility(IPersonSet).getByName('registry')
-            reg_expert.addMember(person, reg_expert)
-            reg_expert_url = api_url(reg_expert)
+            getUtility(ILaunchpadCelebrities).registry_experts.addMember(
+                person, admin)
+        reg_expert_url = api_url(person)
         webservice = webservice_for_person(
-            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(
             "/+git", "repackRepository", user=reg_expert_url, path=repo_path)
         self.assertEqual(200, response.status)
-        self.assertEqual(2, hosting_fixture.repackRepository.call_count)
+        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+
+    def test_repackRepository_non_existent_repo(self):
+        # Return 404 when repo is not found
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        repo_path = 'non-existent-repo'
+        webservice_user = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
+        admin_url = api_url(webservice_user)
+        webservice = webservice_for_person(
+            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "repackRepository", user=admin_url, path=repo_path)
+        self.assertEqual(404, response.status)
+        self.assertEqual(0, hosting_fixture.repackRepository.call_count)
 
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")

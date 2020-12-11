@@ -1184,8 +1184,9 @@ class IGitRepositorySet(Interface):
                 PROJECT
                 DISTRO/+source/SOURCE
 
-        Return None if no match was found.
-        """
+        Raises NoSuchGitRepository if no match was found;
+        or CannotRepackRepository if the repack was attempted by a person
+        that is not an admin or a registry expert."""
 
 
 class IGitRepositoryDelta(Interface):

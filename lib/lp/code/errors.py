@@ -493,7 +493,8 @@ class GitRepositoryBlobUnsupportedRemote(Exception):
 
 @error_status(http_client.FORBIDDEN)
 class CannotRepackRepository(Exception):
-    """Tried to repack a repository."""
+    """Raised when there was an attempt to repack a repository
+    by someone with a role different than admin or registry expert."""
 
 
 class GitRepositoryDeletionFault(Exception):

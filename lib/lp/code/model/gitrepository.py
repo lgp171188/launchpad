@@ -106,6 +106,7 @@ from lp.code.errors import (
     GitDefaultConflict,
     GitTargetError,
     NoSuchGitReference,
+    NoSuchGitRepository,
     )
 from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
@@ -1932,7 +1933,7 @@ class GitRepositorySet:
         if roles.in_admin or roles.in_registry_experts:
             repository, extra_path = getUtility(IGitLookup).getByPath(path)
             if repository is None:
-                return None
+                raise NoSuchGitRepository(path)
             repository_path = repository.getInternalPath()
             getUtility(IGitHostingClient).repackRepository(repository_path)
         else:
