@@ -233,26 +233,50 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
     def __eq__(self, other):
         """Equality operator.
 
-        Objects compare equal if:
-            - They are the same instance, or
-            - They have the same class and id, and the id is not None.
+        Objects compare equal if they have the same class and id, and the id
+        is not None.
 
-        These rules allows objects retrieved from different stores to
-        compare equal. The 'is' comparison is to support newly created
-        objects that don't yet have an id (and by definition only exist
-        in the Master store).
+        This rule allows objects retrieved from different stores to compare
+        equal.  Newly-created objects may not yet have an id; in such cases
+        we flush the store so that we can find out their id.
         """
         naked_self = removeSecurityProxy(self)
         naked_other = removeSecurityProxy(other)
-        return (
-            (naked_self is naked_other)
-            or (naked_self.__class__ == naked_other.__class__
-                and naked_self.id is not None
-                and naked_self.id == naked_other.id))
+        if naked_self.__class__ != naked_other.__class__:
+            return False
+        try:
+            self_id = naked_self.id
+        except KeyError:
+            self.syncUpdate()
+            self_id = naked_self.id
+        if self_id is None:
+            return False
+        try:
+            other_id = naked_other.id
+        except KeyError:
+            other.syncUpdate()
+            other_id = naked_other.id
+        return self_id == other_id
 
     def __ne__(self, other):
         """Inverse of __eq__."""
         return not (self == other)
+
+    def __hash__(self):
+        """Hash operator.
+
+        We must define __hash__ since we define __eq__ (Python 3 requires
+        this), but we need to take care to preserve the invariant that
+        objects that compare equal have the same hash value.  Newly-created
+        objects may not yet have an id; in such cases we flush the store so
+        that we can find out their id.
+        """
+        try:
+            id = self.id
+        except KeyError:
+            self.syncUpdate()
+            id = self.id
+        return hash((self.__class__, id))
 
     def __storm_invalidated__(self):
         """Flush cached properties."""
