@@ -211,7 +211,6 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
     IHugeVocabulary,
-    NamedSQLObjectHugeVocabulary,
     NamedSQLObjectVocabulary,
     NamedStormHugeVocabulary,
     SQLObjectVocabularyBase,
@@ -1827,7 +1826,7 @@ class VocabularyFilterDistribution(VocabularyFilter):
         return [PillarName.distribution != None]
 
 
-class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
+class PillarVocabularyBase(NamedStormHugeVocabulary):
     """Active `IPillar` objects vocabulary."""
     displayname = 'Needs to be overridden'
     _table = PillarName
@@ -1872,8 +1871,8 @@ class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
             ]
         base_clauses = [
             ProductSet.getProductPrivacyFilter(getUtility(ILaunchBag).user)]
-        if self._filter:
-            base_clauses.extend(self._filter)
+        if self._clauses:
+            base_clauses.extend(self._clauses)
         if vocab_filter:
             base_clauses.extend(vocab_filter.filter_terms)
         equal_clauses = base_clauses + [PillarName.name == query]
@@ -1898,7 +1897,7 @@ class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
 class DistributionOrProductVocabulary(PillarVocabularyBase):
     """Active `IDistribution` or `IProduct` objects vocabulary."""
     displayname = 'Select a project'
-    _filter = [PillarName.projectgroup == None, PillarName.active == True]
+    _clauses = [PillarName.projectgroup == None, PillarName.active == True]
 
     def __contains__(self, obj):
         if IProduct.providedBy(obj):
@@ -1917,7 +1916,7 @@ class DistributionOrProductVocabulary(PillarVocabularyBase):
 class DistributionOrProductOrProjectGroupVocabulary(PillarVocabularyBase):
     """Active `IProduct`, `IProjectGroup` or `IDistribution` vocabulary."""
     displayname = 'Select a project'
-    _filter = [PillarName.active == True]
+    _clauses = [PillarName.active == True]
 
     def __contains__(self, obj):
         if IProduct.providedBy(obj) or IProjectGroup.providedBy(obj):
@@ -1938,16 +1937,17 @@ class FeaturedProjectVocabulary(
                                DistributionOrProductOrProjectGroupVocabulary):
     """Vocabulary of projects that are featured on the LP Home Page."""
 
-    _filter = AND(PillarName.q.id == FeaturedProject.q.pillar_name,
-                  PillarName.q.active == True)
-    _clauseTables = ['FeaturedProject']
+    _clauses = [
+        PillarName.id == FeaturedProject.pillar_name_id,
+        PillarName.active == True,
+        ]
 
     def __contains__(self, obj):
         """See `IVocabulary`."""
-        query = """PillarName.id=FeaturedProject.pillar_name
-                   AND PillarName.name = %s""" % sqlvalues(obj.name)
-        return PillarName.selectOne(
-                   query, clauseTables=['FeaturedProject']) is not None
+        return IStore(PillarName).find(
+            PillarName,
+            PillarName.id == FeaturedProject.pillar_name_id,
+            PillarName.name == obj.name).one()
 
 
 class SourcePackageNameIterator(BatchedCountableIterator):
