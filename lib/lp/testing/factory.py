@@ -3289,7 +3289,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         translations = removeSecurityProxy(translations)
         if translations is None:
-            return {0: self.getUniqueString()}
+            return {0: self.getUniqueUnicode()}
         if isinstance(translations, dict):
             return translations
         assert isinstance(translations, (list, tuple)), (

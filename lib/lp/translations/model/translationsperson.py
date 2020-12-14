@@ -30,11 +30,12 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import IPerson
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import PersonLanguage
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.projectgroup import ProjectGroup
 from lp.registry.model.teammembership import TeamParticipation
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.interfaces import IStore
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -64,12 +65,12 @@ class TranslationsPerson:
     @property
     def translatable_languages(self):
         """See `ITranslationsPerson`."""
-        return Language.select("""
-            Language.id = PersonLanguage.language AND
-            PersonLanguage.person = %s AND
-            Language.code <> 'en' AND
-            Language.visible""" % sqlvalues(self.person),
-            clauseTables=['PersonLanguage'], orderBy='englishname')
+        return IStore(Language).find(
+            Language,
+            PersonLanguage.language == Language.id,
+            PersonLanguage.person == self.person,
+            Language.code != 'en',
+            Language.visible).order_by(Language.englishname)
 
     def getTranslationHistory(self, no_older_than=None):
         """See `ITranslationsPerson`."""
@@ -108,8 +109,8 @@ class TranslationsPerson:
 
         If they have made no explicit decision yet, return None.
         """
-        relicensing_agreement = TranslationRelicensingAgreement.selectOneBy(
-            person=self.person)
+        relicensing_agreement = IStore(TranslationRelicensingAgreement).find(
+            TranslationRelicensingAgreement, person=self.person).one()
         if relicensing_agreement is None:
             return None
         else:
@@ -123,8 +124,8 @@ class TranslationsPerson:
 
         If they have already made a decision, overrides it with the new one.
         """
-        relicensing_agreement = TranslationRelicensingAgreement.selectOneBy(
-            person=self.person)
+        relicensing_agreement = IStore(TranslationRelicensingAgreement).find(
+            TranslationRelicensingAgreement, person=self.person).one()
         if relicensing_agreement is None:
             relicensing_agreement = TranslationRelicensingAgreement(
                 person=self.person,
