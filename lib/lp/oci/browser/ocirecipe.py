@@ -897,6 +897,35 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         )
     custom_widget_git_ref = GitRefWidget
 
+    def setUpGitRefWidget(self):
+        """Setup GitRef widget indicating the user to use the default
+        oci project's git repository, if possible.
+        """
+        widget = self.widgets["git_ref"]
+        widget.setUpSubWidgets()
+        default_repo = self.context.oci_project.getDefaultGitRepository()
+        msg = None
+        if default_repo is None:
+            msg = (
+                "The git repository for this OCI project was not created yet."
+                "<br/>Check the <a href='{oci_proj_url}'>OCI project's page"
+                "</a> for instructions on how to create it.")
+        elif self.context.git_ref.repository != default_repo:
+            msg = (
+                "You are not using the default repository of this OCI project."
+                "<br/>Please, use <em>{repo_path}</em>.")
+        if msg:
+            oci_proj = self.context.oci_project
+            msg = msg.format(
+                oci_proj_url=canonical_url(oci_proj),
+                repo_path=oci_proj.getDefaultGitRepositoryPath())
+            self.widget_errors["git_ref"] = msg
+
+    def setUpWidgets(self):
+        """See `LaunchpadFormView`."""
+        super(OCIRecipeEditView, self).setUpWidgets()
+        self.setUpGitRefWidget()
+
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpFields()

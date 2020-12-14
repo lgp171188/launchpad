@@ -656,6 +656,40 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         login_person(self.person)
         self.assertRecipeProcessors(recipe, ["386", "armhf"])
 
+    def test_edit_without_default_repo_for_ociproject(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, oci_project=oci_project)
+        with person_logged_in(self.person):
+            oci_project_url = canonical_url(oci_project)
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        error_message = (
+            'The git repository for this OCI project was not created yet.<br/>'
+            "Check the <a href='{url}'>OCI project's page</a> for "
+            'instructions on how to create it.').format(url=oci_project_url)
+        self.assertIn(error_message, browser.contents)
+
+    def test_edit_repository_is_not_default_for_ociproject(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, oci_project=oci_project)
+        self.factory.makeGitRepository(
+            name=oci_project.name,
+            target=oci_project, owner=self.person, registrant=self.person)
+        with person_logged_in(self.person):
+            default_repo_path = oci_project.getDefaultGitRepositoryPath()
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        error_message = (
+            'You are not using the default repository of this OCI project.'
+            '<br/>Please, use <em>{repo}</em>').format(repo=default_repo_path)
+        self.assertIn(error_message, browser.contents)
+
 
 class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
 
