@@ -428,7 +428,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                         TeamParticipation.personID,
                         where=TeamParticipation.team == self.grantee)))
             specification_filters.append(
-                In(SpecificationSubscription.personID,
+                In(SpecificationSubscription.person_id,
                     Select(
                         TeamParticipation.personID,
                         where=TeamParticipation.team == self.grantee)))
@@ -472,13 +472,13 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     sub.person, self.requestor, ignore_permissions=True)
         if specification_filters:
             specification_filters.append(Not(*get_specification_privacy_filter(
-                SpecificationSubscription.personID)))
+                SpecificationSubscription.person_id)))
             tables = (
                 SpecificationSubscription,
                 Join(
                     Specification,
                     Specification.id ==
-                        SpecificationSubscription.specificationID))
+                        SpecificationSubscription.specification_id))
             specifications_subscriptions = IStore(
                 SpecificationSubscription).using(*tables).find(
                 SpecificationSubscription, *specification_filters).config(

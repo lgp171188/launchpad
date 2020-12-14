@@ -506,11 +506,11 @@ class SprintMeetingExportView(LaunchpadView):
         people = defaultdict(dict)
         # Attendees per specification.
         for subscription in load_referencing(SpecificationSubscription,
-                model_specs, ['specificationID']):
-            if subscription.personID not in attendee_set:
+                model_specs, ['specification_id']):
+            if subscription.person_id not in attendee_set:
                 continue
-            people[subscription.specificationID][
-                subscription.personID] = subscription.essential
+            people[subscription.specification_id][
+                subscription.person_id] = subscription.essential
 
         # Spec specials - drafter/assignee.  Don't need approver for
         # performance, as specifications() above eager-loaded the
