@@ -1419,7 +1419,9 @@ class TestBranchCollectionConvertListingSortToOrderBy(TestCase):
         """Assert that one list of sort specs is equal to another."""
         def sort_data(sort):
             return sort.suffix, sort.expr
-        self.assertEqual(map(sort_data, sort_one), map(sort_data, sort_two))
+        self.assertEqual(
+            [sort_data(sort) for sort in sort_one],
+            [sort_data(sort) for sort in sort_two])
 
     def test_default(self):
         """Test that passing None or DEFAULT results in the default list."""
