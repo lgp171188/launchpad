@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the GNU
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the GNU
 # Affero General Public License version 3 (see the file LICENSE).
 
 """Translations vocabularies."""
@@ -16,13 +16,18 @@ __all__ = [
     ]
 
 from sqlobject import AND
+from storm.locals import (
+    Desc,
+    Not,
+    Or,
+    )
 from zope.schema.vocabulary import SimpleTerm
 
 from lp.registry.interfaces.distroseries import IDistroSeries
-from lp.services.database.sqlbase import sqlvalues
 from lp.services.webapp.vocabulary import (
     NamedSQLObjectVocabulary,
     SQLObjectVocabularyBase,
+    StormVocabularyBase,
     )
 from lp.services.worlddata.interfaces.language import ILanguage
 from lp.services.worlddata.vocabularies import LanguageVocabulary
@@ -119,53 +124,48 @@ class TranslationTemplateVocabulary(SQLObjectVocabularyBase):
         return SimpleTerm(obj, obj.id, obj.name)
 
 
-class FilteredLanguagePackVocabularyBase(SQLObjectVocabularyBase):
+class FilteredLanguagePackVocabularyBase(StormVocabularyBase):
     """Base vocabulary class to retrieve language packs for a distroseries."""
     _table = LanguagePack
-    _orderBy = '-date_exported'
+    _order_by = Desc(LanguagePack.date_exported)
+
+    def __init__(self, context=None):
+        if not IDistroSeries.providedBy(context):
+            raise AssertionError(
+                "%s is only useful from a DistroSeries context." %
+                self.__class__.__name__)
+        super(FilteredLanguagePackVocabularyBase, self).__init__(context)
 
     def toTerm(self, obj):
         return SimpleTerm(
             obj, obj.id, '%s' % obj.date_exported.strftime('%F %T %Z'))
 
-    def _baseQueryList(self):
-        """Return a list of sentences that defines the specific filtering.
-
-        That list will be linked with an ' AND '.
-        """
-        raise NotImplementedError
-
-    def __iter__(self):
-        if not IDistroSeries.providedBy(self.context):
-            # This vocabulary is only useful from a DistroSeries context.
-            return
-
-        query = self._baseQueryList()
-        query.append('distroseries = %s' % sqlvalues(self.context))
-        language_packs = self._table.select(
-            ' AND '.join(query), orderBy=self._orderBy)
-
-        for language_pack in language_packs:
-            yield self.toTerm(language_pack)
+    @property
+    def _clauses(self):
+        return [LanguagePack.distroseries == self.context]
 
 
 class FilteredFullLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
     """Full export Language Pack for a distribution series."""
     displayname = 'Select a full export language pack'
 
-    def _baseQueryList(self):
-        """See `FilteredLanguagePackVocabularyBase`."""
-        return ['type = %s' % sqlvalues(LanguagePackType.FULL)]
+    @property
+    def _clauses(self):
+        return (
+            super(FilteredFullLanguagePackVocabulary, self)._clauses +
+            [LanguagePack.type == LanguagePackType.FULL])
 
 
 class FilteredDeltaLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
     """Delta export Language Pack for a distribution series."""
     displayname = 'Select a delta export language pack'
 
-    def _baseQueryList(self):
-        """See `FilteredLanguagePackVocabularyBase`."""
-        return ['(type = %s AND updates = %s)' % sqlvalues(
-            LanguagePackType.DELTA, self.context.language_pack_base)]
+    @property
+    def _clauses(self):
+        return (
+            super(FilteredDeltaLanguagePackVocabulary, self)._clauses +
+            [LanguagePack.type == LanguagePackType.DELTA,
+             LanguagePack.updates == self.context.language_pack_base])
 
 
 class FilteredLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
@@ -176,8 +176,8 @@ class FilteredLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
             obj, obj.id, '%s (%s)' % (
                 obj.date_exported.strftime('%F %T %Z'), obj.type.title))
 
-    def _baseQueryList(self):
-        """See `FilteredLanguagePackVocabularyBase`."""
+    @property
+    def _clauses(self):
         # We are interested on any full language pack or language pack
         # that is a delta of the current base lanuage pack type,
         # except the ones already used.
@@ -186,9 +186,10 @@ class FilteredLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
             used_lang_packs.append(self.context.language_pack_base.id)
         if self.context.language_pack_delta is not None:
             used_lang_packs.append(self.context.language_pack_delta.id)
-        query = []
+        clauses = []
         if used_lang_packs:
-            query.append('id NOT IN %s' % sqlvalues(used_lang_packs))
-        query.append('(updates is NULL OR updates = %s)' % sqlvalues(
-            self.context.language_pack_base))
-        return query
+            clauses.append(Not(LanguagePack.id.is_in(used_lang_packs)))
+        clauses.append(Or(
+            LanguagePack.updates == None,
+            LanguagePack.updates == self.context.language_pack_base))
+        return super(FilteredLanguagePackVocabulary, self)._clauses + clauses

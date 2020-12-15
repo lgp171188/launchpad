@@ -851,7 +851,8 @@ class Person(
         if SpecificationFilter.SUBSCRIBER in filter:
             role_clauses.append(
                 Specification.id.is_in(
-                    Select(SpecificationSubscription.specificationID,
+                    Select(
+                        SpecificationSubscription.specification_id,
                         [SpecificationSubscription.person == self])))
 
         clauses = [Or(*role_clauses)]

@@ -7,11 +7,11 @@ This is the class that holds the text of translations in the database.
 
 Creating one is easy.
 
-    >>> created = POTranslation(translation="This is a launchpad test")
+    >>> created = POTranslation.new("This is a launchpad test")
 
-To get hold of a PO translation, use POTranslation.byTranslation.
+To get hold of a PO translation, use POTranslation.getByTranslation.
 
-    >>> got = POTranslation.byTranslation("This is a launchpad test")
+    >>> got = POTranslation.getByTranslation("This is a launchpad test")
     >>> got == created
     True
     >>> got.translation
@@ -19,10 +19,10 @@ To get hold of a PO translation, use POTranslation.byTranslation.
 
 However, if the translation doesn't already exist, you'll get an error.
 
-    >>> got = POTranslation.byTranslation("In Xanadu did Kubla Khan")
+    >>> got = POTranslation.getByTranslation("In Xanadu did Kubla Khan")
     Traceback (most recent call last):
     ...
-    SQLObjectNotFound: In Xanadu did Kubla Khan
+    NotFoundError: 'In Xanadu did Kubla Khan'
 
 If you want to get hold of one, and have it automatically created if it
 doesn't already exist, use POTranslation.getOrCreateTranslation.

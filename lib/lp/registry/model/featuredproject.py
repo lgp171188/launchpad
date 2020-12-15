@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for Featured Projects."""
@@ -8,15 +8,19 @@ __all__ = [
     'FeaturedProject',
     ]
 
-from sqlobject import IntCol
+from storm.locals import (
+    Int,
+    Reference,
+    )
 from zope.interface import implementer
 
 from lp.registry.interfaces.featuredproject import IFeaturedProject
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IFeaturedProject)
-class FeaturedProject(SQLBase):
+class FeaturedProject(StormBase):
     """A featured project reference.
 
     This is a reference to the name of a project, product or distribution
@@ -24,6 +28,16 @@ class FeaturedProject(SQLBase):
     page.
     """
 
-    _defaultOrder = ['id']
+    __storm_table__ = 'FeaturedProject'
+    __storm_order__ = ['id']
 
-    pillar_name = IntCol(notNull=True)
+    id = Int(primary=True)
+    pillar_name_id = Int(name='pillar_name', allow_none=False)
+    pillar_name = Reference(pillar_name_id, 'PillarName.id')
+
+    def __init__(self, pillar_name):
+        super(FeaturedProject, self).__init__()
+        self.pillar_name = pillar_name
+
+    def destroySelf(self):
+        IStore(self).remove(self)

@@ -743,14 +743,14 @@ class TestSharingMigrationPerformance(TestCaseWithFactory,
         self.assertNoStatementsInvolvingTable(
             POMsgID.__storm_table__, recorder.statements)
         self.assertNoStatementsInvolvingTable(
-            POTranslation._table, recorder.statements)
+            POTranslation.__storm_table__, recorder.statements)
 
         with StormStatementRecorder() as recorder:
             self.merger.mergeTranslationMessages()
         self.assertNoStatementsInvolvingTable(
             POMsgID.__storm_table__, recorder.statements)
         self.assertNoStatementsInvolvingTable(
-            POTranslation._table, recorder.statements)
+            POTranslation.__storm_table__, recorder.statements)
 
 
 class TestFindMergablePackagings(TestCaseWithFactory):

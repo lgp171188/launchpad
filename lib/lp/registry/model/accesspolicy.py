@@ -181,7 +181,7 @@ class AccessArtifact(StormBase):
         ids = [abstract.id for abstract in abstracts]
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(abstracts)
         getUtility(IAccessPolicyArtifactSource).deleteByArtifact(abstracts)
-        IStore(abstract).find(cls, cls.id.is_in(ids)).remove()
+        IStore(abstracts[0]).find(cls, cls.id.is_in(ids)).remove()
 
 
 @implementer(IAccessPolicy)

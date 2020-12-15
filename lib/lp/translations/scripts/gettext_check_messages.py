@@ -11,13 +11,12 @@ from datetime import (
     )
 
 import six
-from zope.component import getUtility
+from storm.locals import SQL
 from zope.security.proxy import removeSecurityProxy
 
+from lp.services.database.interfaces import IStore
 from lp.services.scripts.base import LaunchpadScript
-from lp.translations.interfaces.translationmessage import (
-    ITranslationMessageSet,
-    )
+from lp.translations.model.translationmessage import TranslationMessage
 from lp.translations.utilities.validate import (
     GettextValidationError,
     validate_translation,
@@ -66,8 +65,11 @@ class GettextCheckMessages(LaunchpadScript):
         self.logger.debug(
             "Checking messages matching: %s" % self.options.where)
 
-        messages = getUtility(ITranslationMessageSet).selectDirect(
-            self.options.where, order_by=self.options.order_by)
+        messages = IStore(TranslationMessage).find(TranslationMessage)
+        if self.options.where is not None:
+            messages = messages.find(SQL(self.options.where))
+        if self.options.order_by is not None:
+            messages = messages.order_by(SQL(self.options.order_by))
         self._iterate(messages)
 
         self.logger.info("Done.")

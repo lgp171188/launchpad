@@ -233,9 +233,11 @@ just PO files.
     >>> product_template.productseries is None
     False
     >>> request_set.addRequest(person, product_template)
-    >>> alsa_template = POTemplate.selectOneBy(path='po/alsa-utils.pot')
+    >>> alsa_template = IStore(POTemplate).find(
+    ...     POTemplate, path='po/alsa-utils.pot').one()
     >>> alsa_es = alsa_template.getPOFileByLang('es')
-    >>> netapplet_template = POTemplate.selectOneBy(path='po/netapplet.pot')
+    >>> netapplet_template = IStore(POTemplate).find(
+    ...     POTemplate, path='po/netapplet.pot').one()
     >>> request_set.addRequest(
     ...     person, [alsa_template, netapplet_template], [alsa_es])
     >>> transaction.commit()

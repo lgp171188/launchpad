@@ -233,12 +233,13 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     date_started = UtcDateTimeCol(notNull=False, default=None)
 
     # useful joins
-    _subscriptions = SQLMultipleJoin('SpecificationSubscription',
-        joinColumn='specification', orderBy='id')
-    subscribers = SQLRelatedJoin('Person',
-        joinColumn='specification', otherColumn='person',
-        intermediateTable='SpecificationSubscription',
-        orderBy=['display_name', 'name'])
+    _subscriptions = ReferenceSet(
+        'id', 'SpecificationSubscription.specification_id',
+        order_by='SpecificationSubscription.id')
+    subscribers = ReferenceSet(
+        'id', 'SpecificationSubscription.specification_id',
+        'SpecificationSubscription.person_id', 'Person.id',
+        order_by=('Person.display_name', 'Person.name'))
     sprint_links = ReferenceSet(
         '<primary key>', 'SprintSpecification.specification_id',
         order_by='SprintSpecification.id')
@@ -715,8 +716,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     # subscriptions
     def subscription(self, person):
         """See ISpecification."""
-        return SpecificationSubscription.selectOneBy(
-                specification=self, person=person)
+        return IStore(SpecificationSubscription).find(
+            SpecificationSubscription, specification=self, person=person).one()
 
     def getSubscriptionByName(self, name):
         """See ISpecification."""
@@ -776,7 +777,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
                             unsubscribed_by.displayname,
                             person.displayname))
                 get_property_cache(self).subscriptions.remove(sub)
-                SpecificationSubscription.delete(sub.id)
+                IStore(SpecificationSubscription).remove(sub)
                 artifacts_to_delete = getUtility(
                     IAccessArtifactSource).find([self])
                 getUtility(IAccessArtifactGrantSource).revokeByArtifact(
@@ -929,7 +930,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             raise CannotChangeInformationType("Forbidden by project policy.")
         self.information_type = information_type
         reconcile_access_for_artifact(self, information_type, [self.target])
-        if information_type in PRIVATE_INFORMATION_TYPES and self.subscribers:
+        if (information_type in PRIVATE_INFORMATION_TYPES and
+                not self.subscribers.is_empty()):
             # Grant the subscribers access if they do not have a
             # policy grant.
             service = getUtility(IService, 'sharing')

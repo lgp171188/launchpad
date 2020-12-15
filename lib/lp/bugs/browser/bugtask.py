@@ -728,7 +728,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             else:
                 return comment_event_dict(event_group)
 
-        events = map(event_dict, event_groups)
+        events = [event_dict(event_group) for event_group in event_groups]
 
         # Insert blanks if we're showing only a subset of the comment list.
         if self.visible_comments_truncated_for_display:

@@ -442,7 +442,7 @@ class POTMsgSet(SQLBase):
         # all translated forms.  The Python code can later sort out the
         # distinct translations per form.
         msgstrs = [
-            Coalesce(getattr(TranslationMessage, 'msgstr%dID' % form), -1)
+            Coalesce(getattr(TranslationMessage, 'msgstr%d_id' % form), -1)
             for form in range(TranslationConstants.MAX_PLURAL_FORMS)]
 
         result = IStore(TranslationMessage).with_(msgsets).find(
@@ -597,7 +597,7 @@ class POTMsgSet(SQLBase):
         # more than one, prefer the one that adds the fewest extraneous
         # plural forms.
         order.extend([
-            NullsFirst(getattr(TranslationMessage, 'msgstr%dID' % form))
+            NullsFirst(getattr(TranslationMessage, 'msgstr%d_id' % form))
             for form in remaining_plural_forms])
         matches = list(IStore(TranslationMessage).find(
             TranslationMessage, *clauses).order_by(*order))
