@@ -4132,7 +4132,7 @@ class SSHKeySet:
 
         if check_key:
             try:
-                key = Key.fromString(sshkey)
+                key = Key.fromString(sshkey.encode("UTF-8"))
             except Exception as e:
                 raise SSHKeyAdditionError(key=sshkey, exception=e)
             if kind != key.sshType():
