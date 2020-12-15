@@ -3016,11 +3016,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if processors is None:
             processors = [getUtility(IProcessorSet).getByName('386')]
         if url is None:
-            url = 'http://%s:8221/' % self.getUniqueString()
+            url = 'http://%s:8221/' % self.getUniqueUnicode()
         if name is None:
-            name = self.getUniqueString('builder-name')
+            name = self.getUniqueUnicode('builder-name')
         if title is None:
-            title = self.getUniqueString('builder-title')
+            title = self.getUniqueUnicode('builder-title')
         if owner is None:
             owner = self.makePerson()
         if virtualized and vm_reset_protocol is None:
