@@ -28,6 +28,7 @@ from lp.bugs.model.bugsummary import BugSummary
 from lp.code.enums import TargetRevisionControlSystems
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.database.sqlbase import (
@@ -52,7 +53,10 @@ from lp.soyuz.enums import (
     )
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    login_celebrity,
+    TestCaseWithFactory,
+    )
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.pofiletranslator import IPOFileTranslatorSet
@@ -612,6 +616,24 @@ class TestCloseAccount(TestCaseWithFactory):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, specification.owner)
+
+    def test_skips_teammembership_last_changed_by(self):
+        targetteam = self.factory.makeTeam(name='target')
+        member = self.factory.makePerson()
+        login_celebrity('admin')
+        targetteam.addMember(member, targetteam.teamowner)
+        membershipset = getUtility(ITeamMembershipSet)
+        membershipset.deactivateActiveMemberships(
+            targetteam, comment='test', reviewer=member)
+        membership = membershipset.getByPersonAndTeam(member, targetteam)
+        self.assertEqual(member, membership.last_changed_by)
+
+        person_id = member.id
+        account_id = member.account.id
+        script = self.makeScript([six.ensure_str(member.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
 
     def test_handles_login_token(self):
         person = self.factory.makePerson()
