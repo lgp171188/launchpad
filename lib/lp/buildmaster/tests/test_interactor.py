@@ -705,7 +705,7 @@ class TestSlaveTimeouts(TestCase):
         super(TestSlaveTimeouts, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
-        self.proxy = DeadProxy("url")
+        self.proxy = DeadProxy(b"url")
         self.slave = self.slave_helper.getClientSlave(
             reactor=self.clock, proxy=self.proxy)
         self.addCleanup(shut_down_default_process_pool)
