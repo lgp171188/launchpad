@@ -361,7 +361,8 @@ class OCIRegistryClient:
         :raises ManifestUploadFailed: If the final registry manifest fails to
                                       upload due to network or validity.
         """
-        if cls.updateSupersededBuilds(build):
+        cls.updateSupersededBuilds(build)
+        if build.status == BuildStatus.SUPERSEDED:
             return
         # Get the required metadata files
         manifest = cls._getJSONfile(build.manifest)
@@ -459,11 +460,9 @@ class OCIRegistryClient:
         :return: True if the build was superseded.
         """
         if build.status == BuildStatus.SUPERSEDED:
-            return True
+            return
         if build.hasMoreRecentBuild():
             build.updateStatus(BuildStatus.SUPERSEDED)
-            return True
-        return False
 
     @classmethod
     def uploadManifestList(cls, build_request, uploaded_builds):
@@ -472,8 +471,10 @@ class OCIRegistryClient:
         """
         # First, double check that the builds that will be updated in the
         # manifest files were not superseded by newer builds.
+        for build in uploaded_builds:
+            cls.updateSupersededBuilds(build)
         uploaded_builds = [build for build in uploaded_builds
-                           if not cls.updateSupersededBuilds(build)]
+                           if build.status != BuildStatus.SUPERSEDED]
         if not uploaded_builds:
             return
         for push_rule in build_request.recipe.push_rules:
