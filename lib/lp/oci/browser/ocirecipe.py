@@ -792,7 +792,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                 "</a> for instructions on how to create one.")
             msg = structured(
                 msg.format(oci_proj_url=canonical_url(self.context)))
-            self.widget_errors["git_ref"] = msg
+            self.widget_errors["git_ref"] = msg.escapedtext
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
