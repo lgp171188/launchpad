@@ -309,24 +309,24 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         error_message = (
-            'The git repository for this OCI project was not created yet.<br/>'
-            "Check the <a href='{url}'>OCI project's page</a> for "
-            'instructions on how to create it.').format(url=oci_project_url)
+            'Your git repository for this OCI project was not created yet.'
+            "<br/>Check the <a href='{url}'>OCI project page</a> for "
+            'instructions on how to create one.').format(url=oci_project_url)
         self.assertIn(error_message, browser.contents)
 
     def test_create_new_recipe_with_default_repo_already_created(self):
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(pillar=self.distribution)
-        owner = oci_project.registrant
         self.factory.makeGitRepository(
             name=oci_project.name,
-            target=oci_project, owner=owner, registrant=owner)
+            target=oci_project, owner=self.person, registrant=self.person)
         with admin_logged_in():
-            default_repo_path = oci_project.getDefaultGitRepositoryPath()
+            default_repo_path = oci_project.getDefaultGitRepositoryPath(
+                self.person)
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         error_message = (
-            'The git repository for this OCI project was not created yet.')
+            'Your git repository for this OCI project was not created yet.')
         self.assertNotIn(error_message, browser.contents)
         self.assertThat(browser.contents, soupmatchers.HTMLContains(
             soupmatchers.Tag(
