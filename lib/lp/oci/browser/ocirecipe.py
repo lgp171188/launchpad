@@ -49,7 +49,10 @@ from lp.app.browser.launchpadform import (
     LaunchpadFormView,
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
-from lp.app.browser.tales import format_link
+from lp.app.browser.tales import (
+    format_link,
+    GitRepositoryFormatterAPI,
+    )
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -902,25 +905,27 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         """Setup GitRef widget indicating the user to use the default
         oci project's git repository, if possible.
         """
+        oci_proj = self.context.oci_project
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
-        default_repo = self.context.oci_project.getDefaultGitRepository()
         msg = None
-        if default_repo is None:
-            msg = (
-                "The git repository for this OCI project was not created yet."
-                "<br/>Check the <a href='{oci_proj_url}'>OCI project's page"
-                "</a> for instructions on how to create it.")
-        elif self.context.git_ref.repository != default_repo:
-            msg = (
-                "You are not using the default repository of this OCI project."
-                "<br/>Please, use <em>{repo_path}</em>.")
+        if self.context.git_ref.namespace.target != self.context.oci_project:
+            msg = ("This recipe's git repository is not in the "
+                   "correct namespace.<br/>")
+            default_repo = oci_proj.getDefaultGitRepository(self.context.owner)
+            if default_repo:
+                link = GitRepositoryFormatterAPI(default_repo).link('')
+                msg += "Please, consider using %s." % link
+            else:
+                msg += (
+                    "Check the <a href='{oci_proj_url}'>OCI project page</a> "
+                    "for instructions on how to create it correctly.")
         if msg:
-            oci_proj = self.context.oci_project
-            msg = msg.format(
+            msg = structured(msg.format(
                 oci_proj_url=canonical_url(oci_proj),
-                repo_path=oci_proj.getDefaultGitRepositoryPath())
-            self.widget_errors["git_ref"] = msg
+                repo_path=oci_proj.getDefaultGitRepositoryPath(
+                    self.context.owner)))
+            self.widget_errors["git_ref"] = msg.escapedtext
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
