@@ -777,18 +777,19 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         """Setup GitRef widget indicating the user to use the default
         oci project's git repository, if possible.
         """
-        path = self.context.getDefaultGitRepositoryPath()
+        path = self.context.getDefaultGitRepositoryPath(self.user)
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
         widget.repository_widget.setRenderedValue(path)
-        default_repo = self.context.getDefaultGitRepository()
+        default_repo = self.context.getDefaultGitRepository(self.user)
         if default_repo is None:
             msg = (
-                "The git repository for this OCI project was not created yet."
-                "<br/>Check the <a href='{oci_proj_url}'>OCI project's page"
-                "</a> for instructions on how to create it.")
-            msg = msg.format(oci_proj_url=canonical_url(self.context))
-            self.widget_errors["git_ref"] = msg
+                "Your git repository for this OCI project was not created yet."
+                "<br/>Check the <a href='{oci_proj_url}'>OCI project page"
+                "</a> for instructions on how to create one.")
+            msg = structured(
+                msg.format(oci_proj_url=canonical_url(self.context)))
+            self.widget_errors["git_ref"] = msg.escapedtext
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
