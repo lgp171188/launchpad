@@ -222,15 +222,13 @@ class OCIProject(BugTargetBase, StormBase):
             if recipe is not None:
                 recipe._official = True
 
-    def getDefaultGitRepository(self):
-        namespace = getUtility(IGitNamespaceSet).get(
-            self.registrant, oci_project=self)
+    def getDefaultGitRepository(self, person):
+        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
         return namespace.getByName(self.name)
 
-    def getDefaultGitRepositoryPath(self):
-        namespace = getUtility(IGitNamespaceSet).get(
-            self.registrant, oci_project=self)
-        return '%s/+git/%s' % (namespace.name, self.name)
+    def getDefaultGitRepositoryPath(self, person):
+        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
+        return namespace.name
 
 
 @implementer(IOCIProjectSet)

@@ -215,11 +215,11 @@ class OCIProjectContextMenu(ContextMenu):
 class OCIProjectIndexView(LaunchpadView):
     @property
     def git_repository(self):
-        return self.context.getDefaultGitRepository()
+        return self.context.getDefaultGitRepository(self.user)
 
     @property
     def git_repository_path(self):
-        return self.context.getDefaultGitRepositoryPath()
+        return self.context.getDefaultGitRepositoryPath(self.user)
 
 
 class OCIProjectEditView(LaunchpadEditFormView):
