@@ -3460,7 +3460,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertThat(snap.store_secrets, MatchesDict({
                 "root": Equals(root_macaroon.serialize()),
                 "discharge_encrypted": AfterPreprocessing(
-                    container.decrypt, Equals(discharge_macaroon.serialize())),
+                    lambda data: container.decrypt(data).decode("UTF-8"),
+                    Equals(discharge_macaroon.serialize())),
                 }))
 
     def makeBuildableDistroArchSeries(self, **kwargs):

@@ -337,12 +337,13 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         e = self.assertRaises(
             BadRequest, ws_das.setSourceFilter,
             packageset=packageset_url, sense="Include")
-        self.assertEqual(
+        expected_error = (
             "The requested package set is for %s and cannot be set as a "
             "filter for %s %s." % (
                 packageset.distroseries.fullseriesname,
-                das.distroseries.fullseriesname, das.architecturetag),
-            e.content)
+                das.distroseries.fullseriesname,
+                das.architecturetag))
+        self.assertEqual(expected_error.encode("UTF-8"), e.content)
 
     def test_setSourceFilter_removeSourceFilter(self):
         das = self.factory.makeDistroArchSeries()

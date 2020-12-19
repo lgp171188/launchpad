@@ -67,7 +67,8 @@ class TestOCIRecipeUploads(OCIConfigHelperMixin, TestUploadProcessorBase):
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
         write_file(os.path.join(upload_dir, "layer_2.tar.gz"), b"layer_2")
         write_file(
-            os.path.join(upload_dir, "digests.json"), json.dumps(self.digests))
+            os.path.join(upload_dir, "digests.json"),
+            json.dumps(self.digests).encode("UTF-8"))
         write_file(os.path.join(upload_dir, "manifest.json"), b"manifest")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
@@ -101,7 +102,8 @@ class TestOCIRecipeUploads(OCIConfigHelperMixin, TestUploadProcessorBase):
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
         write_file(os.path.join(upload_dir, "layer_2.tar.gz"), b"layer_2")
         write_file(
-            os.path.join(upload_dir, "digests.json"), json.dumps(self.digests))
+            os.path.join(upload_dir, "digests.json"),
+            json.dumps(self.digests).encode("UTF-8"))
         write_file(os.path.join(upload_dir, "manifest.json"), b"manifest")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", build)
@@ -139,7 +141,8 @@ class TestOCIRecipeUploads(OCIConfigHelperMixin, TestUploadProcessorBase):
             self.incoming_folder, "test", str(self.build.id), "ubuntu")
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
         write_file(
-            os.path.join(upload_dir, "digests.json"), json.dumps(self.digests))
+            os.path.join(upload_dir, "digests.json"),
+            json.dumps(self.digests).encode("UTF-8"))
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
         result = handler.processOCIRecipe(self.log)
@@ -160,7 +163,8 @@ class TestOCIRecipeUploads(OCIConfigHelperMixin, TestUploadProcessorBase):
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
         write_file(os.path.join(upload_dir, "manifest.json"), b"manifest")
         write_file(
-            os.path.join(upload_dir, "digests.json"), json.dumps(self.digests))
+            os.path.join(upload_dir, "digests.json"),
+            json.dumps(self.digests).encode("UTF-8"))
 
         # create the existing file
         self.switchToAdmin()

@@ -20,6 +20,7 @@ import fixtures
 from fixtures import MockPatch
 from pymacaroons import Macaroon
 import pytz
+import six
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
@@ -662,7 +663,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def _createTestFile(self, name, content, hash):
         path = os.path.join(self.test_files_dir, name)
         with open(path, 'wb') as fp:
-            fp.write(content)
+            fp.write(six.ensure_binary(content))
         self.slave.valid_files[hash] = path
 
     def setUp(self):
