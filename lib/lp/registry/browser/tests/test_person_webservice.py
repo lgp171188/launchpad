@@ -64,10 +64,9 @@ class TestPersonEmailSecurity(TestCaseWithFactory):
         accessor = self.factory.makePerson()
         lp = launchpadlib_for("test", accessor.name)
         person = lp.people['target']
-        emails = sorted(list(person.confirmed_email_addresses))
-        self.assertNotEqual(
-                sorted([self.email_one, self.email_two]),
-                len(emails))
+        emails = [entry.email for entry in person.confirmed_email_addresses]
+        self.assertContentEqual(
+            ['test1@example.com', 'test2@example.com'], emails)
 
     def test_anonymous_cannot_access(self):
         # An anonymous launchpadlib connection cannot see email addresses.
