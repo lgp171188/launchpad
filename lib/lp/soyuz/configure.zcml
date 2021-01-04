@@ -276,13 +276,15 @@
     <class
         class="lp.soyuz.model.packagediff.PackageDiffSet">
         <allow
-            interface="lp.soyuz.interfaces.packagediff.IPackageDiffSet"/>
+            interface="lp.soyuz.interfaces.packagediff.IPackageDiffSet"
+            attributes="__len__"/>
     </class>
     <securedutility
         class="lp.soyuz.model.packagediff.PackageDiffSet"
         provides="lp.soyuz.interfaces.packagediff.IPackageDiffSet">
         <allow
-            interface="lp.soyuz.interfaces.packagediff.IPackageDiffSet"/>
+            interface="lp.soyuz.interfaces.packagediff.IPackageDiffSet"
+            attributes="__len__"/>
     </securedutility>
 
     <!-- ArchiveAuthToken -->
@@ -607,7 +609,8 @@
         <class
             class="lp.soyuz.model.distroarchseries.DistroArchSeries">
             <allow
-                interface="lp.soyuz.interfaces.distroarchseries.IDistroArchSeriesPublic"/>
+                interface="lp.soyuz.interfaces.distroarchseries.IDistroArchSeriesPublic"
+                attributes="__len__"/>
             <require
                 permission="launchpad.Admin"
                 set_schema="lp.soyuz.interfaces.distroarchseries.IDistroArchSeriesPublic"/>
