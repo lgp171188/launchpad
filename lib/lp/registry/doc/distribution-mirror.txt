@@ -653,6 +653,7 @@ is correct.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing Archive Mirrors
     INFO    Probed 5 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Disabling 1 mirror(s):
             http://launchpad.test/ubuntu/+mirror/archive-404-mirror
     INFO    Re-enabling 1 mirror(s):
@@ -667,6 +668,7 @@ is correct.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Disabling 1 mirror(s):
             http://launchpad.test/ubuntu/+mirror/unreachable-mirror
     INFO    Done.
@@ -696,6 +698,7 @@ all official mirrors independently if they were probed recently or not.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Done.
     <BLANKLINE>
 
@@ -715,6 +718,7 @@ we'll enable them again.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Re-enabling 1 mirror(s):
             http://launchpad.test/ubuntu/+mirror/releases-mirror
     INFO    Done.
