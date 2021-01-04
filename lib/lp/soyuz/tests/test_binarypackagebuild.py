@@ -628,7 +628,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
             entry["self_link"], "application/json",
             dumps({"external_dependencies": "random"}))
         self.assertEqual(400, response.status)
-        self.assertIn("Invalid external dependencies", response.body)
+        self.assertIn(b"Invalid external dependencies", response.body)
 
     def test_external_dependencies_ppa_owner_valid(self):
         # PPA admins can look and touch.
