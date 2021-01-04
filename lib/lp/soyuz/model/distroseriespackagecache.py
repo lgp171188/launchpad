@@ -18,7 +18,6 @@ from storm.expr import (
     Max,
     Select,
     )
-from storm.locals import Bytes
 from zope.interface import implementer
 
 from lp.services.database import bulk
@@ -45,7 +44,6 @@ class DistroSeriesPackageCache(SQLBase):
     binarypackagename = ForeignKey(dbName='binarypackagename',
         foreignKey='BinaryPackageName', notNull=True)
 
-    fti = Bytes(allow_none=True, default=None)
     name = StringCol(notNull=False, default=None)
     summary = StringCol(notNull=False, default=None)
     description = StringCol(notNull=False, default=None)
