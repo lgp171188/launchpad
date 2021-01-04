@@ -797,10 +797,6 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
                         data['processors'].append(processor)
 
 
-class SnapAuthorizationException(Exception):
-    pass
-
-
 class SnapAuthorizeView(LaunchpadEditFormView):
     """View for authorizing snap package uploads to the store."""
 
