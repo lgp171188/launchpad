@@ -157,6 +157,7 @@ def close_account(username, log):
         ('specification', 'starter'),
         ('structuralsubscription', 'subscribed_by'),
         ('teammembership', 'acknowledged_by'),
+        ('teammembership', 'last_changed_by'),
         ('teammembership', 'proposed_by'),
         ('teammembership', 'reviewed_by'),
         ('translationimportqueueentry', 'importer'),

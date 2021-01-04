@@ -111,7 +111,6 @@ class FileUploadProtocol(basic.LineReceiver):
     def line_command(self, line):
         try:
             command, args = line.split(None, 1)
-            command = command.decode('UTF-8')
         except ValueError:
             raise ProtocolViolation('Bad command: ' + line)
 
@@ -120,7 +119,7 @@ class FileUploadProtocol(basic.LineReceiver):
 
     def line_header(self, line):
         # Blank line signals the end of the headers
-        if line == b'':
+        if line == '':
             # If File-Content-ID was specified, File-Alias-ID must be too, and
             # vice-versa.
             contentID = self.newFile.contentID
@@ -147,7 +146,7 @@ class FileUploadProtocol(basic.LineReceiver):
 
         # Simple RFC 822-ish header parsing
         try:
-            name, value = line.decode('UTF-8').split(':', 2)
+            name, value = line.split(':', 2)
         except ValueError:
             raise ProtocolViolation('Invalid header: ' + line)
 
