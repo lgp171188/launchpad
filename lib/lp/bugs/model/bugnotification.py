@@ -274,7 +274,7 @@ class BugNotificationSet:
                 In(BugNotificationFilter.bug_notification_id,
                    [notification.id for notification in notifications]),
                 In(StructuralSubscription.subscriberID,
-                   source_person_id_map.keys()))
+                   list(source_person_id_map)))
         filter_ids = []
         # Record the filters for each source.
         for source_person_id, filter_id, filter_description in filter_data:
@@ -299,7 +299,7 @@ class BugNotificationSet:
                 (BugSubscriptionFilterMute.person_id,
                  BugSubscriptionFilterMute.filter_id),
                 In(BugSubscriptionFilterMute.person_id,
-                   recipient_id_map.keys()),
+                   list(recipient_id_map)),
                 In(BugSubscriptionFilterMute.filter_id, filter_ids))
             for person_id, filter_id in mute_data:
                 if filter_id in recipient_id_map[person_id]['filters']:
