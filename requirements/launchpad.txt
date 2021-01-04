@@ -73,7 +73,7 @@ lazr.jobrunner==0.16
 lazr.lifecycle==1.2
 lazr.restful==0.23.0
 lazr.restfulclient==0.14.3
-lazr.sshserver==0.1.10
+lazr.sshserver==0.1.11
 lazr.uri==1.0.5
 libnacl==1.3.6
 lpjsmin==0.6
