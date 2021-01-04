@@ -69,7 +69,6 @@ from zope.schema import (
     Text,
     TextLine,
     )
-from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
 from lp.answers.interfaces.faqtarget import IFAQTarget
@@ -825,9 +824,6 @@ class IProductView(
 
     def getMilestonesAndReleases():
         """Return all the milestones and releases for this product."""
-
-    def packagedInDistros():
-        """Returns the distributions this product has been packaged in."""
 
     def userCanEdit(user):
         """Can the user edit this product?"""

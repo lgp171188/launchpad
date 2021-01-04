@@ -1348,10 +1348,6 @@ class DummyPOFile(POFileMixIn):
         """See `IRosettaStats`."""
         return 0.0
 
-    def rosettaPercentage(self, language=None):
-        """See `IRosettaStats`."""
-        return 0.0
-
     def updatesPercentage(self, language=None):
         """See `IRosettaStats`."""
         return 0.0
