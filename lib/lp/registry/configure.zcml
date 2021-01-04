@@ -1934,13 +1934,15 @@
     <class
         class="lp.registry.model.distribution.DistributionSet">
         <allow
-            interface="lp.registry.interfaces.distribution.IDistributionSet"/>
+            interface="lp.registry.interfaces.distribution.IDistributionSet"
+            attributes="__len__"/>
     </class>
     <securedutility
         class="lp.registry.model.distribution.DistributionSet"
         provides="lp.registry.interfaces.distribution.IDistributionSet">
         <allow
-            interface="lp.registry.interfaces.distribution.IDistributionSet"/>
+            interface="lp.registry.interfaces.distribution.IDistributionSet"
+            attributes="__len__"/>
     </securedutility>
 
     <!-- SourcePackage -->
