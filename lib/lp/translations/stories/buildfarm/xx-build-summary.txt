@@ -51,7 +51,7 @@ Create a builder working on a TranslationTemplatesBuild for a branch.
     >>> unused = ubuntu.currentseries.nominatedarchindep.addOrUpdateChroot(
     ...     fake_chroot)
 
-    >>> builder = factory.makeBuilder(vm_host=factory.getUniqueString())
+    >>> builder = factory.makeBuilder(vm_host=factory.getUniqueUnicode())
     >>> _ = patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(FakeSlave()))
     >>> buildqueue.markAsBuilding(builder)
 

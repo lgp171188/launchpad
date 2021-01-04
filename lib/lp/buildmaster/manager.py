@@ -409,7 +409,7 @@ def recover_failure(logger, vitals, builder, retry, exception):
         # We've already tried resetting it enough times, so we have
         # little choice but to give up.
         logger.info("Failing builder %s.", builder.name)
-        builder.failBuilder(str(exception))
+        builder.failBuilder(six.text_type(exception))
     elif builder_action == True:
         # Dirty the builder to attempt recovery. In the virtual case,
         # the dirty idleness will cause a reset, giving us a good chance

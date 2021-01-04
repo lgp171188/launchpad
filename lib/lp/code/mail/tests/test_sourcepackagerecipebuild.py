@@ -68,7 +68,7 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=5))
         build.updateStatus(
             BuildStatus.FULLYBUILT,
-            builder=self.factory.makeBuilder(name='bob'))
+            builder=self.factory.makeBuilder(name=u'bob'))
         build.setLog(self.factory.makeLibraryFileAlias())
         ctrl = self.makeStatusEmail(build)
         self.assertEqual(
