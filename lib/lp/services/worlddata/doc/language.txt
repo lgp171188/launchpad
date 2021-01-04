@@ -31,19 +31,6 @@ We can convert language codes to standard form.
   >>> print(language_set.canonicalise_language_code('pt-br'))
   pt_BR
 
-codes_to_languages
-==================
-
-Convert a list of ISO language codes to language objects. If the code is
-unknown, it's ignored.
-
-  # 'zz' code doesn't exist:
-  >>> language_set.getLanguageByCode('zz') is None
-  True
-  >>> languages = language_set.codes_to_languages(['es', 'pt_BR', 'zz'])
-  >>> [language.englishname for language in languages]
-  [u'Spanish', u'Portuguese (Brazil)']
-
 createLanguage
 ==============
 

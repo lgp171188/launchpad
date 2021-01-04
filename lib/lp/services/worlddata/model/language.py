@@ -283,19 +283,6 @@ class LanguageSet:
         else:
             return code
 
-    def codes_to_languages(self, codes):
-        """See `ILanguageSet`."""
-
-        languages = []
-
-        for code in [self.canonicalise_language_code(code) for code in codes]:
-            try:
-                languages.append(self[code])
-            except KeyError:
-                pass
-
-        return languages
-
     def createLanguage(self, code, englishname, nativename=None,
                        pluralforms=None, pluralexpression=None, visible=True,
                        direction=TextDirection.LTR):
