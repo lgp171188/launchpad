@@ -43,6 +43,7 @@ from tenacity import (
     )
 from zope.interface import implementer
 
+from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     IOCIRegistryClient,
@@ -360,6 +361,9 @@ class OCIRegistryClient:
         :raises ManifestUploadFailed: If the final registry manifest fails to
                                       upload due to network or validity.
         """
+        cls.updateSupersededBuilds(build)
+        if build.status == BuildStatus.SUPERSEDED:
+            return
         # Get the required metadata files
         manifest = cls._getJSONfile(build.manifest)
         digests_list = cls._getJSONfile(build.digests)
@@ -449,10 +453,30 @@ class OCIRegistryClient:
         return current_manifest
 
     @classmethod
+    def updateSupersededBuilds(cls, build):
+        """Checks if the given build was superseded by another build,
+        updating its status in case it should have been superseded.
+
+        :return: True if the build was superseded.
+        """
+        if build.status == BuildStatus.SUPERSEDED:
+            return
+        if build.hasMoreRecentBuild():
+            build.updateStatus(BuildStatus.SUPERSEDED)
+
+    @classmethod
     def uploadManifestList(cls, build_request, uploaded_builds):
         """Uploads to all build_request.recipe.push_rules the manifest list
         for the builds in the given build_request.
         """
+        # First, double check that the builds that will be updated in the
+        # manifest files were not superseded by newer builds.
+        for build in uploaded_builds:
+            cls.updateSupersededBuilds(build)
+        uploaded_builds = [build for build in uploaded_builds
+                           if build.status != BuildStatus.SUPERSEDED]
+        if not uploaded_builds:
+            return
         for push_rule in build_request.recipe.push_rules:
             http_client = RegistryHTTPClient.getInstance(push_rule)
             multi_manifest_content = cls.makeMultiArchManifest(

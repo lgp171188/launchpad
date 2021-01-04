@@ -472,6 +472,8 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @property
     def registry_upload_status(self):
+        if self.status == BuildStatus.SUPERSEDED:
+            return OCIRecipeBuildRegistryUploadStatus.SUPERSEDED
         job = self.last_registry_upload_job
         if job is None or job.job.status == JobStatus.SUSPENDED:
             return OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED
@@ -513,6 +515,16 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
                 "Cannot upload this build because it has already been "
                 "uploaded.")
         getUtility(IOCIRegistryUploadJobSource).create(self)
+
+    def hasMoreRecentBuild(self):
+        """See `IOCIRecipeBuild`."""
+        recent_builds = IStore(self).find(
+            OCIRecipeBuild,
+            OCIRecipeBuild.recipe == self.recipe,
+            OCIRecipeBuild.processor == self.processor,
+            OCIRecipeBuild.status == BuildStatus.FULLYBUILT,
+            OCIRecipeBuild.date_created > self.date_created)
+        return not recent_builds.is_empty()
 
 
 @implementer(IOCIRecipeBuildSet)
