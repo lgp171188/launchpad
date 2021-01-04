@@ -3,9 +3,10 @@
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
 by asking BeautifulSoup to use lxml.
 
+    >>> import feedparser
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> from lp.services.feeds.tests.helper import (
-    ...     parse_ids, parse_links, validate_feed)
+    ...     parse_ids, parse_links)
 
 == Create some specific branches to use for this test ==
 
@@ -70,11 +71,7 @@ The feed for a person's revisions will show the most recent 25 revisions
 that have been committed by that person (or attributed to that person).
 
     >>> anon_browser.open('http://feeds.launchpad.test/~mike/revisions.atom')
-    >>> def validate_browser_feed(browser):
-    ...     validate_feed(
-    ...         browser.contents, browser.headers['content-type'], browser.url)
-    >>> validate_browser_feed(anon_browser)
-    No Errors
+    >>> _ = feedparser.parse(anon_browser.contents)
     >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
     [u'Latest Revisions by Mike Murphy']
     >>> def print_parse_ids(browser):
@@ -102,8 +99,7 @@ If we look at the feed for a team, we get revisions created by any member
 of that team.
 
     >>> browser.open('http://feeds.launchpad.test/~m-team/revisions.atom')
-    >>> validate_browser_feed(browser)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Latest Revisions by members of The M Team']
     >>> print_parse_ids(browser)
@@ -120,8 +116,7 @@ The feed for a product's revisions will show the most recent 25 revisions
 that have been committed on branches for the product.
 
     >>> anon_browser.open('http://feeds.launchpad.test/fooix/revisions.atom')
-    >>> validate_browser_feed(anon_browser)
-    No Errors
+    >>> _ = feedparser.parse(anon_browser.contents)
     >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
     [u'Latest Revisions for Fooix']
 
@@ -145,8 +140,7 @@ A feed for a project group will show the most recent 25 revisions across any
 branch for any product that is associated with the project group.
 
     >>> anon_browser.open('http://feeds.launchpad.test/fubar/revisions.atom')
-    >>> validate_browser_feed(anon_browser)
-    No Errors
+    >>> _ = feedparser.parse(anon_browser.contents)
     >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
     [u'Latest Revisions for Fubar']
 

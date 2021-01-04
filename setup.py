@@ -168,7 +168,6 @@ setup(
         'dkimpy[ed25519]',
         'dulwich',
         'feedparser',
-        'feedvalidator',
         'fixtures',
         # Required for gunicorn[gthread].  We depend on it explicitly
         # because gunicorn declares its dependency in a way that produces
