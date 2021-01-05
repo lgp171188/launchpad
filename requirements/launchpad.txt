@@ -155,7 +155,7 @@ treq==18.6.0
 Twisted==19.2.1
 txAMQP==0.6.2
 txfixtures==0.4.3
-txpkgupload==0.2
+txpkgupload==0.4
 # lp1 Set version directly in setup.py to fix wheel building.
 unittest2==1.1.0+lp1
 urllib3==1.25.11
