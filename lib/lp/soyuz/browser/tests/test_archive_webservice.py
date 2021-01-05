@@ -124,7 +124,7 @@ class TestArchiveWebservice(TestCaseWithFactory):
         self.assertThat(
             ws.delete(ppa_url),
             MatchesStructure.byEquality(
-                status=400, body="Archive already deleted."))
+                status=400, body=b"Archive already deleted."))
 
     def test_delete_is_restricted(self):
         with admin_logged_in():

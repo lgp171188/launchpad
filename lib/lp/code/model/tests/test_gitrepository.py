@@ -4503,8 +4503,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "git-repository macaroons may only be issued for a logged-in "
-            "user.", response.body)
+            b"git-repository macaroons may only be issued for a logged-in "
+            b"user.", response.body)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

@@ -165,7 +165,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
     def setUp(self):
         super(TestAsyncOCIRecipeBuildBehaviour, self).setUp()
         build_username = 'OCIBUILD-1'
-        self.token = {'secret': uuid.uuid4().get_hex(),
+        self.token = {'secret': uuid.uuid4().hex,
                       'username': build_username,
                       'timestamp': datetime.utcnow().isoformat()}
         self.proxy_url = ("http://{username}:{password}"
