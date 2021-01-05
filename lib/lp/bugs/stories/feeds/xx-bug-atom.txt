@@ -3,12 +3,13 @@
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
 by asking BeautifulSoup to use lxml.
 
+    >>> import feedparser
     >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
     ...     SoupStrainer,
     ...     )
     >>> from lp.services.feeds.tests.helper import (
-    ...     parse_entries, parse_links, validate_feed)
+    ...     parse_entries, parse_links)
 
 Please note that when displaying the results of the feeds in a reader
 the order of entries may not be the same as generated.  Some readers
@@ -25,9 +26,7 @@ the bugs page for the product, while the alternate link for entries
 point to the bugs themselves.
 
     >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in Jokosher']
     >>> browser.url
@@ -83,9 +82,7 @@ This feed gets the latest bugs for a project, and has the same type of content
 as the latest bugs feed for a product.
 
     >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in The Mozilla Project']
     >>> browser.url
@@ -145,9 +142,7 @@ This feed gets the latest bugs for a distribution, and has the same type
 of content as the latest bugs feed for a product.
 
     >>> browser.open('http://feeds.launchpad.test/ubuntu/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in Ubuntu']
     >>> browser.url
@@ -203,9 +198,7 @@ Create a private team and assign an ubuntu distro bug to that team.
 Get the ubuntu/latest-bugs feed.
 
     >>> browser.open('http://feeds.launchpad.test/ubuntu/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -231,9 +224,7 @@ type of content as the latest bugs feed for a product.
     >>> browser.open(
     ...     'http://feeds.launchpad.test/ubuntu/+source/thunderbird'
     ...     '/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in thunderbird in Ubuntu']
     >>> browser.url
@@ -264,9 +255,7 @@ type of content as the latest bugs feed for a product.
 
     >>> browser.open(
     ...     'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in Hoary']
     >>> browser.url
@@ -305,9 +294,7 @@ type of content as the latest bugs feed for a product.
 
     >>> browser.open(
     ...     'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in 1.0']
     >>> browser.url
@@ -344,9 +331,7 @@ type of content as the latest bugs feed for a product.
 This feed gets the latest bugs for a person.
 
     >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs for Foo Bar']
     >>> browser.url
@@ -420,9 +405,7 @@ some results.
 
     >>> browser.open(
     ...    'http://feeds.launchpad.test/~simple-team/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs for Simple Team']
 
@@ -449,9 +432,7 @@ some results.
 This feed gets the latest bugs reported against any target.
 
     >>> browser.open('http://feeds.launchpad.test/bugs/latest-bugs.atom')
-    >>> validate_feed(browser.contents,
-    ...               browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Launchpad bugs']
     >>> browser.url
@@ -560,9 +541,7 @@ to True.
 This feed shows the status of a single bug.
 
     >>> browser.open('http://feeds.launchpad.test/bugs/1/bug.atom')
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
+    >>> _ = feedparser.parse(browser.contents)
     >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bug 1']
     >>> entries = parse_entries(browser.contents)

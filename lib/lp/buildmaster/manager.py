@@ -596,6 +596,8 @@ class SlaveScanner:
     def updateVersion(self, vitals, slave_status):
         """Update the DB's record of the slave version if necessary."""
         version = slave_status.get("builder_version")
+        if version is not None:
+            version = six.ensure_text(version)
         if version != vitals.version:
             self.builder_factory[self.builder_name].version = version
             transaction.commit()

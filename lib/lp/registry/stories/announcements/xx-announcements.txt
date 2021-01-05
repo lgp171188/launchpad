@@ -6,12 +6,13 @@ list is available as a portlet on the project home page, as well as on a
 dedicated batched page showing all announcements, and as an RSS/Atom
 news feed.
 
+    >>> import feedparser
     >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
     ...     SoupStrainer,
     ...     )
     >>> from lp.services.feeds.tests.helper import (
-    ...     parse_ids, parse_links, validate_feed)
+    ...     parse_ids, parse_links)
 
     >>> NOANNOUNCE = 'no announcements for this project'
     >>> def latest_news(content):
@@ -629,10 +630,7 @@ The feeds are published even when there are no announcements.
 
     >>> nopriv_browser.open(
     ...     'http://feeds.launchpad.test/netapplet/announcements.atom')
-    >>> validate_feed(nopriv_browser.contents,
-    ...              nopriv_browser.headers['content-type'],
-    ...              nopriv_browser.url)
-    No Errors
+    >>> _ = feedparser.parse(nopriv_browser.contents)
     >>> 'NetApplet Announcements' in nopriv_browser.contents
     True
 
@@ -654,10 +652,7 @@ announcement, which is due in the future, does not show up:
 
     >>> nopriv_browser.open(
     ...     'http://feeds.launchpad.test/jokosher/announcements.atom')
-    >>> validate_feed(nopriv_browser.contents,
-    ...              nopriv_browser.headers['content-type'],
-    ...              nopriv_browser.url)
-    No Errors
+    >>> _ = feedparser.parse(nopriv_browser.contents)
     >>> 'Jokosher announcement headline' in nopriv_browser.contents
     False
 
@@ -665,10 +660,7 @@ Retracted items do not show up either.
 
     >>> nopriv_browser.open(
     ...     'http://feeds.launchpad.test/guadalinex/announcements.atom')
-    >>> validate_feed(nopriv_browser.contents,
-    ...              nopriv_browser.headers['content-type'],
-    ...              nopriv_browser.url)
-    No Errors
+    >>> _ = feedparser.parse(nopriv_browser.contents)
     >>> 'Kubuntu announcement headline' in nopriv_browser.contents
     True
     >>> for id_ in parse_ids(nopriv_browser.contents):
@@ -695,10 +687,7 @@ products.
 
     >>> nopriv_browser.open(
     ...     'http://feeds.launchpad.test/apache/announcements.atom')
-    >>> validate_feed(nopriv_browser.contents,
-    ...              nopriv_browser.headers['content-type'],
-    ...              nopriv_browser.url)
-    No Errors
+    >>> _ = feedparser.parse(nopriv_browser.contents)
     >>> 'Tomcat announcement headline' in nopriv_browser.contents
     True
     >>> 'Modified headline' in nopriv_browser.contents # apache itself
@@ -723,10 +712,7 @@ hosted in Launchpad:
 
     >>> nopriv_browser.open(
     ...     'http://feeds.launchpad.test/announcements.atom')
-    >>> validate_feed(nopriv_browser.contents,
-    ...              nopriv_browser.headers['content-type'],
-    ...              nopriv_browser.url)
-    No Errors
+    >>> _ = feedparser.parse(nopriv_browser.contents)
     >>> 'Announcements published via Launchpad' in (
     ...     six.ensure_text(nopriv_browser.contents))
     True
@@ -753,10 +739,7 @@ let us use a DTD to define the html entities that standard xml is missing.
 
     >>> nopriv_browser.open(
     ...     'http://feeds.launchpad.test/ubuntu/announcements.atom')
-    >>> validate_feed(nopriv_browser.contents,
-    ...              nopriv_browser.headers['content-type'],
-    ...              nopriv_browser.url)
-    No Errors
+    >>> _ = feedparser.parse(nopriv_browser.contents)
     >>> soup = BeautifulSoup(nopriv_browser.contents)
     >>> soup.find('feed').entry.title
     <...>Ampersand="&amp;" LessThan="&lt;" GreaterThan="&gt;"</title>

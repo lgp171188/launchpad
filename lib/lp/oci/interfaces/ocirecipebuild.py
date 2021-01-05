@@ -94,6 +94,13 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
         This OCI build was successfully uploaded to a registry.
         """)
 
+    SUPERSEDED = Item("""
+        Superseded
+
+        The upload has been cancelled because another build will upload a
+        more recent version.
+    """)
+
 
 class IOCIRecipeBuildView(IPackageBuild):
     """`IOCIRecipeBuild` attributes that require launchpad.View permission."""
@@ -211,6 +218,13 @@ class IOCIRecipeBuildView(IPackageBuild):
             "attempt to upload this build to a registry."),
         value_type=Dict(key_type=TextLine()),
         required=False, readonly=True))
+
+    def hasMoreRecentBuild():
+        """Checks if this recipe has a more recent build currently building or
+        already built for the same processor.
+
+        :return: True if another build superseded this one.
+        """
 
 
 class IOCIRecipeBuildEdit(Interface):

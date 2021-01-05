@@ -10,7 +10,9 @@
     i18n_domain="launchpad">
 
     <class class="lp.services.mail.notificationrecipientset.NotificationRecipientSet">
-        <allow interface="lp.services.mail.interfaces.INotificationRecipientSet" />
+        <allow
+            interface="lp.services.mail.interfaces.INotificationRecipientSet"
+            attributes="__len__" />
     </class>
 
 </configure>

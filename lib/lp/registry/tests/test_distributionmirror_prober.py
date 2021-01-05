@@ -8,6 +8,8 @@ __metaclass__ = type
 from datetime import datetime
 import logging
 import os
+import re
+from textwrap import dedent
 
 from fixtures import MockPatchObject
 from lazr.uri import URI
@@ -25,6 +27,7 @@ from testtools.twistedsupport import (
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
+import transaction
 from twisted.internet import (
     defer,
     reactor,
@@ -37,8 +40,18 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.registry.interfaces.distributionmirror import (
+    MirrorContent,
+    MirrorStatus,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.registry.model.distributionmirror import DistributionMirror
+from lp.registry.model.distributionmirror import (
+    DistributionMirror,
+    MirrorCDImageDistroSeries,
+    MirrorDistroArchSeries,
+    MirrorDistroSeriesSource,
+    MirrorProbeRecord,
+    )
 from lp.registry.scripts import distributionmirror_prober
 from lp.registry.scripts.distributionmirror_prober import (
     _get_cdimage_file_list,
@@ -72,14 +85,18 @@ from lp.registry.tests.distributionmirror_http_server import (
     )
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
+from lp.services.database.interfaces import IStore
 from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.timeout import default_timeout
 from lp.testing import (
+    admin_logged_in,
     clean_up_reactor,
+    run_script,
     TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import (
+    LaunchpadZopelessLayer,
     TwistedLayer,
     ZopelessDatabaseLayer,
     )
@@ -1174,3 +1191,117 @@ class TestLoggingMixin(TestCase):
         logger.log_file.seek(0)
         message = logger.log_file.read()
         self.assertNotEqual(None, message)
+
+
+class TestDistroMirrorProberFunctional(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super(TestDistroMirrorProberFunctional, self).setUp()
+        # Makes a clean distro mirror set, with only the mirrors we want.
+        self.removeMirrors()
+
+    def removeMirrors(self):
+        """Removes all mirror information from database."""
+        store = IStore(DistributionMirror)
+        store.find(MirrorProbeRecord).remove()
+        store.find(MirrorDistroArchSeries).remove()
+        store.find(MirrorDistroSeriesSource).remove()
+        store.find(MirrorCDImageDistroSeries).remove()
+        store.find(DistributionMirror).remove()
+        store.flush()
+
+    def makeMirror(self, content_type, distro=None):
+        with admin_logged_in():
+            if distro is None:
+                distro = self.factory.makeDistribution()
+                distro.supports_mirrors = True
+                self.factory.makeDistroSeries(distribution=distro)
+            mirror = self.factory.makeMirror(
+                distro, http_url="http://fake-url.invalid")
+            mirror.enabled = True
+            mirror.status = MirrorStatus.OFFICIAL
+            mirror.official_candidate = True
+            mirror.content = content_type
+        return mirror
+
+    def test_cdimage_prober(self):
+        """Checks that CD image prober works fine, end to end."""
+        mirror = self.makeMirror(content_type=MirrorContent.RELEASE)
+        transaction.commit()
+
+        out, err, exit_code = run_script(
+            "cronscripts/distributionmirror-prober.py --no-remote-hosts "
+            "--content-type=cdimage --no-owner-notification --force")
+        self.assertEqual(0, exit_code, err)
+
+        lock_file = "/var/lock/launchpad-distributionmirror-prober.lock"
+        self.assertEqual(dedent("""\
+            INFO    Creating lockfile: %s
+            INFO    Probing CD Image Mirrors
+            INFO    Probed 1 mirrors.
+            INFO    Starting to update mirrors statuses outside reactor now.
+            INFO    Done.
+            """) % lock_file, err)
+
+        with admin_logged_in():
+            record = removeSecurityProxy(mirror.last_probe_record)
+
+        log_lines = record.log_file.read()
+        self.assertEqual(4, len(log_lines.split("\n")))
+        self.assertIn(
+            "Found all ISO images for series The Hoary Hedgehog Release "
+            "and flavour kubuntu.", log_lines)
+        self.assertIn(
+            "Found all ISO images for series The Hoary Hedgehog Release "
+            "and flavour ubuntu.", log_lines)
+        self.assertIn(
+            "Found all ISO images for series The Warty Warthog Release "
+            "and flavour ubuntu.", log_lines)
+
+    def test_archive_prober(self):
+        """Checks that archive prober works fine, end to end."""
+        # Using ubuntu to avoid the need to create all the packages that
+        # will be checked by prober.
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        mirror = self.makeMirror(
+            content_type=MirrorContent.ARCHIVE, distro=ubuntu)
+        transaction.commit()
+
+        out, err, exit_code = run_script(
+            "cronscripts/distributionmirror-prober.py --no-remote-hosts "
+            "--content-type=archive --no-owner-notification --force")
+        self.assertEqual(0, exit_code, err)
+
+        lock_file = "/var/lock/launchpad-distributionmirror-prober.lock"
+        self.assertEqual(dedent("""\
+            INFO    Creating lockfile: %s
+            INFO    Probing Archive Mirrors
+            INFO    Probed 1 mirrors.
+            INFO    Starting to update mirrors statuses outside reactor now.
+            INFO    Done.
+            """) % lock_file, err)
+
+        with admin_logged_in():
+            record = removeSecurityProxy(mirror.last_probe_record)
+
+        log_lines = record.log_file.read()
+
+        # Make sure that prober output seems reasonable.
+        self.assertEqual(85, len(log_lines.split("\n")))
+        url = "http://fake-url.invalid/dists/"
+        self.assertEqual(40, len(re.findall(
+            (r"Ensuring MirrorDistroSeries of .* with url %s" % url) +
+            r".* exists in the database",
+            log_lines)))
+        self.assertEqual(40, len(re.findall(
+            (r"Ensuring MirrorDistroArchSeries of .* with url %s" % url) +
+            r".* exists in the database",
+            log_lines)))
+        self.assertEqual(1, len(re.findall(
+            r"Updating MirrorDistroArchSeries of .* freshness to Up to date",
+            log_lines)))
+        self.assertEqual(3, len(re.findall(
+            r"Updating MirrorDistroSeries of .* freshness to Up to date",
+            log_lines)))
