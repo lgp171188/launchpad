@@ -7,18 +7,13 @@ __metaclass__ = type
 
 __all__ = [
     'can_be_nominated_for_series',
-    'valid_bug_number',
     'valid_cve_sequence',
     'validate_new_team_email',
-    'validate_new_person_email',
-    'validate_date_interval',
     ]
 
 from zope.component import getUtility
-from zope.formlib.interfaces import WidgetsError
 
 from lp import _
-from lp.app.errors import NotFoundError
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.cve import valid_cve
 from lp.app.validators.email import valid_email
@@ -45,17 +40,6 @@ def can_be_nominated_for_series(series):
             "This bug has already been nominated for these "
             "series: ${series}", mapping={'series': series_str}))
 
-    return True
-
-
-def valid_bug_number(value):
-    from lp.bugs.interfaces.bug import IBugSet
-    bugset = getUtility(IBugSet)
-    try:
-        bugset.get(value)
-    except NotFoundError:
-        raise LaunchpadValidationError(_(
-            "Bug ${bugid} doesn't exist.", mapping={'bugid': value}))
     return True
 
 
@@ -95,49 +79,3 @@ def validate_new_team_email(email):
     _validate_email(email)
     _check_email_availability(email)
     return True
-
-
-def validate_new_person_email(email):
-    """Check that the given email is valid and not registered to
-    another launchpad account.
-
-    This validator is supposed to be used only when creating a new profile
-    using the /people/+newperson page, as the message will say clearly to the
-    user that the profile they're trying to create already exists, so there's
-    no need to create another one.
-    """
-    from lp.services.webapp.publisher import canonical_url
-    from lp.registry.interfaces.person import IPersonSet
-    _validate_email(email)
-    owner = getUtility(IPersonSet).getByEmail(email)
-    if owner is not None:
-        message = _("The profile you're trying to create already exists: "
-                    '<a href="${url}">${owner}</a>.',
-                    mapping={'url': html_escape(canonical_url(owner)),
-                             'owner': html_escape(owner.displayname)})
-        raise LaunchpadValidationError(structured(message))
-    return True
-
-
-def validate_date_interval(start_date, end_date, error_msg=None):
-    """Check if start_date precedes end_date.
-
-    >>> from datetime import datetime
-    >>> start = datetime(2006, 7, 18)
-    >>> end = datetime(2006, 8, 18)
-    >>> validate_date_interval(start, end)
-    >>> validate_date_interval(end, start)
-    Traceback (most recent call last):
-    ...
-    WidgetsError: LaunchpadValidationError: This event can&#x27;t start
-    after it ends.
-    >>> validate_date_interval(end, start, error_msg="A custom error msg")
-    Traceback (most recent call last):
-    ...
-    WidgetsError: LaunchpadValidationError: A custom error msg
-
-    """
-    if error_msg is None:
-        error_msg = _("This event can't start after it ends.")
-    if start_date >= end_date:
-        raise WidgetsError([LaunchpadValidationError(error_msg)])
