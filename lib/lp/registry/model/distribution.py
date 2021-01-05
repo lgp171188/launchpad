@@ -274,9 +274,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         enum=DistributionDefaultTraversalPolicy, notNull=False,
         default=DistributionDefaultTraversalPolicy.SERIES)
     redirect_default_traversal = BoolCol(notNull=False, default=False)
-    oci_registry_credentialsID = Int(name='oci_credentials', allow_none=True)
+    oci_registry_credentials_id = Int(name='oci_credentials', allow_none=True)
     oci_registry_credentials = Reference(
-        oci_registry_credentialsID, "OCIRegistryCredentials.id")
+        oci_registry_credentials_id, "OCIRegistryCredentials.id")
 
     def __repr__(self):
         display_name = backslashreplace(self.display_name)

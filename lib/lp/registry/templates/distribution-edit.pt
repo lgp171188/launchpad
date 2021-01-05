@@ -1,0 +1,98 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad"
+>
+<body>
+
+<tal:main metal:fill-slot="main">
+
+  <div metal:use-macro="context/@@launchpad_form/form">
+    <metal:formbody fill-slot="widgets">
+      <table class="form">
+        <tal:widget define="widget nocall:view/widgets/display_name">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/summary">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/description">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/bug_reporting_guidelines">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/bug_reported_acknowledgement">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/package_derivatives_email">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/icon">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/logo">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/mugshot">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/official_malone">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/enable_bug_expiration">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/blueprints_usage">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/translations_usage">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/answers_usage">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/translation_focus">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/default_traversal_policy">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/redirect_default_traversal">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+
+        <tr>
+            <td><label>OCI registry credentials</label></td>
+        <tr>
+        <tr>
+            <td tal:define="widget nocall:view/widgets/oci_credentials_url">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+            </td>
+            <td tal:define="widget nocall:view/widgets/oci_credentials_region">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+            </td>
+            <td tal:define="widget nocall:view/widgets/oci_credentials_username">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+            </td>
+            <td tal:define="widget nocall:view/widgets/oci_credentials_password">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+            </td>
+            <td tal:define="widget nocall:view/widgets/oci_credentials_confirm_password">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+            </td>
+            <td tal:define="widget nocall:view/widgets/oci_credentials_delete">
+                <metal:widget use-macro="context/@@launchpad_form/widget_div" />
+            </td>
+        </tr>
+      </table>
+    </metal:formbody>
+  </div>
+
+</tal:main>
+
+</body>
+</html>

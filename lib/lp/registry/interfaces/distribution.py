@@ -724,7 +724,7 @@ class IDistributionPublic(
         IOCIRegistryCredentials,
         title=_("OCI registry credentials"),
         description=_("Credentials and URL to use for uploading all OCI "
-                      "Images in this distribution to a registry."),
+                      "images in this distribution to a registry."),
         required=False, readonly=True)
 
 
