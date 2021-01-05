@@ -18,6 +18,7 @@ from lazr.restfulclient.errors import (
     )
 import pytz
 from simplejson import dumps
+import six
 from storm.store import Store
 from testtools.matchers import (
     Equals,
@@ -187,7 +188,7 @@ class TestBugCommentRepresentation(TestCaseWithFactory):
 
         self.assertEqual(response.status, 200)
 
-        rendered_comment = response.body
+        rendered_comment = six.ensure_text(response.body)
         self.assertRenderedCommentsEqual(
             rendered_comment, self.expected_comment_html)
 
