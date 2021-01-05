@@ -495,8 +495,7 @@ class PullerWorkerUIFactory(SilentUIFactory):
     def confirm_action(self, prompt, confirmation_id, args):
         """If we're asked to break a lock like a stale lock of ours, say yes.
         """
-        if confirmation_id not in (
-                'bzrlib.lockdir.break', 'breezy.lockdir.break'):
+        if confirmation_id != 'breezy.lockdir.break':
             raise AssertionError(
                 "Didn't expect confirmation id %r" % (confirmation_id,))
         branch_id = self.puller_worker_protocol.branch_id

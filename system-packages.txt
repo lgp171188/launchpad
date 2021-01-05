@@ -31,6 +31,3 @@ PIL
 # Dependency of cscvs.
 sqlite; python_version < "3"
 _sqlite; python_version < "3"
-
-# Used by bzr-git and bzr-svn.
-tdb
