@@ -292,7 +292,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     def setUp(self):
         super(TestAsyncSnapBuildBehaviour, self).setUp()
         build_username = 'SNAPBUILD-1'
-        self.token = {'secret': uuid.uuid4().get_hex(),
+        self.token = {'secret': uuid.uuid4().hex,
                       'username': build_username,
                       'timestamp': datetime.utcnow().isoformat()}
         self.proxy_url = ("http://{username}:{password}"
