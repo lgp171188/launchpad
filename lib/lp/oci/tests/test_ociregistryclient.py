@@ -227,6 +227,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
     @responses.activate
     def test_upload_ignores_superseded_builds(self):
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
         recipe = self.build.recipe
         processor = self.build.processor
         distribution = recipe.oci_project.distribution
