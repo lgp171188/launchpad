@@ -120,9 +120,6 @@ def filter_warnings():
     warnings.filterwarnings(
         'ignore', 'twisted.python.plugin', DeprecationWarning,
         )
-    warnings.filterwarnings(
-        'ignore', 'bzrlib.*was deprecated', DeprecationWarning,
-        )
     # XXX cjwatson 2019-10-18: This can be dropped once the port to Breezy
     # is complete.
     warnings.filterwarnings(

@@ -179,9 +179,6 @@ from lp.testing.fixture import (
 from lp.testing.karma import KarmaRecorder
 from lp.testing.mail_helpers import pop_notifications
 
-if six.PY2:
-    from bzrlib import trace as bzr_trace
-
 # The following names have been imported for the purpose of being
 # exported. They are referred to here to silence lint warnings.
 admin_logged_in
@@ -842,8 +839,6 @@ class TestCaseWithFactory(TestCase):
         # make it so in order to avoid "No handlers for "brz" logger'
         # messages.
         trace._brz_logger = logging.getLogger('brz')
-        if six.PY2:
-            bzr_trace._bzr_logger = logging.getLogger('bzr')
 
     def getUserBrowser(self, url=None, user=None):
         """Return a Browser logged in as a fresh user, maybe opened at `url`.
