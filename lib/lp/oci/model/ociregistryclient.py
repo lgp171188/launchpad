@@ -462,7 +462,10 @@ class OCIRegistryClient:
         if build.status == BuildStatus.SUPERSEDED:
             return
         if build.hasMoreRecentBuild():
-            build.updateStatus(BuildStatus.SUPERSEDED)
+            force_transition = (build.status == BuildStatus.FULLYBUILT)
+            build.updateStatus(
+                BuildStatus.SUPERSEDED,
+                force_invalid_transition=force_transition)
 
     @classmethod
     def uploadManifestList(cls, build_request, uploaded_builds):
