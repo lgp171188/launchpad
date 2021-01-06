@@ -193,10 +193,6 @@ class SharingJobDerived(
             return self.distro
 
     @property
-    def pillar_text(self):
-        return self.pillar.displayname if self.pillar else 'all pillars'
-
-    @property
     def log_name(self):
         return self.__class__.__name__
 

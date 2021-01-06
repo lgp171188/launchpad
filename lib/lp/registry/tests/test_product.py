@@ -879,7 +879,7 @@ class TestProduct(TestCaseWithFactory):
             'license_info', 'license_status', 'licenses', 'milestones',
             'mugshot', 'newCodeImport',
             'obsolete_translatable_series', 'official_bug_tags',
-            'packagedInDistros', 'packagings',
+            'packagings',
             'past_sprints', 'personHasDriverRights',
             'primary_translatable', 'private_bugs',
             'programminglang', 'qualifies_for_free_hosting',

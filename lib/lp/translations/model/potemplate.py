@@ -1305,18 +1305,6 @@ class POTemplateSet:
             iscurrent=iscurrent,
             ordered_by_names=ordered_by_names)
 
-    def getSubsetFromImporterSourcePackageName(self, distroseries,
-        sourcepackagename, iscurrent=None):
-        """See `IPOTemplateSet`."""
-        if distroseries is None or sourcepackagename is None:
-            raise AssertionError(
-                'distroseries and sourcepackage must be not None.')
-
-        return POTemplateSubset(
-            distroseries=distroseries,
-            sourcepackagename=sourcepackagename,
-            iscurrent=iscurrent)
-
     def getSharingSubset(self, distribution=None, sourcepackagename=None,
                          product=None):
         """See `IPOTemplateSet`."""
