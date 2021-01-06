@@ -69,6 +69,7 @@ from zope.schema import (
     Text,
     TextLine,
     )
+from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
 from lp.answers.interfaces.faqtarget import IFAQTarget
