@@ -367,10 +367,9 @@ CREATE OR REPLACE FUNCTION bugsummary_targets(btf_row public.bugtaskflat)
     )
     LANGUAGE sql IMMUTABLE
     AS $_$
-    -- Include a sourcepackagename-free task if this one has a
+    -- Include a sourcepackagename-free/ociproject-free task if this one has a
     -- sourcepackagename, so package tasks are also counted in their
     -- distro/series.
-    -- XXX what about pillar for ociprojects?
     SELECT
         $1.product, $1.productseries, $1.distribution,
         $1.distroseries, $1.sourcepackagename,
@@ -378,8 +377,7 @@ CREATE OR REPLACE FUNCTION bugsummary_targets(btf_row public.bugtaskflat)
     UNION -- Implicit DISTINCT
     SELECT
         $1.product, $1.productseries, $1.distribution,
-        $1.distroseries, NULL,
-        $1.ociproject, $1.ociprojectseries;
+        $1.distroseries, NULL, NULL, NULL;
 $_$;
 
 CREATE OR REPLACE FUNCTION bugsummary_locations(
