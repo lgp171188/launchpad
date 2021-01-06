@@ -1175,16 +1175,6 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             return comp
         raise NotFoundError(name)
 
-    def getSectionByName(self, name):
-        """See `IDistroSeries`."""
-        section = Section.byName(name)
-        if section is None:
-            raise NotFoundError(name)
-        permitted = set(self.sections)
-        if section in permitted:
-            return section
-        raise NotFoundError(name)
-
     def searchPackages(self, text):
         """See `IDistroSeries`."""
         find_spec = (

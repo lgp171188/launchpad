@@ -169,14 +169,6 @@ class ICveSet(Interface):
         found in the text.
         """
 
-    def inMessage(msg):
-        """Find any CVE's in the given message.
-
-        This will create any CVE's that it does not already know about. It
-        returns a list of all the CVE's that it saw mentioned in the
-        message.
-        """
-
     def getBugCvesForBugTasks(bugtasks, cve_mapper=None):
         """Return (Bug, Cve) tuples that correspond to the supplied bugtasks.
 

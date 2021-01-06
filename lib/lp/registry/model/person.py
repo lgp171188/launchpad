@@ -4197,10 +4197,6 @@ class WikiName(SQLBase, HasOwnerMixin):
 @implementer(IWikiNameSet)
 class WikiNameSet:
 
-    def getByWikiAndName(self, wiki, wikiname):
-        """See `IWikiNameSet`."""
-        return WikiName.selectOneBy(wiki=wiki, wikiname=wikiname)
-
     def get(self, id):
         """See `IWikiNameSet`."""
         try:
