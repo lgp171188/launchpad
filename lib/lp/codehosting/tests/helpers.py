@@ -16,6 +16,7 @@ __all__ = [
 
 import os
 
+from breezy.controldir import ControlDir
 from breezy.errors import FileExists
 from breezy.plugins.loom import branch as loom_branch
 from breezy.tests import (
@@ -86,13 +87,10 @@ class LoomTestMixin:
 
 def create_branch_with_one_revision(branch_dir, format=None):
     """Create a dummy Bazaar branch at the given directory."""
-    # XXX cjwatson 2019-06-13: This still uses bzrlib until such time as the
-    # code import workers are ported to Breezy.
-    from bzrlib.bzrdir import BzrDir
     if not os.path.exists(branch_dir):
         os.makedirs(branch_dir)
     try:
-        tree = BzrDir.create_standalone_workingtree(branch_dir, format)
+        tree = ControlDir.create_standalone_workingtree(branch_dir, format)
     except FileExists:
         return
     f = open(os.path.join(branch_dir, 'hello'), 'w')

@@ -520,44 +520,6 @@ class ObjectFactory(
         epoch = datetime(2009, 1, 1, tzinfo=pytz.UTC)
         return epoch + timedelta(minutes=self.getUniqueInteger())
 
-    def makeCodeImportSourceDetails(self, target_id=None, rcstype=None,
-                                    target_rcstype=None, url=None,
-                                    cvs_root=None, cvs_module=None,
-                                    stacked_on_url=None, macaroon=None):
-        if not six.PY2:
-            raise NotImplementedError(
-                "Code imports do not yet work on Python 3.")
-
-        # XXX cjwatson 2020-08-07: Move this back up to module level once
-        # codeimport has been ported to Breezy.
-        from lp.codehosting.codeimport.worker import CodeImportSourceDetails
-
-        if target_id is None:
-            target_id = self.getUniqueInteger()
-        if rcstype is None:
-            rcstype = 'bzr-svn'
-        if target_rcstype is None:
-            target_rcstype = 'bzr'
-        if rcstype in ['bzr-svn', 'bzr']:
-            assert cvs_root is cvs_module is None
-            if url is None:
-                url = self.getUniqueURL()
-        elif rcstype == 'cvs':
-            assert url is None
-            if cvs_root is None:
-                cvs_root = self.getUniqueUnicode()
-            if cvs_module is None:
-                cvs_module = self.getUniqueUnicode()
-        elif rcstype == 'git':
-            assert cvs_root is cvs_module is None
-            if url is None:
-                url = self.getUniqueURL(scheme='git')
-        else:
-            raise AssertionError("Unknown rcstype %r." % rcstype)
-        return CodeImportSourceDetails(
-            target_id, rcstype, target_rcstype, url, cvs_root, cvs_module,
-            stacked_on_url=stacked_on_url, macaroon=macaroon)
-
 
 class BareLaunchpadObjectFactory(ObjectFactory):
     """Factory methods for creating Launchpad objects.
