@@ -172,9 +172,9 @@ An OCI project based in that product will produce an extra row
     prod ps   dist ds   spn   ocip tag mile status import pa   #
     ------------------------------------------------------------
     pr-a x    x    x    x     op-1 x   x    New    Undeci F    1
-    pr-a x    x    x    x     x    x   x    New    Undeci F    1
+    pr-a x    x    x    x     x    x   x    New    Undeci F    2
                                                               ===
-                                                                2
+                                                                3
 
 There is one row per tag per combination of product, status and milestone.
 If we are interested in all bugs targeted to a product regardless of how
@@ -199,10 +199,10 @@ are 2 New and 2 Confirmed bug tasks targetted to the pr-a product.:
     prod ps   dist ds   spn   ocip tag mile status import pa   #
     ------------------------------------------------------------
     pr-a x    x    x    x     op-1 x   x    New    Undeci F    1
-    pr-a x    x    x    x     x   x   x    New    Undeci F    2
+    pr-a x    x    x    x     x   x   x    New    Undeci F    3
     pr-a x    x    x    x     x   x   x    Confir Undeci F    2
                                                             ===
-                                                              5
+                                                              6
 
 Here are the rows associated with the 't-a' tag. There is 1 Confirmed
 bug task targetted to the pr-a product who's bug is tagged 't-a'.:
@@ -228,7 +228,7 @@ need to cope with that:
     ...     BugSummary.product == prod_a,
     ...     BugSummary.viewed_by == None,
     ...     BugSummary.tag == None).sum(BugSummary.count) or 0
-    5
+    6
 
     >>> store.find(
     ...     BugSummary,
@@ -244,7 +244,7 @@ total (so far, we have created only 4 bugs):
     ...     BugSummary,
     ...     BugSummary.viewed_by == None,
     ...     BugSummary.product==prod_a).sum(BugSummary.count) or 0
-    6
+    7
 
 Milestones works similarly, except you leave out the milestone clause
 to calculate totals regardless of milestone. If you explicitly query for
@@ -264,10 +264,10 @@ been assigned to a milestone:
     pr-a x    x    x    x     x    t-b ms-a New    Undeci F    1
     pr-a x    x    x    x     x    t-c ms-a New    Undeci F    1
     pr-a x    x    x    x     x    x   ms-a New    Undeci F    1
-    pr-a x    x    x    x     x    x   x    New    Undeci F    2
+    pr-a x    x    x    x     x    x   x    New    Undeci F    3
     pr-a x    x    x    x     x    x   x    Confir Undeci F    2
                                                              ===
-                                                               9
+                                                              10
 
 Number of New bugs not targeted to a milestone. Note the difference
 between selecting records where tag is None, and where milestone is None:
@@ -279,7 +279,7 @@ between selecting records where tag is None, and where milestone is None:
     ...     BugSummary.viewed_by == None,
     ...     BugSummary.milestone == None,
     ...     BugSummary.tag == None).sum(BugSummary.count) or 0
-    3
+    4
 
 Number of bugs targeted to prod_a, grouped by milestone:
 
@@ -299,7 +299,7 @@ Number of bugs targeted to prod_a, grouped by milestone:
     ...     else:
     ...         print(None, count)
     ms-a 1
-    None 5
+    None 6
 
 
 ProductSeries Bug Counts

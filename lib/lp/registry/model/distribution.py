@@ -643,8 +643,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # Circular fail.
         from lp.bugs.model.bugsummary import BugSummary
         return And(
-                BugSummary.distribution_id == self.id,
-                BugSummary.sourcepackagename_id == None)
+            BugSummary.distribution_id == self.id,
+            BugSummary.sourcepackagename_id == None,
+            BugSummary.ociproject_id == None)
 
     def _customizeSearchParams(self, search_params):
         """Customize `search_params` for this distribution."""
