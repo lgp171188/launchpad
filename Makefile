@@ -300,10 +300,6 @@ $(subst $(PY),,$(PIP_BIN)): $(PY)
 # a prerequisite, to make sure it's up to date when doing deployments.
 compile: $(PY)
 	${SHHH} utilities/relocate-virtualenv env
-	if grep -q '^2\.' env/python_version; then \
-		${SHHH} $(MAKE) -C sourcecode build \
-			PYTHON=${PYTHON} LPCONFIG=${LPCONFIG}; \
-	fi
 	$(PYTHON) utilities/link-system-packages.py \
 		"$(SITE_PACKAGES)" system-packages.txt
 	${SHHH} bin/build-twisted-plugin-cache

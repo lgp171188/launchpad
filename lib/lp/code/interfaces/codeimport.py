@@ -47,22 +47,58 @@ from lp.services.fields import (
     )
 
 
+# CVSROOT parsing based on cscvs.
+
+class CVSRootError(Exception):
+    """Raised when trying to use a CVSROOT with invalid syntax."""
+
+    def __init__(self, root):
+        super(CVSRootError, self).__init__(self, 'bad CVSROOT: %r' % root)
+
+
+_cvs_root_parser = re.compile(r"""
+    ^:(?P<method>[^:]+):
+    (?:
+        (?:
+            (?P<username>[^:/]+)
+            (?::(?P<password>[^:/]+))?
+        @)?
+        (?P<hostname>[^:/]+)
+        (?::(?P<port>\\d+))?
+    :?)?
+    (?P<path>/.*)$
+    """, flags=re.X)
+
+
+def _normalise_cvs_root(root):
+    """Take in a CVSROOT and normalise it to the :scheme:.... format."""
+    root = str(root)
+    if not root:
+        raise CVSRootError(root)
+    if root.startswith(":"):
+        return root
+    if root.startswith("/"):
+        return ":local:%s" % root
+    if ":" not in root:
+        if '/' not in root:
+            raise CVSRootError(root)
+        root = "%s:%s" % (root[:root.find("/")-1], root[root.find("/"):])
+    return ":ext:%s" % root
+
+
 def validate_cvs_root(cvsroot):
-    # XXX cjwatson 2020-08-12: Move these imports back up to the top level
-    # once they work on Python 3.
-    from CVS.protocol import (
-        CVSRoot,
-        CvsRootError,
-        )
     try:
-        root = CVSRoot(cvsroot)
-    except CvsRootError as e:
+        match = _cvs_root_parser.match(_normalise_cvs_root(cvsroot))
+        if match is None:
+            raise CVSRootError(cvsroot)
+        method, username, password, hostname, port, path = match.groups()
+    except CVSRootError as e:
         raise LaunchpadValidationError(e)
-    if root.method == 'local':
+    if method == 'local':
         raise LaunchpadValidationError('Local CVS roots are not allowed.')
-    if not root.hostname:
+    if not hostname:
         raise LaunchpadValidationError('CVS root is invalid.')
-    if root.hostname.count('.') == 0:
+    if hostname.count('.') == 0:
         raise LaunchpadValidationError(
             'Please use a fully qualified host name.')
     return True
