@@ -5,12 +5,16 @@
 
 __metaclass__ = type
 
-import email
 from logging import getLogger
 
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.sendmail.interfaces import IMailer
+
+from lp.services.compat import (
+    message_as_bytes,
+    message_from_bytes,
+    )
 
 
 @implementer(IMailer)
@@ -37,7 +41,7 @@ class StubMailer:
         # headers that determine the actual To: address. However, this might
         # be required to bypass some spam filters.
         if self.rewrite:
-            message = email.message_from_string(message)
+            message = message_from_bytes(message)
             message['X-Orig-To'] = message['To']
             message['X-Orig-Cc'] = message['Cc']
             message['X-Orig-From'] = message['From']
@@ -47,7 +51,7 @@ class StubMailer:
             del message['Reply-To']
             message['To'] = ', '.join(self.to_addrs)
             message['From'] = self.from_addr
-            message = message.as_string()
+            message = message_as_bytes(message)
 
         sendmail = getUtility(IMailer, self.mailer)
         sendmail.send(self.from_addr, self.to_addrs, message)
