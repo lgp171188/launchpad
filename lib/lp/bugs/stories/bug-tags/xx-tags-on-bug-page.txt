@@ -19,7 +19,7 @@ If we enter an invalid tag name, we'll get an error.
     >>> user_browser.getControl('Change').click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     '!!invalid!!' isn't a valid tag name. Tags must start with a letter
     or number and be lowercase. The characters "+", "-" and "." are also

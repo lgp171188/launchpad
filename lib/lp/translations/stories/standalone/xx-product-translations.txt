@@ -172,7 +172,7 @@ The page mentions which product series should be translated.
     ...         browser.contents, 'translation-recommendation')
     ...     if tag is None:
     ...         return None
-    ...     return extract_text(tag.renderContents())
+    ...     return extract_text(tag.decode_contents())
 
     >>> product_url = 'http://translations.launchpad.test/evolution'
 

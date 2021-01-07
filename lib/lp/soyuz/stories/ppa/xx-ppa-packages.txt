@@ -423,7 +423,7 @@ Anyone can see the build status for package in Celso's PPA.
     ...         built_icon = columns[-1].img['src']
     ...         built_text = columns[-1].a
     ...         if built_text is not None:
-    ...             built_text = built_text.renderContents()
+    ...             built_text = built_text.decode_contents()
     ...         print(name, built_icon, built_text)
 
     >>> print_build_status(anon_browser.contents)

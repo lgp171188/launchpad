@@ -83,7 +83,7 @@ from the answer contact list.
 A confirmation message is displayed:
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Landscape Developers has been removed as an answer contact for Ubuntu.
 
 

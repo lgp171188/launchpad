@@ -71,7 +71,7 @@ First we'll test the name field validator.
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     <BLANKLINE>
     Invalid name 'ltsp_on_steroids!'. Names must be at least two characte...
@@ -83,7 +83,7 @@ nice error message
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     <BLANKLINE>
     ubz is already in use by another sprint.
@@ -99,7 +99,7 @@ a error message.
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     <BLANKLINE>
     This event can't start after it ends
@@ -213,7 +213,7 @@ should receive a nice error message.
     >>> browser.getControl('Change').click()
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     This event can't start after it ends
 
@@ -266,7 +266,7 @@ We should be able to see the spec assignment table of a sprint:
 
     >>> mainarea = find_main_content(anon_browser.contents)
     >>> for header in mainarea.findAll('th'):
-    ...     print(header.renderContents())
+    ...     print(header.decode_contents())
     Priority
     Name
     Definition
@@ -330,7 +330,7 @@ date up to one day after the sprint ends.
     http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     Please pick a date after 2006-01-10 08:30
 
@@ -344,7 +344,7 @@ An attendance that starts after the end of the sprint is also an error:
     http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There are 2 errors.
     Please pick a date before 2006-02-12 17:00
     Please pick a date before 2006-02-13 17:00
@@ -360,7 +360,7 @@ error:
     http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There are 2 errors.
     Please pick a date after 2006-01-09 08:30
     Please pick a date after 2006-01-10 08:30

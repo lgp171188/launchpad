@@ -8,7 +8,7 @@ all events relevant to that pillar.
     ...     maincontent = find_tag_by_id(contents, 'maincontent')
     ...     for link in maincontent.findAll('a'):
     ...         if re.search('/sprints/[a-z0-9]', link['href']) is not None:
-    ...             print(link.renderContents())
+    ...             print(link.decode_contents())
 
     >>> anon_browser.open('http://launchpad.test/firefox/+sprints')
     >>> print_sprints(anon_browser.contents)

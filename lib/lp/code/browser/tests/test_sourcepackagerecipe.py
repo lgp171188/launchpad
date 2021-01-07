@@ -140,10 +140,10 @@ class BzrMixin:
                 self.assertEqual(2, len(branch_links))
                 package_branches_info.append(
                     '%s%s' % (root_url, branch_links[0]['href']))
-                package_branches_info.append(branch_links[0].renderContents())
+                package_branches_info.append(branch_links[0].decode_contents())
                 package_branches_info.append(
                     '%s%s' % (root_url, branch_links[1]['href']))
-                package_branches_info.append(branch_links[1].renderContents())
+                package_branches_info.append(branch_links[1].decode_contents())
             expected_branch_info = []
             for branch_info in related_package_branch_info:
                 branch = branch_info[0]
@@ -170,9 +170,9 @@ class BzrMixin:
                 self.assertEqual(2, len(branch_links))
                 series_branches_info.append(
                     '%s%s' % (root_url, branch_links[0]['href']))
-                series_branches_info.append(branch_links[0].renderContents())
+                series_branches_info.append(branch_links[0].decode_contents())
                 series_branches_info.append(branch_links[1]['href'])
-                series_branches_info.append(branch_links[1].renderContents())
+                series_branches_info.append(branch_links[1].decode_contents())
             expected_branch_info = []
             for branch_info in related_series_branch_info:
                 branch = branch_info[0]
