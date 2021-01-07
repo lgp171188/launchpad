@@ -32,6 +32,7 @@ from lp.services.utils import (
     iter_split,
     load_bz2_pickle,
     obfuscate_structure,
+    round_half_up,
     run_capturing_output,
     sanitise_urls,
     save_bz2_pickle,
@@ -422,3 +423,29 @@ class TestSanitiseURLs(TestCase):
                 '{"one": "http://example.com/", '
                 '"two": "http://alice:secret@example.com/", '
                 '"three": "http://bob:hidden@example.org/"}'))
+
+
+class TestRoundHalfUp(TestCase):
+
+    def test_exact_integer(self):
+        self.assertEqual(-2, round_half_up(-2.0))
+        self.assertEqual(-1, round_half_up(-1.0))
+        self.assertEqual(0, round_half_up(0.0))
+        self.assertEqual(1, round_half_up(1.0))
+        self.assertEqual(2, round_half_up(2.0))
+
+    def test_not_half(self):
+        self.assertEqual(-999, round_half_up(-999.1))
+        self.assertEqual(-999, round_half_up(-998.9))
+        self.assertEqual(0, round_half_up(-0.4))
+        self.assertEqual(0, round_half_up(0.3))
+        self.assertEqual(75, round_half_up(74.7))
+        self.assertEqual(75, round_half_up(75.2))
+
+    def test_half(self):
+        self.assertEqual(-10, round_half_up(-9.5))
+        self.assertEqual(-9, round_half_up(-8.5))
+        self.assertEqual(-1, round_half_up(-0.5))
+        self.assertEqual(1, round_half_up(0.5))
+        self.assertEqual(9, round_half_up(8.5))
+        self.assertEqual(10, round_half_up(9.5))

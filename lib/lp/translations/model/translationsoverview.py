@@ -16,6 +16,7 @@ from lp.services.database.sqlbase import (
     cursor,
     sqlvalues,
     )
+from lp.services.utils import round_half_up
 from lp.translations.interfaces.translationsoverview import (
     ITranslationsOverview,
     MalformedKarmaCacheData,
@@ -43,9 +44,9 @@ class TranslationsOverview:
 
         normalized_sizes = []
         for (pillar, size) in pillars:
-            new_size = int(round(
+            new_size = round_half_up(
                 real_minimum +
-                (size - offset - real_minimum) * multiplier))
+                (size - offset - real_minimum) * multiplier)
             normalized_sizes.append({'pillar': pillar, 'weight': new_size})
         return normalized_sizes
 

@@ -20,6 +20,7 @@ __all__ = [
     'obfuscate_email',
     'obfuscate_structure',
     're_email_address',
+    'round_half_up',
     'run_capturing_output',
     'sanitise_urls',
     'save_bz2_pickle',
@@ -32,6 +33,7 @@ __all__ = [
 
 import bz2
 from datetime import datetime
+import decimal
 from itertools import (
     islice,
     tee,
@@ -364,3 +366,15 @@ def sanitise_urls(s):
     # Remove credentials from URLs.
     password_re = re.compile(r'://([^:@/]*:[^@/]*@)(\S+)')
     return password_re.sub(r'://<redacted>@\2', s)
+
+
+def round_half_up(number):
+    """Round `number` to the nearest integer, with ties going away from zero.
+
+    This is equivalent to `int(round(number))` on Python 2; Python 3's
+    `round` prefers round-to-even in the case of ties, which does a better
+    job of avoiding statistical bias in many cases but isn't always what we
+    want.
+    """
+    return int(decimal.Decimal(number).to_integral_value(
+        rounding=decimal.ROUND_HALF_UP))

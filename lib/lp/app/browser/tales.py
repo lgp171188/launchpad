@@ -72,6 +72,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
+from lp.services.utils import round_half_up
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.canonicalurl import nearest_adapter
 from lp.services.webapp.error import SystemErrorView
@@ -2467,7 +2468,7 @@ class DurationFormatterAPI:
         # Convert seconds into minutes, and round it.
         minutes, remaining_seconds = divmod(seconds, 60)
         minutes += remaining_seconds / 60.0
-        minutes = int(round(minutes))
+        minutes = round_half_up(minutes)
 
         if minutes <= 59:
             return "%d minutes" % minutes
@@ -2480,7 +2481,7 @@ class DurationFormatterAPI:
         # greater than one hour, but fewer than ten hours, to a 10
         # minute granularity.
         hours, remaining_seconds = divmod(seconds, 3600)
-        ten_minute_chunks = int(round(remaining_seconds / 600.0))
+        ten_minute_chunks = round_half_up(remaining_seconds / 600.0)
         minutes = ten_minute_chunks * 10
         hours += (minutes / 60)
         minutes %= 60
@@ -2501,7 +2502,7 @@ class DurationFormatterAPI:
 
         # Try to calculate the approximate number of hours, to a
         # maximum of 47.
-        hours = int(round(seconds / 3600.0))
+        hours = round_half_up(seconds / 3600.0)
         if hours <= 47:
             return "%d hours" % hours
 
@@ -2511,7 +2512,7 @@ class DurationFormatterAPI:
 
         # Try to approximate to day granularity, up to a maximum of 13
         # days.
-        days = int(round(seconds / (24 * 3600)))
+        days = round_half_up(seconds / (24 * 3600))
         if days <= 13:
             return "%s days" % days
 
@@ -2521,7 +2522,7 @@ class DurationFormatterAPI:
 
         # If we've made it this far, we'll calculate the duration to a
         # granularity of weeks, once and for all.
-        weeks = int(round(seconds / (7 * 24 * 3600.0)))
+        weeks = round_half_up(seconds / (7 * 24 * 3600.0))
         return "%d weeks" % weeks
 
     def millisecondduration(self):

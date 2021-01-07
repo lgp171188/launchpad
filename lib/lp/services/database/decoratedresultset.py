@@ -86,7 +86,7 @@ class DecoratedResultSet(object):
             assert (
                 removeSecurityProxy(self.result_set).return_both
                     == self.return_both)
-            return zip(*results)
+            return tuple(zip(*results))
         else:
             return results, results
 
