@@ -1178,9 +1178,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         """See BugTargetBase."""
         # Circular fail.
         from lp.bugs.model.bugsummary import BugSummary
-        return And(
-            BugSummary.product_id == self.id,
-            BugSummary.ociproject_id == None)
+        return BugSummary.product_id == self.id
 
     def searchQuestions(self, search_text=None,
                         status=QUESTION_STATUS_DEFAULT_SEARCH,
