@@ -765,6 +765,14 @@ class OCIRecipeFormMixin:
         )
         return False, message
 
+    def use_distribution_credentials(self):
+        if hasattr(self.context, 'oci_project'):
+            project = self.context.oci_project
+        else:
+            project = self.context
+        distro = project.distribution
+        return (distro and distro.oci_registry_credentials)
+
 
 class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                        OCIRecipeFormMixin):
@@ -1011,6 +1019,14 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                 "May only be enabled by the owner of the OCI Project."),
             default=self.context.official,
             required=False, readonly=False))
+        if self.context.use_distribution_credentials:
+            self.form_fields += FormFields(TextLine(
+                __name__='image_name',
+                title=u"Image name",
+                description=(
+                    "Name to use for registry upload. "
+                    "Defaults to the name of the recipe."),
+                required=False, readonly=False))
 
     def validate(self, data):
         """See `LaunchpadFormView`."""

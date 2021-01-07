@@ -151,35 +151,37 @@
     </div>
 
 
-    <h2>Recipe push rules</h2>
-    <table id="push-rules-listing" tal:condition="view/has_push_rules" class="listing"
-           style="margin-bottom: 1em; ">
-      <thead>
-        <tr>
-          <th>Registry URL</th>
-          <th>Username</th>
-          <th>Image Name</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tal:recipe-push-rules repeat="item view/push_rules">
-          <tr tal:define="rule item;
-                          show_credentials rule/registry_credentials/required:launchpad.View"
-              tal:attributes="id string:rule-${rule/id}">
-            <td tal:content="python: rule.registry_credentials.url if show_credentials else ''"/>
-            <td tal:content="python: rule.registry_credentials.username if show_credentials else ''"/>
-            <td tal:content="rule/image_name"/>
+    <div tal:condition="not: context/use_distribution_credentials">
+      <h2>Recipe push rules</h2>
+      <table id="push-rules-listing" tal:condition="view/has_push_rules" class="listing"
+            style="margin-bottom: 1em; ">
+        <thead>
+          <tr>
+            <th>Registry URL</th>
+            <th>Username</th>
+            <th>Image Name</th>
           </tr>
-        </tal:recipe-push-rules>
-      </tbody>
-    </table>
-    <p tal:condition="not: view/has_push_rules">
-      This OCI recipe has no push rules defined yet.
-    </p>
+        </thead>
+        <tbody>
+          <tal:recipe-push-rules repeat="item view/push_rules">
+            <tr tal:define="rule item;
+                            show_credentials rule/registry_credentials/required:launchpad.View"
+                tal:attributes="id string:rule-${rule/id}">
+              <td tal:content="python: rule.registry_credentials.url if show_credentials else ''"/>
+              <td tal:content="python: rule.registry_credentials.username if show_credentials else ''"/>
+              <td tal:content="rule/image_name"/>
+            </tr>
+          </tal:recipe-push-rules>
+        </tbody>
+      </table>
+      <p tal:condition="not: view/has_push_rules">
+        This OCI recipe has no push rules defined yet.
+      </p>
 
-    <div tal:define="link context/menu:context/edit_push_rules"
-         tal:condition="link/enabled">
-      <tal:edit-push-rules replace="structure link/fmt:link"/>
+      <div tal:define="link context/menu:context/edit_push_rules"
+          tal:condition="link/enabled">
+        <tal:edit-push-rules replace="structure link/fmt:link"/>
+      </div>
     </div>
 
   </div>

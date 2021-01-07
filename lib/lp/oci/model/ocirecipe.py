@@ -76,7 +76,10 @@ from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
-from lp.oci.model.ocipushrule import OCIPushRule
+from lp.oci.model.ocipushrule import (
+    OCIDistributionPushRule,
+    OCIPushRule,
+    )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.oci.model.ocirecipejob import OCIRecipeJob
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -471,6 +474,14 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def push_rules(self):
+        # if we're in a distribution that has credentials set at that level
+        # create a push rule using those credentials
+        if self.use_distribution_credentials:
+            push_rule = OCIDistributionPushRule(
+                self,
+                self.image_name,
+                self.oci_project.distribution.oci_registry_credentials)
+            return [push_rule]
         rules = IStore(self).find(
             OCIPushRule,
             OCIPushRule.recipe == self.id)
