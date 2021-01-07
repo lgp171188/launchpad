@@ -547,7 +547,8 @@ class Person(
                      storm_validator=_validate_name)
 
     def __repr__(self):
-        displayname = self.displayname.encode('ASCII', 'backslashreplace')
+        displayname = six.ensure_str(
+            self.displayname, encoding='ASCII', errors='backslashreplace')
         return '<Person at 0x%x %s (%s)>' % (id(self), self.name, displayname)
 
     display_name = StringCol(dbName='displayname', notNull=True)
