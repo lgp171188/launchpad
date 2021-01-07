@@ -16,6 +16,7 @@ import re
 
 from lazr.restful.utils import get_current_browser_request
 import responses
+import six
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 from zope.interface import implementer
@@ -158,14 +159,14 @@ class TestBranchHostingClient(TestCase):
             "+branch-id/123/+json/files/%2Brev%20id%3F/%2Bfile/%20name%3F")
 
     def test_getBlob(self):
-        blob = b"".join(chr(i) for i in range(256))
+        blob = b"".join(six.int2byte(i) for i in range(256))
         with self.mockRequests("GET", body=blob):
             response = self.client.getBlob(123, "file-id")
         self.assertEqual(blob, response)
         self.assertRequest("+branch-id/123/download/head%3A/file-id")
 
     def test_getBlob_revision(self):
-        blob = b"".join(chr(i) for i in range(256))
+        blob = b"".join(six.int2byte(i) for i in range(256))
         with self.mockRequests("GET", body=blob):
             response = self.client.getBlob(123, "file-id", rev="a")
         self.assertEqual(blob, response)
@@ -198,7 +199,7 @@ class TestBranchHostingClient(TestCase):
                 self.client.getBlob, 123, "file-id")
 
     def test_getBlob_url_quoting(self):
-        blob = b"".join(chr(i) for i in range(256))
+        blob = b"".join(six.int2byte(i) for i in range(256))
         with self.mockRequests("GET", body=blob):
             self.client.getBlob(123, "+file/ id?", rev="+rev id?")
         self.assertRequest(
@@ -206,7 +207,7 @@ class TestBranchHostingClient(TestCase):
 
     def test_works_in_job(self):
         # `BranchHostingClient` is usable from a running job.
-        blob = b"".join(chr(i) for i in range(256))
+        blob = b"".join(six.int2byte(i) for i in range(256))
 
         @implementer(IRunnableJob)
         class GetBlobJob(BaseRunnableJob):
