@@ -162,6 +162,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     build_daily = Bool(name="build_daily", default=False)
 
+    _image_name = Unicode(name="image_name", allow_none=True)
+
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
@@ -534,6 +536,19 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     @property
     def can_upload_to_registry(self):
         return not self.push_rules.is_empty()
+
+    @property
+    def use_distribution_credentials(self):
+        distribution = self.oci_project.distribution
+        return distribution and distribution.oci_registry_credentials
+
+    @property
+    def image_name(self):
+        return self._image_name or self.name
+
+    @image_name.setter
+    def image_name(self, value):
+        self._image_name = value
 
     def newPushRule(self, registrant, registry_url, image_name, credentials,
                     credentials_owner=None):
