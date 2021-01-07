@@ -18,6 +18,7 @@ from zope.formlib.textwidgets import (
     )
 
 from lp.app.errors import UnexpectedFormData
+from lp.services.utils import round_half_up
 
 
 class StrippedTextWidget(TextWidget):
@@ -104,9 +105,9 @@ class LocalDateTimeWidget(TextWidget):
         try:
             year, month, day, hour, minute, second, dummy_tz = parse(input)
             second, micro = divmod(second, 1.0)
-            micro = round(micro * 1000000)
+            micro = round_half_up(micro * 1000000)
             dt = datetime.datetime(year, month, day,
-                                   hour, minute, int(second), int(micro))
+                                   hour, minute, int(second), micro)
         except (DateTimeError, ValueError, IndexError) as v:
             raise ConversionError('Invalid date value', v)
         tz = pytz.timezone(self.timeZoneName)
