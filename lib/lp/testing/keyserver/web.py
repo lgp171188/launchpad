@@ -32,7 +32,6 @@ __all__ = [
     'KeyServerResource',
     ]
 
-import cgi
 import glob
 import os
 from time import sleep
@@ -40,6 +39,7 @@ from time import sleep
 from twisted.web.resource import Resource
 from zope.component import getUtility
 
+from lp.services.compat import escape
 from lp.services.gpg.interfaces import (
     GPGKeyNotFoundError,
     IGPGHandler,
@@ -146,7 +146,7 @@ class LookUp(Resource):
         path = locate_key(self.root, filename)
         if path is not None:
             with open(path) as f:
-                content = cgi.escape(f.read())
+                content = escape(f.read(), quote=False)
             page = ('<html>\n<head>\n'
                     '<title>Results for Key %s</title>\n'
                     '</head>\n<body>'
