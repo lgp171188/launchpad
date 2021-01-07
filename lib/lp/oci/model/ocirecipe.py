@@ -170,7 +170,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
-                 allow_internet=True, build_args=None, build_path=None):
+                 allow_internet=True, build_args=None, build_path=None,
+                 image_name=None):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
@@ -189,6 +190,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.allow_internet = allow_internet
         self.build_args = build_args or {}
         self.build_path = build_path
+        self.image_name = image_name
 
     def __repr__(self):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
@@ -485,7 +487,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         rules = IStore(self).find(
             OCIPushRule,
             OCIPushRule.recipe == self.id)
-        return rules
+        return list(rules)
 
     @property
     def _pending_states(self):
@@ -546,7 +548,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def can_upload_to_registry(self):
-        return not self.push_rules.is_empty()
+        return bool(self.push_rules)
 
     @property
     def use_distribution_credentials(self):
@@ -601,7 +603,8 @@ class OCIRecipeSet:
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True, build_args=None, build_path=None):
+            allow_internet=True, build_args=None, build_path=None,
+            image_name=None):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -626,7 +629,7 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created, allow_internet, build_args, build_path)
+            date_created, allow_internet, build_args, build_path, image_name)
         store.add(oci_recipe)
 
         if processors is None:

@@ -86,6 +86,10 @@
         <dd>
           <span tal:condition="context/official">Yes</span>
           <span tal:condition="not: context/official">No</span>
+      <dl id="image-name" tal:condition="context/use_distribution_credentials">
+        <dt>Registry image name</dt>
+        <dd>
+          <span tal:content="context/image_name" />
         </dd>
       </dl>
     </div>
@@ -150,6 +154,11 @@
       <tal:request-builds replace="structure link/fmt:link"/>
     </div>
 
+
+    <div tal:condition=context/use_distribution_credentials>
+      <h3>Registry upload</h3>
+      <p>This recipe will use the registry credentials set by the parent distribution</p>
+    </div>
 
     <div tal:condition="not: context/use_distribution_credentials">
       <h2>Recipe push rules</h2>

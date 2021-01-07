@@ -4,6 +4,8 @@
 """OCI recipe views."""
 
 from __future__ import absolute_import, print_function, unicode_literals
+import ipdb
+
 
 __metaclass__ = type
 __all__ = [
@@ -765,13 +767,14 @@ class OCIRecipeFormMixin:
         )
         return False, message
 
+    @property
     def use_distribution_credentials(self):
         if hasattr(self.context, 'oci_project'):
             project = self.context.oci_project
         else:
             project = self.context
         distro = project.distribution
-        return (distro and distro.oci_registry_credentials)
+        return bool(distro and distro.oci_registry_credentials)
 
 
 class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
@@ -816,6 +819,14 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                 "May only be enabled by the owner of the OCI Project."),
             default=False,
             required=False, readonly=False))
+        if self.use_distribution_credentials:
+            self.form_fields += FormFields(TextLine(
+                __name__='image_name',
+                title=u"Image name",
+                description=(
+                    "Name to use for registry upload. "
+                    "Defaults to the name of the recipe."),
+                required=False, readonly=False))
 
     def setUpGitRefWidget(self):
         """Setup GitRef widget indicating the user to use the default
@@ -894,7 +905,9 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             build_file=data["build_file"], description=data["description"],
             build_daily=data["build_daily"], build_args=data["build_args"],
             build_path=data["build_path"], processors=data["processors"],
-            official=data.get('official_recipe', False))
+            official=data.get('official_recipe', False),
+            # image_name is only available if using distribution credentials.
+            image_name=data.get("image_name"))
         self.next_url = canonical_url(recipe)
 
 
