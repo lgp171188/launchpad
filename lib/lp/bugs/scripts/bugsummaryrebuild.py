@@ -1,4 +1,4 @@
-# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -32,6 +32,7 @@ from lp.bugs.model.bugtask import (
 from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.series import ISeriesMixin
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
@@ -78,7 +79,7 @@ def get_bugtask_targets():
     # BugSummary counts package tasks in the packageless totals, so
     # ensure that there's also a packageless total for each distro(series).
     new_targets.update(set(
-        (p, ps, d, ds, None, ocip)
+        (p, ps, d, ds, None, None)
         for (p, ps, d, ds, spn, ocip) in new_targets))
     return new_targets
 
@@ -127,10 +128,14 @@ def get_bugsummary_constraint(target, cls=RawBugSummary):
 def get_bugtaskflat_constraint(target):
     """Convert an `IBugTarget` to a list of constraints on BugTaskFlat."""
     raw_key = bug_target_to_key(target)
-    # For the purposes of BugSummary, DSP/SP tasks count for their
-    # distro(series).
+    # For the purposes of BugSummary, DSP/SP and OCI project tasks count for
+    # their distro(series).
     if IDistribution.providedBy(target) or IDistroSeries.providedBy(target):
         del raw_key['sourcepackagename']
+        del raw_key['ociproject']
+    # For bugsummary, ociprojects count to their products.
+    if IProduct.providedBy(target):
+        del raw_key['ociproject']
     # Map to ID columns to work around Storm bug #682989.
     return [
         getattr(BugTaskFlat, '%s_id' % k) == (v.id if v else None)
@@ -189,7 +194,7 @@ def apply_bugsummary_changes(target, added, updated, removed):
     """Apply a set of BugSummary changes to the DB."""
     bits = _get_bugsummary_constraint_bits(target)
     target_key = tuple(map(
-        bits.__getitem__,
+        bits.get,
         ('product_id', 'productseries_id', 'distribution_id',
          'distroseries_id', 'sourcepackagename_id', 'ociproject_id')))
     target_cols = (
