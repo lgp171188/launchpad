@@ -1399,8 +1399,8 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         self.assertIs(None, view.preview_diff_text)
 
     def test_preview_diff_utf8(self):
-        """A preview_diff in utf-8 should decoded as utf-8."""
-        text = ''.join(unichr(x) for x in range(255))
+        """A preview_diff in utf-8 should be decoded as utf-8."""
+        text = ''.join(six.unichr(x) for x in range(255))
         diff_bytes = ''.join(unified_diff('', text)).encode('utf-8')
         self.setPreviewDiff(diff_bytes)
         transaction.commit()
@@ -1411,7 +1411,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
     def test_preview_diff_all_chars(self):
         """preview_diff should work on diffs containing all possible bytes."""
-        text = b''.join(chr(x) for x in range(255))
+        text = b''.join(six.int2byte(x) for x in range(255))
         diff_bytes = b''.join(unified_diff(b'', text))
         self.setPreviewDiff(diff_bytes)
         transaction.commit()
@@ -1423,7 +1423,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
     def test_preview_diff_timeout(self):
         # The preview_diff will recover from a timeout set to get the
         # librarian content.
-        text = b''.join(chr(x) for x in range(255))
+        text = b''.join(six.int2byte(x) for x in range(255))
         diff_bytes = b''.join(unified_diff(b'', text))
         preview_diff = self.setPreviewDiff(diff_bytes)
         transaction.commit()
@@ -1443,7 +1443,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # The preview_diff will recover from a LookupError while getting the
         # librarian content.  (This can happen e.g. on staging replicas of
         # the production database.)
-        text = b''.join(chr(x) for x in range(255))
+        text = b''.join(six.int2byte(x) for x in range(255))
         diff_bytes = b''.join(unified_diff(b'', text))
         preview_diff = self.setPreviewDiff(diff_bytes)
         transaction.commit()

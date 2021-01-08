@@ -8,12 +8,13 @@ __all__ = [
     'FileBugDataParser',
     ]
 
-from email import message_from_string
+import base64
 import tempfile
 
 import six
 
 from lp.bugs.model.bug import FileBugData
+from lp.services.compat import message_from_bytes
 
 
 class FileBugDataParser:
@@ -26,7 +27,7 @@ class FileBugDataParser:
     def __init__(self, blob_file):
         self.blob_file = blob_file
         self.headers = {}
-        self._buffer = ''
+        self._buffer = b''
         self.extra_description = None
         self.comments = []
         self.attachments = []
@@ -48,7 +49,7 @@ class FileBugDataParser:
                     # If the end string isn't present, we return
                     # everything.
                     buffer = self._buffer
-                    self._buffer = ''
+                    self._buffer = b''
                     return buffer
                 break
         end_index = self._buffer.index(end_string)
@@ -58,15 +59,15 @@ class FileBugDataParser:
 
     def readHeaders(self):
         """Read the next set of headers of the message."""
-        header_text = self._consumeBytes('\n\n')
+        header_text = self._consumeBytes(b'\n\n')
         # Use the email package to return a dict-like object of the
         # headers, so we don't have to parse the text ourselves.
-        return message_from_string(header_text)
+        return message_from_bytes(header_text)
 
     def readLine(self):
         """Read a line of the message."""
-        data = self._consumeBytes('\n')
-        if data == '':
+        data = self._consumeBytes(b'\n')
+        if data == b'':
             raise AssertionError('End of file reached.')
         return data
 
@@ -111,9 +112,9 @@ class FileBugDataParser:
         self._setDataFromHeaders(data, headers)
 
         # The headers is a Message instance.
-        boundary = "--" + headers.get_param("boundary")
+        boundary = b"--" + six.ensure_binary(headers.get_param("boundary"))
         line = self.readLine()
-        while not line.startswith(boundary + '--'):
+        while not line.startswith(boundary + b'--'):
             part_file = tempfile.TemporaryFile()
             part_headers = self.readHeaders()
             content_encoding = part_headers.get('Content-Transfer-Encoding')
@@ -123,8 +124,8 @@ class FileBugDataParser:
             line = self.readLine()
             while not line.startswith(boundary):
                 # Decode the file.
-                if content_encoding is not None:
-                    line = line.decode(content_encoding)
+                if content_encoding == 'base64':
+                    line = base64.b64decode(line)
                 part_file.write(line)
                 line = self.readLine()
             # Prepare the file for reading.

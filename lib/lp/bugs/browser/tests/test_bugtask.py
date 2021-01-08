@@ -871,7 +871,7 @@ class TestBugTasksTableView(TestCaseWithFactory):
         # Check the result.
         soup = BeautifulSoup(content)
         tag = soup.find('label', attrs={'for': "foo.assignee.assigned_to"})
-        tag_text = tag.renderContents().strip()
+        tag_text = tag.decode_contents().strip()
         self.assertEqual(assignee.unique_displayname, tag_text)
 
 

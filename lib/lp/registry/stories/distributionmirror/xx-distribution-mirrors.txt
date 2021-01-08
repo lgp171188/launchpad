@@ -89,7 +89,7 @@ seen by distro owners, mirror admins of the distro or launchpad admins.
     >>> browser.url
     'http://launchpad.test/ubuntu/+disabledmirrors'
 
-    >>> print(find_tag_by_id(browser.contents, 'maincontent').renderContents())
+    >>> print(find_tag_by_id(browser.contents, 'maincontent').decode_contents())
     <BLANKLINE>
     ...We don't know of any Disabled Mirrors for this distribution...
 

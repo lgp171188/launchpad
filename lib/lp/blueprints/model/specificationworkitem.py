@@ -6,6 +6,7 @@ __all__ = [
     'SpecificationWorkItem',
     ]
 
+import six
 from storm.locals import (
     Bool,
     Int,
@@ -49,7 +50,8 @@ class SpecificationWorkItem(StormBase):
     deleted = Bool(allow_none=False, default=False)
 
     def __repr__(self):
-        title = self.title.encode('ASCII', 'backslashreplace')
+        title = six.ensure_str(
+            self.title, encoding='ASCII', errors='backslashreplace')
         assignee = getattr(self.assignee, 'name', None)
         return '<SpecificationWorkItem [%s] %s: %s of %s>' % (
             assignee, title, self.status.name, self.specification)

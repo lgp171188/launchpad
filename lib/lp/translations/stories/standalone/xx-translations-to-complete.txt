@@ -38,7 +38,7 @@ The dashboard shows a listing of translations that need Jean's help.
 
     >>> tag = find_tag_by_id(
     ...     jean_browser.contents, 'translations-to-complete-table')
-    >>> print(tag.renderContents())
+    >>> print(tag.decode_contents())
 
 Only Jean sees his personal listing.
 

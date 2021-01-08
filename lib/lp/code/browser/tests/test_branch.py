@@ -1290,9 +1290,10 @@ class TestBranchPrivacyPortlet(TestCaseWithFactory):
         information_type = soup.find('strong')
         description = soup.find('div', id='information-type-description')
         self.assertEqual(
-            InformationType.USERDATA.title, information_type.renderContents())
+            InformationType.USERDATA.title, information_type.decode_contents())
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            InformationType.USERDATA.description, description.renderContents())
+            InformationType.USERDATA.description,
+            description.decode_contents())
         self.assertIsNotNone(
             soup.find('a', id='privacy-link', attrs={'href': edit_url}))
 

@@ -21,6 +21,7 @@ import re
 
 from lazr.restful.utils import get_current_browser_request
 import responses
+import six
 from six.moves.urllib.parse import (
     parse_qsl,
     urlsplit,
@@ -332,7 +333,7 @@ class TestGitHostingClient(TestCase):
                 self.client.delete, "123")
 
     def test_getBlob(self):
-        blob = b''.join(chr(i) for i in range(256))
+        blob = b''.join(six.int2byte(i) for i in range(256))
         payload = {"data": blob.encode("base64"), "size": len(blob)}
         with self.mockRequests("GET", json=payload):
             response = self.client.getBlob("123", "dir/path/file/name")
@@ -341,7 +342,7 @@ class TestGitHostingClient(TestCase):
             "repo/123/blob/dir/path/file/name", method="GET")
 
     def test_getBlob_revision(self):
-        blob = b''.join(chr(i) for i in range(256))
+        blob = b''.join(six.int2byte(i) for i in range(256))
         payload = {"data": blob.encode("base64"), "size": len(blob)}
         with self.mockRequests("GET", json=payload):
             response = self.client.getBlob("123", "dir/path/file/name", "dev")
@@ -373,7 +374,7 @@ class TestGitHostingClient(TestCase):
                 self.client.getBlob, "123", "dir/path/file/name")
 
     def test_getBlob_url_quoting(self):
-        blob = b''.join(chr(i) for i in range(256))
+        blob = b''.join(six.int2byte(i) for i in range(256))
         payload = {"data": blob.encode("base64"), "size": len(blob)}
         with self.mockRequests("GET", json=payload):
             self.client.getBlob("123", "dir/+file name?.txt", "+rev/ no?")
@@ -403,7 +404,7 @@ class TestGitHostingClient(TestCase):
                 self.client.getBlob, "123", "dir/path/file/name")
 
     def test_getBlob_wrong_size(self):
-        blob = b''.join(chr(i) for i in range(256))
+        blob = b''.join(six.int2byte(i) for i in range(256))
         payload = {"data": blob.encode("base64"), "size": 0}
         with self.mockRequests("GET", json=payload):
             self.assertRaisesWithContent(

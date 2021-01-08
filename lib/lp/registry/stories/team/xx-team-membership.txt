@@ -48,7 +48,7 @@ TestBrowser to manually re-enable the input. That's what the
 We get a nice error message
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Invalid expiration: Invalid date value
 
 Give up on change, nothing should have changed with Colin:

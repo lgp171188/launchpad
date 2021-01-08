@@ -47,7 +47,7 @@ The +edit page for a watch also displays some details about the watch.
 
     >>> for data_tag in find_tags_by_class(
     ...     admin_browser.contents, 'bugwatch-data'):
-    ...     print(extract_text(data_tag.renderContents()))
+    ...     print(extract_text(data_tag.decode_contents()))
     Tracker: The Mozilla.org Bug Tracker
     Remote bug ID: 1000
     Last status: None recorded
@@ -77,7 +77,7 @@ Next check column.
     >>> admin_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> data_tag = find_tag_by_id(
     ...     admin_browser.contents, 'bugwatch-next_check')
-    >>> print(extract_text(data_tag.renderContents()))
+    >>> print(extract_text(data_tag.decode_contents()))
     Next check: 2010-04-08...
 
 
@@ -198,7 +198,7 @@ will appear on the page.
 
     >>> data_tag = find_tag_by_id(
     ...     user_browser.contents, 'bugwatch-next_check')
-    >>> print(extract_text(data_tag.renderContents()))
+    >>> print(extract_text(data_tag.decode_contents()))
     Next check: Not yet scheduled
 
 Clicking the Update Now button will schedule it to be checked
@@ -217,7 +217,7 @@ been scheduled.
     >>> user_browser.open(watch_url)
     >>> data_tag = find_tag_by_id(
     ...     user_browser.contents, 'bugwatch-next_check')
-    >>> print(extract_text(data_tag.renderContents()))
+    >>> print(extract_text(data_tag.decode_contents()))
     Next check: 2...
 
 The button will no longer be shown on the page.
@@ -313,7 +313,7 @@ Clicking the button will reset the watch completely.
 
     >>> data_tag = find_tag_by_id(
     ...     user_browser.contents, 'bugwatch-lastchecked')
-    >>> print(extract_text(data_tag.renderContents()))
+    >>> print(extract_text(data_tag.decode_contents()))
     Checked:
 
 Should a non-admin, non-Launchpad-developer user visit the page, the

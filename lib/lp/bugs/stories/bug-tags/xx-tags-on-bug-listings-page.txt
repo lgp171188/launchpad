@@ -8,7 +8,7 @@ using Javascript after page load.
     http://launchpad.test/ubuntu/+bugtarget-portlet-tags-content
     >>> tags_portlet = find_tags_by_class(anon_browser.contents, 'data-list')[0]
     >>> for a_tag in tags_portlet('a'):
-    ...     print(a_tag.renderContents())
+    ...     print(a_tag.decode_contents())
     crash
     pebcak
     dataloss

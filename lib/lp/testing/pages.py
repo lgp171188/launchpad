@@ -533,8 +533,8 @@ def print_comments(page):
     main_content = find_main_content(page)
     for comment in main_content('div', 'boardCommentBody'):
         for li_tag in comment('li'):
-            print("Attachment: %s" % li_tag.a.renderContents())
-        print(comment.div.renderContents())
+            print("Attachment: %s" % li_tag.a.decode_contents())
+        print(comment.div.decode_contents())
         print("-" * 40)
 
 

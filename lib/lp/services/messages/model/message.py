@@ -254,21 +254,19 @@ class MessageSet:
         # Re-encode the header parts using utf-8, replacing undecodable
         # characters with question marks.
         re_encoded_bits = []
-        for bytes, charset in bits:
-            if charset is None:
-                charset = 'us-ascii'
+        for word, charset in bits:
             # 2008-09-26 gary:
             # The RFC 2047 encoding names and the Python encoding names are
             # not always the same. A safer and more correct approach would use
-            #   bytes.decode(email.charset.Charset(charset).input_codec,
-            #                'replace')
+            #   word.decode(email.charset.Charset(charset).input_codec,
+            #               'replace')
             # or similar, rather than
-            #   bytes.decode(charset, 'replace')
+            #   word.decode(charset, 'replace')
             # That said, this has not bitten us so far, and is only likely to
             # cause problems in unusual encodings that we are hopefully
             # unlikely to encounter in this part of the code.
-            re_encoded_bits.append(
-                (self.decode(bytes, charset).encode('utf-8'), 'utf-8'))
+            decoded = word if charset is None else self.decode(word, charset)
+            re_encoded_bits.append((decoded.encode('utf-8'), 'utf-8'))
 
         return six.text_type(email.header.make_header(re_encoded_bits))
 
