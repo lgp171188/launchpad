@@ -32,8 +32,8 @@ message explains that the driver changed.
     'http://launchpad.test/firefox/1.0'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     tag.renderContents()
-    'Successfully changed the release manager to Guilherme Salgado'
+    ...     print(tag.decode_contents())
+    Successfully changed the release manager to Guilherme Salgado
 
 Sample Person and Guilherme Salgado are listed as the drivers of Firefox 1.0.
 

@@ -36,10 +36,10 @@ in the question's description.
 
     >>> user_browser.getLink('mailto: problem in webpage').click()
     >>> description = find_main_content(user_browser.contents).p
-    >>> description.renderContents()
-    'I am not able to open my email client if i click on a
-     <a href="mailto:user@domain.com" ...>mailto:...user@domain...com</a>
-     link ...'
+    >>> print(description.decode_contents())
+    I am not able to open my email client if i click on a
+    <a href="mailto:user@domain.com" ...>mailto:...user@domain...com</a>
+    link ...
 
 No Privileges Person can see email addresses in the FAQ's
 Related question's portlet.
@@ -133,9 +133,9 @@ They cannot see the address reading the question either.
     False
 
     >>> description = find_main_content(anon_browser.contents).p
-    >>> description.renderContents()
-    'I am not able to open my email client if i click on a
-    mailto:&lt;email address hidden&gt; link ...'
+    >>> print(description.decode_contents())
+    I am not able to open my email client if i click on a
+    mailto:&lt;email address hidden&gt; link ...
 
 Anonymous users cannot see the email addresses in the Related
 questions portlet on a FAQ page.

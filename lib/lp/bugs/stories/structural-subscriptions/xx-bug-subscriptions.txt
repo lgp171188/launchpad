@@ -104,7 +104,7 @@ to subscribe other people.
 No Privileges Person is now subscribed...
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     No Privileges Person will now receive an email each time someone reports
     or changes a public bug in "mozilla-firefox in Ubuntu".
 

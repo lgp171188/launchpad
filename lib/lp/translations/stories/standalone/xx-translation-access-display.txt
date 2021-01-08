@@ -10,7 +10,7 @@ translation, and also reminds him that he has full editing privileges.
     ...     if tag is None:
     ...         print('None')
     ...     else:
-    ...         print(tag.renderContents())
+    ...         print(tag.decode_contents())
 
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/'
@@ -73,7 +73,7 @@ If the two groups are identical, however, it is only listed once.
     ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> managers_tag = find_tag_by_id(
-    ...     admin_browser.contents, 'translation-managers').renderContents()
+    ...     admin_browser.contents, 'translation-managers').decode_contents()
     >>> print(re.search(',\s+and', managers_tag))
     None
 

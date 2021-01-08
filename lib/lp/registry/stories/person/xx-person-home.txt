@@ -188,7 +188,7 @@ most active and also the areas in which they worked on each project.
     >>> anon_browser.open('http://launchpad.test/~name16')
     >>> table = find_tag_by_id(anon_browser.contents, 'contributions')
     >>> for tr in table.findAll('tr'):
-    ...     print(tr.find('th').find('a').renderContents())
+    ...     print(tr.find('th').find('a').decode_contents())
     ...     for td in tr.findAll('td'):
     ...         img = td.find('img')
     ...         if img is not None:

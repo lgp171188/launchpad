@@ -33,10 +33,10 @@ duplicate bug page:
 
     >>> def print_messages(browser):
     ...     for tag in find_tags_by_class(browser.contents, 'message'):
-    ...         print(tag.renderContents())
+    ...         print(tag.decode_contents())
 
     >>> print(find_tag_by_id(
-    ...     admin_browser.contents, 'duplicate-of').renderContents())
+    ...     admin_browser.contents, 'duplicate-of').decode_contents())
     bug #8
 
 But when accessing it as an unprivileged user the title of the private

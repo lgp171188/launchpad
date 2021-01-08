@@ -24,7 +24,7 @@ IP address, since we'll use that later.
     >>> def find_description(url):
     ...     user_browser.open(url)
     ...     main = find_main_content(user_browser.contents)
-    ...     return re.findall("See[^!]*!", main.renderContents(), re.DOTALL)
+    ...     return re.findall("See[^!]*!", main.decode_contents(), re.DOTALL)
 
 The template's description is linkified, so the URL is clickable.
 

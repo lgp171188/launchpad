@@ -58,7 +58,7 @@ on the 'Add Information Request' button.
     ...     'http://launchpad.test/firefox/+question/2')
     >>> content = find_tag_by_id(
     ...     support_browser.contents, 'can-you-help-with-this-problem')
-    >>> print(content.h2.renderContents())
+    >>> print(content.h2.decode_contents())
     Can you help with this problem?
 
     >>> print(extract_text(
@@ -86,7 +86,7 @@ you an error.
 
     >>> support_browser.getControl('Add Information Request').click()
     >>> soup = find_main_content(support_browser.contents)
-    >>> print(soup.find('div', 'message').renderContents())
+    >>> print(soup.find('div', 'message').decode_contents())
     Please enter a message.
 
 
@@ -219,7 +219,7 @@ The confirmed answer is also highlighted.
     <img ... src="/@@/favourite-yes" ... title="Marked as best answer"/>
 
     >>> print(soup.find(
-    ...     'div', 'boardCommentBody highlighted').renderContents())
+    ...     'div', 'boardCommentBody highlighted').decode_contents())
     <p>New version of the firefox package are available with SVG support
     enabled. You can use apt-get or adept to upgrade.</p>
 
@@ -383,7 +383,7 @@ It lists all the actions performed through workflow on the question:
     >>> soup = find_main_content(anon_browser.contents)
     >>> action_listing = soup.find('table', 'listing')
     >>> for header in action_listing.findAll('th'):
-    ...     print(header.renderContents())
+    ...     print(header.decode_contents())
     When
     Who
     Action
@@ -392,8 +392,8 @@ It lists all the actions performed through workflow on the question:
     >>> for row in action_listing.find('tbody').findAll('tr'):
     ...     cells = row.findAll('td')
     ...     who = extract_text(cells[1].find('a'))
-    ...     action = cells[2].renderContents()
-    ...     new_status = cells[3].renderContents()
+    ...     action = cells[2].decode_contents()
+    ...     new_status = cells[3].decode_contents()
     ...     print(who.lstrip('&nbsp;'), action, new_status)
     No Privileges Person Request for more information Needs information
     No Privileges Person Comment Needs information

@@ -122,8 +122,9 @@ owner of the project group views it:
 
     >>> admin_browser.open('http://launchpad.test/a-test-group')
     >>> for warning in find_tags_by_class(admin_browser.contents, 'warning'):
-    ...     extract_text(warning.renderContents())
-    u'There are no projects registered for\nTest Group...'
+    ...     print(extract_text(warning.decode_contents()))
+    There are no projects registered for
+    Test Group...
 
 A link is included in the warning message which will take the admin user to
 the new product form for the project group.

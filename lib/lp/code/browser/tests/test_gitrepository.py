@@ -203,7 +203,7 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository, no_login=True)
         directions = find_tag_by_id(browser.contents, "push-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
+        self.assertThat(directions.decode_contents(), DocTestMatches(dedent("""
             Only <a
             href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can upload to this repository. If you are {owner.display_name}
@@ -219,7 +219,7 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository, no_login=True)
         directions = find_tag_by_id(browser.contents, "push-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
+        self.assertThat(directions.decode_contents(), DocTestMatches(dedent("""
             Members of <a
             href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can upload to this repository. <a href="+login">Log in</a> for
@@ -251,7 +251,7 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository)
         directions = find_tag_by_id(browser.contents, "ssh-key-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
+        self.assertThat(directions.decode_contents(), DocTestMatches(dedent("""
             To authenticate with the Launchpad Git hosting service, you need
             to <a href="http://launchpad.test/~{user.name}/+editsshkeys">
             register an SSH key</a>.
