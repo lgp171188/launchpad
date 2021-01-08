@@ -1,4 +1,4 @@
-# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -42,14 +42,7 @@ def rollup_journal():
     IStore(RawBugSummary).execute('SELECT bugsummary_rollup_journal()')
 
 
-def create_tasks(factory, expected_targets_for):
-    """Create a bug and some bugtasks, returning the expected targets.
-
-    :param factory: LaunchpadObjectFactory object.
-    :param expected_targets_for: The return list should be the expected
-            target tuples for 'bugsummary' or 'bugtask'?
-    """
-    assert expected_targets_for in ('bugsummary', 'bugtask')
+def create_tasks(factory):
     ps = factory.makeProductSeries()
     product = ps.product
     sp = factory.makeSourcePackage(publish=True)
@@ -75,13 +68,10 @@ def create_tasks(factory, expected_targets_for):
         (None, None, None, sp.distroseries.id, sp.sourcepackagename.id, None),
         (None, None, ocip_distro.pillar.id, None, None, ocip_distro.id),
         (ocip_product.pillar.id, None, None, None, None, ocip_product.id),
-        ]
-    if expected_targets_for == 'bugsummary':
         # OCI projects generates 2 rows on bugsummary for each bug task:
         # 1 for the oci project + pillar, and one only for the pillar.
-        expected_targets += [
-            (None, None, ocip_distro.pillar.id, None, None, None),
-            (ocip_product.pillar.id, None, None, None, None, None),
+        (None, None, ocip_distro.pillar.id, None, None, None),
+        (ocip_product.pillar.id, None, None, None, None, None),
         ]
     return expected_targets
 
@@ -94,8 +84,7 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
         # get_bugsummary_targets returns the set of target tuples that are
         # currently represented in BugSummary.
         orig_targets = get_bugsummary_targets()
-        expected_targets = create_tasks(
-            self.factory, expected_targets_for='bugsummary')
+        expected_targets = create_tasks(self.factory)
         rollup_journal()
         new_targets = get_bugsummary_targets()
         self.assertContentEqual(expected_targets, new_targets - orig_targets)
@@ -104,8 +93,7 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
         # get_bugtask_targets returns the set of target tuples that are
         # currently represented in BugTask.
         orig_targets = get_bugtask_targets()
-        expected_targets = create_tasks(
-            self.factory, expected_targets_for='bugtask')
+        expected_targets = create_tasks(self.factory)
         new_targets = get_bugtask_targets()
         self.assertContentEqual(expected_targets, new_targets - orig_targets)
 
