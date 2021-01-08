@@ -178,6 +178,19 @@ def close_account(username, log):
         # can hopefully provide a garbo job for this eventually.
         ('revisionauthor', 'person'),
         }
+
+    # If all the teams that the user owns
+    # have been deleted (not just one) skip Person.teamowner
+    merged = True
+    persons = list(
+        store.find(Person,
+                   Person.teamownerID == person.id))
+    for person_team_owner in persons:
+        if not ('merged' in person_team_owner.name):
+            merged = False
+    if merged:
+        skip.add(('person', 'teamowner'))
+
     reference_names = {
         (src_tab, src_col) for src_tab, src_col, _, _, _, _ in references}
     for src_tab, src_col in skip:
