@@ -6,9 +6,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from lp.soyuz.browser.archive import DistributionArchiveURL
-
-
 __metaclass__ = type
 
 from datetime import (
