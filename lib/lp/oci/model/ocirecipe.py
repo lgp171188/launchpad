@@ -481,8 +481,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         if self.use_distribution_credentials:
             push_rule = OCIDistributionPushRule(
                 self,
-                self.image_name,
-                self.oci_project.distribution.oci_registry_credentials)
+                self.oci_project.distribution.oci_registry_credentials,
+                self.image_name)
             return [push_rule]
         rules = IStore(self).find(
             OCIPushRule,

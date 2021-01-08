@@ -77,11 +77,13 @@ class OCIPushRule(Storm):
 class OCIDistributionPushRule:
     """A none-database instance that is synthesised from data elsewhere."""
 
-    def __init__(self, recipe, image_name, credentials):
-        self.id = 0
+    registry_credentials = None
+
+    def __init__(self, recipe, registry_credentials, image_name):
+        self.id = -1
         self.recipe = recipe
+        self.registry_credentials = registry_credentials
         self.image_name = image_name
-        self.credentials = credentials
 
     @property
     def registry_url(self):
