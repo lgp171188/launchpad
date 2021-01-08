@@ -189,13 +189,13 @@ class POFileMixIn(RosettaStats):
                                 tm_ids,
                                 Join(
                                     TranslationTemplateItem,
-                                    tm_ids.potmsgset ==
+                                    tm_ids.potmsgsetID ==
                                         TranslationTemplateItem.potmsgsetID)),
                             where=And(
                                 TranslationTemplateItem.potemplate ==
                                     pofile.potemplate,
                                 TranslationTemplateItem.sequence > 0,
-                                tm_ids.language == pofile.language),
+                                tm_ids.languageID == pofile.languageID),
                             distinct=True)),
                         Like(
                             POTranslation.translation,
