@@ -269,7 +269,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     redirect_default_traversal = BoolCol(notNull=False, default=False)
 
     def __repr__(self):
-        display_name = self.display_name.encode('ASCII', 'backslashreplace')
+        display_name = six.ensure_str(
+            self.display_name, encoding='ASCII', errors='backslashreplace')
         return "<%s '%s' (%s)>" % (
             self.__class__.__name__, display_name, self.name)
 
