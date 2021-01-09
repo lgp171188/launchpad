@@ -411,7 +411,7 @@ search page allow selection of a milestone.
 
     >>> print(pretty(related_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,
-      'title': u'Coughing Bob 0.9',
+      'title': 'Coughing Bob 0.9',
       'value': ...}]
 
 
@@ -428,7 +428,7 @@ will already appear.
 
     >>> print(pretty(reported_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,
-      'title': u'Coughing Bob 0.9',
+      'title': 'Coughing Bob 0.9',
       'value': ...}]
 
 Filing a new bug and assigning a new milestone will make the new
@@ -440,10 +440,10 @@ milestone appear amongst the possible options.
 
     >>> print(pretty(reported_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,
-      'title': u'Coughing Bob 1.0',
+      'title': 'Coughing Bob 1.0',
       'value': ...},
      {'checked': False,
-      'title': u'Coughing Bob 0.9',
+      'title': 'Coughing Bob 0.9',
       'value': ...}]
 
 
@@ -465,7 +465,7 @@ Once a bug has been assigned, the milestone appears.
 
     >>> print(pretty(assigned_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,
-      'title': u'Coughing Bob 1.0',
+      'title': 'Coughing Bob 1.0',
       'value': ...}]
 
 
@@ -488,7 +488,7 @@ Once the user has commented, the related milestone does appear.
 
     >>> print(pretty(commented_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,
-      'title': u'Coughing Bob 1.0',
+      'title': 'Coughing Bob 1.0',
       'value': ...}]
 
 
@@ -512,5 +512,5 @@ Once new_user has subscribed, the related milestones appear.
 
     >>> print(pretty(subscribed_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,
-      'title': u'Coughing Bob 1.0',
+      'title': 'Coughing Bob 1.0',
       'value': ...}]
