@@ -186,7 +186,7 @@ def close_account(username, log):
         store.find(Person,
                    Person.teamownerID == person.id))
     for person_team_owner in persons:
-        if not ('merged' in person_team_owner.name):
+        if person_team_owner.merged is None:
             merged = False
     if merged:
         skip.add(('person', 'teamowner'))

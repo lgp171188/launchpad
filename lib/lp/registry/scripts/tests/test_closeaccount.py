@@ -637,8 +637,9 @@ class TestCloseAccount(TestCaseWithFactory):
 
     def test_skips_teamowner_merged(self):
         person = self.factory.makePerson()
+        merged_person = self.factory.makePerson()
         owned_team1 = self.factory.makeTeam(name='target', owner=person)
-        owned_team1.name = 'target-merged'
+        removeSecurityProxy(owned_team1).merged = merged_person
         owned_team2 = self.factory.makeTeam(name='target2', owner=person)
         person_id = person.id
         account_id = person.account.id
@@ -651,7 +652,7 @@ class TestCloseAccount(TestCaseWithFactory):
 
         # Account will now close as the user doesn't own
         # any other teams at this point
-        owned_team2.name = 'target2-merged'
+        removeSecurityProxy(owned_team2).merged = merged_person
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
