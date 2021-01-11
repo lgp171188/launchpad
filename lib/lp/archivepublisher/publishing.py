@@ -1267,7 +1267,7 @@ class Publisher(object):
             release_file["NotAutomatic"] = "yes"
             release_file["ButAutomaticUpgrades"] = "yes"
 
-        for filename in sorted(all_files, key=os.path.dirname):
+        for filename in sorted(all_files):
             hashes = self._readIndexFileHashes(suite, filename)
             if hashes is None:
                 continue
