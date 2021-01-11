@@ -181,6 +181,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         )
         responses.add("PUT", manifests_url, status=status_code, json=json)
 
+        # format for distribution credential upload
+        manifests_url = "{}/v2/{}/manifests/{}_edge".format(
+            push_rule.registry_credentials.url,
+            push_rule.image_name,
+            push_rule.recipe.git_ref.name
+        )
+        responses.add("PUT", manifests_url, status=status_code, json=json)
+
     @responses.activate
     def test_upload(self):
         self._makeFiles()
@@ -338,10 +346,32 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 'diff_id_1': Equals(self.layer_files[0].library_file),
                 'diff_id_2': Equals(self.layer_files[1].library_file)})}))
 
-    def test_calculateTag(self):
-        result = self.client._calculateTag(
-            self.build, self.build.recipe.push_rules[0])
-        self.assertEqual("edge", result)
+    def test_calculateTags_none_distribution(self):
+        result = self.client._calculateTags(self.build.recipe)
+        self.assertThat(result, MatchesListwise([Equals("edge")]))
+
+    def test_calculateTags_in_distribution(self):
+        credentials = self.factory.makeOCIRegistryCredentials()
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/1.0-20.04"])
+        self.build.recipe.git_ref = git_ref
+        distro = self.build.recipe.oci_project.distribution
+        with person_logged_in(distro.owner):
+            distro.oci_registry_credentials = credentials
+        result = self.client._calculateTags(self.build.recipe)
+        self.assertThat(result, MatchesListwise(
+            [Equals("1.0-20.04_edge"), Equals("edge")]))
+
+    def test_calculateTags_in_distribution_official(self):
+        credentials = self.factory.makeOCIRegistryCredentials()
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/1.0-20.04"])
+        self.build.recipe.git_ref = git_ref
+        distro = self.build.recipe.oci_project.distribution
+        with person_logged_in(distro.owner):
+            distro.oci_registry_credentials = credentials
+        self.build.recipe.oci_project.setOfficialRecipe(self.build.recipe)
+        result = self.client._calculateTags(self.build.recipe)
+        self.assertThat(result, MatchesListwise(
+            [Equals("1.0-20.04_edge"), Equals("latest"), Equals("edge")]))
 
     def test_build_registry_manifest(self):
         self._makeFiles()
