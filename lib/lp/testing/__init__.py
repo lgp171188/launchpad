@@ -62,6 +62,7 @@ from datetime import (
     )
 from fnmatch import fnmatchcase
 from functools import partial
+import io
 import logging
 import os
 import re
@@ -1491,20 +1492,20 @@ def nonblocking_readline(instream, timeout):
     Files must provide a valid fileno() method. This is a test helper
     as it is inefficient and unlikely useful for production code.
     """
-    result = six.StringIO()
+    result = io.BytesIO()
     start = now = time.time()
     deadline = start + timeout
-    while (now < deadline and not result.getvalue().endswith('\n')):
+    while (now < deadline and not result.getvalue().endswith(b'\n')):
         rlist = select([instream], [], [], deadline - now)
         if rlist:
             # Reading 1 character at a time is inefficient, but means
             # we don't need to implement put-back.
             next_char = os.read(instream.fileno(), 1)
-            if next_char == "":
+            if next_char == b"":
                 break  # EOF
             result.write(next_char)
         now = time.time()
-    return result.getvalue()
+    return six.ensure_str(result.getvalue())
 
 
 class FakeLaunchpadRequest(FakeRequest):
