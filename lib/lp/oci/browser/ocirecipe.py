@@ -773,10 +773,28 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             "architectures are restricted and may only be enabled or "
             "disabled by administrators.")
 
+    def setUpGitRefWidget(self):
+        """Setup GitRef widget indicating the user to use the default
+        oci project's git repository, if possible.
+        """
+        path = self.context.getDefaultGitRepositoryPath(self.user)
+        widget = self.widgets["git_ref"]
+        widget.setUpSubWidgets()
+        widget.repository_widget.setRenderedValue(path)
+        default_repo = self.context.getDefaultGitRepository(self.user)
+        if default_repo is None:
+            msg = (
+                "Your git repository for this OCI project was not created yet."
+                "<br/>Check the <a href='%s'>OCI project page"
+                "</a> for instructions on how to create one.")
+            msg = structured(msg, canonical_url(self.context))
+            self.widget_errors["git_ref"] = msg.escapedtext
+
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeAddView, self).setUpWidgets()
         self.widgets["processors"].widget_class = "processors"
+        self.setUpGitRefWidget()
 
     @property
     def cancel_url(self):
@@ -923,6 +941,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                         # enabled. Leave it untouched.
                         data["processors"].append(processor)
         self.validateBuildArgs(data)
+
 
 class OCIRecipeDeleteView(BaseOCIRecipeEditView):
     """View for deleting OCI recipes."""
