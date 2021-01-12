@@ -4279,9 +4279,12 @@ class ContactViaWebNotificationRecipientSet:
                 self._count_recipients = 0
         return self._count_recipients
 
-    def __nonzero__(self):
+    def __bool__(self):
         """See `INotificationRecipientSet`."""
         return len(self) > 0
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def getReason(self, person_or_email):
         """See `INotificationRecipientSet`."""
