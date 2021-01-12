@@ -151,7 +151,7 @@ We first create a misnamed copy of the changes file.
     >>> import os, shutil
     >>> originalp = datadir('ed_0.2-20_i386.changes.binary-only')
     >>> copyp = datadir('p-m_0.4.12-2~ppa2.changes')
-    >>> shutil.copyfile(originalp, copyp)
+    >>> _ = shutil.copyfile(originalp, copyp)
 
 And then invoke the name check on the changes file with the malformed name.
 
