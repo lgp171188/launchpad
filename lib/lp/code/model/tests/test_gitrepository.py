@@ -4325,7 +4325,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             repository.owner, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(repository_url, "getRules")
-        self.assertThat(json.loads(response.body), MatchesListwise([
+        self.assertThat(response.jsonBody(), MatchesListwise([
             MatchesDict({
                 "ref_pattern": Equals("refs/heads/stable/*"),
                 "grants": MatchesSetwise(
@@ -4440,7 +4440,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=owner_url,
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["create", "push"]),
             "refs/heads/next": Equals(["create", "push"]),
             "refs/other": Equals(["create", "push", "force-push"]),
@@ -4448,7 +4448,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[0],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["create"]),
             "refs/heads/next": Equals([]),
             "refs/other": Equals([]),
@@ -4456,7 +4456,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[1],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["push"]),
             "refs/heads/next": Equals(["push", "force-push"]),
             "refs/other": Equals([]),
@@ -4477,7 +4477,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         webservice.default_api_version = "devel"
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(200, response.status)
-        macaroon = Macaroon.deserialize(json.loads(response.body))
+        macaroon = Macaroon.deserialize(response.jsonBody())
         with person_logged_in(ANONYMOUS):
             self.assertThat(macaroon, MatchesStructure(
                 location=Equals(config.vhost.mainsite.hostname),
