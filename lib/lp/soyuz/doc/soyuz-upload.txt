@@ -77,7 +77,7 @@ been uploaded over FTP.
     ...     os.makedirs(upload_dir)
     ...
     ...     for filepath in send_filepaths:
-    ...         shutil.copyfile(
+    ...         _ = shutil.copyfile(
     ...             filepath,
     ...             os.path.join(upload_dir, os.path.basename(filepath)))
     ...

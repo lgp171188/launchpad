@@ -254,7 +254,7 @@ archive already.
 # wouldn't have been uploaded in practice because (as you can see below) the
 # .orig was not included in the .changes file.
     >>> import shutil
-    >>> shutil.copy(datadir("ed_0.2.orig.tar.gz"), datadir("ed-0.2-21/"))
+    >>> _ = shutil.copy(datadir("ed_0.2.orig.tar.gz"), datadir("ed-0.2-21/"))
 
     >>> ed_upload = NascentUpload.from_changesfile_path(
     ...     datadir("ed-0.2-21/ed_0.2-21_source.changes"),
