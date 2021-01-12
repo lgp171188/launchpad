@@ -13,7 +13,6 @@ import doctest
 from io import BytesIO
 from itertools import chain
 import os
-import pprint
 import re
 import unittest
 
@@ -85,6 +84,7 @@ from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import PageTestLayer
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    PrettyPrinter,
     stop,
     )
 
@@ -876,7 +876,7 @@ def setUpGlobs(test, future=False):
     test.globs['logout'] = logout
     test.globs['parse_relationship_section'] = parse_relationship_section
     test.globs['permissive_security_policy'] = permissive_security_policy
-    test.globs['pretty'] = pprint.PrettyPrinter(width=1).pformat
+    test.globs['pretty'] = PrettyPrinter(width=1).pformat
     test.globs['print_action_links'] = print_action_links
     test.globs['print_errors'] = print_errors
     test.globs['print_location'] = print_location

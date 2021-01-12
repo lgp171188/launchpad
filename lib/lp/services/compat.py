@@ -10,6 +10,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'escape',
     'lzma',
     'message_as_bytes',
     'message_from_bytes',
@@ -26,6 +27,11 @@ try:
     from email import message_from_bytes
 except ImportError:
     from email import message_from_string as message_from_bytes
+
+try:
+    from html import escape
+except ImportError:
+    from cgi import escape
 
 import io
 

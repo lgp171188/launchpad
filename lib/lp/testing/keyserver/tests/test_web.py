@@ -54,7 +54,7 @@ class TestWebResources(TestCase):
             path.lstrip('/'))
         client = self.useFixture(TReqFixture(reactor)).client
         return client.get(url).addCallback(check_status).addCallback(
-            treq.content)
+            treq.text_content)
 
     def getURL(self, path):
         """Start a test key server and get the content at 'path'."""
@@ -99,11 +99,11 @@ class TestWebResources(TestCase):
                 self.fail('Response was not an HTTP error response.')
             if not isinstance(failure, Failure):
                 raise failure
-            self.assertEqual('404', failure.value.status)
+            self.assertEqual(b'404', failure.value.status)
             self.assertEqual(
-                '<html><head><title>Error handling request</title></head>\n'
-                '<body><h1>Error handling request</h1>'
-                'No results found: No keys found</body></html>',
+                b'<html><head><title>Error handling request</title></head>\n'
+                b'<body><h1>Error handling request</h1>'
+                b'No results found: No keys found</body></html>',
                 failure.value.response)
 
         d.addCallback(regular_execution_callback)
