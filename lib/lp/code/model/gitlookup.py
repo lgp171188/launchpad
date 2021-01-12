@@ -145,12 +145,12 @@ class ProjectGitTraversable(_BaseGitTraversable):
     def traverse(self, owner, name, segments):
         if name == "+oci":
             try:
-                spn_name = next(segments)
+                ociproject_name = next(segments)
             except StopIteration:
                 raise InvalidNamespace("/".join(segments.traversed))
-            oci_project = self.context.getOCIProject(spn_name)
+            oci_project = self.context.getOCIProject(ociproject_name)
             if oci_project is None:
-                raise NoSuchOCIProjectName(spn_name)
+                raise NoSuchOCIProjectName(ociproject_name)
             return owner, oci_project, None
         return super(ProjectGitTraversable, self).traverse(
             owner, name, segments)
