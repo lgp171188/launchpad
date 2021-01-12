@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OCI recipe views."""
@@ -699,7 +699,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
                 recipe, view_name="+edit", user=self.person)
         error_message = (
             "This recipe's git repository is not in the correct "
-            "namespace.<br/>Please, consider using {repo}")
+            "namespace.<br/>Consider using {repo} instead.")
         self.assertIn(
             error_message.format(repo=repo_link), browser.contents)
 

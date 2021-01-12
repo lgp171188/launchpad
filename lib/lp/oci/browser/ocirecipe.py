@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI recipe views."""
@@ -906,6 +906,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         oci project's git repository, if possible.
         """
         oci_proj = self.context.oci_project
+        oci_proj_url = canonical_url(oci_proj)
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
         msg = None
@@ -915,16 +916,13 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
             default_repo = oci_proj.getDefaultGitRepository(self.context.owner)
             if default_repo:
                 link = GitRepositoryFormatterAPI(default_repo).link('')
-                msg += "Please, consider using %s." % link
+                msg += "Consider using %s instead." % link
             else:
                 msg += (
-                    "Check the <a href='{oci_proj_url}'>OCI project page</a> "
-                    "for instructions on how to create it correctly.")
+                    "Check the <a href='%(oci_proj_url)s'>OCI project page</a>"
+                    " for instructions on how to create it correctly.")
         if msg:
-            msg = structured(msg.format(
-                oci_proj_url=canonical_url(oci_proj),
-                repo_path=oci_proj.getDefaultGitRepositoryPath(
-                    self.context.owner)))
+            msg = structured(msg, oci_proj_url=oci_proj_url)
             self.widget_errors["git_ref"] = msg.escapedtext
 
     def setUpWidgets(self):
