@@ -13,7 +13,6 @@ __all__ = [
 
 import pytz
 import six
-from lp.services.database.stormexpr import fti_search
 from six import text_type
 from storm.expr import (
     Join,
@@ -32,6 +31,7 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.model.bugtarget import BugTargetBase
+from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
@@ -221,6 +221,14 @@ class OCIProject(BugTargetBase, StormBase):
                 previous._official = False
             if recipe is not None:
                 recipe._official = True
+
+    def getDefaultGitRepository(self, person):
+        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
+        return namespace.getByName(self.name)
+
+    def getDefaultGitRepositoryPath(self, person):
+        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
+        return namespace.name
 
 
 @implementer(IOCIProjectSet)
