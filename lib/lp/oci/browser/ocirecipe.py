@@ -785,10 +785,9 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         if default_repo is None:
             msg = (
                 "Your git repository for this OCI project was not created yet."
-                "<br/>Check the <a href='{oci_proj_url}'>OCI project page"
+                "<br/>Check the <a href='%s'>OCI project page"
                 "</a> for instructions on how to create one.")
-            msg = structured(
-                msg.format(oci_proj_url=canonical_url(self.context)))
+            msg = structured(msg, canonical_url(self.context))
             self.widget_errors["git_ref"] = msg.escapedtext
 
     def setUpWidgets(self):
