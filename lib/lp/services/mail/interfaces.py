@@ -19,6 +19,7 @@ __all__ = [
     'UnknownRecipientError',
     ]
 
+import six
 from zope.interface import (
     Attribute,
     Interface,
@@ -152,8 +153,11 @@ class INotificationRecipientSet(Interface):
         Return true if person or email is in the notification recipients list.
         """
 
-    def __nonzero__():
+    def __bool__():
         """Return False when the set is empty, True when it's not."""
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def getReason(person_or_email):
         """Return a reason tuple containing (text, header) for an address.
