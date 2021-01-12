@@ -7,10 +7,10 @@ from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
+import io
 import os
 import shutil
 import socket
-from StringIO import StringIO
 
 from breezy.tests import TestCaseWithTransport
 from breezy.tests.http_server import (
@@ -48,7 +48,7 @@ class PullerWorkerMixin:
                          policy=None):
         """Anonymous creation method for PullerWorker."""
         if protocol is None:
-            protocol = PullerWorkerProtocol(StringIO())
+            protocol = PullerWorkerProtocol(io.BytesIO())
         if branch_type is None:
             if policy is None:
                 policy = AcceptAnythingBranchMirrorerPolicy()
