@@ -447,7 +447,7 @@ Launchpad.add_comment() will return the integer comment ID of the new comment
 on the remote server.
 
     >>> comment = "Didn't we have a lovely time the day we went to Bangor?"
-    >>> bugzilla_transport.auth_cookie = 'open sesame'
+    >>> bugzilla_transport.setCookie('Bugzilla_logincookie=open sesame')
     >>> return_dict = server.Launchpad.add_comment(
     ...     {'id': 1, 'comment': comment})
     >>> print(return_dict['comment_id'])
@@ -494,7 +494,7 @@ Launchpad.set_link() requires authentication.
 Launchpad.set_link() will return  0 if no Launchpad bug has ever linked
 to the remote bug.
 
-    >>> bugzilla_transport.auth_cookie = "here we go again"
+    >>> bugzilla_transport.setCookie("Bugzilla_logincookie=here we go again")
     >>> result = server.Launchpad.set_link({'id': 1, 'launchpad_id': 10})
     >>> print(result['launchpad_id'])
     0
