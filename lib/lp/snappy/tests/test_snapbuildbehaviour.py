@@ -9,7 +9,6 @@ __metaclass__ = type
 
 import base64
 from datetime import datetime
-import json
 import os.path
 from textwrap import dedent
 import time
@@ -349,11 +348,12 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         branch = self.factory.makeBranch()
         job = self.makeJob(branch=branch)
         yield job.extraBuildArgs()
+        expected_uri = urlsplit(
+            config.snappy.builder_proxy_auth_api_endpoint).path.encode("UTF-8")
         self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
             MatchesDict({
-                "method": Equals("POST"),
-                "uri": Equals(urlsplit(
-                    config.snappy.builder_proxy_auth_api_endpoint).path),
+                "method": Equals(b"POST"),
+                "uri": Equals(expected_uri),
                 "headers": ContainsDict({
                     b"Authorization": MatchesListwise([
                         Equals(b"Basic " + base64.b64encode(
@@ -362,9 +362,9 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
                         Equals(b"application/json"),
                         ]),
                     }),
-                "content": AfterPreprocessing(json.loads, MatchesDict({
+                "json": MatchesDict({
                     "username": StartsWith(job.build.build_cookie + "-"),
-                    })),
+                    }),
                 }),
             ]))
 

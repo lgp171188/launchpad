@@ -43,14 +43,14 @@ class ProxyAuthAPITokensResource(resource.Resource):
         self.requests = []
 
     def render_POST(self, request):
-        content = request.content.read()
+        content = json.loads(request.content.read().decode("UTF-8"))
         self.requests.append({
             "method": request.method,
             "uri": request.uri,
             "headers": dict(request.requestHeaders.getAllRawHeaders()),
-            "content": content,
+            "json": content,
             })
-        username = json.loads(content)["username"]
+        username = content["username"]
         return json.dumps({
             "username": username,
             "secret": uuid.uuid4().hex,
