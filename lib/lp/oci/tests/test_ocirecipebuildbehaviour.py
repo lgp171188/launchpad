@@ -22,7 +22,6 @@ import pytz
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
-    AfterPreprocessing,
     ContainsDict,
     Equals,
     Is,
@@ -231,11 +230,12 @@ class TestAsyncOCIRecipeBuildBehaviour(
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref)
         yield job.extraBuildArgs()
+        expected_uri = urlsplit(
+            config.snappy.builder_proxy_auth_api_endpoint).path.encode("UTF-8")
         self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
             MatchesDict({
-                "method": Equals("POST"),
-                "uri": Equals(urlsplit(
-                    config.snappy.builder_proxy_auth_api_endpoint).path),
+                "method": Equals(b"POST"),
+                "uri": Equals(expected_uri),
                 "headers": ContainsDict({
                     b"Authorization": MatchesListwise([
                         Equals(b"Basic " + base64.b64encode(
@@ -244,9 +244,9 @@ class TestAsyncOCIRecipeBuildBehaviour(
                         Equals(b"application/json"),
                         ]),
                     }),
-                "content": AfterPreprocessing(json.loads, MatchesDict({
+                "json": MatchesDict({
                     "username": StartsWith(job.build.build_cookie + "-"),
-                    })),
+                    }),
                 }),
             ]))
 
