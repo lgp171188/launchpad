@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OCI recipe views."""
@@ -33,6 +33,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
+from lp.app.browser.tales import GitRepositoryFormatterAPI
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -655,6 +656,72 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Update OCI recipe").click()
         login_person(self.person)
         self.assertRecipeProcessors(recipe, ["386", "armhf"])
+
+    def test_edit_without_default_repo_for_ociproject(self):
+        self.setUpDistroSeries()
+        repo = self.factory.makeGitRepository(
+            owner=self.person, registrant=self.person)
+        [git_ref] = self.factory.makeGitRefs(repository=repo)
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, oci_project=oci_project, git_ref=git_ref)
+        with person_logged_in(self.person):
+            oci_project_url = canonical_url(oci_project)
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        error_message = (
+            "This recipe's git repository is not in the correct "
+            "namespace.<br/>Check the <a href='{url}'>OCI project page</a> "
+            "for instructions on how to create it correctly.")
+        self.assertIn(
+            error_message.format(url=oci_project_url), browser.contents)
+
+    def test_edit_repository_is_not_default_for_ociproject(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        [random_git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project,
+            git_ref=random_git_ref)
+
+        # Make the default git repository that should have been used by the
+        # recipe.
+        self.factory.makeGitRepository(
+            name=oci_project.name,
+            target=oci_project, owner=self.person, registrant=self.person)
+
+        with person_logged_in(self.person):
+            default_repo = oci_project.getDefaultGitRepository(recipe.owner)
+            repo_link = GitRepositoryFormatterAPI(default_repo).link('')
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        error_message = (
+            "This recipe's git repository is not in the correct "
+            "namespace.<br/>Consider using {repo} instead.")
+        self.assertIn(
+            error_message.format(repo=repo_link), browser.contents)
+
+    def test_edit_repository_in_the_correct_namespace(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        default_repo = self.factory.makeGitRepository(
+            name=oci_project.name,
+            target=oci_project, owner=self.person, registrant=self.person)
+
+        [git_ref] = self.factory.makeGitRefs(repository=default_repo)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project,
+            git_ref=git_ref)
+
+        with person_logged_in(self.person):
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        self.assertNotIn(
+            "This recipe's git repository is not in the correct namespace",
+            browser.contents)
 
 
 class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
