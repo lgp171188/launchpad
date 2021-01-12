@@ -15,6 +15,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import base64
 from contextlib import contextmanager
 import json
 import re
@@ -43,7 +44,6 @@ from lp.code.errors import (
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
     GitTargetError,
-    NoSuchGitReference,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.model.githosting import RefCopyOperation
@@ -334,7 +334,10 @@ class TestGitHostingClient(TestCase):
 
     def test_getBlob(self):
         blob = b''.join(six.int2byte(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": len(blob)}
+        payload = {
+            "data": base64.b64encode(blob).decode("UTF-8"),
+            "size": len(blob),
+            }
         with self.mockRequests("GET", json=payload):
             response = self.client.getBlob("123", "dir/path/file/name")
         self.assertEqual(blob, response)
@@ -343,7 +346,10 @@ class TestGitHostingClient(TestCase):
 
     def test_getBlob_revision(self):
         blob = b''.join(six.int2byte(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": len(blob)}
+        payload = {
+            "data": base64.b64encode(blob).decode("UTF-8"),
+            "size": len(blob),
+            }
         with self.mockRequests("GET", json=payload):
             response = self.client.getBlob("123", "dir/path/file/name", "dev")
         self.assertEqual(blob, response)
@@ -375,7 +381,10 @@ class TestGitHostingClient(TestCase):
 
     def test_getBlob_url_quoting(self):
         blob = b''.join(six.int2byte(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": len(blob)}
+        payload = {
+            "data": base64.b64encode(blob).decode("UTF-8"),
+            "size": len(blob),
+            }
         with self.mockRequests("GET", json=payload):
             self.client.getBlob("123", "dir/+file name?.txt", "+rev/ no?")
         self.assertRequest(
@@ -405,7 +414,7 @@ class TestGitHostingClient(TestCase):
 
     def test_getBlob_wrong_size(self):
         blob = b''.join(six.int2byte(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": 0}
+        payload = {"data": base64.b64encode(blob).decode("UTF-8"), "size": 0}
         with self.mockRequests("GET", json=payload):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
