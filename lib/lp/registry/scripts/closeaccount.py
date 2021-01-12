@@ -181,14 +181,8 @@ def close_account(username, log):
 
     # If all the teams that the user owns
     # have been deleted (not just one) skip Person.teamowner
-    merged = True
-    persons = list(
-        store.find(Person,
-                   Person.teamownerID == person.id))
-    for person_team_owner in persons:
-        if person_team_owner.merged is None:
-            merged = False
-    if merged:
+    teams = store.find(Person, Person.teamowner == person)
+    if all(team.merged is not None for team in teams):
         skip.add(('person', 'teamowner'))
 
     reference_names = {
