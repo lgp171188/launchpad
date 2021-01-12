@@ -68,7 +68,7 @@ def main():
     for service, pid in pids:
         if not process_exists(pid):
             continue
-        log.warn(
+        log.warning(
             "SIGTERM failed to kill %s (%d). Trying SIGKILL", service, pid)
         try:
             os.kill(pid, SIGKILL)

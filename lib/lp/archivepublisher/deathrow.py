@@ -290,7 +290,7 @@ class DeathRow:
                 # symlink has vanished from the pool/ (could be a code
                 # mistake) but there is nothing we can do about it at this
                 # point.
-                self.logger.warn(str(info))
+                self.logger.warning(str(info))
 
         self.logger.info("Total bytes freed: %s" % bytes)
 

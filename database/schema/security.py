@@ -541,7 +541,7 @@ def reset_permissions(con, config, options):
             if '.' not in obj_name:
                 continue
             if obj_name not in valid_objs:
-                log.warn('Bad object name %r', obj_name)
+                log.warning('Bad object name %r', obj_name)
                 continue
             obj = schema[obj_name]
 
@@ -659,7 +659,7 @@ def reset_permissions(con, config, options):
     forgotten = [obj.fullname for obj in forgotten
         if obj.type in ['table', 'function', 'view']]
     if forgotten:
-        log.warn('No permissions specified for %r', forgotten)
+        log.warning('No permissions specified for %r', forgotten)
 
     if options.dryrun:
         log.info("Dry run - rolling back changes")

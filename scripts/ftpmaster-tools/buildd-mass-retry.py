@@ -121,7 +121,7 @@ class BuilddMassRetryScript(LaunchpadScript):
                     continue
 
                 if not build.can_be_retried:
-                    self.logger.warn(
+                    self.logger.warning(
                         'Can not retry %s (%s)' % (build.title, build.id))
                     continue
 

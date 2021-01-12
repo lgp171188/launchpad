@@ -236,9 +236,9 @@ def import_binarypackages(distro, packages_map, package_root,
 
         if nosource:
             # XXX kiko 2005-10-23: untested
-            log.warn('%i source packages not found', len(nosource))
+            log.warning('%i source packages not found', len(nosource))
             for pkg in nosource:
-                log.warn(pkg)
+                log.warning(pkg)
 
 
 def do_one_binarypackage(distro, binary, archtag, package_root,
