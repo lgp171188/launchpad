@@ -261,6 +261,7 @@ from lp.services.database.sqlbase import (
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import (
+    backslashreplace,
     ensure_unicode,
     shortlist,
     )
@@ -547,8 +548,7 @@ class Person(
                      storm_validator=_validate_name)
 
     def __repr__(self):
-        displayname = six.ensure_str(
-            self.displayname, encoding='ASCII', errors='backslashreplace')
+        displayname = backslashreplace(self.displayname)
         return '<Person at 0x%x %s (%s)>' % (id(self), self.name, displayname)
 
     display_name = StringCol(dbName='displayname', notNull=True)

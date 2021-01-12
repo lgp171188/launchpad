@@ -89,8 +89,8 @@ The Spanish translations now show up as suggestions.  For example, where
 "cards" might translate to Catalan as "targetas," the Spanish equivalent is
 "tarjetas."
 
-    >>> print(extract_text(find_main_content(
-    ...     browser.contents)).encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_main_content(
+    ...     browser.contents))))
     Translating into Catalan...
     ...
     English: cards
@@ -138,8 +138,8 @@ languages are defined.  Suggestions just work for anonymous users.
     ...     anon_browser.toStr('Spanish (es)')).selected = True
     >>> anon_browser.getControl('Change').click()
 
-    >>> print(extract_text(find_main_content(
-    ...     anon_browser.contents)).encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_main_content(
+    ...     anon_browser.contents))))
     Browsing Catalan translation
     ...
     English: cards

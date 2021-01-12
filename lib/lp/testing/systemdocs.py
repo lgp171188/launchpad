@@ -32,6 +32,7 @@ from zope.testing.loggingsupport import Handler
 
 from lp.services.config import config
 from lp.services.database.sqlbase import flush_database_updates
+from lp.services.helpers import backslashreplace
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
     ANONYMOUS,
@@ -264,6 +265,7 @@ def setGlobs(test, future=False):
     test.globs['launchpadlib_credentials_for'] = launchpadlib_credentials_for
     test.globs['oauth_access_token_for'] = oauth_access_token_for
     test.globs['six'] = six
+    test.globs['backslashreplace'] = backslashreplace
 
     if future:
         import __future__

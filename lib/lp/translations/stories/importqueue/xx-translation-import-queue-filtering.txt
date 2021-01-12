@@ -52,8 +52,7 @@ already included in the sample data.
     ...     """Print "x -> y of z results" batch navigator heading."""
     ...     heading = find_tags_by_class(
     ...         browser.contents, 'batch-navigation-index')[0]
-    ...     print(
-    ...         extract_text(heading).encode('us-ascii', 'backslashreplace'))
+    ...     print(backslashreplace(extract_text(heading)))
 
     >>> def print_dropdown(browser, name, index=0):
     ...     """Print contents of named dropdown."""
@@ -307,7 +306,7 @@ The only entry that shows up now is the one Carlos just uploaded.
 
     >>> def represent_queue_entry(entry_html):
     ...     text_contents = extract_text(entry_html)
-    ...     return text_contents.encode('ascii', 'backslashreplace')
+    ...     return backslashreplace(text_contents)
 
     >>> import_list = find_tag_by_id(
     ...     user_browser.contents, 'import-entries-list')

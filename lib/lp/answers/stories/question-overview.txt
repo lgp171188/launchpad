@@ -169,7 +169,7 @@ question' button on their overview page.
 
     >>> questions = find_tag_by_id(
     ...     user_browser.contents, 'portlet-latest-questions')
-    >>> print(extract_text(questions).encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(questions)))
     All questions
     Latest questions
     Problemas de Impress\xe3o no Firefox ...

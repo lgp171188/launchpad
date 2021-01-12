@@ -135,8 +135,7 @@ announcement so there is a "Latest news" portlet. Let's render the
 portlet, taking care not to render today's date which would timebomb our
 script.
 
-    >>> print(latest_news(priv_browser.contents).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(latest_news(priv_browser.contents)))
     Announcements
     Apache announcement headline...
     Read all announcements
@@ -160,8 +159,7 @@ work too:
 
 And check out the results:
 
-    >>> print(latest_news(priv_browser.contents).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(latest_news(priv_browser.contents)))
     Announcements
     Apache announcement headline ...
     Tomcat announcement headline on 2007-11-24 ...

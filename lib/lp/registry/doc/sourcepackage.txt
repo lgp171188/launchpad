@@ -218,7 +218,7 @@ method on a distribution:
     >>> print ubuntu_firefox.name
     mozilla-firefox
 
-    >>> print ubuntu_firefox.title.encode('ascii', 'backslashreplace')
+    >>> print(backslashreplace(ubuntu_firefox.title))
     mozilla-firefox package in Ubuntu
 
     >>> print ubuntu_firefox.displayname

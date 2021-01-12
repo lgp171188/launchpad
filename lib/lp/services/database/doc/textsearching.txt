@@ -106,11 +106,11 @@ The following examples show the text version of the query using
     ...         SQLBase._connection._connection.rollback()
     ...         raise
     ...     if uncompiled is not None:
-    ...         uncompiled = uncompiled.encode('US-ASCII', 'backslashreplace')
+    ...         uncompiled = backslashreplace(uncompiled)
     ...         uncompiled = uncompiled.replace(' ','')
     ...     if compiled is not None:
     ...         compiled = compiled.decode('UTF-8')
-    ...         compiled = compiled.encode('US-ASCII', 'backslashreplace')
+    ...         compiled = backslashreplace(compiled)
     ...     print('%s <=> %s' % (uncompiled, compiled))
     >>>
     >>> def search(text_to_search, search_phrase):
