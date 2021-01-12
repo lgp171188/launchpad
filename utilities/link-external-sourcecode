@@ -7,6 +7,7 @@ import optparse
 from os import (
     curdir,
     listdir,
+    makedirs,
     symlink,
     unlink,
     )
@@ -111,6 +112,9 @@ if __name__ == '__main__':
 
     if options.parent is None:
         parser.error("Parent tree not specified.")
+
+    if not exists(join(options.target, 'sourcecode')):
+        makedirs(join(options.target, 'sourcecode'))
 
     missing_files = gen_missing_files(
         abspath(join(options.parent, 'sourcecode')),
