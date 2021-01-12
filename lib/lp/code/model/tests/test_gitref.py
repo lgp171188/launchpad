@@ -867,7 +867,7 @@ class TestGitRefWebservice(TestCaseWithFactory):
             ref.owner, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(ref_url, "getGrants")
-        self.assertThat(json.loads(response.body), MatchesSetwise(
+        self.assertThat(response.jsonBody(), MatchesSetwise(
             MatchesDict({
                 "grantee_type": Equals("Repository owner"),
                 "grantee_link": Is(None),
@@ -951,10 +951,10 @@ class TestGitRefWebservice(TestCaseWithFactory):
         webservice.default_api_version = "devel"
         response = webservice.named_get(
             ref_url, "checkPermissions", person=owner_url)
-        self.assertEqual(["create", "push"], json.loads(response.body))
+        self.assertEqual(["create", "push"], response.jsonBody())
         response = webservice.named_get(
             ref_url, "checkPermissions", person=grantee_urls[0])
-        self.assertEqual(["create"], json.loads(response.body))
+        self.assertEqual(["create"], response.jsonBody())
         response = webservice.named_get(
             ref_url, "checkPermissions", person=grantee_urls[1])
-        self.assertEqual(["push", "force-push"], json.loads(response.body))
+        self.assertEqual(["push", "force-push"], response.jsonBody())
