@@ -37,7 +37,6 @@ Location: /
 >>> destination_url = re.search('(?m)^Location:\s(.*)$', str(result)).group(1)
 >>> launchpad_session_cookie = re.search(
 ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-...     )
 >>> print(http(r"""
 ... GET %(destination_url)s HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
@@ -75,7 +74,6 @@ Location: /+notificationtest1
 >>> destination_url = re.search('(?m)^Location:\s(.*)$', str(result)).group(1)
 >>> launchpad_session_cookie = re.search(
 ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-...     )
 >>> print(http(r"""
 ... GET %(destination_url)s HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
@@ -116,7 +114,6 @@ Location: /+notificationtest3
 >>> destination_url = re.search('(?m)^Location:\s(.*)$', str(result)).group(1)
 >>> launchpad_session_cookie = re.search(
 ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-...     )
 >>> result = http(r"""
 ... GET %(destination_url)s HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
@@ -133,7 +130,6 @@ Location: /+notificationtest1
 >>> destination_url = re.search('(?m)^Location:\s(.*)$', str(result)).group(1)
 >>> launchpad_session_cookie = re.search(
 ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-...     )
 >>> print(http(r"""
 ... GET %(destination_url)s HTTP/1.1
 ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==

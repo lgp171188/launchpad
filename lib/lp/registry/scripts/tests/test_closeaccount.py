@@ -635,6 +635,28 @@ class TestCloseAccount(TestCaseWithFactory):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
+    def test_skips_teamowner_merged(self):
+        person = self.factory.makePerson()
+        merged_person = self.factory.makePerson()
+        owned_team1 = self.factory.makeTeam(name='target', owner=person)
+        removeSecurityProxy(owned_team1).merged = merged_person
+        owned_team2 = self.factory.makeTeam(name='target2', owner=person)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+
+        # Closing account fails as the user still owns team2
+        with dbuser('launchpad'):
+            self.assertRaises(
+                LaunchpadScriptFailure, self.runScript, script)
+
+        # Account will now close as the user doesn't own
+        # any other teams at this point
+        removeSecurityProxy(owned_team2).merged = merged_person
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
     def test_handles_login_token(self):
         person = self.factory.makePerson()
         email = '%s@another-domain.test' % person.name
