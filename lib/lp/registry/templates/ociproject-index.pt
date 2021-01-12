@@ -32,16 +32,14 @@
         build your OCI recipes by using the following commands:
         <br />
         <pre class="command">
-          git remote add origin git+ssh://<tal:name replace="view/user/name"/>@git.launchpad.net/<tal:name replace="view/git_repository_path"/>
+          git remote add origin git+ssh://<tal:name replace="view/user/name"/>@<tal:host replace="view/git_ssh_hostname" />/<tal:name replace="view/git_repository_path"/>
           git push --set-upstream origin master
         </pre>
       </p>
     </div>
     <div tal:define="repo view/git_repository"
          tal:condition="repo">
-      Your default git repository for this project is
-      <a tal:content="repo/display_name"
-         tal:attributes="href repo/fmt:url">lp:foo</a>.
+      Your default git repository for this project is <a tal:replace="structure repo/fmt:link"/>.
     </div>
 
     <h2>OCI project information</h2>

@@ -113,7 +113,8 @@ class TestOCIProjectView(BrowserTestCase):
         oci_project = self.factory.makeOCIProject(
             pillar=pillar, ociprojectname="oci-name")
         git_url = (
-            "git\+ssh://a-usr@git.launchpad.net/~a-usr/a-pillar/\+oci/oci-name"
+            "git\+ssh://a-usr@git.launchpad.test/"
+            "~a-usr/a-pillar/\+oci/oci-name"
         )
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
             OCI project oci-name for A-pillar
