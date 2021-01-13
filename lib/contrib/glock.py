@@ -191,7 +191,7 @@ class GlobalLock:
                 raise LockAlreadyAcquired('Lock %s already acquired by '
                                           'someone else' % self.name)
             if self.previous_lockfile_present and self.logger:
-                self.logger.warn("Stale lockfile detected and claimed.")
+                self.logger.warning("Stale lockfile detected and claimed.")
             #print('got thread lock.') ##
 
         self.is_locked = True

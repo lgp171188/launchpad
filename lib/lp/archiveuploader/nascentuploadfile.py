@@ -492,7 +492,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         if self.priority_name not in self.priority_map:
             default_priority = 'extra'
-            self.logger.warn(
+            self.logger.warning(
                  "Unable to grok priority %r, overriding it with %s"
                  % (self.priority_name, default_priority))
             self.priority_name = default_priority

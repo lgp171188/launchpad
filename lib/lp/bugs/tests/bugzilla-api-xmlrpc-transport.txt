@@ -462,7 +462,7 @@ Bug.add_comment() will return the integer comment ID of the new comment
 on the remote server.
 
     >>> comment = "I'm supposed to write something apposite here."
-    >>> bugzilla_transport.auth_cookie = 'open sesame'
+    >>> bugzilla_transport.setCookie('Bugzilla_logincookie=open sesame')
     >>> return_dict = server.Bug.add_comment({'id': 1, 'comment': comment})
     >>> return_dict
     {'id': 7}

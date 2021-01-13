@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the IGitLookup implementation."""
@@ -242,8 +242,8 @@ class TestGetByUrl(TestCaseWithFactory):
     def test_getByUrl_with_trailing_segments(self):
         # URLs with trailing segments beyond the repository are rejected.
         self.makeProjectRepository()
-        self.assertIsNone(
-            self.lookup.getByUrl("git://git.launchpad.test/~aa/bb/+git/cc/foo"))
+        self.assertIsNone(self.lookup.getByUrl(
+            "git://git.launchpad.test/~aa/bb/+git/cc/foo"))
 
     def test_getByUrl_with_git(self):
         # getByUrl recognises LP repositories for git URLs.
@@ -409,6 +409,16 @@ class TestGitTraverser(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         path = "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
         self.assertTraverses(path, None, oci_project)
+
+    def test_ociproject_based_on_project(self):
+        # `traverse_path` resolves '~person/product/+oci/ociproject' to the OCI
+        # project.
+        project = self.factory.makeProduct()
+        oci_project = self.factory.makeOCIProject(pillar=project)
+        path = "~%s/%s/+oci/%s" % (
+            oci_project.registrant.name, oci_project.pillar.name,
+            oci_project.name)
+        self.assertTraverses(path, oci_project.registrant, oci_project)
 
     def test_ociproject_no_named_repositories(self):
         # OCI projects do not have named repositories without an owner

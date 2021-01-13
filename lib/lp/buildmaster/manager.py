@@ -638,7 +638,7 @@ class SlaveScanner:
                 # The slave is either confused or disabled, so reset and
                 # requeue the job. The next scan cycle will clean up the
                 # slave if appropriate.
-                self.logger.warn(
+                self.logger.warning(
                     "%s. Resetting job %s.", lost_reason,
                     vitals.build_queue.build_cookie)
                 vitals.build_queue.reset()

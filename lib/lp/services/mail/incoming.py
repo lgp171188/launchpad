@@ -367,7 +367,7 @@ def extract_addresses(mail, file_alias_url, log):
     else:
         # This most likely means a email configuration problem, and it should
         # log an oops.
-        log.warn(
+        log.warning(
             "No X-Launchpad-Original-To header was present "
             "in email: %s" % file_alias_url)
     # Process all addresses found as a fall back.

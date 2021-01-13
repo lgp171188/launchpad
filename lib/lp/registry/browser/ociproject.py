@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Views, menus, and traversal related to `OCIProject`s."""
@@ -15,6 +15,7 @@ __all__ = [
     'OCIProjectURL',
     ]
 
+from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import implementer
@@ -42,6 +43,7 @@ from lp.registry.interfaces.ociprojectname import (
     IOCIProjectNameSet,
     )
 from lp.registry.interfaces.product import IProduct
+from lp.services.config import config
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -210,6 +212,20 @@ class OCIProjectContextMenu(ContextMenu):
             self.context).is_empty()
         return Link(
             '+recipes', 'View OCI recipes', icon='info', enabled=enabled)
+
+
+class OCIProjectIndexView(LaunchpadView):
+    @property
+    def git_repository(self):
+        return self.context.getDefaultGitRepository(self.user)
+
+    @property
+    def git_repository_path(self):
+        return self.context.getDefaultGitRepositoryPath(self.user)
+
+    @property
+    def git_ssh_hostname(self):
+        return urlsplit(config.codehosting.git_ssh_root).hostname
 
 
 class OCIProjectEditView(LaunchpadEditFormView):

@@ -305,8 +305,8 @@ class TestTimeout(TestCase):
         # client closes its end of the connection. If the client closes its
         # socket, '' is received, otherwise a socket timeout will occur.
         client_sock, client_addr = sock.accept()
-        self.assertStartsWith(client_sock.recv(1024), "GET / HTTP/1.1")
-        self.assertEqual('', client_sock.recv(1024))
+        self.assertStartsWith(client_sock.recv(1024), b"GET / HTTP/1.1")
+        self.assertEqual(b'', client_sock.recv(1024))
 
     def test_urlfetch_slow_server(self):
         """The function also times out if the server replies very slowly.
@@ -318,15 +318,15 @@ class TestTimeout(TestCase):
 
         def slow_reply():
             (client_sock, client_addr) = sock.accept()
-            content = 'You are veeeeryyy patient!'
+            content = b'You are veeeeryyy patient!'
             client_sock.sendall(dedent("""\
                 HTTP/1.0 200 Ok
                 Content-Type: text/plain
-                Content-Length: %d\n\n""" % len(content)))
+                Content-Length: %d\n\n""" % len(content)).encode("UTF-8"))
 
             # Send the body of the reply very slowly, so that
             # it times out in read() and not urlopen.
-            for c in content:
+            for c in [b'%c' % b for b in content]:
                 client_sock.send(c)
                 if stop_event.wait(0.05):
                     break
@@ -356,20 +356,22 @@ class TestTimeout(TestCase):
                 Content-Type: text/plain
                 Content-Length: 8
 
-                Success."""))
+                Success.""").encode("UTF-8"))
             client_sock.close()
 
         t = threading.Thread(target=success_result)
         t.start()
         self.assertThat(
             urlfetch(http_server_url),
-            MatchesStructure.byEquality(status_code=200, content='Success.'))
+            MatchesStructure.byEquality(status_code=200, content=b'Success.'))
         t.join()
 
     def test_urlfetch_no_proxy_by_default(self):
         """urlfetch does not use a proxy by default."""
         self.pushConfig('launchpad', http_proxy='http://proxy.example:3128/')
-        fake_send = FakeMethod(result=Response())
+        response = Response()
+        response.status_code = 200
+        fake_send = FakeMethod(result=response)
         self.useFixture(
             MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
         urlfetch('http://example.com/')
@@ -379,7 +381,9 @@ class TestTimeout(TestCase):
         """urlfetch uses proxies if explicitly requested."""
         proxy = 'http://proxy.example:3128/'
         self.pushConfig('launchpad', http_proxy=proxy)
-        fake_send = FakeMethod(result=Response())
+        response = Response()
+        response.status_code = 200
+        fake_send = FakeMethod(result=response)
         self.useFixture(
             MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
         urlfetch('http://example.com/', use_proxy=True)
@@ -390,7 +394,9 @@ class TestTimeout(TestCase):
     def test_urlfetch_no_ca_certificates(self):
         """If ca_certificates_path is None, urlfetch uses bundled certs."""
         self.pushConfig('launchpad', ca_certificates_path='none')
-        fake_send = FakeMethod(result=Response())
+        response = Response()
+        response.status_code = 200
+        fake_send = FakeMethod(result=response)
         self.useFixture(
             MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
         urlfetch('http://example.com/')
@@ -399,7 +405,9 @@ class TestTimeout(TestCase):
     def test_urlfetch_ca_certificates_if_configured(self):
         """urlfetch uses the configured ca_certificates_path if it is set."""
         self.pushConfig('launchpad', ca_certificates_path='/path/to/certs')
-        fake_send = FakeMethod(result=Response())
+        response = Response()
+        response.status_code = 200
+        fake_send = FakeMethod(result=response)
         self.useFixture(
             MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
         urlfetch('http://example.com/')
@@ -425,7 +433,7 @@ class TestTimeout(TestCase):
                 Content-Type: text/plain
                 Content-Length: 8
 
-                Success."""))
+                Success.""").encode("UTF-8"))
             client_sock.close()
 
         self.pushConfig('launchpad', http_proxy=http_server_url)
@@ -436,7 +444,7 @@ class TestTimeout(TestCase):
         self.assertThat(response, MatchesStructure(
             status_code=Equals(200),
             headers=ContainsDict({'Content-Length': Equals('8')}),
-            content=Equals('Success.')))
+            content=Equals(b'Success.')))
         t.join()
 
     def test_urlfetch_does_not_support_file_urls_by_default(self):
@@ -456,7 +464,7 @@ class TestTimeout(TestCase):
         self.assertThat(urlfetch(url, allow_file=True), MatchesStructure(
             status_code=Equals(200),
             headers=ContainsDict({'Content-Length': Equals(8)}),
-            content=Equals('Success.')))
+            content=Equals(b'Success.')))
 
     def test_urlfetch_writes_to_output_file(self):
         """If given an output_file, urlfetch writes to it."""
@@ -470,7 +478,7 @@ class TestTimeout(TestCase):
                 Content-Type: text/plain
                 Content-Length: 8
 
-                Success."""))
+                Success.""").encode("UTF-8"))
             client_sock.close()
 
         t = threading.Thread(target=success_result)

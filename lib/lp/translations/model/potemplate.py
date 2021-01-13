@@ -1001,7 +1001,7 @@ class POTemplate(SQLBase, RosettaStats):
                         txn.abort()
                         txn.begin()
                     if logger:
-                        logger.warn(
+                        logger.warning(
                             "Statistics update failed: %s" %
                             six.text_type(error))
 
@@ -1341,7 +1341,7 @@ class POTemplateSet:
             return matches[0]
         elif sourcepackagename is None:
             # Multiple matches, and for a product not a package.
-            logging.warn(
+            logging.warning(
                 "Found %d templates with path '%s' for productseries %s",
                 len(matches), path, productseries.title)
             return None
@@ -1358,7 +1358,7 @@ class POTemplateSet:
             if len(preferred_matches) == 1:
                 return preferred_matches[0]
             else:
-                logging.warn(
+                logging.warning(
                     "Found %d templates with path '%s' for package %s "
                     "(%d matched on from_sourcepackagename).",
                     len(matches), path, sourcepackagename.name,

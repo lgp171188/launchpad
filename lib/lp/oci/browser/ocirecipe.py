@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI recipe views."""
@@ -49,7 +49,10 @@ from lp.app.browser.launchpadform import (
     LaunchpadFormView,
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
-from lp.app.browser.tales import format_link
+from lp.app.browser.tales import (
+    format_link,
+    GitRepositoryFormatterAPI,
+    )
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -773,10 +776,28 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             "architectures are restricted and may only be enabled or "
             "disabled by administrators.")
 
+    def setUpGitRefWidget(self):
+        """Setup GitRef widget indicating the user to use the default
+        oci project's git repository, if possible.
+        """
+        path = self.context.getDefaultGitRepositoryPath(self.user)
+        widget = self.widgets["git_ref"]
+        widget.setUpSubWidgets()
+        widget.repository_widget.setRenderedValue(path)
+        default_repo = self.context.getDefaultGitRepository(self.user)
+        if default_repo is None:
+            msg = (
+                "Your git repository for this OCI project was not created yet."
+                "<br/>Check the <a href='%s'>OCI project page"
+                "</a> for instructions on how to create one.")
+            msg = structured(msg, canonical_url(self.context))
+            self.widget_errors["git_ref"] = msg.escapedtext
+
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeAddView, self).setUpWidgets()
         self.widgets["processors"].widget_class = "processors"
+        self.setUpGitRefWidget()
 
     @property
     def cancel_url(self):
@@ -879,6 +900,35 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         )
     custom_widget_git_ref = GitRefWidget
 
+    def setUpGitRefWidget(self):
+        """Setup GitRef widget indicating the user to use the default
+        oci project's git repository, if possible.
+        """
+        oci_proj = self.context.oci_project
+        oci_proj_url = canonical_url(oci_proj)
+        widget = self.widgets["git_ref"]
+        widget.setUpSubWidgets()
+        msg = None
+        if self.context.git_ref.namespace.target != self.context.oci_project:
+            msg = ("This recipe's git repository is not in the "
+                   "correct namespace.<br/>")
+            default_repo = oci_proj.getDefaultGitRepository(self.context.owner)
+            if default_repo:
+                link = GitRepositoryFormatterAPI(default_repo).link('')
+                msg += "Consider using %s instead." % link
+            else:
+                msg += (
+                    "Check the <a href='%(oci_proj_url)s'>OCI project page</a>"
+                    " for instructions on how to create it correctly.")
+        if msg:
+            msg = structured(msg, oci_proj_url=oci_proj_url)
+            self.widget_errors["git_ref"] = msg.escapedtext
+
+    def setUpWidgets(self):
+        """See `LaunchpadFormView`."""
+        super(OCIRecipeEditView, self).setUpWidgets()
+        self.setUpGitRefWidget()
+
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpFields()
@@ -923,6 +973,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                         # enabled. Leave it untouched.
                         data["processors"].append(processor)
         self.validateBuildArgs(data)
+
 
 class OCIRecipeDeleteView(BaseOCIRecipeEditView):
     """View for deleting OCI recipes."""

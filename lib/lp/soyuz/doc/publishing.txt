@@ -1335,7 +1335,7 @@ We use the source publications to initialize
     >>> decorated_set = ArchiveSourcePublications(cprov_published_sources)
     >>> empty_decorated_set = ArchiveSourcePublications([])
 
-`ArchiveSourcePublications` implements __nonzero__, so callsites can
+`ArchiveSourcePublications` implements __bool__, so callsites can
 verify in advance whether there are elements to be iterated or not.
 
     >>> bool(decorated_set)

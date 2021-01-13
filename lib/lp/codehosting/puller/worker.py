@@ -110,13 +110,16 @@ class PullerWorkerProtocol:
         self.out_stream = output
 
     def sendNetstring(self, string):
-        self.out_stream.write('%d:%s,' % (len(string), string))
+        self.out_stream.write(
+            b'%d:%s,' % (len(string), six.ensure_binary(string)))
 
     def sendEvent(self, command, *args):
         self.sendNetstring(command)
         self.sendNetstring(str(len(args)))
         for argument in args:
-            self.sendNetstring(str(argument))
+            if not isinstance(argument, bytes):
+                argument = six.text_type(argument).encode('UTF-8')
+            self.sendNetstring(argument)
 
     def startMirroring(self):
         self.sendEvent('startMirroring')
@@ -163,7 +166,7 @@ class BranchMirrorerPolicy(BranchOpenPolicy):
             # Looms suck.
             revision_id = None
         else:
-            revision_id = 'null:'
+            revision_id = b'null:'
         source_branch.controldir.clone_on_transport(
             dest_transport, revision_id=revision_id)
         return Branch.open(destination_url)

@@ -81,9 +81,12 @@ class NotificationRecipientSet:
         else:
             return False
 
-    def __nonzero__(self):
+    def __bool__(self):
         """See `INotificationRecipientSet`."""
         return bool(self._personToRationale)
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def getReason(self, person_or_email):
         """See `INotificationRecipientSet`."""

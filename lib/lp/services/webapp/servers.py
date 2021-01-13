@@ -210,8 +210,11 @@ class StepsToGo(six.Iterator):
     def __len__(self):
         return len(self._stack)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self._stack)
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
 
 class ApplicationServerSettingRequestFactory:
