@@ -352,11 +352,12 @@ class ImporterHandler:
 
             # We couldn't find a sourcepackagerelease in the database.
             # Perhaps we can opportunistically pick one out of the archive.
-            log.warn("No source package %s (%s) listed for %s (%s), "
-                     "scrubbing archive..." %
-                     (binarypackagedata.source,
-                      version, binarypackagedata.package,
-                      binarypackagedata.version))
+            log.warning(
+                "No source package %s (%s) listed for %s (%s), "
+                "scrubbing archive..." %
+                (binarypackagedata.source,
+                 version, binarypackagedata.package,
+                 binarypackagedata.version))
 
             # XXX kiko 2005-11-03: I question whether
             # binarypackagedata.section here is actually correct -- but
@@ -369,8 +370,9 @@ class ImporterHandler:
             if sourcepackage:
                 return sourcepackage
 
-            log.warn("Nope, couldn't find it. Could it be a "
-                     "bin-only-NMU? Checking version %s" % version)
+            log.warning(
+                "Nope, couldn't find it. Could it be a "
+                "bin-only-NMU? Checking version %s" % version)
 
             # XXX kiko 2005-11-03: Testing a third cycle of this loop
             # isn't done.

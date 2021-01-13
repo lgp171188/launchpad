@@ -288,7 +288,7 @@ class RemoveTranslations(LaunchpadScript):
         if not result:
             raise LaunchpadScriptFailure(message)
         if message is not None:
-            self.logger.warn(message)
+            self.logger.warning(message)
 
         if self.options.dry_run:
             self.logger.info("Dry run only.  Not really deleting.")
@@ -337,7 +337,7 @@ def warn_about_deleting_current_messages(cur, from_text, where_text, logger):
         cur.execute(query)
         rows = cur.fetchall()
         if cur.rowcount > 0:
-            logger.warn(
+            logger.warning(
                 'Deleting messages currently in use:')
             for (id, is_current_upstream, is_current_ubuntu) in rows:
                 current = []
@@ -345,7 +345,7 @@ def warn_about_deleting_current_messages(cur, from_text, where_text, logger):
                     current.append('upstream')
                 if is_current_ubuntu:
                     current.append('Ubuntu')
-                logger.warn(
+                logger.warning(
                     'Message %i is a current translation in %s'
                     % (id, ' and '.join(current)))
 
@@ -499,7 +499,7 @@ def remove_translations(logger=None, submitter=None, reviewer=None,
         if rows_deleted > 0:
             logger.info("Deleting %d message(s)." % rows_deleted)
         else:
-            logger.warn("No rows match; not deleting anything.")
+            logger.warning("No rows match; not deleting anything.")
 
     cur.execute("""
         UPDATE TranslationMessage

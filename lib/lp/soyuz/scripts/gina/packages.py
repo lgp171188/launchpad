@@ -132,8 +132,8 @@ def read_dsc(package, version, component, distro_name, archive_root):
             with open(fullpath) as f:
                 changelog = f.read().strip()
         else:
-            log.warn("No changelog file found for %s in %s" %
-                     (package, source_dir))
+            log.warning(
+                "No changelog file found for %s in %s" % (package, source_dir))
             changelog = None
 
         copyright = None
@@ -145,7 +145,7 @@ def read_dsc(package, version, component, distro_name, archive_root):
                 copyright = f.read().strip()
 
         if copyright is None:
-            log.warn(
+            log.warning(
                 "No copyright file found for %s in %s" % (package, source_dir))
             copyright = ''
     finally:
@@ -365,7 +365,7 @@ class SourcePackageData(AbstractPackageData):
 
         if self.section is None:
             self.section = 'misc'
-            log.warn(
+            log.warning(
                 "Source package %s lacks section, assumed %r",
                 self.package, self.section)
 
@@ -399,28 +399,31 @@ class SourcePackageData(AbstractPackageData):
             cldata = parsed_changelog[0]
             if 'changes' in cldata:
                 if cldata["package"] != self.package:
-                    log.warn("Changelog package %s differs from %s" %
-                             (cldata["package"], self.package))
+                    log.warning(
+                        "Changelog package %s differs from %s" %
+                        (cldata["package"], self.package))
                 if cldata["version"] != self.version:
-                    log.warn("Changelog version %s differs from %s" %
-                             (cldata["version"], self.version))
+                    log.warning(
+                        "Changelog version %s differs from %s" %
+                        (cldata["version"], self.version))
                 self.changelog_entry = encoding.guess(cldata["changes"])
                 self.changelog = changelog
                 self.urgency = cldata["urgency"]
             else:
-                log.warn("Changelog empty for source %s (%s)" %
-                         (self.package, self.version))
+                log.warning(
+                    "Changelog empty for source %s (%s)" %
+                    (self.package, self.version))
 
     def ensure_complete(self):
         if self.format is None:
             # XXX kiko 2005-11-05: this is very funny. We care so much about
             # it here, but we don't do anything about this in handlers.py!
             self.format = "1.0"
-            log.warn(
+            log.warning(
                 "Invalid format in %s, assumed %r", self.package, self.format)
 
         if self.urgency not in ChangesFile.urgency_map:
-            log.warn(
+            log.warning(
                 "Invalid urgency in %s, %r, assumed %r",
                 self.package, self.urgency, "low")
             self.urgency = "low"
@@ -541,13 +544,13 @@ class BinaryPackageData(AbstractPackageData):
 
         if self.section is None:
             self.section = 'misc'
-            log.warn(
+            log.warning(
                 "Binary package %s lacks a section, assumed %r",
                 self.package, self.section)
 
         if self.priority is None:
             self.priority = 'extra'
-            log.warn(
+            log.warning(
                 "Binary package %s lacks valid priority, assumed %r",
                 self.package, self.priority)
 

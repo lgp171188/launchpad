@@ -1632,7 +1632,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
                 "Script aborted after %d seconds.", self.script_timeout)
 
         if tunable_loops:
-            self.logger.warn("%d tasks did not run.", len(tunable_loops))
+            self.logger.warning("%d tasks did not run.", len(tunable_loops))
 
         if self.failure_count:
             self.logger.error("%d tasks failed.", self.failure_count)
@@ -1736,7 +1736,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
                     tunable_loops.append(tunable_loop_class)
                 # Otherwise, emit a warning and skip the task.
                 else:
-                    loop_logger.warn(
+                    loop_logger.warning(
                         "Unable to acquire lock %s. Running elsewhere?",
                         loop_lock_path)
                 continue

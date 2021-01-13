@@ -615,7 +615,7 @@ class TranslationImportQueueEntry(StormBase):
                            "because entry %d is in the way." % (
                                potemplate.title, self.id, self.path,
                                existing_entry.id))
-                logging.warn(warning)
+                logging.warning(warning)
                 return None
 
             # We got the potemplate, try to guess the language from
