@@ -91,6 +91,7 @@ from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
+    IGitRepositoryExpensiveRequest,
     user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
@@ -1803,6 +1804,16 @@ class DownloadFullSourcePackageTranslations(OnlyRosettaExpertsAndAdmins):
             # User is owner of applicable translation group.
             (translation_group is not None and
              user.inTeam(translation_group.owner)))
+
+
+class GitRepositoryExpensiveRequest(AuthorizationBase):
+    """Restrict git repository repacks."""
+
+    permission = 'launchpad.ExpensiveRequest'
+    usedfor = IGitRepositoryExpensiveRequest
+
+    def checkAuthenticated(self, user):
+        return user.in_registry_experts or user.in_admin
 
 
 class EditProductRelease(EditByOwnersOrAdmins):

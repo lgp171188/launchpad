@@ -80,6 +80,7 @@ from lp.code.errors import (
     GitRepositoryExists,
     GitTargetError,
     NoSuchGitReference,
+    NoSuchGitRepository,
     )
 from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
@@ -139,10 +140,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    )
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
@@ -198,7 +196,6 @@ from lp.testing.pages import (
     LaunchpadWebServiceCaller,
     webservice_for_person,
     )
-from lp.testing.sampledata import ADMIN_EMAIL
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
 
@@ -3836,12 +3833,14 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             owner=owner_db, name="repository")
         repo_path = repository_db.shortened_path
         user_url = api_url(owner_db)
-        webservice = webservice_for_person(
-            owner_db, permission=OAuthPermission.WRITE_PUBLIC)
-        webservice.default_api_version = "devel"
-        response = webservice.named_get(
-            "/+git", "repackRepository", user=user_url, path=repo_path)
-        self.assertEqual(403, response.status)
+
+        def call_repack():
+            return repository_db.repackRepository(
+                user=user_url, path=repo_path)
+
+        with person_logged_in(owner_db):
+            self.assertRaises(
+                Unauthorized, call_repack)
         self.assertEqual(0, hosting_fixture.repackRepository.call_count)
 
     def test_repackRepository_admin(self):
@@ -3851,21 +3850,16 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         repository_db = self.factory.makeGitRepository(
             owner=owner_db, name="repository")
         repo_path = repository_db.shortened_path
-        webservice_user = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
-        admin_url = api_url(webservice_user)
-        webservice = webservice_for_person(
-            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
-        webservice.default_api_version = "devel"
-        response = webservice.named_get(
-            "/+git", "repackRepository", user=admin_url, path=repo_path)
-        self.assertEqual(200, response.status)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        admin_url = api_url(admin)
+        with person_logged_in(admin):
+            repository_db.repackRepository(user=admin_url, path=repo_path)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
     def test_repackRepository_registry_expert(self):
         # Registry experts can trigger a repack
         hosting_fixture = self.useFixture(GitHostingFixture())
-        admin = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
-
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         person = self.factory.makePerson()
         owner_db = self.factory.makePerson()
         repository_db = self.factory.makeGitRepository(
@@ -3875,26 +3869,25 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             getUtility(ILaunchpadCelebrities).registry_experts.addMember(
                 person, admin)
         reg_expert_url = api_url(person)
-        webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
-        webservice.default_api_version = "devel"
-        response = webservice.named_get(
-            "/+git", "repackRepository", user=reg_expert_url, path=repo_path)
-        self.assertEqual(200, response.status)
+        with person_logged_in(person):
+            repository_db.repackRepository(user=reg_expert_url, path=repo_path)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
     def test_repackRepository_non_existent_repo(self):
         # Return 404 when repo is not found
         hosting_fixture = self.useFixture(GitHostingFixture())
         repo_path = 'non-existent-repo'
-        webservice_user = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
-        admin_url = api_url(webservice_user)
-        webservice = webservice_for_person(
-            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
-        webservice.default_api_version = "devel"
-        response = webservice.named_get(
-            "/+git", "repackRepository", user=admin_url, path=repo_path)
-        self.assertEqual(404, response.status)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        admin_url = api_url(admin)
+        repository_db = self.factory.makeGitRepository(
+            owner=admin, name="repository")
+
+        def call_repack():
+            return repository_db.repackRepository(
+                user=admin_url, path=repo_path)
+        with person_logged_in(admin):
+            self.assertRaises(
+                NoSuchGitRepository, call_repack)
         self.assertEqual(0, hosting_fixture.repackRepository.call_count)
 
     def test_urls(self):

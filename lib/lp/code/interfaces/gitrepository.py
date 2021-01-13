@@ -12,6 +12,7 @@ __all__ = [
     'git_repository_name_validator',
     'IGitRepository',
     'IGitRepositoryDelta',
+    'IGitRepositoryExpensiveRequest',
     'IGitRepositorySet',
     'IHasGitRepositoryURL',
     'user_has_special_git_repository_access',
@@ -737,6 +738,40 @@ class IGitRepositoryEditableAttributes(Interface):
             "refs/heads/master.")))
 
 
+class IGitRepositoryExpensiveRequest(Interface):
+    """IGitRepository methods that require
+    launchpad.ExpensiveRequest permission.
+
+    """
+
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(
+        path=TextLine(title=_("Repository path"), required=True))
+    @export_read_operation()
+    @operation_for_version("devel")
+    def repackRepository(user, path):
+        """Trigger a repack repository operation.
+
+        :param path: The repository path.
+
+        Any of these forms may be used::
+
+            Unique names:
+                ~OWNER/PROJECT/+git/NAME
+                ~OWNER/DISTRO/+source/SOURCE/+git/NAME
+                ~OWNER/+git/NAME
+            Owner-target default aliases:
+                ~OWNER/PROJECT
+                ~OWNER/DISTRO/+source/SOURCE
+            Official aliases:
+                PROJECT
+                DISTRO/+source/SOURCE
+
+        Raises NoSuchGitRepository if no match was found;
+        or Unauthorized if the repack was attempted by a person
+        that is not an admin or a registry expert."""
+
+
 class IGitRepositoryEdit(IWebhookTarget):
     """IGitRepository methods that require launchpad.Edit permission."""
 
@@ -937,7 +972,7 @@ class IGitRepositoryEdit(IWebhookTarget):
 @exported_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 class IGitRepository(IGitRepositoryView, IGitRepositoryModerateAttributes,
                      IGitRepositoryModerate, IGitRepositoryEditableAttributes,
-                     IGitRepositoryEdit):
+                     IGitRepositoryEdit, IGitRepositoryExpensiveRequest):
     """A Git repository."""
 
     private = exported(Bool(
@@ -1160,33 +1195,6 @@ class IGitRepositorySet(Interface):
         :return: A dict mapping project IDs to their default repositories.
             Projects that do not have default repositories are omitted.
         """
-
-    @call_with(user=REQUEST_USER)
-    @operation_parameters(
-        path=TextLine(title=_("Repository path"), required=True))
-    @export_read_operation()
-    @operation_for_version("devel")
-    def repackRepository(user, path):
-        """Trigger a repack repository operation.
-
-        :param path: The repository path.
-
-        Any of these forms may be used::
-
-            Unique names:
-                ~OWNER/PROJECT/+git/NAME
-                ~OWNER/DISTRO/+source/SOURCE/+git/NAME
-                ~OWNER/+git/NAME
-            Owner-target default aliases:
-                ~OWNER/PROJECT
-                ~OWNER/DISTRO/+source/SOURCE
-            Official aliases:
-                PROJECT
-                DISTRO/+source/SOURCE
-
-        Raises NoSuchGitRepository if no match was found;
-        or CannotRepackRepository if the repack was attempted by a person
-        that is not an admin or a registry expert."""
 
 
 class IGitRepositoryDelta(Interface):

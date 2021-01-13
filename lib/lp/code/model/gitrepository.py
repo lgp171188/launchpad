@@ -102,7 +102,6 @@ from lp.code.enums import (
 from lp.code.errors import (
     CannotDeleteGitRepository,
     CannotModifyNonHostedGitRepository,
-    CannotRepackRepository,
     GitDefaultConflict,
     GitTargetError,
     NoSuchGitReference,
@@ -174,7 +173,6 @@ from lp.registry.model.accesspolicy import (
     reconcile_access_for_artifact,
     )
 from lp.registry.model.person import Person
-from lp.registry.model.personroles import PersonRoles
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
 from lp.services.database import bulk
@@ -471,6 +469,13 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
                     self.information_type.title, target.displayname))
         namespace.moveRepository(self, user, rename_if_necessary=True)
         self._reconcileAccess()
+
+    def repackRepository(self, user, path):
+        repository, extra_path = getUtility(IGitLookup).getByPath(path)
+        if repository is None:
+            raise NoSuchGitRepository(path)
+        repository_path = repository.getInternalPath()
+        getUtility(IGitHostingClient).repackRepository(repository_path)
 
     @property
     def namespace(self):
@@ -1927,18 +1932,6 @@ class GitRepositorySet:
     def empty_list(self):
         """See `IGitRepositorySet`."""
         return []
-
-    def repackRepository(self, user, path):
-        roles = PersonRoles(user)
-        if roles.in_admin or roles.in_registry_experts:
-            repository, extra_path = getUtility(IGitLookup).getByPath(path)
-            if repository is None:
-                raise NoSuchGitRepository(path)
-            repository_path = repository.getInternalPath()
-            getUtility(IGitHostingClient).repackRepository(repository_path)
-        else:
-            raise CannotRepackRepository(
-                "Only admins and registry experts can repack repositories")
 
     @staticmethod
     def preloadDefaultRepositoriesForProjects(projects):
