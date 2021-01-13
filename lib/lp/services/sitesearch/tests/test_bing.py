@@ -215,6 +215,13 @@ class TestBingSearchService(TestCase):
         self.assertRaises(
             SiteSearchResponseError, self.search_service.search, 'fnord')
 
+    @responses.activate
+    def test_search_converts_ValueError(self):
+        # The method converts ValueError to SiteSearchResponseError.
+        responses.add('GET', re.compile(r'.*'))
+        self.assertRaises(
+            SiteSearchResponseError, self.search_service.search, 'fnord')
+
     def test_parse_search_response_KeyError(self):
         # The method converts KeyError to SiteSearchResponseError.
         self.assertRaises(
