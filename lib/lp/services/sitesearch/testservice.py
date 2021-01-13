@@ -50,7 +50,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         filepath = os.path.join(self.content_dir, filename)
-        with open(filepath) as f:
+        with open(filepath, 'rb') as f:
             content_body = f.read()
         self.wfile.write(content_body)
 
