@@ -80,7 +80,6 @@ from lp.code.errors import (
     GitRepositoryExists,
     GitTargetError,
     NoSuchGitReference,
-    NoSuchGitRepository,
     )
 from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
@@ -3849,11 +3848,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         owner_db = self.factory.makePerson()
         repository_db = self.factory.makeGitRepository(
             owner=owner_db, name="repository")
-        repo_path = repository_db.shortened_path
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        admin_url = api_url(admin)
         with person_logged_in(admin):
-            repository_db.repackRepository(user=admin_url, path=repo_path)
+            repository_db.repackRepository()
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
     def test_repackRepository_registry_expert(self):
@@ -3864,31 +3861,12 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         owner_db = self.factory.makePerson()
         repository_db = self.factory.makeGitRepository(
             owner=owner_db, name="repository")
-        repo_path = repository_db.shortened_path
         with admin_logged_in():
             getUtility(ILaunchpadCelebrities).registry_experts.addMember(
                 person, admin)
-        reg_expert_url = api_url(person)
         with person_logged_in(person):
-            repository_db.repackRepository(user=reg_expert_url, path=repo_path)
+            repository_db.repackRepository()
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
-
-    def test_repackRepository_non_existent_repo(self):
-        # Return 404 when repo is not found
-        hosting_fixture = self.useFixture(GitHostingFixture())
-        repo_path = 'non-existent-repo'
-        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        admin_url = api_url(admin)
-        repository_db = self.factory.makeGitRepository(
-            owner=admin, name="repository")
-
-        def call_repack():
-            return repository_db.repackRepository(
-                user=admin_url, path=repo_path)
-        with person_logged_in(admin):
-            self.assertRaises(
-                NoSuchGitRepository, call_repack)
-        self.assertEqual(0, hosting_fixture.repackRepository.call_count)
 
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")

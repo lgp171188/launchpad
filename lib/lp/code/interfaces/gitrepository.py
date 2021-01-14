@@ -741,34 +741,14 @@ class IGitRepositoryEditableAttributes(Interface):
 class IGitRepositoryExpensiveRequest(Interface):
     """IGitRepository methods that require
     launchpad.ExpensiveRequest permission.
-
     """
 
-    @call_with(user=REQUEST_USER)
-    @operation_parameters(
-        path=TextLine(title=_("Repository path"), required=True))
-    @export_read_operation()
+    @export_write_operation()
     @operation_for_version("devel")
-    def repackRepository(user, path):
+    def repackRepository():
         """Trigger a repack repository operation.
 
-        :param path: The repository path.
-
-        Any of these forms may be used::
-
-            Unique names:
-                ~OWNER/PROJECT/+git/NAME
-                ~OWNER/DISTRO/+source/SOURCE/+git/NAME
-                ~OWNER/+git/NAME
-            Owner-target default aliases:
-                ~OWNER/PROJECT
-                ~OWNER/DISTRO/+source/SOURCE
-            Official aliases:
-                PROJECT
-                DISTRO/+source/SOURCE
-
-        Raises NoSuchGitRepository if no match was found;
-        or Unauthorized if the repack was attempted by a person
+        Raises Unauthorized if the repack was attempted by a person
         that is not an admin or a registry expert."""
 
 

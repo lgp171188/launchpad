@@ -105,7 +105,6 @@ from lp.code.errors import (
     GitDefaultConflict,
     GitTargetError,
     NoSuchGitReference,
-    NoSuchGitRepository,
     )
 from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
@@ -470,12 +469,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         namespace.moveRepository(self, user, rename_if_necessary=True)
         self._reconcileAccess()
 
-    def repackRepository(self, user, path):
-        repository, extra_path = getUtility(IGitLookup).getByPath(path)
-        if repository is None:
-            raise NoSuchGitRepository(path)
-        repository_path = repository.getInternalPath()
-        getUtility(IGitHostingClient).repackRepository(repository_path)
+    def repackRepository(self):
+        getUtility(IGitHostingClient).repackRepository(self.shortened_path)
 
     @property
     def namespace(self):
