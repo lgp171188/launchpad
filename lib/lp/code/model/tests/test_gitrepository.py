@@ -3830,16 +3830,12 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         owner_db = self.factory.makePerson()
         repository_db = self.factory.makeGitRepository(
             owner=owner_db, name="repository")
-        repo_path = repository_db.shortened_path
-        user_url = api_url(owner_db)
 
         def call_repack():
-            return repository_db.repackRepository(
-                user=user_url, path=repo_path)
+            return repository_db.repackRepository()
 
         with person_logged_in(owner_db):
-            self.assertRaises(
-                Unauthorized, call_repack)
+            self.assertRaises(Unauthorized, call_repack)
         self.assertEqual(0, hosting_fixture.repackRepository.call_count)
 
     def test_repackRepository_admin(self):
@@ -3851,6 +3847,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         with person_logged_in(admin):
             repository_db.repackRepository()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.repackRepository.calls)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
     def test_repackRepository_registry_expert(self):
@@ -3866,6 +3865,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                 person, admin)
         with person_logged_in(person):
             repository_db.repackRepository()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.repackRepository.calls)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
     def test_urls(self):

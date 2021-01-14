@@ -470,7 +470,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         self._reconcileAccess()
 
     def repackRepository(self):
-        getUtility(IGitHostingClient).repackRepository(self.shortened_path)
+        getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
 
     @property
     def namespace(self):
