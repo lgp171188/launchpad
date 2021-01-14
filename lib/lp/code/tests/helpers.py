@@ -3,7 +3,12 @@
 
 """Helper functions for code testing live here."""
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+    )
 
 __metaclass__ = type
 __all__ = [
@@ -212,7 +217,7 @@ def make_project_cloud_data(factory, details):
         project = factory.makeProduct(name=project_name)
         start_date = last_commit - delta * (num_commits - 1)
         gen = time_counter(start_date, delta)
-        commits_each = num_commits / num_authors
+        commits_each = num_commits // num_authors
         for committer in range(num_authors - 1):
             make_project_branch_with_revisions(
                 factory, gen, project, commits_each)
