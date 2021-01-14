@@ -1221,7 +1221,7 @@ class PersonRdfContentsView:
     # parsing of the default text/html content-type.)
     template = ViewPageTemplateFile(
         '../templates/person-rdf-contents.pt',
-        content_type="application/rdf+xml")
+        content_type='application/rdf+xml;charset="utf-8"')
 
     def __init__(self, context, request):
         self.context = context
