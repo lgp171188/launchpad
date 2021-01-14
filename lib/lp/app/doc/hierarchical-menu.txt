@@ -288,8 +288,8 @@ considered to be on the home page if there are no breadcrumbs.
     >>> homepage_hierarchy.items
     []
 
-    >>> homepage_hierarchy.render().strip()
-    u''
+    >>> print(homepage_hierarchy.render().strip())
+    <BLANKLINE>
 
 
 Put the monkey patched method back.

@@ -137,8 +137,8 @@ And now we change it to a random image.
     >>> widget = ImageChangeWidget(
     ...     person_logo, LaunchpadTestRequest(form=form), edit_style)
     >>> fileupload = widget.getInputValue()
-    >>> fileupload.filename
-    u'logo.png'
+    >>> print(fileupload.filename)
+    logo.png
 
     >>> fileupload.content.filesize == len(logo.getvalue())
     True
@@ -299,8 +299,8 @@ Image is the correct dimensions:
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
     >>> fileupload = widget.getInputValue()
-    >>> fileupload.filename
-    u'mugshot.png'
+    >>> print(fileupload.filename)
+    mugshot.png
 
     >>> fileupload.content.filesize == len(mugshot.getvalue())
     True
@@ -390,8 +390,8 @@ If the image is smaller than the dimensions, the input validates:
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
     >>> fileupload = widget.getInputValue()
-    >>> fileupload.filename
-    u'mugshot.png'
+    >>> print(fileupload.filename)
+    mugshot.png
 
 The same occurs if the image matches the specified dimensions:
 
@@ -400,7 +400,5 @@ The same occurs if the image matches the specified dimensions:
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
     >>> fileupload = widget.getInputValue()
-    >>> fileupload.filename
-    u'mugshot.png'
-
-
+    >>> print(fileupload.filename)
+    mugshot.png

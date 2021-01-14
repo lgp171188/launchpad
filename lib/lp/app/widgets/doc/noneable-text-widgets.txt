@@ -62,6 +62,5 @@ Excess whitespace is stripped, but newlines are preserved.
     >>> request = LaunchpadTestRequest(
     ...     form={'field.summary' : ' flower \n grass '})
     >>> widget = NoneableDescriptionWidget(field, request)
-    >>> widget.getInputValue()
-    u'flower \n grass'
-
+    >>> six.ensure_str(widget.getInputValue())
+    'flower \n grass'

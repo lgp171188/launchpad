@@ -299,5 +299,5 @@ But our database connections are broken.
     >>> dummy = config.pop('no_db')
     >>> getUtility(IZStorm)._reset()
 
-    >>> IStore(Person).find(Person, name='janitor').one().name
-    u'janitor'
+    >>> print(IStore(Person).find(Person, name='janitor').one().name)
+    janitor
