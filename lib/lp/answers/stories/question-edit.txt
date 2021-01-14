@@ -7,9 +7,10 @@ title and description.
 
     >>> anon_browser.open('http://launchpad.test/firefox/+question/2')
     >>> anon_browser.getLink('Edit question').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> test_browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> test_browser.open('http://launchpad.test/firefox/+question/2')
