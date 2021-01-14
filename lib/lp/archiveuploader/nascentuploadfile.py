@@ -566,7 +566,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
         except Exception as e:
             yield UploadError(
                 "%s: extracting control file raised %s: %s. giving up."
-                 % (self.filename, sys.exc_type, e))
+                 % (self.filename, sys.exc_info()[0], e))
             return
 
         for mandatory_field in self.mandatory_fields:

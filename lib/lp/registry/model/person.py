@@ -4136,8 +4136,9 @@ class SSHKeySet:
                 key = Key.fromString(sshkey.encode("UTF-8"))
             except Exception as e:
                 raise SSHKeyAdditionError(key=sshkey, exception=e)
-            if kind != key.sshType():
-                raise SSHKeyAdditionError(type_mismatch=(kind, key.sshType()))
+            keydatatype = six.ensure_str(key.sshType())
+            if kind != keydatatype:
+                raise SSHKeyAdditionError(type_mismatch=(kind, keydatatype))
 
         if send_notification:
             person.security_field_changed(

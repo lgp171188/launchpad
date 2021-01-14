@@ -281,7 +281,7 @@ class BaseRdfView(DataDownloadView):
     template = None
     filename = None
 
-    content_type = 'application/rdf+xml'
+    content_type = 'application/rdf+xml;charset="utf-8"'
 
     def getBody(self):
         """Render RDF output, and return it as a string encoded in UTF-8.
