@@ -2174,7 +2174,8 @@ class TestPersonRdfView(BrowserTestCase):
         self.assertEqual(
             content_disposition, browser.headers['Content-disposition'])
         self.assertEqual(
-            'application/rdf+xml', browser.headers['Content-type'])
+            'application/rdf+xml;charset="utf-8"',
+            browser.headers['Content-type'])
 
 
 load_tests = load_tests_apply_scenarios

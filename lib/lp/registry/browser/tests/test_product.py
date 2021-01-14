@@ -956,7 +956,8 @@ class TestProductRdfView(BrowserTestCase):
         self.assertEqual(
             content_disposition, browser.headers['Content-disposition'])
         self.assertEqual(
-            'application/rdf+xml', browser.headers['Content-type'])
+            'application/rdf+xml;charset="utf-8"',
+            browser.headers['Content-type'])
 
 
 class TestProductSet(BrowserTestCase):
