@@ -55,7 +55,7 @@ class ProxyAuthAPITokensResource(resource.Resource):
             "username": username,
             "secret": uuid.uuid4().hex,
             "timestamp": datetime.utcnow().isoformat(),
-            })
+            }).encode("UTF-8")
 
 
 class InProcessProxyAuthAPIFixture(fixtures.Fixture):
