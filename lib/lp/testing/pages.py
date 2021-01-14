@@ -929,10 +929,8 @@ def PageTestSuite(storydir, package=None, setUp=setUpGlobs, **kw):
     suite = unittest.TestSuite()
     # Add tests to the suite individually.
     if filenames:
-        checker = doctest.OutputChecker()
         paths = [os.path.join(storydir, filename) for filename in filenames]
         suite.addTest(LayeredDocFileSuite(
-            paths=paths,
-            package=package, checker=checker, stdout_logging=False,
+            paths=paths, package=package, stdout_logging=False,
             layer=PageTestLayer, setUp=setUp, **kw))
     return suite
