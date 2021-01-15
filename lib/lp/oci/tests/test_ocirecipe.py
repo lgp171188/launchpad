@@ -887,6 +887,11 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
             recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
             self.assertFalse(recipe.is_valid_branch_format)
 
+    def test_valid_branch_format_invalid_with_slash(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0/bar-foo"])
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.assertFalse(recipe.is_valid_branch_format)
+
 
 class TestOCIRecipeSet(TestCaseWithFactory):
 

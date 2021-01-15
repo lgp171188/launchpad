@@ -181,7 +181,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         )
         responses.add("PUT", manifests_url, status=status_code, json=json)
 
-        # format for distribution credential upload
+        # recipes that the git branch name matches the correct format
         manifests_url = "{}/v2/{}/manifests/{}_edge".format(
             push_rule.registry_credentials.url,
             push_rule.image_name,
