@@ -243,22 +243,22 @@ class OCIRegistryClient:
         return data
 
     @classmethod
-    def _calculateTag(cls, build, push_rule):
+    def _calculateTags(cls, recipe):
         """Work out the base tag for the image should be.
 
-        :param build: `OCIRecipeBuild` representing this build.
         :param push_rule: `OCIPushRule` that we are using.
         """
-        # XXX twom 2020-04-17 This needs to include OCIProjectSeries and
-        # base image name
-        return "{}".format("edge")
+        tags = []
+        if recipe.is_valid_branch_format:
+            tags.append("{}_{}".format(recipe.git_ref.name, "edge"))
+        tags.append("edge")
+        return tags
 
     @classmethod
-    def _getCurrentRegistryManifest(cls, http_client, push_rule):
+    def _getCurrentRegistryManifest(cls, http_client, tag):
         """Get the current manifest for the given push rule. If manifest
         doesn't exist, raises HTTPError.
         """
-        tag = cls._calculateTag(None, push_rule)
         url = "/manifests/{}".format(tag)
         accept = "application/vnd.docker.distribution.manifest.list.v2+json"
         response = http_client.requestPath(
@@ -267,7 +267,7 @@ class OCIRegistryClient:
 
     @classmethod
     def _uploadRegistryManifest(cls, http_client, registry_manifest,
-                                push_rule, build=None):
+                                push_rule, tag, build=None):
         """Uploads the build manifest, returning its content information.
 
         The returned information can be used to create a Manifest list
@@ -276,18 +276,15 @@ class OCIRegistryClient:
 
         :return: A dict with {"digest": "sha256:xxx", "size": total_bytes}
         """
+        # This is
+        # https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list
+        # Specifically the Schema 2 manifest.
         digest = None
         data = json.dumps(registry_manifest)
         size = len(data)
         content_type = registry_manifest.get(
             "mediaType",
             "application/vnd.docker.distribution.manifest.v2+json")
-        if build is None:
-            # When uploading a manifest list, use the tag.
-            tag = cls._calculateTag(build, push_rule)
-        else:
-            # When uploading individual build manifests, use their digest.
-            tag = "sha256:%s" % hashlib.sha256(data).hexdigest()
         try:
             manifest_response = http_client.requestPath(
                 "/manifests/{}".format(tag),
@@ -311,7 +308,7 @@ class OCIRegistryClient:
 
     @classmethod
     def _upload_to_push_rule(
-            cls, push_rule, build, manifest, digests, preloaded_data):
+            cls, push_rule, build, manifest, digests, preloaded_data, tag):
         http_client = RegistryHTTPClient.getInstance(push_rule)
 
         for section in manifest:
@@ -346,7 +343,7 @@ class OCIRegistryClient:
 
             # Upload the registry manifest
             manifest = cls._uploadRegistryManifest(
-                http_client, registry_manifest, push_rule, build)
+                http_client, registry_manifest, push_rule, tag, build)
 
             # Save the uploaded manifest location, so we can use it in case
             # this is a multi-arch image upload.
@@ -376,11 +373,13 @@ class OCIRegistryClient:
 
         exceptions = []
         for push_rule in build.recipe.push_rules:
-            try:
-                cls._upload_to_push_rule(
-                    push_rule, build, manifest, digests, preloaded_data)
-            except Exception as e:
-                exceptions.append(e)
+            for tag in cls._calculateTags(build.recipe):
+                try:
+                    cls._upload_to_push_rule(
+                        push_rule, build, manifest, digests, preloaded_data,
+                        tag)
+                except Exception as e:
+                    exceptions.append(e)
         if len(exceptions) == 1:
             raise exceptions[0]
         elif len(exceptions) > 1:
@@ -388,7 +387,7 @@ class OCIRegistryClient:
 
     @classmethod
     def makeMultiArchManifest(cls, http_client, push_rule, build_request,
-                              uploaded_builds):
+                              uploaded_builds, tag):
         """Returns the multi-arch manifest content including all uploaded
         builds of the given build_request.
         """
@@ -402,7 +401,7 @@ class OCIRegistryClient:
 
         try:
             current_manifest = cls._getCurrentRegistryManifest(
-                http_client, push_rule)
+                http_client, tag)
             # Check if the current manifest is not an incompatible version.
             version = current_manifest.get("schemaVersion", 1)
             if version < 2 or "manifests" not in current_manifest:
@@ -481,11 +480,14 @@ class OCIRegistryClient:
         if not uploaded_builds:
             return
         for push_rule in build_request.recipe.push_rules:
-            http_client = RegistryHTTPClient.getInstance(push_rule)
-            multi_manifest_content = cls.makeMultiArchManifest(
-                http_client, push_rule, build_request, uploaded_builds)
-            cls._uploadRegistryManifest(
-                http_client, multi_manifest_content, push_rule, build=None)
+            for tag in cls._calculateTags(build_request.recipe):
+                http_client = RegistryHTTPClient.getInstance(push_rule)
+                multi_manifest_content = cls.makeMultiArchManifest(
+                    http_client, push_rule, build_request, uploaded_builds,
+                    tag)
+                cls._uploadRegistryManifest(
+                    http_client, multi_manifest_content, push_rule, tag,
+                    build=None)
 
 
 class OCIRegistryAuthenticationError(Exception):

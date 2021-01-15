@@ -870,6 +870,28 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
             self.assertContentEqual(
                 [self.default_procs[0], self.arm, hppa], recipe.processors)
 
+    def test_valid_branch_format(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0-20.04"])
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.assertTrue(recipe.is_valid_branch_format)
+
+    def test_valid_branch_format_invalid(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0-foo"])
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.assertFalse(recipe.is_valid_branch_format)
+
+    def test_valid_branch_format_invalid_uses_risk(self):
+        for risk in ["stable", "candidate", "beta", "edge"]:
+            path = "refs/heads/{}-20.04".format(risk)
+            [git_ref] = self.factory.makeGitRefs(paths=[path])
+            recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+            self.assertFalse(recipe.is_valid_branch_format)
+
+    def test_valid_branch_format_invalid_with_slash(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0/bar-foo"])
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.assertFalse(recipe.is_valid_branch_format)
+
 
 class TestOCIRecipeSet(TestCaseWithFactory):
 
