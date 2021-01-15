@@ -91,7 +91,6 @@ from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
-    IGitRepositoryExpensiveRequest,
     user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
@@ -1810,7 +1809,7 @@ class GitRepositoryExpensiveRequest(AuthorizationBase):
     """Restrict git repository repacks."""
 
     permission = 'launchpad.ExpensiveRequest'
-    usedfor = IGitRepositoryExpensiveRequest
+    usedfor = IGitRepository
 
     def checkAuthenticated(self, user):
         return user.in_registry_experts or user.in_admin

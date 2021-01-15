@@ -3831,11 +3831,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         repository_db = self.factory.makeGitRepository(
             owner=owner_db, name="repository")
 
-        def call_repack():
-            return repository_db.repackRepository()
-
         with person_logged_in(owner_db):
-            self.assertRaises(Unauthorized, call_repack)
+            self.assertRaises(
+                Unauthorized, getattr, repository_db, 'repackRepository')
         self.assertEqual(0, hosting_fixture.repackRepository.call_count)
 
     def test_repackRepository_admin(self):
