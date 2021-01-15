@@ -12,6 +12,7 @@ __all__ = [
     'git_repository_name_validator',
     'IGitRepository',
     'IGitRepositoryDelta',
+    'IGitRepositoryExpensiveRequest',
     'IGitRepositorySet',
     'IHasGitRepositoryURL',
     'user_has_special_git_repository_access',
@@ -737,6 +738,20 @@ class IGitRepositoryEditableAttributes(Interface):
             "refs/heads/master.")))
 
 
+class IGitRepositoryExpensiveRequest(Interface):
+    """IGitRepository methods that require
+    launchpad.ExpensiveRequest permission.
+    """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def repackRepository():
+        """Trigger a repack repository operation.
+
+        Raises Unauthorized if the repack was attempted by a person
+        that is not an admin or a registry expert."""
+
+
 class IGitRepositoryEdit(IWebhookTarget):
     """IGitRepository methods that require launchpad.Edit permission."""
 
@@ -937,7 +952,7 @@ class IGitRepositoryEdit(IWebhookTarget):
 @exported_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 class IGitRepository(IGitRepositoryView, IGitRepositoryModerateAttributes,
                      IGitRepositoryModerate, IGitRepositoryEditableAttributes,
-                     IGitRepositoryEdit):
+                     IGitRepositoryEdit, IGitRepositoryExpensiveRequest):
     """A Git repository."""
 
     private = exported(Bool(

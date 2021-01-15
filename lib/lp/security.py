@@ -1805,6 +1805,16 @@ class DownloadFullSourcePackageTranslations(OnlyRosettaExpertsAndAdmins):
              user.inTeam(translation_group.owner)))
 
 
+class GitRepositoryExpensiveRequest(AuthorizationBase):
+    """Restrict git repository repacks."""
+
+    permission = 'launchpad.ExpensiveRequest'
+    usedfor = IGitRepository
+
+    def checkAuthenticated(self, user):
+        return user.in_registry_experts or user.in_admin
+
+
 class EditProductRelease(EditByOwnersOrAdmins):
     permission = 'launchpad.Edit'
     usedfor = IProductRelease

@@ -329,6 +329,7 @@ class GitHostingFixture(fixtures.Fixture):
         self.getBlob = FakeMethod(result=blob)
         self.delete = FakeMethod()
         self.disable_memcache = disable_memcache
+        self.repackRepository = FakeMethod()
 
     def _setUp(self):
         self.useFixture(ZopeUtilityFixture(self, IGitHostingClient))

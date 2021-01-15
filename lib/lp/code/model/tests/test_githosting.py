@@ -38,6 +38,7 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.errors import (
+    CannotRepackRepository,
     GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
@@ -484,3 +485,16 @@ class TestGitHostingClient(TestCase):
         JobRunner([job]).runAll()
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
         self.assertEqual({"refs/heads/master": {}}, job.refs)
+
+    def test_repack(self):
+        with self.mockRequests("POST", status=200):
+            repack = self.client.repackRepository("/repo/123")
+        self.assertEqual(None, repack)
+
+    def test_repack_failure(self):
+        with self.mockRequests("POST", status=400):
+            self.assertRaisesWithContent(
+                CannotRepackRepository,
+                "Failed to repack Git repository /repo/123: "
+                "400 Client Error: Bad Request",
+                self.client.repackRepository, "/repo/123")
