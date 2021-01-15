@@ -723,6 +723,34 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             "This recipe's git repository is not in the correct namespace",
             browser.contents)
 
+    def test_edit_repository_dont_override_important_msgs(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project,
+            git_ref=git_ref)
+
+        wrong_namespace_msg = (
+            "This recipe's git repository is not in the correct namespace")
+        wrong_ref_path_msg = (
+                "The repository at %s does not contain a branch named "
+                "&#x27;non-existing git-ref&#x27;."
+            ) % git_ref.repository.display_name
+        with person_logged_in(self.person):
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+            self.assertIn(wrong_namespace_msg, browser.contents)
+            args = browser.getControl(name="field.git_ref.path")
+            args.value = "non-existing git-ref"
+            browser.getControl("Update OCI recipe").click()
+
+            # The error message should have changed.
+            self.assertNotIn(wrong_namespace_msg, browser.contents)
+            self.assertIn(wrong_ref_path_msg, browser.contents)
+
 
 class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
 
