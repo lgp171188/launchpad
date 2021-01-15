@@ -15,6 +15,8 @@ from functools import partial
 import hashlib
 from io import BytesIO
 import json
+
+
 try:
     from json.decoder import JSONDecodeError
 except ImportError:
@@ -249,10 +251,8 @@ class OCIRegistryClient:
         :param push_rule: `OCIPushRule` that we are using.
         """
         tags = []
-        if recipe.use_distribution_credentials:
+        if recipe.is_valid_branch_format:
             tags.append("{}_{}".format(recipe.git_ref.name, "edge"))
-        if recipe.official:
-            tags.append("latest")
         tags.append("edge")
         return tags
 

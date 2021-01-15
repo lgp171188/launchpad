@@ -12,6 +12,8 @@ __all__ = [
     'OCIRecipeSet',
     ]
 
+import re
+
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six
@@ -196,6 +198,11 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def official(self):
         """See `IOCIProject.setOfficialRecipe` method."""
         return self._official
+
+    @property
+    def is_valid_branch_format(self):
+        format_regex = "^(?!(stable|candidate|beta|edge)).*-(\d{2}\.\d{2})$"
+        return bool(re.match(format_regex, self.git_ref.name))
 
     @property
     def build_args(self):

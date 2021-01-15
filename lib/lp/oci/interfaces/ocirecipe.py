@@ -280,6 +280,11 @@ class IOCIRecipeView(Interface):
             "Whether everything is set up to allow uploading builds of "
             "this OCI recipe to a registry."))
 
+    is_valid_branch_format = Bool(
+        title=_("Is valid branch format"), required=True, readonly=True,
+        description=_("Whether the git branch name is the correct "
+                      "format for using as a tag name."))
+
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
 
