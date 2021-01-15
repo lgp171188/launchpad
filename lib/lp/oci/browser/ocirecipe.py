@@ -908,6 +908,9 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         oci_proj_url = canonical_url(oci_proj)
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
+        if widget.error():
+            # Do not override more important git_ref errors.
+            return
         msg = None
         if self.context.git_ref.namespace.target != self.context.oci_project:
             msg = ("This recipe's git repository is not in the "
