@@ -81,8 +81,8 @@ an IStructuredString implementation.
     >>> from lp.services.webapp.escaping import structured
     >>> view.error_message = structured(
     ...    'A structure is just "%s".', 'smoke & mirrors')
-    >>> view.error_message.escapedtext
-    u'A structure is just "smoke &amp; mirrors".'
+    >>> print(view.error_message.escapedtext)
+    A structure is just "smoke &amp; mirrors".
     >>> view.error_message = structured('Information overload.')
-    >>> view.error_message.escapedtext
-    u'Information overload.'
+    >>> print(view.error_message.escapedtext)
+    Information overload.

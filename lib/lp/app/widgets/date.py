@@ -408,8 +408,8 @@ class DateTimeWidget(TextWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         DateTimes are displayed without the corresponding time zone
         information:
@@ -562,8 +562,8 @@ class DateWidget(DateTimeWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         The widget ignores time and time zone information, returning only
         the date:

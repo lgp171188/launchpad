@@ -103,13 +103,13 @@ upper and lower navigation link views.
     >>> navigator = BatchNavigator([], request=request)
     >>> upper_view = getMultiAdapter(
     ...     (navigator, request), name='+navigation-links-upper')
-    >>> upper_view.render()
-    u''
+    >>> print(upper_view.render())
+    <BLANKLINE>
 
     >>> lower_view = getMultiAdapter(
     ...     (navigator, request), name='+navigation-links-lower')
-    >>> lower_view.render()
-    u''
+    >>> print(lower_view.render())
+    <BLANKLINE>
 
 When there is a current batch, but there are no previous or next
 batches, both the upper and lower navigation links view will render.

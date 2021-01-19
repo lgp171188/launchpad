@@ -123,8 +123,8 @@ class LocalDateTimeWidget(TextWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         Dates are displayed without an associated time zone:
 
@@ -218,14 +218,14 @@ class DelimitedListWidget(TextAreaWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         By default, lists are displayed one item on a line:
 
           >>> names = ['fred', 'bob', 'harry']
-          >>> widget._toFormValue(names)
-          u'fred\\r\\nbob\\r\\nharry'
+          >>> six.ensure_str(widget._toFormValue(names))
+          'fred\\r\\nbob\\r\\nharry'
         """
         if value == self.context.missing_value:
             value = self._missing
@@ -250,8 +250,11 @@ class DelimitedListWidget(TextAreaWidget):
 
         By default, lists are split by whitespace:
 
-          >>> print(widget._toFieldValue(u'fred\\nbob harry'))
-          [u'fred', u'bob', u'harry']
+          >>> for item in widget._toFieldValue(u'fred\\nbob harry'):
+          ...     print("'%s'" % item)
+          'fred'
+          'bob'
+          'harry'
         """
         value = super(
             DelimitedListWidget, self)._toFieldValue(value)
