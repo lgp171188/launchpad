@@ -13,15 +13,12 @@ __all__ = [
 
 import io
 import os
-import re
 import shutil
 import tempfile
 
-from debian.deb822 import Changes
 from fixtures import MonkeyPatch
 import six
 from storm.locals import Store
-from testtools.testcase import ExpectedException
 from zope.component import (
     getGlobalSiteManager,
     getUtility,
