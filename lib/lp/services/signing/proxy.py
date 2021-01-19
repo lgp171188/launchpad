@@ -217,3 +217,16 @@ class SigningServiceClient:
 
         ret = self._requestJson("/inject", "POST", encrypt=True, json=payload)
         return {"fingerprint": ret["fingerprint"]}
+
+    def addAuthorization(self, key_type, fingerprint, client_name):
+        if key_type not in SigningKeyType.items:
+            raise ValueError("%s is not a valid key type" % key_type)
+
+        payload = {
+            "key-type": key_type.name,
+            "fingerprint": fingerprint,
+            "client-name": client_name,
+            }
+
+        self._requestJson(
+            "/authorizations/add", "POST", encrypt=True, json=payload)
