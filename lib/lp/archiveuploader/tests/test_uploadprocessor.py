@@ -13,12 +13,15 @@ __all__ = [
 
 import io
 import os
+import re
 import shutil
 import tempfile
 
+from debian.deb822 import Changes
 from fixtures import MonkeyPatch
 import six
 from storm.locals import Store
+from testtools.testcase import ExpectedException
 from zope.component import (
     getGlobalSiteManager,
     getUtility,
@@ -536,6 +539,31 @@ class TestUploadProcessor(TestUploadProcessorBase):
             self.assertFalse(os.path.exists(upload))
         finally:
             shutil.rmtree(testdir)
+
+    def testUploadWithoutMaintainerEmail(self):
+        """Attempt to reproduce bug 694768.
+
+        Without altering the file
+        lib/lp/archiveuploader/tests/data/suite/bar_1.0-1/bar_1.0-1_source.changes
+        will pass.
+
+        Running this without an email address for the Maintainer field
+        in that file however will fail but not with the exception in the Bug description.
+
+        """
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        upload_dir = self.queueUpload("bar_1.0-1")
+        self.processUpload(uploadprocessor, upload_dir)
+
+        # Check it went ok to the NEW queue and all is going well so far.
+        daniel = "daniel.silverstone@canonical.com"
+        foo_bar = "foo.bar@canonical.com"
+        notifications = self.assertEmailQueueLength(2)
+        for expected_to_addr, msg in zip((daniel, foo_bar), notifications):
+            self.assertEqual(expected_to_addr, msg["X-Envelope-To"])
+            self.assertTrue(
+                "NEW" in str(msg),
+                "Expected email containing 'NEW', got:\n%s" % msg)
 
     def testRejectionEmailForUnhandledException(self):
         """Test there's a rejection email when nascentupload breaks.
