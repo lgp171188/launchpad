@@ -59,4 +59,5 @@ class ISigningServiceClient(Interface):
         :param public_key: The public key content, in bytes.
         :param description: The description of this key.
         :param created_at: datetime of when the key was created.
+        :return: A dict with 'fingerprint'
         """
