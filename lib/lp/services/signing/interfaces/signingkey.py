@@ -57,6 +57,12 @@ class ISigningKey(Interface):
             keys, and `SigningMode.DETACHED` for other key types.
         """
 
+    def addAuthorization(client_name):
+        """Authorize another client to use this key.
+
+        :param client_name: The name of the client to authorize.
+        """
+
 
 class ISigningKeySet(Interface):
     """Interface to deal with the collection of signing keys

@@ -160,6 +160,11 @@ class SigningServiceResponseFactory:
             }, nonce=self.response_nonce),
             status=200)
 
+        responses.add(
+            responses.POST, self.getUrl("/authorizations/add"),
+            body=self._encryptPayload({}, nonce=self.response_nonce),
+            status=200)
+
         call_counts = {'/sign': 0}
 
         def sign_callback(request):
@@ -563,3 +568,68 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
             'shrug', bytes(private_key), bytes(public_key),
             "This is a test key injected.", datetime.now())
         self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_addAuthorization_invalid_key_type(self):
+        signing = getUtility(ISigningServiceClient)
+        self.assertRaises(
+            ValueError, signing.addAuthorization,
+            "shrug", "fingerprint", "test-client")
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_addAuthorization(self):
+        # Replace GET /service-key response by our mock.
+        resp_factory = self.response_factory
+        resp_factory.addResponses(self)
+
+        fingerprint = self.factory.getUniqueHexString(40).upper()
+        key_type = SigningKeyType.KMOD
+        client_name = "test-client"
+
+        signing = getUtility(ISigningServiceClient)
+        self.assertIsNone(
+            signing.addAuthorization(key_type, fingerprint, client_name))
+
+        self.assertEqual(3, len(responses.calls))
+        # expected order of HTTP calls
+        http_nonce, http_service_key, http_add_authorization = responses.calls
+
+        self.assertEqual("POST", http_nonce.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/nonce"), http_nonce.request.url)
+
+        self.assertEqual("GET", http_service_key.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/service-key"),
+            http_service_key.request.url)
+        self.assertThat(http_add_authorization.request.headers, ContainsDict({
+            "Content-Type": Equals("application/x-boxed-json"),
+            "X-Client-Public-Key": Equals(config.signing.client_public_key),
+            "X-Nonce": Equals(self.response_factory.b64_nonce),
+            "X-Response-Nonce": Equals(
+                self.response_factory.b64_response_nonce),
+            }))
+        self.assertThat(
+            http_add_authorization.request.body,
+            AfterPreprocessing(
+                self.response_factory._decryptPayload,
+                MatchesDict({
+                    "key-type": Equals("KMOD"),
+                    "fingerprint": Equals(fingerprint),
+                    "client-name": Equals(client_name),
+                    })))
+
+        self.assertTimeline([
+            ("POST", "/nonce", {}),
+            ("GET", "/service-key", {}),
+            ("POST", "/authorizations/add", {
+                "headers": {
+                    "Content-Type": "application/x-boxed-json",
+                    "X-Client-Public-Key": config.signing.client_public_key,
+                    "X-Nonce": self.response_factory.b64_nonce,
+                    "X-Response-Nonce":
+                        self.response_factory.b64_response_nonce,
+                    },
+                }),
+            ])
