@@ -81,6 +81,13 @@
           <pre tal:content="build_args" />
         </dd>
       </dl>
+      <dl id="official-recipe">
+        <dt>Official recipe:</dt>
+        <dd>
+          <span tal:condition="context/official">Yes</span>
+          <span tal:condition="not: context/official">No</span>
+        </dd>
+      </dl>
     </div>
 
     <h2>Latest builds</h2>
