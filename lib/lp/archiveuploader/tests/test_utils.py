@@ -246,6 +246,18 @@ class TestUtilities(TestCase):
                     ParseMaintError, b'^%s: ' % re.escape(case)):
                 parse_maintainer_bytes(case, 'Maintainer')
 
+    def testParseMaintainerNonASCII(self):
+        """lp.archiveuploader.utils.parse_maintainer will generate OOPS
+        if Maintainer filed contains non ASCII characters - bug 1910403
+        """
+        from lp.archiveuploader.utils import (
+            parse_maintainer_bytes,
+            )
+        maintainerData = b"No\xc3\xa8l K\xc3\xb6the <No\xc3\xa8l@nocrew.org"
+        self.assertRaises(UnicodeDecodeError, parse_maintainer_bytes,
+                          maintainerData,
+                          'Maintainer')
+
 
 class TestFilenameRegularExpressions(TestCase):
 

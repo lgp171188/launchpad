@@ -537,15 +537,16 @@ class TestUploadProcessor(TestUploadProcessorBase):
         finally:
             shutil.rmtree(testdir)
 
-    def testUploadWithoutMaintainerEmail(self):
+    def testUploadWithoutNonASCII(self):
         """Attempt to reproduce bug 694768.
 
         Without altering the file
         lib/lp/archiveuploader/tests/data/suite/bar_1.0-1/bar_1.0-1_source.changes
         will pass.
 
-        Running this without an email address for the Maintainer field
-        in that file however will fail but not with the exception in the Bug description.
+        Running this with an email address for the Maintainer field
+        that contains nonASCII characters in that file however will
+        fail but not with the exception in the Bug description.
 
         """
         uploadprocessor = self.setupBreezyAndGetUploadProcessor()
