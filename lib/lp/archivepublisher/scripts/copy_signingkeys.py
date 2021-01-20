@@ -69,7 +69,7 @@ class CopySigningKeysScript(LaunchpadScript):
                 "Could not find series '%s' in %s." %
                 (series_name, self.from_archive.distribution.display_name))
 
-    def handle_options(self):
+    def processOptions(self):
         if len(self.args) != 2:
             self.parser.print_help()
             sys.exit(1)
@@ -103,6 +103,7 @@ class CopySigningKeysScript(LaunchpadScript):
             to_archive, series, from_archive_signing_key.signing_key)
 
     def main(self):
+        self.processOptions()
         for key_type in self.key_types:
             self.copy(
                 self.from_archive, self.to_archive, key_type,
