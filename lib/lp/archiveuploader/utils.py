@@ -171,15 +171,7 @@ def extract_component_from_section(section, default_component="main"):
 
 class ParseMaintError(Exception):
     """Exception raised for errors in parsing a maintainer field.
-
-    Attributes:
-       message -- explanation of the error
     """
-
-    def __init__(self, message):
-        Exception.__init__(self)
-        self.args = (message, )
-        self.message = message
 
 
 def parse_maintainer(maintainer, field_name="Maintainer"):

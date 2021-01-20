@@ -16,6 +16,7 @@ from lp.archiveuploader.utils import (
     determine_source_file_type,
     DpkgSourceError,
     extract_dpkg_source,
+    ParseMaintError,
     re_isadeb,
     re_issource,
     )
@@ -234,7 +235,6 @@ class TestUtilities(TestCase):
         """
         from lp.archiveuploader.utils import (
             parse_maintainer_bytes,
-            ParseMaintError,
             )
         cases = (
             "James Troup",
@@ -253,10 +253,15 @@ class TestUtilities(TestCase):
         from lp.archiveuploader.utils import (
             parse_maintainer_bytes,
             )
-        maintainerData = b"No\xc3\xa8l K\xc3\xb6the <No\xc3\xa8l@nocrew.org"
-        self.assertRaises(UnicodeDecodeError, parse_maintainer_bytes,
-                          maintainerData,
-                          'Maintainer')
+        maintainerData = b'No\xc3\xa8l K\xc3\xb6the'
+        exceptionMessage = (b'No\xc3\xa8l K\xc3\xb6the: '
+                            b'no @ found in email address '
+                            b'part.').decode('utf-8')
+
+        self.assertRaisesWithContent(ParseMaintError,
+                                     exceptionMessage.encode("utf-8"),
+                                     parse_maintainer_bytes,
+                                     maintainerData, 'Maintainer')
 
 
 class TestFilenameRegularExpressions(TestCase):

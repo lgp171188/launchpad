@@ -9,7 +9,7 @@ Architecture: source
 Version: 1.0-1
 Distribution: breezy
 Urgency: low
-Maintainer: No\xc3\xa8l K\xc3\xb6the <No\xc3\xa8l@nocrew.org
+Maintainer: Launchpad team <launchpad@lists.canonical.com>
 Changed-By: Daniel Silverstone <daniel.silverstone@canonical.com>
 Description: 
  bar        - Stuff for testing
