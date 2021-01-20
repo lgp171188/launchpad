@@ -12,6 +12,7 @@ from email.utils import (
     make_msgid,
     )
 
+import six
 import transaction
 
 from lp.services.messages.model.message import MessageSet
@@ -27,7 +28,12 @@ class TestMessageSet(TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
 
-    high_characters = ''.join(chr(c) for c in range(128, 256))
+    # Stick to printable non-whitespace characters from ISO-8859-1 to avoid
+    # confusion.  (In particular, '\x85' and '\xa0' are whitespace
+    # characters according to Unicode but not according to ASCII, and this
+    # would otherwise result in different test output between Python 2 and
+    # 3.)
+    high_characters = b''.join(six.int2byte(c) for c in range(161, 256))
 
     def setUp(self):
         super(TestMessageSet, self).setUp()
@@ -72,7 +78,7 @@ class TestMessageSet(TestCaseWithFactory):
         self.assertEqual('text/x-diff', diff.blob.mimetype)
         # Need to commit in order to read back out of the librarian.
         transaction.commit()
-        self.assertEqual('This is the diff, honest.', diff.blob.read())
+        self.assertEqual(b'This is the diff, honest.', diff.blob.read())
 
     def test_fromEmail_strips_attachment_paths(self):
         # Build a simple multipart message with a plain text first part
@@ -86,7 +92,7 @@ class TestMessageSet(TestCaseWithFactory):
         self.assertEqual('text/x-diff', diff.blob.mimetype)
         # Need to commit in order to read back out of the librarian.
         transaction.commit()
-        self.assertEqual('This is the diff, honest.', diff.blob.read())
+        self.assertEqual(b'This is the diff, honest.', diff.blob.read())
 
     def test_fromEmail_always_creates(self):
         """Even when messages are identical, fromEmail creates a new one."""
@@ -152,7 +158,7 @@ class TestMessageSet(TestCaseWithFactory):
 
     def test_decode_unknown_ascii(self):
         """Test decode with ascii characters in an unknown encoding."""
-        result = MessageSet.decode('abcde', 'booga')
+        result = MessageSet.decode(b'abcde', 'booga')
         self.assertEqual(u'abcde', result)
 
     def test_decode_unknown_high_characters(self):

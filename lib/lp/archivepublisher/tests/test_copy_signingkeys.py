@@ -12,6 +12,7 @@ from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
     )
+import transaction
 
 from lp.archivepublisher.scripts.copy_signingkeys import CopySigningKeysScript
 from lp.services.config import config
@@ -23,6 +24,7 @@ from lp.services.signing.model.signingkey import ArchiveSigningKey
 from lp.services.utils import CapturedOutput
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
+from lp.testing.script import run_script
 
 
 class TestCopySigningKeysScript(TestCaseWithFactory):
@@ -39,6 +41,7 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
                 script = CopySigningKeysScript(
                     "copy-signingkeys", dbuser=config.archivepublisher.dbuser,
                     test_args=test_args)
+                script.processOptions()
         except SystemExit:
             exited = True
         else:
@@ -299,4 +302,42 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
                 MatchesStructure.byEquality(
                     archive=archives[1], earliest_distro_series=None,
                     key_type=SigningKeyType.UEFI, signing_key=signing_keys[1]),
+                ))
+
+    def runScript(self, args=None):
+        transaction.commit()
+        ret, out, err = run_script("scripts/copy-signingkeys.py", args=args)
+        if out:
+            self.addDetail("stdout", text_content(out))
+        if err:
+            self.addDetail("stderr", text_content(err))
+        self.assertEqual(0, ret)
+        transaction.commit()
+
+    def test_script(self):
+        archives = [self.factory.makeArchive() for _ in range(2)]
+        signing_keys = [
+            self.factory.makeSigningKey(key_type=key_type)
+            for key_type in (SigningKeyType.UEFI, SigningKeyType.KMOD)]
+        for signing_key in signing_keys[:2]:
+            self.factory.makeArchiveSigningKey(
+                archive=archives[0], signing_key=signing_key)
+
+        self.runScript(args=[archive.reference for archive in archives])
+
+        self.assertThat(
+            self.findKeys(archives),
+            MatchesSetwise(
+                MatchesStructure.byEquality(
+                    archive=archives[0], earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                MatchesStructure.byEquality(
+                    archive=archives[0], earliest_distro_series=None,
+                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
+                MatchesStructure.byEquality(
+                    archive=archives[1], earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                MatchesStructure.byEquality(
+                    archive=archives[1], earliest_distro_series=None,
+                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
                 ))

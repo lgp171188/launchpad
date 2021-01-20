@@ -52,8 +52,7 @@ class TestSeriesSourcePackageBranchSet(TestCaseWithFactory):
 
         links = self.link_set.findForDistributionSourcePackage(
             distro_source_package)
-        self.assertEqual(
-            sorted([b1, b2]), sorted([link.branch for link in links]))
+        self.assertContentEqual([b1, b2], [link.branch for link in links])
 
     def test_delete(self):
         # SeriesSourcePackageBranchSet.delete removes the link between a
@@ -75,5 +74,5 @@ class TestSeriesSourcePackageBranchSet(TestCaseWithFactory):
             branch_updates, branch_updates.owner)
         self.link_set.delete(sourcepackage, PackagePublishingPocket.UPDATES)
         links = self.link_set.findForSourcePackage(sourcepackage)
-        self.assertEqual(
-            sorted([branch_release]), sorted([link.branch for link in links]))
+        self.assertContentEqual(
+            [branch_release], [link.branch for link in links])

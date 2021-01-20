@@ -217,6 +217,29 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
                         "mode": Equals("CLEAR"),
                         }))))
 
+    @responses.activate
+    def test_addAuthorization(self):
+        self.signing_service.addResponses(self)
+
+        s = SigningKey(
+            SigningKeyType.UEFI, u"a fingerprint",
+            bytes(self.signing_service.generated_public_key),
+            description=u"This is my key!")
+        self.assertIsNone(s.addAuthorization(u"another-client"))
+
+        self.assertEqual(3, len(responses.calls))
+        self.assertThat(
+            responses.calls[2].request,
+            MatchesStructure(
+                url=Equals(self.signing_service.getUrl("/authorizations/add")),
+                body=AfterPreprocessing(
+                    self.signing_service._decryptPayload,
+                    MatchesDict({
+                        "key-type": Equals("UEFI"),
+                        "fingerprint": Equals(u"a fingerprint"),
+                        "client-name": Equals(u"another-client"),
+                        }))))
+
 
 class TestArchiveSigningKey(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer

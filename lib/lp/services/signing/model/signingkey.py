@@ -140,6 +140,12 @@ class SigningKey(StormBase):
             self.key_type, self.fingerprint, message_name, message, mode)
         return signed['signed-message']
 
+    def addAuthorization(self, client_name):
+        """See `ISigningKey`."""
+        signing_service = getUtility(ISigningServiceClient)
+        signing_service.addAuthorization(
+            self.key_type, self.fingerprint, client_name)
+
 
 @implementer(IArchiveSigningKey)
 class ArchiveSigningKey(StormBase):

@@ -235,8 +235,8 @@ format.
     ...    signing_key.fingerprint)
 
     >>> [uid] = retrieved_key.uids
-    >>> uid.name
-    u'Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo'
+    >>> print(uid.name)
+    Launchpad PPA for Celso áéíóú Providelo
 
 The secret key is securily stored in the designed configuration
 path. So only the IGPGHandler itself can access it.

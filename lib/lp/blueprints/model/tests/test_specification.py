@@ -73,12 +73,10 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         do_next.createDependency(do_first)
         do_last = self.factory.makeBlueprint()
         do_last.createDependency(do_next)
-        self.assertThat(sorted(do_first.getBlockedSpecs()), Equals([do_next]))
-        self.assertThat(
-            sorted(do_first.all_blocked()), Equals(sorted([do_next, do_last])))
-        self.assertThat(sorted(do_last.getDependencies()), Equals([do_next]))
-        self.assertThat(
-            sorted(do_last.all_deps()), Equals(sorted([do_first, do_next])))
+        self.assertContentEqual([do_next], do_first.getBlockedSpecs())
+        self.assertContentEqual([do_next, do_last], do_first.all_blocked())
+        self.assertContentEqual([do_next], do_last.getDependencies())
+        self.assertContentEqual([do_first, do_next], do_last.all_deps())
 
     def test_diamond_dependency(self):
         #             do_first
@@ -94,18 +92,14 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         do_last = self.factory.makeBlueprint()
         do_last.createDependency(do_next_lhs)
         do_last.createDependency(do_next_rhs)
-        self.assertThat(
-            sorted(do_first.getBlockedSpecs()),
-            Equals(sorted([do_next_lhs, do_next_rhs])))
-        self.assertThat(
-            sorted(do_first.all_blocked()),
-            Equals(sorted([do_next_lhs, do_next_rhs, do_last])))
-        self.assertThat(
-            sorted(do_last.getDependencies()),
-            Equals(sorted([do_next_lhs, do_next_rhs])))
-        self.assertThat(
-            sorted(do_last.all_deps()),
-            Equals(sorted([do_first, do_next_lhs, do_next_rhs])))
+        self.assertContentEqual(
+            [do_next_lhs, do_next_rhs], do_first.getBlockedSpecs())
+        self.assertContentEqual(
+            [do_next_lhs, do_next_rhs, do_last], do_first.all_blocked())
+        self.assertContentEqual(
+            [do_next_lhs, do_next_rhs], do_last.getDependencies())
+        self.assertContentEqual(
+            [do_first, do_next_lhs, do_next_rhs], do_last.all_deps())
 
     def test_all_deps_filters(self):
         # all_deps, when provided a user, shows only the dependencies the user

@@ -249,8 +249,8 @@ After initiliasing sig_file we can parse addresses and look them up in
 Launchpad:
 
     >>> addr = sig_file.parseAddress("Foo Bar <foo.bar@canonical.com>")
-    >>> addr['person'].displayname
-    u'Foo Bar'
+    >>> print(addr['person'].displayname)
+    Foo Bar
     >>> addr['person'].creation_comment is None
     True
 
@@ -271,8 +271,8 @@ a new Person will be created.
     >>> addr['person'].creation_rationale.name
     'SOURCEPACKAGEUPLOAD'
 
-    >>> addr['person'].creation_comment
-    u'when the some-source_6.6.6 package was uploaded to hoary/RELEASE'
+    >>> print(addr['person'].creation_comment)
+    when the some-source_6.6.6 package was uploaded to hoary/RELEASE
 
 If the use an un-initialized policy to create a launchpad person the
 creation_rationale will still be possible, however missing important
@@ -284,8 +284,8 @@ information, the upload target:
     >>> addr['person'].creation_rationale.name
     'SOURCEPACKAGEUPLOAD'
 
-    >>> addr['person'].creation_comment
-    u'when the some-source_6.6.6 package was uploaded to (unknown)'
+    >>> print(addr['person'].creation_comment)
+    when the some-source_6.6.6 package was uploaded to (unknown)
 
 On ChangesFile objects we can have access to the enhanced address_structure
 corresponding to the RFC-822 mentioned after performing 'processAddress':
@@ -302,14 +302,14 @@ As we can see, this method also return an error generator.
 The built address_structure contains values that will be used during
 the upload processing:
 
-    >>> ed_binary_changes.maintainer['name']
-    u'James Troup'
-    >>> ed_binary_changes.maintainer['email']
-    u'james@nocrew.org'
+    >>> print(ed_binary_changes.maintainer['name'])
+    James Troup
+    >>> print(ed_binary_changes.maintainer['email'])
+    james@nocrew.org
     >>> ed_binary_changes.maintainer['person']
     <Person ...>
-    >>> ed_binary_changes.maintainer['person'].displayname
-    u'James Troup'
+    >>> print(ed_binary_changes.maintainer['person'].displayname)
+    James Troup
 
 
 Signature Traces
@@ -322,13 +322,13 @@ requirements.
 The ChangesFile signer IPerson, used to checks upload ACL, normally
 know as 'sponsor' or 'mentor':
 
-    >>> ed_binary_changes.signer.displayname
-    u'Foo Bar'
+    >>> print(ed_binary_changes.signer.displayname)
+    Foo Bar
 
 The IGPGKey used to sign this ChangesFile:
 
-    >>> ed_binary_changes.signingkey.displayname
-    u'1024D/FD311613D941C6DE55737D310E3498675D147547'
+    >>> print(ed_binary_changes.signingkey.displayname)
+    1024D/FD311613D941C6DE55737D310E3498675D147547
 
 
 DSCFile
@@ -374,19 +374,19 @@ The DSC is GPG-signed most of the time, so we can guarantee who was
 the author. The DSCFile class implements the same address parsing
 methods found in ChangesFile:
 
-    >>> ed_source_dsc.maintainer['person'].displayname
-    u'James Troup'
+    >>> print(ed_source_dsc.maintainer['person'].displayname)
+    James Troup
 
 The DSC signer IPerson:
 
-    >>> ed_source_dsc.signer.displayname
-    u'Foo Bar'
+    >>> print(ed_source_dsc.signer.displayname)
+    Foo Bar
 
 The IGPGKey used to sign this DSC, which will be stored as the
 ISourcePackageRelease.dscsiginingkey:
 
-    >>> ed_source_dsc.signingkey.displayname
-    u'1024D/340CA3BB270E2716C9EE0B768E7EB7086C64A8C5'
+    >>> print(ed_source_dsc.signingkey.displayname)
+    1024D/340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
 
 A DSCFile provides a verification API similiar to what we have in
 ChangesFile itself:
