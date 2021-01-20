@@ -157,7 +157,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
         StatsMixin, MakeOCIBuildMixin, TestCaseWithFactory):
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10)
+        timeout=30)
     layer = LaunchpadZopelessLayer
 
     @defer.inlineCallbacks
@@ -592,7 +592,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=20)
+        timeout=30)
 
     def _createTestFile(self, name, content, hash):
         path = os.path.join(self.test_files_dir, name)
