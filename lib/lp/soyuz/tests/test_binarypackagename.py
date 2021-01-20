@@ -89,11 +89,11 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
 
     def test_getNotNewByNames_excludes_unpublished(self):
         names, distroarchseries, archives = self.createPublishingRecords()
-        self.assertEqual(
-            sorted([names[0], names[1]]),
-            sorted(self.name_set.getNotNewByNames(
+        self.assertContentEqual(
+            [names[0], names[1]],
+            self.name_set.getNotNewByNames(
                 [name.id for name in names], distroarchseries.distroseries,
-                [archive.id for archive in archives])))
+                [archive.id for archive in archives]))
 
     def test_getNotNewByNames_excludes_by_status(self):
         names, distroarchseries, archives = self.createPublishingRecords()
@@ -103,11 +103,11 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
             binarypackagerelease=bpr,
             status=PackagePublishingStatus.DELETED,
             archive=archives[0], distroarchseries=distroarchseries)
-        self.assertEqual(
-            sorted([names[0], names[1]]),
-            sorted(self.name_set.getNotNewByNames(
+        self.assertContentEqual(
+            [names[0], names[1]],
+            self.name_set.getNotNewByNames(
                 [name.id for name in names], distroarchseries.distroseries,
-                [archive.id for archive in archives])))
+                [archive.id for archive in archives]))
 
     def test_getNotNewByNames_excludes_by_name_id(self):
         names, distroarchseries, archives = self.createPublishingRecords()
@@ -126,11 +126,11 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
             binarypackagerelease=bpr,
             status=PackagePublishingStatus.PUBLISHED,
             archive=archives[0])
-        self.assertEqual(
-            sorted([names[0], names[1]]),
-            sorted(self.name_set.getNotNewByNames(
+        self.assertContentEqual(
+            [names[0], names[1]],
+            self.name_set.getNotNewByNames(
                 [name.id for name in names], distroarchseries.distroseries,
-                [archive.id for archive in archives])))
+                [archive.id for archive in archives]))
 
     def test_getNotNewByNames_excludes_by_archive(self):
         names, distroarchseries, archives = self.createPublishingRecords()
