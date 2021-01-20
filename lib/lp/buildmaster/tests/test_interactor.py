@@ -778,7 +778,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=20)
+        timeout=30)
 
     def setUp(self):
         super(TestSlaveWithLibrarian, self).setUp()
