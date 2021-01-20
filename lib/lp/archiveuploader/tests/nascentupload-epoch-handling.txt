@@ -54,8 +54,8 @@ Upload and publish 'non-epoched' version:
     >>> bar_src_upload.process()
     >>> result = bar_src_upload.do_accept()
     >>> bar_src_queue_noepoch = bar_src_upload.queue_root
-    >>> bar_src_queue_noepoch.displayversion
-    u'1.0-1'
+    >>> print(bar_src_queue_noepoch.displayversion)
+    1.0-1
     >>> bar_src_queue_noepoch.status.name
     'NEW'
     >>> bar_src_queue_noepoch.setAccepted()
@@ -123,20 +123,20 @@ Upload a newer'epoched' bar source :
 
 Accept all bar sources:
 
-    >>> bar_src_queue_noepoch.displayversion
-    u'1.0-1'
+    >>> print(bar_src_queue_noepoch.displayversion)
+    1.0-1
     >>> bar_src_queue_noepoch.setAccepted()
     >>> bar_src_queue_noepoch.status.name
     'ACCEPTED'
 
-    >>> bar_src_queue_epoch.displayversion
-    u'1:1.0-1'
+    >>> print(bar_src_queue_epoch.displayversion)
+    1:1.0-1
     >>> bar_src_queue_epoch.setAccepted()
     >>> bar_src_queue_epoch.status.name
     'ACCEPTED'
 
-    >>> bar_src_queue_epoch2.displayversion
-    u'1:1.0-2'
+    >>> print(bar_src_queue_epoch2.displayversion)
+    1:1.0-2
     >>> bar_src_queue_epoch2.setAccepted()
     >>> bar_src_queue_epoch2.status.name
     'ACCEPTED'
@@ -214,8 +214,8 @@ For source uploads, Changes.version == DSC.version == SPR.version:
 
     >>> bar_src_queue = bar_src_upload.queue_root
     >>> bar_spr = bar_src_queue.sources[0].sourcepackagerelease
-    >>> bar_spr.version
-    u'1:1.0-9'
+    >>> print(bar_spr.version)
+    1:1.0-9
 
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.soyuz.interfaces.publishing import IPublishingSet
@@ -269,8 +269,8 @@ Anyway, the proper value for BinaryPackageRelease.version is the
 version stored in the binary control file:
 
     >>> bar_bpr = bar_bin_queue.builds[0].build.binarypackages[0]
-    >>> bar_bpr.version
-    u'1:6.6.6'
+    >>> print(bar_bpr.version)
+    1:6.6.6
 
 
 
