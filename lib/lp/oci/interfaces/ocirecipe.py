@@ -320,13 +320,6 @@ class IOCIRecipeView(Interface):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
 
-    def userIsRecipeAdmin(user):
-        """Is a particular user allowed to edit certain attributes.
-
-        Defined as user is launchpad.Admin or is owner of the containing
-        OCI Project.
-        """
-
 
 class IOCIRecipeEdit(IWebhookTarget):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
