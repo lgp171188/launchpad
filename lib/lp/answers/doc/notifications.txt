@@ -25,8 +25,9 @@ is sent:
     >>> ubuntu.answer_contacts
     []
 
-    >>> [sub.person.displayname for sub in ubuntu_question.subscriptions]
-    [u'Sample Person']
+    >>> for sub in ubuntu_question.subscriptions:
+    ...     print(sub.person.displayname)
+    Sample Person
 
     >>> notifications = pop_questionemailjobs()
     >>> len(notifications)
@@ -680,8 +681,12 @@ receive notifications related to it.
     >>> ubuntu.addAnswerContact(salgado, salgado)
     True
 
-    >>> sorted([lang.code for lang in ubuntu.getSupportedLanguages()])
-    [u'en', u'pt_BR']
+    >>> from operator import attrgetter
+    >>> for lang in sorted(
+    ...         ubuntu.getSupportedLanguages(), key=attrgetter('code')):
+    ...     print(lang.code)
+    en
+    pt_BR
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> login('test@canonical.com')
