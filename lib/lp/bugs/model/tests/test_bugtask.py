@@ -1589,11 +1589,9 @@ class TestBugTaskMilestones(TestCaseWithFactory):
             self.product_bug.default_bugtask,
             self.distribution_bug.default_bugtask,
             ]
-        milestones = sorted(
+        self.assertContentEqual(
+            [self.product_milestone, self.distribution_milestone],
             self.bugtaskset.getBugTaskTargetMilestones(tasks))
-        self.assertEqual(
-            sorted([self.product_milestone, self.distribution_milestone]),
-            milestones)
 
 
 class TestConjoinedBugTasks(TestCaseWithFactory):

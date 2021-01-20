@@ -180,9 +180,9 @@ class TestPackagesetSet(TestCaseWithFactory):
     def test_sets_including_source(self):
         # Returns the list of sets including a source package
         parent, child, package = self.buildSimpleHierarchy()
-        self.assertEqual(
-            sorted(self.ps_set.setsIncludingSource(package)),
-            sorted((parent, child)))
+        self.assertContentEqual(
+            self.ps_set.setsIncludingSource(package),
+            (parent, child))
 
         # And can be limited to direct inclusion
         result = self.ps_set.setsIncludingSource(
@@ -196,7 +196,7 @@ class TestPackagesetSet(TestCaseWithFactory):
         parent, child, package = self.buildSimpleHierarchy(series)
         result = self.ps_set.setsIncludingSource(
             package, distroseries=series)
-        self.assertEqual(sorted(result), sorted([parent, child]))
+        self.assertContentEqual(result, [parent, child])
 
     def test_sets_including_source_different_series(self):
         # searches are limited to one series
@@ -209,9 +209,9 @@ class TestPackagesetSet(TestCaseWithFactory):
     def test_sets_including_source_by_name(self):
         # Returns the list osf sets including a source package
         parent, child, package = self.buildSimpleHierarchy()
-        self.assertEqual(
-            sorted(self.ps_set.setsIncludingSource(package.name)),
-            sorted([parent, child]))
+        self.assertContentEqual(
+            self.ps_set.setsIncludingSource(package.name),
+            [parent, child])
 
     def test_sets_including_source_unknown_name(self):
         # A non-existent package name will throw an exception
@@ -415,29 +415,25 @@ class TestPackageset(TestCaseWithFactory):
     def test_sources_included(self):
         # Lists the source packages included in a set
         packageset, packages = self.buildSet()
-        self.assertEqual(
-            sorted(packageset.sourcesIncluded()), sorted(packages))
+        self.assertContentEqual(packageset.sourcesIncluded(), packages)
 
     def test_get_sources_included(self):
         # Lists the names of source packages included in a set
         packageset, packages = self.buildSet()
-        self.assertEqual(
-            sorted(packageset.getSourcesIncluded()),
-            sorted(p.name for p in packages))
+        self.assertContentEqual(
+            packageset.getSourcesIncluded(), [p.name for p in packages])
 
     def test_sources_included_indirect(self):
         # sourcesIncluded traverses the set tree, by default
         packageset1, packages1 = self.buildSet()
         packageset2, packages2 = self.buildSet()
         packageset1.add((packageset2,))
-        self.assertEqual(
-            sorted(packageset1.sourcesIncluded()),
-            sorted(packages1 + packages2))
+        self.assertContentEqual(
+            packageset1.sourcesIncluded(), packages1 + packages2)
 
         # direct_inclusion disables traversal
-        self.assertEqual(
-            sorted(packageset1.sourcesIncluded(direct_inclusion=True)),
-            sorted(packages1))
+        self.assertContentEqual(
+            packageset1.sourcesIncluded(direct_inclusion=True), packages1)
 
     def test_sources_multiply_included(self):
         # Source packages included in multiple packagesets in a tree are only
@@ -446,12 +442,11 @@ class TestPackageset(TestCaseWithFactory):
         packageset2, packages2 = self.buildSet(5)
         packageset1.add(packages2[:2])
         packageset1.add((packageset2,))
-        self.assertEqual(
-            sorted(packageset1.sourcesIncluded(direct_inclusion=True)),
-            sorted(packages1 + packages2[:2]))
-        self.assertEqual(
-            sorted(packageset1.sourcesIncluded()),
-            sorted(packages1 + packages2))
+        self.assertContentEqual(
+            packageset1.sourcesIncluded(direct_inclusion=True),
+            packages1 + packages2[:2])
+        self.assertContentEqual(
+            packageset1.sourcesIncluded(), packages1 + packages2)
 
     def test_is_source_included(self):
         # Test if a source package name is included in a set
@@ -481,22 +476,20 @@ class TestPackageset(TestCaseWithFactory):
         # Adding source packages to a package set repeatedly has no effect
         packageset, packages = self.buildSet()
         packageset.add(packages)
-        self.assertEqual(
-            sorted(packageset.sourcesIncluded()), sorted(packages))
+        self.assertContentEqual(packageset.sourcesIncluded(), packages)
 
     def test_remove_sources(self):
         # Source packages can be removed from a set
         packageset, packages = self.buildSet(5)
         packageset.remove(packages[:2])
-        self.assertEqual(
-            sorted(packageset.sourcesIncluded()), sorted(packages[2:]))
+        self.assertContentEqual(packageset.sourcesIncluded(), packages[2:])
 
     def test_remove_non_preset_sources(self):
         # Trying to remove source packages that are *not* in the set, has no
         # effect.
         packageset, packages = self.buildSet()
         packageset.remove([self.factory.makeSourcePackageName()])
-        self.assertTrue(sorted(packageset.sourcesIncluded()), sorted(packages))
+        self.assertContentEqual(packageset.sourcesIncluded(), packages)
 
     def test_sets_included(self):
         # Returns the sets included in a set
@@ -505,8 +498,7 @@ class TestPackageset(TestCaseWithFactory):
         parent.add((child,))
         grandchild = self.factory.makePackageset()
         child.add((grandchild,))
-        self.assertEqual(
-            sorted(parent.setsIncluded()), sorted([child, grandchild]))
+        self.assertContentEqual(parent.setsIncluded(), [child, grandchild])
         self.assertEqual(
             list(parent.setsIncluded(direct_inclusion=True)), [child])
 
@@ -520,8 +512,8 @@ class TestPackageset(TestCaseWithFactory):
         grandchild = self.factory.makePackageset()
         child.add((grandchild,))
         child2.add((grandchild,))
-        self.assertEqual(
-            sorted(parent.setsIncluded()), sorted([child, child2, grandchild]))
+        self.assertContentEqual(
+            parent.setsIncluded(), [child, child2, grandchild])
 
     def test_sets_included_by(self):
         # Returns the set of sets including a set
@@ -530,8 +522,7 @@ class TestPackageset(TestCaseWithFactory):
         parent.add((child,))
         grandchild = self.factory.makePackageset()
         child.add((grandchild,))
-        self.assertEqual(
-            sorted(grandchild.setsIncludedBy()), sorted([child, parent]))
+        self.assertContentEqual(grandchild.setsIncludedBy(), [child, parent])
         self.assertEqual(
             list(grandchild.setsIncludedBy(direct_inclusion=True)), [child])
 
@@ -541,8 +532,7 @@ class TestPackageset(TestCaseWithFactory):
         child = self.factory.makePackageset()
         child2 = self.factory.makePackageset()
         parent.add((child, child2))
-        self.assertEqual(
-            sorted(parent.setsIncluded()), sorted([child, child2]))
+        self.assertContentEqual(parent.setsIncluded(), [child, child2])
         parent.remove((child,))
         self.assertEqual(list(parent.setsIncluded()), [child2])
 
@@ -553,11 +543,9 @@ class TestPackageset(TestCaseWithFactory):
         grandchild = self.factory.makePackageset()
         parent.add((child,))
         child.add((grandchild,))
-        self.assertEqual(
-            sorted(parent.setsIncluded()), sorted([child, grandchild]))
+        self.assertContentEqual(parent.setsIncluded(), [child, grandchild])
         parent.remove((grandchild,))
-        self.assertEqual(
-            sorted(parent.setsIncluded()), sorted([child, grandchild]))
+        self.assertContentEqual(parent.setsIncluded(), [child, grandchild])
 
     def test_sources_shared_by(self):
         # Lists the source packages shared between two packagesets
@@ -567,9 +555,8 @@ class TestPackageset(TestCaseWithFactory):
 
         pset1.add(pkgs2[:2])
         pset2.add(pkgs1[:2])
-        self.assertEqual(
-            sorted(pset1.sourcesSharedBy(pset2)),
-            sorted(pkgs1[:2] + pkgs2[:2]))
+        self.assertContentEqual(
+            pset1.sourcesSharedBy(pset2), pkgs1[:2] + pkgs2[:2])
 
     def test_get_sources_shared_by(self):
         # List the names of source packages shared between two packagesets
@@ -579,9 +566,9 @@ class TestPackageset(TestCaseWithFactory):
 
         pset1.add(pkgs2[:2])
         pset2.add(pkgs1[:2])
-        self.assertEqual(
-            sorted(pset1.getSourcesSharedBy(pset2)),
-            sorted(p.name for p in (pkgs1[:2] + pkgs2[:2])))
+        self.assertContentEqual(
+            pset1.getSourcesSharedBy(pset2),
+            [p.name for p in (pkgs1[:2] + pkgs2[:2])])
 
     def test_sources_shared_by_subset(self):
         # sourcesSharedBy takes subsets into account, unless told not to
@@ -590,7 +577,7 @@ class TestPackageset(TestCaseWithFactory):
         self.assertTrue(pset1.sourcesSharedBy(pset2).is_empty())
 
         pset1.add((pset2,))
-        self.assertEqual(sorted(pset1.sourcesSharedBy(pset2)), sorted(pkgs2))
+        self.assertContentEqual(pset1.sourcesSharedBy(pset2), pkgs2)
         self.assertTrue(
             pset1.sourcesSharedBy(pset2, direct_inclusion=True).is_empty())
 
@@ -603,50 +590,47 @@ class TestPackageset(TestCaseWithFactory):
 
         pset1.add(pkgs2[:2] + pkgs3)
         pset2.add(pkgs1[:2] + [pset3])
-        self.assertEqual(
-            sorted(pset1.sourcesSharedBy(pset2)),
-            sorted(pkgs1[:2] + pkgs2[:2] + pkgs3))
-        self.assertEqual(
-            sorted(pset1.sourcesSharedBy(pset2)),
-            sorted(pset2.sourcesSharedBy(pset1)))
+        self.assertContentEqual(
+            pset1.sourcesSharedBy(pset2),
+            pkgs1[:2] + pkgs2[:2] + pkgs3)
+        self.assertContentEqual(
+            pset1.sourcesSharedBy(pset2),
+            pset2.sourcesSharedBy(pset1))
 
     def test_sources_not_shared_by(self):
         # Lists source packages in the first set, but not the second
         pset1, pkgs1 = self.buildSet(5)
         pset2, pkgs2 = self.buildSet(5)
-        self.assertEqual(
-            sorted(pset1.sourcesNotSharedBy(pset2)), sorted(pkgs1))
+        self.assertContentEqual(pset1.sourcesNotSharedBy(pset2), pkgs1)
         pset1.add(pkgs2[:2])
         pset2.add(pkgs1[:2])
-        self.assertEqual(
-            sorted(pset1.sourcesNotSharedBy(pset2)), sorted(pkgs1[2:]))
+        self.assertContentEqual(pset1.sourcesNotSharedBy(pset2), pkgs1[2:])
 
     def test_get_sources_not_shared_by(self):
         # List the names of source packages in the first set, but not the
         # second
         pset1, pkgs1 = self.buildSet(5)
         pset2, pkgs2 = self.buildSet(5)
-        self.assertEqual(
-            sorted(pset1.getSourcesNotSharedBy(pset2)),
-            sorted(p.name for p in pkgs1))
+        self.assertContentEqual(
+            pset1.getSourcesNotSharedBy(pset2),
+            [p.name for p in pkgs1])
 
         pset1.add(pkgs2[:2])
         pset2.add(pkgs1[:2])
-        self.assertEqual(
-            sorted(pset1.getSourcesNotSharedBy(pset2)),
-            sorted(p.name for p in pkgs1[2:]))
+        self.assertContentEqual(
+            pset1.getSourcesNotSharedBy(pset2),
+            [p.name for p in pkgs1[2:]])
 
     def test_sources_not_shared_by_subset(self):
         # sourcesNotSharedBy takes subsets into account, unless told not to
         pset1, pkgs1 = self.buildSet()
         pset2, pkgs2 = self.buildSet()
-        self.assertTrue(sorted(pset1.sourcesNotSharedBy(pset2)), sorted(pkgs1))
+        self.assertContentEqual(pset1.sourcesNotSharedBy(pset2), pkgs1)
 
         pset2.add((pset1,))
         self.assertTrue(pset1.sourcesNotSharedBy(pset2).is_empty())
-        self.assertTrue(
-            sorted(pset1.sourcesNotSharedBy(pset2, direct_inclusion=True)),
-            sorted(pkgs1))
+        self.assertContentEqual(
+            pset1.sourcesNotSharedBy(pset2, direct_inclusion=True), pkgs1)
 
     def test_add_unknown_name(self):
         # Adding an unknown package name will raise an error
@@ -907,10 +891,10 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         explicit_child = self.ap_set.newPackagesetUploader(
             self.archive, self.person, child, True)
 
-        self.assertEqual(
-            sorted(self.ap_set.uploadersForPackageset(
-                self.archive, child, direct_permissions=False)),
-            sorted((implicit_parent, explicit_child)))
+        self.assertContentEqual(
+            self.ap_set.uploadersForPackageset(
+                self.archive, child, direct_permissions=False),
+            (implicit_parent, explicit_child))
 
     def test_uploaders_for_packageset_subpackagesets_removed(self):
         # archive permissions cease to apply to removed child packagesets
