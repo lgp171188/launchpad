@@ -516,11 +516,8 @@ def raw_sendmail(from_addr, to_addrs, raw_message, message_detail):
     """
     assert not isinstance(to_addrs, six.string_types), \
         'to_addrs must be a sequence'
-    assert isinstance(raw_message, str), 'Not a native string'
-    if isinstance(raw_message, bytes):  # Python 2
-        assert raw_message.decode('ascii'), 'Not ASCII - badly encoded message'
-    else:  # Python 3
-        assert raw_message.encode('ascii'), 'Not ASCII - badly encoded message'
+    assert isinstance(raw_message, bytes), 'Not a byte string'
+    assert raw_message.decode('ascii'), 'Not ASCII - badly encoded message'
     mailer = getUtility(IMailDelivery, 'Mail')
     request = get_current_browser_request()
     timeline = get_request_timeline(request)
