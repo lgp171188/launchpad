@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 '''
@@ -146,6 +146,13 @@ class LaunchpadConfig:
     def config_dir(self):
         """Return the directory containing this instance configuration."""
         return find_config_dir(self._instance_name)
+
+    @property
+    def use_gunicorn(self):
+        """When running launchpad server, shall we use gunicorn?"""
+        # XXX pappacena: 2020-01-20: Forced False until we have everything
+        # in place.
+        return False
 
     def setInstance(self, instance_name):
         """Set the instance name where the conf files are stored.

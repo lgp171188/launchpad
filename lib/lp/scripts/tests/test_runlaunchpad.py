@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for runlaunchpad.py"""
@@ -23,7 +23,9 @@ from lp.scripts.runlaunchpad import (
     process_config_arguments,
     SERVICES,
     split_out_runlaunchpad_arguments,
+    start_launchpad,
     )
+from lp.services.compat import mock
 import lp.services.config
 from lp.services.config import config
 import lp.testing
@@ -165,3 +167,27 @@ class ServersToStart(testtools.TestCase):
 
     def test_launchpad_systems_red(self):
         self.assertFalse(config.launchpad.launch)
+
+
+class TestAppServerStart(testtools.TestCase):
+    @mock.patch('lp.scripts.runlaunchpad.zope_main')
+    @mock.patch('lp.scripts.runlaunchpad.gunicorn_main')
+    @mock.patch('lp.scripts.runlaunchpad.make_pidfile')
+    def test_call_correct_method(self, make_pidfile, gmain, zmain):
+        # Makes sure zope_main or gunicorn_main is called according to
+        # launchpad configuration.
+        patched_cfg = mock.patch(
+            'lp.services.config.LaunchpadConfig.use_gunicorn',
+            new_callable=mock.PropertyMock)
+        with patched_cfg as mock_use_gunicorn:
+            mock_use_gunicorn.return_value = True
+            start_launchpad([])
+            self.assertEqual(1, gmain.call_count)
+            self.assertEqual(0, zmain.call_count)
+        gmain.reset_mock()
+        zmain.reset_mock()
+        with patched_cfg as mock_use_gunicorn:
+            mock_use_gunicorn.return_value = False
+            start_launchpad([])
+            self.assertEqual(0, gmain.call_count)
+            self.assertEqual(1, zmain.call_count)
