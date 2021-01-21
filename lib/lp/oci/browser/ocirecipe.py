@@ -742,6 +742,18 @@ class OCIRecipeFormMixin:
             build_args[k] = v
         data['build_args'] = build_args
 
+    def userIsRecipeAdmin(self):
+        if check_permission("launchpad.Admin", self.context):
+            return True
+        person = getattr(self.request.principal, 'person', None)
+        if not person:
+            return False
+        # Edit context = OCIRecipe, New context = OCIProject
+        project = getattr(self.context, "oci_project", self.context)
+        if project.pillar.canAdministerOCIProjects(person):
+            return True
+        return False
+
 
 class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                        OCIRecipeFormMixin):
@@ -775,6 +787,16 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             "The architectures that this OCI recipe builds for. Some "
             "architectures are restricted and may only be enabled or "
             "disabled by administrators.")
+        self.form_fields += FormFields(Bool(
+            __name__="official_recipe",
+            title="Official recipe",
+            description=(
+                "Mark this recipe as official for this OCI Project. "
+                "Allows use of distribution registry credentials "
+                "and the default git repository routing. "
+                "May only be enabled by the owner of the OCI Project."),
+            default=False,
+            required=False, readonly=False))
 
     def setUpGitRefWidget(self):
         """Setup GitRef widget indicating the user to use the default
@@ -784,6 +806,9 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
         widget.repository_widget.setRenderedValue(path)
+        if widget.error():
+            # Do not override more important git_ref errors.
+            return
         default_repo = self.context.getDefaultGitRepository(self.user)
         if default_repo is None:
             msg = (
@@ -798,6 +823,11 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         super(OCIRecipeAddView, self).setUpWidgets()
         self.widgets["processors"].widget_class = "processors"
         self.setUpGitRefWidget()
+        # disable the official recipe button if the user doesn't have
+        # permissions to change it
+        widget = self.widgets['official_recipe']
+        if not self.userIsRecipeAdmin():
+            widget.extra = "disabled='disabled'"
 
     @property
     def cancel_url(self):
@@ -829,6 +859,12 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                     "this name." % (
                         owner.display_name, self.context.display_name))
         self.validateBuildArgs(data)
+        official = data.get("official_recipe", None)
+        if official and not self.userIsRecipeAdmin():
+            self.setFieldError(
+                "official_recipe",
+                "You do not have permission to set the official status "
+                "of this recipe.")
 
     @action("Create OCI recipe", name="create")
     def create_action(self, action, data):
@@ -837,7 +873,8 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             oci_project=self.context, git_ref=data["git_ref"],
             build_file=data["build_file"], description=data["description"],
             build_daily=data["build_daily"], build_args=data["build_args"],
-            build_path=data["build_path"], processors=data["processors"])
+            build_path=data["build_path"], processors=data["processors"],
+            official=data.get('official_recipe', False))
         self.next_url = canonical_url(recipe)
 
 
@@ -858,6 +895,11 @@ class BaseOCIRecipeEditView(LaunchpadEditFormView):
                 self.context.setProcessors(
                     new_processors, check_permissions=True, user=self.user)
             del data["processors"]
+        official = data.pop('official_recipe', None)
+        if official is not None and self.userIsRecipeAdmin():
+            self.context.oci_project.setOfficialRecipeStatus(
+                self.context, official)
+
         self.updateContextFromData(data)
         self.next_url = canonical_url(self.context)
 
@@ -931,6 +973,11 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpWidgets()
         self.setUpGitRefWidget()
+        # disable the official recipe button if the user doesn't have
+        # permissions to change it
+        widget = self.widgets['official_recipe']
+        if not self.userIsRecipeAdmin():
+            widget.extra = "disabled='disabled'"
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
@@ -941,6 +988,16 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
             "The architectures that this OCI recipe builds for. Some "
             "architectures are restricted and may only be enabled or "
             "disabled by administrators.")
+        self.form_fields += FormFields(Bool(
+            __name__="official_recipe",
+            title="Official recipe",
+            description=(
+                "Mark this recipe as official for this OCI Project. "
+                "Allows use of distribution registry credentials "
+                "and the default git repository routing. "
+                "May only be enabled by the owner of the OCI Project."),
+            default=False,
+            required=False, readonly=False))
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
@@ -976,6 +1033,14 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                         # enabled. Leave it untouched.
                         data["processors"].append(processor)
         self.validateBuildArgs(data)
+        official = data.get('official_recipe')
+        official_change = self.context.official != official
+        is_admin = self.userIsRecipeAdmin()
+        if official is not None and official_change and not is_admin:
+            self.setFieldError(
+                "official_recipe",
+                "You do not have permission to change the official status "
+                "of this recipe.")
 
 
 class OCIRecipeDeleteView(BaseOCIRecipeEditView):

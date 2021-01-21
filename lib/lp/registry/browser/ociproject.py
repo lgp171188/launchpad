@@ -234,7 +234,6 @@ class OCIProjectEditView(LaunchpadEditFormView):
     schema = IOCIProject
     field_names = [
         'name',
-        'official_recipe',
         ]
 
     def setUpFields(self):
@@ -246,14 +245,6 @@ class OCIProjectEditView(LaunchpadEditFormView):
         # Set the correct pillar field as mandatory
         pillar_field = self.form_fields.get(pillar_key).field
         pillar_field.required = True
-
-    def extendFields(self):
-        official_recipe = self.context.getOfficialRecipe()
-        self.form_fields += form.Fields(
-            Choice(
-                __name__="official_recipe", title=u"Official recipe",
-                required=False, vocabulary="OCIRecipe",
-                default=official_recipe))
 
     @property
     def label(self):
@@ -277,9 +268,7 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     @action('Update OCI project', name='update')
     def update_action(self, action, data):
-        official_recipe = data.pop("official_recipe")
         self.updateContextFromData(data)
-        self.context.setOfficialRecipe(official_recipe)
 
     @property
     def next_url(self):
