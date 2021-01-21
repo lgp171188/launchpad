@@ -446,6 +446,21 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "of this recipe.")
         self.assertIn(error_message, browser.contents)
 
+    def test_create_recipe_doesnt_override_gitref_errors(self):
+        oci_project = self.factory.makeOCIProject()
+        [git_ref] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = "non-exist"
+        browser.getControl("Create OCI recipe").click()
+
+        error_message = "does not contain a branch named"
+        self.assertIn(error_message, browser.contents)
+
 
 class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
 
