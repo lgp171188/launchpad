@@ -402,17 +402,23 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "Official recipe:\nYes",
             MatchesTagText(content, "official-recipe"))
 
-        browser = self.getViewBrowser(
+        browser2 = self.getViewBrowser(
             oci_project2, view_name="+new-recipe", user=self.person)
-        browser.getControl(name="field.name").value = "recipe-name"
-        browser.getControl("Description").value = "Recipe description"
-        browser.getControl(name="field.git_ref.repository").value = (
+        browser2.getControl(name="field.name").value = "recipe-name"
+        browser2.getControl("Description").value = "Recipe description"
+        browser2.getControl(name="field.git_ref.repository").value = (
             git_ref2.repository.identity)
-        browser.getControl(name="field.git_ref.path").value = git_ref2.path
-        official_control = browser.getControl("Official recipe")
+        browser2.getControl(name="field.git_ref.path").value = git_ref2.path
+        official_control = browser2.getControl("Official recipe")
         official_control.selected = True
-        browser.getControl("Create OCI recipe").click()
+        browser2.getControl("Create OCI recipe").click()
 
+        content = find_main_content(browser2.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
+        browser.reload()
         content = find_main_content(browser.contents)
         self.assertThat(
             "Official recipe:\nYes",
