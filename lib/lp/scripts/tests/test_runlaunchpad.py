@@ -169,7 +169,7 @@ class ServersToStart(testtools.TestCase):
         self.assertFalse(config.launchpad.launch)
 
 
-class TestAppServerStart(testtools.TestCase):
+class TestAppServerStart(lp.testing.TestCase):
     @mock.patch('lp.scripts.runlaunchpad.zope_main')
     @mock.patch('lp.scripts.runlaunchpad.gunicorn_main')
     @mock.patch('lp.scripts.runlaunchpad.make_pidfile')

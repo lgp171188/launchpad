@@ -233,7 +233,6 @@ setup(
         'Sphinx',
         'statsd',
         'storm',
-        'subvertpy',
         'talisker[gunicorn]',
         'tenacity',
         'testscenarios',
@@ -335,7 +334,6 @@ setup(
             'version-info = lp.scripts.utilities.versioninfo:main',
             'watch_jsbuild = lp.scripts.utilities.js.watchjsbuild:main',
             'with-xvfb = lp.scripts.utilities.withxvfb:main',
-        ],
-        wsgi=["wsigogogo = lp.startwsgi.gogogo"]
+        ]
     ),
 )
