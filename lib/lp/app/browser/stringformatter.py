@@ -3,6 +3,8 @@
 
 """TALES formatter for strings."""
 
+from __future__ import division
+
 __metaclass__ = type
 __all__ = [
     'add_word_breaks',
@@ -921,7 +923,7 @@ class FormattersAPI:
     def ellipsize(self, maxlength):
         """Use like tal:content="context/foo/fmt:ellipsize/60"."""
         if len(self._stringtoformat) > maxlength:
-            length = (maxlength - 3) / 2
+            length = (maxlength - 3) // 2
             return (
                 self._stringtoformat[:maxlength - length - 3] + '...' +
                 self._stringtoformat[-length:])

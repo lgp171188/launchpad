@@ -3,6 +3,8 @@
 
 """Implementation of the lp: htmlform: fmt: namespaces in TALES."""
 
+from __future__ import division
+
 __metaclass__ = type
 
 from bisect import bisect
@@ -2277,8 +2279,8 @@ class DateTimeFormatterAPI:
         future = delta < timedelta(0, 0, 0)
         delta = abs(delta)
         days = delta.days
-        hours = delta.seconds / 3600
-        minutes = (delta.seconds - (3600 * hours)) / 60
+        hours = delta.seconds // 3600
+        minutes = (delta.seconds - (3600 * hours)) // 60
         seconds = delta.seconds % 60
         result = ''
         if future:
@@ -2341,7 +2343,7 @@ class DateTimeFormatterAPI:
                 number = delta.days
                 unit = 'day'
             else:
-                number = delta.seconds / 60
+                number = delta.seconds // 60
                 if number == 0:
                     return 'less than a minute'
                 unit = 'minute'
@@ -2483,7 +2485,7 @@ class DurationFormatterAPI:
         hours, remaining_seconds = divmod(seconds, 3600)
         ten_minute_chunks = round_half_up(remaining_seconds / 600.0)
         minutes = ten_minute_chunks * 10
-        hours += (minutes / 60)
+        hours += (minutes // 60)
         minutes %= 60
         if hours < 10:
             if minutes:

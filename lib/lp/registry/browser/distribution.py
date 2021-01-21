@@ -3,6 +3,8 @@
 
 """Browser views for distributions."""
 
+from __future__ import division
+
 __metaclass__ = type
 
 __all__ = [
@@ -1258,9 +1260,9 @@ class DistributionMirrorsView(LaunchpadView):
         if throughput < 1000:
             return str(throughput) + ' Kbps'
         elif throughput < 1000000:
-            return str(throughput / 1000) + ' Mbps'
+            return str(throughput // 1000) + ' Mbps'
         else:
-            return str(throughput / 1000000) + ' Gbps'
+            return str(throughput // 1000000) + ' Gbps'
 
     @cachedproperty
     def total_throughput(self):
