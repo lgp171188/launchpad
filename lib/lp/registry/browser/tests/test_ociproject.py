@@ -154,11 +154,9 @@ class TestOCIProjectEditView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
-    def submitEditForm(self, browser, name, official_recipe=''):
+    def submitEditForm(self, browser, name):
         browser.getLink("Edit OCI project").click()
         browser.getControl(name="field.name").value = name
-        browser.getControl(name="field.official_recipe").value = (
-            official_recipe)
         browser.getControl("Update OCI project").click()
 
     def test_edit_oci_project(self):
@@ -253,7 +251,7 @@ class TestOCIProjectEditView(BrowserTestCase):
             view = create_initialized_view(
                 oci_project, name="+edit", principal=oci_project.pillar.owner)
             view.update_action.success(
-                {"name": "changed", "official_recipe": None})
+                {"name": "changed"})
         self.assertSqlAttributeEqualsDate(
             oci_project, "date_last_modified", UTC_NOW)
 
@@ -279,70 +277,6 @@ class TestOCIProjectEditView(BrowserTestCase):
         self.assertStartsWith(
             extract_text(find_tags_by_class(browser.contents, "message")[1]),
             "Invalid name 'invalid name'.")
-
-    def test_edit_oci_project_setting_official_recipe(self):
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
-
-        with admin_logged_in():
-            oci_project = self.factory.makeOCIProject()
-            user = oci_project.pillar.owner
-            recipe1 = self.factory.makeOCIRecipe(
-                registrant=user, owner=user, oci_project=oci_project)
-            recipe2 = self.factory.makeOCIRecipe(
-                registrant=user, owner=user, oci_project=oci_project)
-
-            name_value = oci_project.name
-            recipe_value = "%s/%s" % (user.name, recipe1.name)
-
-        browser = self.getViewBrowser(oci_project, user=user)
-        self.submitEditForm(browser, name_value, recipe_value)
-
-        with admin_logged_in():
-            self.assertEqual(recipe1, oci_project.getOfficialRecipe())
-            self.assertTrue(recipe1.official)
-            self.assertFalse(recipe2.official)
-
-    def test_edit_oci_project_overriding_official_recipe(self):
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
-        with admin_logged_in():
-            oci_project = self.factory.makeOCIProject()
-            user = oci_project.pillar.owner
-            recipe1 = self.factory.makeOCIRecipe(
-                registrant=user, owner=user, oci_project=oci_project)
-            recipe2 = self.factory.makeOCIRecipe(
-                registrant=user, owner=user, oci_project=oci_project)
-
-            # Sets recipe1 as the current official one
-            oci_project.setOfficialRecipe(recipe1)
-
-            # And we will try to set recipe2 as the new official.
-            name_value = oci_project.name
-            recipe_value = "%s/%s" % (user.name, recipe2.name)
-
-        browser = self.getViewBrowser(oci_project, user=user)
-        self.submitEditForm(browser, name_value, recipe_value)
-
-        with admin_logged_in():
-            self.assertEqual(recipe2, oci_project.getOfficialRecipe())
-            self.assertFalse(recipe1.official)
-            self.assertTrue(recipe2.official)
-
-    def test_edit_oci_project_unsetting_official_recipe(self):
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
-        with admin_logged_in():
-            oci_project = self.factory.makeOCIProject()
-            user = oci_project.pillar.owner
-            recipe = self.factory.makeOCIRecipe(
-                registrant=user, owner=user, oci_project=oci_project)
-            oci_project.setOfficialRecipe(recipe)
-            name_value = oci_project.name
-
-        browser = self.getViewBrowser(oci_project, user=user)
-        self.submitEditForm(browser, name_value, '')
-
-        with admin_logged_in():
-            self.assertEqual(None, oci_project.getOfficialRecipe())
-            self.assertFalse(recipe.official)
 
 
 class TestOCIProjectAddView(BrowserTestCase):

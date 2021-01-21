@@ -95,8 +95,8 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def searchRecipes(query):
         """Searches for recipes in this OCI project."""
 
-    def getOfficialRecipe():
-        """Gets the official recipe for this OCI project."""
+    def getOfficialRecipes():
+        """Gets the official recipes for this OCI project."""
 
     def getDefaultGitRepository(person):
         """Returns the default git repository for the given user under the
@@ -147,9 +147,8 @@ class IOCIProjectEdit(Interface):
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
         """Creates a new `IOCIProjectSeries`."""
 
-    def setOfficialRecipe(recipe):
-        """Sets the given recipe as the official one. If recipe is None,
-        the current official recipe will be unset."""
+    def setOfficialRecipeStatus(recipe, status):
+        """Change whether an OCI Recipe is official or not for this project."""
 
 
 class IOCIProjectLegitimate(Interface):
