@@ -118,6 +118,24 @@ class TestGitRefVocabulary(TestCaseWithFactory):
             "refs/heads/next-squared", "refs/tags/next-1.0"])
         self.assertEqual(4, len(self.vocabulary_class(ref_master.repository)))
 
+    def test_no_term_with_no_repository(self):
+        # Form validation can mean that we don't always have a repository
+        # available before a widget is rendered, which needs to not error
+        vocab = self.vocabulary_class(
+            self.factory.makeSnap(branch=self.factory.makeAnyBranch()))
+        [ref] = self.factory.makeGitRefs()
+        term = SimpleTerm(ref, ref.name, ref.name)
+        self.assertRaises(
+            LookupError,
+            vocab.getTermByToken,
+            term.token)
+
+    def test_no_results_with_no_repository(self):
+        vocab = self.vocabulary_class(
+            self.factory.makeSnap(branch=self.factory.makeAnyBranch()))
+        results = vocab.searchForTerms("master")
+        self.assertEqual(results.count(), 0)
+
 
 class TestGitBranchVocabulary(TestCaseWithFactory):
 

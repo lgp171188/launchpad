@@ -86,11 +86,8 @@ class GitRefVocabulary(StormVocabularyBase):
         self.repository = None
         self.repository_url = repository_url
 
-    def _assertHasRepository(self):
-        if self.repository is None and self.repository_url is None:
-            raise AssertionError(
-                "GitRefVocabulary cannot be used without setting a "
-                "repository or a repository URL.")
+    def _checkHasRepository(self):
+        return not (self.repository is None and self.repository_url is None)
 
     @property
     def _order_by(self):
@@ -108,7 +105,8 @@ class GitRefVocabulary(StormVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
-        self._assertHasRepository()
+        if not self._checkHasRepository():
+            raise LookupError(token)
         if self.repository is not None:
             ref = self.repository.getRefByPath(token)
             if ref is None:
@@ -125,7 +123,8 @@ class GitRefVocabulary(StormVocabularyBase):
 
     def searchForTerms(self, query=None, vocab_filter=None):
         """See `IHugeVocabulary."""
-        self._assertHasRepository()
+        if not self._checkHasRepository():
+            return CountableIterator(0, [], self.toTerm)
         if self.repository is not None:
             pattern = self._makePattern(query=query)
             results = IStore(self._table).find(
