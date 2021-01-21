@@ -150,7 +150,7 @@ class LaunchpadConfig:
     @property
     def use_gunicorn(self):
         """When running launchpad server, shall we use gunicorn?"""
-        # XXX pappacena: 2020-01-20: Forced False until we have everything
+        # XXX pappacena: 2021-01-20: Forced False until we have everything
         # in place.
         return False
 
