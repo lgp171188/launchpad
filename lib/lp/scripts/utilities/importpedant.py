@@ -32,8 +32,6 @@ valid_imports_not_in_all = {
     # Exported in Python 3, but missing and so not exported in Python 2.
     'contextlib': set(['ExitStack']),
     'importlib': set(['resources']),
-    # Exported in Python 3, but missing and so not exported in Python 2.
-    'json.decoder': set(['JSONDecodeError']),
     'openid.fetchers': set(['Urllib2Fetcher']),
     'openid.message': set(['NamespaceAliasRegistrationError']),
     # Exported as shlex.quote in Python 3.
