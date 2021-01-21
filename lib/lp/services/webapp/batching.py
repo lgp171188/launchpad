@@ -237,14 +237,12 @@ class ShadowedList:
         """See `list`."""
         return len(self.values)
 
-    def __getslice__(self, start, end):
+    def __getitem__(self, key):
         """See `list`."""
-        return ShadowedList(
-            self.values[start:end], self.shadow_values[start:end])
-
-    def __getitem__(self, index):
-        """See `list`."""
-        return self.values[index]
+        if isinstance(key, slice):
+            return ShadowedList(self.values[key], self.shadow_values[key])
+        else:
+            return self.values[key]
 
     def __add__(self, other):
         """See `list`."""
