@@ -90,7 +90,8 @@ class EmailAddress(SQLBase, HasOwnerMixin):
     @property
     def rdf_sha1(self):
         """See `IEmailAddress`."""
-        return hashlib.sha1('mailto:' + self.email).hexdigest().upper()
+        return hashlib.sha1(
+            ('mailto:' + self.email).encode('UTF-8')).hexdigest().upper()
 
 
 @implementer(IEmailAddressSet)

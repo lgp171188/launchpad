@@ -158,7 +158,9 @@ class TestPgSession(TestCase):
         result = store.execute(
             "SELECT client_id FROM SessionData ORDER BY client_id")
         client_ids = [row[0] for row in result]
-        self.assertEqual(client_ids, [hashlib.sha256(client_id).hexdigest()])
+        self.assertEqual(
+            client_ids,
+            [hashlib.sha256(client_id.encode('ASCII')).hexdigest()])
 
         # The session cookie also is now set, via the same "trigger".
         self.assertNotEqual(

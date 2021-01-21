@@ -432,7 +432,8 @@ class TestGitRefView(BrowserTestCase):
             datetime(2015, 1, day + 1, tzinfo=pytz.UTC) for day in range(5)]
         return [
             {
-                "sha1": six.ensure_text(hashlib.sha1(str(i)).hexdigest()),
+                "sha1": six.ensure_text(hashlib.sha1(
+                    str(i).encode("ASCII")).hexdigest()),
                 "message": "Commit %d" % i,
                 "author": {
                     "name": authors[i].display_name,
@@ -445,8 +446,8 @@ class TestGitRefView(BrowserTestCase):
                     "time": int(seconds_since_epoch(dates[i])),
                     },
                 "parents": [six.ensure_text(
-                    hashlib.sha1(str(i - 1)).hexdigest())],
-                "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
+                    hashlib.sha1(str(i - 1).encode("ASCII")).hexdigest())],
+                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
                 }
             for i in range(5)]
 
@@ -494,7 +495,7 @@ class TestGitRefView(BrowserTestCase):
         mp = self.factory.makeBranchMergeProposalForGit(target_ref=ref)
         merged_tip = dict(log[-1])
         merged_tip["sha1"] = six.ensure_text(
-            hashlib.sha1("merged").hexdigest())
+            hashlib.sha1(b"merged").hexdigest())
         self.scanRef(mp.merge_source, merged_tip)
         mp.markAsMerged(merged_revision_id=log[0]["sha1"])
         view = create_initialized_view(ref, "+index")
@@ -524,7 +525,7 @@ class TestGitRefView(BrowserTestCase):
         mp = self.factory.makeBranchMergeProposalForGit(target_ref=ref)
         merged_tip = dict(log[-1])
         merged_tip["sha1"] = six.ensure_text(
-            hashlib.sha1("merged").hexdigest())
+            hashlib.sha1(b"merged").hexdigest())
         self.scanRef(mp.merge_source, merged_tip)
         mp.markAsMerged(merged_revision_id=log[0]["sha1"])
         mp.source_git_repository.removeRefs([mp.source_git_path])
