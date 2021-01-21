@@ -200,12 +200,12 @@ class OCIProject(BugTargetBase, StormBase):
             Person.name.contains_string(query))
         return q.order_by(Person.name, OCIRecipe.name)
 
-    def getOfficialRecipe(self):
+    def getOfficialRecipes(self):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        return self.getRecipes().find(OCIRecipe._official == True).one()
+        return self.getRecipes().find(OCIRecipe._official == True)
 
-    def setOfficialRecipe(self, recipe):
+    def setOfficialRecipeStatus(self, recipe, status):
         """See `IOCIProject`."""
         if recipe is not None and recipe.oci_project != self:
             raise ValueError(
@@ -215,12 +215,7 @@ class OCIProject(BugTargetBase, StormBase):
         # attribute not declared on the Interface, and we need to set it
         # regardless of security checks on OCIRecipe objects.
         recipe = removeSecurityProxy(recipe)
-        previous = removeSecurityProxy(self.getOfficialRecipe())
-        if previous != recipe:
-            if previous is not None:
-                previous._official = False
-            if recipe is not None:
-                recipe._official = True
+        recipe._official = status
 
     def getDefaultGitRepository(self, person):
         namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)

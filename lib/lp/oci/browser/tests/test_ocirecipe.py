@@ -375,6 +375,49 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "Official recipe:\nYes",
             MatchesTagText(content, "official-recipe"))
 
+    def test_set_official_multiple(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+
+        # do it once
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        [git_ref] = self.factory.makeGitRefs()
+
+        # and then do it again
+        oci_project2 = self.factory.makeOCIProject(pillar=distribution)
+        [git_ref2] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        official_control = browser.getControl("Official recipe")
+        official_control.selected = True
+        browser.getControl("Create OCI recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
+        browser = self.getViewBrowser(
+            oci_project2, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref2.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref2.path
+        official_control = browser.getControl("Official recipe")
+        official_control.selected = True
+        browser.getControl("Create OCI recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
     def test_set_official_no_permissions(self):
         distro_owner = self.factory.makePerson()
         distribution = self.factory.makeDistribution(

@@ -592,27 +592,27 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 oci_project=oci_project2, registrant=owner, owner=owner)
             for _ in range(2)]
 
-        self.assertIsNone(oci_project1.getOfficialRecipe())
-        self.assertIsNone(oci_project2.getOfficialRecipe())
+        self.assertTrue(oci_project1.getOfficialRecipes().is_empty())
+        self.assertTrue(oci_project2.getOfficialRecipes().is_empty())
         for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
 
         # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
-            oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
-            self.assertEqual(2, recorder.count)
+            oci_project1.setOfficialRecipeStatus(oci_proj1_recipes[0], True)
+            self.assertEqual(1, recorder.count)
 
-        self.assertIsNone(oci_project2.getOfficialRecipe())
+        self.assertTrue(oci_project2.getOfficialRecipes().is_empty())
         self.assertEqual(
-            oci_proj1_recipes[0], oci_project1.getOfficialRecipe())
+            oci_proj1_recipes[0], oci_project1.getOfficialRecipes()[0])
         self.assertTrue(oci_proj1_recipes[0].official)
         for recipe in oci_proj1_recipes[1:] + oci_proj2_recipes:
             self.assertFalse(recipe.official)
 
         # Set back no recipe as official.
         with StormStatementRecorder() as recorder:
-            oci_project1.setOfficialRecipe(None)
-            self.assertEqual(1, recorder.count)
+            oci_project1.setOfficialRecipeStatus(oci_proj1_recipes[0], False)
+            self.assertEqual(0, recorder.count)
 
         for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
@@ -630,7 +630,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project=oci_project, registrant=owner)
 
         self.assertRaises(
-            ValueError, another_oci_project.setOfficialRecipe, recipe)
+            ValueError, another_oci_project.setOfficialRecipeStatus,
+            recipe, True)
 
     def test_permission_check_on_setOfficialRecipe(self):
         distro = self.factory.makeDistribution()
@@ -642,7 +643,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         another_user = self.factory.makePerson()
         with person_logged_in(another_user):
             self.assertRaises(
-                Unauthorized, getattr, oci_project, 'setOfficialRecipe')
+                Unauthorized, getattr, oci_project, 'setOfficialRecipeStatus')
 
     def test_oci_project_get_recipe_by_name_and_owner(self):
         owner = self.factory.makePerson()

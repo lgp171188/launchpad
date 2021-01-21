@@ -894,7 +894,8 @@ class BaseOCIRecipeEditView(LaunchpadEditFormView):
             del data["processors"]
         official = data.pop('official_recipe', None)
         if official is not None and self.userIsRecipeAdmin():
-            self.context.oci_project.setOfficialRecipe(self.context)
+            self.context.oci_project.setOfficialRecipeStatus(
+                self.context, official)
 
         self.updateContextFromData(data)
         self.next_url = canonical_url(self.context)
@@ -1030,7 +1031,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                         data["processors"].append(processor)
         self.validateBuildArgs(data)
         official = data.get('official_recipe')
-        official_change = not self.context.official == official
+        official_change = self.context.official != official
         is_admin = self.userIsRecipeAdmin()
         if official is not None and official_change and not is_admin:
             self.setFieldError(
