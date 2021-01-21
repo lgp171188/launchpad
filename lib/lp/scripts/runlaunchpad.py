@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -18,8 +18,9 @@ import sys
 import fixtures
 from lazr.config import as_host_port
 from rabbitfixture.server import RabbitServerResources
+from talisker import run_gunicorn
 from testtools.testresult.real import _details_to_str
-from zope.app.server.main import main
+from zope.app.server.main import main as zope_main
 
 from lp.services.config import config
 from lp.services.daemons import tachandler
@@ -331,6 +332,20 @@ def start_testapp(argv=list(sys.argv)):
                 pass
 
 
+def gunicorn_main():
+    orig_argv = sys.argv
+    try:
+        sys.argv = [
+            os.path.join(config.root, "bin", "talisker.gunicorn"),
+            "lp.startwsgi",
+            "-c", os.path.join(config.config_dir, "gunicorn.conf.py")
+        ]
+        run_gunicorn()
+        return
+    finally:
+        sys.argv = orig_argv
+
+
 def start_launchpad(argv=list(sys.argv), setup=None):
     # We really want to replace this with a generic startup harness.
     # However, this should last us until this is developed
@@ -352,7 +367,10 @@ def start_launchpad(argv=list(sys.argv), setup=None):
             # Store our process id somewhere
             make_pidfile('launchpad')
             if config.launchpad.launch:
-                main(argv)
+                if config.use_gunicorn:
+                    gunicorn_main()
+                else:
+                    zope_main(argv)
             else:
                 # We just need the foreground process to sit around forever
                 # waiting for the signal to shut everything down.  Normally,

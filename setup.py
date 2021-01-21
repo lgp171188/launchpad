@@ -233,6 +233,7 @@ setup(
         'Sphinx',
         'statsd',
         'storm',
+        'talisker[gunicorn]',
         'tenacity',
         'testscenarios',
         'testtools',
