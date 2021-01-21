@@ -14,8 +14,9 @@ __all__ = [
     'BugImporter',
     ]
 
-from cStringIO import StringIO
+import base64
 import datetime
+import io
 import logging
 import os
 import time
@@ -394,7 +395,7 @@ class BugImporter:
             filename = get_value(attachnode, 'filename')
             title = get_value(attachnode, 'title')
             mimetype = get_value(attachnode, 'mimetype')
-            contents = get_value(attachnode, 'contents').decode('base-64')
+            contents = base64.b64decode(get_value(attachnode, 'contents'))
             if filename is None:
                 # if filename is None, use the last component of the URL
                 if attachnode.get('href') is not None:
@@ -417,7 +418,7 @@ class BugImporter:
             filealias = getUtility(ILibraryFileAliasSet).create(
                 name=filename,
                 size=len(contents),
-                file=StringIO(contents),
+                file=io.BytesIO(contents),
                 contentType=mimetype)
 
             getUtility(IBugAttachmentSet).create(
