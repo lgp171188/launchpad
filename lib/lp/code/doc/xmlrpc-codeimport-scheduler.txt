@@ -62,7 +62,7 @@ previously unseen hostnames.
     0
     >>> new_machine = getUtility(ICodeImportMachineSet).getByHostname(
     ...     'doesnt-exist-yet')
-    >>> new_machine.hostname
-    u'doesnt-exist-yet'
+    >>> print(new_machine.hostname)
+    doesnt-exist-yet
     >>> new_machine.state.name
     'ONLINE'

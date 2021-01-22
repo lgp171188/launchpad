@@ -33,8 +33,8 @@ hostname and online state information.
     >>> verifyObject(ICodeImportMachine, sample_machine)
     True
 
-    >>> sample_machine.hostname
-    u'bazaar-importer'
+    >>> print(sample_machine.hostname)
+    bazaar-importer
 
     >>> print(sample_machine.state.name)
     ONLINE
@@ -149,8 +149,8 @@ heartbeat for some time.
     OFFLINE frobisher
 
     >>> [new_event] = new_events
-    >>> dict(new_event.items())[CodeImportEventDataType.OFFLINE_REASON]
-    u'STOPPED'
+    >>> print(dict(new_event.items())[CodeImportEventDataType.OFFLINE_REASON])
+    STOPPED
 
 
 setQuiescing
@@ -171,8 +171,8 @@ bazaar experts or more likely a LOSA (administrator).
     QUIESCE frobisher name16
 
     >>> [new_event] = new_events
-    >>> dict(new_event.items())[CodeImportEventDataType.MESSAGE]
-    u'1.1.42 rollout'
+    >>> print(dict(new_event.items())[CodeImportEventDataType.MESSAGE])
+    1.1.42 rollout
 
 
 Allowed State Transitions

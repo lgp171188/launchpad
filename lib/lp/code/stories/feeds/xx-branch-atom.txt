@@ -48,8 +48,10 @@ which will include an entry for each branch.
 
     >>> anon_browser.open('http://feeds.launchpad.test/~mike/branches.atom')
     >>> _ = feedparser.parse(anon_browser.contents)
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Mike Murphy']
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Mike Murphy
     >>> def print_parse_ids(browser):
     ...     for id in parse_ids(browser.contents):
     ...         print(id)
@@ -89,8 +91,10 @@ still be hidden:
 
     >>> anon_browser.open('http://feeds.launchpad.test/~name12/branches.atom')
     >>> _ = feedparser.parse(anon_browser.contents)
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Sample Person']
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Sample Person
     >>> 'foo@localhost' in anon_browser.contents
     False
     >>> 'email address hidden' in anon_browser.contents
@@ -123,8 +127,9 @@ branches listed, just an id for the feed.
 
     >>> browser.open('http://feeds.launchpad.test/~landscape-developers/branches.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Branches for Landscape Developers']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Landscape Developers
     >>> print_parse_ids(browser)
     <id>tag:launchpad.net,2006-07-11:/code/~landscape-developers</id>
 
@@ -136,8 +141,10 @@ which will include an entry for each branch.
 
     >>> anon_browser.open('http://feeds.launchpad.test/fooix/branches.atom')
     >>> _ = feedparser.parse(anon_browser.contents)
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Fooix']
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Fooix
     >>> print_parse_ids(anon_browser)
     <id>tag:launchpad.net,...:/code/fooix</id>
     <id>tag:launchpad.net,2007-12-05:/code/~mary/fooix/fifth</id>
@@ -167,8 +174,10 @@ branches which will include an entry for each branch.
 
     >>> anon_browser.open('http://feeds.launchpad.test/oh-man/branches.atom')
     >>> _ = feedparser.parse(anon_browser.contents)
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Oh Man']
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Oh Man
     >>> print_parse_ids(anon_browser)
     <id>tag:launchpad.net,...:/code/oh-man</id>
     <id>tag:launchpad.net,2007-12-06:/code/~mary/fooey/sixth</id>
@@ -202,8 +211,9 @@ different entry.
     >>> url = 'http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom'
     >>> browser.open(url)
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Latest Revisions for Branch lp://dev/~mark/firefox/release--0.9.1']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Latest Revisions for Branch lp://dev/~mark/firefox/release--0.9.1
     >>> print(browser.url)
     http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom
 
