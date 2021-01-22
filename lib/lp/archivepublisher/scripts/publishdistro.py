@@ -179,7 +179,7 @@ class PublishDistro(PublisherScript):
             self.options.private_ppa,
             self.options.copy_archive,
             ]
-        return len(filter(None, exclusive_options))
+        return len(list(filter(None, exclusive_options)))
 
     def logOptions(self):
         """Dump the selected options to the debug log."""

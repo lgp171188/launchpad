@@ -706,7 +706,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             result.append(list(key))
             # Pull out all the official series names and append them as a list
             # to the end of the current record.
-            result[-1].append(filter(None, map(itemgetter(2), group)))
+            result[-1].append(list(filter(None, map(itemgetter(2), group))))
 
         return result
 

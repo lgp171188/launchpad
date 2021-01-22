@@ -178,7 +178,7 @@ class TranslationBuildApprover(object):
 
         importer = TranslationImporter()
         # We only care for templates.
-        self.filenames = filter(importer.isTemplateName, filenames)
+        self.filenames = list(filter(importer.isTemplateName, filenames))
         self._potemplateset = getUtility(IPOTemplateSet).getSubset(
             productseries=productseries,
             distroseries=distroseries,
