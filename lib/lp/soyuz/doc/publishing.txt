@@ -1252,7 +1252,7 @@ The returned ResultSet element is tuple containing:
     mozilla-firefox_0.9_i386.changes
 
     >>> print(content.md5)
-    e4a7193a8f72fa2755e2162512069093
+    b14d7265706d0f5b19d5812d59a61d2a
 
 Last but not least the publishing set class allows for the bulk deletion
 of publishing history records.
