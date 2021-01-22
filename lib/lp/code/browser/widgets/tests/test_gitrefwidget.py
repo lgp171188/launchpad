@@ -8,6 +8,7 @@ from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,
     )
+from zope.component import getUtility
 from zope.formlib.interfaces import (
     IBrowserWidget,
     IInputWidget,
@@ -21,11 +22,13 @@ from zope.schema import ValidationError
 
 from lp.app.validators import LaunchpadValidationError
 from lp.code.browser.widgets.gitref import GitRefWidget
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.vocabularies.gitrepository import GitRepositoryVocabulary
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    person_logged_in,
     TestCaseWithFactory,
     verifyObject,
     )
@@ -254,6 +257,22 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
                 form,
                 "There is no Git repository named '%s' registered in "
                 "Launchpad." % ref.repository_url)
+
+    def test_getInputValue_owner_default_short_form(self):
+        owner = self.factory.makePerson()
+        target = self.factory.makeProduct()
+        repo = self.factory.makeGitRepository(owner=owner, target=target)
+        [ref] = self.factory.makeGitRefs(repository=repo)
+        with person_logged_in(repo.owner):
+            getUtility(IGitRepositorySet).setDefaultRepositoryForOwner(
+                owner, target, repo, owner)
+        short_url = "~{}/{}".format(owner.name, target.name)
+        form = {
+            "field.git_ref.repository": short_url,
+            "field.git_ref.path": ref.path,
+            }
+        self.widget.request = LaunchpadTestRequest(form=form)
+        self.assertEqual(ref, self.widget.getInputValue())
 
     def test_call(self):
         # The __call__ method sets up the widgets.
