@@ -66,7 +66,7 @@ For distroseries we publish a subset of its attributes.
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
     changeslist: 'hoary-changes@ubuntu.com'
-    component_names: [u'main', u'restricted']
+    component_names: ['main', 'restricted']
     date_created: '2006-10-16T18:31:43.483559+00:00'
     datereleased: None
     description: 'Hoary is the ...
@@ -76,7 +76,7 @@ For distroseries we publish a subset of its attributes.
     drivers_collection_link: 'http://.../ubuntu/hoary/drivers'
     fullseriesname: 'Ubuntu Hoary'
     include_long_descriptions: True
-    index_compressors: [u'gzip', u'bzip2']
+    index_compressors: ['gzip', 'bzip2']
     language_pack_full_export_requested: False
     main_archive_link: 'http://.../ubuntu/+archive/primary'
     name: 'hoary'
@@ -89,8 +89,7 @@ For distroseries we publish a subset of its attributes.
     resource_type_link: ...
     self_link: 'http://.../ubuntu/hoary'
     status: 'Active Development'
-    suite_names:
-        [u'Release', u'Security', u'Updates', u'Proposed', u'Backports']
+    suite_names: ['Release', 'Security', 'Updates', 'Proposed', 'Backports']
     summary: 'Hoary is the ...
     supported: False
     title: 'The Hoary Hedgehog Release'

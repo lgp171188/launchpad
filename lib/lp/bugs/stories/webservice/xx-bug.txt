@@ -1198,7 +1198,7 @@ renamed bug tracker.
     >>> pprint_entry(bug_tracker)
     active: True
     base_url: 'http://bugs.example.com/'
-    base_url_aliases: [u'http://bugs.example.com/bugs/', u'http://www.example.com/bugtracker/']
+    base_url_aliases: ['http://bugs.example.com/bugs/', 'http://www.example.com/bugtracker/']
     bug_tracker_type: 'Bugzilla'
     contact_details: 'bob@example.com'
     has_lp_plugin: None
