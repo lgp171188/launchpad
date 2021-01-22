@@ -93,9 +93,9 @@ class TestMacaroonAuth(TestCase):
 
     def test_good(self):
         r = Request()
-        root_key = hashlib.sha256("root").hexdigest()
+        root_key = hashlib.sha256(b"root").hexdigest()
         root_macaroon = Macaroon(key=root_key)
-        discharge_key = hashlib.sha256("discharge").hexdigest()
+        discharge_key = hashlib.sha256(b"discharge").hexdigest()
         discharge_caveat_id = '{"secret": "thing"}'
         root_macaroon.add_third_party_caveat(
             "sso.example", discharge_key, discharge_caveat_id)
@@ -113,7 +113,7 @@ class TestMacaroonAuth(TestCase):
 
     def test_good_no_discharge(self):
         r = Request()
-        root_key = hashlib.sha256("root").hexdigest()
+        root_key = hashlib.sha256(b"root").hexdigest()
         root_macaroon = Macaroon(key=root_key)
         MacaroonAuth(root_macaroon.serialize())(r)
         auth_value = r.headers["Authorization"]
@@ -137,9 +137,9 @@ class TestMacaroonAuth(TestCase):
 
     def test_logging(self):
         r = Request()
-        root_key = hashlib.sha256("root").hexdigest()
+        root_key = hashlib.sha256(b"root").hexdigest()
         root_macaroon = Macaroon(key=root_key)
-        discharge_key = hashlib.sha256("discharge").hexdigest()
+        discharge_key = hashlib.sha256(b"discharge").hexdigest()
         discharge_caveat_id = '{"secret": "thing"}'
         root_macaroon.add_third_party_caveat(
             "sso.example", discharge_key, discharge_caveat_id)
@@ -234,10 +234,10 @@ class TestSnapStoreClient(TestCaseWithFactory):
 
     def _make_store_secrets(self, encrypted=False):
         self.root_key = hashlib.sha256(
-            self.factory.getUniqueString()).hexdigest()
+            self.factory.getUniqueBytes()).hexdigest()
         root_macaroon = Macaroon(key=self.root_key)
         self.discharge_key = hashlib.sha256(
-            self.factory.getUniqueString()).hexdigest()
+            self.factory.getUniqueBytes()).hexdigest()
         self.discharge_caveat_id = self.factory.getUniqueString()
         root_macaroon.add_third_party_caveat(
             "sso.example", self.discharge_key, self.discharge_caveat_id)
@@ -431,7 +431,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
 
     @responses.activate
     def test_upload_no_discharge(self):
-        root_key = hashlib.sha256(self.factory.getUniqueString()).hexdigest()
+        root_key = hashlib.sha256(self.factory.getUniqueBytes()).hexdigest()
         root_macaroon = Macaroon(key=root_key)
         snapbuild = self.makeUploadableSnapBuild(
             store_secrets={"root": root_macaroon.serialize()})

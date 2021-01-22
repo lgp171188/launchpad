@@ -299,13 +299,13 @@ class TestGitAPIMixin:
             GitHostingFixture(refs={
                 'refs/heads/master': {
                     "object": {
-                        "sha1": sha1('master-branch'),
+                        "sha1": sha1(b'master-branch'),
                         "type": "commit",
                     },
                 },
                 'refs/heads/foo': {
                     "object": {
-                        "sha1": sha1('foo-branch'),
+                        "sha1": sha1(b'foo-branch'),
                         "type": "commit",
                     },
                 }}))
@@ -336,7 +336,7 @@ class TestGitAPIMixin:
             {'refs/heads/foo', 'refs/heads/master'},
             {i.path for i in git_repository.refs})
         self.assertEqual(
-            {sha1('foo-branch'), sha1('master-branch')},
+            {sha1(b'foo-branch'), sha1(b'master-branch')},
             {i.commit_sha1 for i in git_repository.refs})
 
     def assertConfirmRepoCreationFails(

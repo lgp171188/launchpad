@@ -111,7 +111,7 @@ class TestRequestTokens(TestOAuth):
         self.assertIsInstance(secret, six.text_type)
         self.assertEqual(
             removeSecurityProxy(request_token)._secret,
-            hashlib.sha256(secret).hexdigest())
+            hashlib.sha256(secret.encode('ASCII')).hexdigest())
 
     def test_key_and_secret_automatically_generated(self):
         request_token, secret = self.consumer.newRequestToken()
@@ -285,7 +285,7 @@ class TestAccessTokens(TestOAuth):
         self.assertIsInstance(access_secret, six.text_type)
         self.assertEqual(
             removeSecurityProxy(access_token)._secret,
-            hashlib.sha256(access_secret).hexdigest())
+            hashlib.sha256(access_secret.encode('ASCII')).hexdigest())
 
     def test_access_token_inherits_data_fields_from_request_token(self):
         request_token, access_token, _ = (
