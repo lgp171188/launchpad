@@ -174,7 +174,7 @@ Projects are available at their canonical URL on the API virtual host.
     is_permitted: True
     license_approved: False
     license_info: None
-    licenses: [u'MIT / X / Expat Licence']
+    licenses: ['MIT / X / Expat Licence']
     logo_link: 'http://.../firefox/logo'
     name: 'firefox'
     official_answers: True
@@ -1021,14 +1021,16 @@ Project release files
 Project release files can be added to a project release using the API
 'add_file' method.
 
+    >>> import io
+
     >>> files_url = '/firefox/1.0/1.0.0/files'
     >>> ff_100_files = webservice.get(files_url).jsonBody()
     >>> print_self_link_of_entries(ff_100_files)
 
     >>> pr_url = '/firefox/1.0/1.0.0'
     >>> ff_100 = webservice.get(pr_url).jsonBody()
-    >>> file_content=b"first attachment file content \xff"
-    >>> sig_file_content=b"hash hash hash \xff"
+    >>> file_content=io.BytesIO(b"first attachment file content \xff")
+    >>> sig_file_content=io.BytesIO(b"hash hash hash \xff")
     >>> response = webservice.named_post(ff_100['self_link'], 'add_file',
     ...     filename='filename.txt',
     ...     file_content=file_content,
@@ -1058,16 +1060,18 @@ And it has been uploaded correctly.
     >>> login('bac@canonical.com')
     >>> concrete_one_zero = getUtility(IProductSet)['firefox'].getRelease(
     ...     '1.0.0')
-    >>> concrete_one_zero.files[0].libraryfile.read() == file_content
+    >>> concrete_one_zero.files[0].libraryfile.read() == (
+    ...     file_content.getvalue())
     True
-    >>> concrete_one_zero.files[0].signature.read() == sig_file_content
+    >>> concrete_one_zero.files[0].signature.read() == (
+    ...     sig_file_content.getvalue())
     True
     >>> logout()
 
 The file type and description are optional.  If no signature is
 available then it must be explicitly set to None.
 
-    >>> file_content=b"second attachment file content"
+    >>> file_content=io.BytesIO(b"second attachment file content")
     >>> response = webservice.named_post(ff_100['self_link'], 'add_file',
     ...     filename='filename2.txt',
     ...     file_content=file_content,

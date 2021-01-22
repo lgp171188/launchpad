@@ -68,7 +68,7 @@ lazr.delegates==2.0.4
 lazr.enum==1.2
 lazr.jobrunner==0.16
 lazr.lifecycle==1.2
-lazr.restful==0.23.0
+lazr.restful==1.0.0
 lazr.restfulclient==0.14.3
 lazr.sshserver==0.1.11
 lazr.uri==1.0.5
@@ -83,6 +83,8 @@ mistune==0.8.3
 mock==1.0.1
 mocker==1.1.1
 monotonic==1.5
+multipart==0.1.1; python_version < "3"
+multipart==0.2.3; python_version >= "3"
 netaddr==0.7.19
 oauth==1.0
 oauthlib==3.1.0
@@ -177,6 +179,7 @@ zope.app.publication==4.3.1
 zope.app.publisher==4.2.0
 zope.app.server==4.0.0
 zope.app.wsgi==4.3.0
+zope.publisher==6.0.0
 zope.sendmail==5.1
 zope.server==4.0.2
 # lp:~launchpad-committers/zope.session:launchpad
