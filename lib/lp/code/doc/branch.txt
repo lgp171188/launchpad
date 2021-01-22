@@ -102,8 +102,8 @@ imported or remote, name, and so on.
     ...     branch_type=BranchType.MIRRORED, name='dev',
     ...     registrant=registrant, url=factory.getUniqueURL())
 
-    >>> new_branch.name
-    u'dev'
+    >>> print(new_branch.name)
+    dev
 
 The registrant of the branch is the user that originally registered the
 branch, whereas the owner is the current owner of the branch.
