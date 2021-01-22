@@ -74,8 +74,8 @@ The 'new' method will create a new builder in the database.
     >>> with admin_logged_in():
     ...     bnew = builderset.new(
     ...         [1], 'http://dummy.com:8221/', 'dummy', 'Dummy Title', 1)
-    >>> bnew.name
-    u'dummy'
+    >>> print(bnew.name)
+    dummy
 
 'getBuilders' returns builders with the 'active' flag set, ordered by
 virtualization status, architecture, then name.
@@ -102,8 +102,9 @@ Processor/virtualization.
 
 There are no 'amd64' build queue entries.
 
-    >>> queue_sizes['nonvirt'].keys()
-    [u'386']
+    >>> for arch_tag in queue_sizes['nonvirt']:
+    ...     print(arch_tag)
+    386
 
 The virtualized build queue for 386 is also empty.
 
