@@ -99,17 +99,17 @@ changes without requiring the combined image file to be recreated.
     >>> print new_positioning_file.read()
     /*...
     {
-        "../images/edit.png": [
+        "../images/add.png": [
             0,
-            -228
+            -114
         ],
         "../images/blue-bar.png": [
             0,
             -342
         ],
-        "../images/add.png": [
+        "../images/edit.png": [
             0,
-            -114
+            -228
         ]
     }
 
