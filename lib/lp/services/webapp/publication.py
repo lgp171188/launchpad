@@ -872,11 +872,8 @@ def tracelog(request, prefix, msg):
     easier. ``prefix`` should be unique and contain no spaces, and
     preferably a single character to save space.
     """
-    msg = '%s %s' % (prefix, six.ensure_str(msg, 'US-ASCII'))
     if not config.use_gunicorn:
+        msg = '%s %s' % (prefix, six.ensure_str(msg, 'US-ASCII'))
         tracelog = ITraceLog(request, None)
         if tracelog is not None:
             tracelog.log(msg)
-    else:
-        logger = logging.getLogger()
-        logger.info(msg)
