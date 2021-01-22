@@ -6,9 +6,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
-import re
 
-from testtools.testcase import ExpectedException
+import six
 
 from lp.archiveuploader.tests import datadir
 from lp.archiveuploader.utils import (
@@ -236,32 +235,30 @@ class TestUtilities(TestCase):
         from lp.archiveuploader.utils import (
             parse_maintainer_bytes,
             )
+
         cases = (
-            "James Troup",
-            "James Troup <james>",
-            "James Troup <james@nocrew.org",
-            b"No\xc3\xa8l K\xc3\xb6the")
+            ("James Troup",
+             'James Troup: no @ found in email address part.'),
+
+            ("James Troup <james>",
+             'James Troup <james>: no @ found in email address part.'),
+
+            ("James Troup <james@nocrew.org",
+             ("James Troup <james@nocrew.org: "
+              "doesn't parse as a valid Maintainer field.")),
+
+            (b"No\xc3\xa8l K\xc3\xb6the",
+             (b'No\xc3\xa8l K\xc3\xb6the: '
+              b'no @ found in email address '
+              b'part.').decode('utf-8')),
+        )
+
         for case in cases:
-            with ExpectedException(
-                    ParseMaintError, b'^%s: ' % re.escape(case)):
-                parse_maintainer_bytes(case, 'Maintainer')
-
-    def testParseMaintainerNonASCII(self):
-        """lp.archiveuploader.utils.parse_maintainer will generate OOPS
-        if Maintainer filed contains non ASCII characters - bug 1910403
-        """
-        from lp.archiveuploader.utils import (
-            parse_maintainer_bytes,
-            )
-        maintainerData = b'No\xc3\xa8l K\xc3\xb6the'
-        exceptionMessage = (b'No\xc3\xa8l K\xc3\xb6the: '
-                            b'no @ found in email address '
-                            b'part.').decode('utf-8')
-
-        self.assertRaisesWithContent(ParseMaintError,
-                                     exceptionMessage.encode("utf-8"),
-                                     parse_maintainer_bytes,
-                                     maintainerData, 'Maintainer')
+            try:
+                parse_maintainer_bytes(case[0], 'Maintainer')
+            except ParseMaintError as e:
+                pass
+            self.assertEqual(case[1], six.text_type(e))
 
 
 class TestFilenameRegularExpressions(TestCase):
