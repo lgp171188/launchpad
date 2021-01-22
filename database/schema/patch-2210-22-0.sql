@@ -368,7 +368,7 @@ CREATE OR REPLACE FUNCTION bugsummary_targets(btf_row public.bugtaskflat)
     LANGUAGE sql IMMUTABLE
     AS $_$
     -- Include a sourcepackagename-free/ociproject-free task if this one has a
-    -- sourcepackagename, so package tasks are also counted in their
+    -- sourcepackagename/ociproject, so package tasks are also counted in their
     -- distro/series.
     SELECT
         $1.product, $1.productseries, $1.distribution,
