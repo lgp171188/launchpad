@@ -15,10 +15,6 @@ from functools import partial
 import hashlib
 from io import BytesIO
 import json
-try:
-    from json.decoder import JSONDecodeError
-except ImportError:
-    JSONDecodeError = ValueError
 import logging
 import re
 import tarfile
@@ -94,7 +90,7 @@ class OCIRegistryClient:
         if response.content:
             try:
                 response_data = response.json()
-            except JSONDecodeError:
+            except ValueError:
                 pass
             else:
                 errors = response_data.get("errors")
