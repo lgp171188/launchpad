@@ -76,7 +76,7 @@ class TestPackageBuildMixin(TestCaseWithFactory):
         self.package_build.storeUploadLog("Some content")
         self.assertIsNotNone(self.package_build.upload_log)
         self.assertEqual(
-            hashlib.sha1("Some content").hexdigest(),
+            hashlib.sha1(b"Some content").hexdigest(),
             self.package_build.upload_log.content.sha1)
 
     def test_storeUploadLog_private(self):

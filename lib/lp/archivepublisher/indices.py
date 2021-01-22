@@ -168,7 +168,7 @@ def build_binary_stanza_fields(bpr, component, section, priority,
     # Our formatted description isn't \n-terminated, but apt
     # considers the trailing \n to be part of the data to hash.
     bin_description_md5 = hashlib.md5(
-        description.encode('utf-8') + '\n').hexdigest()
+        description.encode('utf-8') + b'\n').hexdigest()
     if separate_long_descriptions:
         # If distroseries.include_long_descriptions is False, the
         # description should be the summary
@@ -244,7 +244,7 @@ def build_translations_stanza_fields(bpr, packages):
     # Our formatted description isn't \n-terminated, but apt
     # considers the trailing \n to be part of the data to hash.
     bin_description_md5 = hashlib.md5(
-        bin_description.encode('utf-8') + '\n').hexdigest()
+        bin_description.encode('utf-8') + b'\n').hexdigest()
     if (bpr.name, bin_description_md5) not in packages:
         fields = IndexStanzaFields()
         fields.append('Package', bpr.name)

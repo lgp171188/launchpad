@@ -72,8 +72,10 @@ that have been committed by that person (or attributed to that person).
 
     >>> anon_browser.open('http://feeds.launchpad.test/~mike/revisions.atom')
     >>> _ = feedparser.parse(anon_browser.contents)
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Latest Revisions by Mike Murphy']
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Latest Revisions by Mike Murphy
     >>> def print_parse_ids(browser):
     ...     for id in parse_ids(browser.contents):
     ...         print(id)
@@ -100,8 +102,9 @@ of that team.
 
     >>> browser.open('http://feeds.launchpad.test/~m-team/revisions.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Latest Revisions by members of The M Team']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Latest Revisions by members of The M Team
     >>> print_parse_ids(browser)
     <id>tag:launchpad.net,...:/code/~m-team</id>
     <id>tag:launchpad.net,...:/revision/rev3</id>
@@ -117,8 +120,10 @@ that have been committed on branches for the product.
 
     >>> anon_browser.open('http://feeds.launchpad.test/fooix/revisions.atom')
     >>> _ = feedparser.parse(anon_browser.contents)
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Latest Revisions for Fooix']
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Latest Revisions for Fooix
 
 Ignore the date associated with the id of 'fooix' as this is the date created
 for the product, which will be different each time the test is run.
@@ -141,8 +146,10 @@ branch for any product that is associated with the project group.
 
     >>> anon_browser.open('http://feeds.launchpad.test/fubar/revisions.atom')
     >>> _ = feedparser.parse(anon_browser.contents)
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Latest Revisions for Fubar']
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Latest Revisions for Fubar
 
 Ignore the date associated with the id of 'fubar' as this is the date created
 of the project group, which will be different each time the test is run.

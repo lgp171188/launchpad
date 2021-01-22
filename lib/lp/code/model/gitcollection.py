@@ -544,7 +544,8 @@ class GenericGitCollection:
             path = URI(term).path.strip("/")
         except InvalidURIError:
             path = term
-        return getUtility(IGitLookup).getByUniqueName(path)
+        result = getUtility(IGitLookup).getByPath(path)
+        return result[0]
 
     def search(self, term):
         """See `IGitCollection`."""

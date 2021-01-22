@@ -344,7 +344,7 @@ provide such a token.
 
     >>> private_path = TimeLimitedToken.url_to_token_path(
     ...        file_alias.private_url)
-    >>> url_token = token_url.split('=')[1]
+    >>> url_token = token_url.split('=')[1].encode('ASCII')
     >>> hashlib.sha256(url_token).hexdigest() == session_store().find(
     ...     TimeLimitedToken, path=private_path).any().token
     True
