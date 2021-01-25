@@ -86,6 +86,8 @@
         <dd>
           <span tal:condition="context/official">Yes</span>
           <span tal:condition="not: context/official">No</span>
+        </dd>
+      </dl>
       <dl id="image-name" tal:condition="context/use_distribution_credentials">
         <dt>Registry image name</dt>
         <dd>
