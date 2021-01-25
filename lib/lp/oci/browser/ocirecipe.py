@@ -996,7 +996,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                 "Allows use of distribution registry credentials "
                 "and the default git repository routing. "
                 "May only be enabled by the owner of the OCI Project."),
-            default=False,
+            default=self.context.official,
             required=False, readonly=False))
 
     def validate(self, data):
