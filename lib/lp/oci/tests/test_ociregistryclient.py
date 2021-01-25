@@ -205,7 +205,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         self.client.upload(self.build)
 
-        request = json.loads(responses.calls[1].request.body)
+        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
 
         self.assertThat(request, MatchesDict({
             "layers": MatchesListwise([
@@ -690,7 +690,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "digest": "build2digest",
                 "size": 321
             }]
-        }, json.loads(send_manifest_call.request.body))
+        }, json.loads(send_manifest_call.request.body.decode("UTF-8")))
 
     @responses.activate
     def test_multi_arch_manifest_upload_update_manifest(self):
@@ -782,7 +782,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "digest": "new-build2-digest",
                 "size": 2222
             }]
-        }, json.loads(send_manifest_call.request.body))
+        }, json.loads(send_manifest_call.request.body.decode("UTF-8")))
 
     @responses.activate
     def test_multi_arch_manifest_upload_invalid_current_manifest(self):
@@ -837,7 +837,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "digest": "new-build1-digest",
                 "size": 1111
             }]
-        }, json.loads(send_manifest_call.request.body))
+        }, json.loads(send_manifest_call.request.body.decode("UTF-8")))
 
     @responses.activate
     def test_multi_arch_manifest_upload_registry_error_fetching_current(self):

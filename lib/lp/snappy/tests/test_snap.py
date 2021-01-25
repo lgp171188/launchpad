@@ -3254,7 +3254,8 @@ class TestSnapWebservice(TestCaseWithFactory):
                     }],
                 "permissions": ["package_upload"],
                 }
-            self.assertEqual(expected_body, json.loads(call.request.body))
+            self.assertEqual(
+                expected_body, json.loads(call.request.body.decode("UTF-8")))
             self.assertEqual({"root": root_macaroon_raw}, snap.store_secrets)
         return response, root_macaroon.third_party_caveats()[0]
 
