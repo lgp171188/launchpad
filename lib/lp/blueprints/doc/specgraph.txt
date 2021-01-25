@@ -281,8 +281,8 @@ The SpecificationTreeImageTag view is indirectly called when the spec's
     >>> page_view.initialize()
     >>> content = page_view.render()
     >>> image_start = content.find('<map id="deptree"')
-    >>> content[image_start:image_start + 33]
-    u'<map id="deptree" name="deptree">'
+    >>> print(content[image_start:image_start + 33])
+    <map id="deptree" name="deptree">
 
 
 renderGraphvizGraph() error handling
