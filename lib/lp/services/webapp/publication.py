@@ -7,7 +7,6 @@ __all__ = [
     'LaunchpadBrowserPublication',
     ]
 
-import logging
 import re
 import sys
 import threading

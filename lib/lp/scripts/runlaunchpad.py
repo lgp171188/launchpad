@@ -6,11 +6,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = ['start_launchpad']
 
-import tempfile
 try:
     from contextlib import ExitStack
 except ImportError:
     from contextlib2 import ExitStack
+from io import StringIO
 import os
 import re
 import signal
@@ -351,10 +351,8 @@ def gunicornify_zope_config_file():
     for directive in ['interrupt-check-interval']:
         content = re.sub(r"%s .*" % directive, "", content)
 
-    new_filename = tempfile.mktemp(prefix='launchpad.conf-gunicorn-')
-    with open(new_filename, 'w') as fd:
-        fd.write(content)
-    config.zope_config_file = new_filename
+    new_file = StringIO(content)
+    config.zope_config_file = new_file
 
 
 def gunicorn_main():

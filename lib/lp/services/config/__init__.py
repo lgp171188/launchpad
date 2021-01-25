@@ -275,8 +275,12 @@ class LaunchpadConfig:
         """
         with resources.path('zope.app.server', 'schema.xml') as schemafile:
             schema = ZConfig.loadSchema(str(schemafile))
-        root_options, handlers = ZConfig.loadConfig(
-            schema, self.zope_config_file)
+        if isinstance(self.zope_config_file, six.string_types):
+            root_options, handlers = ZConfig.loadConfig(
+                schema, self.zope_config_file)
+        else:
+            root_options, handlers = ZConfig.loadConfigFile(
+                schema, self.zope_config_file)
         self._devmode = root_options.devmode
         self._servers = root_options.servers
 

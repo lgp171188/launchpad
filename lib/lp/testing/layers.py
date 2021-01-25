@@ -88,7 +88,6 @@ import transaction
 from webob.request import environ_from_url as orig_environ_from_url
 import wsgi_intercept
 from wsgi_intercept import httplib2_intercept
-import zcml
 from zope.app.publication.httpfactory import HTTPPublicationRequestFactory
 from zope.app.wsgi import WSGIPublisherApplication
 from zope.component import (
@@ -160,6 +159,7 @@ from lp.testing import (
     reset_logging,
     )
 from lp.testing.pgsql import PgTestSetup
+import zcml
 
 
 COMMA = ','
