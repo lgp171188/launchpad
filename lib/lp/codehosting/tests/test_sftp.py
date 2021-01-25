@@ -138,7 +138,8 @@ class TestSFTPAdapter(TestCase):
         product = self.factory.makeProduct()
         branch_name = self.factory.getUniqueString()
         deferred = server.makeDirectory(
-            '~%s/%s/%s' % (avatar.username, product.name, branch_name),
+            ('~%s/%s/%s' % (
+                avatar.username, product.name, branch_name)).encode('UTF-8'),
             {'permissions': 0o777})
         return deferred
 
@@ -155,8 +156,8 @@ class SFTPTestMixin:
         self.assertEqual(os.getuid(), attrs['uid'])
         self.assertEqual(os.getgid(), attrs['gid'])
         self.assertEqual(stat_value.st_mode, attrs['permissions'])
-        self.assertEqual(stat_value.st_mtime, attrs['mtime'])
-        self.assertEqual(stat_value.st_atime, attrs['atime'])
+        self.assertEqual(int(stat_value.st_mtime), attrs['mtime'])
+        self.assertEqual(int(stat_value.st_atime), attrs['atime'])
 
     def getPathSegment(self):
         """Return a unique path segment for testing.
@@ -192,7 +193,7 @@ class TestSFTPFile(TestCaseInTempDir, SFTPTestMixin):
             yield function(*args, **kwargs)
 
     def openFile(self, path, flags, attrs):
-        return self._sftp_server.openFile(path, flags, attrs)
+        return self._sftp_server.openFile(path.encode('UTF-8'), flags, attrs)
 
     def test_openFileInNonexistingDirectory(self):
         # openFile fails with a no such file error if we try to open a file in
@@ -410,7 +411,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         # setAttrs on the TransportSFTPServer doesn't do anything either.
         filename = self.getPathSegment()
         self.build_tree_contents([(filename, b'bar')])
-        yield self.sftp_server.setAttrs(filename, {})
+        yield self.sftp_server.setAttrs(filename.encode('UTF-8'), {})
 
     @defer.inlineCallbacks
     def test_serverGetAttrs(self):
@@ -419,7 +420,8 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         filename = self.getPathSegment()
         self.build_tree_contents([(filename, b'bar')])
         stat_value = os.stat(filename)
-        attrs = yield self.sftp_server.getAttrs(filename, False)
+        attrs = yield self.sftp_server.getAttrs(
+            filename.encode('UTF-8'), False)
         self.checkAttrs(attrs, stat_value)
 
     @defer.inlineCallbacks
@@ -428,14 +430,15 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         # SFTPErrors.
         nonexistent_file = self.getPathSegment()
         with ExpectedException(filetransfer.SFTPError):
-            yield self.sftp_server.getAttrs(nonexistent_file, False)
+            yield self.sftp_server.getAttrs(
+                nonexistent_file.encode('UTF-8'), False)
 
     @defer.inlineCallbacks
     def test_removeFile(self):
         # removeFile removes the file.
         filename = self.getPathSegment()
         self.build_tree_contents([(filename, b'bar')])
-        yield self.sftp_server.removeFile(filename)
+        yield self.sftp_server.removeFile(filename.encode('UTF-8'))
         self.assertFalse(file_exists(filename))
 
     @defer.inlineCallbacks
@@ -443,7 +446,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         # Errors in removeFile are translated into SFTPErrors.
         filename = self.getPathSegment()
         with ExpectedException(filetransfer.SFTPError):
-            yield self.sftp_server.removeFile(filename)
+            yield self.sftp_server.removeFile(filename.encode('UTF-8'))
 
     @defer.inlineCallbacks
     def test_removeFile_directory(self):
@@ -451,7 +454,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         filename = self.getPathSegment()
         self.build_tree_contents([(filename + '/',)])
         with ExpectedException(filetransfer.SFTPError):
-            yield self.sftp_server.removeFile(filename)
+            yield self.sftp_server.removeFile(filename.encode('UTF-8'))
 
     @defer.inlineCallbacks
     def test_renameFile(self):
@@ -459,7 +462,8 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         orig_filename = self.getPathSegment()
         new_filename = self.getPathSegment()
         self.build_tree_contents([(orig_filename, b'bar')])
-        yield self.sftp_server.renameFile(orig_filename, new_filename)
+        yield self.sftp_server.renameFile(
+            orig_filename.encode('UTF-8'), new_filename.encode('UTF-8'))
         self.assertFalse(file_exists(orig_filename))
         self.assertTrue(file_exists(new_filename))
 
@@ -469,13 +473,15 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         orig_filename = self.getPathSegment()
         new_filename = self.getPathSegment()
         with ExpectedException(filetransfer.SFTPError):
-            yield self.sftp_server.renameFile(orig_filename, new_filename)
+            yield self.sftp_server.renameFile(
+                orig_filename.encode('UTF-8'), new_filename.encode('UTF-8'))
 
     @defer.inlineCallbacks
     def test_makeDirectory(self):
         # makeDirectory makes the directory.
         directory = self.getPathSegment()
-        yield self.sftp_server.makeDirectory(directory, {'permissions': 0o777})
+        yield self.sftp_server.makeDirectory(
+            directory.encode('UTF-8'), {'permissions': 0o777})
         self.assertTrue(
             os.path.isdir(directory), '%r is not a directory' % directory)
         self.assertEqual(0o40777, os.stat(directory).st_mode)
@@ -487,14 +493,14 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         nonexistent_child = '%s/%s' % (nonexistent, self.getPathSegment())
         with ExpectedException(filetransfer.SFTPError):
             yield self.sftp_server.makeDirectory(
-                nonexistent_child, {'permissions': 0o777})
+                nonexistent_child.encode('UTF-8'), {'permissions': 0o777})
 
     @defer.inlineCallbacks
     def test_removeDirectory(self):
         # removeDirectory removes the directory.
         directory = self.getPathSegment()
         os.mkdir(directory)
-        yield self.sftp_server.removeDirectory(directory)
+        yield self.sftp_server.removeDirectory(directory.encode('UTF-8'))
         self.assertFalse(file_exists(directory))
 
     @defer.inlineCallbacks
@@ -502,7 +508,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         # Errors in removeDirectory are translated into SFTPErrors.
         directory = self.getPathSegment()
         with ExpectedException(filetransfer.SFTPError):
-            yield self.sftp_server.removeDirectory(directory)
+            yield self.sftp_server.removeDirectory(directory.encode('UTF-8'))
 
     def test_gotVersion(self):
         # gotVersion returns an empty dictionary.
@@ -513,27 +519,28 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         # We don't support any extensions.
         self.assertRaises(
             NotImplementedError, self.sftp_server.extendedRequest,
-            'foo', 'bar')
+            b'foo', b'bar')
 
     @defer.inlineCallbacks
     def test_realPath(self):
         # realPath returns the absolute path of the file.
         src, dst = self.getPathSegment(), self.getPathSegment()
         os.symlink(src, dst)
-        path = yield self.sftp_server.realPath(dst)
+        path = yield self.sftp_server.realPath(dst.encode('UTF-8'))
         self.assertEqual(os.path.abspath(src).encode('UTF-8'), path)
 
     def test_makeLink(self):
         # makeLink is not supported.
         self.assertRaises(
             NotImplementedError, self.sftp_server.makeLink,
-            self.getPathSegment(), self.getPathSegment())
+            self.getPathSegment().encode('UTF-8'),
+            self.getPathSegment().encode('UTF-8'))
 
     def test_readLink(self):
         # readLink is not supported.
         self.assertRaises(
             NotImplementedError, self.sftp_server.readLink,
-            self.getPathSegment())
+            self.getPathSegment().encode('UTF-8'))
 
     @defer.inlineCallbacks
     def test_openDirectory(self):
@@ -546,7 +553,8 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
             parent_dir + '/',
             '%s/%s/' % (parent_dir, child_dir),
             '%s/%s' % (parent_dir, child_file)])
-        directory = yield self.sftp_server.openDirectory(parent_dir)
+        directory = yield self.sftp_server.openDirectory(
+            parent_dir.encode('UTF-8'))
         entries = list(directory)
         directory.close()
         names = [entry[0] for entry in entries]
@@ -573,7 +581,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         # Errors in openDirectory are translated into SFTPErrors.
         nonexistent = self.getPathSegment()
         with ExpectedException(filetransfer.SFTPError):
-            yield self.sftp_server.openDirectory(nonexistent)
+            yield self.sftp_server.openDirectory(nonexistent.encode('UTF-8'))
 
     @defer.inlineCallbacks
     def test_openDirectoryMemory(self):
@@ -581,7 +589,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         transport = MemoryTransport()
         transport.put_bytes('hello', b'hello')
         sftp_server = TransportSFTPServer(AsyncTransport(transport))
-        directory = yield sftp_server.openDirectory('.')
+        directory = yield sftp_server.openDirectory(b'.')
         with closing(directory):
             names = [entry[0] for entry in directory]
         self.assertEqual([b'hello'], names)

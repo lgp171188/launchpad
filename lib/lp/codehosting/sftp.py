@@ -206,12 +206,14 @@ class TransportSFTPFile:
         """
         # XXX 2008-05-09 JonathanLange: This should at least raise an error,
         # not do nothing silently.
-        return self._server.setAttrs(self._unescaped_relpath, attrs)
+        return self._server.setAttrs(
+            self._unescaped_relpath.encode('UTF-8'), attrs)
 
     @with_sftp_error
     def getAttrs(self):
         """See `ISFTPFile`."""
-        return self._server.getAttrs(self._unescaped_relpath, False)
+        return self._server.getAttrs(
+            self._unescaped_relpath.encode('UTF-8'), False)
 
     @defer.inlineCallbacks
     def close(self):
@@ -253,6 +255,16 @@ class TransportSFTPServer:
 
     def __init__(self, transport):
         self.transport = transport
+
+    def _decodePath(self, path):
+        """Decode a path to UTF-8.
+
+        Twisted sends paths over SFTP as bytes, so we must decode them.
+        """
+        try:
+            return path.decode('UTF-8')
+        except UnicodeDecodeError:
+            raise filetransfer.SFTPError(filetransfer.FX_BAD_MESSAGE, path)
 
     def extendedRequest(self, extendedName, extendedData):
         """See `ISFTPServer`."""
@@ -300,6 +312,7 @@ class TransportSFTPServer:
     @defer.inlineCallbacks
     def openDirectory(self, path):
         """See `ISFTPServer`."""
+        path = self._decodePath(path)
         escaped_path = urlutils.escape(path)
         file_list = yield self.transport.list_dir(escaped_path)
         stat_results = yield self._stat_files_in_list(file_list, escaped_path)
@@ -310,6 +323,7 @@ class TransportSFTPServer:
     @defer.inlineCallbacks
     def openFile(self, path, flags, attrs):
         """See `ISFTPServer`."""
+        path = self._decodePath(path)
         directory = os.path.dirname(path)
         stat_result = yield self.transport.stat(directory)
         if stat.S_ISDIR(stat_result.st_mode):
@@ -326,6 +340,7 @@ class TransportSFTPServer:
     @defer.inlineCallbacks
     def realPath(self, relpath):
         """See `ISFTPServer`."""
+        relpath = self._decodePath(relpath)
         path = yield self.transport.local_realPath(urlutils.escape(relpath))
         unescaped_path = urlutils.unescape(path)
         defer.returnValue(unescaped_path.encode('utf-8'))
@@ -349,8 +364,8 @@ class TransportSFTPServer:
             'uid': getattr(stat_val, 'st_uid', 0),
             'gid': getattr(stat_val, 'st_gid', 0),
             'permissions': getattr(stat_val, 'st_mode', 0),
-            'atime': getattr(stat_val, 'st_atime', 0),
-            'mtime': getattr(stat_val, 'st_mtime', 0),
+            'atime': int(getattr(stat_val, 'st_atime', 0)),
+            'mtime': int(getattr(stat_val, 'st_mtime', 0)),
         }
 
     @with_sftp_error
@@ -360,6 +375,7 @@ class TransportSFTPServer:
 
         This just delegates to TransportSFTPFile's implementation.
         """
+        path = self._decodePath(path)
         stat_result = yield self.transport.stat(urlutils.escape(path))
         defer.returnValue(self._translate_stat(stat_result))
 
@@ -370,22 +386,27 @@ class TransportSFTPServer:
     @with_sftp_error
     def makeDirectory(self, path, attrs):
         """See `ISFTPServer`."""
+        path = self._decodePath(path)
         return self.transport.mkdir(
             urlutils.escape(path), attrs['permissions'])
 
     @with_sftp_error
     def removeDirectory(self, path):
         """See `ISFTPServer`."""
+        path = self._decodePath(path)
         return self.transport.rmdir(urlutils.escape(path))
 
     @with_sftp_error
     def removeFile(self, path):
         """See `ISFTPServer`."""
+        path = self._decodePath(path)
         return self.transport.delete(urlutils.escape(path))
 
     @with_sftp_error
     def renameFile(self, oldpath, newpath):
         """See `ISFTPServer`."""
+        oldpath = self._decodePath(oldpath)
+        newpath = self._decodePath(newpath)
         return self.transport.rename(
             urlutils.escape(oldpath), urlutils.escape(newpath))
 
