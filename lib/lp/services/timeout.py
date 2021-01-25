@@ -376,6 +376,9 @@ class URLFetcher:
             request_kwargs.setdefault(
                 "verify", config.launchpad.ca_certificates_path)
         response = self.session.request(url=url, **request_kwargs)
+        if response.status_code is None:
+            raise HTTPError(
+                "HTTP request returned no status code", response=response)
         raise_for_status_redacted(response)
         if output_file is None:
             # Make sure the content has been consumed before returning.
