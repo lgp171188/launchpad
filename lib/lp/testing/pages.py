@@ -573,8 +573,7 @@ def print_location(contents):
     heading = doc.find(attrs={'id': 'watermark-heading'}).findAll('a')
     container = doc.find(attrs={'class': 'breadcrumbs'})
     hierarchy = container.findAll(recursive=False) if container else []
-    segments = [extract_text(step).encode('us-ascii', 'replace')
-                for step in chain(heading, hierarchy)]
+    segments = [extract_text(step) for step in chain(heading, hierarchy)]
 
     if len(segments) == 0:
         breadcrumbs = 'None displayed'
@@ -586,8 +585,7 @@ def print_location(contents):
     print_location_apps(contents)
     main_heading = doc.h1
     if main_heading:
-        main_heading = extract_text(main_heading).encode(
-            'us-ascii', 'replace')
+        main_heading = extract_text(main_heading)
     else:
         main_heading = '(No main heading)'
     print("Main heading: %s" % main_heading)
