@@ -553,7 +553,12 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     @property
     def use_distribution_credentials(self):
         distribution = self.oci_project.distribution
-        return distribution and distribution.oci_registry_credentials
+        # if we're not in a distribution, we can't use those credentials...
+        if not distribution:
+            return False
+        official = self.official
+        credentials = distribution.oci_registry_credentials
+        return bool(distribution and official and credentials)
 
     @property
     def image_name(self):

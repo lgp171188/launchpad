@@ -254,6 +254,15 @@ class OCIRecipeView(LaunchpadView):
             "%s=%s" % (k, v)
             for k, v in sorted(self.context.build_args.items()))
 
+    @property
+    def distribution_has_credentials(self):
+        if hasattr(self.context, 'oci_project'):
+            project = self.context.oci_project
+        else:
+            project = self.context
+        distro = project.distribution
+        return bool(distro and distro.oci_registry_credentials)
+
 
 def builds_for_recipe(recipe):
     """A list of interesting builds.
@@ -766,7 +775,7 @@ class OCIRecipeFormMixin:
         return False, message
 
     @property
-    def use_distribution_credentials(self):
+    def distribution_has_credentials(self):
         if hasattr(self.context, 'oci_project'):
             project = self.context.oci_project
         else:
@@ -817,7 +826,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                 "May only be enabled by the owner of the OCI Project."),
             default=False,
             required=False, readonly=False))
-        if self.use_distribution_credentials:
+        if self.distribution_has_credentials:
             self.form_fields += FormFields(TextLine(
                 __name__='image_name',
                 title=u"Image name",
@@ -1030,7 +1039,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                 "May only be enabled by the owner of the OCI Project."),
             default=self.context.official,
             required=False, readonly=False))
-        if self.context.use_distribution_credentials:
+        if self.distribution_has_credentials:
             self.form_fields += FormFields(TextLine(
                 __name__='image_name',
                 title=u"Image name",

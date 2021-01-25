@@ -88,7 +88,7 @@
           <span tal:condition="not: context/official">No</span>
         </dd>
       </dl>
-      <dl id="image-name" tal:condition="context/use_distribution_credentials">
+      <dl id="image-name" tal:condition="view/distribution_has_credentials">
         <dt>Registry image name</dt>
         <dd>
           <span tal:content="context/image_name" />
@@ -157,12 +157,13 @@
     </div>
 
 
-    <div tal:condition=context/use_distribution_credentials>
+    <div tal:condition=view/distribution_has_credentials>
       <h3>Registry upload</h3>
-      <p>This recipe will use the registry credentials set by the parent distribution</p>
+      <p tal:condition="context/use_distribution_credentials">This recipe will use the registry credentials set by the parent distribution</p>
+      <p tal:condition="not: context/use_distribution_credentials">This is not an official recipe for the OCI project, and will not be uploaded to a registry</p>
     </div>
 
-    <div tal:condition="not: context/use_distribution_credentials">
+    <div tal:condition="not: view/distribution_has_credentials">
       <h2>Recipe push rules</h2>
       <table id="push-rules-listing" tal:condition="view/has_push_rules" class="listing"
             style="margin-bottom: 1em; ">

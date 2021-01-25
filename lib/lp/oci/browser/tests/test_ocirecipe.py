@@ -280,7 +280,6 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         image_name = self.factory.getUniqueUnicode()
         browser.getControl(name="field.image_name").value = image_name
         browser.getControl("Create OCI recipe").click()
-
         content = find_main_content(browser.contents)
         self.assertThat(
             "Registry image name\n{}".format(image_name),
@@ -769,9 +768,11 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         credentials = self.factory.makeOCIRegistryCredentials()
         with person_logged_in(self.distribution.owner):
             self.distribution.oci_registry_credentials = credentials
-        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
-        recipe = self.factory.makeOCIRecipe(
-            registrant=self.person, owner=self.person, oci_project=oci_project)
+            oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+            recipe = self.factory.makeOCIRecipe(
+                registrant=self.person, owner=self.person,
+                oci_project=oci_project)
+            oci_project.setOfficialRecipeStatus(recipe, True)
         browser = self.getViewBrowser(
             recipe, view_name="+edit", user=recipe.owner)
         image_name = self.factory.getUniqueUnicode()

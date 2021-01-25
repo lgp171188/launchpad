@@ -757,6 +757,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             distribution.oci_registry_credentials = credentials
         project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=project)
+        with person_logged_in(distribution.owner):
+            project.setOfficialRecipeStatus(recipe, True)
         self.assertTrue(recipe.use_distribution_credentials)
 
     def test_use_distribution_credentials_not_set(self):
