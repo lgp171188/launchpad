@@ -105,7 +105,7 @@ The 'search' form is also suppresed.
     >>> anon_browser.getControl('Search', index=0).click()
     Traceback (most recent call last):
     ...
-    LookupError: label u'Search'
+    LookupError: label ...'Search'
     ...
 
 

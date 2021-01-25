@@ -123,7 +123,7 @@ any team and hence does no see the option to asign somebody else.
     >>> user_browser.getControl(name="jokosher.assignee", index=0)
     Traceback (most recent call last):
     ...
-    LookupError: name u'jokosher.assignee'
+    LookupError: name ...'jokosher.assignee'
     ...
 
 Once no_priv is a member of a team, the option is shown.

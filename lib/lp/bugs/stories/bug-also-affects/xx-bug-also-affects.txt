@@ -257,7 +257,7 @@ package is linked to the evolution upstream product.
     >>> user_browser.getControl('Project').value
     Traceback (most recent call last):
     ...
-    LookupError: label u'Project'
+    LookupError: label ...'Project'
     ...
 
     >>> user_browser.getControl(name='field.product').value
