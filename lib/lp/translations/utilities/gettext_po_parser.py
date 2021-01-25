@@ -607,7 +607,8 @@ class POParser(object):
             number_plural_forms = (
                 self._translation_file.header.number_plural_forms)
             if (self._message.msgid_plural and
-                len(self._message.translations) < number_plural_forms):
+                    number_plural_forms is not None and
+                    len(self._message.translations) < number_plural_forms):
                 # Has plural forms but the number of translations is lower.
                 # Fill the others with an empty string.
                 for index in range(

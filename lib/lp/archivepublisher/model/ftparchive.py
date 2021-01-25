@@ -435,6 +435,7 @@ class FTPArchiveHandler:
                     package_arch = "%s/%s" % (packagename, archtag)
                     override['bin'].add((
                         package_arch, priority, section,
+                        0 if phased_update_percentage is None else 1,
                         phased_update_percentage))
                 elif subcomp in self.publisher.subcomponents:
                     # We pick up subcomponent packages here, although they
@@ -492,7 +493,7 @@ class FTPArchiveHandler:
         ef = open(ef_override_new, "w")
         f = open(main_override_new, "w")
         basic_override_seen = set()
-        for (package_arch, priority, section,
+        for (package_arch, priority, section, _,
              phased_update_percentage) in bin_overrides:
             package = package_arch.split("/")[0]
             if package not in basic_override_seen:
