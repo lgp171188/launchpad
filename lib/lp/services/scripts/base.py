@@ -471,7 +471,8 @@ def cronscript_enabled(control_url, name, log):
     # Try reading the config file. If it fails, we log the
     # traceback and continue on using the defaults.
     try:
-        cron_config.readfp(io.StringIO(response.text))
+        with response:
+            cron_config.readfp(io.StringIO(response.text))
     except Exception:
         log.exception("Error parsing %s", control_url)
 
