@@ -199,4 +199,4 @@ class TestXRefSet(TestCaseWithFactory):
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
             [('a', 'baz')],
-            getUtility(IXRefSet).findFrom(('b', 'foo')).keys())
+            list(getUtility(IXRefSet).findFrom(('b', 'foo'))))

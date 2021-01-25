@@ -364,7 +364,7 @@ class GenericGitCollection:
             "candidate_repositories",
             Select(
                 GitRepository.id,
-                tables=[GitRepository] + self._tables.values(),
+                tables=[GitRepository] + list(self._tables.values()),
                 where=And(*expressions) if expressions else True))
         expressions = [SQL("""
             source_git_repository IN

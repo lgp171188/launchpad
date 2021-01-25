@@ -914,7 +914,7 @@ class TestDominatorMethods(TestCaseWithFactory):
                 pocket=pocket, status=status))
             for status in PackagePublishingStatus.items)
         published_spph = spphs[PackagePublishingStatus.PUBLISHED]
-        dominator = self.makeDominator(spphs.values())
+        dominator = self.makeDominator(list(spphs.values()))
         self.assertContentEqual(
             [(published_spph.sourcepackagerelease.sourcepackagename.name, 1)],
             dominator.findPublishedSourcePackageNames(series, pocket))
@@ -999,7 +999,7 @@ class TestDominatorMethods(TestCaseWithFactory):
                 sourcepackagerelease=self.factory.makeSourcePackageRelease(
                     sourcepackagename=package)))
             for status in PackagePublishingStatus.items)
-        dominator = self.makeDominator(spphs.values())
+        dominator = self.makeDominator(list(spphs.values()))
         self.assertContentEqual(
             [spphs[PackagePublishingStatus.PUBLISHED]],
             dominator.findPublishedSPPHs(series, pocket, package.name))
