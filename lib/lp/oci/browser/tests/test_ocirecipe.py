@@ -888,6 +888,22 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         official_control = browser.getControl("Official recipe")
         self.assertTrue(official_control.disabled)
 
+    def test_official_is_set_while_disabled(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+        non_admin = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=non_admin, owner=non_admin,
+            oci_project=oci_project)
+        with person_logged_in(self.person):
+            oci_project.setOfficialRecipeStatus(recipe, True)
+        browser = self.getViewBrowser(recipe, user=non_admin)
+        browser.getLink("Edit OCI recipe").click()
+        official_control = browser.getControl("Official recipe")
+        self.assertTrue(official_control.disabled)
+        self.assertTrue(official_control.selected)
+
     def test_official_is_enabled(self):
         distribution = self.factory.makeDistribution(
             oci_project_admin=self.person)
