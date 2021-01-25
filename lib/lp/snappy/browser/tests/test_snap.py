@@ -501,7 +501,8 @@ class TestSnapAddView(BaseTestSnapView):
                 }],
             "permissions": ["package_upload"],
             }
-        self.assertEqual(expected_body, json.loads(call.request.body))
+        self.assertEqual(
+            expected_body, json.loads(call.request.body.decode("UTF-8")))
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
@@ -1201,7 +1202,8 @@ class TestSnapEditView(BaseTestSnapView):
             "packages": [{"name": "two", "series": self.snappyseries.name}],
             "permissions": ["package_upload"],
             }
-        self.assertEqual(expected_body, json.loads(call.request.body))
+        self.assertEqual(
+            expected_body, json.loads(call.request.body.decode("UTF-8")))
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
@@ -1266,7 +1268,8 @@ class TestSnapAuthorizeView(BaseTestSnapView):
                     }],
                 "permissions": ["package_upload"],
                 }
-            self.assertEqual(expected_body, json.loads(call.request.body))
+            self.assertEqual(
+                expected_body, json.loads(call.request.body.decode("UTF-8")))
             self.assertEqual(
                 {"root": root_macaroon_raw}, self.snap.store_secrets)
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
