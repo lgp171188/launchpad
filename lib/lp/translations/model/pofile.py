@@ -748,7 +748,8 @@ class POFile(SQLBase, POFileMixIn):
         query = [
             '%(table_name)s.msgstr0 IS NOT NULL' % {'table_name': table_name},
             ]
-        if self.language.pluralforms > 1:
+        if (self.language.pluralforms is not None and
+                self.language.pluralforms > 1):
             plurals_query = ' AND '.join(
                 '%(table_name)s.msgstr%(plural_form)d IS NOT NULL' % {
                   'plural_form': plural_form,
