@@ -107,7 +107,7 @@ A number of VirtualHostRequestPublicationFactories are registered with
 Zope to handle requests for a particular vhost, port, and set of HTTP
 methods.
 
-    >>> from cStringIO import StringIO
+    >>> import io
     >>> from lp.services.webapp.publication import (
     ...     LaunchpadBrowserPublication)
     >>> from lp.services.webapp.servers import (
@@ -181,7 +181,7 @@ host configured settings.
 
     >>> type(requestfactory)
     <class '...ApplicationServerSettingRequestFactory'>
-    >>> request = requestfactory(StringIO(''), environment)
+    >>> request = requestfactory(io.BytesIO(), environment)
     >>> type(request)
     <class 'lp.services.webapp.servers.LaunchpadBrowserRequest'>
     >>> request.getApplicationURL()
