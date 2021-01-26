@@ -68,43 +68,45 @@
 
     <h3 tal:condition="view/official_recipe_count">Official recipes</h3>
     <table class="listing" id="mirrors_list" tal:condition="view/official_recipe_count">
-        <tbody>
-          <tr class="head">
-            <th>Name</th>
-            <th>Owner</th>
-            <th>Source</th>
-            <th>Build file</th>
-            <th>Date created</th>
-          </tr>
+      <tbody>
+        <tr class="head">
+          <th>Name</th>
+          <th>Owner</th>
+          <th>Source</th>
+          <th>Build file</th>
+          <th>Date created</th>
+        </tr>
 
-          <tr tal:repeat="recipe context/getOfficialRecipes">
-            <td>
-              <a tal:content="recipe/name"
-                 tal:attributes="href recipe/fmt:url" />
-            </td>
-            <td tal:content="structure recipe/owner/fmt:link" />
-            <td tal:content="recipe/git_ref/identity" />
-            <td tal:content="recipe/build_file" />
-            <td tal:content="recipe/date_created/fmt:displaydate" />
-          </tr>
-        </tbody>
-      </table>
+        <tr tal:repeat="recipe context/getOfficialRecipes">
+          <td>
+            <a tal:content="recipe/name"
+                tal:attributes="href recipe/fmt:url" />
+          </td>
+          <td tal:content="structure recipe/owner/fmt:link" />
+          <td>
+            <a tal:replace="structure recipe/git_ref/fmt:link"/>
+          </td>
+          <td tal:content="recipe/build_file" />
+          <td tal:content="recipe/date_created/fmt:displaydate" />
+        </tr>
+      </tbody>
+    </table>
     <div tal:condition="python: not view.official_recipe_count and view.other_recipe_count">
       <p>There are no official recipes for this OCI project.</p>
     </div>
 
     <div tal:define="count view/other_recipe_count"
-           tal:condition="count">
+         tal:condition="count">
       <span tal:condition="python: count == 1">
-        There is <strong>1</strong> non-official recipe.</span>
+        There is <strong>1</strong> unofficial recipe.</span>
       <span tal:condition="python: count != 1">
-        There are <strong tal:content="count" /> non-official recipes.
+        There are <strong tal:content="count" /> unofficial recipes.
       </span>
       <p>
         <tal:summary
-        tal:define="link context/menu:context/view_recipes"
-        tal:condition="link/enabled"
-        tal:content="structure link/render"/>
+          define="link context/menu:context/view_recipes"
+          condition="link/enabled"
+          content="structure link/render"/>
       </p>
     </div>
 

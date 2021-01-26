@@ -161,7 +161,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
         browser = self.getViewBrowser(
             oci_project, view_name="+index", user=distribution.owner)
         self.assertIn("Official recipes", browser.contents)
-        self.assertNotIn("non-official recipe", browser.contents)
+        self.assertNotIn("unofficial recipe", browser.contents)
         self.assertNotIn(
             "There are no recipes registered for this OCI project.",
             browser.contents)
@@ -176,7 +176,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             oci_project, view_name="+index", user=distribution.owner)
         self.assertIn("Official recipes", browser.contents)
         self.assertIn(
-            "There is <strong>1</strong> non-official recipe.",
+            "There is <strong>1</strong> unofficial recipe.",
             browser.contents)
         self.assertNotIn(
             "There are no recipes registered for this OCI project.",
@@ -192,7 +192,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             oci_project, view_name="+index", user=distribution.owner)
         self.assertNotIn("Official recipes", browser.contents)
         self.assertIn(
-            "There are <strong>2</strong> non-official recipes.",
+            "There are <strong>2</strong> unofficial recipes.",
             browser.contents)
         self.assertNotIn(
             "There are no recipes registered for this OCI project.",
@@ -205,7 +205,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
         browser = self.getViewBrowser(
             oci_project, view_name="+index", user=distribution.owner)
         self.assertNotIn("Official recipes", browser.contents)
-        self.assertNotIn("non-official recipe", browser.contents)
+        self.assertNotIn("unofficial recipe", browser.contents)
         self.assertIn(
             "There are no recipes registered for this OCI project.",
             browser.contents)
