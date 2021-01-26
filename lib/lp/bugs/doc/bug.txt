@@ -664,7 +664,7 @@ Marking as duplicate.
 
 Adding an attachment.
 
-    >>> from StringIO import StringIO
+    >>> import io
     >>> from lp.bugs.interfaces.bugattachment import IBugAttachmentSet
     >>> from lp.services.librarian.interfaces import (
     ...     ILibraryFileAliasSet)
@@ -675,10 +675,10 @@ Adding an attachment.
 
 (Upload a file to the Librarian.)
 
-    >>> filecontent = 'Some useful information.'
+    >>> filecontent = b'Some useful information.'
     >>> filealias = getUtility(ILibraryFileAliasSet).create(
     ...     name='foo.txt', size=len(filecontent),
-    ...     file=StringIO(filecontent), contentType='text/plain')
+    ...     file=io.BytesIO(filecontent), contentType='text/plain')
 
 (Attach it to the bug.)
 
