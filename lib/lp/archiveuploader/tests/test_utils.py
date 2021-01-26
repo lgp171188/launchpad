@@ -257,8 +257,9 @@ class TestUtilities(TestCase):
             try:
                 parse_maintainer_bytes(case[0], 'Maintainer')
             except ParseMaintError as e:
-                pass
-            self.assertEqual(case[1], six.text_type(e))
+                self.assertEqual(case[1], six.text_type(e))
+            else:
+                self.fail('ParseMaintError not raised')
 
 
 class TestFilenameRegularExpressions(TestCase):

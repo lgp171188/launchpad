@@ -192,9 +192,8 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
     else:
         m = re_parse_maintainer.match(maintainer)
         if not m:
-            raise ParseMaintError(
-                six.ensure_text("%s: doesn't parse as a valid %s field."
-                                % (maintainer, field_name)))
+            raise ParseMaintError("%s: doesn't parse as a valid %s field."
+                                  % (maintainer, field_name))
         name = m.group(1)
         email = m.group(2)
         # Just in case the maintainer ended up with nested angles; check...
@@ -202,9 +201,8 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
             email = email[1:]
 
     if email.find(u"@") == -1 and email.find(u"buildd_") != 0:
-        raise ParseMaintError(
-            six.ensure_text("%s: no @ found in email address part." %
-                            maintainer))
+        raise ParseMaintError("%s: no @ found in email address part."
+                              % maintainer)
 
     return (name, email)
 
