@@ -1251,7 +1251,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             potmsgset_pofile[translation_message.potmsgset.id] = pofile.id
         transaction.commit()
         store = IMasterStore(POTMsgSet)
-        test_ids = potmsgset_pofile.keys()
+        test_ids = list(potmsgset_pofile)
         obsolete_msgsets = store.find(
             POTMsgSet,
             In(TranslationTemplateItem.potmsgsetID, test_ids),

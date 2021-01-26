@@ -108,7 +108,7 @@ There are no 'amd64' build queue entries.
 
 The virtualized build queue for 386 is also empty.
 
-    >>> queue_sizes['virt'].keys()
+    >>> list(queue_sizes['virt'])
     []
 
 The queue size is not affect by builds target to disabled
@@ -128,7 +128,7 @@ We will temporarily disable the ubuntu primary archive.
 That done, the non-virtualized queue for i386 becomes empty.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> queue_sizes['nonvirt'].keys()
+    >>> list(queue_sizes['nonvirt'])
     []
 
 Let's re-enable the ubuntu primary archive.

@@ -626,9 +626,9 @@ class BugWatchSet:
         # or that have an item_id parameter containing the bug ID.
         if path not in ('/bugs/', '/bugs/index.php'):
             return None
-        if len(query) == 1 and query.values()[0] is None:
+        if len(query) == 1 and list(query.values())[0] is None:
             # The query string is just a bare ID.
-            remote_bug = query.keys()[0]
+            remote_bug = list(query)[0]
         elif 'item_id' in query:
             remote_bug = query['item_id']
         else:

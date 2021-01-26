@@ -89,7 +89,7 @@ class BrowserTestCase(TestCase):
         self.assertIsNone(browser.command)
         self.assertIsNone(browser.script)
         self.assertIsNone(browser.browser_window)
-        self.assertEqual(['console-message'], browser.listeners.keys())
+        self.assertEqual(['console-message'], list(browser.listeners))
 
     def test_init_show_browser(self):
         # The Browser can be set to show the window.

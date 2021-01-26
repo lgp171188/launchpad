@@ -1326,8 +1326,8 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         # Exclude any architectures which already have built or copied
         # binaries. A new build with the same archtag could never
         # succeed; its files would conflict during upload.
-        relevant_builds = self.findBuiltOrPublishedBySourceAndArchive(
-            sourcepackagerelease, archive).values()
+        relevant_builds = list(self.findBuiltOrPublishedBySourceAndArchive(
+            sourcepackagerelease, archive).values())
 
         # Find any architectures that already have a build that exactly
         # matches, regardless of status. We can't create a second build

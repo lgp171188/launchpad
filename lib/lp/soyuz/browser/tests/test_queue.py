@@ -500,7 +500,7 @@ class TestCompletePackageUpload(TestCaseWithFactory):
         complete_upload = self.makeCompletePackageUpload(
             upload, package_sets=package_sets)
         self.assertEqual(
-            package_sets.values()[0][0].name,
+            list(package_sets.values())[0][0].name,
             complete_upload.display_package_sets)
 
     def test_display_package_sets_returns_empty_for_other_upload(self):
