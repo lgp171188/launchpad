@@ -22,8 +22,8 @@ contributors on a given context and the top contributors by category.
     >>> contributors = view.top_contributors_by_category
     >>> categories = sorted(contributors.keys())
     >>> for category in categories:
-    ...     print category, [(contrib.person.name, contrib.karmavalue)
-    ...                      for contrib in contributors[category]]
+    ...     print(category, [(contrib.person.name, contrib.karmavalue)
+    ...                      for contrib in contributors[category]])
     Bug Management [(u'name16', 11)]
     Specification Tracking [(u'mark', 22)]
     Translations in Rosetta [(u'name16', 164), (u'carlos', 9)]
@@ -31,21 +31,21 @@ contributors on a given context and the top contributors by category.
 The view renders summaries by category.
 
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print extract_text(find_tag_by_id(content, 'overall_top'))
+    >>> print(extract_text(find_tag_by_id(content, 'overall_top')))
     Person             Project Karma  Total Karma
     Foo Bar            175            241
     Mark Shuttleworth   22            130
     Carlos ...           9              9
 
-    >>> print extract_text(find_tag_by_id(content, 'Bug Management'))
+    >>> print(extract_text(find_tag_by_id(content, 'Bug Management')))
     Person   Bug Management Karma  Total Karma
     Foo Bar  11                     241
 
-    >>> print extract_text(find_tag_by_id(content, 'Specification Tracking'))
+    >>> print(extract_text(find_tag_by_id(content, 'Specification Tracking')))
     Person             Specification Tracking Karma  Total Karma
     Mark Shuttleworth  22                            130
 
-    >>> print extract_text(find_tag_by_id(content, 'Translations in Rosetta'))
+    >>> print(extract_text(find_tag_by_id(content, 'Translations in Rosetta')))
     Person      Translations in Rosetta Karma  Total Karma
     Foo Bar     164                            241
     Carlos ...    9                              9
@@ -59,7 +59,7 @@ The top contributors portlet shows the top contributors to a project
     >>> view = create_initialized_view(
     ...     product, name='+portlet-top-contributors', principal=user)
     >>> content = find_tag_by_id(view.render(), 'portlet-top-contributors')
-    >>> print extract_text(content)
+    >>> print(extract_text(content))
     More contributors Top contributors
     Foo Bar...
     Mark ...
@@ -69,5 +69,5 @@ It has a link to +topcontributors page.
 
     >>> css_class = {'class': 'menu-link-top_contributors sprite info'}
     >>> link = content.find('a', css_class)
-    >>> print link['href']
+    >>> print(link['href'])
     http://launchpad.test/evolution/+topcontributors

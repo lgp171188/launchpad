@@ -91,7 +91,7 @@ no communication between the two systems.
 Nobody can purge an active mailing list, the team owner...
 
     >>> view = create_view(the_owner)
-    >>> print view.label
+    >>> print(view.label)
     Mailing list configuration
     >>> view.list_can_be_purged
     False
@@ -117,7 +117,7 @@ Even subverting the form will not trick Launchpad into purging the list.
     >>> view = create_view(
     ...     an_admin,
     ...     {'field.actions.purge_list': u'Purge this Mailing List'})
-    >>> print '\n'.join(view.errors)
+    >>> print('\n'.join(view.errors))
     This list cannot be purged.
 
 Now the team owner deactivates the mailing list.  When this completes

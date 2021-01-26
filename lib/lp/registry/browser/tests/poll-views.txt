@@ -31,7 +31,7 @@ The portlet does not render any markup when there are no polls...
     >>> view.should_show_polls_portlet
     False
 
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     <BLANKLINE>
 
 Unless the user is a team owner.
@@ -44,7 +44,7 @@ Unless the user is a team owner.
     >>> view.should_show_polls_portlet
     True
 
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     Polls
     No current polls.
     Show polls
@@ -71,7 +71,7 @@ has not opened.
     >>> view.should_show_polls_portlet
     True
 
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     Polls
     Show polls
 
@@ -85,7 +85,7 @@ The portlet shows more details to the poll owner.
     >>> view.should_show_polls_portlet
     True
 
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     Polls
     title - opens in 5 hours
     Show polls
@@ -98,7 +98,7 @@ and an owner is the owner has a link to create more polls.
 
     >>> ignored = login_person(user)
     >>> view = create_team_view(team, name='+portlet-polls', principal=user)
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     Polls
     title - closes on ...
     You have 7 days left to vote in this poll.
@@ -106,7 +106,7 @@ and an owner is the owner has a link to create more polls.
 
     >>> ignored = login_person(owner)
     >>> view = create_team_view(team, name='+portlet-polls', principal=owner)
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     Polls
     title - closes on ...
     You have 7 days left to vote in this poll.
@@ -120,14 +120,14 @@ see the polls.
 
     >>> ignored = login_person(user)
     >>> view = create_team_view(team, name='+portlet-polls', principal=user)
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     Polls
     No current polls.
     Show polls
 
     >>> ignored = login_person(owner)
     >>> view = create_team_view(team, name='+portlet-polls', principal=owner)
-    >>> print extract_text(view.render())
+    >>> print(extract_text(view.render()))
     Polls
     No current polls.
     Show polls
