@@ -108,10 +108,10 @@ header is missing.)
 
 Now we can see that each handler handled the emails sent to its domain:
 
-    >>> set(foo_handler.handledMails) ^ set(msgids['foo.com'])
-    set([])
-    >>> set(bar_handler.handledMails) ^ set(msgids['bar.com'])
-    set([])
+    >>> for item in set(foo_handler.handledMails) ^ set(msgids['foo.com']):
+    ...     print(item)
+    >>> for item in set(bar_handler.handledMails) ^ set(msgids['bar.com']):
+    ...     print(item)
 
 --------------
 Unhandled Mail

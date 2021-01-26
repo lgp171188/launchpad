@@ -77,8 +77,9 @@ property only returns the non-PPA builds.
 
 All the builds returned are for non-PPA archives:
 
-   >>> set(build.archive.purpose.name for build in spr.builds)
-   set(['PRIMARY'])
+   >>> for item in set(build.archive.purpose.name for build in spr.builds):
+   ...     print(item)
+   PRIMARY
 
 Check that the uploaded changesfile works:
 

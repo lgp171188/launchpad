@@ -668,17 +668,23 @@ There will now be a number of publishings in the partner archive:
 All the publishings will also have the 'partner' component and the
 partner archive:
 
-    >>> print(set(sspph.component.name for sspph in source_difference))
-    set([u'partner'])
+    >>> for name in set(sspph.component.name for sspph in source_difference):
+    ...     print(name)
+    partner
 
-    >>> print(set(sbpph.component.name for sbpph in binary_difference))
-    set([u'partner'])
+    >>> for name in set(sbpph.component.name for sbpph in binary_difference):
+    ...     print(name)
+    partner
 
-    >>> print(set(sspph.archive.purpose.name for sspph in source_difference))
-    set(['PARTNER'])
+    >>> for name in set(
+    ...         sspph.archive.purpose.name for sspph in source_difference):
+    ...     print(name)
+    PARTNER
 
-    >>> print(set(sbpph.archive.purpose.name for sbpph in binary_difference))
-    set(['PARTNER'])
+    >>> for name in set(
+    ...         sbpph.archive.purpose.name for sbpph in binary_difference):
+    ...     print(name)
+    PARTNER
 
 
 Source-only imports
@@ -754,8 +760,9 @@ targetted distroseries, 'lenny'.
     >>> lenny_sources.count()
     12
 
-    >>> print(set([pub.status.name for pub in lenny_sources]))
-    set(['PUBLISHED'])
+    >>> for name in set([pub.status.name for pub in lenny_sources]):
+    ...     print(name)
+    PUBLISHED
 
 As mentioned before, lenny/i386 is empty, no binaries were imported.
 Also, the number of binaries published in the whole debian distribution

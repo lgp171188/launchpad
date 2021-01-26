@@ -201,15 +201,18 @@ _tagsToFieldValue() converts the tags entered in the form into a value
 suitable for the field. In the absense of tags it returns an empty
 frozenset():
 
-    >>> tags_frozen_set_widget._tagsToFieldValue(None)
-    frozenset([])
-    >>> tags_frozen_set_widget._tagsToFieldValue([])
-    frozenset([])
+    >>> for item in tags_frozen_set_widget._tagsToFieldValue(None):
+    ...     print(item)
+    >>> for item in tags_frozen_set_widget._tagsToFieldValue([]):
+    ...     print(item)
 
 Otherwise it returns a `frozenset` of the tags given:
 
-    >>> tags_frozen_set_widget._tagsToFieldValue([u"foo", u"bar"])
-    frozenset([u'foo', u'bar'])
+    >>> for item in sorted(tags_frozen_set_widget._tagsToFieldValue(
+    ...         [u"foo", u"bar"])):
+    ...     print(item)
+    bar
+    foo
 
 
 Large and Small Bug Tags Widget
