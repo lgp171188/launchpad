@@ -1,4 +1,4 @@
-<!-- Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 <configure
@@ -96,6 +96,14 @@
         provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
         factory="lp.oci.model.ocirecipebuildbehaviour.OCIRecipeBuildBehaviour"
         permission="zope.Public" />
+
+    <!-- OCIRecipeBuildMacaroonIssuer -->
+    <securedutility
+        class="lp.oci.model.ocirecipebuild.OCIRecipeBuildMacaroonIssuer"
+        provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
+        name="ocirecipe-build">
+        <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
+    </securedutility>
 
     <!-- OCIFile -->
     <class class="lp.oci.model.ocirecipebuild.OCIFile">

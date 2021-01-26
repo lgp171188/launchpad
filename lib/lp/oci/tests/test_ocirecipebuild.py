@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for OCI image building recipe functionality."""
@@ -11,6 +11,7 @@ from datetime import (
     )
 
 from fixtures import FakeLogger
+from pymacaroons import Macaroon
 import pytz
 import six
 from testtools.matchers import (
@@ -18,11 +19,14 @@ from testtools.matchers import (
     Equals,
     Is,
     MatchesDict,
+    MatchesListwise,
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
@@ -30,6 +34,7 @@ from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_TESTING_FLAGS,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.oci.interfaces.ocirecipebuild import (
@@ -43,9 +48,15 @@ from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    )
+from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -61,6 +72,7 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.matchers import HasQueryCount
+from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestOCIFileSet(TestCaseWithFactory):
@@ -641,3 +653,149 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         target = self.factory.makeOCIRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series)
         self.assertFalse(target.virtualized)
+
+
+class TestOCIRecipeBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
+    """Test OCIRecipeBuild macaroon issuing and verification."""
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super(TestOCIRecipeBuildMacaroonIssuer, self).setUp()
+        self.useFixture(FeatureFixture(OCI_RECIPE_TESTING_FLAGS))
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+
+    def getPrivateBuild(self):
+        build = self.factory.makeOCIRecipeBuild()
+        build.recipe.git_ref.repository.transitionToInformationType(
+            InformationType.PRIVATESECURITY, build.recipe.registrant)
+        return build
+
+    def test_issueMacaroon_refuses_public_ocirecipebuild(self):
+        build = self.factory.makeOCIRecipeBuild()
+        issuer = getUtility(IMacaroonIssuer, "ocirecipe-build")
+        self.assertRaises(
+            BadMacaroonContext, removeSecurityProxy(issuer).issueMacaroon,
+            build)
+
+    def test_issueMacaroon_good(self):
+        build = self.getPrivateBuild()
+        issuer = getUtility(IMacaroonIssuer, "ocirecipe-build")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("ocirecipe-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.ocirecipe-build %s" % build.id),
+                ])))
+
+    def test_issueMacaroon_via_authserver(self):
+        build = self.getPrivateBuild()
+        private_root = getUtility(IPrivateApplication)
+        authserver = AuthServerAPIView(private_root.authserver, TestRequest())
+        macaroon = Macaroon.deserialize(
+            authserver.issueMacaroon(
+                "ocirecipe-build", "OCIRecipeBuild", build.id))
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("ocirecipe-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.ocirecipe-build %s" % build.id),
+                ])))
+
+    def test_verifyMacaroon_good(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, build.recipe.git_ref.repository)
+
+    def test_verifyMacaroon_good_no_context(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, None, require_context=False)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, build.recipe.git_ref.repository,
+            require_context=False)
+
+    def test_verifyMacaroon_no_context_but_require_context(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Expected macaroon verification context but got None."],
+            issuer, macaroon, None)
+
+    def test_verifyMacaroon_wrong_location(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = Macaroon(
+            location="another-location", key=issuer._root_secret)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, build.recipe.git_ref.repository)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, build.recipe.git_ref.repository,
+            require_context=False)
+
+    def test_verifyMacaroon_wrong_key(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = Macaroon(
+            location=config.vhost.mainsite.hostname, key="another-secret")
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer, macaroon, build.recipe.git_ref.repository)
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer, macaroon, build.recipe.git_ref.repository,
+            require_context=False)
+
+    def test_verifyMacaroon_not_building(self):
+        build = self.getPrivateBuild()
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ocirecipe-build %s' failed." % build.id],
+            issuer, macaroon, build.recipe.git_ref.repository)
+
+    def test_verifyMacaroon_wrong_build(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        other_build = self.getPrivateBuild()
+        other_build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = issuer.issueMacaroon(other_build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ocirecipe-build %s' failed." %
+             other_build.id],
+            issuer, macaroon, build.recipe.git_ref.repository)
+
+    def test_verifyMacaroon_wrong_repository(self):
+        build = self.getPrivateBuild()
+        other_repository = self.factory.makeGitRepository()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ocirecipe-build %s' failed." % build.id],
+            issuer, macaroon, other_repository)
