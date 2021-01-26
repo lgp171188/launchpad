@@ -1390,7 +1390,7 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
         # Save the field names we extract from the form in a separate
         # list, because we modify this list of names later if the
         # bugtask is reassigned to a different product.
-        field_names = data.keys()
+        field_names = list(data)
         new_values = data.copy()
         data_to_apply = data.copy()
 

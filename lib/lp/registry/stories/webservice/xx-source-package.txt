@@ -92,8 +92,9 @@ we'll get the new branch.
 
     >>> linked_branches = webservice.named_get(
     ...     evolution['self_link'], 'linkedBranches').jsonBody()
-    >>> print(linked_branches.keys())
-    [u'RELEASE']
+    >>> for pocket in linked_branches:
+    ...     print(pocket)
+    RELEASE
     >>> branch = linked_branches[u'RELEASE']
     >>> print(branch['unique_name'])
     ~devo/my-distro/.../branch

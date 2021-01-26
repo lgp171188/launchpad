@@ -77,7 +77,7 @@ git push --set-upstream origin master
         <p id="active-review-count"
           tal:define="count context/menu:branches/active_review_count|nothing;
                       link context/menu:branches/active_reviews|nothing"
-          tal:condition="python: count &gt; 0">
+          tal:condition="python: count is not None and count &gt; 0">
           <tal:project replace="context/display_name"/> has
           <tal:active-count replace="count"/>
           <tal:link replace="structure python: link.render().lower()"/>.

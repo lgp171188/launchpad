@@ -132,7 +132,7 @@ the bugs will be fetched one-at-a-time:
     ...     rt.initializeRemoteBugDB([1585])
     GET http://example.com/REST/1.0/ticket/1585/show
 
-    >>> rt.bugs.keys()
+    >>> list(rt.bugs)
     [1585]
 
 If there are more than batch_query_threshold bugs to update then they are

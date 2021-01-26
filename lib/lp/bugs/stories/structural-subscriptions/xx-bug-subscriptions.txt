@@ -145,7 +145,7 @@ the page.
     >>> remove_other = browser.getControl('\xa0No Privileges Person')
     Traceback (most recent call last):
     ...
-    LookupError: label u'\xa0No Privileges Person'
+    LookupError: label ...'\xa0No Privileges Person'
     ...
 
 We clean up by removing Sample Person as the distribution driver.
@@ -188,13 +188,13 @@ the UI elements for the subscription/unsubscription of arbitrary persons.
     >>> browser.getControl('Subscribe someone else:')
     Traceback (most recent call last):
     ...
-    LookupError: label u'Subscribe someone else:'
+    LookupError: label ...'Subscribe someone else:'
     ...
 
     >>> print(browser.getControl('\xa0Foo Bar'))
     Traceback (most recent call last):
     ...
-    LookupError: label u'\xa0Foo Bar'
+    LookupError: label ...'\xa0Foo Bar'
     ...
 
 

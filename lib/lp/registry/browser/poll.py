@@ -106,6 +106,15 @@ class PollNavigation(Navigation):
             self.context, int(name))
 
 
+def vote_sort_key(vote):
+    """A sort key for a vote.
+
+    Votes with preference=None come first, followed by all other votes in
+    ascending order of preference.
+    """
+    return (vote.preference is not None, vote.preference)
+
+
 class BasePollView(LaunchpadView):
     """A base view class to be used in other poll views."""
 
@@ -145,7 +154,7 @@ class BasePollView(LaunchpadView):
         elif self.isCondorcet():
             # Here we have multiple votes, and the token is the same in
             # all of them.
-            self.currentVotes = sorted(votes, key=lambda v: v.preference)
+            self.currentVotes = sorted(votes, key=vote_sort_key)
             self.token = self.currentVotes[0].token
         self.gotTokenAndVotes = True
 
@@ -186,7 +195,7 @@ class BasePollView(LaunchpadView):
             # option.
             self.currentVote = votes[0]
         elif self.isCondorcet():
-            self.currentVotes = sorted(votes, key=lambda v: v.preference)
+            self.currentVotes = sorted(votes, key=vote_sort_key)
         self.gotTokenAndVotes = True
         return True
 
@@ -371,13 +380,13 @@ class PollVoteView(BasePollView):
             assert len(activeoptions) == len(self.currentVotes)
             for vote in self.currentVotes:
                 vote.preference = newvotes.get(vote.option)
-            self.currentVotes.sort(key=lambda v: v.preference)
+            self.currentVotes.sort(key=vote_sort_key)
             self.feedback = "Your vote was changed successfully."
         else:
             # This is a new vote.
             votes = self.context.storeCondorcetVote(self.user, newvotes)
             self.token = votes[0].token
-            self.currentVotes = sorted(votes, key=lambda v: v.preference)
+            self.currentVotes = sorted(votes, key=vote_sort_key)
             if self.isSecret():
                 self.feedback = (
                     "Your vote has been recorded. If you want to view or "

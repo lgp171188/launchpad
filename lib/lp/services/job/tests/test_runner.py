@@ -229,7 +229,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, job_2.job.status)
         oops = self.oopses[-1]
         self.assertIn('Fake exception.  Foobar, I say!', oops['tb_text'])
-        self.assertEqual(["{'foo': 'bar'}"], oops['req_vars'].values())
+        self.assertEqual(["{'foo': 'bar'}"], list(oops['req_vars'].values()))
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
             ('job.start_count,type=NullJob,env=test',))
@@ -251,7 +251,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         runner = JobRunner([job_1, job_2])
         runner.runAll()
         oops = self.oopses[-1]
-        self.assertEqual(["{'foo': 'bar'}"], oops['req_vars'].values())
+        self.assertEqual(["{'foo': 'bar'}"], list(oops['req_vars'].values()))
 
     def test_runAll_aborts_transaction_on_error(self):
         """runAll should abort the transaction on oops."""

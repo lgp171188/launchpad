@@ -64,7 +64,8 @@ class TestExportResult(TestCaseWithFactory):
 
         self.assertStartsWith(export_result.url, "https://")
         sha256 = hashlib.sha256(export.content).hexdigest()
-        self.assertEqual(sha256, librarian.aliases.values()[0].content.sha256)
+        self.assertEqual(
+            sha256, list(librarian.aliases.values())[0].content.sha256)
         alias = librarian.findBySHA256(sha256)
         self.assertEqual(export.path, alias.filename)
 

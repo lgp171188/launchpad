@@ -572,7 +572,7 @@ class MailingListSetTestCase(TestCaseWithFactory):
             team2.mailing_list.transitionToStatus(MailingListStatus.INACTIVE)
         team_names = [team1.name, team2.name]
         result = self.mailing_list_set.getSenderAddresses(team_names)
-        self.assertEqual([team1.name], result.keys())
+        self.assertEqual([team1.name], list(result))
 
     def test_getSubscribedAddresses_dict_keys(self):
         # getSubscribedAddresses() returns a dict of team names.
@@ -693,7 +693,7 @@ class MailingListSetTestCase(TestCaseWithFactory):
             team2.mailing_list.transitionToStatus(MailingListStatus.INACTIVE)
         team_names = [team1.name, team2.name]
         result = self.mailing_list_set.getSubscribedAddresses(team_names)
-        self.assertEqual([team1.name], result.keys())
+        self.assertEqual([team1.name], list(result))
 
     def test_getSubscribedAddresses_after_rejoin(self):
         # A users subscription is preserved when a user leaved a team, then

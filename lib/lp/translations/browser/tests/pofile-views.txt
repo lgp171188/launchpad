@@ -5,8 +5,8 @@ On this section, we are going to test the view class for an IPOFile.
 
 First, we need some imports.
 
+    >>> import io
     >>> from zope.publisher.browser import FileUpload
-    >>> from StringIO import StringIO
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.translations.model.translationmessage import (
     ...     TranslationMessage, DummyTranslationMessage)
@@ -381,7 +381,7 @@ string again once we're on zope.publisher >= 4.0.0a1.
 
     >>> class FileUploadArgument:
     ...     filename=b'po/es.po'
-    ...     file=StringIO(b'foos')
+    ...     file=io.BytesIO(b'foos')
     ...     headers=''
 
 Now, we do the upload.

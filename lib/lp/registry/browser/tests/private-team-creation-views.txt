@@ -63,11 +63,11 @@ When creating a private team, the team membership policy must be
     ...     personset, '+newteam',
     ...     form=form, principal=foo_bar)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
 
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     Private teams must have a Restricted membership policy.
 
 When the inputs are correct the admin can successfully create the team.
@@ -86,9 +86,9 @@ When the inputs are correct the admin can successfully create the team.
     ...     personset, '+newteam',
     ...     form=form, principal=foo_bar)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
-    >>> print len(view.errors)
+    >>> print(len(view.errors))
     0
 
 Commercial admins can create a team too.
@@ -108,16 +108,16 @@ Commercial admins can create a team too.
     ...     personset, '+newteam',
     ...     form=form, principal=commercial_member)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
 
-    >>> print len(view.errors)
+    >>> print(len(view.errors))
     0
 
     >>> import transaction
     >>> transaction.commit()
     >>> secret_team = personset.getByName('secret-team')
-    >>> print secret_team.visibility.name
+    >>> print(secret_team.visibility.name)
     PRIVATE
 
 Admins who attempt to create a new team with the name of an existing
@@ -138,11 +138,11 @@ team get the normal error message.
     ...     personset, '+newteam',
     ...     form=form, principal=foo_bar)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
 
     >>> for error in view.errors:
-    ...     print view.getFieldError(error.field_name)
+    ...     print(view.getFieldError(error.field_name))
     secret-team is already in use by another person or team.
 
 Regular users who try to create a team with a name that is already
@@ -162,11 +162,11 @@ taken by a private team get the blacklist message.
     ...     personset, '+newteam',
     ...     form=form, principal=nopriv)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
 
     >>> for error in view.errors:
-    ...     print view.getFieldError(error.field_name)
+    ...     print(view.getFieldError(error.field_name))
     The name &#x27;secret-team&#x27; has been blocked by the Launchpad
     administrators.  Contact Launchpad Support if you want to use this
     name.
@@ -212,11 +212,11 @@ And a private team must have restricted membership.
     ...     secret_team, '+edit',
     ...     form=form, principal=foo_bar)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
 
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     Private teams must have a Restricted membership policy.
 
 Visibility transitions
@@ -293,9 +293,9 @@ those permitted by private teams.
     >>> view = create_initialized_view(
     ...     team, '+edit',
     ...     form=form, principal=foo_bar)
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
-    >>> print len(view.errors)
+    >>> print(len(view.errors))
     0
 
 If the team has any other artifacts then it will not be allowed to
@@ -318,10 +318,10 @@ change to Private.
     >>> view = create_initialized_view(
     ...     team, '+edit',
     ...     form=form, principal=foo_bar)
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     This team cannot be converted to Private since it is referenced by a
     bugtracker.
 
@@ -330,10 +330,10 @@ display_name for the team is the old value.
 
     >>> transaction.commit()
     >>> super_secret2 = personset.getByName('super-secret2')
-    >>> print super_secret2.name
+    >>> print(super_secret2.name)
     super-secret2
 
-    >>> print super_secret2.display_name
+    >>> print(super_secret2.display_name)
     Shhhh
 
 
@@ -358,9 +358,9 @@ Commercial admins can create private projects with the 'private-' prefix.
     ...     personset, '+newteam',
     ...     form=form, principal=foo_bar)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
-    >>> print len(view.errors)
+    >>> print(len(view.errors))
     0
 
 When trying to register a project with a 'private-' prefix, regular
@@ -381,11 +381,11 @@ users will get a blacklist message.
     ...     personset, '+newteam',
     ...     form=form, principal=nopriv)
 
-    >>> print len(view.request.notifications)
+    >>> print(len(view.request.notifications))
     0
 
     >>> for error in view.errors:
-    ...     print view.getFieldError(error.field_name)
+    ...     print(view.getFieldError(error.field_name))
     The name &#x27;private-top-secret&#x27; has been blocked by the
     Launchpad administrators. Contact Launchpad Support if you want to
     use this name.

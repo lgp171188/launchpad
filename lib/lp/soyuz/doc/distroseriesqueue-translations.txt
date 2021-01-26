@@ -385,9 +385,9 @@ The LibraryFileAlias returned by getLatestTranslationsUploads on the
 source package points to a tarball with translations files for the
 package.
 
+    >>> import io
     >>> import tarfile
-    >>> from StringIO import StringIO
-    >>> tarball = StringIO(latest_translations_upload.read())
+    >>> tarball = io.BytesIO(latest_translations_upload.read())
     >>> archive = tarfile.open('', 'r|gz', tarball)
     >>> translation_files = sorted([
     ...     entry.name for entry in archive.getmembers()

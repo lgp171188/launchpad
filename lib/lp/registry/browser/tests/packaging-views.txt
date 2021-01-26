@@ -29,27 +29,27 @@ The distroseries field's vocabulary is the same as the ubuntu.series
 attribute.
 
     >>> view = create_view(productseries, '+ubuntupkg')
-    >>> print view.label
+    >>> print(view.label)
     Ubuntu source packaging
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Ubuntu source packaging
 
-    >>> print view.field_names
+    >>> print(view.field_names)
     ['sourcepackagename', 'distroseries']
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/hot/hotter
 
     >>> for series in ubuntu.series:
-    ...     print series.name
+    ...     print(series.name)
     breezy-autotest
     grumpy
     hoary
     warty
     >>> view.setUpFields()
     >>> for term in view.form_fields['distroseries'].field.vocabulary:
-    ...     print term.token
+    ...     print(term.token)
     breezy-autotest
     grumpy
     hoary
@@ -66,7 +66,7 @@ attribute.
     >>> view.errors
     []
     >>> for package in productseries.sourcepackages:
-    ...     print package.name
+    ...     print(package.name)
     hot
 
     >>> transaction.commit()
@@ -80,29 +80,29 @@ Ubuntu package.
 
     >>> view = create_initialized_view(productseries, '+ubuntupkg')
 
-    >>> print view.label
+    >>> print(view.label)
     Ubuntu source packaging
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Ubuntu source packaging
 
-    >>> print view.field_names
+    >>> print(view.field_names)
     ['sourcepackagename', 'distroseries']
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/hot/hotter
 
 The view restricts the packaging to Ubuntu series, and default is the current
 Ubuntu series.
 
-    >>> print view.default_distroseries.name
+    >>> print(view.default_distroseries.name)
     hoary
 
-    >>> print view.widgets['distroseries']._getDefault().name
+    >>> print(view.widgets['distroseries']._getDefault().name)
     hoary
 
     >>> for term in view.widgets['distroseries'].vocabulary:
-    ...     print term.title
+    ...     print(term.title)
     Breezy Badger Autotest (6.6.6)
     Grumpy (5.10)
     Hoary (5.04)
@@ -115,28 +115,28 @@ packaging history is empty, and the sourcepackagename widget is empty.
     ...     product=product, name='cold')
     >>> view = create_initialized_view(new_productseries, '+ubuntupkg')
 
-    >>> print view.default_sourcepackagename
+    >>> print(view.default_sourcepackagename)
     None
 
-    >>> print view.widgets.get('sourcepackagename')._getFormValue()
+    >>> print(view.widgets.get('sourcepackagename')._getFormValue())
     <BLANKLINE>
 
-    >>> print view.ubuntu_history
+    >>> print(view.ubuntu_history)
     []
 
 Series have been packaged in Ubuntu do have the current information and
 a history.
 
     >>> view = create_initialized_view(productseries, '+ubuntupkg')
-    >>> print view.default_sourcepackagename.name
+    >>> print(view.default_sourcepackagename.name)
     hot
 
-    >>> print view.widgets.get('sourcepackagename')._getFormValue().name
+    >>> print(view.widgets.get('sourcepackagename')._getFormValue().name)
     hot
 
     >>> for packaging in view.ubuntu_history:
-    ...     print packaging.distroseries.name
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.distroseries.name)
+    ...     print(packaging.sourcepackagename.name)
     hoary hot
 
 The package in the current Ubuntu series can be updated.
@@ -156,8 +156,8 @@ The package in the current Ubuntu series can be updated.
 We now have two source packages linked to our productseries.
 
     >>> for packaging in view.ubuntu_history:
-    ...     print packaging.distroseries.name
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.distroseries.name)
+    ...     print(packaging.sourcepackagename.name)
     hoary thunderbird
     hoary hot
 
@@ -174,8 +174,8 @@ action is ignored because there is no change
     []
 
     >>> for packaging in view.ubuntu_history:
-    ...     print packaging.distroseries.name
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.distroseries.name)
+    ...     print(packaging.sourcepackagename.name)
     hoary thunderbird
     hoary hot
 
@@ -202,15 +202,15 @@ and a new entry can be added to the packaging history.
     >>> view.errors
     []
 
-    >>> print view.default_distroseries.name
+    >>> print(view.default_distroseries.name)
     grumpy
 
-    >>> print view.default_sourcepackagename
+    >>> print(view.default_sourcepackagename)
     None
 
     >>> for packaging in view.ubuntu_history:
-    ...     print packaging.distroseries.name
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.distroseries.name)
+    ...     print(packaging.sourcepackagename.name)
     grumpy hot
     hoary thunderbird
     hoary hot
@@ -222,18 +222,18 @@ Product packages view
 The +packages named view displays the packages links to the product's series.
 
     >>> view = create_initialized_view(product, name='+packages')
-    >>> print view.label
+    >>> print(view.label)
     Linked packages
 
 The view provides the series_batch property.
 
     >>> def print_packages(view):
     ...     for series in view.series_batch.batch:
-    ...         print series.name
+    ...         print(series.name)
     ...         for package in series.packagings:
-    ...             print '  Package %s: %s' % (
+    ...             print('  Package %s: %s' % (
     ...                 package.sourcepackagename.name,
-    ...                 package.distroseries.name)
+    ...                 package.distroseries.name))
     >>> print_packages(view)
     trunk
     hotter
@@ -248,7 +248,7 @@ sorted by distribution with Ubuntu first and the rest in alphabetic
 order.
 
     >>> for distro_dict in view.distro_packaging:
-    ...     print distro_dict['distribution'].name
+    ...     print(distro_dict['distribution'].name)
     ubuntu
 
 A packaging link can be deleted if the owner believes it is an error. The
@@ -275,7 +275,7 @@ instead.)
     >>> table = find_tag_by_id(view.render(), 'packages-hotter')
     >>> for link in table.findAll('a'):
     ...     if '+remove-packaging' in link['href']:
-    ...         print link['href']
+    ...         print(link['href'])
     http://launchpad.test/ubuntu/grumpy/+source/hot/+remove-packaging
     http://launchpad.test/ubuntu/hoary/+source/thunderbird/+remove-packaging
     http://launchpad.test/ubuntu/hoary/+source/hot/+remove-packaging
@@ -309,10 +309,10 @@ The DistroSeriesPackagesView shows the packages in a distro series that
 are linked to upstream projects.
 
     >>> view = create_initialized_view(hoary, name='+packaging')
-    >>> print view.label
+    >>> print(view.label)
     All series packages linked to upstream project series
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     All upstream links
 
 The view provides a property to get prioritized list of series packagings.
@@ -325,11 +325,11 @@ to access the packagings. The default batch size is 20.
     >>> batch_navigator.default_size
     20
 
-    >>> print batch_navigator.heading
+    >>> print(batch_navigator.heading)
     packagings
 
     >>> for packaging in batch_navigator.batch:
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.sourcepackagename.name)
     netapplet
     evolution
     hot
@@ -342,10 +342,10 @@ The +needs-packaging view lists the source packages that needs packaging
 links to an upstream project.
 
     >>> view = create_initialized_view(hoary, name='+needs-packaging')
-    >>> print view.label
+    >>> print(view.label)
     Packages that need upstream packaging links
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Needs upstream links
 
 The view provides the cached_unlinked_packages property to access a
@@ -355,11 +355,11 @@ The view provides the cached_unlinked_packages property to access a
     >>> batch_navigator.default_size
     20
 
-    >>> print batch_navigator.heading
+    >>> print(batch_navigator.heading)
     packages
 
     >>> for summary in batch_navigator.batch:
-    ...     print summary['package'].name
+    ...     print(summary['package'].name)
     pmount
     alsa-utils
     cnews

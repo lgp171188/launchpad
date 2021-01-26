@@ -62,13 +62,13 @@ support any applications.
 
     >>> view = create_view(projectgroup, name='+index', principal=owner)
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print find_tag_by_id(content, 'portlet-latest-faqs')
+    >>> print(find_tag_by_id(content, 'portlet-latest-faqs'))
     None
-    >>> print find_tag_by_id(content, 'portlet-latest-questions')
+    >>> print(find_tag_by_id(content, 'portlet-latest-questions'))
     None
-    >>> print find_tag_by_id(content, 'portlet-latest-bugs')
+    >>> print(find_tag_by_id(content, 'portlet-latest-bugs'))
     None
-    >>> print find_tag_by_id(content, 'portlet-blueprints')
+    >>> print(find_tag_by_id(content, 'portlet-blueprints'))
     None
 
 The portlet are rendered when a child product officially uses the Launchpad
@@ -82,11 +82,11 @@ Answers, Blueprints, and Bugs applications.
     >>> view = create_view(projectgroup, name='+index', principal=owner)
     >>> content = find_tag_by_id(view.render(), 'maincontent')
 
-    >>> print find_tag_by_id(content, 'portlet-latest-faqs')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-faqs')['id'])
     portlet-latest-faqs
-    >>> print find_tag_by_id(content, 'portlet-latest-questions')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-questions')['id'])
     portlet-latest-questions
-    >>> print find_tag_by_id(content, 'portlet-latest-bugs')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-bugs')['id'])
     portlet-latest-bugs
-    >>> print find_tag_by_id(content, 'portlet-blueprints')['id']
+    >>> print(find_tag_by_id(content, 'portlet-blueprints')['id'])
     portlet-blueprints

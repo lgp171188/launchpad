@@ -222,7 +222,7 @@ they are as we expect.
     menu: None
     name: foo
     path: /sesamestreet/+foo
-    render: <bound method FacetLink.render ...>
+    render: <bound method ...render ...>
     selected: False
     site: None
     sort_key: 0
@@ -240,7 +240,7 @@ they are as we expect.
     menu: None
     name: bar
     path: /sesamestreet/+bar
-    render: <bound method FacetLink.render ...>
+    render: <bound method ...render ...>
     selected: False
     site: None
     sort_key: 1

@@ -256,8 +256,7 @@ location bar.
     ...     soup = BeautifulSoup(html)
     ...     hierarchy = soup.find(attrs={'class': 'breadcrumbs'}).findAll(
     ...         recursive=False)
-    ...     segments = [extract_text(step).encode('us-ascii', 'replace')
-    ...                 for step in hierarchy]
+    ...     segments = [extract_text(step) for step in hierarchy]
     ...     print('Location:', ' > '.join(segments))
 
     >>> markup = hierarchy.render()

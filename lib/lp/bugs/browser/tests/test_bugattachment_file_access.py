@@ -174,7 +174,7 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
         mo = re.search(r'^/\d+/foo\.txt$', parsed_url.path)
         self.assertIsNot(None, mo)
         params = parse_qs(parsed_url.query)
-        self.assertEqual(['token'], params.keys())
+        self.assertEqual(['token'], list(params))
 
         # Our test environment does not support wildcard DNS.  Work around
         # this.

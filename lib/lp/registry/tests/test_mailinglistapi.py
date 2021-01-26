@@ -95,7 +95,7 @@ class MailingListAPITestCase(TestCaseWithFactory):
         with person_logged_in(self.member):
             self.member.hide_email_addresses = True
         all_info = self.api.getMembershipInformation([self.team.name])
-        self.assertEqual(['team-a'], all_info.keys())
+        self.assertEqual(['team-a'], list(all_info))
         self.assertEqual(self.team_expected, sorted(all_info[self.team.name]))
 
     def test_getMembershipInformation_remote_public_archive(self):
