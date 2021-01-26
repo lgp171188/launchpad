@@ -40,7 +40,7 @@ are there any email addresses.
     >>> view.email_address_visibility.is_login_required
     True
 
-    >>> print view.visible_email_address_description
+    >>> print(view.visible_email_address_description)
     None
 
     >>> view.visible_email_addresses
@@ -86,7 +86,7 @@ them.
     >>> view.email_address_visibility.are_hidden
     True
 
-    >>> print view.visible_email_address_description
+    >>> print(view.visible_email_address_description)
     None
 
     >>> view.visible_email_addresses
@@ -159,7 +159,7 @@ email addresses state is NONE_AVAILABLE.
     >>> view.email_address_visibility.are_none_available
     True
 
-    >>> print view.visible_email_address_description
+    >>> print(view.visible_email_address_description)
     None
 
     >>> view.visible_email_addresses
@@ -180,7 +180,7 @@ their preferred languages, English is used.
 
     >>> login(ANONYMOUS)
     >>> view = create_view(sample_person, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     English
 
 This assumption is visible to the user when they view their own profile
@@ -194,7 +194,7 @@ correction. The list of languages is alphabetized.
     >>> sample_person.addLanguage(languageset.getLanguageByCode('fr'))
 
     >>> view = create_view(sample_person, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     French, Somali
 
 Teams may have languages too. English is the default if the team has not
@@ -204,7 +204,7 @@ set a language.
     []
 
     >>> view = create_view(landscape_developers, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     English
 
 Teams most often set just one language that is used for the Answers
@@ -214,7 +214,7 @@ parenthesis.
     >>> landscape_developers.addLanguage(
     ...     languageset.getLanguageByCode('pt_BR'))
     >>> view = create_view(landscape_developers, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     Portuguese (Brazil)
 
 
@@ -284,7 +284,7 @@ working on.
     >>> len(view.assigned_specs_in_progress)
     1
 
-    >>> print view.render()
+    >>> print(view.render())
     <div id="working-on"...
     <a href="/~ken/+specs?role=assignee"> All assigned blueprints </a>...
     ...<a ...href="http://blueprints.launchpad.test/tool/+spec/..."...>Specs
@@ -323,7 +323,7 @@ status is in INPROGRESS.
     >>> len(view.assigned_specs_in_progress)
     1
 
-    >>> print view.render()
+    >>> print(view.render())
     <div id="working-on"...
     <a href="http://launchpad.test/~ken/+assignedbugs?...">
       All bugs in progress </a>...
@@ -439,7 +439,7 @@ If the PPA is private, only the owner will see the section.
 For a user with no PPAs, nobody will see the section apart from themselves.
 This aspect allows them to access the 'Create a new PPA' link.
 
-    >>> print sample_person.archive
+    >>> print(sample_person.archive)
     None
 
     >>> ignored = login_person(sample_person)

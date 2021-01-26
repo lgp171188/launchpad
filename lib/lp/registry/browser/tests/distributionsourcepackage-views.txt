@@ -49,7 +49,7 @@ series.
     >>> view = create_initialized_view(
     ...     ubuntu_eel, name='+index', principal=factory.makePerson())
     >>> for series in view.active_series:
-    ...     print series.name, series.version
+    ...     print(series.name, series.version)
     latest 10.04
     breezy-autotest 6.6.6
     earliest 1.1
@@ -58,7 +58,7 @@ The view has a latest_sourcepackage attribute whose series is the same
 as the first series from view.active_series.
 
     >>> latest_series = view.latest_sourcepackage.distroseries
-    >>> print latest_series.name, latest_series.version
+    >>> print(latest_series.name, latest_series.version)
     latest 10.04
 
 The view has a version_table attribute for populating a table. The "Set
@@ -73,8 +73,8 @@ CURRENT or DEVELOPMENT.
     ...         if row['show_set_upstream_link'] is True:
     ...             set_upstream_link = '  set-upstream-link'
     ...         ds = row['distroseries']
-    ...         print "%-16s %-12s %s" % (
-    ...             ds.name, ds.status.name, set_upstream_link)
+    ...         print("%-16s %-12s %s" % (
+    ...             ds.name, ds.status.name, set_upstream_link))
     latest           DEVELOPMENT    set-upstream-link
     breezy-autotest  CURRENT        set-upstream-link
     earliest         SUPPORTED
@@ -84,7 +84,7 @@ this page will display a form to add one.
 
     >>> from lp.testing.pages import find_tag_by_id
     >>> upstream_portlet = find_tag_by_id(view.render(), 'upstream')
-    >>> print upstream_portlet.find(id='field.actions.link')['value']
+    >>> print(upstream_portlet.find(id='field.actions.link')['value'])
     Link to Upstream Project
 
 
@@ -140,17 +140,17 @@ package.
     >>> ubuntu_gedit_view = create_initialized_view(
     ...     ubuntu_gedit, name='+index')
     >>> for archive_pub in ubuntu_gedit_view.related_ppa_versions:
-    ...     print "%s - %s" % (
+    ...     print("%s - %s" % (
     ...         archive_pub['archive'].displayname,
     ...         archive_pub['versions']
-    ...         )
+    ...         ))
     PPA named nightly for Person-name... - Breezy Badger Autotest (0.8.2n3)
     PPA named beta for Person-name... - Breezy Badger Autotest (0.8.1),
         Hoary Mock (0.8.0)
 
 The view also calculates the url for finding further PPA versions.
 
-    >>> print ubuntu_gedit_view.further_ppa_versions_url
+    >>> print(ubuntu_gedit_view.further_ppa_versions_url)
     http://launchpad.test/ubuntutest/+ppas?name_filter=gedit
 
 
@@ -166,13 +166,13 @@ view provides a label, page_title and cancel_url.
     >>> package = factory.makeDistributionSourcePackage(
     ...     sourcepackagename=sourcepackagename, distribution=distribution)
     >>> view = create_initialized_view(package, '+edit')
-    >>> print view.label
+    >>> print(view.label)
     Edit ...bonkers... package in Youbuntu
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Edit ...bonkers... package in Youbuntu
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/youbuntu/+source/bonkers
 
 The view allows the user the set the bug_reporting_guidelines field.
@@ -181,7 +181,7 @@ The view allows the user the set the bug_reporting_guidelines field.
     ['bug_reporting_guidelines', 'bug_reported_acknowledgement',
     'enable_bugfiling_duplicate_search']
 
-    >>> print package.bug_reporting_guidelines
+    >>> print(package.bug_reporting_guidelines)
     None
 
     >>> form = {
@@ -191,8 +191,8 @@ The view allows the user the set the bug_reporting_guidelines field.
     >>> view = create_initialized_view(package, '+edit', form=form)
     >>> view.errors
     []
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/youbuntu/+source/bonkers
 
-    >>> print package.bug_reporting_guidelines
+    >>> print(package.bug_reporting_guidelines)
     guidelines

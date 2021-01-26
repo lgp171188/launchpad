@@ -13,7 +13,7 @@ Person (name12).
     >>> productset = getUtility(IProductSet)
     >>> firefox = productset.getByName('firefox')
     >>> sample_person = firefox.owner
-    >>> print sample_person.name
+    >>> print(sample_person.name)
     name12
 
 No Privileges Person is taking over the project, but they cannot access the
