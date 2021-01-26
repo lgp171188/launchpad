@@ -85,12 +85,6 @@ OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
 OCI_RECIPE_BUILD_DISTRIBUTION = 'oci.default_build_distribution'
 OCI_RECIPE_PRIVATE_FEATURE_FLAG = "oci.recipe.allow_private"
 
-OCI_RECIPE_TESTING_FLAGS = {
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
-    OCI_RECIPE_ALLOW_CREATE: 'on',
-    OCI_RECIPE_PRIVATE_FEATURE_FLAG: 'on'
-}
-
 
 @error_status(http_client.UNAUTHORIZED)
 class OCIRecipeFeatureDisabled(Unauthorized):

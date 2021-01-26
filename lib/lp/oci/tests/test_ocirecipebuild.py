@@ -34,7 +34,6 @@ from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
-    OCI_RECIPE_TESTING_FLAGS,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.oci.interfaces.ocirecipebuild import (
@@ -655,14 +654,15 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         self.assertFalse(target.virtualized)
 
 
-class TestOCIRecipeBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
+class TestOCIRecipeBuildMacaroonIssuer(
+    MacaroonTestMixin, OCIConfigHelperMixin, TestCaseWithFactory):
     """Test OCIRecipeBuild macaroon issuing and verification."""
 
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         super(TestOCIRecipeBuildMacaroonIssuer, self).setUp()
-        self.useFixture(FeatureFixture(OCI_RECIPE_TESTING_FLAGS))
+        self.setConfig()
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")
 
