@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `OCIRecipeBuildBehaviour`."""
@@ -39,6 +39,7 @@ from zope.component import getUtility
 from zope.proxy import isProxy
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
@@ -72,6 +73,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
@@ -396,7 +398,55 @@ class TestAsyncOCIRecipeBuildBehaviour(
             "git_path": Equals(ref.name),
             "name": Equals(job.build.recipe.name),
             "proxy_url": ProxyURLMatcher(job, self.now),
-            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
+            "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
+            "series": Equals(job.build.distro_arch_series.distroseries.name),
+            "trusted_keys": Equals(expected_trusted_keys),
+            # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
+            "metadata": ContainsDict({
+                "architectures": Equals(["i386"]),
+                "build_request_id": Equals(None),
+                "build_request_timestamp": Equals(None),
+                "build_urls": Equals({"i386": canonical_url(job.build)})
+            })
+        }))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_private_repo(self):
+        # extraBuildArgs returns appropriate arguments if asked to build a
+        # job for a Git branch.
+        [ref] = self.factory.makeGitRefs()
+        ref.repository.transitionToInformationType(
+            InformationType.PRIVATESECURITY, ref.repository.owner)
+        job = self.makeJob(git_ref=ref)
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
+        with dbuser(config.builddmaster.dbuser):
+            with mock.patch.object(job._authserver, 'callRemote') as m_remote:
+                issueMacaroon = defer.Deferred()
+                issueMacaroon.callback("yammy-macaroon-123")
+                m_remote.return_value = issueMacaroon
+                args = yield job.extraBuildArgs()
+        # Asserts that nothing here is a zope proxy, to avoid errors when
+        # serializing it for XML-RPC call.
+        self.assertHasNoZopeSecurityProxy(args)
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_file": Equals(job.build.recipe.build_file),
+            "build_args": Equals({"BUILD_VAR": "123"}),
+            "build_path": Equals(job.build.recipe.build_path),
+            "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_repository": Equals(ref.repository.getCodebrowseUrl(
+                username="", password="yammy-macaroon-123")),
+            "git_path": Equals(ref.name),
+            "name": Equals(job.build.recipe.name),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
             # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
