@@ -232,7 +232,7 @@ If there are files, these files will be returned as a list.
 
     >>> release_file = release.addReleaseFile(
     ...     'test.txt', b'test', 'text/plain', person,
-    ...     signature_filename='test.txt.asc', signature_content='123',
+    ...     signature_filename='test.txt.asc', signature_content=b'123',
     ...     description="test file")
     >>> view = create_view(milestone, '+index')
     >>> [file.libraryfile.filename for file in view.download_files]
