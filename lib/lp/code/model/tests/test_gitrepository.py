@@ -2933,15 +2933,15 @@ class TestGitRepositoryGetBlob(TestCaseWithFactory):
 
     def test_getBlob_with_default_rev(self):
         repository = self.factory.makeGitRepository()
-        self.useFixture(GitHostingFixture(blob='Some text'))
+        self.useFixture(GitHostingFixture(blob=b'Some text'))
         ret = repository.getBlob('src/README.txt')
-        self.assertEqual('Some text', ret)
+        self.assertEqual(b'Some text', ret)
 
     def test_getBlob_with_rev(self):
         repository = self.factory.makeGitRepository()
-        self.useFixture(GitHostingFixture(blob='Some text'))
+        self.useFixture(GitHostingFixture(blob=b'Some text'))
         ret = repository.getBlob('src/README.txt', 'some-rev')
-        self.assertEqual('Some text', ret)
+        self.assertEqual(b'Some text', ret)
 
 
 class TestGitRepositoryRules(TestCaseWithFactory):
