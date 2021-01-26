@@ -237,15 +237,13 @@ class OCIProjectIndexView(LaunchpadView):
     def git_ssh_hostname(self):
         return urlsplit(config.codehosting.git_ssh_root).hostname
 
-    @property
+    @cachedproperty
     def official_recipe_count(self):
         return self.context.getOfficialRecipes().count()
 
-    @property
+    @cachedproperty
     def other_recipe_count(self):
-        all_count = self.context.getRecipes().count()
-        official_count = self.context.getOfficialRecipes().count()
-        return all_count - official_count
+        return self.context.getUnofficialRecipes().count()
 
 
 class OCIProjectEditView(LaunchpadEditFormView):

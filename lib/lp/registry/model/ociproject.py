@@ -205,6 +205,11 @@ class OCIProject(BugTargetBase, StormBase):
         from lp.oci.model.ocirecipe import OCIRecipe
         return self.getRecipes().find(OCIRecipe._official == True)
 
+    def getUnofficialRecipes(self):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        return self.getRecipes().find(OCIRecipe._official == False)
+
     def setOfficialRecipeStatus(self, recipe, status):
         """See `IOCIProject`."""
         if recipe is not None and recipe.oci_project != self:

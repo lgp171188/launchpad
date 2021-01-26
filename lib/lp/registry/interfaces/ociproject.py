@@ -98,6 +98,9 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getOfficialRecipes():
         """Gets the official recipes for this OCI project."""
 
+    def getUnofficialRecipes():
+        """Gets the unofficial recipes for this OCI project."""
+
     def getDefaultGitRepository(person):
         """Returns the default git repository for the given user under the
         namespace of this OCI project"""
