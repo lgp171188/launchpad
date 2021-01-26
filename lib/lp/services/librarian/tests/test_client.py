@@ -20,6 +20,7 @@ from six.moves.urllib.error import (
     URLError,
     )
 from six.moves.urllib.request import urlopen
+from testtools.testcase import ExpectedException
 import transaction
 
 from lp.services.config import config
@@ -171,8 +172,11 @@ class LibrarianFileWrapperTestCase(TestCase):
 
     def test_unbounded_read_incorrect_length(self):
         file = self.makeFile(extra_content_length=1)
-        self.assertEqual(b"abcdef", file.read())
-        self.assertRaises(http_client.IncompleteRead, file.read)
+        with ExpectedException(http_client.IncompleteRead):
+            # Python 3 notices the short response on the first read.
+            self.assertEqual(b"abcdef", file.read())
+            # Python 2 only notices the short response on the next read.
+            file.read()
 
     def test_bounded_read_correct_length(self):
         file = self.makeFile()
