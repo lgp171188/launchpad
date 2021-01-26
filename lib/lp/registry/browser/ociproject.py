@@ -187,11 +187,21 @@ class OCIProjectNavigationMenu(NavigationMenu):
 
     facet = 'overview'
 
-    links = ('edit',)
+    links = ('edit', 'create_recipe', 'view_recipes')
 
     @enabled_with_permission('launchpad.Edit')
     def edit(self):
         return Link('+edit', 'Edit OCI project', icon='edit')
+
+    @enabled_with_permission('launchpad.AnyLegitimatePerson')
+    def create_recipe(self):
+        return Link('+new-recipe', 'Create OCI recipe', icon='add')
+
+    def view_recipes(self):
+        enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
+            self.context).is_empty()
+        return Link(
+            '+recipes', 'View all recipes', icon='info', enabled=enabled)
 
 
 class OCIProjectContextMenu(ContextMenu):
@@ -211,7 +221,7 @@ class OCIProjectContextMenu(ContextMenu):
         enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
             self.context).is_empty()
         return Link(
-            '+recipes', 'View OCI recipes', icon='info', enabled=enabled)
+            '+recipes', 'View all recipes', icon='info', enabled=enabled)
 
 
 class OCIProjectIndexView(LaunchpadView):
@@ -226,6 +236,16 @@ class OCIProjectIndexView(LaunchpadView):
     @property
     def git_ssh_hostname(self):
         return urlsplit(config.codehosting.git_ssh_root).hostname
+
+    @property
+    def official_recipe_count(self):
+        return self.context.getOfficialRecipes().count()
+
+    @property
+    def other_recipe_count(self):
+        all_count = self.context.getRecipes().count()
+        official_count = self.context.getOfficialRecipes().count()
+        return all_count - official_count
 
 
 class OCIProjectEditView(LaunchpadEditFormView):

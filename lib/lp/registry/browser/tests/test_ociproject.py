@@ -14,7 +14,7 @@ from datetime import datetime
 import pytz
 from zope.security.proxy import removeSecurityProxy
 
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.ociproject import (
     OCI_PROJECT_ALLOW_CREATE,
     OCIProjectCreateFeatureDisabled,
@@ -79,9 +79,13 @@ class TestOCIProjectNavigation(TestCaseWithFactory):
         self.assertEqual(oci_project, obj)
 
 
-class TestOCIProjectView(BrowserTestCase):
+class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIProjectView, self).setUp()
+        self.setConfig()
 
     def test_index_distribution_pillar(self):
         distribution = self.factory.makeDistribution(displayname="My Distro")
@@ -148,6 +152,63 @@ class TestOCIProjectView(BrowserTestCase):
             Project: A-pillar
             Name: oci-name
             """, self.getMainText(oci_project, user=owner))
+
+    def test_shows_official_recipes(self):
+        distribution = self.factory.makeDistribution(displayname="My Distro")
+        oci_project = self.factory.makeOCIProject(
+            pillar=distribution, ociprojectname="oci-name")
+        self.factory.makeOCIRecipe(oci_project=oci_project, official=True)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+index", user=distribution.owner)
+        self.assertIn("Official recipes", browser.contents)
+        self.assertNotIn("non-official recipe", browser.contents)
+        self.assertNotIn(
+            "There are no recipes registered for this OCI project.",
+            browser.contents)
+
+    def test_shows_official_and_unofficial_recipes(self):
+        distribution = self.factory.makeDistribution(displayname="My Distro")
+        oci_project = self.factory.makeOCIProject(
+            pillar=distribution, ociprojectname="oci-name")
+        self.factory.makeOCIRecipe(oci_project=oci_project, official=True)
+        self.factory.makeOCIRecipe(oci_project=oci_project, official=False)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+index", user=distribution.owner)
+        self.assertIn("Official recipes", browser.contents)
+        self.assertIn(
+            "There is <strong>1</strong> non-official recipe.",
+            browser.contents)
+        self.assertNotIn(
+            "There are no recipes registered for this OCI project.",
+            browser.contents)
+
+    def test_shows_unofficial_recipes(self):
+        distribution = self.factory.makeDistribution(displayname="My Distro")
+        oci_project = self.factory.makeOCIProject(
+            pillar=distribution, ociprojectname="oci-name")
+        self.factory.makeOCIRecipe(oci_project=oci_project, official=False)
+        self.factory.makeOCIRecipe(oci_project=oci_project, official=False)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+index", user=distribution.owner)
+        self.assertNotIn("Official recipes", browser.contents)
+        self.assertIn(
+            "There are <strong>2</strong> non-official recipes.",
+            browser.contents)
+        self.assertNotIn(
+            "There are no recipes registered for this OCI project.",
+            browser.contents)
+
+    def test_shows_no_recipes(self):
+        distribution = self.factory.makeDistribution(displayname="My Distro")
+        oci_project = self.factory.makeOCIProject(
+            pillar=distribution, ociprojectname="oci-name")
+        browser = self.getViewBrowser(
+            oci_project, view_name="+index", user=distribution.owner)
+        self.assertNotIn("Official recipes", browser.contents)
+        self.assertNotIn("non-official recipe", browser.contents)
+        self.assertIn(
+            "There are no recipes registered for this OCI project.",
+            browser.contents)
 
 
 class TestOCIProjectEditView(BrowserTestCase):

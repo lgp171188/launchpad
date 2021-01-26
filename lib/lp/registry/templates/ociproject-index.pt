@@ -18,7 +18,7 @@
   </metal:registering>
 
   <metal:side fill-slot="side">
-    <div tal:replace="structure context/@@+global-actions"/>
+    <tal:menu replace="structure context/@@+global-actions" />
   </metal:side>
 
   <metal:heading fill-slot="heading">
@@ -65,14 +65,53 @@
     </div>
 
     <h2>Recipes</h2>
-    <div id="recipe-summary"
-         tal:define="link context/menu:context/view_recipes"
-         tal:condition="link/enabled"
-         tal:content="structure link/render"/>
-    <tal:create-recipe
-        define="link context/menu:context/create_recipe"
-        condition="link/enabled"
-        replace="structure link/render"/>
+
+    <h3 tal:condition="view/official_recipe_count">Official recipes</h3>
+    <table class="listing" id="mirrors_list" tal:condition="view/official_recipe_count">
+        <tbody>
+          <tr class="head">
+            <th>Name</th>
+            <th>Owner</th>
+            <th>Source</th>
+            <th>Build file</th>
+            <th>Date created</th>
+          </tr>
+
+          <tr tal:repeat="recipe context/getOfficialRecipes">
+            <td>
+              <a tal:content="recipe/name"
+                 tal:attributes="href recipe/fmt:url" />
+            </td>
+            <td tal:content="structure recipe/owner/fmt:link" />
+            <td tal:content="recipe/git_ref/identity" />
+            <td tal:content="recipe/build_file" />
+            <td tal:content="recipe/date_created/fmt:displaydate" />
+          </tr>
+        </tbody>
+      </table>
+    <div tal:condition="python: not view.official_recipe_count and view.other_recipe_count">
+      <p>There are no official recipes for this OCI project.</p>
+    </div>
+
+    <div tal:define="count view/other_recipe_count"
+           tal:condition="count">
+      <span tal:condition="python: count == 1">
+        There is <strong>1</strong> non-official recipe.</span>
+      <span tal:condition="python: count != 1">
+        There are <strong tal:content="count" /> non-official recipes.
+      </span>
+      <p>
+        <tal:summary
+        tal:define="link context/menu:context/view_recipes"
+        tal:condition="link/enabled"
+        tal:content="structure link/render"/>
+      </p>
+    </div>
+
+    <div tal:condition="python: not view.official_recipe_count and not view.other_recipe_count">
+      <p>There are no recipes registered for this OCI project.</p>
+    </div>
+
   </div>
 </body>
 </html>
