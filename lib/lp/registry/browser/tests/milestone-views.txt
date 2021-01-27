@@ -216,8 +216,9 @@ release as a set.
 
     >>> ignored = login_person(person)
     >>> view = create_view(milestone, '+index')
-    >>> view.getReleases()
-    set([<ProductRelease ...>])
+    >>> for release in view.getReleases():
+    ...     print(repr(release))
+    <ProductRelease ...>
 
     >>> [release.version for release in view.getReleases()]
     [u'kakapo']
