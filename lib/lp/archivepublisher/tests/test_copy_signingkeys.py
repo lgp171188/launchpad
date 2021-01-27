@@ -139,6 +139,8 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
             "INFO No FIT signing key for %s / None" % archives[0].reference,
             "INFO No OpenPGP signing key for %s / None" %
                 archives[0].reference,
+            "INFO No CV2 Kernel signing key for %s / None" %
+                archives[0].reference,
             ]
         self.assertEqual(
             expected_log, script.logger.content.as_text().splitlines())
@@ -244,6 +246,8 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
             "INFO No FIT signing key for %s / %s" % (
                 archives[0].reference, distro_serieses[0].name),
             "INFO No OpenPGP signing key for %s / %s" % (
+                archives[0].reference, distro_serieses[0].name),
+            "INFO No CV2 Kernel signing key for %s / %s" % (
                 archives[0].reference, distro_serieses[0].name),
             ]
         self.assertEqual(
