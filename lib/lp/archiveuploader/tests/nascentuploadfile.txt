@@ -95,8 +95,9 @@ At this point the changesfile content is already parsed:
     >>> ed_binary_changes.version
     '0.2-20'
 
-    >>> ed_binary_changes.architectures
-    set(['i386'])
+    >>> for item in ed_binary_changes.architectures:
+    ...     print(item)
+    i386
 
     >>> ed_binary_changes.suite_name
     'unstable'
