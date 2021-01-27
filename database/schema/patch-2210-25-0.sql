@@ -4,8 +4,8 @@
 SET client_min_messages=ERROR;
 
 ALTER TABLE GitRepository
-    ADD COLUMN loose_objects integer,
-    ADD COLUMN packs integer,
+    ADD COLUMN loose_object_count integer,
+    ADD COLUMN pack_count integer,
     ADD COLUMN date_last_repacked timestamp without time zone,
     ADD COLUMN date_last_scanned timestamp without time zone;
 
