@@ -9,7 +9,7 @@ ALTER TABLE GitRepository
     ADD COLUMN date_last_repacked timestamp without time zone,
     ADD COLUMN date_last_scanned timestamp without time zone;
 
-    COMMENT ON COLUMN GitRepository.date_last_scanned IS 'The datetime that packs and loose_objects were last updated for this repository.';
-    COMMENT ON COLUMN GitRepository.date_last_repacked IS 'The datetime that the last repack request was executed successfully on Turnip.';
+COMMENT ON COLUMN GitRepository.date_last_scanned IS 'The datetime that packs and loose_objects were last updated for this repository.';
+COMMENT ON COLUMN GitRepository.date_last_repacked IS 'The datetime that the last repack request was executed successfully on Turnip.';
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 25, 0);
