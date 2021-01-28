@@ -12,7 +12,7 @@ import sys
 from lp.services.config import config
 from lp.services.mail.helpers import save_mail_to_librarian
 from lp.services.mail.incoming import handle_one_mail
-from lp.services.mail.signedmessage import signed_message_from_string
+from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.services.scripts.base import LaunchpadScript
 
 
@@ -31,6 +31,8 @@ class ProcessMail(LaunchpadScript):
         # with handling a mailbox, which we're avoiding here.
         if len(self.args) >= 1:
             from_file = open(self.args[0], 'rb')
+        elif sys.version_info[0] >= 3:
+            from_file = sys.stdin.buffer
         else:
             from_file = sys.stdin
         self.logger.debug("reading message from %r" % (from_file,))
@@ -40,7 +42,7 @@ class ProcessMail(LaunchpadScript):
         self.logger.debug("got %d bytes" % len(raw_mail))
         file_alias = save_mail_to_librarian(raw_mail)
         self.logger.debug("saved to librarian as %r" % (file_alias,))
-        parsed_mail = signed_message_from_string(raw_mail)
+        parsed_mail = signed_message_from_bytes(raw_mail)
         # Kinda kludgey way to cause sendmail to just print it.
         config.sendmail_to_stdout = True
         handle_one_mail(

@@ -18,6 +18,7 @@ import gpgme
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.compat import message_as_bytes
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.mail.helpers import IncomingEmailError
 from lp.services.mail.incoming import (
@@ -25,7 +26,7 @@ from lp.services.mail.incoming import (
     canonicalise_line_endings,
     )
 from lp.services.mail.interfaces import IWeaklyAuthenticatedPrincipal
-from lp.services.mail.signedmessage import signed_message_from_string
+from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.testing import TestCaseWithFactory
 from lp.testing.factory import GPGSigningContext
 from lp.testing.gpgkeys import (
@@ -54,7 +55,7 @@ class TestSignedMessage(TestCaseWithFactory):
         # and generates a weakly authenticated principal.
         sender = self.factory.makePerson()
         email_message = self.factory.makeEmailMessage(sender=sender)
-        msg = signed_message_from_string(email_message.as_string())
+        msg = signed_message_from_bytes(message_as_bytes(email_message))
         self.assertIs(None, msg.signedContent)
         self.assertIs(None, msg.signature)
         principal = authenticateEmail(msg)
@@ -79,7 +80,7 @@ class TestSignedMessage(TestCaseWithFactory):
             body=body, signing_context=signing_context)
         getUtility(IGPGHandler).resetLocalState()
         self.assertFalse(msg.is_multipart())
-        return signed_message_from_string(msg.as_string())
+        return signed_message_from_bytes(message_as_bytes(msg))
 
     def test_clearsigned_message_wrong_sender(self):
         # If the message is signed, but the key doesn't belong to the sender,
@@ -137,7 +138,7 @@ class TestSignedMessage(TestCaseWithFactory):
         key = import_secret_test_key()
         gpghandler = getUtility(IGPGHandler)
         signature = gpghandler.signContent(
-            canonicalise_line_endings(body_text.as_string()),
+            canonicalise_line_endings(message_as_bytes(body_text)),
             key, 'test', gpgme.SIG_MODE_DETACH)
         gpghandler.resetLocalState()
 
@@ -146,7 +147,7 @@ class TestSignedMessage(TestCaseWithFactory):
         attachment['Content-Type'] = 'application/pgp-signature'
         msg.attach(attachment)
         self.assertTrue(msg.is_multipart())
-        return signed_message_from_string(msg.as_string())
+        return signed_message_from_bytes(message_as_bytes(msg))
 
     def test_detached_signature_message_wrong_sender(self):
         # If the message is signed, but the key doesn't belong to the sender,
@@ -180,7 +181,7 @@ class TestSignedMessage(TestCaseWithFactory):
         sender = getUtility(IPersonSet).getByEmail('test@canonical.com')
         sender.require_strong_email_authentication = True
         email_message = self.factory.makeEmailMessage(sender=sender)
-        msg = signed_message_from_string(email_message.as_string())
+        msg = signed_message_from_bytes(message_as_bytes(email_message))
         error = self.assertRaises(IncomingEmailError, authenticateEmail, msg)
         expected_message = (
             "Launchpad only accepts signed email from your address.\n\n"

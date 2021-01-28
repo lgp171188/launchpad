@@ -20,13 +20,13 @@ from lp.services.mail.incoming import (
     InactiveAccount,
     )
 from lp.services.mail.interfaces import IWeaklyAuthenticatedPrincipal
-from lp.services.mail.signedmessage import signed_message_from_string
+from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
 # sample private key made with 'openssl genrsa' and public key using 'openssl
 # rsa -pubout'.  Not really the key for canonical.com ;-)
-sample_privkey = """\
+sample_privkey = b"""\
 -----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQC7ozYozzZuLYQi2DXSMtI3wWzWd7tAJfg+zwbOcNS4Aib6lo3R
 y6ansi+fOhHSwgeOrkBGKzgHi2T8iDPzpUFhAZuOFsQaVY6yHzhXwPFi/nKYtFxU
@@ -44,7 +44,7 @@ fTl3LEI1X53HlyAUuQJALHmpSB2Qq0DqmgcAGXkDsh3GRfMv91a7u99VDT/fe+J0
 -----END RSA PRIVATE KEY-----
 """
 
-sample_pubkey = """\
+sample_pubkey = b"""\
 -----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7ozYozzZuLYQi2DXSMtI3wWzW
 d7tAJfg+zwbOcNS4Aib6lo3Ry6ansi+fOhHSwgeOrkBGKzgHi2T8iDPzpUFhAZuO
@@ -53,7 +53,7 @@ FsQaVY6yHzhXwPFi/nKYtFxUX0DE4/GxkmNDgBOPqIpyEUQJvf5+byvb5mI85AS0
 -----END PUBLIC KEY-----
 """
 
-sample_dns = """\
+sample_dns = b"""\
 k=rsa; \
 p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7ozYozzZuLYQi2DXSMtI3wWzW\
 d7tAJfg+zwbOcNS4Aib6lo3Ry6ansi+fOhHSwgeOrkBGKzgHi2T8iDPzpUFhAZuO\
@@ -80,12 +80,12 @@ class TestDKIM(TestCaseWithFactory):
         if canonicalize is None:
             canonicalize = (dkim.Relaxed, dkim.Relaxed)
         dkim_line = dkim.sign(plain_message,
-            selector='example',
-            domain='canonical.com',
+            selector=b'example',
+            domain=b'canonical.com',
             privkey=sample_privkey,
             logger=self.logger,
             canonicalize=canonicalize)
-        assert dkim_line[-1] == '\n'
+        assert dkim_line[-1:] == b'\n'
         return dkim_line + plain_message
 
     def monkeypatch_dns(self):
@@ -116,9 +116,9 @@ class TestDKIM(TestCaseWithFactory):
         if response_type == 'valid':
             key = sample_dns
         elif response_type == 'broken':
-            key = sample_dns.replace(';', '')
+            key = sample_dns.replace(b';', b'')
         elif response_type == 'garbage':
-            key = 'abcdefg'
+            key = b'abcdefg'
         else:
             raise ValueError(response_type)
         self._dns_responses[u'example._domainkey.canonical.com.'] = key
@@ -129,22 +129,24 @@ class TestDKIM(TestCaseWithFactory):
     def assertStronglyAuthenticated(self, principal, signed_message):
         if IWeaklyAuthenticatedPrincipal.providedBy(principal):
             self.fail('expected strong authentication; got weak:\n'
-                + self.get_dkim_log() + '\n\n' + signed_message)
+                + self.get_dkim_log() + '\n\n'
+                + six.ensure_text(signed_message, errors='replace'))
 
     def assertWeaklyAuthenticated(self, principal, signed_message):
         if not IWeaklyAuthenticatedPrincipal.providedBy(principal):
             self.fail('expected weak authentication; got strong:\n'
-                + self.get_dkim_log() + '\n\n' + signed_message)
+                + self.get_dkim_log() + '\n\n'
+                + six.ensure_text(signed_message, errors='replace'))
 
     def assertDkimLogContains(self, substring):
         l = self.get_dkim_log()
         if l.find(substring) == -1:
             self.fail("didn't find %r in log: %s" % (substring, l))
 
-    def makeMessageText(self, sender=None, from_address=None):
+    def makeMessageBytes(self, sender=None, from_address=None):
         if from_address is None:
             from_address = "Foo Bar <foo.bar@canonical.com>"
-        text = ("From: " + from_address + "\n" + """\
+        buf = (b"From: " + six.ensure_binary(from_address) + b"\n" + b"""\
 Date: Fri, 1 Apr 2010 00:00:00 +1000
 Subject: yet another comment
 To: 1@bugs.staging.launchpad.net
@@ -153,8 +155,8 @@ To: 1@bugs.staging.launchpad.net
 
 Why isn't this fixed yet?""")
         if sender is not None:
-            text = "Sender: " + sender + "\n" + text
-        return text
+            buf = b"Sender: " + six.ensure_binary(sender) + b"\n" + buf
+        return buf
 
     def test_dkim_broken_pubkey(self):
         """Handle a subtly-broken pubkey like qq.com, see bug 881237.
@@ -162,10 +164,10 @@ Why isn't this fixed yet?""")
         The message is not trusted but inbound message processing does not
         abort either.
         """
-        signed_message = self.fake_signing(self.makeMessageText())
+        signed_message = self.fake_signing(self.makeMessageBytes())
         self.preload_dns_response('broken')
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertWeaklyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
@@ -173,17 +175,17 @@ Why isn't this fixed yet?""")
             "ERROR unknown algorithm in k= tag")
 
     def test_dkim_garbage_pubkey(self):
-        signed_message = self.fake_signing(self.makeMessageText())
+        signed_message = self.fake_signing(self.makeMessageBytes())
         self.preload_dns_response('garbage')
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertWeaklyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
         # We seem to just get the public key as the error message, which
         # isn't the most informative of errors, but this is buried inside
         # dkimpy and there isn't much we can do about it.
-        self.assertDkimLogContains("ERROR abcdefg")
+        self.assertDkimLogContains("ERROR %s" % b"abcdefg")
 
     def test_dkim_disabled(self):
         """With disabling flag set, mail isn't trusted."""
@@ -194,27 +196,27 @@ Why isn't this fixed yet?""")
             self.test_dkim_valid_strict)
 
     def test_dkim_valid_strict(self):
-        signed_message = self.fake_signing(self.makeMessageText(),
+        signed_message = self.fake_signing(self.makeMessageBytes(),
             canonicalize=(dkim.Simple, dkim.Simple))
         self.preload_dns_response()
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertStronglyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
 
     def test_dkim_valid(self):
-        signed_message = self.fake_signing(self.makeMessageText())
+        signed_message = self.fake_signing(self.makeMessageBytes())
         self.preload_dns_response()
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertStronglyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
 
     def test_dkim_untrusted_signer(self):
         # Valid signature from an untrusted domain -> untrusted
-        signed_message = self.fake_signing(self.makeMessageText())
+        signed_message = self.fake_signing(self.makeMessageBytes())
         self.preload_dns_response()
         saved_domains = incoming._trusted_dkim_domains[:]
 
@@ -224,7 +226,7 @@ Why isn't this fixed yet?""")
         self.addCleanup(restore)
         incoming._trusted_dkim_domains = []
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertWeaklyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
@@ -234,12 +236,12 @@ Why isn't this fixed yet?""")
         # that of the From-sender, if that domain is relaying the message.
         # However, we shouldn't then trust the purported sender, because they
         # might have just made it up rather than relayed it.
-        tweaked_message = self.makeMessageText(
+        tweaked_message = self.makeMessageBytes(
             from_address='steve.alexander@ubuntulinux.com')
         signed_message = self.fake_signing(tweaked_message)
         self.preload_dns_response()
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertWeaklyAuthenticated(principal, signed_message)
         # should come from From, not the dkim signature
         self.assertEqual(principal.person.preferredemail.email,
@@ -250,13 +252,13 @@ Why isn't this fixed yet?""")
         #  We still treat this as weakly authenticated by the purported
         # From-header sender, though perhaps in future we would prefer
         # to reject these messages.
-        signed_message = self.fake_signing(self.makeMessageText())
+        signed_message = self.fake_signing(self.makeMessageBytes())
         self.preload_dns_response()
         fiddled_message = signed_message.replace(
-            'From: Foo Bar <foo.bar@canonical.com>',
-            'From: Carlos <carlos@canonical.com>')
+            b'From: Foo Bar <foo.bar@canonical.com>',
+            b'From: Carlos <carlos@canonical.com>')
         principal = authenticateEmail(
-            signed_message_from_string(fiddled_message))
+            signed_message_from_bytes(fiddled_message))
         self.assertWeaklyAuthenticated(principal, fiddled_message)
         # should come from From, not the dkim signature
         self.assertEqual(principal.person.preferredemail.email,
@@ -264,13 +266,13 @@ Why isn't this fixed yet?""")
 
     def test_dkim_changed_from_realname(self):
         # If the real name part of the message has changed, it's detected.
-        signed_message = self.fake_signing(self.makeMessageText())
+        signed_message = self.fake_signing(self.makeMessageBytes())
         self.preload_dns_response()
         fiddled_message = signed_message.replace(
-            'From: Foo Bar <foo.bar@canonical.com>',
-            'From: Evil Foo <foo.bar@canonical.com>')
+            b'From: Foo Bar <foo.bar@canonical.com>',
+            b'From: Evil Foo <foo.bar@canonical.com>')
         principal = authenticateEmail(
-            signed_message_from_string(fiddled_message))
+            signed_message_from_bytes(fiddled_message))
         # We don't care about the real name for determining the principal.
         self.assertWeaklyAuthenticated(principal, fiddled_message)
         self.assertEqual(principal.person.preferredemail.email,
@@ -279,9 +281,9 @@ Why isn't this fixed yet?""")
     def test_dkim_nxdomain(self):
         # If there's no DNS entry for the pubkey it should be handled
         # decently.
-        signed_message = self.fake_signing(self.makeMessageText())
+        signed_message = self.fake_signing(self.makeMessageBytes())
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertWeaklyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
@@ -291,8 +293,8 @@ Why isn't this fixed yet?""")
         # treated as weakly authenticated.
         # The library doesn't log anything if there's no header at all.
         principal = authenticateEmail(
-            signed_message_from_string(self.makeMessageText()))
-        self.assertWeaklyAuthenticated(principal, self.makeMessageText())
+            signed_message_from_bytes(self.makeMessageBytes()))
+        self.assertWeaklyAuthenticated(principal, self.makeMessageBytes())
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
 
@@ -300,11 +302,11 @@ Why isn't this fixed yet?""")
         # The message has a syntactically valid DKIM signature that
         # doesn't actually correspond to what was signed.  We log
         # something about this but we don't want to drop the message.
-        signed_message = self.fake_signing(self.makeMessageText())
-        signed_message += 'blah blah'
+        signed_message = self.fake_signing(self.makeMessageBytes())
+        signed_message += b'blah blah'
         self.preload_dns_response()
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertWeaklyAuthenticated(principal, signed_message)
         self.assertEqual(principal.person.preferredemail.email,
             'foo.bar@canonical.com')
@@ -324,12 +326,12 @@ Why isn't this fixed yet?""")
             person=person,
             address='dkimtest@example.com')
         self.preload_dns_response()
-        tweaked_message = self.makeMessageText(
+        tweaked_message = self.makeMessageBytes(
             sender="dkimtest@canonical.com",
             from_address="DKIM Test <dkimtest@example.com>")
         signed_message = self.fake_signing(tweaked_message)
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertStronglyAuthenticated(principal, signed_message)
 
     def test_dkim_signed_but_from_unknown_address(self):
@@ -342,12 +344,12 @@ Why isn't this fixed yet?""")
             name='dkimtest',
             displayname='DKIM Test')
         self.preload_dns_response()
-        tweaked_message = self.makeMessageText(
+        tweaked_message = self.makeMessageBytes(
             sender="dkimtest@canonical.com",
             from_address="DKIM Test <dkimtest@example.com>")
         signed_message = self.fake_signing(tweaked_message)
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertEqual(principal.person.preferredemail.email,
             'dkimtest@example.com')
         self.assertWeaklyAuthenticated(principal, signed_message)
@@ -369,12 +371,12 @@ Why isn't this fixed yet?""")
             displayname='DKIM Test')
         self.factory.makeEmail(sender_address, person, EmailAddressStatus.NEW)
         self.preload_dns_response()
-        tweaked_message = self.makeMessageText(
+        tweaked_message = self.makeMessageBytes(
             sender=sender_address,
             from_address="DKIM Test <dkimtest@example.com>")
         signed_message = self.fake_signing(tweaked_message)
         principal = authenticateEmail(
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))
         self.assertEqual(principal.person.preferredemail.email,
             from_address)
         self.assertWeaklyAuthenticated(principal, signed_message)
@@ -397,11 +399,11 @@ Why isn't this fixed yet?""")
             displayname='DKIM Test',
             account_status=AccountStatus.NOACCOUNT)
         self.preload_dns_response()
-        message_text = self.makeMessageText(
+        message_text = self.makeMessageBytes(
             sender=from_address,
             from_address=from_address)
         signed_message = self.fake_signing(message_text)
         self.assertRaises(
             InactiveAccount,
             authenticateEmail,
-            signed_message_from_string(signed_message))
+            signed_message_from_bytes(signed_message))

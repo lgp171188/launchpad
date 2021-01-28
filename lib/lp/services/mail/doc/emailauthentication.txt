@@ -108,12 +108,16 @@ be canonicalised to \r\n. In order to ensure that the line endings in
 signed_canonicalised.txt are not already '\r\n', we recreate the test
 message.
 
+    >>> from lp.services.compat import (
+    ...     message_as_bytes,
+    ...     message_from_bytes,
+    ...     )
     >>> from lp.services.mail.signedmessage import SignedMessage
     >>> msg = read_test_message('signed_canonicalised.txt')
-    >>> msg_lines = msg.as_string().splitlines()
-    >>> msg = email.message_from_string(
-    ...     '\n'.join(msg_lines), _class=SignedMessage)
-    >>> msg.parsed_string = msg.as_string()
+    >>> msg_lines = message_as_bytes(msg).splitlines()
+    >>> msg = message_from_bytes(
+    ...     b'\n'.join(msg_lines), _class=SignedMessage)
+    >>> msg.parsed_bytes = message_as_bytes(msg)
 
     >>> from lp.services.gpg.interfaces import IGPGHandler
     >>> getUtility(IGPGHandler).getVerifiedSignature(
@@ -129,10 +133,10 @@ message.
 authenticateEmail() doesn't have any problems verifying the signature:
 
     >>> from lp.registry.interfaces.person import IPerson
-    >>> for line_ending in '\n', '\r\n':
-    ...     msg = email.message_from_string(
+    >>> for line_ending in b'\n', b'\r\n':
+    ...     msg = message_from_bytes(
     ...         line_ending.join(msg_lines), _class=SignedMessage)
-    ...     msg.parsed_string = msg.as_string()
+    ...     msg.parsed_bytes = message_as_bytes(msg)
     ...     principal = authenticateEmail(msg, accept_any_timestamp)
     ...     authenticated_person = IPerson(principal)
     ...     print(authenticated_person.preferredemail.email)
@@ -147,7 +151,7 @@ starts failing, Python is probably fixed, so the manual boundary parsing
 hack can be removed.
 
     >>> msg = read_test_message('signed_folded_header.txt')
-    >>> print(msg.parsed_string) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(six.ensure_str(msg.parsed_bytes)) #doctest: -NORMALIZE_WHITESPACE
     Date:...
     ...
     Content-Type: multipart/mixed;

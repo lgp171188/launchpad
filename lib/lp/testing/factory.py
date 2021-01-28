@@ -240,6 +240,7 @@ from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.karma import KarmaTotalCache
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.database.constants import (
     DEFAULT,
@@ -2223,7 +2224,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if force_transfer_encoding:
             encode_base64(body_part)
         body_part.set_charset(charset)
-        mail.parsed_string = mail.as_string()
+        mail.parsed_bytes = message_as_bytes(mail)
         return mail
 
     def makeSpecification(self, product=None, title=None, distribution=None,
