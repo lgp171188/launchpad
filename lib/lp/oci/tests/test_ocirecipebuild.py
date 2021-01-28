@@ -674,21 +674,21 @@ class TestOCIRecipeBuildMacaroonIssuer(
 
     def test_issueMacaroon_refuses_public_ocirecipebuild(self):
         build = self.factory.makeOCIRecipeBuild()
-        issuer = getUtility(IMacaroonIssuer, "ocirecipe-build")
+        issuer = getUtility(IMacaroonIssuer, "oci-recipe-build")
         self.assertRaises(
             BadMacaroonContext, removeSecurityProxy(issuer).issueMacaroon,
             build)
 
     def test_issueMacaroon_good(self):
         build = self.getPrivateBuild()
-        issuer = getUtility(IMacaroonIssuer, "ocirecipe-build")
+        issuer = getUtility(IMacaroonIssuer, "oci-recipe-build")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
         self.assertThat(macaroon, MatchesStructure(
             location=Equals("launchpad.test"),
-            identifier=Equals("ocirecipe-build"),
+            identifier=Equals("oci-recipe-build"),
             caveats=MatchesListwise([
                 MatchesStructure.byEquality(
-                    caveat_id="lp.ocirecipe-build %s" % build.id),
+                    caveat_id="lp.oci-recipe-build %s" % build.id),
                 ])))
 
     def test_issueMacaroon_via_authserver(self):
@@ -697,20 +697,20 @@ class TestOCIRecipeBuildMacaroonIssuer(
         authserver = AuthServerAPIView(private_root.authserver, TestRequest())
         macaroon = Macaroon.deserialize(
             authserver.issueMacaroon(
-                "ocirecipe-build", "OCIRecipeBuild", build.id))
+                "oci-recipe-build", "OCIRecipeBuild", build.id))
         self.assertThat(macaroon, MatchesStructure(
             location=Equals("launchpad.test"),
-            identifier=Equals("ocirecipe-build"),
+            identifier=Equals("oci-recipe-build"),
             caveats=MatchesListwise([
                 MatchesStructure.byEquality(
-                    caveat_id="lp.ocirecipe-build %s" % build.id),
+                    caveat_id="lp.oci-recipe-build %s" % build.id),
                 ])))
 
     def test_verifyMacaroon_good(self):
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(
             issuer, macaroon, build.recipe.git_ref.repository)
@@ -719,7 +719,7 @@ class TestOCIRecipeBuildMacaroonIssuer(
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(
             issuer, macaroon, None, require_context=False)
@@ -731,7 +731,7 @@ class TestOCIRecipeBuildMacaroonIssuer(
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
             ["Expected macaroon verification context but got None."],
@@ -741,7 +741,7 @@ class TestOCIRecipeBuildMacaroonIssuer(
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = Macaroon(
             location="another-location", key=issuer._root_secret)
         self.assertMacaroonDoesNotVerify(
@@ -756,7 +756,7 @@ class TestOCIRecipeBuildMacaroonIssuer(
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = Macaroon(
             location=config.vhost.mainsite.hostname, key="another-secret")
         self.assertMacaroonDoesNotVerify(
@@ -770,10 +770,10 @@ class TestOCIRecipeBuildMacaroonIssuer(
     def test_verifyMacaroon_not_building(self):
         build = self.getPrivateBuild()
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.ocirecipe-build %s' failed." % build.id],
+            ["Caveat check for 'lp.oci-recipe-build %s' failed." % build.id],
             issuer, macaroon, build.recipe.git_ref.repository)
 
     def test_verifyMacaroon_wrong_build(self):
@@ -782,10 +782,10 @@ class TestOCIRecipeBuildMacaroonIssuer(
         other_build = self.getPrivateBuild()
         other_build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = issuer.issueMacaroon(other_build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.ocirecipe-build %s' failed." %
+            ["Caveat check for 'lp.oci-recipe-build %s' failed." %
              other_build.id],
             issuer, macaroon, build.recipe.git_ref.repository)
 
@@ -794,8 +794,8 @@ class TestOCIRecipeBuildMacaroonIssuer(
         other_repository = self.factory.makeGitRepository()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "ocirecipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build"))
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.ocirecipe-build %s' failed." % build.id],
+            ["Caveat check for 'lp.oci-recipe-build %s' failed." % build.id],
             issuer, macaroon, other_repository)
