@@ -266,7 +266,18 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     @property
     def is_private(self):
         """See `IBuildFarmJob`."""
-        return self.recipe.git_ref.private
+        # XXX pappacena 2021-01-28: We need to keep track of git
+        # repository's history in the build itself, in order to know if an
+        # OCIRecipeBuild was created while the repo was private, and even
+        # which repository it was using at that time (since the OCIRecipe's
+        # repo can be changed or deleted).
+        # There was some discussions about it for Snaps here:
+        # https://code.launchpad.net/
+        # ~cjwatson/launchpad/snap-build-record-code/+merge/365356
+        return (
+            self.recipe.owner.private or
+            self.recipe.git_repository is None or
+            self.recipe.git_repository.private)
 
     def retry(self):
         """See `IOCIRecipeBuild`."""
@@ -598,7 +609,7 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 @implementer(IMacaroonIssuer)
 class OCIRecipeBuildMacaroonIssuer(MacaroonIssuerBase):
 
-    identifier = "ocirecipe-build"
+    identifier = "oci-recipe-build"
     issuable_via_authserver = True
 
     def checkIssuingContext(self, context, **kwargs):
