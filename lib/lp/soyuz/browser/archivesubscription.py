@@ -164,7 +164,7 @@ class ArchiveSubscribersView(LaunchpadFormView):
         Bulk loads the related Person records.
         """
         batch = list(self.batchnav.currentBatch())
-        ids = map(attrgetter('subscriber_id'), batch)
+        ids = [subscription.subscriber_id for subscription in batch]
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(ids,
             need_validity=True))
         return batch
