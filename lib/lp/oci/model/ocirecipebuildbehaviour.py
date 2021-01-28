@@ -145,7 +145,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
                 macaroon_raw = yield cancel_on_timeout(
                     self._authserver.callRemote(
                         "issueMacaroon",
-                        "ocirecipe-build", "OCIRecipeBuild", build.id),
+                        "oci-recipe-build", "OCIRecipeBuild", build.id),
                     config.builddmaster.authentication_timeout)
                 url = build.recipe.git_repository.getCodebrowseUrl(
                     username=None, password=macaroon_raw)

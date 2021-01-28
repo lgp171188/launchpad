@@ -101,7 +101,7 @@
     <securedutility
         class="lp.oci.model.ocirecipebuild.OCIRecipeBuildMacaroonIssuer"
         provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
-        name="ocirecipe-build">
+        name="oci-recipe-build">
         <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
     </securedutility>
 
