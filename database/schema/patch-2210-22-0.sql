@@ -17,8 +17,8 @@ ALTER TABLE BugTask
             WHEN productseries IS NOT NULL THEN distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
             WHEN distribution IS NOT NULL THEN distroseries IS NULL
             WHEN distroseries IS NOT NULL THEN ociproject IS NULL AND ociprojectseries IS NULL
-            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
-            WHEN ociprojectseries IS NOT NULL THEN ociproject IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
+            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL) AND sourcepackagename IS NULL
+            WHEN ociprojectseries IS NOT NULL THEN ociproject IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL) AND sourcepackagename IS NULL
             ELSE false
         END) NOT VALID;
 
@@ -42,8 +42,8 @@ ALTER TABLE BugSummary
             WHEN productseries IS NOT NULL THEN distribution IS NULL AND distroseries IS NULL AND sourcepackagename IS NULL AND ociproject IS NULL AND ociprojectseries IS NULL
             WHEN distribution IS NOT NULL THEN distroseries IS NULL
             WHEN distroseries IS NOT NULL THEN ociproject IS NULL AND ociprojectseries IS NULL
-            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
-            WHEN ociprojectseries IS NOT NULL THEN ociproject IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL)
+            WHEN ociproject IS NOT NULL THEN ociprojectseries IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL) AND sourcepackagename IS NULL
+            WHEN ociprojectseries IS NOT NULL THEN ociproject IS NULL AND (distribution IS NOT NULL OR product IS NOT NULL) AND sourcepackagename IS NULL
             ELSE false
         END) NOT VALID;
 
@@ -177,24 +177,15 @@ BEGIN
         -- first try to update the row
         UPDATE BugSummary SET count = count + d.count
         WHERE
-            ((product IS NULL AND $1.product IS NULL)
-                OR product = $1.product)
-            AND ((productseries IS NULL AND $1.productseries IS NULL)
-                OR productseries = $1.productseries)
-            AND ((distribution IS NULL AND $1.distribution IS NULL)
-                OR distribution = $1.distribution)
-            AND ((distroseries IS NULL AND $1.distroseries IS NULL)
-                OR distroseries = $1.distroseries)
-            AND ((sourcepackagename IS NULL AND $1.sourcepackagename IS NULL)
-                OR sourcepackagename = $1.sourcepackagename)
-            AND ((ociproject IS NULL AND $1.ociproject IS NULL)
-                OR ociproject = $1.ociproject)
-            AND ((ociprojectseries IS NULL AND $1.ociprojectseries IS NULL)
-                OR ociprojectseries = $1.ociprojectseries)
-            AND ((viewed_by IS NULL AND $1.viewed_by IS NULL)
-                OR viewed_by = $1.viewed_by)
-            AND ((tag IS NULL AND $1.tag IS NULL)
-                OR tag = $1.tag)
+            product IS NOT DISTINCT FROM $1.product
+            AND productseries IS NOT DISTINCT FROM $1.productseries
+            AND distribution IS NOT DISTINCT FROM $1.distribution
+            AND distroseries IS NOT DISTINCT FROM $1.distroseries
+            AND sourcepackagename IS NOT DISTINCT FROM $1.sourcepackagename
+            AND ociproject IS NOT DISTINCT FROM $1.ociproject
+            AND ociprojectseries IS NOT DISTINCT FROM $1.ociprojectseries
+            AND viewed_by IS NOT DISTINCT FROM $1.viewed_by
+            AND tag IS NOT DISTINCT FROM $1.tag
             AND status = $1.status
             AND ((milestone IS NULL AND $1.milestone IS NULL)
                 OR milestone = $1.milestone)
@@ -367,9 +358,9 @@ CREATE OR REPLACE FUNCTION bugsummary_targets(btf_row public.bugtaskflat)
     )
     LANGUAGE sql IMMUTABLE
     AS $_$
-    -- Include a sourcepackagename-free/ociproject-free task if this one has a
-    -- sourcepackagename/ociproject, so package tasks are also counted in their
-    -- distro/series.
+    -- Include a sourcepackagename-free/ociproject(series)-free task if this
+    -- one has a sourcepackagename/ociproject(series), so package tasks are
+    -- also counted in their distro/series.
     SELECT
         $1.product, $1.productseries, $1.distribution,
         $1.distroseries, $1.sourcepackagename,
