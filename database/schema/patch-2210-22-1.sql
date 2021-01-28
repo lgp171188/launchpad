@@ -122,11 +122,6 @@ CREATE UNIQUE INDEX bugsummary__unique
 DROP INDEX old__bugsummary__unique;
 
 
--- BugSummaryJournal
--- XXX pappacena 2020-11-10: do we really need this index?
-ALTER INDEX bugsummaryjournal__full__idx
-    RENAME TO old__bugsummaryjournal__full__idx;
-
 CREATE INDEX bugsummaryjournal__full__idx
     ON BugSummaryJournal (
         status, product, productseries, distribution, distroseries,
