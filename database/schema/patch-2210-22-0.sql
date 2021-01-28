@@ -50,6 +50,11 @@ ALTER TABLE BugSummary
 ALTER INDEX bugsummary__unique
     RENAME TO old__bugsummary__unique;
 
+
+ALTER INDEX bugsummaryjournal__full__idx
+    RENAME TO old__bugsummaryjournal__full__idx;
+
+
 ALTER TABLE BugSummaryJournal
     ADD COLUMN ociproject integer,
     ADD COLUMN ociprojectseries integer;
