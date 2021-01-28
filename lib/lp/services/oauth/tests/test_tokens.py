@@ -14,6 +14,7 @@ from datetime import (
 import hashlib
 
 import pytz
+import six
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -107,10 +108,10 @@ class TestRequestTokens(TestOAuth):
     def test_newRequestToken(self):
         request_token, secret = self.consumer.newRequestToken()
         verifyObject(IOAuthRequestToken, request_token)
-        self.assertIsInstance(secret, unicode)
+        self.assertIsInstance(secret, six.text_type)
         self.assertEqual(
             removeSecurityProxy(request_token)._secret,
-            hashlib.sha256(secret).hexdigest())
+            hashlib.sha256(secret.encode('ASCII')).hexdigest())
 
     def test_key_and_secret_automatically_generated(self):
         request_token, secret = self.consumer.newRequestToken()
@@ -281,10 +282,10 @@ class TestAccessTokens(TestOAuth):
         request_token, access_token, access_secret = (
             self._exchange_request_token_for_access_token())
         verifyObject(IOAuthAccessToken, access_token)
-        self.assertIsInstance(access_secret, unicode)
+        self.assertIsInstance(access_secret, six.text_type)
         self.assertEqual(
             removeSecurityProxy(access_token)._secret,
-            hashlib.sha256(access_secret).hexdigest())
+            hashlib.sha256(access_secret.encode('ASCII')).hexdigest())
 
     def test_access_token_inherits_data_fields_from_request_token(self):
         request_token, access_token, _ = (

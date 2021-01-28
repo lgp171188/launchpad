@@ -61,7 +61,7 @@ class TimelineRecordingClient(memcache.Client):
             if success:
                 logging.debug("Memcache set succeeded for %s", key)
             else:
-                logging.warn("Memcache set failed for %s", key)
+                logging.warning("Memcache set failed for %s", key)
             return success
         finally:
             action.finish()

@@ -178,7 +178,7 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             build_channels={"snapcraft": "stable"})
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "name: dummy is already in use by another base.", response.body)
+            b"name: dummy is already in use by another base.", response.body)
 
     def test_getByName(self):
         # lp.snap_bases.getByName returns a matching SnapBase.
@@ -203,7 +203,7 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             "/+snap-bases", "getByName", name="nonexistent")
         self.assertEqual(404, response.status)
-        self.assertEqual("No such base: 'nonexistent'.", response.body)
+        self.assertEqual(b"No such base: 'nonexistent'.", response.body)
 
     def test_getDefault(self):
         # lp.snap_bases.getDefault returns the default SnapBase, if any.

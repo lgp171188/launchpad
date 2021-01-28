@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -15,16 +15,23 @@ import logging
 import re
 
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
+from sqlobject import StringCol
 from storm.expr import (
+    And,
     Coalesce,
+    Column,
     Desc,
+    Join,
+    Not,
     Or,
+    Select,
     SQL,
+    Table,
+    With,
+    )
+from storm.locals import (
+    Int,
+    Reference,
     )
 from storm.store import (
     EmptyResultSet,
@@ -34,15 +41,19 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    cursor,
-    quote,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.stormexpr import (
+    IsTrue,
+    NullsFirst,
+    NullsLast,
     )
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
@@ -54,9 +65,6 @@ from lp.translations.interfaces.potmsgset import (
 from lp.translations.interfaces.side import (
     ITranslationSideTraitsSet,
     TranslationSide,
-    )
-from lp.translations.interfaces.translationfileformat import (
-    TranslationFileFormat,
     )
 from lp.translations.interfaces.translationimporter import (
     ITranslationImporter,
@@ -133,10 +141,11 @@ class POTMsgSet(SQLBase):
     _table = 'POTMsgSet'
 
     context = StringCol(dbName='context', notNull=False)
-    msgid_singular = ForeignKey(foreignKey='POMsgID', dbName='msgid_singular',
-        notNull=True)
-    msgid_plural = ForeignKey(foreignKey='POMsgID', dbName='msgid_plural',
-        notNull=False, default=DEFAULT)
+    msgid_singular_id = Int(name='msgid_singular', allow_none=False)
+    msgid_singular = Reference(msgid_singular_id, 'POMsgID.id')
+    msgid_plural_id = Int(
+        name='msgid_plural', allow_none=True, default=DEFAULT)
+    msgid_plural = Reference(msgid_plural_id, 'POMsgID.id')
     commenttext = StringCol(dbName='commenttext', notNull=False)
     filereferences = StringCol(dbName='filereferences', notNull=False)
     sourcecomment = StringCol(dbName='sourcecomment', notNull=False)
@@ -163,6 +172,8 @@ class POTMsgSet(SQLBase):
         of all the source_file_format values.  Otherwise, it should be
         a `TranslationFileFormat` value.
         """
+        # Circular import.
+        from lp.translations.model.potemplate import POTemplate
 
         translation_importer = getUtility(ITranslationImporter)
 
@@ -175,19 +186,18 @@ class POTMsgSet(SQLBase):
 
         # Now let's find all the source_file_formats for all the
         # POTemplates this POTMsgSet is part of.
-        query = """
-           SELECT DISTINCT POTemplate.source_file_format
-             FROM TranslationTemplateItem
-                  JOIN POTemplate
-                    ON POTemplate.id = TranslationTemplateItem.potemplate
-             WHERE TranslationTemplateItem.potmsgset = %s""" % (
-            sqlvalues(self))
-        cur = cursor()
-        cur.execute(query)
-        source_file_formats = cur.fetchall()
-        for source_file_format, in source_file_formats:
+        origin = [
+            TranslationTemplateItem,
+            Join(
+                POTemplate,
+                TranslationTemplateItem.potemplate == POTemplate.id),
+            ]
+        source_file_formats = IStore(POTemplate).using(*origin).find(
+            POTemplate.source_file_format,
+            TranslationTemplateItem.potmsgset == self).config(distinct=True)
+        for source_file_format in source_file_formats:
             format = translation_importer.getTranslationFormatImporter(
-                TranslationFileFormat.items[source_file_format])
+                source_file_format)
             format_uses_english_msgids = not format.uses_source_string_msgids
 
             if uses_english_msgids is None:
@@ -326,15 +336,13 @@ class POTMsgSet(SQLBase):
                                     include_dismissed=False,
                                     include_unreviewed=True):
         """See `IPOTMsgSet`."""
-        query = """
-            is_current_ubuntu IS NOT TRUE AND
-            is_current_upstream IS NOT TRUE AND
-            potmsgset = %s AND
-            language = %s
-            """ % sqlvalues(self, language)
-        msgstr_clause = make_plurals_sql_fragment(
-            "msgstr%(form)d IS NOT NULL", "OR")
-        query += " AND (%s)" % msgstr_clause
+        clauses = [
+            Not(IsTrue(TranslationMessage.is_current_ubuntu)),
+            Not(IsTrue(TranslationMessage.is_current_upstream)),
+            TranslationMessage.potmsgset == self,
+            TranslationMessage.language == language,
+            SQL(make_plurals_sql_fragment("msgstr%(form)d IS NOT NULL", "OR")),
+            ]
         if include_dismissed != include_unreviewed:
             current = self.getCurrentTranslation(
                 potemplate, language, potemplate.translation_side)
@@ -344,10 +352,10 @@ class POTMsgSet(SQLBase):
                 else:
                     comparing_date = current.date_reviewed
                 if include_unreviewed:
-                    term = " AND date_created > %s"
+                    clause = TranslationMessage.date_created > comparing_date
                 else:
-                    term = " AND date_created <= %s"
-                query += term % sqlvalues(comparing_date)
+                    clause = TranslationMessage.date_created <= comparing_date
+                clauses.append(clause)
         elif include_dismissed and include_unreviewed:
             # Return all messages
             pass
@@ -355,7 +363,7 @@ class POTMsgSet(SQLBase):
             # No need to run a query.
             return EmptyResultSet()
 
-        return TranslationMessage.select(query)
+        return IStore(TranslationMessage).find(TranslationMessage, *clauses)
 
     def _getExternalTranslationMessages(self, suggested_languages=(),
         used_languages=()):
@@ -385,8 +393,9 @@ class POTMsgSet(SQLBase):
         # Watch out when changing this condition: make sure it's done in
         # a way so that indexes are indeed hit when the query is executed.
         # Also note that there is a NOT(in_use_clause) index.
-        in_use_clause = (
-            "(is_current_ubuntu IS TRUE OR is_current_upstream IS TRUE)")
+        in_use_clause = Or(
+            IsTrue(TranslationMessage.is_current_ubuntu),
+            IsTrue(TranslationMessage.is_current_upstream))
         # Present a list of language + usage constraints to sql. A language
         # can either be unconstrained, used, or suggested depending on which
         # of suggested_languages, used_languages it appears in.
@@ -397,26 +406,33 @@ class POTMsgSet(SQLBase):
         used_languages = used_languages - both_languages
         lang_used = []
         if both_languages:
-            lang_used.append('TranslationMessage.language IN %s' %
-                quote(both_languages))
-        if used_languages:
-            lang_used.append('(TranslationMessage.language IN %s AND %s)' % (
-                quote(used_languages), in_use_clause))
-        if suggested_languages:
             lang_used.append(
-                '(TranslationMessage.language IN %s AND NOT %s)' % (
-                quote(suggested_languages), in_use_clause))
+                TranslationMessage.languageID.is_in(both_languages))
+        if used_languages:
+            lang_used.append(And(
+                TranslationMessage.languageID.is_in(used_languages),
+                in_use_clause))
+        if suggested_languages:
+            lang_used.append(And(
+                TranslationMessage.languageID.is_in(suggested_languages),
+                Not(in_use_clause)))
 
-        msgsets = SQL('''msgsets AS (
-                SELECT POTMsgSet.id
-                FROM POTMsgSet
-                JOIN TranslationTemplateItem ON
-                    TranslationTemplateItem.potmsgset = POTMsgSet.id
-                JOIN SuggestivePOTemplate ON
-                    TranslationTemplateItem.potemplate =
-                        SuggestivePOTemplate.potemplate
-                WHERE POTMsgSet.msgid_singular = %s and POTMsgSet.id <> %s
-            )''' % sqlvalues(self.msgid_singular, self))
+        SuggestivePOTemplate = Table('SuggestivePOTemplate')
+        msgsets = With('msgsets', Select(
+            POTMsgSet.id,
+            tables=(
+                POTMsgSet,
+                Join(
+                    TranslationTemplateItem,
+                    TranslationTemplateItem.potmsgset == POTMsgSet.id),
+                Join(
+                    SuggestivePOTemplate,
+                    TranslationTemplateItem.potemplate ==
+                        Column('potemplate', SuggestivePOTemplate))),
+            where=And(
+                POTMsgSet.msgid_singular == self.msgid_singular,
+                POTMsgSet.id != self.id)))
+        msgsets_table = Table('msgsets')
 
         # Subquery to find the ids of TranslationMessages that are
         # matching suggestions.
@@ -425,25 +441,23 @@ class POTMsgSet(SQLBase):
         # excluding older messages that are identical to newer ones in
         # all translated forms.  The Python code can later sort out the
         # distinct translations per form.
-        msgstrs = ', '.join([
-            'COALESCE(msgstr%d, -1)' % form
-            for form in range(TranslationConstants.MAX_PLURAL_FORMS)])
-        ids_query_params = {
-            'msgstrs': msgstrs,
-            'where': '(' + ' OR '.join(lang_used) + ')',
-        }
-        ids_query = '''
-            SELECT DISTINCT ON (%(msgstrs)s)
-                TranslationMessage.id
-            FROM TranslationMessage
-            JOIN msgsets ON msgsets.id = TranslationMessage.potmsgset
-            WHERE %(where)s
-            ORDER BY %(msgstrs)s, date_created DESC
-            ''' % ids_query_params
+        msgstrs = [
+            Coalesce(getattr(TranslationMessage, 'msgstr%d_id' % form), -1)
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)]
 
         result = IStore(TranslationMessage).with_(msgsets).find(
             TranslationMessage,
-            TranslationMessage.id.is_in(SQL(ids_query)))
+            TranslationMessage.id.is_in(Select(
+                TranslationMessage.id,
+                tables=(
+                    TranslationMessage,
+                    Join(
+                        msgsets_table,
+                        TranslationMessage.potmsgset ==
+                            Column('id', msgsets_table))),
+                where=Or(*lang_used),
+                order_by=(msgstrs + [Desc(TranslationMessage.date_created)]),
+                distinct=msgstrs)))
 
         return shortlist(result, longest_expected=100, hardlimit=2000)
 
@@ -556,17 +570,18 @@ class POTMsgSet(SQLBase):
         :param prefer_shared: Whether to prefer a shared match over a
             diverged one.
         """
-        clauses = ['potmsgset = %s' % sqlvalues(self),
-                   'language = %s' % sqlvalues(pofile.language),
-                   '(potemplate IS NULL OR potemplate = %s)' % sqlvalues(
-                                                        pofile.potemplate)]
+        clauses = [
+            TranslationMessage.potmsgset == self,
+            TranslationMessage.language == pofile.language,
+            Or(
+                TranslationMessage.potemplate == None,
+                TranslationMessage.potemplate == pofile.potemplate),
+            ]
 
         for pluralform in range(pofile.plural_forms):
-            if potranslations[pluralform] is None:
-                clauses.append('msgstr%s IS NULL' % sqlvalues(pluralform))
-            else:
-                clauses.append('msgstr%s=%s' % (
-                    sqlvalues(pluralform, potranslations[pluralform])))
+            clauses.append(
+                getattr(TranslationMessage, 'msgstr%d' % pluralform) ==
+                    potranslations[pluralform])
 
         remaining_plural_forms = list(range(
             pofile.plural_forms, TranslationConstants.MAX_PLURAL_FORMS))
@@ -574,18 +589,18 @@ class POTMsgSet(SQLBase):
         # Prefer either shared or diverged messages, depending on
         # arguments.
         if prefer_shared:
-            order = ['potemplate NULLS FIRST']
+            order = [NullsFirst(TranslationMessage.potemplateID)]
         else:
-            order = ['potemplate NULLS LAST']
+            order = [NullsLast(TranslationMessage.potemplateID)]
 
         # Normally at most one message should match.  But if there is
         # more than one, prefer the one that adds the fewest extraneous
         # plural forms.
         order.extend([
-            'msgstr%s NULLS FIRST' % quote(form)
+            NullsFirst(getattr(TranslationMessage, 'msgstr%d_id' % form))
             for form in remaining_plural_forms])
-        matches = list(
-            TranslationMessage.select(' AND '.join(clauses), orderBy=order))
+        matches = list(IStore(TranslationMessage).find(
+            TranslationMessage, *clauses).order_by(*order))
 
         if len(matches) > 0:
             if len(matches) > 1:
@@ -1187,9 +1202,9 @@ class POTMsgSet(SQLBase):
         else:
             # Store the given plural form.
             try:
-                pomsgid = POMsgID.byMsgid(plural_form_text)
-            except SQLObjectNotFound:
-                pomsgid = POMsgID(msgid=plural_form_text)
+                pomsgid = POMsgID.getByMsgid(plural_form_text)
+            except NotFoundError:
+                pomsgid = POMsgID.new(plural_form_text)
             self.msgid_plural = pomsgid
 
     def setTranslationCreditsToTranslated(self, pofile):
@@ -1214,8 +1229,9 @@ class POTMsgSet(SQLBase):
 
     def setSequence(self, potemplate, sequence):
         """See `IPOTMsgSet`."""
-        translation_template_item = TranslationTemplateItem.selectOneBy(
-            potmsgset=self, potemplate=potemplate)
+        translation_template_item = IStore(TranslationTemplateItem).find(
+            TranslationTemplateItem,
+            potmsgset=self, potemplate=potemplate).one()
         if translation_template_item is not None:
             # Update the sequence for the translation template item.
             translation_template_item.sequence = sequence
@@ -1246,8 +1262,9 @@ class POTMsgSet(SQLBase):
 
     def getSequence(self, potemplate):
         """See `IPOTMsgSet`."""
-        translation_template_item = TranslationTemplateItem.selectOneBy(
-            potmsgset=self, potemplate=potemplate)
+        translation_template_item = IStore(TranslationTemplateItem).find(
+            TranslationTemplateItem,
+            potmsgset=self, potemplate=potemplate).one()
         if translation_template_item is not None:
             return translation_template_item.sequence
         else:
@@ -1260,5 +1277,5 @@ class POTMsgSet(SQLBase):
 
     def getAllTranslationTemplateItems(self):
         """See `IPOTMsgSet`."""
-        return TranslationTemplateItem.selectBy(
-            potmsgset=self, orderBy=['id'])
+        return IStore(TranslationTemplateItem).find(
+            TranslationTemplateItem, potmsgset=self).order_by('id')

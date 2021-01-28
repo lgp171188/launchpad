@@ -80,7 +80,7 @@ We can't see its placeholder in non-development mode:
     >>> anon_browser.open('http://translations.launchpad.test/evolution/')
     >>> for tag in find_tags_by_class(
     ...     anon_browser.contents, 'menu-link-translationdownload'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
 
     # Reset global configuration...
     >>> config.devmode = True

@@ -14,7 +14,8 @@ packages.
 There are several builders in the sample data. Let's examine the first.
 
     >>> from lp.buildmaster.model.builder import Builder
-    >>> builder = Builder.get(1)
+    >>> from lp.services.database.interfaces import IStore
+    >>> builder = IStore(Builder).get(Builder, 1)
 
 As expected, it implements IBuilder.
 
@@ -65,7 +66,7 @@ And also by ID.
     >>> print(builderset.get(100).name)
     Traceback (most recent call last):
     ...
-    SQLObjectNotFound: Object not found
+    NotFoundError: 100
 
 The 'new' method will create a new builder in the database.
 
@@ -73,8 +74,8 @@ The 'new' method will create a new builder in the database.
     >>> with admin_logged_in():
     ...     bnew = builderset.new(
     ...         [1], 'http://dummy.com:8221/', 'dummy', 'Dummy Title', 1)
-    >>> bnew.name
-    u'dummy'
+    >>> print(bnew.name)
+    dummy
 
 'getBuilders' returns builders with the 'active' flag set, ordered by
 virtualization status, architecture, then name.
@@ -101,12 +102,13 @@ Processor/virtualization.
 
 There are no 'amd64' build queue entries.
 
-    >>> queue_sizes['nonvirt'].keys()
-    [u'386']
+    >>> for arch_tag in queue_sizes['nonvirt']:
+    ...     print(arch_tag)
+    386
 
 The virtualized build queue for 386 is also empty.
 
-    >>> queue_sizes['virt'].keys()
+    >>> list(queue_sizes['virt'])
     []
 
 The queue size is not affect by builds target to disabled
@@ -126,7 +128,7 @@ We will temporarily disable the ubuntu primary archive.
 That done, the non-virtualized queue for i386 becomes empty.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> queue_sizes['nonvirt'].keys()
+    >>> list(queue_sizes['nonvirt'])
     []
 
 Let's re-enable the ubuntu primary archive.

@@ -135,19 +135,23 @@ class TestLoaders(TestCaseWithFactory):
         # Commit so the database object is available in both master
         # and slave stores.
         transaction.commit()
-        db_objects = set(
-            (IMasterStore(db_object).get(db_object_type, db_object.id),
-             ISlaveStore(db_object).get(db_object_type, db_object.id)))
+        # Use a list, since objects corresponding to the same DB row from
+        # different stores compare equal.
+        db_objects = [
+            IMasterStore(db_object).get(db_object_type, db_object.id),
+            ISlaveStore(db_object).get(db_object_type, db_object.id),
+            ]
+        db_object_ids = {id(obj) for obj in db_objects}
         db_queries = list(bulk.gen_reload_queries(db_objects))
         self.assertEqual(2, len(db_queries))
-        db_objects_loaded = set()
+        db_object_ids_loaded = set()
         for db_query in db_queries:
-            objects = set(db_query)
+            object_ids = {id(obj) for obj in db_query}
             # None of these objects should have been loaded before.
             self.assertEqual(
-                set(), objects.intersection(db_objects_loaded))
-            db_objects_loaded.update(objects)
-        self.assertEqual(db_objects, db_objects_loaded)
+                set(), object_ids.intersection(db_object_ids_loaded))
+            db_object_ids_loaded.update(object_ids)
+        self.assertEqual(db_object_ids, db_object_ids_loaded)
 
     def test_gen_reload_queries_with_non_Storm_objects(self):
         # gen_reload_queries() does not like non-Storm objects.

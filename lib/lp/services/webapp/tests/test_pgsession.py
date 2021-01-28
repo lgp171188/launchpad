@@ -6,7 +6,6 @@
 __metaclass__ = type
 
 import hashlib
-from unittest import TestCase
 
 from zope.publisher.browser import TestRequest
 from zope.security.management import (
@@ -22,6 +21,7 @@ from lp.services.webapp.pgsession import (
     PGSessionData,
     PGSessionDataContainer,
     )
+from lp.testing import TestCase
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadLayer,
@@ -42,15 +42,14 @@ class TestPgSession(TestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
+        super(TestPgSession, self).setUp()
         self.sdc = PGSessionDataContainer()
+        self.addCleanup(delattr, self, 'sdc')
         LaunchpadLayer.resetSessionDb()
         self.request = TestRequest()
+        self.addCleanup(delattr, self, 'request')
         newInteraction(self.request)
-
-    def tearDown(self):
-        endInteraction()
-        del self.request
-        del self.sdc
+        self.addCleanup(endInteraction)
 
     def test_sdc_basics(self):
         # Make sure we have the correct class and it provides the required
@@ -111,15 +110,15 @@ class TestPgSession(TestCase):
         self.assertIsNot(session1a['key2'], session1a_dupe['key2'])
 
         # Ensure the keys method works as it is suppsed to
-        self.assertEqual(sorted(session1a.keys()), ['key1', 'key2'])
-        self.assertEqual(session2a.keys(), [])
+        self.assertContentEqual(session1a.keys(), ['key1', 'key2'])
+        self.assertContentEqual(session2a.keys(), [])
 
         # Ensure we can delete and alter things from the session
         del session1a['key1']
         session1a['key2'] = 'new value2'
         self.assertRaises(KeyError, session1a.__getitem__, 'key1')
         self.assertEqual(session1a['key2'], 'new value2')
-        self.assertEqual(session1a.keys(), ['key2'])
+        self.assertContentEqual(session1a.keys(), ['key2'])
 
         # Note that deleting will not raise a KeyError
         del session1a['key1']
@@ -130,7 +129,7 @@ class TestPgSession(TestCase):
         session1a_dupe = self.sdc[client_id1][product_id1]
         self.assertRaises(KeyError, session1a_dupe.__getitem__, 'key1')
         self.assertEqual(session1a_dupe['key2'], 'new value2')
-        self.assertEqual(session1a_dupe.keys(), ['key2'])
+        self.assertContentEqual(session1a_dupe.keys(), ['key2'])
 
     def test_session_only_stored_when_changed(self):
         # A record of the session is only stored in the database when
@@ -158,7 +157,9 @@ class TestPgSession(TestCase):
         result = store.execute(
             "SELECT client_id FROM SessionData ORDER BY client_id")
         client_ids = [row[0] for row in result]
-        self.assertEqual(client_ids, [hashlib.sha256(client_id).hexdigest()])
+        self.assertEqual(
+            client_ids,
+            [hashlib.sha256(client_id.encode('ASCII')).hexdigest()])
 
         # The session cookie also is now set, via the same "trigger".
         self.assertNotEqual(

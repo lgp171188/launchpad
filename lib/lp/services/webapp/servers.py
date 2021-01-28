@@ -210,8 +210,11 @@ class StepsToGo(six.Iterator):
     def __len__(self):
         return len(self._stack)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self._stack)
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
 
 class ApplicationServerSettingRequestFactory:
@@ -1286,7 +1289,7 @@ class WebServicePublication(WebServicePublicationMixin,
         consumers = getUtility(IOAuthConsumerSet)
         consumer = consumers.getByKey(consumer_key)
         token_key = form.get('oauth_token')
-        anonymous_request = (token_key == '')
+        anonymous_request = not token_key
 
         if consumer_key is None:
             # Either the client's OAuth implementation is broken, or

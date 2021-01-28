@@ -66,7 +66,7 @@ class DistributionMirrorTestHTTPServer(Resource):
             return Resource.getChild(self, name, request)
 
     def render_GET(self, request):
-        return "Hi"
+        return b"Hi"
 
 
 class DistributionMirrorTestSecureHTTPServer(DistributionMirrorTestHTTPServer):
@@ -82,7 +82,7 @@ class RedirectingResource(Resource):
 
     def render_GET(self, request):
         request.redirect(self.redirection_url)
-        request.write('Get Lost')
+        request.write(b'Get Lost')
 
 
 class NeverFinishResource(Resource):
@@ -93,4 +93,4 @@ class NeverFinishResource(Resource):
 class FiveHundredResource(Resource):
     def render_GET(self, request):
         request.setResponseCode(500)
-        request.write('ASPLODE!!!')
+        request.write(b'ASPLODE!!!')

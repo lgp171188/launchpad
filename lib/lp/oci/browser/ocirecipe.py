@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI recipe views."""
@@ -49,7 +49,10 @@ from lp.app.browser.launchpadform import (
     LaunchpadFormView,
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
-from lp.app.browser.tales import format_link
+from lp.app.browser.tales import (
+    format_link,
+    GitRepositoryFormatterAPI,
+    )
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -344,7 +347,9 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         super(OCIRecipeEditPushRulesView, self).setUpFields()
         image_name_fields = []
         url_fields = []
+        region_fields = []
         private_url_fields = []
+        private_region_fields = []
         username_fields = []
         private_username_fields = []
         password_fields = []
@@ -361,6 +366,12 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                         __name__=self._getFieldName('url', elem.id),
                         default=elem.registry_credentials.url,
                         required=True, readonly=True))
+                region = elem.registry_credentials.region
+                region_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('region', elem.id),
+                        default=region,
+                        required=False, readonly=True))
                 username_fields.append(
                     TextLine(
                         __name__=self._getFieldName('username', elem.id),
@@ -380,6 +391,10 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                     TextLine(
                         __name__=self._getFieldName('url', elem.id),
                         default='', required=True, readonly=True))
+                private_region_fields.append(
+                    TextLine(
+                        __name__=self._getFieldName('region', elem.id),
+                        default='', required=False, readonly=True))
                 private_username_fields.append(
                     TextLine(
                         __name__=self._getFieldName('username', elem.id),
@@ -405,6 +420,10 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             TextLine(
                 __name__=u'add_url',
                 required=False, readonly=False))
+        region_fields.append(
+            TextLine(
+                __name__=u'add_region',
+                required=False, readonly=False))
         username_fields.append(
             TextLine(
                 __name__=u'add_username',
@@ -423,6 +442,10 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             FormFields(*url_fields) +
             FormFields(
                 *private_url_fields,
+                custom_widget=InvisibleCredentialsWidget) +
+            FormFields(*region_fields) +
+            FormFields(
+                *private_region_fields,
                 custom_widget=InvisibleCredentialsWidget) +
             FormFields(*username_fields) +
             FormFields(
@@ -453,6 +476,8 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         widgets_by_name = {widget.name: widget for widget in self.widgets}
         url_field_name = (
                 "field." + self._getFieldName("url", rule.id))
+        region_field_name = (
+                "field." + self._getFieldName("region", rule.id))
         image_field_name = (
                 "field." + self._getFieldName("image_name", rule.id))
         username_field_name = (
@@ -461,6 +486,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                 "field." + self._getFieldName("delete", rule.id))
         return {
             "url": widgets_by_name[url_field_name],
+            "region": widgets_by_name[region_field_name],
             "image_name": widgets_by_name[image_field_name],
             "username": widgets_by_name[username_field_name],
             "delete": widgets_by_name[delete_field_name],
@@ -473,6 +499,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
             "existing_credentials":
                 widgets_by_name["field.existing_credentials"],
             "url": widgets_by_name["field.add_url"],
+            "region": widgets_by_name["field.add_region"],
             "username": widgets_by_name["field.add_username"],
             "password": widgets_by_name["field.add_password"],
             "confirm_password": widgets_by_name["field.add_confirm_password"],
@@ -483,18 +510,20 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         parsed_data = {}
         add_image_name = data.get("add_image_name")
         add_url = data.get("add_url")
+        add_region = data.get("add_region")
         add_username = data.get("add_username")
         add_password = data.get("add_password")
         add_confirm_password = data.get("add_confirm_password")
         add_existing_credentials = data.get("existing_credentials")
 
         # parse data from the Add new rule section of the form
-        if (add_url or add_username or add_password or
+        if (add_url or add_region or add_username or add_password or
                 add_confirm_password or add_image_name or
                 add_existing_credentials):
             parsed_data.setdefault(None, {
                 "image_name": add_image_name,
                 "url": add_url,
+                "region": add_region,
                 "username": add_username,
                 "password": add_password,
                 "confirm_password": add_confirm_password,
@@ -523,6 +552,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         add_data = parsed_data[None]
         image_name = add_data.get("image_name")
         url = add_data.get("url")
+        region = add_data.get("region")
         password = add_data.get("password")
         confirm_password = add_data.get("confirm_password")
         username = add_data.get("username")
@@ -550,14 +580,17 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
 
             credentials_set = getUtility(IOCIRegistryCredentialsSet)
             try:
+                credential_data = {'username': username, 'password': password}
+                if region is not None:
+                    credential_data['region'] = region
                 credentials = credentials_set.getOrCreate(
                     registrant=self.user, owner=self.context.owner, url=url,
-                    credentials={'username': username, 'password': password})
+                    credentials=credential_data)
             except OCIRegistryCredentialsAlreadyExist:
                 self.setFieldError(
                     "add_url",
-                    "Credentials already exist with the same URL and "
-                    "username.")
+                    "Credentials already exist with the same URL, username, "
+                    "and region.")
                 return
             except ValidationError:
                 self.setFieldError("add_url", "Not a valid URL.")
@@ -709,6 +742,18 @@ class OCIRecipeFormMixin:
             build_args[k] = v
         data['build_args'] = build_args
 
+    def userIsRecipeAdmin(self):
+        if check_permission("launchpad.Admin", self.context):
+            return True
+        person = getattr(self.request.principal, 'person', None)
+        if not person:
+            return False
+        # Edit context = OCIRecipe, New context = OCIProject
+        project = getattr(self.context, "oci_project", self.context)
+        if project.pillar.canAdministerOCIProjects(person):
+            return True
+        return False
+
 
 class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                        OCIRecipeFormMixin):
@@ -742,11 +787,47 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             "The architectures that this OCI recipe builds for. Some "
             "architectures are restricted and may only be enabled or "
             "disabled by administrators.")
+        self.form_fields += FormFields(Bool(
+            __name__="official_recipe",
+            title="Official recipe",
+            description=(
+                "Mark this recipe as official for this OCI Project. "
+                "Allows use of distribution registry credentials "
+                "and the default git repository routing. "
+                "May only be enabled by the owner of the OCI Project."),
+            default=False,
+            required=False, readonly=False))
+
+    def setUpGitRefWidget(self):
+        """Setup GitRef widget indicating the user to use the default
+        oci project's git repository, if possible.
+        """
+        path = self.context.getDefaultGitRepositoryPath(self.user)
+        widget = self.widgets["git_ref"]
+        widget.setUpSubWidgets()
+        widget.repository_widget.setRenderedValue(path)
+        if widget.error():
+            # Do not override more important git_ref errors.
+            return
+        default_repo = self.context.getDefaultGitRepository(self.user)
+        if default_repo is None:
+            msg = (
+                "Your git repository for this OCI project was not created yet."
+                "<br/>Check the <a href='%s'>OCI project page"
+                "</a> for instructions on how to create one.")
+            msg = structured(msg, canonical_url(self.context))
+            self.widget_errors["git_ref"] = msg.escapedtext
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeAddView, self).setUpWidgets()
         self.widgets["processors"].widget_class = "processors"
+        self.setUpGitRefWidget()
+        # disable the official recipe button if the user doesn't have
+        # permissions to change it
+        widget = self.widgets['official_recipe']
+        if not self.userIsRecipeAdmin():
+            widget.extra = "disabled='disabled'"
 
     @property
     def cancel_url(self):
@@ -778,6 +859,12 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                     "this name." % (
                         owner.display_name, self.context.display_name))
         self.validateBuildArgs(data)
+        official = data.get("official_recipe", None)
+        if official and not self.userIsRecipeAdmin():
+            self.setFieldError(
+                "official_recipe",
+                "You do not have permission to set the official status "
+                "of this recipe.")
 
     @action("Create OCI recipe", name="create")
     def create_action(self, action, data):
@@ -786,7 +873,8 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             oci_project=self.context, git_ref=data["git_ref"],
             build_file=data["build_file"], description=data["description"],
             build_daily=data["build_daily"], build_args=data["build_args"],
-            build_path=data["build_path"], processors=data["processors"])
+            build_path=data["build_path"], processors=data["processors"],
+            official=data.get('official_recipe', False))
         self.next_url = canonical_url(recipe)
 
 
@@ -807,6 +895,11 @@ class BaseOCIRecipeEditView(LaunchpadEditFormView):
                 self.context.setProcessors(
                     new_processors, check_permissions=True, user=self.user)
             del data["processors"]
+        official = data.pop('official_recipe', None)
+        if official is not None and self.userIsRecipeAdmin():
+            self.context.oci_project.setOfficialRecipeStatus(
+                self.context, official)
+
         self.updateContextFromData(data)
         self.next_url = canonical_url(self.context)
 
@@ -849,6 +942,43 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         )
     custom_widget_git_ref = GitRefWidget
 
+    def setUpGitRefWidget(self):
+        """Setup GitRef widget indicating the user to use the default
+        oci project's git repository, if possible.
+        """
+        oci_proj = self.context.oci_project
+        oci_proj_url = canonical_url(oci_proj)
+        widget = self.widgets["git_ref"]
+        widget.setUpSubWidgets()
+        if widget.error():
+            # Do not override more important git_ref errors.
+            return
+        msg = None
+        if self.context.git_ref.namespace.target != self.context.oci_project:
+            msg = ("This recipe's git repository is not in the "
+                   "correct namespace.<br/>")
+            default_repo = oci_proj.getDefaultGitRepository(self.context.owner)
+            if default_repo:
+                link = GitRepositoryFormatterAPI(default_repo).link('')
+                msg += "Consider using %s instead." % link
+            else:
+                msg += (
+                    "Check the <a href='%(oci_proj_url)s'>OCI project page</a>"
+                    " for instructions on how to create it correctly.")
+        if msg:
+            msg = structured(msg, oci_proj_url=oci_proj_url)
+            self.widget_errors["git_ref"] = msg.escapedtext
+
+    def setUpWidgets(self):
+        """See `LaunchpadFormView`."""
+        super(OCIRecipeEditView, self).setUpWidgets()
+        self.setUpGitRefWidget()
+        # disable the official recipe button if the user doesn't have
+        # permissions to change it
+        widget = self.widgets['official_recipe']
+        if not self.userIsRecipeAdmin():
+            widget.extra = "disabled='disabled'"
+
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpFields()
@@ -858,6 +988,16 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
             "The architectures that this OCI recipe builds for. Some "
             "architectures are restricted and may only be enabled or "
             "disabled by administrators.")
+        self.form_fields += FormFields(Bool(
+            __name__="official_recipe",
+            title="Official recipe",
+            description=(
+                "Mark this recipe as official for this OCI Project. "
+                "Allows use of distribution registry credentials "
+                "and the default git repository routing. "
+                "May only be enabled by the owner of the OCI Project."),
+            default=self.context.official,
+            required=False, readonly=False))
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
@@ -893,6 +1033,15 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                         # enabled. Leave it untouched.
                         data["processors"].append(processor)
         self.validateBuildArgs(data)
+        official = data.get('official_recipe')
+        official_change = self.context.official != official
+        is_admin = self.userIsRecipeAdmin()
+        if official is not None and official_change and not is_admin:
+            self.setFieldError(
+                "official_recipe",
+                "You do not have permission to change the official status "
+                "of this recipe.")
+
 
 class OCIRecipeDeleteView(BaseOCIRecipeEditView):
     """View for deleting OCI recipes."""

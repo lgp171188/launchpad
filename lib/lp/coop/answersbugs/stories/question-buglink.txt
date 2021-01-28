@@ -118,7 +118,7 @@ have access to:
     >>> browser.getControl('Bug ID').value = '6'
     >>> browser.getControl('Link').click()
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print tag.decode_contents()
     There is 1 error.
     You are not allowed to link to private bug #6.
 

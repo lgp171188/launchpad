@@ -38,13 +38,10 @@ We need to be logged into the security model in order to get any further
     >>> switch_dbuser('launchpad')
     >>> login('foo.bar@canonical.com')
 
-Helper functions to examine emails that were sent:
+A helper function to examine emails that were sent:
 
     >>> from lp.services.mail import stub
     >>> from lp.testing.mail_helpers import pop_notifications
-
-    >>> def by_to_addrs(a, b):
-    ...     return cmp(a[1], b[1])
 
     >>> def print_addrlist(field):
     ...    for entry in sorted([addr.strip() for addr in field.split(',')]):
@@ -783,7 +780,7 @@ We first create a misnamed copy of the changes file.
     >>> import shutil
     >>> originalp = datadir('suite/bar_1.0-1/bar_1.0-1_source.changes')
     >>> copyp = datadir('suite/bar_1.0-1/z-z_0.4.12-2~ppa2.changes')
-    >>> shutil.copyfile(originalp, copyp)
+    >>> _ = shutil.copyfile(originalp, copyp)
 
 And then try to upload using the changes file with the malformed name.
 

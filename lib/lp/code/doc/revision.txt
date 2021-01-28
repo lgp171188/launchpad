@@ -35,8 +35,8 @@ we trust it, there's really no simple way to map that reliably to persons.
 
     >>> from lp.code.model.revision import RevisionAuthor
     >>> author = RevisionAuthor(name='ddaa@localhost')
-    >>> author.name
-    u'ddaa@localhost'
+    >>> print(author.name)
+    ddaa@localhost
 
 The log-body of a revision is the commit message of that revision.
 
@@ -234,5 +234,6 @@ as needed.
     ...     print(parent_id)
     rev-1
     rev-2
-    >>> print(revision.getProperties())
-    {u'key': u'value'}
+    >>> for key, value in sorted(revision.getProperties().items()):
+    ...     print('%s: %s' % (key, value))
+    key: value

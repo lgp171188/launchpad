@@ -78,7 +78,8 @@ class LoginToken(SQLBase):
         token = kwargs.pop('token', None)
         if token is not None:
             self._plaintext_token = token
-            kwargs['_token'] = hashlib.sha256(token).hexdigest()
+            kwargs['_token'] = hashlib.sha256(
+                token.encode('UTF-8')).hexdigest()
         super(LoginToken, self).__init__(*args, **kwargs)
 
     _plaintext_token = None
@@ -346,7 +347,8 @@ class LoginTokenSet:
     def __getitem__(self, tokentext):
         """See ILoginTokenSet."""
         token = IStore(LoginToken).find(
-            LoginToken, _token=hashlib.sha256(tokentext).hexdigest()).one()
+            LoginToken,
+            _token=hashlib.sha256(tokentext.encode('UTF-8')).hexdigest()).one()
         if token is None:
             raise NotFoundError(tokentext)
         token._plaintext_token = tokentext

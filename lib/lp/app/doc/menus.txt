@@ -89,11 +89,11 @@ object has a canonical url derived from its place in the hierarchy.
     ...     'http://launchpad.test/joy-of-cooking/fried-spam',
     ...     traversed_objects=[cookbook, recipe])
 
-    >>> canonical_url(cookbook)
-    u'http://launchpad.test/joy-of-cooking'
+    >>> print(canonical_url(cookbook))
+    http://launchpad.test/joy-of-cooking
 
-    >>> canonical_url(recipe)
-    u'http://launchpad.test/joy-of-cooking/fried-spam'
+    >>> print(canonical_url(recipe))
+    http://launchpad.test/joy-of-cooking/fried-spam
 
 Content objects are not suitable for presentation by themselves; they
 require a view class to adapt them to the required format. An object may

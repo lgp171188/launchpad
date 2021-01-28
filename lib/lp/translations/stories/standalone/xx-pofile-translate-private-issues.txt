@@ -10,12 +10,12 @@ if you log in.
 The GNOME standard string for credits is well handled.
 
   >>> msgid = find_tag_by_id(browser.contents, 'msgset_199_singular')
-  >>> print(msgid.renderContents())
+  >>> print(msgid.decode_contents())
   translation-credits
 
   >>> translation = find_tag_by_id(
   ...     browser.contents, 'msgset_199_es_translation_0')
-  >>> print(translation.renderContents())
+  >>> print(translation.decode_contents())
   To prevent privacy issues, this translation is not available to anonymous
   users,<br/> if you want to see it, please, <a href="+login">log in</a>
   first.
@@ -23,13 +23,13 @@ The GNOME standard string for credits is well handled.
 And the same for KDE one.
 
   >>> msgid = find_tag_by_id(browser.contents, 'msgset_200_singular')
-  >>> print(msgid.renderContents())
+  >>> print(msgid.decode_contents())
   _: EMAIL OF TRANSLATORS<img alt="" src="/@@/translation-newline"/><br/>
   Your emails
 
   >>> translation = find_tag_by_id(
   ...     browser.contents, 'msgset_200_es_translation_0')
-  >>> print(translation.renderContents())
+  >>> print(translation.decode_contents())
   To prevent privacy issues, this translation is not available to anonymous
   users,<br/> if you want to see it, please, <a href="+login">log in</a>
   first.
@@ -50,25 +50,25 @@ But, if you are logged in, the system will show you the data.
 The GNOME standard string for credits is now available:
 
   >>> msgid = find_tag_by_id(user_browser.contents, 'msgset_199_singular')
-  >>> print(msgid.renderContents())
+  >>> print(msgid.decode_contents())
   translation-credits
 
   >>> translation = find_tag_by_id(
   ...     user_browser.contents, 'msgset_199_es_translation_0')
-  >>> print(extract_text(translation.renderContents()))
+  >>> print(extract_text(translation.decode_contents()))
   Launchpad Contributions:
   Carlos ... http://translations.launchpad.test/~carlos
 
 And the same for KDE one.
 
   >>> msgid = find_tag_by_id(user_browser.contents, 'msgset_200_singular')
-  >>> print(msgid.renderContents())
+  >>> print(msgid.decode_contents())
   _: EMAIL OF TRANSLATORS<img alt="" src="/@@/translation-newline"/><br/>
   Your emails
 
   >>> translation = find_tag_by_id(
   ...     user_browser.contents, 'msgset_200_es_translation_0')
-  >>> print(translation.renderContents())
+  >>> print(translation.decode_contents())
   ,,carlos@canonical.com
 
 Also, suggestions should not appear.

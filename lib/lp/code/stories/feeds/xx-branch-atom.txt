@@ -3,12 +3,13 @@
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
 by asking BeautifulSoup to use lxml.
 
+    >>> import feedparser
     >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
     ...     SoupStrainer,
     ...     )
     >>> from lp.services.feeds.tests.helper import (
-    ...     parse_ids, parse_links, validate_feed)
+    ...     parse_ids, parse_links)
 
 == Create some specific branches to use for this test ==
 
@@ -46,13 +47,11 @@ The feed for a person's branches will show the most recent 25 branches
 which will include an entry for each branch.
 
     >>> anon_browser.open('http://feeds.launchpad.test/~mike/branches.atom')
-    >>> def validate_browser_feed(browser):
-    ...     validate_feed(
-    ...         browser.contents, browser.headers['content-type'], browser.url)
-    >>> validate_browser_feed(anon_browser)
-    No Errors
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Mike Murphy']
+    >>> _ = feedparser.parse(anon_browser.contents)
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Mike Murphy
     >>> def print_parse_ids(browser):
     ...     for id in parse_ids(browser.contents):
     ...         print(id)
@@ -91,10 +90,11 @@ If an anonymous user fetches the same feed the email addresses will
 still be hidden:
 
     >>> anon_browser.open('http://feeds.launchpad.test/~name12/branches.atom')
-    >>> validate_browser_feed(anon_browser)
-    No Errors
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Sample Person']
+    >>> _ = feedparser.parse(anon_browser.contents)
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Sample Person
     >>> 'foo@localhost' in anon_browser.contents
     False
     >>> 'email address hidden' in anon_browser.contents
@@ -126,10 +126,10 @@ If we look at the feed for landscape developers there will be no
 branches listed, just an id for the feed.
 
     >>> browser.open('http://feeds.launchpad.test/~landscape-developers/branches.atom')
-    >>> validate_browser_feed(browser)
-    No Errors
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Branches for Landscape Developers']
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Landscape Developers
     >>> print_parse_ids(browser)
     <id>tag:launchpad.net,2006-07-11:/code/~landscape-developers</id>
 
@@ -140,10 +140,11 @@ The feed for a product's branches will show the most recent 25 branches
 which will include an entry for each branch.
 
     >>> anon_browser.open('http://feeds.launchpad.test/fooix/branches.atom')
-    >>> validate_browser_feed(anon_browser)
-    No Errors
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Fooix']
+    >>> _ = feedparser.parse(anon_browser.contents)
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Fooix
     >>> print_parse_ids(anon_browser)
     <id>tag:launchpad.net,...:/code/fooix</id>
     <id>tag:launchpad.net,2007-12-05:/code/~mary/fooix/fifth</id>
@@ -172,10 +173,11 @@ The feed for a project group's branches will show the most recent 25
 branches which will include an entry for each branch.
 
     >>> anon_browser.open('http://feeds.launchpad.test/oh-man/branches.atom')
-    >>> validate_browser_feed(anon_browser)
-    No Errors
-    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
-    [u'Branches for Oh Man']
+    >>> _ = feedparser.parse(anon_browser.contents)
+    >>> for element in BeautifulSoup(
+    ...         anon_browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Branches for Oh Man
     >>> print_parse_ids(anon_browser)
     <id>tag:launchpad.net,...:/code/oh-man</id>
     <id>tag:launchpad.net,2007-12-06:/code/~mary/fooey/sixth</id>
@@ -208,11 +210,10 @@ different entry.
 
     >>> url = 'http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom'
     >>> browser.open(url)
-    >>> validate_feed(browser.contents,
-    ...              browser.headers['content-type'], browser.url)
-    No Errors
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Latest Revisions for Branch lp://dev/~mark/firefox/release--0.9.1']
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Latest Revisions for Branch lp://dev/~mark/firefox/release--0.9.1
     >>> print(browser.url)
     http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom
 

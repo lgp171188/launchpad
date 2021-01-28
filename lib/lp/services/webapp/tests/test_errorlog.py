@@ -239,7 +239,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
             if isinstance(key, str):
                 key.decode('utf8')
             else:
-                self.assertIsInstance(key, unicode)
+                self.assertIsInstance(key, six.text_type)
 
     def test_raising_with_webservice_request(self):
         # Test ErrorReportingUtility.raising() with a WebServiceRequest

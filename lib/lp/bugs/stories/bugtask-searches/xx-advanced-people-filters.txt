@@ -119,7 +119,7 @@ displayed.
     >>> anon_browser.getControl('Commenter').value = 'non-existent'
     >>> anon_browser.getControl('Search', index=0).click()
     >>> for message in find_tags_by_class(anon_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There's no person with the name or email address 'non-existent'.
 
 Entering an existing person shows all bugs that person has commented on
@@ -181,7 +181,7 @@ displayed:
     >>> anon_browser.getControl('Subscriber').value = 'non-existent'
     >>> anon_browser.getControl('Search', index=0).click()
     >>> for message in find_tags_by_class(anon_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There's no person with the name or email address 'non-existent'.
 
 Entering an existing person shows all bugs for packages or products that

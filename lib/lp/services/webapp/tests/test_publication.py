@@ -7,13 +7,8 @@ __metaclass__ = type
 
 import sys
 
-from contrib.oauth import (
-    OAuthConsumer,
-    OAuthRequest,
-    OAuthSignatureMethod_PLAINTEXT,
-    OAuthToken,
-    )
 from fixtures import FakeLogger
+from oauthlib import oauth1
 from storm.database import (
     STATE_DISCONNECTED,
     STATE_RECONNECT,
@@ -115,16 +110,16 @@ class TestWebServicePublication(TestCaseWithFactory):
             person, permission=OAuthPermission.READ_PUBLIC, context=None)
         access_token, access_secret = request_token.createAccessToken()
 
-        # Use oauth.OAuthRequest just to generate a dictionary containing all
-        # the parameters we need to use in a valid OAuth request, using the
-        # access token we just created for our new person.
-        oauth_consumer = OAuthConsumer(consumer.key, u'')
-        oauth_token = OAuthToken(access_token.key, access_secret)
-        oauth_request = OAuthRequest.from_consumer_and_token(
-            oauth_consumer, oauth_token)
-        oauth_request.sign_request(
-            OAuthSignatureMethod_PLAINTEXT(), oauth_consumer, oauth_token)
-        return LaunchpadTestRequest(form=oauth_request.parameters)
+        # Make an OAuth signature using the access token we just created for
+        # our new person.
+        client = oauth1.Client(
+            consumer.key,
+            resource_owner_key=access_token.key,
+            resource_owner_secret=access_secret,
+            signature_method=oauth1.SIGNATURE_PLAINTEXT)
+        _, headers, _ = client.sign('/dummy')
+        return LaunchpadTestRequest(
+            environ={'HTTP_AUTHORIZATION': headers['Authorization']})
 
     def test_getPrincipal_for_person_and_account_with_different_ids(self):
         # WebServicePublication.getPrincipal() does not rely on accounts
@@ -326,11 +321,11 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             MatchesListwise(
                 [MatchesListwise(
                     (Equals('traversal_duration,success=True,'
-                     'pageid=RootObject-index-html'),
+                     'pageid=RootObject-index-html,env=test'),
                      GreaterThan(0))),
                  MatchesListwise(
                      (Equals('publication_duration,success=True,'
-                      'pageid=RootObject-index-html'),
+                      'pageid=RootObject-index-html,env=test'),
                       GreaterThan(0)))]))
 
     def test_traversal_failure_stats(self):
@@ -350,7 +345,7 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             MatchesListwise(
                 [MatchesListwise(
                     (Equals('traversal_duration,success=False,'
-                     'pageid=None'),
+                     'pageid=None,env=test'),
                      GreaterThan(0)))]))
 
     def test_publication_failure_stats(self):
@@ -370,11 +365,11 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             MatchesListwise(
                 [MatchesListwise(
                     (Equals('traversal_duration,success=True,'
-                     'pageid=RootObject-index-html'),
+                     'pageid=RootObject-index-html,env=test'),
                      GreaterThan(0))),
                  MatchesListwise(
                      (Equals('publication_duration,success=False,'
-                      'pageid=RootObject-index-html'),
+                      'pageid=RootObject-index-html,env=test'),
                       GreaterThan(0)))]))
 
     def test_prepPageIDForMetrics_none(self):

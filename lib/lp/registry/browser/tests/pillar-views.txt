@@ -19,7 +19,7 @@ be rendered. The newly created pillar does not use any launchpad applications.
     >>> view.has_involvement
     False
 
-    >>> print view.render()
+    >>> print(view.render())
     <BLANKLINE>
 
 Pillars that do use launchpad applications have an involvement menu.
@@ -34,22 +34,22 @@ Pillars that do use launchpad applications have an involvement menu.
 
     >>> view.official_malone
     True
-    >>> print view.answers_usage.name
+    >>> print(view.answers_usage.name)
     LAUNCHPAD
-    >>> print view.translations_usage.name
+    >>> print(view.translations_usage.name)
     UNKNOWN
-    >>> print view.blueprints_usage.name
+    >>> print(view.blueprints_usage.name)
     UNKNOWN
-    >>> print view.codehosting_usage.name
+    >>> print(view.codehosting_usage.name)
     UNKNOWN
 
 The view provides a list of enabled links that is rendered by the template.
 
     >>> for link in view.enabled_links:
-    ...     print link.name
+    ...     print(link.name)
     report_bug ask_question
 
-    >>> print view.render()
+    >>> print(view.render())
     <div id="involvement" class="portlet">
       <h2>Get Involved</h2>
       <ul class="involvement">
@@ -68,10 +68,10 @@ Products are supported.
     >>> ignored = login_person(product.owner)
     >>> product.blueprints_usage = ServiceUsage.LAUNCHPAD
     >>> view = create_view(product, '+get-involved')
-    >>> print view.blueprints_usage.name
+    >>> print(view.blueprints_usage.name)
     LAUNCHPAD
     >>> for link in view.enabled_links:
-    ...     print link.name
+    ...     print(link.name)
     register_blueprint
 
 Products subclass the view to display disabled links to encourage
@@ -80,13 +80,13 @@ also has configuration links that make it easy to figure out where
 to configure each service.
 
     >>> for link in view.visible_disabled_links:
-    ...     print link.name
+    ...     print(link.name)
     report_bug
     ask_question
     help_translate
 
     >>> for link in view.configuration_links:
-    ...     print link['link'].name
+    ...     print(link['link'].name)
     configure_code
     configure_bugtracker
     configure_translations
@@ -98,7 +98,7 @@ configuration links nor the completeness computation as the use of
 blueprints is not promoted.
 
     >>> for key in sorted(view.configuration_states.keys()):
-    ...     print key, view.configuration_states[key]
+    ...     print(key, view.configuration_states[key])
     configure_answers False
     configure_bugtracker False
     configure_code False
@@ -108,7 +108,7 @@ The percentage of the registration completed can be determined by
 using the 'registration_completeness' property, which returns a
 dictionary, which makes it easy for use in the page template.
 
-    >>> print pretty(view.registration_completeness)
+    >>> print(pretty(view.registration_completeness))
     {'done': 0,
      'undone': 100}
 
@@ -117,13 +117,13 @@ Changing the product's usage is reflected in the view properties.
     >>> product.translations_usage = ServiceUsage.LAUNCHPAD
     >>> view = create_view(product, '+get-involved')
     >>> for key in sorted(view.configuration_states.keys()):
-    ...     print key, view.configuration_states[key]
+    ...     print(key, view.configuration_states[key])
     configure_answers False
     configure_bugtracker False
     configure_code False
     configure_translations True
 
-    >>> print pretty(view.registration_completeness)
+    >>> print(pretty(view.registration_completeness))
     {'done': 25,
      'undone': 75}
 
@@ -131,7 +131,7 @@ The progress bar is shown as a green bar.
 
     >>> from lp.testing.pages import find_tag_by_id
     >>> rendered = view.render()
-    >>> print find_tag_by_id(rendered, 'progressbar')
+    >>> print(find_tag_by_id(rendered, 'progressbar'))
     <div id="progressbar" ...>
     <img ...src="/@@/green-bar" ... width: 25%.../>
     ...
@@ -139,7 +139,7 @@ The progress bar is shown as a green bar.
 Each application is displayed (except for blueprints) with an
 indicator showing whether it has been configured or not.
 
-    >>> print find_tag_by_id(rendered, 'configuration_links')
+    >>> print(find_tag_by_id(rendered, 'configuration_links'))
     <table...
     <a ...href="http://launchpad.test/bread/+configure-code"...
     <span class="sprite no action-icon">...
@@ -158,18 +158,18 @@ applications used by their products.
     >>> product.projectgroup = project_group
 
     >>> view = create_view(project_group, '+get-involved')
-    >>> print view.blueprints_usage.name
+    >>> print(view.blueprints_usage.name)
     LAUNCHPAD
 
 The offical_codehosting for a project is based on whether the project's
 development focus series has a branch.
 
-    >>> print product.development_focus.branch
+    >>> print(product.development_focus.branch)
     None
     >>> product.official_codehosting
     False
     >>> view = create_view(product, '+get-involved')
-    >>> print view.codehosting_usage.name
+    >>> print(view.codehosting_usage.name)
     UNKNOWN
 
     >>> product.development_focus.branch = factory.makeBranch(
@@ -177,7 +177,7 @@ development focus series has a branch.
     >>> product.official_codehosting
     True
     >>> view = create_view(product, '+get-involved')
-    >>> print view.codehosting_usage.name
+    >>> print(view.codehosting_usage.name)
     LAUNCHPAD
 
     >>> from lp.code.enums import BranchType
@@ -187,7 +187,7 @@ development focus series has a branch.
     >>> remote.official_codehosting
     False
     >>> view = create_view(remote, '+get-involved')
-    >>> print view.codehosting_usage.name
+    >>> print(view.codehosting_usage.name)
     UNKNOWN
 
 
@@ -195,7 +195,7 @@ Project groups cannot make links to register a branch, so
 official_codehosting is always false.
 
     >>> view = create_view(project_group, '+get-involved')
-    >>> print view.codehosting_usage.name
+    >>> print(view.codehosting_usage.name)
     NOT_APPLICABLE
 
 Project groups ignore products translations_usage setting if none of the
@@ -206,7 +206,7 @@ products are fully configured as translatable.
     False
 
     >>> view = create_view(project_group, '+get-involved')
-    >>> print view.translations_usage.name
+    >>> print(view.translations_usage.name)
     UNKNOWN
 
 If a product is translatable, translations is enabled in the involvment menu.
@@ -222,7 +222,7 @@ If a product is translatable, translations is enabled in the involvment menu.
     True
 
     >>> view = create_view(project_group, '+get-involved')
-    >>> print view.translations_usage.name
+    >>> print(view.translations_usage.name)
     LAUNCHPAD
 
 DistroSeries can use this view. The distribution is used to set the links.
@@ -230,7 +230,7 @@ DistroSeries can use this view. The distribution is used to set the links.
     >>> series = factory.makeDistroSeries(distribution=distribution)
     >>> view = create_view(series, '+get-involved')
     >>> for link in view.enabled_links:
-    ...     print link.name
+    ...     print(link.name)
     report_bug
 
 DistributionSourcePackages can use this view. The distribution is used to
@@ -246,7 +246,7 @@ and translations those links are not enabled for DistributionSourcePackages.
     ...     distribution=distribution)
     >>> view = create_view(package, '+get-involved')
     >>> for link in view.enabled_links:
-    ...     print link.name
+    ...     print(link.name)
     report_bug ask_question
 
 
@@ -264,7 +264,7 @@ The menu when viewed from a product page.
     >>> menuapi = MenuAPI(view)
     >>> for link in sorted(
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
-    ...     print link.url
+    ...     print(link.url)
     http://bugs.launchpad.test/bread/+filebug
     http://answers.launchpad.test/bread/+addquestion
     http://translations.launchpad.test/bread
@@ -282,7 +282,7 @@ The menu when viewed from a distribution page.
     >>> for link in sorted(
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     if link.enabled:
-    ...         print link.url
+    ...         print(link.url)
     http://bugs.launchpad.test/umbra/+filebug
     http://answers.launchpad.test/umbra/+addquestion
     http://translations.launchpad.test/umbra
@@ -295,6 +295,6 @@ The menu when viewed from a distribution source package page.
     >>> for link in sorted(
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     if link.enabled:
-    ...         print link.url
+    ...         print(link.url)
     http://bugs.launchpad.test/umbra/+source/box/+filebug
     http://answers.launchpad.test/umbra/+source/box/+addquestion

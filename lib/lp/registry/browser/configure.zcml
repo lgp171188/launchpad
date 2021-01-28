@@ -99,8 +99,7 @@
         />
     <browser:url
         for="lp.registry.interfaces.distroseries.IDistroSeries"
-        path_expression="name"
-        attribute_to_parent="distribution"
+        urldata="lp.registry.browser.distroseries.DistroSeriesURL"
         />
     <browser:defaultView
         name="+index"
@@ -544,8 +543,7 @@
         />
     <browser:url
         for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
-        path_expression="string:+source/${name}"
-        attribute_to_parent="distribution"
+        urldata="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageURL"
         />
     <browser:navigation
         module="lp.registry.browser.distributionsourcepackage"
@@ -608,8 +606,7 @@
         />
     <browser:url
         for="lp.registry.interfaces.ociproject.IOCIProject"
-        path_expression="string:+oci/${name}"
-        attribute_to_parent="pillar"
+        urldata="lp.registry.browser.ociproject.OCIProjectURL"
         />
     <browser:url
         for="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"
@@ -623,7 +620,7 @@
     <browser:page
         name="+index"
         for="lp.registry.interfaces.ociproject.IOCIProject"
-        class="lp.services.webapp.LaunchpadView"
+        class="lp.registry.browser.ociproject.OCIProjectIndexView"
         permission="launchpad.View"
         template="../templates/ociproject-index.pt"
         />

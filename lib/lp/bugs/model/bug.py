@@ -127,6 +127,7 @@ from lp.bugs.interfaces.bugattachment import (
 from lp.bugs.interfaces.bugmessage import IBugMessageSet
 from lp.bugs.interfaces.bugnomination import (
     BugNominationStatus,
+    IBugNominationSet,
     NominationError,
     NominationSeriesObsoleteError,
     )
@@ -368,13 +369,13 @@ class Bug(SQLBase, InformationTypeMixin):
 
     # useful Joins
     activity = SQLMultipleJoin('BugActivity', joinColumn='bug', orderBy='id')
-    messages = SQLRelatedJoin('Message', joinColumn='bug',
-                           otherColumn='message',
+    messages = SQLRelatedJoin('Message', joinColumn='bug_id',
+                           otherColumn='message_id',
                            intermediateTable='BugMessage',
                            prejoins=['owner'],
                            orderBy=['datecreated', 'id'])
-    bug_messages = SQLMultipleJoin(
-        'BugMessage', joinColumn='bug', orderBy='index')
+    bug_messages = ReferenceSet(
+        'id', BugMessage.bug_id, order_by=BugMessage.index)
     watches = SQLMultipleJoin(
         'BugWatch', joinColumn='bug', orderBy=['bugtracker', 'remotebug'])
     duplicates = SQLMultipleJoin('Bug', joinColumn='duplicateof', orderBy='id')
@@ -617,25 +618,25 @@ class Bug(SQLBase, InformationTypeMixin):
                 Message,
                 Join(
                     BugMessage,
-                    BugMessage.messageID == Message.id),
+                    BugMessage.message_id == Message.id),
                 LeftJoin(
                     Join(
                         ParentMessage,
                         ParentBugMessage,
-                        ParentMessage.id == ParentBugMessage.messageID),
+                        ParentMessage.id == ParentBugMessage.message_id),
                     And(
                         Message.parent == ParentMessage.id,
-                        ParentBugMessage.bugID == self.id)),
+                        ParentBugMessage.bug_id == self.id)),
                 ]
             results = store.using(*tables).find(
                 (Message, ParentMessage, BugMessage),
-                BugMessage.bugID == self.id,
+                BugMessage.bug_id == self.id,
                 )
         else:
             lookup = Message, BugMessage
             results = store.find(lookup,
-                BugMessage.bugID == self.id,
-                BugMessage.messageID == Message.id,
+                BugMessage.bug_id == self.id,
+                BugMessage.message_id == Message.id,
                 )
         results.order_by(BugMessage.index)
         return DecoratedResultSet(results, index_message,
@@ -659,14 +660,14 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.registry.model.productseries import ProductSeries
         from lp.registry.model.sourcepackagename import SourcePackageName
         store = Store.of(self)
-        tasks = list(store.find(BugTask, BugTask.bugID == self.id))
+        tasks = list(store.find(BugTask, BugTask.bug_id == self.id))
         # The bugtasks attribute is iterated in the API and web
         # services, so it needs to preload all related data otherwise
         # late evaluation is triggered in both places. Separately,
         # bugtask_sort_key requires the related products, series,
         # distros, distroseries and source package names to be loaded.
-        ids = set(map(operator.attrgetter('assigneeID'), tasks))
-        ids.update(map(operator.attrgetter('ownerID'), tasks))
+        ids = set(map(operator.attrgetter('assignee_id'), tasks))
+        ids.update(map(operator.attrgetter('owner_id'), tasks))
         ids.discard(None)
         if ids:
             list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
@@ -678,11 +679,11 @@ class Bug(SQLBase, InformationTypeMixin):
             if not ids:
                 return
             list(store.find(klass, klass.id.is_in(ids)))
-        load_something('productID', Product)
-        load_something('productseriesID', ProductSeries)
-        load_something('distributionID', Distribution)
-        load_something('distroseriesID', DistroSeries)
-        load_something('sourcepackagenameID', SourcePackageName)
+        load_something('product_id', Product)
+        load_something('productseries_id', ProductSeries)
+        load_something('distribution_id', Distribution)
+        load_something('distroseries_id', DistroSeries)
+        load_something('sourcepackagename_id', SourcePackageName)
         list(store.find(BugWatch, BugWatch.bugID == self.id))
         return sorted(tasks, key=bugtask_sort_key)
 
@@ -692,7 +693,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.registry.model.product import Product
         return Store.of(self).using(
                 BugTask,
-                LeftJoin(Product, Product.id == BugTask.productID)
+                LeftJoin(Product, Product.id == BugTask.product_id)
             ).find(
                 BugTask, bug=self
             ).order_by(
@@ -1534,7 +1535,7 @@ class Bug(SQLBase, InformationTypeMixin):
     @cachedproperty
     def _question_from_bug(self):
         for question in self.questions:
-            if (question.ownerID == self.ownerID
+            if (question.owner_id == self.ownerID
                 and question.datecreated == self.datecreated):
                 return question
         return None
@@ -1578,7 +1579,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # query seems fine as we have to join out from bugmessage anyway.
         result = Store.of(self).find((BugMessage, Message, MessageChunk),
             Message.id == MessageChunk.messageID,
-            BugMessage.messageID == Message.id,
+            BugMessage.message_id == Message.id,
             BugMessage.bug == self.id, *ranges)
         result.order_by(BugMessage.index, MessageChunk.sequence)
 
@@ -1676,16 +1677,7 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def getNominationFor(self, target):
         """See `IBug`."""
-        if IDistroSeries.providedBy(target):
-            filter_args = dict(distroseriesID=target.id)
-        elif IProductSeries.providedBy(target):
-            filter_args = dict(productseriesID=target.id)
-        elif ISourcePackage.providedBy(target):
-            filter_args = dict(distroseriesID=target.series.id)
-        else:
-            return None
-
-        nomination = BugNomination.selectOneBy(bugID=self.id, **filter_args)
+        nomination = getUtility(IBugNominationSet).getByBugTarget(self, target)
 
         if nomination is None:
             raise NotFoundError(
@@ -1702,7 +1694,7 @@ class Bug(SQLBase, InformationTypeMixin):
             return nomination.target.bugtargetdisplayname.lower()
 
         if nominations is None:
-            nominations = BugNomination.selectBy(bugID=self.id)
+            nominations = getUtility(IBugNominationSet).findByBug(self)
         if IProduct.providedBy(target):
             filtered_nominations = []
             for nomination in shortlist(nominations):
@@ -2619,10 +2611,10 @@ class BugSubscriptionInfo:
         """
         if self.bugtask is None:
             assignees = load_people(
-                Person.id.is_in(Select(BugTask.assigneeID,
+                Person.id.is_in(Select(BugTask.assignee_id,
                     BugTask.bug == self.bug)))
         else:
-            assignees = load_people(Person.id == self.bugtask.assigneeID)
+            assignees = load_people(Person.id == self.bugtask.assignee_id)
         if self.bug.private:
             return IStore(Person).find(Person,
                 Person.id.is_in([a.id for a in assignees]),

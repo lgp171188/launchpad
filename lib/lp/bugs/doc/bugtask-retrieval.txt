@@ -1,19 +1,21 @@
-= Retrieving bug tasks =
+Retrieving bug tasks
+*********************
 
 The IBugTaskSet interface provide a couple of methods for retrieving
 IBugTask instances. For convenience, Launchpad provides a default
 implementation of IBugTaskSet, allowing retrieval of any bug task in
 Launchpad. We'll use this implementation for demonstration purposes:
 
-    >>> from lp.app.errors import NotFoundError
     >>> from lp.bugs.interfaces.bugtask import (
     ...     IBugTask,
     ...     IBugTaskSet,
     ...     )
+    >>> from lp.services.database.interfaces import IStore
     >>> task_set = getUtility(IBugTaskSet)
 
 
-== Retrieving a single bug task ==
+Retrieving a single bug task
+*****************************
 
 The IBugTaskSet get method retrieves a single bug task matching a given
 ID:
@@ -22,7 +24,7 @@ ID:
     >>> retrieved_task
     <BugTask ...>
 
-    >>> from lp.testing import verifyObject 
+    >>> from lp.testing import verifyObject
     >>> verifyObject(IBugTask, retrieved_task)
     True
 
@@ -38,15 +40,17 @@ raises a NotFoundError:
     NotFoundError: ...
 
 
-== Retrieving multiple bug tasks ==
+Retrieving multiple bug tasks
+******************************
 
 The IBugTaskSet getMultiple method can retrieve multiple bug tasks in a
 single operation. To demonstrate, we'll begin by generating a list of
 sample bug tasks:
 
     >>> from lp.bugs.model.bugtask import BugTask
+    >>> store = IStore(BugTask)
     >>> sample_task_count = 10
-    >>> sample_tasks = BugTask.select(limit=sample_task_count)
+    >>> sample_tasks = store.find(BugTask)[:sample_task_count]
     >>> sample_task_ids = [task.id for task in sample_tasks]
 
 When given a sequence of bug task IDs, the method returns a dictionary

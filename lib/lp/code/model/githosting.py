@@ -27,13 +27,13 @@ from six.moves.urllib.parse import (
 from zope.interface import implementer
 
 from lp.code.errors import (
+    CannotRepackRepository,
     GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
     GitTargetError,
-    NoSuchGitReference,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.services.config import config
@@ -309,3 +309,18 @@ class GitHostingClient:
                 raise GitReferenceDeletionFault(
                     "Error deleting %s from repo %s: HTTP %s" %
                     (ref, path, e.response.status_code))
+
+    def repackRepository(self, path, logger=None):
+        """See `IGitHostingClient`."""
+
+        url = "/repo/%s/repack" % path
+        try:
+            if logger is not None:
+                logger.info(
+                    "Repacking repository %s" % (
+                        path))
+            return self._post(url)
+        except requests.RequestException as e:
+            raise CannotRepackRepository(
+                "Failed to repack Git repository %s: %s" %
+                (path, six.text_type(e)))

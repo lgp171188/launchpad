@@ -1,6 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from datetime import datetime
@@ -67,6 +69,10 @@ class FileUploadProtocol(basic.LineReceiver):
 
     def lineReceived(self, line):
         try:
+            try:
+                line = line.decode('UTF-8')
+            except UnicodeDecodeError:
+                raise ProtocolViolation('Non-data lines must be in UTF-8')
             getattr(self, 'line_' + self.state, self.badLine)(line)
         except ProtocolViolation as e:
             self.sendError(e.msg)
@@ -105,7 +111,6 @@ class FileUploadProtocol(basic.LineReceiver):
     def line_command(self, line):
         try:
             command, args = line.split(None, 1)
-            command = command.decode('UTF-8')
         except ValueError:
             raise ProtocolViolation('Bad command: ' + line)
 
@@ -114,7 +119,7 @@ class FileUploadProtocol(basic.LineReceiver):
 
     def line_header(self, line):
         # Blank line signals the end of the headers
-        if line == b'':
+        if line == '':
             # If File-Content-ID was specified, File-Alias-ID must be too, and
             # vice-versa.
             contentID = self.newFile.contentID
@@ -141,7 +146,7 @@ class FileUploadProtocol(basic.LineReceiver):
 
         # Simple RFC 822-ish header parsing
         try:
-            name, value = line.decode('UTF-8').split(':', 2)
+            name, value = line.split(':', 2)
         except ValueError:
             raise ProtocolViolation('Invalid header: ' + line)
 
@@ -156,11 +161,6 @@ class FileUploadProtocol(basic.LineReceiver):
     def command_STORE(self, args):
         try:
             size, name = args.split(None, 1)
-            try:
-                name = name.decode('utf-8')
-            except:
-                raise ProtocolViolation(
-                    "STORE command expects the filename to be in UTF-8")
             size = int(size)
         except ValueError:
             raise ProtocolViolation(

@@ -170,11 +170,14 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
             ]
-        for status in BuildStatus:
+        for status in BuildStatus.items:
+            build = self.factory.makeBinaryPackageBuild()
+            build.queueBuild()
+            build.updateStatus(status)
             if status in ok_cases:
-                self.assertTrue(self.build.can_be_cancelled)
+                self.assertTrue(build.can_be_cancelled)
             else:
-                self.assertFalse(self.build.can_be_cancelled)
+                self.assertFalse(build.can_be_cancelled)
 
     def test_can_be_cancelled_virtuality(self):
         # Both virtual and non-virtual builds can be cancelled.
@@ -625,7 +628,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
             entry["self_link"], "application/json",
             dumps({"external_dependencies": "random"}))
         self.assertEqual(400, response.status)
-        self.assertIn("Invalid external dependencies", response.body)
+        self.assertIn(b"Invalid external dependencies", response.body)
 
     def test_external_dependencies_ppa_owner_valid(self):
         # PPA admins can look and touch.

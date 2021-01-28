@@ -111,7 +111,7 @@ class OkSlave:
 
     def build(self, buildid, buildtype, chroot, filemap, args):
         self.call_log.append(
-            ('build', buildid, buildtype, chroot, filemap.keys(), args))
+            ('build', buildid, buildtype, chroot, list(filemap), args))
         return defer.succeed(('BuildStatus.BUILDING', buildid))
 
     def echo(self, *args):

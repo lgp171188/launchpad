@@ -188,7 +188,7 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
         result = self.store.execute(
             query, (self.session_data.hashed_client_id, self.product_id))
         for key, pickled_value in result:
-            value = pickle.loads(str(pickled_value))
+            value = pickle.loads(bytes(pickled_value))
             self._data_cache[key] = value
 
     def __getitem__(self, key):

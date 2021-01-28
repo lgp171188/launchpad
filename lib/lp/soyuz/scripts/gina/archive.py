@@ -153,9 +153,10 @@ class ArchiveComponentItems:
             archive_info = ArchiveFilesystemInfo(
                 archive_root, distroseries, component, arch, source_only)
         except NoBinaryArchive:
-            log.warn("The archive for %s/%s doesn't contain "
-                     "a directory for %s, skipping" %
-                     (distroseries, component, arch))
+            log.warning(
+                "The archive for %s/%s doesn't contain "
+                "a directory for %s, skipping" %
+                (distroseries, component, arch))
             return
         self._archive_archs.append(archive_info)
 

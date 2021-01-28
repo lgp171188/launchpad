@@ -25,7 +25,6 @@ from sqlobject import (
     ForeignKey,
     IntCol,
     SQLMultipleJoin,
-    SQLObjectNotFound,
     StringCol,
     )
 from storm.expr import (
@@ -458,16 +457,16 @@ class POTemplate(SQLBase, RosettaStats):
         """See `IPOTemplate`."""
         # Find a message ID with the given text.
         try:
-            singular_msgid = POMsgID.byMsgid(singular_text)
-        except SQLObjectNotFound:
+            singular_msgid = POMsgID.getByMsgid(singular_text)
+        except NotFoundError:
             return None
 
         # Find a message ID for the plural string.
         plural_msgid = None
         if plural_text is not None:
             try:
-                plural_msgid = POMsgID.byMsgid(plural_text)
-            except SQLObjectNotFound:
+                plural_msgid = POMsgID.getByMsgid(plural_text)
+            except NotFoundError:
                 return None
 
         # Find a message set with the given message ID.
@@ -500,7 +499,7 @@ class POTemplate(SQLBase, RosettaStats):
         if prefetch:
             def prefetch_msgids(rows):
                 load_related(
-                    POMsgID, rows, ['msgid_singularID', 'msgid_pluralID'])
+                    POMsgID, rows, ['msgid_singular_id', 'msgid_plural_id'])
             return DecoratedResultSet(result, pre_iter_hook=prefetch_msgids)
         else:
             return result
@@ -543,7 +542,7 @@ class POTemplate(SQLBase, RosettaStats):
 
     def getPOFileByPath(self, path):
         """See `IPOTemplate`."""
-        return POFile.selectOneBy(potemplate=self, path=path)
+        return IStore(POFile).find(POFile, potemplate=self, path=path).one()
 
     def getPOFileByLang(self, language_code):
         """See `IPOTemplate`."""
@@ -864,12 +863,12 @@ class POTemplate(SQLBase, RosettaStats):
     def getOrCreatePOMsgID(text):
         """Creates or returns existing POMsgID for given `text`."""
         try:
-            msgid = POMsgID.byMsgid(text)
-        except SQLObjectNotFound:
+            msgid = POMsgID.getByMsgid(text)
+        except NotFoundError:
             # If there are no existing message ids, create a new one.
             # We do not need to check whether there is already a message set
             # with the given text in this template.
-            msgid = POMsgID(msgid=text)
+            msgid = POMsgID.new(text)
         return msgid
 
     def createMessageSetFromText(self, singular_text, plural_text,
@@ -1002,7 +1001,7 @@ class POTemplate(SQLBase, RosettaStats):
                         txn.abort()
                         txn.begin()
                     if logger:
-                        logger.warn(
+                        logger.warning(
                             "Statistics update failed: %s" %
                             six.text_type(error))
 
@@ -1020,8 +1019,8 @@ class POTemplate(SQLBase, RosettaStats):
         Plural = ClassAlias(POMsgID)
 
         SingularJoin = LeftJoin(
-            Singular, Singular.id == POTMsgSet.msgid_singularID)
-        PluralJoin = LeftJoin(Plural, Plural.id == POTMsgSet.msgid_pluralID)
+            Singular, Singular.id == POTMsgSet.msgid_singular_id)
+        PluralJoin = LeftJoin(Plural, Plural.id == POTMsgSet.msgid_plural_id)
 
         source = Store.of(self).using(
             TranslationTemplateItem, POTMsgSet, SingularJoin, PluralJoin)
@@ -1282,17 +1281,18 @@ class POTemplateSet:
 
     def __iter__(self):
         """See `IPOTemplateSet`."""
-        res = POTemplate.select()
-        for potemplate in res:
+        for potemplate in IStore(POTemplate).find(POTemplate):
             yield potemplate
 
     def getAllByName(self, name):
         """See `IPOTemplateSet`."""
-        return POTemplate.selectBy(name=name, orderBy=['name', 'id'])
+        return IStore(POTemplate).find(POTemplate, name=name).order_by(
+            POTemplate.name, POTemplate.id)
 
     def getAllOrderByDateLastUpdated(self):
         """See `IPOTemplateSet`."""
-        return POTemplate.select(orderBy=['-date_last_updated'])
+        return IStore(POTemplate).find(POTemplate).order_by(
+            Desc(POTemplate.date_last_updated))
 
     def getSubset(self, distroseries=None, sourcepackagename=None,
                   productseries=None, iscurrent=None,
@@ -1304,18 +1304,6 @@ class POTemplateSet:
             productseries=productseries,
             iscurrent=iscurrent,
             ordered_by_names=ordered_by_names)
-
-    def getSubsetFromImporterSourcePackageName(self, distroseries,
-        sourcepackagename, iscurrent=None):
-        """See `IPOTemplateSet`."""
-        if distroseries is None or sourcepackagename is None:
-            raise AssertionError(
-                'distroseries and sourcepackage must be not None.')
-
-        return POTemplateSubset(
-            distroseries=distroseries,
-            sourcepackagename=sourcepackagename,
-            iscurrent=iscurrent)
 
     def getSharingSubset(self, distribution=None, sourcepackagename=None,
                          product=None):
@@ -1353,7 +1341,7 @@ class POTemplateSet:
             return matches[0]
         elif sourcepackagename is None:
             # Multiple matches, and for a product not a package.
-            logging.warn(
+            logging.warning(
                 "Found %d templates with path '%s' for productseries %s",
                 len(matches), path, productseries.title)
             return None
@@ -1370,7 +1358,7 @@ class POTemplateSet:
             if len(preferred_matches) == 1:
                 return preferred_matches[0]
             else:
-                logging.warn(
+                logging.warning(
                     "Found %d templates with path '%s' for package %s "
                     "(%d matched on from_sourcepackagename).",
                     len(matches), path, sourcepackagename.name,

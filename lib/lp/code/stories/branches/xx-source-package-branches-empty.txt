@@ -40,9 +40,10 @@ Since there are no branches, there is no branch listing table:
     >>> print(find_tag_by_id(browser.contents, 'branchtable'))
     None
 
-    >>> print(repr(extract_text(
-    ...     find_tag_by_id(browser.contents, 'branch-summary'))))
-    u'There are no branches for the foo package in distro\nin Launchpad.'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'branch-summary')))
+    There are no branches for the foo package in distro
+    in Launchpad.
 
     >>> print_tag_with_id(browser.contents, 'distro-branch-warning')
     This page is for a packaging branch for a program in

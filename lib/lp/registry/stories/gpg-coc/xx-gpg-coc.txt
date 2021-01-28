@@ -454,7 +454,7 @@ Now Sample Person will deactivate their key...
 
     >>> browser.getControl('Deactivate Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     No key(s) selected for deactivation.
 
 
@@ -465,7 +465,7 @@ Now they select the checkbox and deactivate it.
     >>> browser.getControl('Deactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Deactivated key(s): 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 
@@ -486,7 +486,7 @@ Now they'll request their key to be reactivated.
     >>> browser.getControl('Reactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     No key(s) selected for reactivation.
 
     >>> browser.getControl(
@@ -494,7 +494,7 @@ Now they'll request their key to be reactivated.
     >>> browser.getControl('Reactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     A message has been sent to test@canonical.com with instructions to reactivate...
 
 

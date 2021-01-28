@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad Pillars share a namespace.
@@ -249,24 +249,23 @@ class PillarNameSet:
 
     def add_featured_project(self, project):
         """See `IPillarSet`."""
-        query = """
-            PillarName.name = %s
-            AND PillarName.id = FeaturedProject.pillar_name
-            """ % sqlvalues(project.name)
-        existing = FeaturedProject.selectOne(
-            query, clauseTables=['PillarName'])
+        existing = IStore(FeaturedProject).find(
+            FeaturedProject,
+            PillarName.name == project.name,
+            PillarName.id == FeaturedProject.pillar_name_id).one()
         if existing is None:
-            pillar_name = PillarName.selectOneBy(name=project.name)
-            return FeaturedProject(pillar_name=pillar_name.id)
+            pillar_name = IStore(PillarName).find(
+                PillarName, name=project.name).one()
+            featured_project = FeaturedProject(pillar_name=pillar_name)
+            IStore(FeaturedProject).add(featured_project)
+            return featured_project
 
     def remove_featured_project(self, project):
         """See `IPillarSet`."""
-        query = """
-            PillarName.name = %s
-            AND PillarName.id = FeaturedProject.pillar_name
-            """ % sqlvalues(project.name)
-        existing = FeaturedProject.selectOne(
-            query, clauseTables=['PillarName'])
+        existing = IStore(FeaturedProject).find(
+            FeaturedProject,
+            PillarName.name == project.name,
+            PillarName.id == FeaturedProject.pillar_name_id).one()
         if existing is not None:
             existing.destroySelf()
 
@@ -280,7 +279,7 @@ class PillarNameSet:
 
         store = IStore(PillarName)
         pillar_names = store.find(
-            PillarName, PillarName.id == FeaturedProject.pillar_name)
+            PillarName, PillarName.id == FeaturedProject.pillar_name_id)
 
         def preload_pillars(rows):
             pillar_names = (

@@ -33,7 +33,7 @@ def dominate_imported_source_packages(txn, logger, distro_name, series_name,
         # file has a Published publication.  So there should be at least
         # as many Published publications as live versions.
         if pub_count < len(live_versions):
-            logger.warn(
+            logger.warning(
                 "Package %s has fewer live source publications (%s) than "
                 "live versions (%s).  The archive may be broken in some "
                 "way.",

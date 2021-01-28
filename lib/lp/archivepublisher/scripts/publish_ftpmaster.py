@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Master distro publishing script."""
@@ -353,7 +353,7 @@ class PublishFTPMaster(LaunchpadCronScript):
             test_args=arguments, logger=self.logger, ignore_cron_control=True)
         publish_distro.logger = self.logger
         publish_distro.txn = self.txn
-        publish_distro.main()
+        publish_distro.main(reset_store_between_archives=False)
 
     def publishDistroArchive(self, distribution, archive,
                              security_suites=None):

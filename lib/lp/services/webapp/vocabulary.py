@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Vocabularies pulling stuff from the database.
@@ -15,7 +15,6 @@ __all__ = [
     'FilteredVocabularyBase',
     'ForgivingSimpleVocabulary',
     'IHugeVocabulary',
-    'NamedSQLObjectHugeVocabulary',
     'NamedSQLObjectVocabulary',
     'NamedStormHugeVocabulary',
     'NamedStormVocabulary',
@@ -214,10 +213,9 @@ class BatchedCountableIterator(CountableIterator):
     """A wrapping iterator with hook to create descriptions for its terms."""
     # XXX kiko 2007-01-18: note that this class doesn't use the item_wrapper
     # at all. I hate compatibility shims. We can't remove it from the __init__
-    # because it is always supplied by NamedSQLObjectHugeVocabulary, and
-    # we don't want child classes to have to reimplement it.  This
-    # probably indicates we need to reconsider how these classes are
-    # split.
+    # because it is always supplied by NamedStormVocabulary, and we don't
+    # want child classes to have to reimplement it.  This probably indicates
+    # we need to reconsider how these classes are split.
     def __iter__(self):
         """See CountableIterator"""
         return iter(self.getTermsWithDescriptions(self._iterator))
@@ -435,40 +433,6 @@ class NamedSQLObjectVocabulary(SQLObjectVocabularyBase):
                 clause = AND(clause, self._filter)
             return self._table.select(clause, orderBy=self._orderBy)
         return self.emptySelectResults()
-
-
-@implementer(IHugeVocabulary)
-class NamedSQLObjectHugeVocabulary(NamedSQLObjectVocabulary):
-    """A NamedSQLObjectVocabulary that implements IHugeVocabulary."""
-    _orderBy = 'name'
-    displayname = None
-    step_title = 'Search'
-    # The iterator class will be used to wrap the results; its iteration
-    # methods should return SimpleTerms, as the reference implementation
-    # CountableIterator does.
-    iterator = CountableIterator
-
-    def __init__(self, context=None):
-        NamedSQLObjectVocabulary.__init__(self, context)
-        if self.displayname is None:
-            self.displayname = 'Select %s' % self.__class__.__name__
-
-    def search(self, query, vocab_filter=None):
-        # XXX kiko 2007-01-17: this is a transitional shim; we're going to
-        # get rid of search() altogether, but for now we've only done it for
-        # the NamedSQLObjectHugeVocabulary.
-        raise NotImplementedError
-
-    def searchForTerms(self, query=None, vocab_filter=None):
-        if not query:
-            return self.emptySelectResults()
-
-        query = ensure_unicode(query).lower()
-        clause = CONTAINSSTRING(self._table.q.name, query)
-        if self._filter:
-            clause = AND(clause, self._filter)
-        results = self._table.select(clause, orderBy=self._orderBy)
-        return self.iterator(results.count(), results, self.toTerm)
 
 
 @implementer(IVocabulary, IVocabularyTokenized)

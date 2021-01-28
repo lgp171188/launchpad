@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -26,11 +26,15 @@ from lp.bugs.model.bug import (
     generate_subscription_with,
     )
 from lp.bugs.model.bugsubscription import BugSubscription
+from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
-from lp.services.database.bulk import load_related
+from lp.services.database.bulk import (
+    load_referencing,
+    load_related,
+    )
 
 
 @implementer(IRealSubscriptionInfo)
@@ -183,9 +187,9 @@ class PersonSubscriptions(object):
         # Preload bug owners, then all pillars.
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             [bug.ownerID for bug in bugs]))
-        all_tasks = [task for task in bug.bugtasks for bug in bugs]
-        load_related(Product, all_tasks, ['productID'])
-        load_related(Distribution, all_tasks, ['distributionID'])
+        all_tasks = load_referencing(BugTask, bugs, ['bug_id'])
+        load_related(Product, all_tasks, ['product_id'])
+        load_related(Distribution, all_tasks, ['distribution_id'])
         for bug in bugs:
             # indicate the reporter and bug_supervisor
             duplicates.annotateReporter(bug, bug.owner)

@@ -258,7 +258,7 @@ class TestPublishFTPMasterScript(
         distro = self.makeDistroWithPublishDirectory()
         script = self.makeScript(distro)
         script.setUp()
-        self.assertEqual([distro], script.getConfigs().keys())
+        self.assertEqual([distro], list(script.getConfigs()))
 
     def test_getConfigs_skips_configless_distros(self):
         distro = self.factory.makeDistribution(no_pubconf=True)

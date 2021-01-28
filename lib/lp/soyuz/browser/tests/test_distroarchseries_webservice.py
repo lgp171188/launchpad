@@ -126,8 +126,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1 = hashlib.sha1('abcxyz').hexdigest()
-        sha256 = hashlib.sha256('abcxyz').hexdigest()
+        sha1 = hashlib.sha1(b'abcxyz').hexdigest()
+        sha256 = hashlib.sha256(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
         self.assertThat(
             das.getChrootHash(
@@ -142,7 +142,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             das.architecturetag)
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1 = hashlib.sha1('abcxyz').hexdigest()
+        sha1 = hashlib.sha1(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
         self.assertTrue(ws_das.chroot_url.endswith(expected_file))
         ws_das.removeChroot()
@@ -155,9 +155,9 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1_1 = hashlib.sha1('abcxyz').hexdigest()
+        sha1_1 = hashlib.sha1(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1_1)
-        sha1_2 = hashlib.sha1('123456').hexdigest()
+        sha1_2 = hashlib.sha1(b'123456').hexdigest()
         ws_das.setChroot(data=b'123456', sha1sum=sha1_2, pocket='Updates')
         release_chroot = das.getChroot(pocket=PackagePublishingPocket.RELEASE)
         self.assertEqual(sha1_1, release_chroot.content.sha1)
@@ -196,9 +196,9 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1_1 = hashlib.sha1('abcxyz').hexdigest()
+        sha1_1 = hashlib.sha1(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1_1)
-        sha1_2 = hashlib.sha1('123456').hexdigest()
+        sha1_2 = hashlib.sha1(b'123456').hexdigest()
         ws_das.setChroot(data=b'123456', sha1sum=sha1_2, image_type='LXD image')
         chroot_image = das.getChroot(image_type=BuildBaseImageType.CHROOT)
         self.assertEqual(sha1_1, chroot_image.content.sha1)

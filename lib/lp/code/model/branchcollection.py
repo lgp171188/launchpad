@@ -438,7 +438,7 @@ class GenericBranchCollection:
             "candidate_branches",
             Select(
                 Branch.id,
-                tables=[Branch] + self._tables.values(),
+                tables=[Branch] + list(self._tables.values()),
                 where=And(*expressions) if expressions else True))
         expressions = [SQL("""
             source_branch IN (SELECT id FROM candidate_branches) AND
@@ -550,7 +550,7 @@ class GenericBranchCollection:
             store = IStore(BugBranch)
             rs = store.using(
                 BugBranch,
-                Join(BugTask, BugTask.bugID == BugBranch.bug_id),
+                Join(BugTask, BugTask.bug_id == BugBranch.bug_id),
             ).find(
                 (BugTask, BugBranch),
                 BugBranch.bug_id.is_in(bug_ids),

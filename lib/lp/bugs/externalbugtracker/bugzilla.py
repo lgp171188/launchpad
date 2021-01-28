@@ -379,7 +379,7 @@ class Bugzilla(ExternalBugTracker):
             resolution_tag = 'resolution'
             priority_tag = 'priority'
             severity_tag = None
-        elif self.version < (2, 16):
+        elif self.version is None or self.version < (2, 16):
             buglist_page = 'xml.cgi'
             data = {'id': ','.join(bug_ids)}
             bug_tag = 'bug'

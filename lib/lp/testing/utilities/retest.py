@@ -24,11 +24,13 @@ report (or a part of) can be piped in, for example by pasting it:
 
 from __future__ import print_function
 
+from collections import OrderedDict
 import fileinput
 from itertools import takewhile
 import os
 import re
 import sys
+import tempfile
 
 from six.moves import map as imap
 
@@ -39,10 +41,10 @@ from lp.services.config import config
 TEST = os.path.join(config.root, "bin/test")
 
 # Regular expression to match numbered stories.
-STORY_RE = re.compile("(.*)/\d{2}-.*")
+STORY_RE = re.compile(r"(.*)/\d{2}-.*")
 
 # Regular expression to remove terminal color escapes.
-COLOR_RE = re.compile("\x1b[[][0-9;]+m")
+COLOR_RE = re.compile(r"\x1b[[][0-9;]+m")
 
 
 def decolorize(text):
@@ -88,7 +90,12 @@ def gen_tests(test_lines):
 
 
 def extract_tests(lines):
-    return set(gen_tests(gen_test_lines(lines)))
+    # Deduplicate test IDs.  We don't have a convenient ordered set type,
+    # but an OrderedDict is good enough.
+    tests = OrderedDict()
+    for test in gen_tests(gen_test_lines(lines)):
+        tests[test] = None
+    return list(tests.keys())
 
 
 def run_tests(tests):
@@ -97,10 +104,12 @@ def run_tests(tests):
     for test in tests:
         print("  %s" % test)
     args = ['-vvc'] if sys.stdout.isatty() else ['-vv']
-    for test in tests:
-        args.append('-t')
-        args.append(re.escape(test))
-    os.execl(TEST, TEST, *args)
+    with tempfile.NamedTemporaryFile(mode='w+') as test_list:
+        for test in tests:
+            print(test, file=test_list)
+        test_list.flush()
+        args.extend(['--load-list', test_list.name])
+        os.execl(TEST, TEST, *args)
 
 
 def main():

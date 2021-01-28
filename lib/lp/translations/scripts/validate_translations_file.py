@@ -93,7 +93,7 @@ class ValidateTranslationsFile:
         except UnknownFileType:
             raise
         except Exception as e:
-            self.logger.warn("Failure in '%s': %s" % (filename, e))
+            self.logger.warning("Failure in '%s': %s" % (filename, e))
             return False
 
         return True

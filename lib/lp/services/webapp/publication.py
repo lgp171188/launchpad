@@ -489,6 +489,10 @@ class LaunchpadBrowserPublication(
             publication_thread_duration = None
         request.setInWSGIEnvironment(
             'launchpad.publicationduration', publication_duration)
+        if publication_thread_duration is not None:
+            request.setInWSGIEnvironment(
+                'launchpad.publicationthreadduration',
+                publication_thread_duration)
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
             'publication_duration,success=True,pageid={}'.format(
@@ -600,16 +604,16 @@ class LaunchpadBrowserPublication(
         traversal_duration = time.time() - request._traversal_start
         request.setInWSGIEnvironment(
             'launchpad.traversalduration', traversal_duration)
-        # Update statsd, timing is in milliseconds
-        getUtility(IStatsdClient).timing(
-            'traversal_duration,success=True,pageid={}'.format(
-                self._prepPageIDForMetrics(pageid)),
-            traversal_duration * 1000)
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
                 _get_thread_time() - request._traversal_thread_start)
             request.setInWSGIEnvironment(
                 'launchpad.traversalthreadduration', traversal_thread_duration)
+        # Update statsd, timing is in milliseconds
+        getUtility(IStatsdClient).timing(
+            'traversal_duration,success=True,pageid={}'.format(
+                self._prepPageIDForMetrics(pageid)),
+            traversal_duration * 1000)
 
     def _maybePlacefullyAuthenticate(self, request, ob):
         """ This should never be called because we've excised it in
@@ -637,36 +641,36 @@ class LaunchpadBrowserPublication(
             publication_duration = now - request._publication_start
             request.setInWSGIEnvironment(
                 'launchpad.publicationduration', publication_duration)
-            # Update statsd, timing is in milliseconds
-            getUtility(IStatsdClient).timing(
-                'publication_duration,success=False,pageid={}'.format(
-                    self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid'))),
-                publication_duration * 1000)
             if thread_now is not None:
                 publication_thread_duration = (
                     thread_now - request._publication_thread_start)
                 request.setInWSGIEnvironment(
                     'launchpad.publicationthreadduration',
                     publication_thread_duration)
+            # Update statsd, timing is in milliseconds
+            getUtility(IStatsdClient).timing(
+                'publication_duration,success=False,pageid={}'.format(
+                    self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid'))),
+                publication_duration * 1000)
         elif (hasattr(request, '_traversal_start') and
               ('launchpad.traversalduration' not in orig_env)):
             # The traversal process has been started but hasn't completed.
             traversal_duration = now - request._traversal_start
             request.setInWSGIEnvironment(
                 'launchpad.traversalduration', traversal_duration)
-            # Update statsd, timing is in milliseconds
-            getUtility(IStatsdClient).timing(
-                'traversal_duration,success=False,pageid={}'.format(
-                    self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid'))
-                ), traversal_duration * 1000)
             if thread_now is not None:
                 traversal_thread_duration = (
                     thread_now - request._traversal_thread_start)
                 request.setInWSGIEnvironment(
                     'launchpad.traversalthreadduration',
                     traversal_thread_duration)
+            # Update statsd, timing is in milliseconds
+            getUtility(IStatsdClient).timing(
+                'traversal_duration,success=False,pageid={}'.format(
+                    self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid'))
+                ), traversal_duration * 1000)
         else:
             # The exception wasn't raised in the middle of the traversal nor
             # the publication, so there's nothing we need to do here.
@@ -795,16 +799,13 @@ class LaunchpadBrowserPublication(
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
                     OpStats.stats['404s'] += 1
-                    statsd_client.incr('errors.404,env={}'.format(
-                        statsd_client.lp_environment))
+                    statsd_client.incr('errors.404')
                 elif status == 500:  # Unhandled exceptions
                     OpStats.stats['500s'] += 1
-                    statsd_client.incr('errors.500,env={}'.format(
-                        statsd_client.lp_environment))
+                    statsd_client.incr('errors.500')
                 elif status == 503:  # Timeouts
                     OpStats.stats['503s'] += 1
-                    statsd_client.incr('errors.503,env={}'.format(
-                        statsd_client.lp_environment))
+                    statsd_client.incr('errors.503')
 
                 # Increment counters for status code groups.
                 status_group = str(status)[0] + 'XXs'
@@ -813,8 +814,7 @@ class LaunchpadBrowserPublication(
                 # Increment counter for 5XXs_b.
                 if is_browser(request) and status_group == '5XXs':
                     OpStats.stats['5XXs_b'] += 1
-                    statsd_client.incr('errors.5XX,env={}'.format(
-                        statsd_client.lp_environment))
+                    statsd_client.incr('errors.5XX')
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name

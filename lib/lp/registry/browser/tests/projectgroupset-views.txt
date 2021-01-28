@@ -24,7 +24,7 @@ A Launchpad admin has permission to access the +index view.
 
 The view provides a page_title.
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Project groups registered in Launchpad
 
 A regular user cannot access the view.
@@ -64,7 +64,7 @@ A Launchpad admin has permission to access the +all view.
 
 The view provides a page_title.
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Project groups registered in Launchpad
 
 A regular user cannot access the view.
@@ -90,7 +90,7 @@ A Launchpad admin has permission to access the +new view.
     >>> check_permission('launchpad.Moderate', view)
     True
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Register a project group with Launchpad
 
 A regular user cannot access the view.

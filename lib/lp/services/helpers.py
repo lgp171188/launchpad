@@ -85,7 +85,8 @@ def backslashreplace(str):
     """Return a copy of the string, with non-ASCII characters rendered as
     xNN or uNNNN. Used to test data containing typographical quotes etc.
     """
-    return str.decode('UTF-8').encode('ASCII', 'backslashreplace')
+    return six.ensure_str(
+        six.ensure_text(str).encode('ASCII', 'backslashreplace'))
 
 
 def bytes_to_tarfile(s):

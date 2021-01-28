@@ -836,6 +836,9 @@
         permission="launchpad.Edit"
         interface="lp.code.interfaces.gitrepository.IGitRepositoryEdit"
         set_schema="lp.code.interfaces.gitrepository.IGitRepositoryEditableAttributes" />
+    <require
+        permission="launchpad.ExpensiveRequest"
+        interface="lp.code.interfaces.gitrepository.IGitRepositoryExpensiveRequest"/>
   </class>
   <adapter
       for="lp.code.interfaces.gitrepository.IGitRepository"

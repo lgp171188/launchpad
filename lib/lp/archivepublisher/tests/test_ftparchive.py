@@ -78,8 +78,8 @@ class FakeSelectResult:
     def count(self):
         return len(self._result)
 
-    def __getslice__(self, i, j):
-        return self._result[i:j]
+    def __getitem__(self, key):
+        return self._result[key]
 
 
 class TestFTPArchive(TestCaseWithFactory):

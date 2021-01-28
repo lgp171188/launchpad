@@ -56,7 +56,7 @@ consumer keys.
     >>> response = caller.get(root)
     >>> response.status
     401
-    >>> print(response.body)
+    >>> print(six.ensure_text(response.body))
     Unknown consumer (new-consumer).
 
 But with anonymous access there is no registration step. The first
@@ -81,7 +81,7 @@ Anonymous requests can't access certain data.
     >>> response = anon_webservice.get(body['me_link'])
     >>> response.status
     401
-    >>> print(response.body)
+    >>> print(six.ensure_text(response.body))
     You need to be logged in to view this URL.
 
 Anonymous requests can't change the dataset.
@@ -92,7 +92,7 @@ Anonymous requests can't change the dataset.
     ...     'application/json', data)
     >>> response.status
     401
-    >>> print(response.body)
+    >>> print(six.ensure_text(response.body))
     (<Person at...>, 'display_name', 'launchpad.Edit')
 
 A completely unsigned web service request is treated as an anonymous

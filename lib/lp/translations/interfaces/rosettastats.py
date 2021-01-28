@@ -73,11 +73,6 @@ class IRosettaStats(Interface):
     def currentPercentage(language=None):
         """Return the percentage of current msgsets inside this object."""
 
-    def rosettaPercentage(language=None):
-        """Return the percentage of msgsets translated with Rosetta inside
-        this object.
-        """
-
     def translatedPercentage(language=None):
         """Return the percentage of msgsets translated for this object."""
 

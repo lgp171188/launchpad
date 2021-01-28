@@ -72,8 +72,8 @@ re_isadeb = re.compile(r"(.+?)_(.+?)_(.+)\.(u?d?deb)$")
 re_isbuildinfo = re.compile(r"(.+?)_(.+?)_(.+)\.buildinfo$")
 
 source_file_exts = [
-    'orig(?:-.+)?\.tar\.(?:gz|bz2|xz)(?:\.asc)?', 'diff.gz',
-    '(?:debian\.)?tar\.(?:gz|bz2|xz)', 'dsc']
+    r'orig(?:-.+)?\.tar\.(?:gz|bz2|xz)(?:\.asc)?', 'diff.gz',
+    r'(?:debian\.)?tar\.(?:gz|bz2|xz)', 'dsc']
 re_issource = re.compile(
     r"([^_]+)_(.+?)\.(%s)" % "|".join(ext for ext in source_file_exts))
 re_is_component_orig_tar_ext = re.compile(r"^orig-(.+).tar.(?:gz|bz2|xz)$")
@@ -171,15 +171,7 @@ def extract_component_from_section(section, default_component="main"):
 
 class ParseMaintError(Exception):
     """Exception raised for errors in parsing a maintainer field.
-
-    Attributes:
-       message -- explanation of the error
     """
-
-    def __init__(self, message):
-        Exception.__init__(self)
-        self.args = (message, )
-        self.message = message
 
 
 def parse_maintainer(maintainer, field_name="Maintainer"):
@@ -200,9 +192,8 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
     else:
         m = re_parse_maintainer.match(maintainer)
         if not m:
-            raise ParseMaintError(
-                "%s: doesn't parse as a valid %s field."
-                % (maintainer.encode("utf-8"), field_name))
+            raise ParseMaintError("%s: doesn't parse as a valid %s field."
+                                  % (maintainer, field_name))
         name = m.group(1)
         email = m.group(2)
         # Just in case the maintainer ended up with nested angles; check...
@@ -210,9 +201,8 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
             email = email[1:]
 
     if email.find(u"@") == -1 and email.find(u"buildd_") != 0:
-        raise ParseMaintError(
-            "%s: no @ found in email address part." %
-            maintainer.encode("utf-8"))
+        raise ParseMaintError("%s: no @ found in email address part."
+                              % maintainer)
 
     return (name, email)
 

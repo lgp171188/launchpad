@@ -117,7 +117,7 @@ Karl then renews his membership.
     'http://launchpad.test/~karl'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Membership renewed until ...
 
 Karl can't renew it again, since it's now not set to expire soon.
@@ -169,7 +169,7 @@ now renew the membership.
     'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Membership renewed until ...
 
 If the user double clicks or goes back to a cached version of the page
@@ -184,7 +184,7 @@ provided no information as to whether the membership was renewed.
     'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Membership renewed until ...
 
 When the page is loaded again, there is no form since the membership

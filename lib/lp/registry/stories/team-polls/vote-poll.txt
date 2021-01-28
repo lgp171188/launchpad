@@ -10,7 +10,7 @@ that they must use to see/change their vote afterwards.
     >>> browser.url
     'http://launchpad.test/~ubuntu-team/+poll/never-closes/+vote'
 
-    >>> print(find_tag_by_id(browser.contents, 'your-vote').renderContents())
+    >>> print(find_tag_by_id(browser.contents, 'your-vote').decode_contents())
     <BLANKLINE>
     ...
     <h2>Your current vote</h2>
@@ -26,11 +26,11 @@ that they must use to see/change their vote afterwards.
 
     >>> tags = find_tags_by_class(browser.contents, "informational message")
     >>> for tag in tags:
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Your vote has been recorded. If you want to view or change it later you
     must write down this key: ...
 
-    >>> print(find_tag_by_id(browser.contents, 'your-vote').renderContents())
+    >>> print(find_tag_by_id(browser.contents, 'your-vote').decode_contents())
     <BLANKLINE>
     ...
     <h2>Your current vote</h2>
@@ -44,7 +44,7 @@ Foo Bar will now vote on a poll with public votes.
     >>> browser.url
     'http://launchpad.test/~ubuntu-team/+poll/never-closes4/+vote'
 
-    >>> print(find_tag_by_id(browser.contents, 'your-vote').renderContents())
+    >>> print(find_tag_by_id(browser.contents, 'your-vote').decode_contents())
     <BLANKLINE>
     ...
     <h2>Your current vote</h2>
@@ -60,11 +60,11 @@ Foo Bar will now vote on a poll with public votes.
 
     >>> tags = find_tags_by_class(browser.contents, "informational message")
     >>> for tag in tags:
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Your vote was stored successfully. You can come back to this page at any
     time before this poll closes to view or change your vote, if you want.
 
-    >>> print(find_tag_by_id(browser.contents, 'your-vote').renderContents())
+    >>> print(find_tag_by_id(browser.contents, 'your-vote').decode_contents())
     <BLANKLINE>
     ...
     <h2>Your current vote</h2>
@@ -88,10 +88,10 @@ yet.
 
     >>> contents = team_admin_browser.contents
     >>> for tag in find_tags_by_class(contents, "informational message"):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     You chose not to vote yet.
 
-    >>> print(find_tag_by_id(contents, 'your-vote').renderContents())
+    >>> print(find_tag_by_id(contents, 'your-vote').decode_contents())
     <BLANKLINE>
     ...
     <h2>Your current vote</h2>
@@ -110,7 +110,7 @@ even if they guess the URL for the voting page.
     ...     'http://launchpad.test/~ubuntu-team/+poll/never-closes/+vote')
     >>> for tag in find_tags_by_class(
     ...     non_member_browser.contents, "informational message"):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     You can’t vote in this poll because you’re not a member of Ubuntu Team.
 
 
@@ -121,7 +121,7 @@ It's not possible to vote on closed polls, even if we manually craft the URL.
     >>> team_admin_browser.open(
     ...     'http://launchpad.test/~ubuntu-team/+poll/leader-2004')
     >>> print(find_tag_by_id(
-    ...     team_admin_browser.contents, 'maincontent').renderContents())
+    ...     team_admin_browser.contents, 'maincontent').decode_contents())
     <BLANKLINE>
     ...
     <h2>Voting has closed</h2>
@@ -130,7 +130,7 @@ It's not possible to vote on closed polls, even if we manually craft the URL.
     >>> team_admin_browser.open(
     ...     'http://launchpad.test/~ubuntu-team/+poll/leader-2004/+vote')
     >>> print(find_tag_by_id(
-    ...     team_admin_browser.contents, 'maincontent').renderContents())
+    ...     team_admin_browser.contents, 'maincontent').decode_contents())
     <BLANKLINE>
     ...
     <p class="informational message">
@@ -149,7 +149,7 @@ The same is true for condorcet polls too.
     >>> team_admin_browser.open(
     ...     'http://launchpad.test/~ubuntu-team/+poll/director-2004')
     >>> print(find_tag_by_id(
-    ...     team_admin_browser.contents, 'maincontent').renderContents())
+    ...     team_admin_browser.contents, 'maincontent').decode_contents())
     <BLANKLINE>
     ...
     <h2>Voting has closed</h2>

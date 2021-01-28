@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -6,11 +6,12 @@ __all__ = ['BugMessage', 'BugMessageSet']
 
 from email.utils import make_msgid
 
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
+import six
+from storm.properties import (
+    Int,
+    Unicode,
     )
+from storm.references import Reference
 from storm.store import Store
 from zope.interface import implementer
 
@@ -19,10 +20,8 @@ from lp.bugs.interfaces.bugmessage import (
     IBugMessageSet,
     )
 from lp.registry.interfaces.person import validate_public_person
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import (
     Message,
     MessageChunk,
@@ -30,30 +29,46 @@ from lp.services.messages.model.message import (
 
 
 @implementer(IBugMessage)
-class BugMessage(SQLBase):
+class BugMessage(StormBase):
     """A table linking bugs and messages."""
 
-    _table = 'BugMessage'
+    __storm_table__ = 'BugMessage'
 
-    def __init__(self, *args, **kw):
+    # db field names
+    id = Int(primary=True)
+
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    message_id = Int(name='message', allow_none=False)
+    message = Reference(message_id, 'Message.id')
+
+    bugwatch_id = Int(name='bugwatch', allow_none=True, default=None)
+    bugwatch = Reference(bugwatch_id, 'BugWatch.id')
+
+    remote_comment_id = Unicode(allow_none=True, default=None)
+    # -- The index of the message is cached in the DB.
+    index = Int(name='index', allow_none=False)
+    # -- The owner, cached from the message table using triggers.
+    owner_id = Int(
+        name="owner", allow_none=False, validator=validate_public_person)
+    owner = Reference(owner_id, "Person.id")
+
+    def __init__(self, owner=None, index=0, message=None, bug=None,
+                 bugwatch=None, remote_comment_id=None):
         # This is maintained by triggers to ensure validity, but we
         # also set it here to ensure it is visible to the transaction
         # creating a BugMessage.
-        kw['owner'] = owner = kw['message'].owner
-        assert owner is not None, "BugMessage's Message must have an owner"
-        super(BugMessage, self).__init__(*args, **kw)
-
-    # db field names
-    bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    message = ForeignKey(dbName='message', foreignKey='Message', notNull=True)
-    bugwatch = ForeignKey(dbName='bugwatch', foreignKey='BugWatch',
-        notNull=False, default=None)
-    remote_comment_id = StringCol(notNull=False, default=None)
-    # -- The index of the message is cached in the DB.
-    index = IntCol(notNull=True)
-    # -- The owner, cached from the message table using triggers.
-    owner = ForeignKey(dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        self.owner = message.owner
+        assert self.owner is not None, (
+            "BugMessage's Message must have an owner")
+        self.index = index
+        self.message = message
+        self.bug = bug
+        self.remote_comment_id = (
+            six.ensure_text(remote_comment_id) if remote_comment_id is not None
+            else None)
+        self.bugwatch = bugwatch
 
     def __repr__(self):
         return "<BugMessage at 0x%x message=%s index=%s>" % (
@@ -81,15 +96,18 @@ class BugMessageSet:
 
     def get(self, bugmessageid):
         """See `IBugMessageSet`."""
-        return BugMessage.get(bugmessageid)
+        store = IStore(BugMessage)
+        return store.get(BugMessage, bugmessageid)
 
     def getByBugAndMessage(self, bug, message):
         """See`IBugMessageSet`."""
-        return BugMessage.selectOneBy(bug=bug, message=message)
+        store = IStore(BugMessage)
+        return store.find(BugMessage, bug=bug, message=message).one()
 
     def getImportedBugMessages(self, bug):
         """See IBugMessageSet."""
-        return BugMessage.select("""
-            BugMessage.bug = %s
-            AND BugMessage.bugwatch IS NOT NULL
-            """ % sqlvalues(bug), orderBy='id')
+        store = IStore(BugMessage)
+        resultset = store.find(
+            BugMessage,
+            BugMessage.bug == bug, BugMessage.bugwatch != None)
+        return resultset.order_by(BugMessage.id)

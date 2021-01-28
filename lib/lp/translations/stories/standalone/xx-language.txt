@@ -48,7 +48,7 @@ the system detects it and warns the user.
     http://translations.launchpad.test/+languages/+add
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     There is already a language with that code.
 
@@ -113,7 +113,7 @@ about the selected language.
     http://translations.launchpad.test/+languages/es
 
     >>> print(extract_text(find_portlet(browser.contents, 'Plural forms'
-    ...     ).renderContents()))
+    ...     ).decode_contents()))
     Plural forms
     Spanish has 2 plural forms:
     Form 0 for 1.
@@ -166,7 +166,7 @@ form.
 
     >>> browser.open('http://translations.launchpad.test/+languages/ab')
     >>> print(extract_text(find_portlet(browser.contents, 'Plural forms'
-    ...     ).renderContents()))
+    ...     ).decode_contents()))
     Plural forms
     Unfortunately, Launchpad doesn't know the plural
     form information for this language...
@@ -265,7 +265,7 @@ so the user can fix it.
     http://translations.launchpad.test/+languages/es/+admin
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     There is already a language with that code.
 

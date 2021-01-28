@@ -96,8 +96,8 @@ has a productrelease.
     >>> browser.url
     'http://launchpad.test/firefox/trunk/1.0/+edit'
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     tag.renderContents()
-    'A project release already exists for this milestone.'
+    ...     print(tag.decode_contents())
+    A project release already exists for this milestone.
 
 
 == Editing a product release ==

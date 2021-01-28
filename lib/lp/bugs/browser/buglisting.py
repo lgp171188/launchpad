@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTask-related browser views."""
@@ -657,8 +657,8 @@ class BugTaskListingItem:
         else:
             milestone_name = None
         assignee = None
-        if self.assigneeID is not None:
-            assignee = self.people[self.assigneeID].displayname
+        if self.assignee_id is not None:
+            assignee = self.people[self.assignee_id].displayname
         reporter = self.people[self.bug.ownerID]
 
         # the case that there is no target context (e.g. viewing bug that

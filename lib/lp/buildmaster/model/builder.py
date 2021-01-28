@@ -9,19 +9,18 @@ __all__ = [
     'BuilderSet',
     ]
 
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLObjectNotFound,
-    StringCol,
-    )
+import pytz
 from storm.expr import (
     Coalesce,
     Count,
     Sum,
     )
-from storm.properties import Int
+from storm.properties import (
+    Bool,
+    DateTime,
+    Int,
+    Unicode,
+    )
 from storm.references import Reference
 from storm.store import Store
 from zope.component import getUtility
@@ -50,14 +49,12 @@ from lp.services.database.bulk import (
     load_related,
     )
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     ISlaveStore,
     IStore,
     )
-from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import (
     cachedproperty,
@@ -71,40 +68,63 @@ from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 
 
 @implementer(IBuilder, IHasBuildRecords)
-class Builder(SQLBase):
-    _table = 'Builder'
+class Builder(StormBase):
+    __storm_table__ = 'Builder'
+    __storm_order__ = ['id']
 
-    _defaultOrder = ['id']
-
-    url = StringCol(dbName='url', notNull=True)
-    name = StringCol(dbName='name', notNull=True)
-    title = StringCol(dbName='title', notNull=True)
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    _builderok = BoolCol(dbName='builderok', notNull=True)
-    failnotes = StringCol(dbName='failnotes')
-    virtualized = BoolCol(dbName='virtualized', default=True, notNull=True)
-    manual = BoolCol(dbName='manual', default=False)
-    vm_host = StringCol(dbName='vm_host')
-    active = BoolCol(dbName='active', notNull=True, default=True)
-    failure_count = IntCol(dbName='failure_count', default=0, notNull=True)
-    version = StringCol(dbName='version')
-    clean_status = EnumCol(
+    id = Int(primary=True)
+    url = Unicode(name='url', allow_none=False)
+    name = Unicode(name='name', allow_none=False)
+    title = Unicode(name='title', allow_none=False)
+    owner_id = Int(
+        name='owner', validator=validate_public_person, allow_none=False)
+    owner = Reference(owner_id, 'Person.id')
+    _builderok = Bool(name='builderok', allow_none=False)
+    failnotes = Unicode(name='failnotes')
+    virtualized = Bool(name='virtualized', default=True, allow_none=False)
+    manual = Bool(name='manual', default=False)
+    vm_host = Unicode(name='vm_host')
+    active = Bool(name='active', allow_none=False, default=True)
+    failure_count = Int(name='failure_count', default=0, allow_none=False)
+    version = Unicode(name='version')
+    clean_status = DBEnum(
         enum=BuilderCleanStatus, default=BuilderCleanStatus.DIRTY)
-    vm_reset_protocol = EnumCol(enum=BuilderResetProtocol)
-    date_clean_status_changed = UtcDateTimeCol()
+    vm_reset_protocol = DBEnum(enum=BuilderResetProtocol)
+    date_clean_status_changed = DateTime(tzinfo=pytz.UTC)
 
-    def _getBuilderok(self):
+    def __init__(self, processors, url, name, title, owner, active=True,
+                 virtualized=True, vm_host=None, vm_reset_protocol=None,
+                 builderok=True, manual=False):
+        super(Builder, self).__init__()
+        # The processors cache starts out empty so that the processors
+        # property setter doesn't issue an additional query.
+        get_property_cache(self)._processors_cache = []
+        self.url = url
+        self.name = name
+        self.title = title
+        self.owner = owner
+        self.active = active
+        self.virtualized = virtualized
+        self.vm_host = vm_host
+        self.vm_reset_protocol = vm_reset_protocol
+        self._builderok = builderok
+        self.manual = manual
+        # We have to add the new object to the store here (it might more
+        # normally be done in BuilderSet.new), because the processors
+        # property setter needs to link other objects to it.
+        IStore(Builder).add(self)
+        self.processors = processors
+
+    @property
+    def builderok(self):
         return self._builderok
 
-    def _setBuilderok(self, value):
+    @builderok.setter
+    def builderok(self, value):
         self._builderok = value
         if value is True:
             self.resetFailureCount()
             self.setCleanStatus(BuilderCleanStatus.DIRTY)
-
-    builderok = property(_getBuilderok, _setBuilderok)
 
     def gotFailure(self):
         """See `IBuilder`."""
@@ -124,10 +144,12 @@ class Builder(SQLBase):
             BuilderProcessor.processor_id == Processor.id,
             BuilderProcessor.builder == self).order_by(Processor.name))
 
-    def _processors(self):
+    @property
+    def processors(self):
         return self._processors_cache
 
-    def _set_processors(self, processors):
+    @processors.setter
+    def processors(self, processors):
         existing = set(self.processors)
         wanted = set(processors)
         # Enable the wanted but missing.
@@ -143,8 +165,6 @@ class Builder(SQLBase):
             BuilderProcessor.processor_id.is_in(
                 processor.id for processor in existing - wanted)).remove()
         del get_property_cache(self)._processors_cache
-
-    processors = property(_processors, _set_processors)
 
     @property
     def processor(self):
@@ -218,14 +238,11 @@ class BuilderSet(object):
         self.title = "The Launchpad build farm"
 
     def __iter__(self):
-        return iter(Builder.select())
+        return iter(IStore(Builder).find(Builder))
 
     def getByName(self, name):
         """See IBuilderSet."""
-        try:
-            return Builder.selectOneBy(name=name)
-        except SQLObjectNotFound:
-            raise NotFoundError(name)
+        return IStore(Builder).find(Builder, name=name).one()
 
     def __getitem__(self, name):
         return self.getByName(name)
@@ -234,35 +251,39 @@ class BuilderSet(object):
             virtualized=False, vm_host=None, vm_reset_protocol=None,
             manual=True):
         """See IBuilderSet."""
-        return Builder(processors=processors, url=url, name=name, title=title,
-                       owner=owner, active=active, virtualized=virtualized,
-                       vm_host=vm_host, vm_reset_protocol=vm_reset_protocol,
-                       _builderok=True, manual=manual)
+        return Builder(
+            processors=processors, url=url, name=name, title=title,
+            owner=owner, active=active, virtualized=virtualized,
+            vm_host=vm_host, vm_reset_protocol=vm_reset_protocol,
+            builderok=True, manual=manual)
 
     def get(self, builder_id):
         """See IBuilderSet."""
-        return Builder.get(builder_id)
+        builder = IStore(Builder).get(Builder, builder_id)
+        if builder is None:
+            raise NotFoundError(builder_id)
+        return builder
 
     def count(self):
         """See IBuilderSet."""
-        return Builder.select().count()
+        return IStore(Builder).find(Builder).count()
 
     def preloadProcessors(self, builders):
         """See `IBuilderSet`."""
         # Grab (Builder.id, Processor.id) pairs and stuff them into the
         # Builders' processor caches.
         store = IStore(BuilderProcessor)
-        builder_ids = [b.id for b in builders]
+        builders_by_id = {b.id: b for b in builders}
         pairs = list(store.using(BuilderProcessor, Processor).find(
             (BuilderProcessor.builder_id, BuilderProcessor.processor_id),
             BuilderProcessor.processor_id == Processor.id,
-            BuilderProcessor.builder_id.is_in(builder_ids)).order_by(
+            BuilderProcessor.builder_id.is_in(builders_by_id)).order_by(
                 BuilderProcessor.builder_id, Processor.name))
         load(Processor, [pid for bid, pid in pairs])
         for builder in builders:
             get_property_cache(builder)._processors_cache = []
         for bid, pid in pairs:
-            cache = get_property_cache(store.get(Builder, bid))
+            cache = get_property_cache(builders_by_id[bid])
             cache._processors_cache.append(store.get(Processor, pid))
 
     def getBuilders(self):
@@ -274,7 +295,7 @@ class BuilderSet(object):
 
         def preload(rows):
             self.preloadProcessors(rows)
-            load_related(Person, rows, ['ownerID'])
+            load_related(Person, rows, ['owner_id'])
             bqs = getUtility(IBuildQueueSet).preloadForBuilders(rows)
             BuildQueue.preloadSpecificBuild(bqs)
         return DecoratedResultSet(rs, pre_iter_hook=preload)

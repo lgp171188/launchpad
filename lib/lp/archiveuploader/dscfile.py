@@ -31,6 +31,7 @@ from debian.deb822 import (
     PkgRelation,
     )
 import scandir
+import six
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -313,7 +314,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
 
         if self.format is None:
             raise EarlyReturnUploadError(
-                "Unsupported source format: %s" % self._dict['Format'])
+                "Unsupported source format: %s" %
+                six.ensure_str(self._dict['Format']))
 
     #
     # Useful properties.
@@ -333,7 +335,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         """Return the DSC format."""
         try:
             return SourcePackageFormat.getTermByToken(
-                self._dict['Format']).value
+                six.ensure_text(self._dict['Format'])).value
         except LookupError:
             return None
 

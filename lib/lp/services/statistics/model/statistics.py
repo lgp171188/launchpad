@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes that implement LaunchpadStatistics."""
@@ -29,6 +29,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.product import Product
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
@@ -102,7 +103,8 @@ class LaunchpadStatisticSet:
         self.update('bug_count', Bug.select().count())
         ztm.commit()
 
-        self.update('bugtask_count', BugTask.select().count())
+        store = IStore(BugTask)
+        self.update('bugtask_count', store.find(BugTask).count())
         ztm.commit()
 
         self.update(
@@ -173,7 +175,7 @@ class LaunchpadStatisticSet:
         ztm.commit()
         self.update('pofile_count', POFile.select().count())
         ztm.commit()
-        self.update('pomsgid_count', POMsgID.select().count())
+        self.update('pomsgid_count', IStore(POMsgID).find(POMsgID).count())
         ztm.commit()
         self.update('language_count', Language.select(
             "POFile.language=Language.id",
@@ -205,19 +207,20 @@ class LaunchpadStatisticSet:
         ztm.commit()
 
     def _updateQuestionStatistics(self, ztm):
-        self.update('question_count', Question.select().count())
+        store = IStore(Question)
+        self.update('question_count', store.find(Question).count())
         ztm.commit()
 
         self.update(
             'answered_question_count',
-            Question.select(
-              'status = %s' % sqlvalues(QuestionStatus.ANSWERED)).count())
+            store.find(
+                Question, Question.status == QuestionStatus.ANSWERED).count())
         ztm.commit()
 
         self.update(
             'solved_question_count',
-            Question.select(
-              'status = %s' % sqlvalues(QuestionStatus.SOLVED)).count())
+            store.find(
+                Question, Question.status == QuestionStatus.SOLVED).count())
         ztm.commit()
 
         cur = cursor()

@@ -59,4 +59,13 @@ class ISigningServiceClient(Interface):
         :param public_key: The public key content, in bytes.
         :param description: The description of this key.
         :param created_at: datetime of when the key was created.
+        :return: A dict with 'fingerprint'
+        """
+
+    def addAuthorization(key_type, fingerprint, client_name):
+        """Authorize another client to use a key.
+
+        :param key_type: One of `SigningKeyType`.
+        :param fingerprint: The fingerprint of the signing key.
+        :param client_name: The name of the client to authorize.
         """

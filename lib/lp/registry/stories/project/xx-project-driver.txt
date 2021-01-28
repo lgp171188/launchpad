@@ -18,8 +18,8 @@ message informs them of the driver change.
     'http://launchpad.test/gnome'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     tag.renderContents()
-    'Successfully changed the driver to Sample Person'
+    ...     print(tag.decode_contents())
+    Successfully changed the driver to Sample Person
 
 Sample Person is listed as the driver of the project.
 

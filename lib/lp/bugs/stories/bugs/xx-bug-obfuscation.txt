@@ -17,8 +17,9 @@ description in the bug page.
 
     >>> description = find_tag_by_id(
     ...     user_browser.contents, 'edit-description')
-    >>> description.renderContents()
-    '...<p>Shirtpkdf user@domain.org lkjd hlkjfds...'
+    >>> print(description.decode_contents())
+    <BLANKLINE>
+    ...<p>Shirtpkdf user@domain.org lkjd hlkjfds...
 
 An anonymous cannot see the email address anywhere in the page.
 
@@ -33,5 +34,6 @@ An anonymous cannot see the email address anywhere in the page.
 
     >>> description = find_tag_by_id(
     ...     anon_browser.contents, 'edit-description')
-    >>> description.renderContents()
-    '...<p>Shirtpkdf &lt;email address hidden&gt; lkjd hlkjfds...'
+    >>> print(description.decode_contents())
+    <BLANKLINE>
+    ...<p>Shirtpkdf &lt;email address hidden&gt; lkjd hlkjfds...

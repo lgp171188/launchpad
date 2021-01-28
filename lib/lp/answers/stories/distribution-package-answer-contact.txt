@@ -88,5 +88,5 @@ Again a confirmation message is displayed.
 
     >>> browser.getControl('Continue').click()
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     You have been removed as an answer contact for evolution in Ubuntu.

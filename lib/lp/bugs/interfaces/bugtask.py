@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug task interfaces."""
@@ -374,6 +374,9 @@ class IllegalTarget(Exception):
 
 class IBugTaskDelete(Interface):
     """An interface for operations allowed with the Delete permission."""
+    def destroySelf():
+        """Removes this BugTask from the database."""
+
     @export_destructor_operation()
     @call_with(who=REQUEST_USER)
     @operation_for_version('devel')
@@ -395,30 +398,31 @@ class IBugTask(IHasBug, IBugTaskDelete):
     id = Int(title=_("Bug Task #"))
     bug = exported(
         BugField(title=_("Bug"), readonly=True))
+    bug_id = Int(title=_("The bug ID for this bug task"))
     product = Choice(
         title=_('Project'), required=False, vocabulary='Product')
-    productID = Attribute('The product ID')
+    product_id = Attribute('The product ID')
     productseries = Choice(
         title=_('Series'), required=False, vocabulary='ProductSeries')
-    productseriesID = Attribute('The product series ID')
+    productseries_id = Attribute('The product series ID')
     sourcepackagename = Choice(
         title=_("Package"), required=False,
         vocabulary='SourcePackageName')
-    sourcepackagenameID = Attribute('The sourcepackagename ID')
+    sourcepackagename_id = Attribute('The sourcepackagename ID')
     distribution = Choice(
         title=_("Distribution"), required=False, vocabulary='Distribution')
-    distributionID = Attribute('The distribution ID')
+    distribution_id = Attribute('The distribution ID')
     distroseries = Choice(
         title=_("Series"), required=False,
         vocabulary='DistroSeries')
-    distroseriesID = Attribute('The distroseries ID')
+    distroseries_id = Attribute('The distroseries ID')
     milestone = exported(ReferenceChoice(
         title=_('Milestone'),
         required=False,
         readonly=True,
         vocabulary='BugTaskMilestone',
         schema=Interface))  # IMilestone
-    milestoneID = Attribute('The id of the milestone.')
+    milestone_id = Attribute('The id of the milestone.')
 
     # The status and importance's vocabularies do not
     # contain an UNKNOWN item in bugtasks that aren't linked to a remote
@@ -440,7 +444,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
             title=_('Assigned to'), required=False,
             vocabulary='ValidAssignee',
             readonly=True))
-    assigneeID = Int(title=_('The assignee ID (for eager loading)'))
+    assignee_id = Int(title=_('The assignee ID (for eager loading)'))
     bugtargetdisplayname = exported(
         Text(title=_("The short, descriptive name of the target"),
              readonly=True),

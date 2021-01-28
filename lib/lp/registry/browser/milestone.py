@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Milestone views."""
@@ -234,7 +234,7 @@ class MilestoneViewMixin(object):
         # We want the assignees loaded as we show them in the milestone home
         # page.
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            [bug.assigneeID for bug in non_conjoined_slaves],
+            [bug.assignee_id for bug in non_conjoined_slaves],
             need_validity=True))
         return non_conjoined_slaves
 

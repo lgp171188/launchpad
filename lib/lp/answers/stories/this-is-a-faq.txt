@@ -60,7 +60,7 @@ relevant' option is selected.
     ...         else:
     ...             radio = '( )'
     ...         if button['value']:
-    ...             link = button.findNext('a').renderContents()
+    ...             link = button.findNext('a').decode_contents()
     ...         else:
     ...             link = ''
     ...         print(radio, label, link)

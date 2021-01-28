@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes that implement SourcePackage items."""
@@ -10,7 +10,10 @@ __all__ = [
     'SourcePackageQuestionTargetMixin',
     ]
 
-from operator import attrgetter
+from operator import (
+    attrgetter,
+    itemgetter,
+    )
 
 from storm.locals import (
     And,
@@ -58,6 +61,7 @@ from lp.registry.model.packaging import (
     PackagingUtil,
     )
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_updates,
@@ -224,31 +228,29 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
         not duplicated. include_status must be a sequence.
         """
         clauses = []
-        clauses.append(
-                """SourcePackagePublishingHistory.sourcepackagerelease =
-                   SourcePackageRelease.id AND
-                   SourcePackagePublishingHistory.sourcepackagename = %s AND
-                   SourcePackagePublishingHistory.distroseries = %s AND
-                   SourcePackagePublishingHistory.archive IN %s
-                """ % sqlvalues(
-                        self.sourcepackagename,
-                        self.distroseries,
-                        self.distribution.all_distro_archive_ids))
+        clauses.extend([
+            SourcePackagePublishingHistory.sourcepackagerelease ==
+                SourcePackageRelease.id,
+            SourcePackagePublishingHistory.sourcepackagename ==
+                self.sourcepackagename,
+            SourcePackagePublishingHistory.distroseries == self.distroseries,
+            SourcePackagePublishingHistory.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            ])
 
         if include_status:
             if not isinstance(include_status, list):
                 include_status = list(include_status)
-            clauses.append("SourcePackagePublishingHistory.status IN %s"
-                       % sqlvalues(include_status))
-
-        query = " AND ".join(clauses)
+            clauses.append(
+                SourcePackagePublishingHistory.status.is_in(include_status))
 
         if not order_by:
-            order_by = '-datepublished'
+            order_by = [Desc(SourcePackagePublishingHistory.datepublished)]
 
-        return SourcePackagePublishingHistory.select(
-            query, orderBy=order_by, clauseTables=['SourcePackageRelease'],
-            prejoinClauseTables=['SourcePackageRelease'])
+        rows = IStore(SourcePackagePublishingHistory).find(
+            (SourcePackagePublishingHistory, SourcePackageRelease),
+            *clauses).order_by(*order_by)
+        return DecoratedResultSet(rows, itemgetter(0))
 
     def _getFirstPublishingHistory(self, include_status=None, order_by=None):
         """As _getPublishingHistory, but just returns the first item."""
@@ -330,8 +332,8 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
     def releases(self):
         """See `ISourcePackage`."""
         packages = self._getPublishingHistory(
-            order_by=["SourcePackageRelease.version",
-                      "SourcePackagePublishingHistory.datepublished"])
+            order_by=[SourcePackageRelease.version,
+                      SourcePackagePublishingHistory.datepublished])
 
         return [DistributionSourcePackageRelease(
                 distribution=self.distribution,
@@ -774,14 +776,14 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
         distributionID = self.distroseries.distributionID
 
         def weight_function(bugtask):
-            if bugtask.sourcepackagenameID == sourcepackagenameID:
-                if bugtask.distroseriesID == seriesID:
+            if bugtask.sourcepackagename_id == sourcepackagenameID:
+                if bugtask.distroseries_id == seriesID:
                     return OrderedBugTask(1, bugtask.id, bugtask)
-                elif bugtask.distributionID == distributionID:
+                elif bugtask.distribution_id == distributionID:
                     return OrderedBugTask(2, bugtask.id, bugtask)
-            elif bugtask.distroseriesID == seriesID:
+            elif bugtask.distroseries_id == seriesID:
                 return OrderedBugTask(3, bugtask.id, bugtask)
-            elif bugtask.distributionID == distributionID:
+            elif bugtask.distribution_id == distributionID:
                 return OrderedBugTask(4, bugtask.id, bugtask)
             # Catch the default case, and where there is a task for the same
             # sourcepackage on a different distro.

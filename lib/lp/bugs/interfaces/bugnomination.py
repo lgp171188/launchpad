@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces related to bug nomination."""
@@ -127,7 +127,7 @@ class IBugNomination(IHasBug, IHasOwner):
     owner = exported(PublicPersonChoice(
         title=_('Submitter'), required=True, readonly=True,
         vocabulary='ValidPersonOrTeam'))
-    ownerID = Attribute('The db id of the owner.')
+    owner_id = Attribute('The db id of the owner.')
     decider = exported(PublicPersonChoice(
         title=_('Decided By'), required=False, readonly=True,
         vocabulary='ValidPersonOrTeam'))
@@ -192,6 +192,15 @@ class IBugNominationSet(Interface):
         Returns an IBugNomination. Raises a NotFoundError is the
         nomination was not found.
         """
+
+    def getByBugTarget(bug, target):
+        """Get a nomination by the bug and target.
+
+        Returns an IBugNomination, or None if none is found.
+        """
+
+    def findByBug(bug):
+        """Returns the list of IBugNomination for the given bug."""
 
 
 class IBugNominationForm(Interface):

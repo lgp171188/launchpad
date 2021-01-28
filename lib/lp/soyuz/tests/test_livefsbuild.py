@@ -160,11 +160,14 @@ class TestLiveFSBuild(TestCaseWithFactory):
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
             ]
-        for status in BuildStatus:
+        for status in BuildStatus.items:
+            build = self.factory.makeLiveFSBuild()
+            build.queueBuild()
+            build.updateStatus(status)
             if status in ok_cases:
-                self.assertTrue(self.build.can_be_cancelled)
+                self.assertTrue(build.can_be_cancelled)
             else:
-                self.assertFalse(self.build.can_be_cancelled)
+                self.assertFalse(build.can_be_cancelled)
 
     def test_cancel_not_in_progress(self):
         # The cancel() method for a pending build leaves it in the CANCELLED

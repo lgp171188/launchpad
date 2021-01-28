@@ -337,7 +337,7 @@ class EmailAddressExtractBugTrackerAndBugTest(ExtractBugTrackerAndBugTest):
         # addresses.
         self.assertRaises(UnrecognizedBugTrackerURL,
             self.bugwatch_set.extractBugTrackerAndBug,
-            url='this\.is@@a.bad.email.address')
+            url=r'this\.is@@a.bad.email.address')
 
     def test_invalid_bug_number(self):
         # Test does not make sense for email addresses.

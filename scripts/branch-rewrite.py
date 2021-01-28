@@ -10,6 +10,8 @@ documentation of the very simple 'protocol' Apache uses to talk to us, and
 lp.codehosting.rewrite.BranchRewriter for the logic of the rewritemap.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import _pythonpath
 
 import os
@@ -57,7 +59,8 @@ class BranchRewriteScript(LaunchpadScript):
                 transaction.abort()
                 # Mod-rewrite always gives us a newline terminated string.
                 if line:
-                    print rewriter.rewriteLine(line.strip())
+                    print(rewriter.rewriteLine(line.strip()))
+                    sys.stdout.flush()
                 else:
                     # Standard input has been closed, so die.
                     return
@@ -65,7 +68,8 @@ class BranchRewriteScript(LaunchpadScript):
                 sys.exit()
             except Exception:
                 self.logger.exception('Exception occurred:')
-                print "NULL"
+                print("NULL")
+                sys.stdout.flush()
                 # The exception might have been a DisconnectionError or
                 # similar. Cleanup such as database reconnection will
                 # not happen until the transaction is rolled back.

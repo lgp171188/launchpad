@@ -342,3 +342,29 @@ class TestLoggingWithinRequest(TestCaseWithFactory):
                     file.getvalue(),
                     '@SQL-stub-database SELECT * FROM surprise\n' +
                     "-" * 70 + "\n")
+
+    def test_gap_between_requests(self):
+        # The tracer doesn't get confused by statements executed between
+        # requests.
+        tracer = da.LaunchpadStatementTracer()
+        with person_logged_in(self.person):
+            with StormStatementRecorder() as logger:
+                tracer.connection_raw_execute(
+                    self.connection, None, 'SELECT * FROM one', ())
+                tracer.connection_raw_execute_success(
+                    self.connection, None, 'SELECT * FROM one', ())
+            self.assertEqual(['SELECT * FROM one'], logger.statements)
+            da.clear_request_started()
+            with StormStatementRecorder() as logger:
+                tracer.connection_raw_execute(
+                    self.connection, None, 'SELECT * FROM two', ())
+                tracer.connection_raw_execute_success(
+                    self.connection, None, 'SELECT * FROM two', ())
+            self.assertEqual(['SELECT * FROM two'], logger.statements)
+            da.set_request_started(2000.0)
+            with StormStatementRecorder() as logger:
+                tracer.connection_raw_execute(
+                    self.connection, None, 'SELECT * FROM three', ())
+                tracer.connection_raw_execute_success(
+                    self.connection, None, 'SELECT * FROM three', ())
+            self.assertEqual(['SELECT * FROM three'], logger.statements)

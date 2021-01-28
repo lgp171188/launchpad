@@ -37,6 +37,7 @@ from zope.formlib.textwidgets import TextWidget
 from zope.formlib.widget import DisplayWidget
 
 from lp.app.validators import LaunchpadValidationError
+from lp.services.utils import round_half_up
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
 
@@ -390,9 +391,9 @@ class DateTimeWidget(TextWidget):
         try:
             year, month, day, hour, minute, second, dummy_tz = parse(input)
             second, micro = divmod(second, 1.0)
-            micro = round(micro * 1000000)
+            micro = round_half_up(micro * 1000000)
             dt = datetime(year, month, day,
-                          hour, minute, int(second), int(micro))
+                          hour, minute, int(second), micro)
         except (DateTimeError, ValueError, IndexError) as v:
             raise ConversionError('Invalid date value', v)
         return self.time_zone.localize(dt)
@@ -407,8 +408,8 @@ class DateTimeWidget(TextWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         DateTimes are displayed without the corresponding time zone
         information:
@@ -561,8 +562,8 @@ class DateWidget(DateTimeWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         The widget ignores time and time zone information, returning only
         the date:

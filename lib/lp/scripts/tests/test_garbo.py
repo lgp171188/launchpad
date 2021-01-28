@@ -1181,9 +1181,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             path="sample path"))))
         self.runDaily()
         self.assertEqual(0, len(list(store.find(TimeLimitedToken,
-            path="sample path", token=hashlib.sha256("foo").hexdigest()))))
+            path="sample path", token=hashlib.sha256(b"foo").hexdigest()))))
         self.assertEqual(1, len(list(store.find(TimeLimitedToken,
-            path="sample path", token=hashlib.sha256("bar").hexdigest()))))
+            path="sample path", token=hashlib.sha256(b"bar").hexdigest()))))
 
     def test_CacheSuggestivePOTemplates(self):
         switch_dbuser('testadmin')
@@ -1251,7 +1251,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             potmsgset_pofile[translation_message.potmsgset.id] = pofile.id
         transaction.commit()
         store = IMasterStore(POTMsgSet)
-        test_ids = potmsgset_pofile.keys()
+        test_ids = list(potmsgset_pofile)
         obsolete_msgsets = store.find(
             POTMsgSet,
             In(TranslationTemplateItem.potmsgsetID, test_ids),

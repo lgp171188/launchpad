@@ -54,7 +54,7 @@ his two translatable languages. The page also displays two messages
 confirming his changes.
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     Added Welsh to your preferred languages.<br/>Removed Spanish from your
     preferred languages.
 
@@ -196,7 +196,7 @@ page will nag you about it.
     ...     """Return the nag message as shown in browser, if present."""
     ...     tag = find_tag_by_id(browser.contents, 'no-languages')
     ...     if tag:
-    ...         return tag.renderContents()
+    ...         return tag.decode_contents()
     ...     else:
     ...         return None
 

@@ -13,6 +13,7 @@ import os
 import shutil
 import tempfile
 
+import six
 from testtools import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -71,7 +72,7 @@ class FakeBuildFarmJob:
 class FakeLibraryFileContent:
 
     def __init__(self, filename):
-        self.sha1 = hashlib.sha1(filename).hexdigest()
+        self.sha1 = hashlib.sha1(six.ensure_binary(filename)).hexdigest()
 
 
 class FakeLibraryFileAlias:
@@ -184,7 +185,7 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
             ('ensurepresent', 'http://host/bar.tar', 'admin', 'sekrit'),
             ('ensurepresent', 'http://host/foo.dsc', '', ''),
             ('build', 'PACKAGEBUILD-1', 'foobuild',
-             hashlib.sha1(chroot_filename).hexdigest(),
+             hashlib.sha1(six.ensure_binary(chroot_filename)).hexdigest(),
              ['foo.dsc', 'bar.tar'],
              {'archives': ['http://admin:sekrit@blah/'],
               'image_type': image_type,

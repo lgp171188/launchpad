@@ -5,6 +5,8 @@
 Run the doctests and pagetests.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import os
@@ -23,7 +25,7 @@ from lp.testing.systemdocs import (
 class MockTransport:
     disconnecting = False
 
-    bytesWritten = ''
+    bytesWritten = b''
     connectionLost = False
 
     def write(self, bytes):
@@ -43,7 +45,7 @@ class MockLibrary:
 
 
 class MockFile:
-    bytes = ''
+    bytes = b''
     stored = False
     databaseName = None
     debugID = None
@@ -72,7 +74,7 @@ def upload_request(request):
     closed, e.g.::
 
         reply: '200'
-        file u'foo.txt' stored as text/plain, contents: 'Foo!'
+        file 'foo.txt' stored as text/plain, contents: 'Foo!'
 
     or::
 
@@ -91,7 +93,7 @@ def upload_request(request):
     from twisted.python import log
 
     def log_observer(x):
-        print >> sys.stderr, x
+        print(x, file=sys.stderr)
         if 'failure' in x:
             x['failure'].printTraceback(file=sys.stderr)
 
@@ -113,18 +115,18 @@ def upload_request(request):
     server.fileLibrary = MockLibrary()
 
     # Feed in the request
-    server.dataReceived(request.replace('\n', '\r\n'))
+    server.dataReceived(request.replace(b'\n', b'\r\n'))
 
     # Report on what happened
-    print "reply: %r" % server.transport.bytesWritten.rstrip('\r\n')
+    print("reply: %r" % server.transport.bytesWritten.rstrip(b'\r\n'))
 
     if server.transport.connectionLost:
-        print 'connection closed'
+        print('connection closed')
 
     mockFile = server.fileLibrary.file
     if mockFile is not None and mockFile.stored:
-        print "file %r stored as %s, contents: %r" % (
-                mockFile.name, mockFile.mimetype, mockFile.bytes)
+        print("file '%s' stored as %s, contents: %r" % (
+                mockFile.name, mockFile.mimetype, mockFile.bytes))
 
     # Cleanup: remove the observer.
     log.removeObserver(log_observer)
@@ -135,12 +137,12 @@ here = os.path.dirname(os.path.realpath(__file__))
 special = {
     'librarian-report.txt': LayeredDocFileSuite(
             '../doc/librarian-report.txt',
-            setUp=setUp, tearDown=tearDown,
+            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
             layer=LaunchpadZopelessLayer
             ),
     'upload.txt': LayeredDocFileSuite(
             '../doc/upload.txt',
-            setUp=setUp, tearDown=tearDown,
+            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
             layer=LaunchpadZopelessLayer,
             globs={'upload_request': upload_request},
             ),

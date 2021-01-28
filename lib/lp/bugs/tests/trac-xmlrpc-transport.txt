@@ -22,7 +22,7 @@ All the methods need an authentication cookie to be sent.
 This test transport doesn't validate the cookie, it just ensures that
 some cookie is set.
 
-    >>> trac_transport.auth_cookie = 'auth-cookie'
+    >>> trac_transport.setCookie('trac_auth=auth_cookie')
 
 
 == launchpad.bugtracker_version() ==

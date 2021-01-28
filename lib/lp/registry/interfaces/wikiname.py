@@ -47,12 +47,6 @@ class IWikiName(IHasOwner):
 class IWikiNameSet(Interface):
     """The set of WikiNames."""
 
-    def getByWikiAndName(wiki, wikiname):
-        """Return the WikiName with the given wiki and wikiname.
-
-        Return None if it doesn't exists.
-        """
-
     def get(id):
         """Return the WikiName with the given id or None."""
 

@@ -6,7 +6,10 @@ import unittest
 
 import scandir
 
-from lp.testing.pages import PageTestSuite
+from lp.testing.pages import (
+    PageTestSuite,
+    setUpGlobs,
+    )
 
 
 here = os.path.dirname(os.path.realpath(__file__))
@@ -18,8 +21,10 @@ def test_suite():
         if not entry.name.startswith('.') and entry.is_dir())
 
     suite = unittest.TestSuite()
-    suite.addTest(PageTestSuite('.'))
+    suite.addTest(PageTestSuite(
+        '.', setUp=lambda test: setUpGlobs(test, future=True)))
     for storydir in stories:
-        suite.addTest(PageTestSuite(storydir))
+        suite.addTest(PageTestSuite(
+            storydir, setUp=lambda test: setUpGlobs(test, future=True)))
 
     return suite

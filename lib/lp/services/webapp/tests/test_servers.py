@@ -8,7 +8,7 @@ from doctest import (
     ELLIPSIS,
     NORMALIZE_WHITESPACE,
     )
-import StringIO
+import io
 import unittest
 
 from lazr.restful.interfaces import (
@@ -60,7 +60,7 @@ class SetInWSGIEnvironmentTestCase(TestCase):
     def test_set(self):
         # Test that setInWSGIEnvironment() can set keys in the WSGI
         # environment.
-        data = StringIO.StringIO('foo')
+        data = io.BytesIO(b'foo')
         env = {}
         request = LaunchpadBrowserRequest(data, env)
         request.setInWSGIEnvironment('key', 'value')
@@ -69,7 +69,7 @@ class SetInWSGIEnvironmentTestCase(TestCase):
     def test_set_fails_for_existing_key(self):
         # Test that setInWSGIEnvironment() fails if the user tries to
         # set a key that existed in the WSGI environment.
-        data = StringIO.StringIO('foo')
+        data = io.BytesIO(b'foo')
         env = {'key': 'old value'}
         request = LaunchpadBrowserRequest(data, env)
         self.assertRaises(KeyError,
@@ -79,7 +79,7 @@ class SetInWSGIEnvironmentTestCase(TestCase):
     def test_set_twice(self):
         # Test that setInWSGIEnvironment() can change the value of
         # keys in the WSGI environment that it had previously set.
-        data = StringIO.StringIO('foo')
+        data = io.BytesIO(b'foo')
         env = {}
         request = LaunchpadBrowserRequest(data, env)
         request.setInWSGIEnvironment('key', 'first value')
@@ -89,7 +89,7 @@ class SetInWSGIEnvironmentTestCase(TestCase):
     def test_set_after_retry(self):
         # Test that setInWSGIEnvironment() a key in the environment
         # can be set twice over a request retry.
-        data = StringIO.StringIO('foo')
+        data = io.BytesIO(b'foo')
         env = {}
         request = LaunchpadBrowserRequest(data, env)
         request.setInWSGIEnvironment('key', 'first value')
@@ -106,7 +106,7 @@ class TestApplicationServerSettingRequestFactory(TestCase):
         # when the protocol is https.
         factory = ApplicationServerSettingRequestFactory(
             LaunchpadBrowserRequest, 'launchpad.test', 'https', 443)
-        request = factory(StringIO.StringIO(), {'HTTP_HOST': 'launchpad.test'})
+        request = factory(io.BytesIO(), {'HTTP_HOST': 'launchpad.test'})
         self.assertEqual(
             request.get('HTTPS'), 'on', "factory didn't set the HTTPS env")
         # This is a sanity check ensuring that effect of this works as
@@ -118,7 +118,7 @@ class TestApplicationServerSettingRequestFactory(TestCase):
         # request when the protocol is http.
         factory = ApplicationServerSettingRequestFactory(
             LaunchpadBrowserRequest, 'launchpad.test', 'http', 80)
-        request = factory(StringIO.StringIO(), {})
+        request = factory(io.BytesIO(), {})
         self.assertEqual(
             request.get('HTTPS'), None,
             "factory should not have set HTTPS env")
@@ -348,7 +348,7 @@ class TestWebServiceRequest(WebServiceTestCase):
         self.assertEqual(request.getApplicationURL(), server_url)
 
     def test_response_should_vary_based_on_content_type(self):
-        request = WebServiceClientRequest(StringIO.StringIO(''), {})
+        request = WebServiceClientRequest(io.BytesIO(b''), {})
         self.assertEqual(
             request.response.getHeader('Vary'), 'Accept')
 
@@ -360,20 +360,20 @@ class TestBasicLaunchpadRequest(TestCase):
 
     def test_baserequest_response_should_vary(self):
         """Test that our base response has a proper vary header."""
-        request = LaunchpadBrowserRequest(StringIO.StringIO(''), {})
+        request = LaunchpadBrowserRequest(io.BytesIO(b''), {})
         self.assertEqual(
             request.response.getHeader('Vary'), 'Cookie, Authorization')
 
     def test_baserequest_response_should_vary_after_retry(self):
         """Test that our base response has a proper vary header."""
-        request = LaunchpadBrowserRequest(StringIO.StringIO(''), {})
+        request = LaunchpadBrowserRequest(io.BytesIO(b''), {})
         retried_request = request.retry()
         self.assertEqual(
             retried_request.response.getHeader('Vary'),
             'Cookie, Authorization')
 
     def test_baserequest_security_headers(self):
-        response = LaunchpadBrowserRequest(StringIO.StringIO(''), {}).response
+        response = LaunchpadBrowserRequest(io.BytesIO(b''), {}).response
         self.assertEqual(
             response.getHeader('Content-Security-Policy'),
             "frame-ancestors 'self';")
@@ -388,7 +388,7 @@ class TestBasicLaunchpadRequest(TestCase):
                 'Strict-Transport-Security'), 'max-age=15552000')
 
     def test_baserequest_revision_header(self):
-        response = LaunchpadBrowserRequest(StringIO.StringIO(''), {}).response
+        response = LaunchpadBrowserRequest(io.BytesIO(b''), {}).response
         self.assertEqual(
             versioninfo.revision, response.getHeader('X-Launchpad-Revision'))
 
@@ -398,14 +398,14 @@ class TestBasicLaunchpadRequest(TestCase):
         # is instantiated.
         bad_path = 'fnord/trunk\xE4'
         env = {'PATH_INFO': bad_path}
-        request = LaunchpadBrowserRequest(StringIO.StringIO(''), env)
+        request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
         self.assertEqual(u'fnord/trunk\ufffd', request.getHeader('PATH_INFO'))
 
     def test_request_with_invalid_query_string_recovers(self):
         # When the query string has invalid utf-8, it is decoded with
         # replacement.
         env = {'QUERY_STRING': 'field.title=subproc\xe9s '}
-        request = LaunchpadBrowserRequest(StringIO.StringIO(''), env)
+        request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
         self.assertEqual(
             [u'subproc\ufffds '], request.query_string_params['field.title'])
 
@@ -461,7 +461,7 @@ class TestFeedsBrowserRequest(TestCase):
     def test_not_strict_transport_security(self):
         # Feeds are served over HTTP, so no Strict-Transport-Security
         # header is sent.
-        response = FeedsBrowserRequest(StringIO.StringIO(''), {}).response
+        response = FeedsBrowserRequest(io.BytesIO(b''), {}).response
         self.assertIs(None, response.getHeader('Strict-Transport-Security'))
 
 
@@ -471,7 +471,7 @@ class TestPrivateXMLRPCRequest(TestCase):
     def test_not_strict_transport_security(self):
         # Private XML-RPC is served over HTTP, so no Strict-Transport-Security
         # header is sent.
-        response = PrivateXMLRPCRequest(StringIO.StringIO(''), {}).response
+        response = PrivateXMLRPCRequest(io.BytesIO(b''), {}).response
         self.assertIs(None, response.getHeader('Strict-Transport-Security'))
 
 
@@ -486,13 +486,13 @@ class TestLaunchpadBrowserRequestMixin:
 
     def test_is_ajax_false(self):
         """Normal requests do not define HTTP_X_REQUESTED_WITH."""
-        request = self.request_factory(StringIO.StringIO(''), {})
+        request = self.request_factory(io.BytesIO(b''), {})
 
         self.assertFalse(request.is_ajax)
 
     def test_is_ajax_true(self):
         """Requests with HTTP_X_REQUESTED_WITH set are ajax requests."""
-        request = self.request_factory(StringIO.StringIO(''), {
+        request = self.request_factory(io.BytesIO(b''), {
             'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
             })
 
@@ -508,7 +508,7 @@ class TestLaunchpadBrowserRequestMixin:
             "SCRIPT_NAME": "/sabbra/cadabra",
             "QUERY_STRING": "tuesday=gone",
             }
-        request = self.request_factory(StringIO.StringIO(''), environ)
+        request = self.request_factory(io.BytesIO(b''), environ)
         self.assertEqual(
             "http://geturl.example.com/sabbra/cadabra",
             request.getURL())
@@ -529,7 +529,7 @@ class TestLaunchpadBrowserRequestMixin:
             "SCRIPT_NAME": "/sabbra/cadabra",
             "QUERY_STRING": "tuesday=gone",
             }
-        request = self.request_factory(StringIO.StringIO(''), environ)
+        request = self.request_factory(io.BytesIO(b''), environ)
         self.assertEqual(
             "http://geturl.example.com/sabbra/cadabra?tuesday=gone",
             request.getURL(include_query=True))

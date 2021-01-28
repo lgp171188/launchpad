@@ -1267,7 +1267,7 @@ class Publisher(object):
             release_file["NotAutomatic"] = "yes"
             release_file["ButAutomaticUpgrades"] = "yes"
 
-        for filename in sorted(all_files, key=os.path.dirname):
+        for filename in sorted(all_files):
             hashes = self._readIndexFileHashes(suite, filename)
             if hashes is None:
                 continue
@@ -1574,8 +1574,9 @@ class DirectoryHash:
                     hashobj.update(chunk)
 
         for (checksum_file, hashobj) in hashes:
-            checksum_file.write("%s *%s\n" %
-                (hashobj.hexdigest(), path[len(self.root) + 1:]))
+            checksum_line = "%s *%s\n" % (
+                hashobj.hexdigest(), path[len(self.root) + 1:])
+            checksum_file.write(checksum_line.encode("UTF-8"))
 
     def add_dir(self, path):
         """Recursively add a directory path to be checksummed."""

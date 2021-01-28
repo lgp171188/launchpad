@@ -32,7 +32,6 @@ from storm.locals import (
     DateTime,
     Int,
     Reference,
-    Store,
     Unicode,
     )
 from zope.component import (
@@ -616,7 +615,7 @@ class TranslationImportQueueEntry(StormBase):
                            "because entry %d is in the way." % (
                                potemplate.title, self.id, self.path,
                                existing_entry.id))
-                logging.warn(warning)
+                logging.warning(warning)
                 return None
 
             # We got the potemplate, try to guess the language from
@@ -803,11 +802,6 @@ class TranslationImportQueueEntry(StormBase):
             return self._get_pofile_from_language(
                 lang_code, translation_domain,
                 sourcepackagename=self.sourcepackagename)
-
-    def getFileContent(self):
-        """See ITranslationImportQueueEntry."""
-        client = getUtility(ILibrarianClient)
-        return client.getFileByAlias(self.content.id).read()
 
     def getTemplatesOnSameDirectory(self):
         """See ITranslationImportQueueEntry."""

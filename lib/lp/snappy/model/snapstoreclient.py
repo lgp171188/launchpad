@@ -12,10 +12,6 @@ __all__ = [
 
 import base64
 import json
-try:
-    from json.decoder import JSONDecodeError
-except ImportError:
-    JSONDecodeError = ValueError
 import string
 import time
 
@@ -225,7 +221,7 @@ class SnapStoreClient:
         if requests_error.response.content:
             try:
                 response_data = requests_error.response.json()
-            except JSONDecodeError:
+            except ValueError:
                 pass
             else:
                 if "error_list" in response_data:
@@ -432,7 +428,7 @@ class SnapStoreClient:
         if cached_channels is not None:
             try:
                 channels = json.loads(cached_channels)
-            except JSONDecodeError:
+            except ValueError:
                 log.exception(
                     "Cannot load cached channels for %s; deleting" %
                     search_host)

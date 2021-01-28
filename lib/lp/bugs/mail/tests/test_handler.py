@@ -379,14 +379,14 @@ class BugTaskCommandGroupTestCase(TestCase):
         self.assertEqual(
             [command_1, command_2, command_3], group.commands)
 
-    def test_BugTaskCommandGroup__nonzero__false(self):
-        # A BugTaskCommandGroup is zero is it has no commands.
+    def test_BugTaskCommandGroup__bool__false(self):
+        # A BugTaskCommandGroup is false if it has no commands.
         group = BugTaskCommandGroup()
         self.assertEqual(0, len(group._commands))
         self.assertFalse(bool(group))
 
-    def test_BugTaskCommandGroup__nonzero__true(self):
-        # A BugTaskCommandGroup is non-zero is it has commands.
+    def test_BugTaskCommandGroup__bool__true(self):
+        # A BugTaskCommandGroup is true if it has commands.
         group = BugTaskCommandGroup(
             BugEmailCommands.get('affects', ['fnord']))
         self.assertEqual(1, len(group._commands))
@@ -470,23 +470,23 @@ class BugCommandGroupTestCase(TestCase):
         self.assertEqual(
             [affects_command, status_command], group.groups[0].commands)
 
-    def test_BugCommandGroup__nonzero__false(self):
-        # A BugCommandGroup is zero is it has no commands or groups.
+    def test_BugCommandGroup__bool__false(self):
+        # A BugCommandGroup is false if it has no commands or groups.
         group = BugCommandGroup()
         self.assertEqual(0, len(group._commands))
         self.assertEqual(0, len(group._groups))
         self.assertFalse(bool(group))
 
-    def test_BugCommandGroup__nonzero__true_commands(self):
-        # A BugCommandGroup is not zero is it has a command.
+    def test_BugCommandGroup__bool__true_commands(self):
+        # A BugCommandGroup is true if it has a command.
         group = BugCommandGroup(
             BugEmailCommands.get('private', ['true']))
         self.assertEqual(1, len(group._commands))
         self.assertEqual(0, len(group._groups))
         self.assertTrue(bool(group))
 
-    def test_BugCommandGroup__nonzero__true_groups(self):
-        # A BugCommandGroup is not zero is it has a group.
+    def test_BugCommandGroup__bool__true_groups(self):
+        # A BugCommandGroup is true if it has a group.
         group = BugCommandGroup()
         group.add(BugTaskCommandGroup(
             BugEmailCommands.get('affects', ['fnord'])))

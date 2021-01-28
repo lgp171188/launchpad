@@ -24,25 +24,25 @@ It shows the 5 latest questions asked:
 
     >>> latest_questions_asked = find_tag_by_id(
     ...     anon_browser.contents, 'latest-questions-asked')
-    >>> print(latest_questions_asked.find('h2').renderContents())
+    >>> print(latest_questions_asked.find('h2').decode_contents())
     Latest questions asked
     >>> for row in latest_questions_asked.findAll('li'):
-    ...     row.find('a').renderContents()
-    '...: Problemas de Impress\xc3\xa3o no Firefox'
-    '...: Problema al recompilar kernel con soporte smp (doble-n\xc3\xbacleo)'
-    '...: Continue playing after shutdown'
-    '...: Installation failed'
-    '...: Firefox loses focus and gets stuck'
+    ...     print(row.find('a').decode_contents())
+    13: Problemas de Impressão no Firefox
+    12: Problema al recompilar kernel con soporte smp (doble-núcleo)
+    11: Continue playing after shutdown
+    5: Installation failed
+    4: Firefox loses focus and gets stuck
 
 As well as the 5 latest questions solved:
 
     >>> latest_questions_solved = find_tag_by_id(
     ...     anon_browser.contents, 'latest-questions-solved')
-    >>> print(latest_questions_solved.find('h2').renderContents())
+    >>> print(latest_questions_solved.find('h2').decode_contents())
     Latest questions solved
     >>> for row in latest_questions_solved.findAll('li'):
-    ...     row.find('a').renderContents()
-    '...: mailto: problem in webpage'
+    ...     print(row.find('a').decode_contents())
+    9: mailto: problem in webpage
 
 The application footer also contains a sample of stats for the application:
 

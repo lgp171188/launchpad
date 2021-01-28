@@ -6,9 +6,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
-import re
 
-from testtools.testcase import ExpectedException
+import six
 
 from lp.archiveuploader.tests import datadir
 from lp.archiveuploader.utils import (
@@ -16,6 +15,7 @@ from lp.archiveuploader.utils import (
     determine_source_file_type,
     DpkgSourceError,
     extract_dpkg_source,
+    ParseMaintError,
     re_isadeb,
     re_issource,
     )
@@ -234,17 +234,32 @@ class TestUtilities(TestCase):
         """
         from lp.archiveuploader.utils import (
             parse_maintainer_bytes,
-            ParseMaintError,
             )
+
         cases = (
-            "James Troup",
-            "James Troup <james>",
-            "James Troup <james@nocrew.org",
-            b"No\xc3\xa8l K\xc3\xb6the")
+            ("James Troup",
+             'James Troup: no @ found in email address part.'),
+
+            ("James Troup <james>",
+             'James Troup <james>: no @ found in email address part.'),
+
+            ("James Troup <james@nocrew.org",
+             ("James Troup <james@nocrew.org: "
+              "doesn't parse as a valid Maintainer field.")),
+
+            (b"No\xc3\xa8l K\xc3\xb6the",
+             (b'No\xc3\xa8l K\xc3\xb6the: '
+              b'no @ found in email address '
+              b'part.').decode('utf-8')),
+        )
+
         for case in cases:
-            with ExpectedException(
-                    ParseMaintError, b'^%s: ' % re.escape(case)):
-                parse_maintainer_bytes(case, 'Maintainer')
+            try:
+                parse_maintainer_bytes(case[0], 'Maintainer')
+            except ParseMaintError as e:
+                self.assertEqual(case[1], six.text_type(e))
+            else:
+                self.fail('ParseMaintError not raised')
 
 
 class TestFilenameRegularExpressions(TestCase):
