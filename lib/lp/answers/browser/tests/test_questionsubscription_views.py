@@ -7,8 +7,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import json
+
 from lazr.restful.interfaces import IWebServiceClientRequest
-from simplejson import dumps
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import getUtility
@@ -52,7 +53,7 @@ class QuestionPortletSubscribersWithDetailsTests(TestCaseWithFactory):
     def test_data_no_subscriptions(self):
         question = self._makeQuestionWithNoSubscribers()
         view = create_view(question, '+portlet-subscribers-details')
-        self.assertEqual(dumps([]), view.subscriber_data_js)
+        self.assertEqual([], json.loads(view.subscriber_data_js))
 
     def test_data_person_subscription(self):
         # subscriber_data_js returns JSON string of a list
@@ -78,7 +79,7 @@ class QuestionPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             'subscription_level': "Direct",
             }
         self.assertEqual(
-            dumps([expected_result]), view.subscriber_data_js)
+            [expected_result], json.loads(view.subscriber_data_js))
 
     def test_data_person_subscription_other_subscriber_query_count(self):
         # All subscriber data should be retrieved with a single query.
@@ -122,7 +123,7 @@ class QuestionPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             'subscription_level': "Direct",
             }
         self.assertEqual(
-            dumps([expected_result]), view.subscriber_data_js)
+            [expected_result], json.loads(view.subscriber_data_js))
 
     def test_data_team_subscription_owner_looks(self):
         # For a team subscription, subscriber_data_js has can_edit
@@ -150,7 +151,7 @@ class QuestionPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             }
         with person_logged_in(subscriber.teamowner):
             self.assertEqual(
-                dumps([expected_result]), view.subscriber_data_js)
+                [expected_result], json.loads(view.subscriber_data_js))
 
     def test_data_team_subscription_member_looks(self):
         # For a team subscription, subscriber_data_js has can_edit
@@ -180,7 +181,7 @@ class QuestionPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             }
         with person_logged_in(subscriber.teamowner):
             self.assertEqual(
-                dumps([expected_result]), view.subscriber_data_js)
+                [expected_result], json.loads(view.subscriber_data_js))
 
     def test_data_subscription_lp_admin(self):
         # For a subscription, subscriber_data_js has can_edit
@@ -210,4 +211,4 @@ class QuestionPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         admin = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
         with person_logged_in(admin):
             self.assertEqual(
-                dumps([expected_result]), view.subscriber_data_js)
+                [expected_result], json.loads(view.subscriber_data_js))

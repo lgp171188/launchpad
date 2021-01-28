@@ -99,26 +99,26 @@ changes without requiring the combined image file to be recreated.
     >>> print new_positioning_file.read()
     /*...
     {
-        "../images/edit.png": [
+        "../images/add.png": [
             0,
-            -228
+            -114
         ],
         "../images/blue-bar.png": [
             0,
             -342
         ],
-        "../images/add.png": [
+        "../images/edit.png": [
             0,
-            -114
+            -228
         ]
     }
 
 The positions attribute can be cleared and loaded from the file.
 
     >>> print pretty(sprite_util.positions)
-    {u'../images/add.png': (0, -114),
-     u'../images/blue-bar.png': (0, -342),
-     u'../images/edit.png': (0, -228)}
+    {'../images/add.png': (0, -114),
+     '../images/blue-bar.png': (0, -342),
+     '../images/edit.png': (0, -228)}
     >>> sprite_util.positions = None
     >>> sprite_util.loadPositioning(new_positioning_file.name)
     >>> print pretty(sprite_util.positions)

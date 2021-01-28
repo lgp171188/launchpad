@@ -104,6 +104,7 @@ def make_portal():
     avatars (see `CodehostingAvatar`).
     """
     authentication_proxy = Proxy(
-        config.codehosting.authentication_endpoint)
-    codehosting_proxy = Proxy(config.codehosting.codehosting_endpoint)
+        config.codehosting.authentication_endpoint.encode('UTF-8'))
+    codehosting_proxy = Proxy(
+        config.codehosting.codehosting_endpoint.encode('UTF-8'))
     return get_portal(authentication_proxy, codehosting_proxy)

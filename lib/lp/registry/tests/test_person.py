@@ -245,25 +245,25 @@ class TestPersonTeams(TestCaseWithFactory):
         # still be retrieved by 'api_all_members'.  See bug #680461.
         self.factory.makeArchive(
             owner=self.user, purpose=ArchivePurpose.PARTNER)
-        expected_members = sorted([self.user, self.a_team.teamowner])
-        retrieved_members = sorted(list(self.a_team.api_all_members))
-        self.assertEqual(expected_members, retrieved_members)
+        expected_members = [self.user, self.a_team.teamowner]
+        retrieved_members = list(self.a_team.api_all_members)
+        self.assertContentEqual(expected_members, retrieved_members)
 
     def test_inTeam_person_no_archive(self):
         # If a person has no archive that person should still be retrieved by
         # 'api_all_members'.
-        expected_members = sorted([self.user, self.a_team.teamowner])
-        retrieved_members = sorted(list(self.a_team.api_all_members))
-        self.assertEqual(expected_members, retrieved_members)
+        expected_members = [self.user, self.a_team.teamowner]
+        retrieved_members = list(self.a_team.api_all_members)
+        self.assertContentEqual(expected_members, retrieved_members)
 
     def test_inTeam_person_ppa_archive(self):
         # If a person has a PPA that person should still be retrieved by
         # 'api_all_members'.
         self.factory.makeArchive(
             owner=self.user, purpose=ArchivePurpose.PPA)
-        expected_members = sorted([self.user, self.a_team.teamowner])
-        retrieved_members = sorted(list(self.a_team.api_all_members))
-        self.assertEqual(expected_members, retrieved_members)
+        expected_members = [self.user, self.a_team.teamowner]
+        retrieved_members = list(self.a_team.api_all_members)
+        self.assertContentEqual(expected_members, retrieved_members)
 
     def test_getOwnedTeams(self):
         # The iterator contains the teams that person owns, regardless of

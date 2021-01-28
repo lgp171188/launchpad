@@ -269,7 +269,7 @@ Similarly to users, teams with active PPAs cannot be renamed either.
     >>> sample_browser.getControl(name='field.name').value = 'duderinos'
     Traceback (most recent call last):
     ...
-    LookupError: name u'field.name'
+    LookupError: name ...'field.name'
     ...
 
     >>> print(extract_text(
@@ -557,7 +557,7 @@ all their PPAs.
     >>> cprov_browser.getControl(name="field.accepted")
     Traceback (most recent call last):
     ...
-    LookupError: name u'field.accepted'
+    LookupError: name ...'field.accepted'
     ...
 
     >>> print(extract_text(

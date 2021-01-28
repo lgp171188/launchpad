@@ -1396,15 +1396,6 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         return DecoratedResultSet(
             get_milestones_and_releases([self]), strip_product_id)
 
-    def packagedInDistros(self):
-        return IStore(Distribution).find(
-            Distribution,
-            Packaging.productseriesID == ProductSeries.id,
-            ProductSeries.product == self,
-            Packaging.distroseriesID == DistroSeries.id,
-            DistroSeries.distributionID == Distribution.id,
-            ).config(distinct=True).order_by(Distribution.name)
-
     def composeCustomLanguageCodeMatch(self):
         """See `HasCustomLanguageCodesMixin`."""
         return CustomLanguageCode.product == self
@@ -1470,7 +1461,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         productID = self.id
 
         def weight_function(bugtask):
-            if bugtask.productID == productID:
+            if bugtask.product_id == productID:
                 return OrderedBugTask(1, bugtask.id, bugtask)
             return OrderedBugTask(2, bugtask.id, bugtask)
 

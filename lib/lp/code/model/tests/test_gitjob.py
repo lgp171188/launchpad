@@ -104,7 +104,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
     def makeFakeRefs(paths):
         return {
             path: {"object": {
-                "sha1": hashlib.sha1(path).hexdigest(),
+                "sha1": hashlib.sha1(path.encode("UTF-8")).hexdigest(),
                 "type": "commit",
                 }}
             for path in paths}
@@ -113,7 +113,8 @@ class TestGitRefScanJob(TestCaseWithFactory):
     def makeFakeCommits(author, author_date_gen, paths):
         dates = {path: next(author_date_gen) for path in paths}
         return [{
-            "sha1": six.ensure_text(hashlib.sha1(path).hexdigest()),
+            "sha1": six.ensure_text(hashlib.sha1(
+                path.encode("UTF-8")).hexdigest()),
             "message": "tip of %s" % path,
             "author": {
                 "name": author.displayname,
@@ -126,7 +127,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 "time": int(seconds_since_epoch(dates[path])),
                 },
             "parents": [],
-            "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
+            "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
             } for path in paths]
 
     def assertRefsMatch(self, refs, repository, paths):
@@ -134,7 +135,8 @@ class TestGitRefScanJob(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=six.ensure_text(hashlib.sha1(path).hexdigest()),
+                commit_sha1=six.ensure_text(hashlib.sha1(
+                    path.encode("UTF-8")).hexdigest()),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))
@@ -200,11 +202,11 @@ class TestGitRefScanJob(TestCaseWithFactory):
             'git_repository_path': Equals(repository.unique_name),
             'ref_changes': Equals({
                 'refs/tags/1.0': {
-                    'old': {'commit_sha1': sha1('refs/tags/1.0')},
+                    'old': {'commit_sha1': sha1(b'refs/tags/1.0')},
                     'new': None},
                 'refs/tags/2.0': {
                     'old': None,
-                    'new': {'commit_sha1': sha1('refs/tags/2.0')}},
+                    'new': {'commit_sha1': sha1(b'refs/tags/2.0')}},
             })})
         self.assertThat(
             delivery,
@@ -276,10 +278,10 @@ class TestGitRefScanJob(TestCaseWithFactory):
         sha1 = lambda s: hashlib.sha1(s).hexdigest()
         new_refs = {
             'refs/heads/master': {
-                'sha1': sha1('master-ng'),
+                'sha1': sha1(b'master-ng'),
                 'type': 'commit'},
             'refs/tags/2.0': {
-                'sha1': sha1('2.0'),
+                'sha1': sha1(b'2.0'),
                 'type': 'commit'},
             }
         removed_refs = ['refs/tags/1.0']
@@ -292,14 +294,14 @@ class TestGitRefScanJob(TestCaseWithFactory):
              'git_repository_path': repository.unique_name,
              'ref_changes': {
                 'refs/heads/master': {
-                    'old': {'commit_sha1': sha1('refs/heads/master')},
-                    'new': {'commit_sha1': sha1('master-ng')}},
+                    'old': {'commit_sha1': sha1(b'refs/heads/master')},
+                    'new': {'commit_sha1': sha1(b'master-ng')}},
                 'refs/tags/1.0': {
-                    'old': {'commit_sha1': sha1('refs/tags/1.0')},
+                    'old': {'commit_sha1': sha1(b'refs/tags/1.0')},
                     'new': None},
                 'refs/tags/2.0': {
                     'old': None,
-                    'new': {'commit_sha1': sha1('2.0')}}}},
+                    'new': {'commit_sha1': sha1(b'2.0')}}}},
             payload)
 
 

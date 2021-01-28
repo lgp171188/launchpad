@@ -35,11 +35,15 @@
     <class
         class="lp.buildmaster.model.builder.Builder">
         <allow
-            interface="lp.buildmaster.interfaces.builder.IBuilderView"/>
+            interface="lp.buildmaster.interfaces.builder.IBuilderView
+                       lp.buildmaster.interfaces.builder.IBuilderModerateAttributes"/>
         <require
             permission="launchpad.Edit"
             interface="lp.buildmaster.interfaces.builder.IBuilderEdit"
             set_schema="lp.buildmaster.interfaces.builder.IBuilderView"/>
+        <require
+            permission="launchpad.Moderate"
+            set_schema="lp.buildmaster.interfaces.builder.IBuilderModerateAttributes"/>
     </class>
 
 

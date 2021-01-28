@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A utility module for the update-bugtasktargetnamecaches.py cronscript."""
@@ -32,8 +32,8 @@ from lp.services.looptuner import (
 # These two tuples must be in the same order. They specify the ID
 # columns to get from BugTask, and the classes that they correspond to.
 target_columns = (
-    BugTask.productID, BugTask.productseriesID, BugTask.distributionID,
-    BugTask.distroseriesID, BugTask.sourcepackagenameID,
+    BugTask.product_id, BugTask.productseries_id, BugTask.distribution_id,
+    BugTask.distroseries_id, BugTask.sourcepackagename_id,
     BugTask.targetnamecache)
 target_classes = (
     Product, ProductSeries, Distribution, DistroSeries, SourcePackageName)

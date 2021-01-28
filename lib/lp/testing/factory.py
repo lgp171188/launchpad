@@ -435,7 +435,7 @@ class ObjectFactory(
     _unique_int_counter = count(100000)
 
     def getUniqueEmailAddress(self):
-        return "%s@example.com" % self.getUniqueString('email')
+        return "%s@example.com" % self.getUniqueUnicode('email')
 
     def getUniqueInteger(self):
         """Return an integer unique to this factory instance.
@@ -519,44 +519,6 @@ class ObjectFactory(
         """
         epoch = datetime(2009, 1, 1, tzinfo=pytz.UTC)
         return epoch + timedelta(minutes=self.getUniqueInteger())
-
-    def makeCodeImportSourceDetails(self, target_id=None, rcstype=None,
-                                    target_rcstype=None, url=None,
-                                    cvs_root=None, cvs_module=None,
-                                    stacked_on_url=None, macaroon=None):
-        if not six.PY2:
-            raise NotImplementedError(
-                "Code imports do not yet work on Python 3.")
-
-        # XXX cjwatson 2020-08-07: Move this back up to module level once
-        # codeimport has been ported to Breezy.
-        from lp.codehosting.codeimport.worker import CodeImportSourceDetails
-
-        if target_id is None:
-            target_id = self.getUniqueInteger()
-        if rcstype is None:
-            rcstype = 'bzr-svn'
-        if target_rcstype is None:
-            target_rcstype = 'bzr'
-        if rcstype in ['bzr-svn', 'bzr']:
-            assert cvs_root is cvs_module is None
-            if url is None:
-                url = self.getUniqueURL()
-        elif rcstype == 'cvs':
-            assert url is None
-            if cvs_root is None:
-                cvs_root = self.getUniqueUnicode()
-            if cvs_module is None:
-                cvs_module = self.getUniqueUnicode()
-        elif rcstype == 'git':
-            assert cvs_root is cvs_module is None
-            if url is None:
-                url = self.getUniqueURL(scheme='git')
-        else:
-            raise AssertionError("Unknown rcstype %r." % rcstype)
-        return CodeImportSourceDetails(
-            target_id, rcstype, target_rcstype, url, cvs_root, cvs_module,
-            stacked_on_url=stacked_on_url, macaroon=macaroon)
 
 
 class BareLaunchpadObjectFactory(ObjectFactory):
@@ -2387,11 +2349,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if target is None:
             target = self.makeProduct()
         if title is None:
-            title = self.getUniqueString('title')
+            title = self.getUniqueUnicode('title')
         if owner is None:
             owner = target.owner
         if description is None:
-            description = self.getUniqueString('description')
+            description = self.getUniqueUnicode('description')
         with person_logged_in(owner):
             question = target.newQuestion(
                 owner=owner, title=title, description=description, **kwargs)
@@ -3016,11 +2978,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if processors is None:
             processors = [getUtility(IProcessorSet).getByName('386')]
         if url is None:
-            url = 'http://%s:8221/' % self.getUniqueString()
+            url = 'http://%s:8221/' % self.getUniqueUnicode()
         if name is None:
-            name = self.getUniqueString('builder-name')
+            name = self.getUniqueUnicode('builder-name')
         if title is None:
-            title = self.getUniqueString('builder-title')
+            title = self.getUniqueUnicode('builder-title')
         if owner is None:
             owner = self.makePerson()
         if virtualized and vm_reset_protocol is None:
@@ -3247,7 +3209,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if potemplate is None:
             potemplate = self.makePOTemplate()
         if singular is None and plural is None:
-            singular = self.getUniqueString()
+            singular = self.getUniqueUnicode()
         if sequence is None:
             sequence = self.getUniqueInteger()
         potmsgset = potemplate.createMessageSetFromText(
@@ -3270,8 +3232,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         if with_plural:
             if msgid is None:
-                msgid = self.getUniqueString()
-            plural = self.getUniqueString()
+                msgid = self.getUniqueUnicode()
+            plural = self.getUniqueUnicode()
         else:
             plural = None
 
@@ -3289,7 +3251,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         translations = removeSecurityProxy(translations)
         if translations is None:
-            return {0: self.getUniqueString()}
+            return {0: self.getUniqueUnicode()}
         if isinstance(translations, dict):
             return translations
         assert isinstance(translations, (list, tuple)), (
@@ -4490,7 +4452,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if date_fulfilled is None:
             date_fulfilled = UTC_NOW
         if diff_content is None:
-            diff_content = self.getUniqueString("packagediff")
+            diff_content = self.getUniqueBytes("packagediff")
         lfa = self.makeLibraryFileAlias(
             filename=diff_filename, content=diff_content)
         return ProxyFactory(

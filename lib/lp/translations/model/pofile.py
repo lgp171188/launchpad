@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """`SQLObject` implementation of `IPOFile` interface."""
@@ -30,10 +30,13 @@ from storm.expr import (
     Exists,
     Join,
     LeftJoin,
+    Like,
+    like_escape,
     Not,
     Or,
     Select,
     SQL,
+    Union,
     )
 from storm.info import ClassAlias
 from storm.store import (
@@ -58,9 +61,7 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     flush_database_updates,
     quote,
-    quote_like,
     SQLBase,
-    sqlvalues,
     )
 from lp.services.mail.helpers import get_email_template
 from lp.services.propertycache import cachedproperty
@@ -98,6 +99,7 @@ from lp.translations.model.potmsgset import (
     credits_message_str,
     POTMsgSet,
     )
+from lp.translations.model.potranslation import POTranslation
 from lp.translations.model.translationimportqueue import collect_import_info
 from lp.translations.model.translationmessage import TranslationMessage
 from lp.translations.model.translationtemplateitem import (
@@ -161,93 +163,89 @@ class POFileMixIn(RosettaStats):
         Returned values are POTMsgSet ids containing them, expected to be
         used in a UNION across all plural forms.
         """
-        translation_match = """
-        -- Find translations containing `text`.
-        -- Like in findPOTMsgSetsContaining(), to avoid seqscans on
-        -- POTranslation table, we do ILIKE comparison on them in
-        -- a subselect which is first filtered by the POFile.
-          SELECT TranslationMessage.potmsgset
-            FROM TranslationMessage
-            JOIN TranslationTemplateItem
-              ON TranslationMessage.potmsgset
-                   = TranslationTemplateItem.potmsgset
-            WHERE
-              TranslationTemplateItem.potemplate = %(potemplate)s AND
-              TranslationMessage.language = %(language)s AND
-              TranslationMessage.msgstr%(plural_form)d IN (
-                SELECT POTranslation.id FROM POTranslation WHERE
-                  POTranslation.id IN (
-                    SELECT DISTINCT(msgstr%(plural_form)d)
-                      FROM TranslationMessage AS tm_ids
-                      JOIN TranslationTemplateItem
-                        ON tm_ids.potmsgset=TranslationTemplateItem.potmsgset
-                      WHERE
-                        TranslationTemplateItem.potemplate
-                          = %(potemplate)s AND
-                        TranslationTemplateItem.sequence > 0 AND
-                        tm_ids.language=%(language)s
-                  ) AND
-                  POTranslation.translation
-                    ILIKE '%%' || %(text)s || '%%')
-                    """ % dict(potemplate=quote(pofile.potemplate),
-                               language=quote(pofile.language),
-                               plural_form=plural_form,
-                               text=quote_like(text))
-        return translation_match
+        # Find translations containing `text`.
+        # Like in findPOTMsgSetsContaining(), to avoid seqscans on
+        # POTranslation table, we do ILIKE comparison on them in a subselect
+        # which is first filtered by the POFile.
+        msgstr_column_name = "msgstr%d_id" % plural_form
+        tm_ids = ClassAlias(TranslationMessage, "tm_ids")
+        return Select(
+            TranslationMessage.potmsgsetID,
+            tables=(
+                TranslationMessage,
+                Join(
+                    TranslationTemplateItem,
+                    TranslationMessage.potmsgset ==
+                        TranslationTemplateItem.potmsgsetID)),
+            where=And(
+                TranslationTemplateItem.potemplate == pofile.potemplate,
+                TranslationMessage.language == pofile.language,
+                getattr(TranslationMessage, msgstr_column_name).is_in(Select(
+                    POTranslation.id,
+                    And(
+                        POTranslation.id.is_in(Select(
+                            getattr(tm_ids, msgstr_column_name),
+                            tables=(
+                                tm_ids,
+                                Join(
+                                    TranslationTemplateItem,
+                                    tm_ids.potmsgsetID ==
+                                        TranslationTemplateItem.potmsgsetID)),
+                            where=And(
+                                TranslationTemplateItem.potemplate ==
+                                    pofile.potemplate,
+                                TranslationTemplateItem.sequence > 0,
+                                tm_ids.languageID == pofile.languageID),
+                            distinct=True)),
+                        Like(
+                            POTranslation.translation,
+                            u"%" + text.translate(like_escape) + u"%",
+                            u"!", case_sensitive=False))))))
 
     def _getTemplateSearchQuery(self, text):
         """Query for finding `text` in msgids of this POFile.
         """
-        english_match = """
-        -- Step 1a: get POTMsgSets where msgid_singular contains `text`
-        -- To avoid seqscans on POMsgID table (what LIKE usually
-        -- does), we do ILIKE comparison on them in a subselect first
-        -- filtered by this POTemplate.
-          SELECT POTMsgSet.id
-            FROM POTMsgSet
-            JOIN TranslationTemplateItem
-              ON TranslationTemplateItem.potmsgset=POTMsgSet.id AND
-                 TranslationTemplateItem.potemplate=%s
-            WHERE
-              (POTMsgSet.msgid_singular IS NOT NULL AND
-               POTMsgSet.msgid_singular IN (
-                 SELECT POMsgID.id FROM POMsgID
-                   WHERE id IN (
-                     SELECT DISTINCT(POTMsgSet.msgid_singular)
-                       FROM POTMsgSet
-                       JOIN TranslationTemplateItem
-                         ON TranslationTemplateItem.potmsgset = POTMsgSet.id
-                       WHERE
-                         TranslationTemplateItem.potemplate=%s AND
-                         TranslationTemplateItem.sequence > 0
-                   ) AND
-                   msgid ILIKE '%%' || %s || '%%'))
-          UNION
-        -- Step 1b: like above, just on msgid_plural.
-          SELECT POTMsgSet.id
-            FROM POTMsgSet
-            JOIN TranslationTemplateItem
-              ON TranslationTemplateItem.potmsgset=POTMsgSet.id AND
-                 TranslationTemplateItem.potemplate=%s
-            WHERE
-              (POTMsgSet.msgid_plural IS NOT NULL AND
-               POTMsgSet.msgid_plural IN (
-                 SELECT POMsgID.id FROM POMsgID
-                   WHERE id IN (
-                     SELECT DISTINCT(POTMsgSet.msgid_plural)
-                       FROM POTMsgSet
-                       JOIN TranslationTemplateItem
-                         ON TranslationTemplateItem.potmsgset = POTMsgSet.id
-                       WHERE
-                         TranslationTemplateItem.potemplate=%s AND
-                         TranslationTemplateItem.sequence > 0
-                   ) AND
-                   msgid ILIKE '%%' || %s || '%%'))
-            """ % (quote(self.potemplate), quote(self.potemplate),
-                   quote_like(text),
-                   quote(self.potemplate), quote(self.potemplate),
-                   quote_like(text))
-        return english_match
+        def select_potmsgsets(column_name):
+            # Get POTMsgSets where `column_name` contains `text`.
+            # To avoid seqscans on POMsgID table (which LIKE usually does),
+            # we do ILIKE comparison on them in a subselect first filtered
+            # by this POTemplate.
+            msgid_column_id = getattr(POTMsgSet, column_name + "_id")
+            return Select(
+                POTMsgSet.id,
+                tables=(
+                    POTMsgSet,
+                    Join(
+                        TranslationTemplateItem,
+                        And(
+                            TranslationTemplateItem.potmsgset == POTMsgSet.id,
+                            TranslationTemplateItem.potemplate ==
+                                self.potemplate))),
+                where=And(
+                    msgid_column_id != None,
+                    msgid_column_id.is_in(Select(
+                        POMsgID.id,
+                        And(
+                            POMsgID.id.is_in(Select(
+                                msgid_column_id,
+                                tables=(
+                                    POTMsgSet,
+                                    Join(
+                                        TranslationTemplateItem,
+                                        TranslationTemplateItem.potmsgset ==
+                                            POTMsgSet.id)),
+                                where=And(
+                                    TranslationTemplateItem.potemplate ==
+                                        self.potemplate,
+                                    TranslationTemplateItem.sequence > 0))),
+                            Like(
+                                POMsgID.msgid,
+                                u"%" + text.translate(like_escape) + u"%",
+                                u"!", case_sensitive=False))))))
+
+        return Union(
+            select_potmsgsets("msgid_singular"),
+            select_potmsgsets("msgid_plural"))
 
     def _getOrderedPOTMsgSets(self, origin_tables, query):
         """Find all POTMsgSets matching `query` from `origin_tables`.
@@ -255,8 +253,6 @@ class POFileMixIn(RosettaStats):
         Orders the result by TranslationTemplateItem.sequence which must
         be among `origin_tables`.
         """
-        if isinstance(query, six.string_types):
-            query = SQL(query)
         results = IMasterStore(POTMsgSet).using(origin_tables).find(
             POTMsgSet, query)
         return results.order_by(TranslationTemplateItem.sequence)
@@ -264,10 +260,9 @@ class POFileMixIn(RosettaStats):
     def findPOTMsgSetsContaining(self, text):
         """See `IPOFile`."""
         clauses = [
-            'TranslationTemplateItem.potemplate = %s' % sqlvalues(
-                self.potemplate),
-            'TranslationTemplateItem.potmsgset = POTMsgSet.id',
-            'TranslationTemplateItem.sequence > 0',
+            TranslationTemplateItem.potemplate == self.potemplate,
+            TranslationTemplateItem.potmsgset == POTMsgSet.id,
+            TranslationTemplateItem.sequence > 0,
             ]
 
         if text is not None:
@@ -291,11 +286,10 @@ class POFileMixIn(RosettaStats):
                         self, plural_form, text)
                     search_clauses.append(translation_match)
 
-            clauses.append(
-                "POTMsgSet.id IN (" + " UNION ".join(search_clauses) + ")")
+            clauses.append(POTMsgSet.id.is_in(Union(*search_clauses)))
 
         return self._getOrderedPOTMsgSets(
-            [POTMsgSet, TranslationTemplateItem], ' AND '.join(clauses))
+            [POTMsgSet, TranslationTemplateItem], And(clauses))
 
     def getFullLanguageCode(self):
         """See `IPOFile`."""
@@ -422,27 +416,22 @@ class POFile(SQLBase, POFileMixIn):
     @property
     def contributors(self):
         """See `IPOFile`."""
-        # Avoid circular import.
+        # Avoid circular imports.
         from lp.registry.model.person import Person
+        from lp.translations.model.pofiletranslator import POFileTranslator
 
         # Translation credit messages are "translated" by
         # rosetta_experts.  Shouldn't show up in contributors lists
         # though.
         admin_team = getUtility(ILaunchpadCelebrities).rosetta_experts
 
-        contributors = Person.select("""
-            POFileTranslator.person = Person.id AND
-            POFileTranslator.person <> %s AND
-            POFileTranslator.pofile = %s""" % sqlvalues(admin_team, self),
-            clauseTables=["POFileTranslator"],
-            distinct=True,
-            # XXX: kiko 2006-10-19:
-            # We can't use Person.sortingColumns because this is a
-            # distinct query. To use it we'd need to add the sorting
-            # function to the column results and then ignore it -- just
-            # like selectAlso does, ironically.
-            orderBy=["Person.displayname", "Person.name"])
-
+        contributors = IStore(Person).find(
+            Person,
+            POFileTranslator.person == Person.id,
+            POFileTranslator.person != admin_team,
+            POFileTranslator.pofile == self).config(distinct=True)
+        contributors = contributors.order_by(*Person._storm_sortingColumns)
+        contributors = contributors.config(distinct=True)
         return contributors
 
     def prepareTranslationCredits(self, potmsgset):
@@ -548,7 +537,7 @@ class POFile(SQLBase, POFileMixIn):
         """Get query data for fetching all POTMsgSets with translations.
 
         Return a tuple of SQL (clauses, clause_tables) to be used with
-        POTMsgSet.select().
+        POTMsgSet queries.
         """
         flag_name = getUtility(ITranslationSideTraitsSet).getForTemplate(
             self.potemplate).flag_name
@@ -759,7 +748,8 @@ class POFile(SQLBase, POFileMixIn):
         query = [
             '%(table_name)s.msgstr0 IS NOT NULL' % {'table_name': table_name},
             ]
-        if self.language.pluralforms > 1:
+        if (self.language.pluralforms is not None and
+                self.language.pluralforms > 1):
             plurals_query = ' AND '.join(
                 '%(table_name)s.msgstr%(plural_form)d IS NOT NULL' % {
                   'plural_form': plural_form,
@@ -1359,10 +1349,6 @@ class DummyPOFile(POFileMixIn):
         """See `IRosettaStats`."""
         return 0.0
 
-    def rosettaPercentage(self, language=None):
-        """See `IRosettaStats`."""
-        return 0.0
-
     def updatesPercentage(self, language=None):
         """See `IRosettaStats`."""
         return 0.0
@@ -1480,8 +1466,8 @@ class POFileSet:
 
     def getBatch(self, starting_id, batch_size):
         """See `IPOFileSet`."""
-        return POFile.select(
-            "id >= %s" % quote(starting_id), orderBy="id", limit=batch_size)
+        return IStore(POFile).find(
+            POFile, POFile.id >= starting_id).order_by(POFile.id)[:batch_size]
 
     def getPOFilesWithTranslationCredits(self, untranslated=False):
         """See `IPOFileSet`."""

@@ -826,9 +826,6 @@ class IProductView(
     def getMilestonesAndReleases():
         """Return all the milestones and releases for this product."""
 
-    def packagedInDistros():
-        """Returns the distributions this product has been packaged in."""
-
     def userCanEdit(user):
         """Can the user edit this product?"""
 

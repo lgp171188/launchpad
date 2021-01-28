@@ -469,6 +469,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         namespace.moveRepository(self, user, rename_if_necessary=True)
         self._reconcileAccess()
 
+    def repackRepository(self):
+        getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
+
     @property
     def namespace(self):
         """See `IGitRepository`."""

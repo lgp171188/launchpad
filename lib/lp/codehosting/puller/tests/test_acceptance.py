@@ -25,6 +25,7 @@ from breezy.urlutils import (
     )
 from breezy.workingtree import WorkingTree
 from fixtures import TempDir
+import six
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -82,7 +83,8 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         self.assertEqual(0, db_branch.mirror_failures)
         mirrored_branch = self.openBranchAsUser(db_branch, accessing_user)
         self.assertEqual(
-            source_branch.last_revision(), db_branch.last_mirrored_id)
+            six.ensure_text(source_branch.last_revision()),
+            db_branch.last_mirrored_id)
         self.assertEqual(
             source_branch.last_revision(), mirrored_branch.last_revision())
         self.assertEqual(
@@ -117,7 +119,8 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         :param command: A command and arguments given as a list.
         :return: retcode, stdout, stderr
         """
-        process = Popen(command, stdout=PIPE, stderr=PIPE)
+        process = Popen(
+            command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
         output, error = process.communicate()
         return process.returncode, output, error
 

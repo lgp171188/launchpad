@@ -123,6 +123,7 @@ from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import intOrZero
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.propertycache import cachedproperty
@@ -537,6 +538,7 @@ class MaintenanceMessage:
     """
 
     timelefttext = None
+    featuretext = None
 
     notmuchtime = timedelta(seconds=30)
     toomuchtime = timedelta(seconds=1800)  # 30 minutes
@@ -558,6 +560,8 @@ class MaintenanceMessage:
             else:
                 self.timelefttext = 'in %s' % (
                     DurationFormatterAPI(timeleft).approximateduration())
+        self.featuretext = getFeatureFlag('app.maintenance_message')
+        if self.timelefttext or self.featuretext:
             return self.index()
         return ''
 
@@ -1008,7 +1012,7 @@ class LaunchpadRootNavigation(Navigation):
             return None
 
         # If the request is for a bug then redirect straight to that bug.
-        bug_match = re.match("/bugs/(\d+)$", self.request['PATH_INFO'])
+        bug_match = re.match(r"/bugs/(\d+)$", self.request['PATH_INFO'])
         if bug_match:
             bug_number = bug_match.group(1)
             bug_set = getUtility(IBugSet)

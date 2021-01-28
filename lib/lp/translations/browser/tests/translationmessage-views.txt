@@ -157,15 +157,15 @@ We will use this helper function to simplify the test:
     # This is just an easy way to get different messages for all
     # available options to test.
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> from lp.translations.model.pomsgid import POMsgID
-    >>> from sqlobject import SQLObjectNotFound
+    >>> from lp.app.errors import NotFoundError
     >>> from lp.services.propertycache import get_property_cache
+    >>> from lp.translations.model.pomsgid import POMsgID
     >>> def changeMsgID(new_msgid):
     ...     potmsgset = removeSecurityProxy(subview.context.potmsgset)
     ...     try:
-    ...         msgid = POMsgID.byMsgid(new_msgid)
-    ...     except SQLObjectNotFound:
-    ...         msgid = POMsgID(msgid=new_msgid)
+    ...         msgid = POMsgID.getByMsgid(new_msgid)
+    ...     except NotFoundError:
+    ...         msgid = POMsgID.new(new_msgid)
     ...     potmsgset.msgid_singular = msgid
     ...     del get_property_cache(potmsgset).singular_text
     ...     flush_database_updates()

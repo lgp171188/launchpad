@@ -11,12 +11,9 @@ import re
 import subprocess
 import sys
 
-if sys.version_info[:2] >= (3, 5):
-    from email import message_from_bytes
-else:
-    from email import message_from_string as message_from_bytes
-
 import six
+
+from lp.services.compat import message_from_bytes
 
 
 class Bug:

@@ -26,7 +26,7 @@ But Sample Person will and be able to add a series.
     >>> print(browser.url)
     http://launchpad.test/firefox/+addseries
 
-    >>> print(find_main_content(browser.contents).find('h1').renderContents())
+    >>> print(find_main_content(browser.contents).find('h1').decode_contents())
     Register a new Mozilla Firefox release series
 
 After checking that the page +addseries is there, we try to add a new series.
@@ -110,7 +110,7 @@ should get a nice error message.
     >>> browser.getControl('Register Series').click()
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     unstable is already in use by another series.
 

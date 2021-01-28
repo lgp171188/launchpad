@@ -5,8 +5,14 @@
 Run the doctests.
 """
 
-from lp.testing.systemdocs import LayeredDocFileSuite
+from __future__ import absolute_import, print_function, unicode_literals
+
+from lp.testing.systemdocs import (
+    LayeredDocFileSuite,
+    setGlobs,
+    )
 
 
 def test_suite():
-    return LayeredDocFileSuite('../README.txt')
+    return LayeredDocFileSuite(
+        '../README.txt', setUp=lambda test: setGlobs(test, future=True))

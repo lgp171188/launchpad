@@ -2595,7 +2595,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             name="mir", branch=branch_url)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "There is already a snap package with the same name and owner.",
+            b"There is already a snap package with the same name and owner.",
             response.body)
 
     def test_not_owner(self):
@@ -2617,14 +2617,14 @@ class TestSnapWebservice(TestCaseWithFactory):
             distro_series=distroseries_url, name="dummy", branch=branch_url)
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "Test Person cannot create snap packages owned by Other Person.",
+            b"Test Person cannot create snap packages owned by Other Person.",
             response.body)
         response = self.webservice.named_post(
             "/+snaps", "new", owner=other_team_url,
             distro_series=distroseries_url, name="dummy", branch=branch_url)
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "Test Person is not a member of Other Team.", response.body)
+            b"Test Person is not a member of Other Team.", response.body)
 
     def test_cannot_make_snap_with_private_components_public(self):
         # If a Snap has private components, then trying to make it public
@@ -2646,7 +2646,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap_url, "application/json", json.dumps({"private": False}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "Snap contains private information and cannot be public.",
+            b"Snap contains private information and cannot be public.",
             response.body)
 
     def test_cannot_set_private_components_of_public_snap(self):
@@ -2681,25 +2681,25 @@ class TestSnapWebservice(TestCaseWithFactory):
             json.dumps({"owner_link": private_team_url}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "A public snap cannot have a private owner.", response.body)
+            b"A public snap cannot have a private owner.", response.body)
         response = private_webservice.patch(
             bzr_snap_url, "application/json",
             json.dumps({"branch_link": private_branch_url}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "A public snap cannot have a private branch.", response.body)
+            b"A public snap cannot have a private branch.", response.body)
         response = private_webservice.patch(
             git_snap_url, "application/json",
             json.dumps({"owner_link": private_team_url}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "A public snap cannot have a private owner.", response.body)
+            b"A public snap cannot have a private owner.", response.body)
         response = private_webservice.patch(
             git_snap_url, "application/json",
             json.dumps({"git_ref_link": private_ref_url}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "A public snap cannot have a private repository.", response.body)
+            b"A public snap cannot have a private repository.", response.body)
 
     def test_cannot_set_git_path_for_bzr(self):
         # Setting git_path on a Bazaar-based Snap fails.
@@ -2767,7 +2767,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             "/+snaps", "getByName", owner=owner_url, name="nonexistent")
         self.assertEqual(404, response.status)
         self.assertEqual(
-            "No such snap package with this owner: 'nonexistent'.",
+            b"No such snap package with this owner: 'nonexistent'.",
             response.body)
 
     def test_findByOwner(self):
@@ -3254,7 +3254,8 @@ class TestSnapWebservice(TestCaseWithFactory):
                     }],
                 "permissions": ["package_upload"],
                 }
-            self.assertEqual(expected_body, json.loads(call.request.body))
+            self.assertEqual(
+                expected_body, json.loads(call.request.body.decode("UTF-8")))
             self.assertEqual({"root": root_macaroon_raw}, snap.store_secrets)
         return response, root_macaroon.third_party_caveats()[0]
 
@@ -3500,7 +3501,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             distro_arch_series=distroarchseries_url, pocket="Updates")
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "An identical build of this snap package is already pending.",
+            b"An identical build of this snap package is already pending.",
             response.body)
 
     def test_requestBuild_not_owner(self):
@@ -3525,8 +3526,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             distro_arch_series=distroarchseries_url, pocket="Updates")
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "Test Person cannot create snap package builds owned by Other "
-            "Team.", response.body)
+            b"Test Person cannot create snap package builds owned by Other "
+            b"Team.", response.body)
 
     def test_requestBuild_archive_disabled(self):
         # Build requests against a disabled archive are rejected.
@@ -3546,7 +3547,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap["self_link"], "requestBuild", archive=archive_url,
             distro_arch_series=distroarchseries_url, pocket="Updates")
         self.assertEqual(403, response.status)
-        self.assertEqual("Disabled Archive is disabled.", response.body)
+        self.assertEqual(b"Disabled Archive is disabled.", response.body)
 
     def test_requestBuild_archive_private_owners_match(self):
         # Build requests against a private archive are allowed if the Snap
@@ -3587,8 +3588,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             distro_arch_series=distroarchseries_url, pocket="Updates")
         self.assertEqual(403, response.status)
         self.assertEqual(
-            "Snap package builds against private archives are only allowed "
-            "if the snap package owner and the archive owner are equal.",
+            b"Snap package builds against private archives are only allowed "
+            b"if the snap package owner and the archive owner are equal.",
             response.body)
 
     def test_requestBuilds(self):
@@ -3732,8 +3733,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             pocket="Updates")
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "Test Person cannot create snap package builds owned by Other "
-            "Team.", response.body)
+            b"Test Person cannot create snap package builds owned by Other "
+            b"Team.", response.body)
 
     def test_requestAutoBuilds(self):
         # requestAutoBuilds can be performed over the webservice.
@@ -3764,8 +3765,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap["self_link"], "requestAutoBuilds")
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "This snap package cannot have automatic builds created for it "
-            "because auto_build_archive is not set.",
+            b"This snap package cannot have automatic builds created for it "
+            b"because auto_build_archive is not set.",
             response.body)
 
     def test_requestAutoBuilds_requires_auto_build_pocket(self):
@@ -3775,8 +3776,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap["self_link"], "requestAutoBuilds")
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "This snap package cannot have automatic builds created for it "
-            "because auto_build_pocket is not set.",
+            b"This snap package cannot have automatic builds created for it "
+            b"because auto_build_pocket is not set.",
             response.body)
 
     def test_requestAutoBuilds_requires_all_requests_to_succeed(self):
@@ -3797,7 +3798,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap["self_link"], "requestAutoBuilds")
         self.assertEqual(403, response.status)
         self.assertEqual(
-            "%s is disabled." % archive.displayname, response.body)
+            ("%s is disabled." % archive.displayname).encode("UTF-8"),
+            response.body)
         response = self.webservice.get(snap["builds_collection_link"])
         self.assertEqual([], response.jsonBody()["entries"])
 

@@ -3,7 +3,12 @@
 
 """Helper functions for code testing live here."""
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+    )
 
 __metaclass__ = type
 __all__ = [
@@ -28,13 +33,9 @@ from itertools import count
 
 from breezy.plugins.builder.recipe import RecipeParser
 import fixtures
-import six
 import transaction
 from zope.component import getUtility
-from zope.security.proxy import (
-    isinstance as zisinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.code.interfaces.branchhosting import IBranchHostingClient
@@ -164,42 +165,6 @@ def consistent_branch_names():
         yield "branch-%s" % next(index)
 
 
-def make_package_branches(factory, series, sourcepackagename, branch_count,
-                          official_count=0, owner=None, registrant=None):
-    """Make some package branches.
-
-    Make `branch_count` branches, and make `official_count` of those
-    official branches.
-    """
-    if zisinstance(sourcepackagename, six.string_types):
-        sourcepackagename = factory.getOrMakeSourcePackageName(
-            sourcepackagename)
-    # Make the branches created in the past in order.
-    time_gen = time_counter(delta=timedelta(days=-1))
-    branch_names = consistent_branch_names()
-    branches = [
-        factory.makePackageBranch(
-            distroseries=series,
-            sourcepackagename=sourcepackagename,
-            date_created=next(time_gen),
-            name=next(branch_names), owner=owner, registrant=registrant)
-        for i in range(branch_count)]
-
-    official = []
-    # Sort the pocket items so RELEASE is last, and thus first popped.
-    pockets = sorted(PackagePublishingPocket.items, reverse=True)
-    # Since there can be only one link per pocket, max out the number of
-    # official branches at the pocket count.
-    for i in range(min(official_count, len(pockets))):
-        branch = branches.pop()
-        pocket = pockets.pop()
-        SeriesSourcePackageBranchSet.new(
-            series, pocket, sourcepackagename, branch, branch.owner)
-        official.append(branch)
-
-    return series, branches, official
-
-
 def make_official_package_branch(factory, owner=None):
     """Make a branch linked to the pocket of a source package."""
     branch = factory.makePackageBranch(owner=owner)
@@ -252,7 +217,7 @@ def make_project_cloud_data(factory, details):
         project = factory.makeProduct(name=project_name)
         start_date = last_commit - delta * (num_commits - 1)
         gen = time_counter(start_date, delta)
-        commits_each = num_commits / num_authors
+        commits_each = num_commits // num_authors
         for committer in range(num_authors - 1):
             make_project_branch_with_revisions(
                 factory, gen, project, commits_each)
@@ -369,6 +334,7 @@ class GitHostingFixture(fixtures.Fixture):
         self.getBlob = FakeMethod(result=blob)
         self.delete = FakeMethod()
         self.disable_memcache = disable_memcache
+        self.repackRepository = FakeMethod()
 
     def _setUp(self):
         self.useFixture(ZopeUtilityFixture(self, IGitHostingClient))

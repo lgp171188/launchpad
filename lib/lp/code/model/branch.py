@@ -665,7 +665,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         if len(reviewers) != len(review_types):
             raise WrongNumberOfReviewTypeArguments(
                 'reviewers and review_types must be equal length.')
-        review_requests = zip(reviewers, review_types)
+        review_requests = list(zip(reviewers, review_types))
         return self.addLandingTarget(
             registrant, merge_target, merge_prerequisite,
             needs_review=needs_review, description=initial_comment,

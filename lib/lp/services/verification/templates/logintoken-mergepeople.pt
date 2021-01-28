@@ -3,7 +3,6 @@
   xmlns:metal="http://xml.zope.org/namespaces/metal"
   xmlns:i18n="http://xml.zope.org/namespaces/i18n"
   omit-tag="">
-<tal:do-this-first tal:content="view/processForm" />
 
 <html
   metal:use-macro="view/macro:page/main_only"
@@ -17,9 +16,7 @@
       <code tal:content="view/dupe/name">foo</code> into the
       account named <code tal:content="context/requester/name">bar</code>.</p>
 
-      <form name="merge" action="" method="POST">
-        <input type="submit" name="VALIDATE" value="Confirm" />
-      </form>
+      <div metal:use-macro="context/@@launchpad_form/form" />
     </div>
 
 </div>

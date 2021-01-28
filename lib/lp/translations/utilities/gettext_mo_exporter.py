@@ -34,6 +34,10 @@ class POCompiler:
 
     def compile(self, gettext_po_file):
         """Return a MO version of the given PO file."""
+        if not isinstance(gettext_po_file, bytes):
+            raise TypeError(
+                "gettext_po_file must be bytes, not %s" %
+                type(gettext_po_file))
 
         msgfmt = subprocess.Popen(
             args=[POCompiler.MSGFMT, '-v', '-o', '-', '-'],
@@ -43,8 +47,13 @@ class POCompiler:
         stdout, stderr = msgfmt.communicate(gettext_po_file)
 
         if msgfmt.returncode != 0:
+            # XXX 2020-06-18 cjwatson: Decoding to UTF-8 isn't quite right
+            # here, but we don't currently have access to the file's
+            # encoding here.  With any luck it won't matter too often.
             raise UnknownTranslationExporterError(
-                'Error compiling PO file: %s\n%s' % (gettext_po_file, stderr))
+                'Error compiling PO file: %s\n%s' % (
+                    gettext_po_file.decode('UTF-8', 'replace'),
+                    stderr.decode('UTF-8', 'replace')))
 
         return stdout
 

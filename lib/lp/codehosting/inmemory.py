@@ -88,7 +88,7 @@ class FakeStore:
         branch_id = kwargs.pop('id')
         assert len(kwargs) == 1, (
             'Expected only id and one other. Got %r' % kwargs)
-        attribute = kwargs.keys()[0]
+        attribute = list(kwargs)[0]
         expected_value = kwargs[attribute]
         branch = self._object_set.get(branch_id)
         if branch is None:

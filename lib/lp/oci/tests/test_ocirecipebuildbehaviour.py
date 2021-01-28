@@ -22,7 +22,6 @@ import pytz
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
-    AfterPreprocessing,
     ContainsDict,
     Equals,
     Is,
@@ -158,14 +157,14 @@ class TestAsyncOCIRecipeBuildBehaviour(
         StatsMixin, MakeOCIBuildMixin, TestCaseWithFactory):
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10)
+        timeout=30)
     layer = LaunchpadZopelessLayer
 
     @defer.inlineCallbacks
     def setUp(self):
         super(TestAsyncOCIRecipeBuildBehaviour, self).setUp()
         build_username = 'OCIBUILD-1'
-        self.token = {'secret': uuid.uuid4().get_hex(),
+        self.token = {'secret': uuid.uuid4().hex,
                       'username': build_username,
                       'timestamp': datetime.utcnow().isoformat()}
         self.proxy_url = ("http://{username}:{password}"
@@ -231,11 +230,12 @@ class TestAsyncOCIRecipeBuildBehaviour(
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref)
         yield job.extraBuildArgs()
+        expected_uri = urlsplit(
+            config.snappy.builder_proxy_auth_api_endpoint).path.encode("UTF-8")
         self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
             MatchesDict({
-                "method": Equals("POST"),
-                "uri": Equals(urlsplit(
-                    config.snappy.builder_proxy_auth_api_endpoint).path),
+                "method": Equals(b"POST"),
+                "uri": Equals(expected_uri),
                 "headers": ContainsDict({
                     b"Authorization": MatchesListwise([
                         Equals(b"Basic " + base64.b64encode(
@@ -244,9 +244,9 @@ class TestAsyncOCIRecipeBuildBehaviour(
                         Equals(b"application/json"),
                         ]),
                     }),
-                "content": AfterPreprocessing(json.loads, MatchesDict({
+                "json": MatchesDict({
                     "username": StartsWith(job.build.build_cookie + "-"),
-                    })),
+                    }),
                 }),
             ]))
 
@@ -592,7 +592,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=20)
+        timeout=30)
 
     def _createTestFile(self, name, content, hash):
         path = os.path.join(self.test_files_dir, name)

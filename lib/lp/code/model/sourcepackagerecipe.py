@@ -3,6 +3,8 @@
 
 """Implementation of the `SourcePackageRecipe` content type."""
 
+from __future__ import division
+
 __metaclass__ = type
 __all__ = [
     'SourcePackageRecipe',
@@ -406,4 +408,4 @@ class SourcePackageRecipe(Storm):
         if len(durations) == 0:
             return None
         durations.sort(reverse=True)
-        return durations[len(durations) / 2]
+        return durations[len(durations) // 2]

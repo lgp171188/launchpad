@@ -612,20 +612,14 @@ POTMsgSet.setSequence
 Finally, the new `IPOTMsgSet` should have an entry in the
 `TranslationTemplateItem` table once we assign a sequence number.
 
-    >>> from lp.translations.model.translationtemplateitem import (
-    ...     TranslationTemplateItem)
-
 First, we need a helper function to check whether the potmsgset exists
 in the table or not.
 
-
     >>> def is_potmsgset_in_potemplate(potmsgset, potemplate):
-    ...     items = [
-    ...         item.potmsgset.id
-    ...         for item in TranslationTemplateItem.selectBy(
-    ...             potemplate=potemplate, potmsgset=potmsgset)
-    ...         if item.sequence > 0
-    ...         ]
+    ...     items = {
+    ...         potmsgset.id
+    ...         for potmsgset in potemplate.getPOTMsgSets(prefetch=False)
+    ...         }
     ...     return potmsgset.id in items
 
 Let's create a new potmsgset object.

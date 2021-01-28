@@ -7,6 +7,7 @@ quiet mode over it.
 
 Get the current counts of stuff in the database:
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.identity.model.emailaddress import EmailAddress
     >>> from lp.soyuz.interfaces.publishing import active_publishing_status
     >>> from lp.soyuz.model.publishing import (
@@ -454,8 +455,9 @@ We check that the binary package publishing override facility works:
     >>> n = BinaryPackageName.selectOneBy(name="libdb1-compat")
     >>> db1 = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
     ...         version="2.1.3-7")
-    >>> for pub in BinaryPackagePublishingHistory.selectBy(
-    ...     binarypackagereleaseID=db1.id, orderBy='distroarchseries'):
+    >>> for pub in IStore(BinaryPackagePublishingHistory).find(
+    ...         BinaryPackagePublishingHistory,
+    ...         binarypackagerelease=db1).order_by('distroarchseries'):
     ...     print("%s %s %s" % (
     ...         pub.distroarchseries.distroseries.name, pub.priority,
     ...         pub.archive.purpose.name))
@@ -666,17 +668,23 @@ There will now be a number of publishings in the partner archive:
 All the publishings will also have the 'partner' component and the
 partner archive:
 
-    >>> print(set(sspph.component.name for sspph in source_difference))
-    set([u'partner'])
+    >>> for name in set(sspph.component.name for sspph in source_difference):
+    ...     print(name)
+    partner
 
-    >>> print(set(sbpph.component.name for sbpph in binary_difference))
-    set([u'partner'])
+    >>> for name in set(sbpph.component.name for sbpph in binary_difference):
+    ...     print(name)
+    partner
 
-    >>> print(set(sspph.archive.purpose.name for sspph in source_difference))
-    set(['PARTNER'])
+    >>> for name in set(
+    ...         sspph.archive.purpose.name for sspph in source_difference):
+    ...     print(name)
+    PARTNER
 
-    >>> print(set(sbpph.archive.purpose.name for sbpph in binary_difference))
-    set(['PARTNER'])
+    >>> for name in set(
+    ...         sbpph.archive.purpose.name for sbpph in binary_difference):
+    ...     print(name)
+    PARTNER
 
 
 Source-only imports
@@ -752,8 +760,9 @@ targetted distroseries, 'lenny'.
     >>> lenny_sources.count()
     12
 
-    >>> print(set([pub.status.name for pub in lenny_sources]))
-    set(['PUBLISHED'])
+    >>> for name in set([pub.status.name for pub in lenny_sources]):
+    ...     print(name)
+    PUBLISHED
 
 As mentioned before, lenny/i386 is empty, no binaries were imported.
 Also, the number of binaries published in the whole debian distribution

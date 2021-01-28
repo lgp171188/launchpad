@@ -95,8 +95,20 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def searchRecipes(query):
         """Searches for recipes in this OCI project."""
 
-    def getOfficialRecipe():
-        """Gets the official recipe for this OCI project."""
+    def getOfficialRecipes():
+        """Gets the official recipes for this OCI project."""
+
+    def getUnofficialRecipes():
+        """Gets the unofficial recipes for this OCI project."""
+
+    def getDefaultGitRepository(person):
+        """Returns the default git repository for the given user under the
+        namespace of this OCI project"""
+
+    def getDefaultGitRepositoryPath(person):
+        """Returns the default git repository path for this OCI Project,
+        regardless if the repository exists or not.
+        """
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
@@ -138,9 +150,8 @@ class IOCIProjectEdit(Interface):
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
         """Creates a new `IOCIProjectSeries`."""
 
-    def setOfficialRecipe(recipe):
-        """Sets the given recipe as the official one. If recipe is None,
-        the current official recipe will be unset."""
+    def setOfficialRecipeStatus(recipe, status):
+        """Change whether an OCI Recipe is official or not for this project."""
 
 
 class IOCIProjectLegitimate(Interface):
@@ -204,7 +215,8 @@ class IOCIProjectSet(Interface):
     def getByPillarAndName(pillar, name):
         """Get the OCIProjects for a given distribution or project.
 
-        :param pillar: An instance of Distribution or Product.
+        :param pillar: An instance of Distribution or Product, or the
+            respective pillar name.
         :param name: The OCIProject name to find.
         :return: The OCIProject found.
         """
@@ -212,6 +224,9 @@ class IOCIProjectSet(Interface):
     def findByPillarAndName(pillar, name_substring):
         """Find OCIProjects for a given pillar that contain the provided
         name."""
+
+    def searchByName(name_substring):
+        """Search OCIProjects that contain the provided name."""
 
     def preloadDataForOCIProjects(oci_projects):
         """Preload data for the given list of OCIProject objects."""

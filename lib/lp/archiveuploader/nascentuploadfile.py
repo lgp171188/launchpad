@@ -492,7 +492,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         if self.priority_name not in self.priority_map:
             default_priority = 'extra'
-            self.logger.warn(
+            self.logger.warning(
                  "Unable to grok priority %r, overriding it with %s"
                  % (self.priority_name, default_priority))
             self.priority_name = default_priority
@@ -566,7 +566,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
         except Exception as e:
             yield UploadError(
                 "%s: extracting control file raised %s: %s. giving up."
-                 % (self.filename, sys.exc_type, e))
+                 % (self.filename, sys.exc_info()[0], e))
             return
 
         for mandatory_field in self.mandatory_fields:
@@ -745,7 +745,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
         try:
             deb_file.control.go(tar_checker.callback)
             deb_file.data.go(tar_checker.callback)
-            future_files = tar_checker.future_files.keys()
+            future_files = list(tar_checker.future_files)
             if future_files:
                 first_file = future_files[0]
                 timestamp = time.ctime(tar_checker.future_files[first_file])
@@ -755,7 +755,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
                      % (self.filename, len(future_files), first_file,
                         timestamp))
 
-            ancient_files = tar_checker.ancient_files.keys()
+            ancient_files = list(tar_checker.ancient_files)
             if ancient_files:
                 first_file = ancient_files[0]
                 timestamp = time.ctime(tar_checker.ancient_files[first_file])

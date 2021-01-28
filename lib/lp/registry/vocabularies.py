@@ -128,6 +128,7 @@ from lp.registry.interfaces.milestone import (
     IMilestoneSet,
     IProjectGroupMilestone,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -155,6 +156,7 @@ from lp.registry.model.featuredproject import FeaturedProject
 from lp.registry.model.karma import KarmaCategory
 from lp.registry.model.mailinglist import MailingList
 from lp.registry.model.milestone import Milestone
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.person import (
     get_person_visibility_terms,
     IrcID,
@@ -209,10 +211,10 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
     IHugeVocabulary,
-    NamedSQLObjectHugeVocabulary,
     NamedSQLObjectVocabulary,
     NamedStormHugeVocabulary,
     SQLObjectVocabularyBase,
+    StormVocabularyBase,
     VocabularyFilter,
     )
 from lp.soyuz.model.archive import Archive
@@ -1824,7 +1826,7 @@ class VocabularyFilterDistribution(VocabularyFilter):
         return [PillarName.distribution != None]
 
 
-class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
+class PillarVocabularyBase(NamedStormHugeVocabulary):
     """Active `IPillar` objects vocabulary."""
     displayname = 'Needs to be overridden'
     _table = PillarName
@@ -1869,8 +1871,8 @@ class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
             ]
         base_clauses = [
             ProductSet.getProductPrivacyFilter(getUtility(ILaunchBag).user)]
-        if self._filter:
-            base_clauses.extend(self._filter)
+        if self._clauses:
+            base_clauses.extend(self._clauses)
         if vocab_filter:
             base_clauses.extend(vocab_filter.filter_terms)
         equal_clauses = base_clauses + [PillarName.name == query]
@@ -1895,7 +1897,7 @@ class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
 class DistributionOrProductVocabulary(PillarVocabularyBase):
     """Active `IDistribution` or `IProduct` objects vocabulary."""
     displayname = 'Select a project'
-    _filter = [PillarName.projectgroup == None, PillarName.active == True]
+    _clauses = [PillarName.projectgroup == None, PillarName.active == True]
 
     def __contains__(self, obj):
         if IProduct.providedBy(obj):
@@ -1914,7 +1916,7 @@ class DistributionOrProductVocabulary(PillarVocabularyBase):
 class DistributionOrProductOrProjectGroupVocabulary(PillarVocabularyBase):
     """Active `IProduct`, `IProjectGroup` or `IDistribution` vocabulary."""
     displayname = 'Select a project'
-    _filter = [PillarName.active == True]
+    _clauses = [PillarName.active == True]
 
     def __contains__(self, obj):
         if IProduct.providedBy(obj) or IProjectGroup.providedBy(obj):
@@ -1935,16 +1937,17 @@ class FeaturedProjectVocabulary(
                                DistributionOrProductOrProjectGroupVocabulary):
     """Vocabulary of projects that are featured on the LP Home Page."""
 
-    _filter = AND(PillarName.q.id == FeaturedProject.q.pillar_name,
-                  PillarName.q.active == True)
-    _clauseTables = ['FeaturedProject']
+    _clauses = [
+        PillarName.id == FeaturedProject.pillar_name_id,
+        PillarName.active == True,
+        ]
 
     def __contains__(self, obj):
         """See `IVocabulary`."""
-        query = """PillarName.id=FeaturedProject.pillar_name
-                   AND PillarName.name = %s""" % sqlvalues(obj.name)
-        return PillarName.selectOne(
-                   query, clauseTables=['FeaturedProject']) is not None
+        return IStore(PillarName).find(
+            PillarName,
+            PillarName.id == FeaturedProject.pillar_name_id,
+            PillarName.name == obj.name).one()
 
 
 class SourcePackageNameIterator(BatchedCountableIterator):
@@ -2205,3 +2208,31 @@ class DistributionSourcePackageVocabulary(FilteredVocabularyBase):
             return self.toTerm((dsp, binary_names))
 
         return CountableIterator(results.count(), results, make_term)
+
+
+@implementer(IHugeVocabulary)
+class OCIProjectVocabulary(StormVocabularyBase):
+    """All OCI Projects."""
+
+    _table = OCIProject
+    displayname = 'Select an OCI project'
+    step_title = 'Search'
+
+    def toTerm(self, ociproject):
+        token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
+        title = "%s" % token
+        return SimpleTerm(ociproject, token, title)
+
+    def getTermByToken(self, token):
+        pillar_name, name = token.split('/')
+        ociproject = getUtility(IOCIProjectSet).getByPillarAndName(
+            pillar_name, name)
+        if ociproject is None:
+            raise LookupError(token)
+        return self.toTerm(ociproject)
+
+    def search(self, query, vocab_filter=None):
+        return getUtility(IOCIProjectSet).searchByName(query)
+
+    def _entries(self):
+        return getUtility(IOCIProjectSet).searchByName('')

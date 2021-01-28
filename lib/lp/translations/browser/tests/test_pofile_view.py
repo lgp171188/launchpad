@@ -368,7 +368,7 @@ class TestBrowser(BrowserTestCase):
             product.translationpermission = TranslationPermission.CLOSED
         # Add credits so that they show in the UI
         self.factory.makePOTMsgSet(
-            potemplate=pofile.potemplate, singular='translator-credits')
+            potemplate=pofile.potemplate, singular=u'translator-credits')
         browser = self.getViewBrowser(pofile)
         self.assertNotIn('This is a dummy translation', browser.contents)
         self.assertIn('(no translation yet)', browser.contents)
@@ -378,7 +378,7 @@ class TestBrowser(BrowserTestCase):
         pofile = self.factory.makePOFile()
         # Add credits so that they show in the UI
         self.factory.makePOTMsgSet(
-            potemplate=pofile.potemplate, singular='translator-credits')
+            potemplate=pofile.potemplate, singular=u'translator-credits')
         browser = self.getViewBrowser(pofile, no_login=True)
         self.assertTextMatchesExpressionIgnoreWhitespace(
             'To prevent privacy issues, this translation is not available to'

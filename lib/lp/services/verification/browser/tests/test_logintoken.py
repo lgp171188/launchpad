@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from zope.component import getUtility
@@ -8,6 +8,7 @@ from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.verification.browser.logintoken import (
     ClaimTeamView,
+    MergePeopleView,
     ValidateEmailView,
     ValidateGPGKeyView,
     )
@@ -58,6 +59,15 @@ class TestCancelActionOnLoginTokenViews(TestCaseWithFactory):
                 self.person, self.email, 'foo@example.com',
                 LoginTokenType.VALIDATEEMAIL)
             self._testCancelAction(ValidateEmailView, token)
+
+    def test_MergePeopleView(self):
+        dupe = self.factory.makePerson()
+        with person_logged_in(self.person):
+            token = getUtility(ILoginTokenSet).new(
+                self.person, self.email,
+                email=removeSecurityProxy(dupe).preferredemail.email,
+                tokentype=LoginTokenType.ACCOUNTMERGE)
+            self._testCancelAction(MergePeopleView, token)
 
     def _testCancelAction(self, view_class, token):
         """Test the 'Cancel' action of the given view, using the given token.
@@ -120,10 +130,10 @@ class MergePeopleViewTestCase(TestCaseWithFactory):
         self.assertIs(False, view.mergeCompleted)
         self.assertTextMatchesExpressionIgnoreWhitespace(
             '.*to merge the Launchpad account named.*claimer', view.render())
-        view = create_initialized_view(
-            token, name="+accountmerge", principal=claimer,
-            form={'VALIDATE': 'Confirm'}, method='POST')
         with person_logged_in(claimer):
+            view = create_initialized_view(
+                token, name="+accountmerge", principal=claimer,
+                form={'field.actions.confirm': 'Confirm'}, method='POST')
             view.render()
         self.assertIs(True, view.mergeCompleted)
         notifications = view.request.notifications

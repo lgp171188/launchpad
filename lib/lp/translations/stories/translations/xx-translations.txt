@@ -12,17 +12,17 @@ We are going to change message #21, but first, we see that this messages
 has no translations at all.
 
   >>> print(find_tag_by_id(
-  ...     user_browser.contents, 'msgset_150').renderContents())
+  ...     user_browser.contents, 'msgset_150').decode_contents())
   21.
   <input name="msgset_150" type="hidden"/>
   >>> print(find_tag_by_id(
-  ...     user_browser.contents, 'msgset_150_singular').renderContents())
+  ...     user_browser.contents, 'msgset_150_singular').decode_contents())
   Found <code>%i</code> invalid file.
   >>> print(find_tag_by_id(user_browser.contents,
-  ...                      'msgset_150_es_translation_0').renderContents())
+  ...                      'msgset_150_es_translation_0').decode_contents())
   (no translation yet)
   >>> print(find_tag_by_id(user_browser.contents,
-  ...                      'msgset_150_es_translation_1').renderContents())
+  ...                      'msgset_150_es_translation_1').decode_contents())
   (no translation yet)
 
 We are going to submit now translations for the singular and plural forms.
@@ -72,17 +72,17 @@ they will be empty waiting for new suggestions/translations.
 Also, we can see that the message has no active translation yet:
 
   >>> print(find_tag_by_id(
-  ...     user_browser.contents, 'msgset_150').renderContents())
+  ...     user_browser.contents, 'msgset_150').decode_contents())
   21.
   <input name="msgset_150" type="hidden"/>
   >>> print(find_tag_by_id(
-  ...     user_browser.contents, 'msgset_150_singular').renderContents())
+  ...     user_browser.contents, 'msgset_150_singular').decode_contents())
   Found <code>%i</code> invalid file.
   >>> print(find_tag_by_id(user_browser.contents,
-  ...                      'msgset_150_es_translation_0').renderContents())
+  ...                      'msgset_150_es_translation_0').decode_contents())
   (no translation yet)
   >>> print(find_tag_by_id(user_browser.contents,
-  ...                      'msgset_150_es_translation_1').renderContents())
+  ...                      'msgset_150_es_translation_1').decode_contents())
   (no translation yet)
 
 = Translations for DistroSeries =
@@ -237,7 +237,6 @@ Looking at the Spanish language overview page, we can see that there are
     >>> evolution_line = find_tag_by_id(browser.contents, 'evolution-2.2')
     >>> print(extract_text(evolution_line))
     evolution-2.2
-    ...
     15 1 1
     ...
 

@@ -21,6 +21,8 @@ format:
 This script is intended to be used in conjunction with "update-stacked-on.py".
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import _pythonpath
@@ -52,9 +54,9 @@ def main():
     execute_zcml_for_scripts()
     for db_branch in get_stacked_branches():
         stacked_on = db_branch.stacked_on
-        print '%s %s %s %s %s' % (
+        print('%s %s %s %s %s' % (
             db_branch.id, db_branch.branch_type.name, db_branch.unique_name,
-            stacked_on.id, stacked_on.unique_name)
+            stacked_on.id, stacked_on.unique_name))
 
 
 if __name__ == '__main__':

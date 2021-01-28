@@ -103,6 +103,12 @@
             template="../templates/ocirecipebuild-index.pt" />
         <browser:page
             for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            class="lp.oci.browser.ocirecipebuild.OCIRecipeBuildRetryView"
+            permission="launchpad.Edit"
+            name="+retry"
+            template="../templates/ocirecipebuild-retry.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
             class="lp.oci.browser.ocirecipebuild.OCIRecipeBuildCancelView"
             permission="launchpad.Edit"
             name="+cancel"

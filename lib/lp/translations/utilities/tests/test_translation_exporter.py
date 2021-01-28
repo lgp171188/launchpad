@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-from cStringIO import StringIO
+import io
 from operator import attrgetter
 import unittest
 
@@ -40,7 +40,7 @@ class TranslationExporterTestCase(unittest.TestCase):
         self.assertTrue(
             verifyObject(
                 IExportedTranslationFile,
-                ExportedTranslationFile(StringIO())),
+                ExportedTranslationFile(io.BytesIO())),
             "ExportedTranslationFile doesn't follow the interface")
 
     def testGetTranslationFormatExporterByFileFormat(self):

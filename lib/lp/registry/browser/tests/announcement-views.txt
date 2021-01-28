@@ -56,10 +56,10 @@ smaller than in production to ease testing.
     >>> announcement_set = getUtility(IAnnouncementSet)
     >>> view = create_initialized_view(
     ...     announcement_set, '+announcements')
-    >>> print len(list(view.announcements))
+    >>> print(len(list(view.announcements)))
     20
-    >>> print view.batch_size
+    >>> print(view.batch_size)
     4
     >>> batch = view.announcement_nav.currentBatch()
-    >>> print len(list(batch))
+    >>> print(len(list(batch)))
     4

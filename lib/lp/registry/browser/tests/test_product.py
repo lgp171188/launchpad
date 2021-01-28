@@ -178,7 +178,11 @@ class TestProductNavigation(TestCaseWithFactory):
             productseries.product.name, productseries.name)
         self.assertDereferences(
             productseries_url, productseries,
-            environ={"HTTPS": "on", "SERVER_URL": None})
+            environ={
+                "HTTPS": "on",
+                "HTTP_HOST": "api.launchpad.test:443",
+                "SERVER_URL": None,
+                })
 
         # Objects subordinate to the redirected series work too.
         productrelease = self.factory.makeProductRelease(
@@ -188,7 +192,11 @@ class TestProductNavigation(TestCaseWithFactory):
             productrelease.version)
         self.assertDereferences(
             productrelease_url, productrelease,
-            environ={"HTTPS": "on", "SERVER_URL": None})
+            environ={
+                "HTTPS": "on",
+                "HTTP_HOST": "api.launchpad.test:443",
+                "SERVER_URL": None,
+                })
 
 
 class TestProductConfiguration(BrowserTestCase):
@@ -948,7 +956,8 @@ class TestProductRdfView(BrowserTestCase):
         self.assertEqual(
             content_disposition, browser.headers['Content-disposition'])
         self.assertEqual(
-            'application/rdf+xml', browser.headers['Content-type'])
+            'application/rdf+xml;charset="utf-8"',
+            browser.headers['Content-type'])
 
 
 class TestProductSet(BrowserTestCase):

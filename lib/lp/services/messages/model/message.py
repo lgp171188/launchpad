@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -108,7 +108,7 @@ class Message(SQLBase):
     parent = ForeignKey(foreignKey='Message', dbName='parent',
         notNull=False, default=None)
     rfc822msgid = StringCol(notNull=True)
-    bugs = SQLRelatedJoin('Bug', joinColumn='message', otherColumn='bug',
+    bugs = SQLRelatedJoin('Bug', joinColumn='message_id', otherColumn='bug_id',
         intermediateTable='BugMessage')
     _chunks = SQLMultipleJoin('MessageChunk', joinColumn='message')
 
@@ -254,21 +254,19 @@ class MessageSet:
         # Re-encode the header parts using utf-8, replacing undecodable
         # characters with question marks.
         re_encoded_bits = []
-        for bytes, charset in bits:
-            if charset is None:
-                charset = 'us-ascii'
+        for word, charset in bits:
             # 2008-09-26 gary:
             # The RFC 2047 encoding names and the Python encoding names are
             # not always the same. A safer and more correct approach would use
-            #   bytes.decode(email.charset.Charset(charset).input_codec,
-            #                'replace')
+            #   word.decode(email.charset.Charset(charset).input_codec,
+            #               'replace')
             # or similar, rather than
-            #   bytes.decode(charset, 'replace')
+            #   word.decode(charset, 'replace')
             # That said, this has not bitten us so far, and is only likely to
             # cause problems in unusual encodings that we are hopefully
             # unlikely to encounter in this part of the code.
-            re_encoded_bits.append(
-                (self.decode(bytes, charset).encode('utf-8'), 'utf-8'))
+            decoded = word if charset is None else self.decode(word, charset)
+            re_encoded_bits.append((decoded.encode('utf-8'), 'utf-8'))
 
         return six.text_type(email.header.make_header(re_encoded_bits))
 

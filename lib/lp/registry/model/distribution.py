@@ -88,6 +88,7 @@ from lp.code.interfaces.seriessourcepackagebranch import (
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
+    DistributionDefaultTraversalPolicy,
     SpecificationSharingPolicy,
     VCSType,
     )
@@ -262,9 +263,14 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     redirect_release_uploads = BoolCol(notNull=True, default=False)
     development_series_alias = StringCol(notNull=False, default=None)
     vcs = EnumCol(enum=VCSType, notNull=False)
+    default_traversal_policy = EnumCol(
+        enum=DistributionDefaultTraversalPolicy, notNull=False,
+        default=DistributionDefaultTraversalPolicy.SERIES)
+    redirect_default_traversal = BoolCol(notNull=False, default=False)
 
     def __repr__(self):
-        display_name = self.display_name.encode('ASCII', 'backslashreplace')
+        display_name = six.ensure_str(
+            self.display_name, encoding='ASCII', errors='backslashreplace')
         return "<%s '%s' (%s)>" % (
             self.__class__.__name__, display_name, self.name)
 
@@ -700,7 +706,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             result.append(list(key))
             # Pull out all the official series names and append them as a list
             # to the end of the current record.
-            result[-1].append(filter(None, map(itemgetter(2), group)))
+            result[-1].append(list(filter(None, map(itemgetter(2), group))))
 
         return result
 
@@ -1473,7 +1479,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         distributionID = self.id
 
         def weight_function(bugtask):
-            if bugtask.distributionID == distributionID:
+            if bugtask.distribution_id == distributionID:
                 return OrderedBugTask(1, bugtask.id, bugtask)
             return OrderedBugTask(2, bugtask.id, bugtask)
 

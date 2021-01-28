@@ -1523,7 +1523,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
 
     def test__convertRefInfo(self):
         # _convertRefInfo converts a valid info dictionary.
-        sha1 = six.ensure_text(hashlib.sha1("").hexdigest())
+        sha1 = six.ensure_text(hashlib.sha1(b"").hexdigest())
         info = {"object": {"sha1": sha1, "type": "commit"}}
         expected_info = {"sha1": sha1, "type": GitObjectType.COMMIT}
         self.assertEqual(expected_info, GitRepository._convertRefInfo(info))
@@ -1568,7 +1568,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=six.ensure_text(hashlib.sha1(path).hexdigest()),
+                commit_sha1=six.ensure_text(hashlib.sha1(
+                    path.encode("UTF-8")).hexdigest()),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))
@@ -1717,12 +1718,12 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 },
             "refs/heads/foo": {
                 "sha1": six.ensure_text(
-                    hashlib.sha1("refs/heads/foo").hexdigest()),
+                    hashlib.sha1(b"refs/heads/foo").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
             "refs/tags/1.0": {
                 "sha1": six.ensure_text(
-                    hashlib.sha1("refs/heads/master").hexdigest()),
+                    hashlib.sha1(b"refs/heads/master").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
             }
@@ -1734,7 +1735,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # non-commits.
         repository = self.factory.makeGitRepository()
         blob_sha1 = six.ensure_text(
-            hashlib.sha1("refs/heads/blob").hexdigest())
+            hashlib.sha1(b"refs/heads/blob").hexdigest())
         refs_info = {
             "refs/heads/blob": {
                 "sha1": blob_sha1,
@@ -1808,8 +1809,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # fetchRefCommits fetches detailed tip commit metadata for the
         # requested refs.
         master_sha1 = six.ensure_text(
-            hashlib.sha1("refs/heads/master").hexdigest())
-        foo_sha1 = six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())
+            hashlib.sha1(b"refs/heads/master").hexdigest())
+        foo_sha1 = six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
@@ -1830,7 +1831,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(committer_date)),
                     },
                 "parents": [],
-                "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
+                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
                 }]))
         refs = {
             "refs/heads/master": {
@@ -1906,9 +1907,9 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         expected_sha1s = [
             ("refs/heads/master", "1111111111111111111111111111111111111111"),
             ("refs/heads/foo",
-             six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())),
+             six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())),
             ("refs/tags/1.0",
-             six.ensure_text(hashlib.sha1("refs/heads/master").hexdigest())),
+             six.ensure_text(hashlib.sha1(b"refs/heads/master").hexdigest())),
             ]
         matchers = [
             MatchesStructure.byEquality(
@@ -2932,15 +2933,15 @@ class TestGitRepositoryGetBlob(TestCaseWithFactory):
 
     def test_getBlob_with_default_rev(self):
         repository = self.factory.makeGitRepository()
-        self.useFixture(GitHostingFixture(blob='Some text'))
+        self.useFixture(GitHostingFixture(blob=b'Some text'))
         ret = repository.getBlob('src/README.txt')
-        self.assertEqual('Some text', ret)
+        self.assertEqual(b'Some text', ret)
 
     def test_getBlob_with_rev(self):
         repository = self.factory.makeGitRepository()
-        self.useFixture(GitHostingFixture(blob='Some text'))
+        self.useFixture(GitHostingFixture(blob=b'Some text'))
         ret = repository.getBlob('src/README.txt', 'some-rev')
-        self.assertEqual('Some text', ret)
+        self.assertEqual(b'Some text', ret)
 
 
 class TestGitRepositoryRules(TestCaseWithFactory):
@@ -3824,6 +3825,50 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def test_repackRepository_owner(self):
+        # Repository owner cannot repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+
+        with person_logged_in(owner_db):
+            self.assertRaises(
+                Unauthorized, getattr, repository_db, 'repackRepository')
+        self.assertEqual(0, hosting_fixture.repackRepository.call_count)
+
+    def test_repackRepository_admin(self):
+        # Admins can trigger a repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        with person_logged_in(admin):
+            repository_db.repackRepository()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.repackRepository.calls)
+        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+
+    def test_repackRepository_registry_expert(self):
+        # Registry experts can trigger a repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        person = self.factory.makePerson()
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        with admin_logged_in():
+            getUtility(ILaunchpadCelebrities).registry_experts.addMember(
+                person, admin)
+        with person_logged_in(person):
+            repository_db.repackRepository()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.repackRepository.calls)
+        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")
         project_db = self.factory.makeProduct(name="project")
@@ -4325,7 +4370,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             repository.owner, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(repository_url, "getRules")
-        self.assertThat(json.loads(response.body), MatchesListwise([
+        self.assertThat(response.jsonBody(), MatchesListwise([
             MatchesDict({
                 "ref_pattern": Equals("refs/heads/stable/*"),
                 "grants": MatchesSetwise(
@@ -4440,7 +4485,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=owner_url,
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["create", "push"]),
             "refs/heads/next": Equals(["create", "push"]),
             "refs/other": Equals(["create", "push", "force-push"]),
@@ -4448,7 +4493,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[0],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["create"]),
             "refs/heads/next": Equals([]),
             "refs/other": Equals([]),
@@ -4456,7 +4501,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[1],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["push"]),
             "refs/heads/next": Equals(["push", "force-push"]),
             "refs/other": Equals([]),
@@ -4477,7 +4522,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         webservice.default_api_version = "devel"
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(200, response.status)
-        macaroon = Macaroon.deserialize(json.loads(response.body))
+        macaroon = Macaroon.deserialize(response.jsonBody())
         with person_logged_in(ANONYMOUS):
             self.assertThat(macaroon, MatchesStructure(
                 location=Equals(config.vhost.mainsite.hostname),
@@ -4503,8 +4548,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "git-repository macaroons may only be issued for a logged-in "
-            "user.", response.body)
+            b"git-repository macaroons may only be issued for a logged-in "
+            b"user.", response.body)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

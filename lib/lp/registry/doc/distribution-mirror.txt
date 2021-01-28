@@ -253,10 +253,10 @@ weren't probed in the last 23 (the value of PROBE_INTERVAL) hours.
     >>> valid_mirror = mirrorset[1]
     >>> valid_mirror.name
     u'archive-mirror'
-    >>> from StringIO import StringIO
-    >>> log_file = StringIO()
-    >>> log_file.write("Fake probe, nothing useful here.")
-    >>> log_file.seek(0)
+    >>> import io
+    >>> log_file = io.BytesIO()
+    >>> _ = log_file.write(b"Fake probe, nothing useful here.")
+    >>> _ = log_file.seek(0)
     >>> library_alias = getUtility(ILibraryFileAliasSet).create(
     ...     name='foo', size=len(log_file.getvalue()),
     ...     file=log_file, contentType='text/plain')
@@ -341,10 +341,11 @@ up on the public mirror listings.
     >>> transaction.commit()
 
     >>> import email
+    >>> from operator import itemgetter
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
     2
-    >>> stub.test_emails.sort(lambda a, b: cmp(a[1], b[1])) # sort by to_addr
+    >>> stub.test_emails.sort(key=itemgetter(1))  # sort by to_addr
     >>> from_addr, to_addr, raw_message = stub.test_emails.pop()
     >>> msg = email.message_from_string(raw_message)
     >>> msg['To']
@@ -652,6 +653,7 @@ is correct.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing Archive Mirrors
     INFO    Probed 5 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Disabling 1 mirror(s):
             http://launchpad.test/ubuntu/+mirror/archive-404-mirror
     INFO    Re-enabling 1 mirror(s):
@@ -666,6 +668,7 @@ is correct.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Disabling 1 mirror(s):
             http://launchpad.test/ubuntu/+mirror/unreachable-mirror
     INFO    Done.
@@ -695,6 +698,7 @@ all official mirrors independently if they were probed recently or not.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Done.
     <BLANKLINE>
 
@@ -714,6 +718,7 @@ we'll enable them again.
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
+    INFO    Starting to update mirrors statuses outside reactor now.
     INFO    Re-enabling 1 mirror(s):
             http://launchpad.test/ubuntu/+mirror/releases-mirror
     INFO    Done.

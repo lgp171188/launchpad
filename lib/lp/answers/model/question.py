@@ -13,7 +13,10 @@ __all__ = [
     'QuestionTargetMixin',
     ]
 
-from datetime import datetime
+from datetime import (
+    datetime,
+    timedelta,
+    )
 from email.utils import make_msgid
 import operator
 
@@ -28,19 +31,26 @@ from lazr.lifecycle.event import (
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
+from storm.expr import (
+    Alias,
+    LeftJoin,
     )
-from storm.expr import LeftJoin
 from storm.locals import (
+    And,
+    ClassAlias,
+    Count,
+    DateTime,
+    Desc,
     Int,
+    Join,
+    Not,
+    Or,
     Reference,
+    Select,
+    Store,
+    Unicode,
     )
 from storm.references import ReferenceSet
-from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import (
@@ -82,6 +92,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.buglink import IBugLinkTarget
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.model.buglinktarget import BugLinkTargetMixin
+from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -98,22 +109,21 @@ from lp.registry.interfaces.product import (
     IProductSet,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
-from lp.services.database.sqlbase import (
-    cursor,
-    quote,
-    SQLBase,
-    sqlvalues,
+from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import (
+    fti_search,
+    rank_by_fti,
     )
-from lp.services.database.stormexpr import rank_by_fti
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
 from lp.services.messages.interfaces.message import IMessage
 from lp.services.messages.model.message import (
@@ -126,6 +136,7 @@ from lp.services.worlddata.helpers import is_english_variant
 from lp.services.worlddata.interfaces.language import ILanguage
 from lp.services.worlddata.model.language import Language
 from lp.services.xref.interfaces import IXRefSet
+from lp.services.xref.model import XRef
 
 
 class notify_question_modified:
@@ -166,50 +177,50 @@ class notify_question_modified:
 
 
 @implementer(IQuestion, IBugLinkTarget)
-class Question(SQLBase, BugLinkTargetMixin):
+class Question(StormBase, BugLinkTargetMixin):
     """See `IQuestion`."""
 
-    _table = 'Question'
+    __storm_table__ = 'Question'
     _defaultOrder = ['-priority', 'datecreated']
 
     # db field names
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    title = StringCol(notNull=True)
-    description = StringCol(notNull=True)
-    language = ForeignKey(
-        dbName='language', notNull=True, foreignKey='Language')
-    status = EnumCol(
-        schema=QuestionStatus, notNull=True, default=QuestionStatus.OPEN)
-    priority = EnumCol(
-        schema=QuestionPriority, notNull=True,
-        default=QuestionPriority.NORMAL)
-    assignee = ForeignKey(
-        dbName='assignee', notNull=False, foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
-    answerer = ForeignKey(
-        dbName='answerer', notNull=False, foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+    id = Int(primary=True)
+    owner_id = Int(name='owner', allow_none=False,
+                   validator=validate_public_person)
+    owner = Reference(owner_id, 'Person.id')
+    title = Unicode(allow_none=False)
+    description = Unicode(allow_none=False)
+    language_id = Int(name="language", allow_none=False)
+    language = Reference(language_id, 'Language.id')
+    status = DBEnum(name="status", enum=QuestionStatus, allow_none=False,
+                    default=QuestionStatus.OPEN)
+    priority = DBEnum(name="priority", enum=QuestionPriority,
+                      allow_none=False, default=QuestionPriority.NORMAL)
+    assignee_id = Int(name="assignee", allow_none=True,
+                      validator=validate_public_person, default=None)
+    assignee = Reference(assignee_id, 'Person.id')
+    answerer_id = Int(name="answerer", allow_none=True,
+                      validator=validate_public_person, default=None)
+    answerer = Reference(answerer_id, 'Person.id')
     answer_id = Int(name='answer', allow_none=True, default=None)
     answer = Reference(answer_id, 'QuestionMessage.id')
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    datedue = UtcDateTimeCol(notNull=False, default=None)
-    datelastquery = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    datelastresponse = UtcDateTimeCol(notNull=False, default=None)
-    date_solved = UtcDateTimeCol(notNull=False, default=None)
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=False, default=None)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=False,
-        default=None)
-    sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', foreignKey='SourcePackageName',
-        notNull=False, default=None)
-    whiteboard = StringCol(notNull=False, default=None)
+    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datedue = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    datelastquery = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datelastresponse = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    product_id = Int(name='product', allow_none=True, default=None)
+    product = Reference(product_id, 'Product.id')
+    distribution_id = Int(name='distribution', allow_none=True, default=None)
+    distribution = Reference(distribution_id, 'Distribution.id')
+    sourcepackagename_id = Int(
+        name='sourcepackagename', allow_none=True, default=None)
+    sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
+    whiteboard = Unicode(allow_none=True, default=None)
 
-    faq = ForeignKey(
-        dbName='faq', foreignKey='FAQ', notNull=False, default=None)
+    faq_id = Int(name='faq', allow_none=True, default=None)
+    faq = Reference(faq_id, 'FAQ.id')
 
     # useful joins
     subscriptions = ReferenceSet(
@@ -223,8 +234,21 @@ class Question(SQLBase, BugLinkTargetMixin):
     # ReferenceSets, so use a list() property instead.
     _messages = ReferenceSet(
         'id', 'QuestionMessage.question_id', order_by='QuestionMessage.id')
-    reopenings = SQLMultipleJoin('QuestionReopening', orderBy='datecreated',
-        joinColumn='question')
+    reopenings = ReferenceSet(
+        'id', 'QuestionReopening.question_id',
+        order_by='QuestionReopening.datecreated')
+
+    def __init__(self, title, description, owner, product, distribution,
+                 language, sourcepackagename, datecreated):
+        self.title = title
+        self.description = description
+        self.owner = owner
+        self.product = product
+        self.distribution = distribution
+        self.sourcepackagename = sourcepackagename
+        self.datecreated = datecreated
+        self.language = language
+        self.datelastquery = datecreated
 
     @property
     def messages(self):
@@ -723,29 +747,28 @@ class QuestionSet:
         # This query joins to bugtasks that are not BugTaskStatus.INVALID
         # because there are many bugtasks to one question. A question is
         # included when BugTask.status IS NULL.
-        return Question.select("""
-            id in (SELECT Question.id
-                FROM Question
-                LEFT OUTER JOIN XRef ON (
-                    XRef.from_type = 'question'
-                    AND XRef.from_id_int = Question.id
-                    AND XRef.to_type = 'bug')
-                LEFT OUTER JOIN BugTask ON (
-                    BugTask.bug = XRef.to_id_int
-                    AND BugTask.status != %s)
-                WHERE
-                    Question.status IN (%s, %s)
-                    AND (Question.datelastresponse IS NULL
-                         OR Question.datelastresponse < (CURRENT_TIMESTAMP
-                            AT TIME ZONE 'UTC' - interval '%s days'))
-                    AND Question.datelastquery < (CURRENT_TIMESTAMP
-                            AT TIME ZONE 'UTC' - interval '%s days')
-                    AND Question.assignee IS NULL
-                    AND BugTask.status IS NULL)
-            """ % sqlvalues(
-                BugTaskStatus.INVALID,
-                QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-                days_before_expiration, days_before_expiration))
+        origin = [
+            Question,
+            LeftJoin(XRef, And(
+                XRef.from_type == u'question',
+                XRef.from_id_int == Question.id,
+                XRef.to_type == u'bug')),
+            LeftJoin(BugTask, And(
+                BugTask.bug == XRef.to_id_int,
+                BugTask._status != BugTaskStatus.INVALID)),
+            ]
+        expiry = datetime.now(pytz.UTC) - timedelta(
+            days=days_before_expiration)
+        return IStore(Question).using(*origin).find(
+            Question,
+            Question.status.is_in(
+                (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO)),
+            Or(
+                Question.datelastresponse == None,
+                Question.datelastresponse < expiry),
+            Question.datelastquery < expiry,
+            Question.assignee == None,
+            BugTask._status == None).config(distinct=True)
 
     def searchQuestions(self, search_text=None, language=None,
                       status=QUESTION_STATUS_DEFAULT_SEARCH, sort=None):
@@ -761,32 +784,33 @@ class QuestionSet:
 
     def getMostActiveProjects(self, limit=5):
         """See `IQuestionSet`."""
-        cur = cursor()
-        cur.execute("""
-            SELECT product, distribution, count(*) AS "question_count"
-            FROM (
-                SELECT product, distribution
-                FROM Question
-                    LEFT OUTER JOIN Product ON (Question.product = Product.id)
-                    LEFT OUTER JOIN Distribution ON (
-                        Question.distribution = Distribution.id)
-                WHERE
-                    ((Product.answers_usage = %s AND Product.active)
-                    OR Distribution.answers_usage = %s)
-                    AND Question.datecreated > (
-                        current_timestamp -interval '60 days')
-                LIMIT 5000
-            ) AS "RecentQuestions"
-            GROUP BY product, distribution
-            ORDER BY question_count DESC
-            LIMIT %s
-            """ % sqlvalues(
-                    ServiceUsage.LAUNCHPAD, ServiceUsage.LAUNCHPAD, limit))
+
+        from lp.registry.model.product import Product
+        from lp.registry.model.distribution import Distribution
+
+        time_cutoff = datetime.now(pytz.UTC) - timedelta(days=60)
+        question_count = Alias(Count())
+
+        origin = (Question,
+                  LeftJoin(Product, Question.product_id == Product.id),
+                  LeftJoin(Distribution,
+                           Question.distribution_id == Distribution.id))
+
+        results = IStore(Question).using(*origin).find(
+            (Question.product_id, Question.distribution_id, question_count),
+            Or(
+                And(Product._answers_usage == ServiceUsage.LAUNCHPAD,
+                    Product.active),
+                Distribution._answers_usage == ServiceUsage.LAUNCHPAD),
+            Question.datecreated > time_cutoff
+            ).group_by(
+                Question.product_id, Question.distribution_id
+            ).order_by(Desc(question_count))[:limit]
 
         projects = []
         product_set = getUtility(IProductSet)
         distribution_set = getUtility(IDistributionSet)
-        for product_id, distribution_id, ignored in cur.fetchall():
+        for product_id, distribution_id, _ in results:
             if product_id:
                 projects.append(product_set.get(product_id))
             elif distribution_id:
@@ -808,8 +832,7 @@ class QuestionSet:
         question = Question(
             title=title, description=description, owner=owner,
             product=product, distribution=distribution, language=language,
-            sourcepackagename=sourcepackagename, datecreated=datecreated,
-            datelastquery=datecreated)
+            sourcepackagename=sourcepackagename, datecreated=datecreated)
 
         # Subscribe the submitter
         question.subscribe(owner)
@@ -818,10 +841,12 @@ class QuestionSet:
 
     def get(self, question_id, default=None):
         """See `IQuestionSet`."""
-        try:
-            return Question.get(question_id)
-        except SQLObjectNotFound:
-            return default
+        # search views produce strings, not integers
+        question_id = int(question_id)
+        question = IStore(Question).find(
+            Question,
+            Question.id == question_id).one()
+        return question or default
 
     def getOpenQuestionCountByPackages(self, packages):
         """See `IQuestionSet`."""
@@ -849,27 +874,17 @@ class QuestionSet:
             package.sourcepackagename.id for package in packages]
         open_statuses = [QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]
 
-        query = """
-            SELECT Question.distribution,
-                   Question.sourcepackagename,
-                   COUNT(*) AS open_questions
-            FROM Question
-            WHERE Question.status IN %(open_statuses)s
-                AND Question.sourcepackagename IN %(package_names)s
-                AND Question.distribution = %(distribution)s
-            GROUP BY Question.distribution, Question.sourcepackagename
-            """ % sqlvalues(
-                open_statuses=open_statuses,
-                package_names=package_name_ids,
-                distribution=distribution,
-                )
-        cur = cursor()
-        cur.execute(query)
+        results = IStore(Question).find(
+            (Question.distribution_id, Question.sourcepackagename_id, Count()),
+            Question.status.is_in(open_statuses),
+            Question.sourcepackagename_id.is_in(package_name_ids),
+            Question.distribution == distribution,
+        ).group_by(Question.distribution_id, Question.sourcepackagename_id)
         sourcepackagename_set = getUtility(ISourcePackageNameSet)
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
         counts = dict((package, 0) for package in packages)
-        for distro_id, spn_id, open_questions in cur.fetchall():
+        for distro_id, spn_id, open_questions in results:
             # The SourcePackageNames here should already be pre-fetched,
             # so that .get(spn_id) won't issue a DB query.
             sourcepackagename = sourcepackagename_set.get(spn_id)
@@ -916,6 +931,9 @@ class QuestionSearch:
 
     def getTargetConstraints(self):
         """Return the constraints related to the IQuestionTarget context."""
+        # Circular import.
+        from lp.registry.model.product import Product
+
         if self.sourcepackagename:
             assert self.distribution is not None, (
                 "Distribution must be specified if sourcepackage is not None")
@@ -923,23 +941,22 @@ class QuestionSearch:
         constraints = []
 
         if self.product:
-            constraints.append(
-                'Question.product = %s' % sqlvalues(self.product))
+            constraints.append(Question.product == self.product)
         elif self.distribution:
-            constraints.append(
-                'Question.distribution = %s' % sqlvalues(self.distribution))
+            constraints.append(Question.distribution == self.distribution)
             if self.sourcepackagename:
                 constraints.append(
-                    'Question.sourcepackagename = %s' % sqlvalues(
-                        self.sourcepackagename))
+                    Question.sourcepackagename == self.sourcepackagename)
         elif self.projectgroup:
-            constraints.append("""
-                Question.product = Product.id AND Product.active AND
-                Product.project = %s""" % sqlvalues(self.projectgroup))
+            constraints.extend([
+                Question.product == Product.id,
+                Product.active,
+                Product.projectgroup == self.projectgroup,
+                ])
         else:
-            constraints.append("""
-                ((Question.product = Product.id AND Product.active) OR
-                 Question.product IS NULL)""")
+            constraints.append(Or(
+                And(Question.product == Product.id, Product.active),
+                Question.product == None))
 
         return constraints
 
@@ -958,9 +975,12 @@ class QuestionSearch:
         """Create the joins needed to select constraints on the messages by a
         particular person."""
         joins = [
-            ("""LEFT OUTER JOIN QuestionMessage
-                ON QuestionMessage.question = Question.id
-                AND QuestionMessage.owner = %s""" % sqlvalues(person))]
+            LeftJoin(
+                QuestionMessage,
+                And(
+                    QuestionMessage.question == Question.id,
+                    QuestionMessage.owner == person)),
+            ]
         if self.projectgroup:
             joins.extend(self.getProductJoins())
         elif not self.product and not self.distribution:
@@ -971,53 +991,50 @@ class QuestionSearch:
     def getProductJoins(self):
         """Create the joins needed to select constraints on projects by a
         particular project group."""
-        return [('JOIN Product '
-                 'ON Question.product = Product.id')]
+        # Circular import.
+        from lp.registry.model.product import Product
+
+        return [Join(Product, Question.product == Product.id)]
 
     def getActivePillarJoins(self):
         """Create the joins needed to select constraints on active pillars."""
-        return [('LEFT OUTER JOIN Product ON Question.product = Product.id')]
+        # Circular import.
+        from lp.registry.model.product import Product
+
+        return [LeftJoin(Product, Question.product == Product.id)]
 
     def getConstraints(self):
-        """Return a list of SQL constraints to use for this search."""
+        """Return a list of Storm constraints to use for this search."""
 
         constraints = self.getTargetConstraints()
 
         if self.search_text is not None:
-            if self.nl_phrase_used:
-                constraints.append(
-                    'Question.fti @@ %s' % quote(self.search_text))
-            else:
-                constraints.append(
-                    'Question.fti @@ ftq(%s)' % quote(self.search_text))
+            constraints.append(fti_search(
+                Question, self.search_text, ftq=not self.nl_phrase_used))
 
         if self.status:
-            constraints.append('Question.status IN %s' % sqlvalues(
-                list(self.status)))
+            constraints.append(Question.status.is_in(self.status))
 
         if self.needs_attention_from:
-            constraints.append('''(
-                (Question.owner = %(person)s
-                    AND Question.status IN %(owner_status)s)
-                OR (Question.owner != %(person)s AND
-                    Question.status = %(open_status)s AND
-                    QuestionMessage.owner = %(person)s)
-                )''' % sqlvalues(
-                    person=self.needs_attention_from,
-                    owner_status=[
-                        QuestionStatus.NEEDSINFO, QuestionStatus.ANSWERED],
-                    open_status=QuestionStatus.OPEN))
+            constraints.append(Or(
+                And(
+                    Question.owner == self.needs_attention_from,
+                    Question.status.is_in([
+                        QuestionStatus.NEEDSINFO, QuestionStatus.ANSWERED])),
+                And(
+                    Question.owner != self.needs_attention_from,
+                    Question.status == QuestionStatus.OPEN,
+                    QuestionMessage.owner == self.needs_attention_from)))
 
         if self.language:
-            constraints.append(
-                'Question.language IN (%s)'
-                    % ', '.join(sqlvalues(*self.language)))
+            constraints.append(Question.language_id.is_in(
+                [language.id for language in self.language]))
 
         return constraints
 
     def getPrejoins(self):
         """Return a list of tables that should be prejoined on this search."""
-        # The idea is to prejoin all dependant tables, except if the
+        # The idea is to prejoin all dependent tables, except if the
         # object will be the same in all rows because it is used as a
         # search criteria.
         if self.product or self.sourcepackagename or self.projectgroup:
@@ -1030,12 +1047,6 @@ class QuestionSearch:
             # QuestionTarget will vary.
             return ['owner', 'product', 'distribution', 'sourcepackagename']
 
-    def getPrejoinClauseTables(self):
-        """Return a list of tables that are in the contraints"""
-        if self.getConstraints().count('Question.product = Product.id'):
-            return ['product']
-        return []
-
     def getOrderByClause(self):
         """Return the ORDER BY clause to use for this search's results."""
         sort = self.sort
@@ -1045,42 +1056,71 @@ class QuestionSearch:
             else:
                 sort = QuestionSort.NEWEST_FIRST
         if sort is QuestionSort.NEWEST_FIRST:
-            return "-Question.datecreated"
+            return [Desc(Question.datecreated)]
         elif sort is QuestionSort.OLDEST_FIRST:
-            return "Question.datecreated"
+            return [Question.datecreated]
         elif sort is QuestionSort.STATUS:
-            return ["Question.status", "-Question.datecreated"]
+            return [Question.status, Desc(Question.datecreated)]
         elif sort is QuestionSort.RELEVANCY:
             if self.search_text:
                 ftq = not self.nl_phrase_used
                 return [
                     rank_by_fti(Question, self.search_text, ftq=ftq),
-                    "-Question.datecreated"]
+                    Desc(Question.datecreated)]
             else:
-                return "-Question.datecreated"
+                return [Desc(Question.datecreated)]
         elif sort is QuestionSort.RECENT_OWNER_ACTIVITY:
-            return ['-Question.datelastquery']
+            return [Desc(Question.datelastquery)]
         else:
             raise AssertionError("Unknown QuestionSort value: %s" % sort)
 
     def getResults(self):
         """Return the questions that match this query."""
-        query = ''
+        # Circular imports.
+        from lp.registry.model.distribution import Distribution
+        from lp.registry.model.person import Person
+        from lp.registry.model.product import Product
+
+        prejoin_table_by_name = {
+            'owner': ClassAlias(Person, 'prejoin_owner'),
+            'product': ClassAlias(Product, 'prejoin_product'),
+            'distribution': ClassAlias(Distribution, 'prejoin_distribution'),
+            'sourcepackagename': ClassAlias(
+                SourcePackageName, 'prejoin_sourcepackagename'),
+            }
+        prejoin_condition_by_name = {
+            'owner': Question.owner == prejoin_table_by_name['owner'].id,
+            'product': (
+                Question.product == prejoin_table_by_name['product'].id),
+            'distribution': (
+                Question.distribution ==
+                prejoin_table_by_name['distribution'].id),
+            'sourcepackagename': (
+                Question.sourcepackagename ==
+                prejoin_table_by_name['sourcepackagename'].id),
+            }
+
         constraints = self.getConstraints()
         if constraints:
             joins = self.getTableJoins()
-            if len(joins) > 0:
+            if joins:
                 # Make a slower query to accommodate the joins.
-                query += (
-                    'Question.id IN ('
-                        'SELECT Question.id FROM Question %s WHERE %s)' % (
-                            '\n'.join(joins), ' AND '.join(constraints)))
-            else:
-                query += ' AND '.join(constraints)
-        return Question.select(
-            query, prejoins=self.getPrejoins(),
-            prejoinClauseTables=self.getPrejoinClauseTables(),
-            orderBy=self.getOrderByClause())
+                constraints = [
+                    Question.id.is_in(Select(
+                        Question.id, where=And(*constraints),
+                        tables=[Question] + joins)),
+                    ]
+        prejoins = [
+            LeftJoin(
+                prejoin_table_by_name[prejoin],
+                prejoin_condition_by_name[prejoin])
+            for prejoin in self.getPrejoins()]
+        prejoin_tables = [
+            prejoin_table_by_name[prejoin] for prejoin in self.getPrejoins()]
+        rows = IStore(Question).using(Question, *prejoins).find(
+            (Question,) + tuple(prejoin_tables),
+            *constraints).order_by(*self.getOrderByClause())
+        return DecoratedResultSet(rows, operator.itemgetter(0))
 
 
 class QuestionTargetSearch(QuestionSearch):
@@ -1119,13 +1159,13 @@ class QuestionTargetSearch(QuestionSearch):
         """
         constraints = QuestionSearch.getConstraints(self)
         if self.owner:
-            constraints.append('Question.owner = %s' % self.owner.id)
+            constraints.append(Question.owner == self.owner)
         if self.unsupported_target is not None:
-            langs = [str(lang.id)
-                     for lang in (
-                        self.unsupported_target.getSupportedLanguages())]
-            constraints.append('Question.language NOT IN (%s)' %
-                               ', '.join(langs))
+            supported_languages = (
+                self.unsupported_target.getSupportedLanguages())
+            constraints.append(
+                Not(Question.language_id.is_in(
+                    [language.id for language in supported_languages])))
 
         return constraints
 
@@ -1156,7 +1196,7 @@ class SimilarQuestionsSearch(QuestionSearch):
         # Change the search text to use based on the native language
         # similarity search algorithm.
         self.search_text = nl_phrase_search(
-            title, Question, " AND ".join(self.getTargetConstraints()))
+            title, Question, self.getTargetConstraints())
         self.nl_phrase_used = True
 
 
@@ -1197,23 +1237,33 @@ class QuestionPersonSearch(QuestionSearch):
 
         if QuestionParticipation.SUBSCRIBER in self.participation:
             joins.append(
-                'LEFT OUTER JOIN QuestionSubscription '
-                'ON QuestionSubscription.question = Question.id'
-                ' AND QuestionSubscription.person = %s' % sqlvalues(
-                    self.person))
+                LeftJoin(
+                    QuestionSubscription,
+                    And(
+                        QuestionSubscription.question == Question.id,
+                        QuestionSubscription.person == self.person)))
 
         if QuestionParticipation.COMMENTER in self.participation:
+            def join_properties(join):
+                # Return the essential properties of a join, so that we can
+                # check whether we already have it in the list.
+                return (join.left, join.right, join.on)
+
+            all_join_properties = [join_properties(join) for join in joins]
             message_joins = self.getMessageJoins(self.person)
-            joins.extend([join for join in message_joins if join not in joins])
+            joins.extend([
+                join for join in message_joins
+                if join_properties(join) not in all_join_properties])
 
         return joins
 
-    queryByParticipationType = {
-        QuestionParticipation.ANSWERER: "Question.answerer = %s",
-        QuestionParticipation.SUBSCRIBER: "QuestionSubscription.person = %s",
-        QuestionParticipation.OWNER: "Question.owner = %s",
-        QuestionParticipation.COMMENTER: "QuestionMessage.owner = %s",
-        QuestionParticipation.ASSIGNEE: "Question.assignee = %s"}
+    columnByParticipationType = {
+        QuestionParticipation.ANSWERER: Question.answerer,
+        QuestionParticipation.SUBSCRIBER: QuestionSubscription.person,
+        QuestionParticipation.OWNER: Question.owner,
+        QuestionParticipation.COMMENTER: QuestionMessage.owner,
+        QuestionParticipation.ASSIGNEE: Question.assignee,
+        }
 
     def getConstraints(self):
         """See `QuestionSearch`.
@@ -1225,12 +1275,11 @@ class QuestionPersonSearch(QuestionSearch):
 
         participations_filter = []
         for participation_type in self.participation:
-            participations_filter.append(
-                self.queryByParticipationType[participation_type] % sqlvalues(
-                    self.person))
+            column = self.columnByParticipationType[participation_type]
+            participations_filter.append(column == self.person)
 
         if participations_filter:
-            constraints.append('(' + ' OR '.join(participations_filter) + ')')
+            constraints.append(Or(participations_filter))
 
         return constraints
 
@@ -1264,7 +1313,7 @@ class QuestionTargetMixin:
             datecreated=bug.datecreated)
         # Give the datelastresponse a current datetime, otherwise the
         # Launchpad Janitor would quickly expire questions made from old bugs.
-        question.datelastresponse = datetime.now(pytz.timezone('UTC'))
+        question.datelastresponse = datetime.now(pytz.UTC)
         # Directly create the BugLink so that users do not receive duplicate
         # messages about the bug.
         question.createBugLink(bug)
@@ -1281,9 +1330,9 @@ class QuestionTargetMixin:
 
     def getQuestion(self, question_id):
         """See `IQuestionTarget`."""
-        try:
-            question = Question.get(question_id)
-        except SQLObjectNotFound:
+        question = IStore(Question).find(
+            Question, Question.id == question_id).one()
+        if not question:
             return None
         # Verify that the question is actually for this target.
         if not self.questionIsForTarget(question):
@@ -1303,18 +1352,11 @@ class QuestionTargetMixin:
 
     def getQuestionLanguages(self):
         """See `IQuestionTarget`."""
-        constraints = ['Language.id = Question.language']
-        targets = self.getTargetTypes()
-        for column, target in targets.items():
-            if target is None:
-                constraint = "Question." + column + " IS NULL"
-            else:
-                constraint = "Question." + column + " = %s" % sqlvalues(
-                    target)
-            constraints.append(constraint)
-        return set(Language.select(
-            ' AND '.join(constraints),
-            clauseTables=['Question'], distinct=True))
+        query = [Language.id == Question.language_id]
+        for column, target in self.getTargetTypes().items():
+            query.append(getattr(Question, column) == target)
+        results = IStore(Question).find(Language, *query).config(distinct=True)
+        return results
 
     @property
     def _store(self):
@@ -1415,44 +1457,32 @@ class QuestionTargetMixin:
         Store.of(answer_contact).flush()
         return True
 
-    def _selectPersonFromAnswerContacts(self, constraints, clause_tables):
-        """Return the Persons or Teams who are AnswerContacts."""
-        constraints.append("""Person.id = AnswerContact.person""")
-        clause_tables.append('AnswerContact')
-        # Avoid a circular import of Person, which imports the mixin.
-        from lp.registry.model.person import Person
-        return Person.select(
-            " AND ".join(constraints), clauseTables=clause_tables,
-            orderBy=['display_name'], distinct=True)
-
     def getAnswerContactsForLanguage(self, language):
         """See `IQuestionTarget`."""
+        from lp.registry.model.person import PersonLanguage, Person
         assert language is not None, (
             "The language cannot be None when selecting answer contacts.")
-        constraints = []
+        query = []
         targets = self.getTargetTypes()
         for column, target in targets.items():
-            if target is None:
-                constraint = "AnswerContact." + column + " IS NULL"
-            else:
-                constraint = "AnswerContact." + column + " = %s" % sqlvalues(
-                    target)
-            constraints.append(constraint)
-
-        constraints.append("""
-            AnswerContact.person = PersonLanguage.person AND
-            PersonLanguage.Language = Language.id""")
+            query.append(getattr(AnswerContact, column) == target)
+        query.append(
+            And(
+                AnswerContact.person == PersonLanguage.person_id,
+                PersonLanguage.language_id == Language.id))
         # XXX sinzui 2007-07-12 bug=125545:
         # Using a LIKE constraint is suboptimal. We would not need this
         # if-else clause if variant languages knew their parent language.
         if language.code == 'en':
-            constraints.append("""
-                Language.code LIKE %s""" % sqlvalues('%s%%' % language.code))
+            query.append(Language.code.startswith(language.code))
         else:
-            constraints.append("""
-                Language.id = %s""" % sqlvalues(language))
-        return list((self._selectPersonFromAnswerContacts(
-            constraints, ['PersonLanguage', 'Language'])))
+            query.append(Language.id == language.id)
+
+        query.append(AnswerContact.person == Person.id)
+        results = IStore(Person).find(
+            Person, *query).config(distinct=True).order_by(
+                "Person.displayname")
+        return results
 
     def getAnswerContactRecipients(self, language):
         """See `IQuestionTarget`."""

@@ -352,6 +352,8 @@ def update_sourcecode(sourcecode_directory, config_filename, cache_filename,
         parse_config_file(config_file), public_only, use_http)
     config_file.close()
     cache = load_cache(cache_filename)
+    if not os.path.exists(sourcecode_directory):
+        os.makedirs(sourcecode_directory)
     branches = find_branches(sourcecode_directory)
     new, updated, removed = plan_update(branches, config)
     possible_transports = []

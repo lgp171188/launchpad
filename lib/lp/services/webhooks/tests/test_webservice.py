@@ -119,13 +119,15 @@ class TestWebhook(TestCaseWithFactory):
         self.assertThat(response,
             MatchesStructure.byEquality(
                 status=400,
-                body="event_types: u'hg:push:0.1' isn't a valid token"))
+                body=(
+                    "event_types: %r isn't a valid token" %
+                    u'hg:push:0.1').encode('ASCII')))
 
     def test_anon_forbidden(self):
         response = LaunchpadWebServiceCaller().get(
             self.webhook_url, api_version='devel')
         self.assertEqual(401, response.status)
-        self.assertIn('launchpad.View', response.body)
+        self.assertIn(b'launchpad.View', response.body)
 
     def test_deliveries(self):
         representation = self.webservice.get(
@@ -294,7 +296,7 @@ class TestWebhookTargetBase:
         response = webservice.get(
             self.target_url + '/webhooks', api_version='devel')
         self.assertEqual(401, response.status)
-        self.assertIn('launchpad.Edit', response.body)
+        self.assertIn(b'launchpad.Edit', response.body)
 
     def test_webhooks_query_count(self):
         def get_webhooks():
@@ -351,7 +353,7 @@ class TestWebhookTargetBase:
             delivery_url='http://example.com/ep',
             event_types=[self.event_type], api_version='devel')
         self.assertEqual(401, response.status)
-        self.assertIn('launchpad.Edit', response.body)
+        self.assertIn(b'launchpad.Edit', response.body)
 
     def test_newWebhook_feature_flag_guard(self):
         response = self.webservice.named_post(
@@ -360,7 +362,7 @@ class TestWebhookTargetBase:
             event_types=[self.event_type], api_version='devel')
         self.assertEqual(401, response.status)
         self.assertEqual(
-            'This webhook feature is not available yet.', response.body)
+            b'This webhook feature is not available yet.', response.body)
 
 
 class TestWebhookTargetGitRepository(

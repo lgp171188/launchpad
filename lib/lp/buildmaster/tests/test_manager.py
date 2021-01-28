@@ -13,6 +13,7 @@ import os
 import signal
 import time
 
+import six
 from six.moves import xmlrpc_client
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
@@ -592,7 +593,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
     def test_update_slave_version(self):
         # If the reported slave version differs from the DB's record of it,
         # then scanning the builder updates the DB.
-        slave = OkSlave(version="100")
+        slave = OkSlave(version=six.ensure_str("100"))
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         builder.version = "99"
         self._resetBuilder(builder)
@@ -610,7 +611,8 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         scanner = self._getScanner()
         with StormStatementRecorder() as recorder:
-            scanner.updateVersion(vitals, {"builder_version": "100"})
+            scanner.updateVersion(
+                vitals, {"builder_version": six.ensure_str("100")})
         self.assertThat(recorder, HasQueryCount(Equals(0)))
 
     @defer.inlineCallbacks
@@ -1006,8 +1008,8 @@ class TestSlaveScannerWithoutDB(TestCase):
 
         with ExpectedException(
                 BuildDaemonIsolationError,
-                "Allegedly clean slave not idle "
-                "\(u'BuilderStatus.BUILDING' instead\)"):
+                r"Allegedly clean slave not idle "
+                r"\(u'BuilderStatus.BUILDING' instead\)"):
             yield scanner.scan()
         self.assertEqual(['status'], slave.call_log)
 

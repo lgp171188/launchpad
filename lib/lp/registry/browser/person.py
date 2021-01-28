@@ -1221,7 +1221,7 @@ class PersonRdfContentsView:
     # parsing of the default text/html content-type.)
     template = ViewPageTemplateFile(
         '../templates/person-rdf-contents.pt',
-        content_type="application/rdf+xml")
+        content_type='application/rdf+xml;charset="utf-8"')
 
     def __init__(self, context, request):
         self.context = context
@@ -3738,16 +3738,24 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             default=credentials.url,
             required=True, readonly=False)
 
+        region = TextLine(
+            __name__=self._getFieldName('region', id),
+            default=credentials.region,
+            required=False, readonly=False)
+
         delete = Bool(
             __name__=self._getFieldName('delete', id),
             default=False,
             required=True, readonly=False)
 
-        return owner, username, password, confirm_password, url, delete
+        return owner, username, password, confirm_password, url, region, delete
 
     def getAddFieldsRow(self):
         add_url = TextLine(
             __name__=u'add_url',
+            required=False, readonly=False)
+        add_region = TextLine(
+            __name__=u'add_region',
             required=False, readonly=False)
         add_owner = Choice(
             __name__=u'add_owner',
@@ -3766,7 +3774,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             required=False, readonly=False)
 
         return (
-            add_url, add_owner, add_username,
+            add_url, add_region, add_owner, add_username,
             add_password, add_confirm_password)
 
     def _parseFieldName(self, field_name):
@@ -3825,6 +3833,8 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 "field." + self._getFieldName("confirm_password",
                                               credentials.id))
         url_field_name = "field." + self._getFieldName("url", credentials.id)
+        region_field_name = "field." + self._getFieldName(
+            "region", credentials.id)
         delete_field_name = (
                 "field." + self._getFieldName("delete", credentials.id))
         return {
@@ -3833,6 +3843,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             "password": widgets_by_name[password_field_name],
             "confirm_password": widgets_by_name[confirm_password_field_name],
             "url": widgets_by_name[url_field_name],
+            "region": widgets_by_name[region_field_name],
             "delete": widgets_by_name[delete_field_name]
         }
 
@@ -3840,6 +3851,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         """Rearrange form data to make it easier to process."""
         parsed_data = {}
         add_url = data["add_url"]
+        add_region = data["add_region"]
         add_owner = data["add_owner"]
         add_username = data["add_username"]
         add_password = data["add_password"]
@@ -3850,6 +3862,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 "password": add_password,
                 "confirm_password": add_confirm_password,
                 "url": add_url,
+                "region": add_region,
                 "owner": add_owner,
                 "action": "add",
             })
@@ -3865,6 +3878,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
             confirm_password_field_name = self._getFieldName(
                 "confirm_password", credentials_id)
             url_field_name = self._getFieldName("url", credentials_id)
+            region_field_name = self._getFieldName("region", credentials_id)
             delete_field_name = self._getFieldName("delete", credentials_id)
             if data.get(delete_field_name):
                 action = "delete"
@@ -3875,6 +3889,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 "password": data.get(password_field_name),
                 "confirm_password": data.get(confirm_password_field_name),
                 "url": data.get(url_field_name),
+                "region": data.get(region_field_name),
                 "owner": data.get(owner_field_name),
                 "action": action,
             })
@@ -3882,6 +3897,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         return parsed_data
 
     def changeCredentials(self, parsed_credentials, credentials):
+        region = parsed_credentials["region"]
         username = parsed_credentials["username"]
         password = parsed_credentials["password"]
         confirm_password = parsed_credentials["confirm_password"]
@@ -3893,15 +3909,19 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                         "confirm_password", credentials.id),
                     "Passwords do not match.")
             else:
-                credentials.setCredentials(
-                    {"username": username,
-                     "password": password})
-                credentials.url = parsed_credentials["url"]
+                raw_credentials = {
+                    "username": username,
+                    "password": password,
+                    }
+                if region:
+                    raw_credentials["region"] = region
+                credentials.setCredentials(raw_credentials)
         elif username != credentials.username:
             removeSecurityProxy(credentials).username = username
+        if parsed_credentials["url"] != credentials.url:
             credentials.url = parsed_credentials["url"]
-        elif parsed_credentials["url"] != credentials.url:
-            credentials.url = parsed_credentials["url"]
+        if credentials.region != region:
+            removeSecurityProxy(credentials).region = region
         if owner != credentials.owner:
             credentials.owner = owner
 
@@ -3919,6 +3939,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     def addCredentials(self, parsed_add_credentials):
         url = parsed_add_credentials["url"]
+        region = parsed_add_credentials["region"]
         owner = parsed_add_credentials["owner"]
         password = parsed_add_credentials["password"]
         confirm_password = parsed_add_credentials["confirm_password"]
@@ -3936,6 +3957,8 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                 credentials = {
                     'username': username,
                     'password': password}
+                if region:
+                    credentials["region"] = region
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
                         registrant=self.user, owner=owner, url=url,
@@ -3948,6 +3971,8 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
                         "username.")
             else:
                 credentials = {'username': username}
+                if region:
+                    credentials["region"] = region
                 try:
                     getUtility(IOCIRegistryCredentialsSet).new(
                         registrant=self.user, owner=owner, url=url,
@@ -4254,9 +4279,12 @@ class ContactViaWebNotificationRecipientSet:
                 self._count_recipients = 0
         return self._count_recipients
 
-    def __nonzero__(self):
+    def __bool__(self):
         """See `INotificationRecipientSet`."""
         return len(self) > 0
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def getReason(self, person_or_email):
         """See `INotificationRecipientSet`."""

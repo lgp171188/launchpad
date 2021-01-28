@@ -148,3 +148,11 @@ class IGitHostingClient(Interface):
         :param refs: A list of tuples like (repo_path, ref_name) to be deleted.
         :param logger: An optional logger.
         """
+
+    def repackRepository(path, logger=None):
+        """Repack a Git repository.
+
+        :param path: Physical path of the new repository on the hosting
+            service.
+        :param logger: An optional logger.
+        """

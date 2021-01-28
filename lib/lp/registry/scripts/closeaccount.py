@@ -153,9 +153,11 @@ def close_account(username, log):
         ('specification', 'goal_decider'),
         ('specification', 'goal_proposer'),
         ('specification', 'last_changed_by'),
+        ('specification', 'owner'),
         ('specification', 'starter'),
         ('structuralsubscription', 'subscribed_by'),
         ('teammembership', 'acknowledged_by'),
+        ('teammembership', 'last_changed_by'),
         ('teammembership', 'proposed_by'),
         ('teammembership', 'reviewed_by'),
         ('translationimportqueueentry', 'importer'),
@@ -176,6 +178,13 @@ def close_account(username, log):
         # can hopefully provide a garbo job for this eventually.
         ('revisionauthor', 'person'),
         }
+
+    # If all the teams that the user owns
+    # have been deleted (not just one) skip Person.teamowner
+    teams = store.find(Person, Person.teamowner == person)
+    if all(team.merged is not None for team in teams):
+        skip.add(('person', 'teamowner'))
+
     reference_names = {
         (src_tab, src_col) for src_tab, src_col, _, _, _, _ in references}
     for src_tab, src_col in skip:
@@ -235,14 +244,15 @@ def close_account(username, log):
 
     # Reassign their bugs
     table_notification('BugTask')
-    store.find(BugTask, BugTask.assigneeID == person.id).set(assigneeID=None)
+    store.find(BugTask, BugTask.assignee_id == person.id).set(assignee_id=None)
 
     # Reassign questions assigned to the user, and close all their questions
     # in non-final states since nobody else can.
     table_notification('Question')
-    store.find(Question, Question.assigneeID == person.id).set(assigneeID=None)
+    store.find(Question, Question.assignee_id == person.id).set(
+        assignee_id=None)
     owned_non_final_questions = store.find(
-        Question, Question.ownerID == person.id,
+        Question, Question.owner_id == person.id,
         Question.status.is_in([
             QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
             QuestionStatus.ANSWERED,
@@ -250,7 +260,7 @@ def close_account(username, log):
     owned_non_final_questions.set(
         status=QuestionStatus.SOLVED,
         whiteboard=(
-            'Closed by Launchpad due to owner requesting account removal'))
+            u'Closed by Launchpad due to owner requesting account removal'))
     skip.add(('question', 'owner'))
 
     # Remove rows from tables in simple cases in the given order

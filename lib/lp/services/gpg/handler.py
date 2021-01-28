@@ -580,7 +580,8 @@ class GPGHandler:
     def _grabPage(self, action, fingerprint):
         """Wrapper to collect KeyServer Pages."""
         url = self.getURLForKeyInServer(fingerprint, action)
-        return urlfetch(url).content
+        with urlfetch(url) as response:
+            return response.content
 
 
 @implementer(IPymeSignature)

@@ -19,6 +19,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
+from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,
@@ -50,11 +51,11 @@ def buildmasterTearDown(test):
 special = {
     'builder.txt': LayeredDocFileSuite(
         '../doc/builder.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadFunctionalLayer),
     'buildqueue.txt': LayeredDocFileSuite(
         '../doc/buildqueue.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadFunctionalLayer),
     }
 
@@ -62,4 +63,5 @@ special = {
 def test_suite():
     return build_test_suite(
         here, special, layer=LaunchpadZopelessLayer,
-        setUp=lambda test: setUp(test, future=True))
+        setUp=lambda test: setUp(test, future=True),
+        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))

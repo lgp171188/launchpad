@@ -15,6 +15,7 @@ import sys
 import traceback
 
 from ampoule.pool import ProcessPool
+import six
 from six.moves.urllib.parse import urlparse
 import transaction
 from twisted.internet import (
@@ -389,7 +390,8 @@ class BuilderInteractor(object):
         def got_resume_bad(failure):
             stdout, stderr, code = failure.value
             raise CannotResumeHost(
-                "Resuming failed:\nOUT:\n%s\nERR:\n%s\n" % (stdout, stderr))
+                "Resuming failed:\nOUT:\n%s\nERR:\n%s\n" %
+                (six.ensure_str(stdout), six.ensure_str(stderr)))
 
         return d.addCallback(got_resume_ok).addErrback(got_resume_bad)
 

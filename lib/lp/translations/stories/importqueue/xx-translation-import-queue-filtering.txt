@@ -286,7 +286,7 @@ Carlos uploads files for Evolution in Ubuntu Hoary.
     ...     BytesIO(b'foo'), 'application/x-po', 'foo.pot')
     >>> admin_browser.getControl('Upload').click()
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(extract_text(tag.renderContents()))
+    ...     print(extract_text(tag.decode_contents()))
     Thank you for your upload. It will be automatically reviewed...
 
     # Commit the transaction so librarian stores the uploaded file.

@@ -109,7 +109,7 @@ changed since a certain date.
 First we need to set up some data to test with, and for this we need
 some DB classes.
 
-    >>> from StringIO import StringIO
+    >>> import io
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
@@ -132,12 +132,12 @@ Get a source package name to go with our distro series.
 Put a dummy file in the Librarian required by the new template we are
 creating.
 
-    >>> contents = '# Test PO template.'
+    >>> contents = b'# Test PO template.'
     >>> file_alias = getUtility(ILibrarianClient).addFile(
-    ...     name = 'test.po',
-    ...     size = len(contents),
-    ...     file = StringIO(contents),
-    ...     contentType = 'application/x-po')
+    ...     name='test.po',
+    ...     size=len(contents),
+    ...     file=io.BytesIO(contents),
+    ...     contentType='application/x-po')
 
 Get some dates.
 

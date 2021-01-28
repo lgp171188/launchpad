@@ -9,9 +9,8 @@ import string
 import tempfile
 import unittest
 
-from testtools import TestCase
-
 from lp.services.testing.customresult import filter_tests
+from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
 
 
@@ -155,6 +154,6 @@ class TestFilterTests(TestCase):
             results = do_filter({'layer1': suite1,
                                  None: suite2})
         self.assertEqual(2, len(results))
-        self.assertEqual([None, 'layer1'], sorted(results.keys()))
+        self.assertContentEqual([None, 'layer1'], results.keys())
         self.assertEqual(['a', 'b'], [t.id() for t in results['layer1']])
         self.assertEqual(['y', 'z'], [t.id() for t in results[None]])

@@ -88,8 +88,9 @@ you wanted the meeting's start and end dates respectively.
 Sample Person is now listed as an attendee.
 
     >>> ubz = getUtility(ISprintSet)['ubz']
-    >>> [attendee.name for attendee in ubz.attendees]
-    [u'name12']
+    >>> for attendee in ubz.attendees:
+    ...     print(attendee.name)
+    name12
 
     >>> sprint_attendance = ubz.attendances[0]
 

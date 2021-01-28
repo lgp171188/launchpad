@@ -94,3 +94,22 @@ Remove +maintenancetime.txt to clean up.
 
     >>> os.remove('+maintenancetime.txt')
 
+
+== Per-page maintenance messages ==
+
+Alternatively, a maintenance message can be set in the
+app.maintenance_message feature flag, which can be scoped to particular
+pages.
+
+    >>> from lp.services.features.testing import FeatureFixture
+    >>> maintenance_text = (
+    ...     'This page will be <a href="https://example.com/">broken</a> '
+    ...     'for a while.')
+    >>> with FeatureFixture({'app.maintenance_message': maintenance_text}):
+    ...     content = front_page_content()
+    >>> maintenance_text in content
+    True
+
+    >>> content = front_page_content()
+    >>> maintenance_text not in content
+    True

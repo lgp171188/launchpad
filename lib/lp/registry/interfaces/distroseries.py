@@ -715,13 +715,6 @@ class IDistroSeriesPublic(
         list for this distroseries.
         """
 
-    def getSectionByName(name):
-        """Get the named section.
-
-        Raise NotFoundError if the section is not in the permitted section
-        list for this distroseries.
-        """
-
     def addSection(section):
         """SQLObject provided method to fill a related join key section."""
 

@@ -222,9 +222,6 @@ class DummyDistroSeriesLanguage(RosettaStats):
     def currentPercentage(self, language=None):
         return 0.0
 
-    def rosettaPercentage(self, language=None):
-        return 0.0
-
     def updatesPercentage(self, language=None):
         return 0.0
 

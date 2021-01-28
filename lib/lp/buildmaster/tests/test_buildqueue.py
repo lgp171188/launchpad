@@ -51,29 +51,6 @@ def find_job(test, name, processor='386'):
     return (None, None)
 
 
-def print_build_setup(builds):
-    """Show the build set-up for a particular test."""
-
-    def processor_name(bq):
-        return ('None' if bq.processor is None else bq.processor.name)
-
-    print("")
-    queue_entries = [build.buildqueue_record for build in builds]
-    queue_entries = sorted(
-        queue_entries, key=lambda qe: qe.job.id, reverse=True)
-    queue_entries = sorted(queue_entries, key=lambda qe: qe.lastscore)
-    for queue_entry in queue_entries:
-        source = None
-        for attr in ('sourcepackagerelease', 'sourcepackagename'):
-            source = getattr(queue_entry.specific_build, attr, None)
-            if source is not None:
-                break
-        print("%5s, %18s, p:%5s, v:%5s e:%s *** s:%5s" % (
-            queue_entry.id, source.name, processor_name(queue_entry),
-            queue_entry.virtualized, queue_entry.estimated_duration,
-            queue_entry.lastscore))
-
-
 class TestBuildCancellation(TestCaseWithFactory):
     """Test cases for cancelling builds."""
 

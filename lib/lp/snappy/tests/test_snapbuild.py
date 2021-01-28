@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build features."""
@@ -36,6 +36,7 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.enums import PersonVisibility
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -181,17 +182,60 @@ class TestSnapBuild(TestCaseWithFactory):
             build = self.factory.makeSnapBuild(archive=private_archive)
             self.assertTrue(build.is_private)
 
+    def test_can_be_retried(self):
+        ok_cases = [
+            BuildStatus.FAILEDTOBUILD,
+            BuildStatus.MANUALDEPWAIT,
+            BuildStatus.CHROOTWAIT,
+            BuildStatus.FAILEDTOUPLOAD,
+            BuildStatus.CANCELLED,
+            BuildStatus.SUPERSEDED,
+            ]
+        for status in BuildStatus.items:
+            build = self.factory.makeSnapBuild(status=status)
+            if status in ok_cases:
+                self.assertTrue(build.can_be_retried)
+            else:
+                self.assertFalse(build.can_be_retried)
+
+    def test_can_be_retried_obsolete_series(self):
+        # Builds for obsolete series cannot be retried.
+        distroseries = self.factory.makeDistroSeries(
+            status=SeriesStatus.OBSOLETE)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeSnapBuild(distroarchseries=das)
+        self.assertFalse(build.can_be_retried)
+
     def test_can_be_cancelled(self):
         # For all states that can be cancelled, can_be_cancelled returns True.
         ok_cases = [
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
             ]
-        for status in BuildStatus:
+        for status in BuildStatus.items:
+            build = self.factory.makeSnapBuild()
+            build.queueBuild()
+            build.updateStatus(status)
             if status in ok_cases:
-                self.assertTrue(self.build.can_be_cancelled)
+                self.assertTrue(build.can_be_cancelled)
             else:
-                self.assertFalse(self.build.can_be_cancelled)
+                self.assertFalse(build.can_be_cancelled)
+
+    def test_retry_resets_state(self):
+        # Retrying a build resets most of the state attributes, but does
+        # not modify the first dispatch time.
+        now = datetime.now(pytz.UTC)
+        build = self.factory.makeSnapBuild()
+        build.updateStatus(BuildStatus.BUILDING, date_started=now)
+        build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        build.gotFailure()
+        with person_logged_in(build.snap.owner):
+            build.retry()
+        self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
+        self.assertEqual(now, build.date_first_dispatched)
+        self.assertIsNone(build.log)
+        self.assertIsNone(build.upload_log)
+        self.assertEqual(0, build.failure_count)
 
     def test_cancel_not_in_progress(self):
         # The cancel() method for a pending build leaves it in the CANCELLED

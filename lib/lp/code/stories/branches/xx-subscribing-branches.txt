@@ -10,7 +10,7 @@ A quick helper function to list the subscribed people.
     ...         print(subscriptions)
     ...         return
     ...     for subscriber in subscriptions.findAll('div'):
-    ...         print(extract_text(subscriber.renderContents()))
+    ...         print(extract_text(subscriber.decode_contents()))
 
 Another to print the informational message.
 

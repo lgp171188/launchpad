@@ -127,13 +127,14 @@ upload, even though it gets changed in the publishing record.
     PENDING main
     PUBLISHED main
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.soyuz.model.component import Component
     >>> from lp.soyuz.model.publishing import (
     ...     SourcePackagePublishingHistory)
 
-    >>> latest_publishing = SourcePackagePublishingHistory.get(
-    ...     publishing_history[-1].id)
+    >>> latest_publishing = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, publishing_history.last().id)
     >>> universe = Component.byName('universe')
     >>> latest_publishing.component = universe
     >>> flush_database_caches()

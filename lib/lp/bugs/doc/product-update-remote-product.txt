@@ -82,9 +82,9 @@ it's skipped as well.
 
     >>> updater = TrackerTypeCollectingUpdater()
     >>> updater.update()
-    >>> multi_product_trackers.symmetric_difference(
-    ...     updater.looped_over_bug_tracker_types)
-    set([])
+    >>> for item in multi_product_trackers.symmetric_difference(
+    ...         updater.looped_over_bug_tracker_types):
+    ...     print(item)
 
 
 updateByBugTrackerType()

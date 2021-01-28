@@ -180,7 +180,7 @@ class TestBugEditLinks(TestCaseWithFactory):
         soupmatchers.Tag(
             'Edit link', 'a',
             attrs={'class': 'assignee-edit',
-                   'href': re.compile('\+editstatus$')}))
+                   'href': re.compile(r'\+editstatus$')}))
 
     def _createBug(self, bug_task_number=1):
         series = self.factory.makeProductSeries()

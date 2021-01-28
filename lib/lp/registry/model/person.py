@@ -547,7 +547,8 @@ class Person(
                      storm_validator=_validate_name)
 
     def __repr__(self):
-        displayname = self.displayname.encode('ASCII', 'backslashreplace')
+        displayname = six.ensure_str(
+            self.displayname, encoding='ASCII', errors='backslashreplace')
         return '<Person at 0x%x %s (%s)>' % (id(self), self.name, displayname)
 
     display_name = StringCol(dbName='displayname', notNull=True)
@@ -851,7 +852,8 @@ class Person(
         if SpecificationFilter.SUBSCRIBER in filter:
             role_clauses.append(
                 Specification.id.is_in(
-                    Select(SpecificationSubscription.specificationID,
+                    Select(
+                        SpecificationSubscription.specification_id,
                         [SpecificationSubscription.person == self])))
 
         clauses = [Or(*role_clauses)]
@@ -1477,8 +1479,8 @@ class Person(
         tasks = list(getUtility(IBugTaskSet).search(search_params))
         # Eager load the things we need that are not already eager loaded by
         # BugTaskSet.search().
-        bulk.load_related(Person, tasks, ['assigneeID'])
-        bulk.load_related(Milestone, tasks, ['milestoneID'])
+        bulk.load_related(Person, tasks, ['assignee_id'])
+        bulk.load_related(Milestone, tasks, ['milestone_id'])
 
         for task in tasks:
             # We skip masters (instead of slaves) from conjoined relationships
@@ -1496,8 +1498,8 @@ class Person(
             elif distroseries is not None:
                 candidate = None
                 for possible_slave in tasks:
-                    sourcepackagename_id = possible_slave.sourcepackagenameID
-                    if sourcepackagename_id == task.sourcepackagenameID:
+                    sourcepackagename_id = possible_slave.sourcepackagename_id
+                    if sourcepackagename_id == task.sourcepackagename_id:
                         candidate = possible_slave
                 # Distribution.currentseries is expensive to run for every
                 # bugtask (as it goes through every series of that
@@ -1821,7 +1823,7 @@ class Person(
                 Bug.id,
                 tables=(
                     Bug,
-                    Join(BugTask, BugTask.bugID == Bug.id)),
+                    Join(BugTask, BugTask.bug_id == Bug.id)),
                 where=And(Bug.information_type.is_in(
                     PRIVATE_INFORMATION_TYPES),
                     BugTask.assignee == self.id)),
@@ -3245,7 +3247,7 @@ class PersonSet:
         cur = cursor()
         cur.execute(
             "SELECT is_blacklisted_name(%(name)s, %(user_id)s)" % sqlvalues(
-            name=name.encode('UTF-8'), user_id=user_id))
+                name=name, user_id=user_id))
         return bool(cur.fetchone()[0])
 
     def getTopContributors(self, limit=50):
@@ -4131,11 +4133,12 @@ class SSHKeySet:
 
         if check_key:
             try:
-                key = Key.fromString(sshkey)
+                key = Key.fromString(sshkey.encode("UTF-8"))
             except Exception as e:
                 raise SSHKeyAdditionError(key=sshkey, exception=e)
-            if kind != key.sshType():
-                raise SSHKeyAdditionError(type_mismatch=(kind, key.sshType()))
+            keydatatype = six.ensure_str(key.sshType())
+            if kind != keydatatype:
+                raise SSHKeyAdditionError(type_mismatch=(kind, keydatatype))
 
         if send_notification:
             person.security_field_changed(
@@ -4195,10 +4198,6 @@ class WikiName(SQLBase, HasOwnerMixin):
 
 @implementer(IWikiNameSet)
 class WikiNameSet:
-
-    def getByWikiAndName(self, wiki, wikiname):
-        """See `IWikiNameSet`."""
-        return WikiName.selectOneBy(wiki=wiki, wikiname=wikiname)
 
     def get(self, id):
         """See `IWikiNameSet`."""

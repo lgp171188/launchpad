@@ -29,10 +29,7 @@ Sorting criteria
 The OrderingCheck accepts all the same sorting options (as keyword args)
 as Python's built-in sorting functions.
 
-    >>> def sort_cmp(left_item, right_item):
-    ...     return left_item - right_item
-
-    >>> checker = OrderingCheck(cmp=sort_cmp, reverse=True)
+    >>> checker = OrderingCheck(key=lambda v: v, reverse=True)
     >>> for number in (3, 2, 1):
     ...     checker.check(number)
 

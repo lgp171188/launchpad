@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -588,7 +588,7 @@ class FileBugViewBaseExtraDataTestCase(FileBugViewMixin, TestCaseWithFactory):
             'Added to the description.',
             bug.description)
         self.assertEqual(2, bug.messages.count())
-        self.assertEqual(bug.bug_messages[-1], message_event.object)
+        self.assertEqual(bug.bug_messages.last(), message_event.object)
         notifications = [
             no.message for no in view.request.response.notifications]
         self.assertContentEqual(

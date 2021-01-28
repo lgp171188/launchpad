@@ -47,7 +47,7 @@ database ids.
     ...         if k.name == 'CODE_IMPORT':
     ...             print(k.name, '<muted>')
     ...         else:
-    ...             print(k.name, repr(v))
+    ...             print(k.name, pretty(v))
 
 We want to concisely check that calling the CodeImportEventSet factory
 methods with required arguments set to None raise an AssertionError.
@@ -120,10 +120,10 @@ retrieved using the items() method.
     >>> print_items(svn_create_event)
     CODE_IMPORT <muted>
     OWNER ...
-    REVIEW_STATUS u'REVIEWED'
+    REVIEW_STATUS 'REVIEWED'
     ASSIGNEE None
     UPDATE_INTERVAL None
-    URL u'svn://svn.example.com/trunk'
+    URL 'svn://svn.example.com/trunk'
 
 The database IDs of the CodeImport is also recorded. It is useful to
 collate events associated with deleted CodeImport objects.
@@ -144,11 +144,11 @@ Subversion URL.
     >>> print_items(cvs_create_event)
     CODE_IMPORT <muted>
     OWNER ...
-    REVIEW_STATUS u'REVIEWED'
+    REVIEW_STATUS 'REVIEWED'
     ASSIGNEE None
     UPDATE_INTERVAL None
-    CVS_ROOT u':pserver:anonymous@cvs.example.com:/cvsroot'
-    CVS_MODULE u'hello'
+    CVS_ROOT ':pserver:anonymous@cvs.example.com:/cvsroot'
+    CVS_MODULE 'hello'
 
 And for a Git import, the git details are recorded.
 
@@ -158,10 +158,10 @@ And for a Git import, the git details are recorded.
     >>> print_items(git_create_event)
     CODE_IMPORT <muted>
     OWNER ...
-    REVIEW_STATUS u'REVIEWED'
+    REVIEW_STATUS 'REVIEWED'
     ASSIGNEE None
     UPDATE_INTERVAL None
-    URL u'git://git.example.org/main.git'
+    URL 'git://git.example.org/main.git'
 
 MODIFY
 ------
@@ -220,11 +220,11 @@ when changes were made without creating a correponding event.
     >>> print_items(modify_event)
     CODE_IMPORT <muted>
     OWNER ...
-    REVIEW_STATUS u'SUSPENDED'
-    OLD_REVIEW_STATUS u'REVIEWED'
+    REVIEW_STATUS 'SUSPENDED'
+    OLD_REVIEW_STATUS 'REVIEWED'
     ASSIGNEE None
     UPDATE_INTERVAL None
-    URL u'svn://svn.example.com/trunk'
+    URL 'svn://svn.example.com/trunk'
 
 If no change of interest is found, no event is created.
 
@@ -312,7 +312,7 @@ case when a user updates the state of the machine through the web UI.
     ddaa
 
     >>> print_items(online_event)
-    MESSAGE u'Fubar was fixed'
+    MESSAGE 'Fubar was fixed'
 
 
 OFFLINE
@@ -337,7 +337,7 @@ ICodeImportSet.newOffline method.
     bazaar-importer
 
     >>> print_items(offline_event)
-    OFFLINE_REASON u'QUIESCED'
+    OFFLINE_REASON 'QUIESCED'
 
 The offline reason must be a value of the CodeImportMachineOfflineReason
 enum. Since it is internally stored as a string, we need to manually
@@ -366,8 +366,8 @@ UI.
     ddaa
 
     >>> print_items(offline_event)
-    MESSAGE u'Down for fixing'
-    OFFLINE_REASON u'STOPPED'
+    MESSAGE 'Down for fixing'
+    OFFLINE_REASON 'STOPPED'
 
 
 QUIESCE
@@ -395,7 +395,7 @@ explaining why quiescing was requested.
     ddaa
 
     >>> print_items(quiesce_event)
-    MESSAGE u'Production rollout.'
+    MESSAGE 'Production rollout.'
 
 
 START
@@ -516,6 +516,6 @@ The job id is the only datum stored in the key-value data associated
 with a RECLAIM event.
 
     >>> print_items(reclaim_event)
-    RECLAIMED_JOB_ID u'42'
+    RECLAIMED_JOB_ID '42'
 
 

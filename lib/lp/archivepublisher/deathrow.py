@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """
@@ -11,11 +11,22 @@ import logging
 import os
 
 import pytz
+from storm.expr import Exists
+from storm.locals import (
+    And,
+    ClassAlias,
+    Not,
+    Select,
+    )
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.diskpool import DiskPool
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.interfaces import IStore
+from lp.services.librarian.model import (
+    LibraryFileAlias,
+    LibraryFileContent,
+    )
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
@@ -23,6 +34,10 @@ from lp.soyuz.interfaces.publishing import (
     ISourcePackagePublishingHistory,
     MissingSymlinkInPool,
     NotInPool,
+    )
+from lp.soyuz.model.files import (
+    BinaryPackageFile,
+    SourcePackageReleaseFile,
     )
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
@@ -108,35 +123,37 @@ class DeathRow:
 
         Both sources and binaries are lists.
         """
-        sources = SourcePackagePublishingHistory.select("""
-            SourcePackagePublishingHistory.archive = %s AND
-            SourcePackagePublishingHistory.scheduleddeletiondate < %s AND
-            SourcePackagePublishingHistory.dateremoved IS NULL AND
-            NOT EXISTS (
-              SELECT 1 FROM sourcepackagepublishinghistory as spph
-              WHERE
-                  SourcePackagePublishingHistory.sourcepackagerelease =
-                      spph.sourcepackagerelease AND
-                  spph.archive = %s AND
-                  spph.status NOT IN %s)
-        """ % sqlvalues(self.archive, UTC_NOW, self.archive,
-                        inactive_publishing_status), orderBy="id")
-        self.logger.debug("%d Sources" % sources.count())
+        OtherSPPH = ClassAlias(SourcePackagePublishingHistory)
+        sources = list(IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.archive == self.archive,
+            SourcePackagePublishingHistory.scheduleddeletiondate < UTC_NOW,
+            SourcePackagePublishingHistory.dateremoved == None,
+            Not(Exists(Select(
+                1, tables=[OtherSPPH],
+                where=And(
+                    SourcePackagePublishingHistory.sourcepackagereleaseID ==
+                        OtherSPPH.sourcepackagereleaseID,
+                    OtherSPPH.archiveID == self.archive.id,
+                    Not(OtherSPPH.status.is_in(inactive_publishing_status))),
+                )))).order_by(SourcePackagePublishingHistory.id))
+        self.logger.debug("%d Sources" % len(sources))
 
-        binaries = BinaryPackagePublishingHistory.select("""
-            BinaryPackagePublishingHistory.archive = %s AND
-            BinaryPackagePublishingHistory.scheduleddeletiondate < %s AND
-            BinaryPackagePublishingHistory.dateremoved IS NULL AND
-            NOT EXISTS (
-              SELECT 1 FROM binarypackagepublishinghistory as bpph
-              WHERE
-                  BinaryPackagePublishingHistory.binarypackagerelease =
-                      bpph.binarypackagerelease AND
-                  bpph.archive = %s AND
-                  bpph.status NOT IN %s)
-        """ % sqlvalues(self.archive, UTC_NOW, self.archive,
-                        inactive_publishing_status), orderBy="id")
-        self.logger.debug("%d Binaries" % binaries.count())
+        OtherBPPH = ClassAlias(BinaryPackagePublishingHistory)
+        binaries = list(IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.archive == self.archive,
+            BinaryPackagePublishingHistory.scheduleddeletiondate < UTC_NOW,
+            BinaryPackagePublishingHistory.dateremoved == None,
+            Not(Exists(Select(
+                1, tables=[OtherBPPH],
+                where=And(
+                    BinaryPackagePublishingHistory.binarypackagereleaseID ==
+                        OtherBPPH.binarypackagereleaseID,
+                    OtherBPPH.archiveID == self.archive.id,
+                    Not(OtherBPPH.status.is_in(inactive_publishing_status))),
+                )))).order_by(BinaryPackagePublishingHistory.id))
+        self.logger.debug("%d Binaries" % len(binaries))
 
         return (sources, binaries)
 
@@ -150,41 +167,34 @@ class DeathRow:
         Only allow removal of unnecessary files.
         """
         clauses = []
-        clauseTables = []
 
-        if ISourcePackagePublishingHistory.implementedBy(
-            publication_class):
-            clauses.append("""
-                SourcePackagePublishingHistory.archive = %s AND
-                SourcePackagePublishingHistory.dateremoved is NULL AND
-                SourcePackagePublishingHistory.sourcepackagerelease =
-                    SourcePackageReleaseFile.sourcepackagerelease AND
-                SourcePackageReleaseFile.libraryfile = LibraryFileAlias.id
-            """ % sqlvalues(self.archive))
-            clauseTables.append('SourcePackageReleaseFile')
-        elif IBinaryPackagePublishingHistory.implementedBy(
-            publication_class):
-            clauses.append("""
-                BinaryPackagePublishingHistory.archive = %s AND
-                BinaryPackagePublishingHistory.dateremoved is NULL AND
-                BinaryPackagePublishingHistory.binarypackagerelease =
-                    BinaryPackageFile.binarypackagerelease AND
-                BinaryPackageFile.libraryfile = LibraryFileAlias.id
-            """ % sqlvalues(self.archive))
-            clauseTables.append('BinaryPackageFile')
+        if ISourcePackagePublishingHistory.implementedBy(publication_class):
+            clauses.extend([
+                SourcePackagePublishingHistory.archive == self.archive,
+                SourcePackagePublishingHistory.dateremoved == None,
+                SourcePackagePublishingHistory.sourcepackagerelease ==
+                    SourcePackageReleaseFile.sourcepackagereleaseID,
+                SourcePackageReleaseFile.libraryfile == LibraryFileAlias.id,
+                ])
+        elif IBinaryPackagePublishingHistory.implementedBy(publication_class):
+            clauses.extend([
+                BinaryPackagePublishingHistory.archive == self.archive,
+                BinaryPackagePublishingHistory.dateremoved == None,
+                BinaryPackagePublishingHistory.binarypackagerelease ==
+                    BinaryPackageFile.binarypackagereleaseID,
+                BinaryPackageFile.libraryfile == LibraryFileAlias.id,
+                ])
         else:
             raise AssertionError("%r is not supported." % publication_class)
 
-        clauses.append("""
-           LibraryFileAlias.content = LibraryFileContent.id AND
-           LibraryFileAlias.filename = %s AND
-           LibraryFileContent.md5 = %s
-        """ % sqlvalues(filename, file_md5))
-        clauseTables.extend(
-            ['LibraryFileAlias', 'LibraryFileContent'])
+        clauses.extend([
+            LibraryFileAlias.content == LibraryFileContent.id,
+            LibraryFileAlias.filename == filename,
+            LibraryFileContent.md5 == file_md5,
+            ])
 
-        all_publications = publication_class.select(
-            " AND ".join(clauses), clauseTables=clauseTables)
+        all_publications = IStore(publication_class).find(
+            publication_class, *clauses)
 
         right_now = datetime.datetime.now(pytz.timezone('UTC'))
         for pub in all_publications:
@@ -280,7 +290,7 @@ class DeathRow:
                 # symlink has vanished from the pool/ (could be a code
                 # mistake) but there is nothing we can do about it at this
                 # point.
-                self.logger.warn(str(info))
+                self.logger.warning(str(info))
 
         self.logger.info("Total bytes freed: %s" % bytes)
 

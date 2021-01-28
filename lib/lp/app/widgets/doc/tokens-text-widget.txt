@@ -19,7 +19,7 @@ satisfied.
 
 The widget removed the extra whitespace and punctuation.
 
-    >>> widget.getInputValue()
-    u'news feeds HTTP RSS UTF-8'
+    >>> print(widget.getInputValue())
+    news feeds HTTP RSS UTF-8
 
 

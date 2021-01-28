@@ -719,6 +719,7 @@ class LaunchpadStatementTracer:
                     int(time() * 1000),
                     u'SQL-%s' % connection._database.name,
                     statement_to_log)
+                connection._lp_statement_action = None
             return
         action = get_request_timeline(get_current_browser_request()).start(
             u'SQL-%s' % connection._database.name, statement_to_log)

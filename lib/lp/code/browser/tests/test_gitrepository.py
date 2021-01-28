@@ -203,7 +203,7 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository, no_login=True)
         directions = find_tag_by_id(browser.contents, "push-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
+        self.assertThat(directions.decode_contents(), DocTestMatches(dedent("""
             Only <a
             href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can upload to this repository. If you are {owner.display_name}
@@ -219,7 +219,7 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository, no_login=True)
         directions = find_tag_by_id(browser.contents, "push-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
+        self.assertThat(directions.decode_contents(), DocTestMatches(dedent("""
             Members of <a
             href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can upload to this repository. <a href="+login">Log in</a> for
@@ -251,7 +251,7 @@ class TestGitRepositoryView(BrowserTestCase):
         browser = self.getViewBrowser(repository)
         directions = find_tag_by_id(browser.contents, "ssh-key-directions")
         login_person(self.user)
-        self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
+        self.assertThat(directions.decode_contents(), DocTestMatches(dedent("""
             To authenticate with the Launchpad Git hosting service, you need
             to <a href="http://launchpad.test/~{user.name}/+editsshkeys">
             register an SSH key</a>.
@@ -1438,7 +1438,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/heads/*").replace("=", "_").decode("UTF-8")
+            b"refs/heads/*").decode("UTF-8").replace("=", "_")
         self.assertEqual(
             "field.%s" % encoded_ref_pattern,
             view._getFieldName("field", "refs/heads/*"))
@@ -1448,7 +1448,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/tags/*").replace("=", "_").decode("UTF-8")
+            b"refs/tags/*").decode("UTF-8").replace("=", "_")
         self.assertEqual(
             "field.%s._repository_owner" % encoded_ref_pattern,
             view._getFieldName(
@@ -1461,7 +1461,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/*").replace("=", "_").decode("UTF-8")
+            b"refs/*").decode("UTF-8").replace("=", "_")
         self.assertEqual(
             "field.%s.%s" % (encoded_ref_pattern, grantee.id),
             view._getFieldName("field", "refs/*", grantee=grantee))
@@ -1484,7 +1484,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/heads/*").replace("=", "_").decode("UTF-8")
+            b"refs/heads/*").decode("UTF-8").replace("=", "_")
         self.assertEqual(
             ("permissions", "refs/heads/*", None),
             view._parseFieldName("permissions.%s" % encoded_ref_pattern))
@@ -1494,7 +1494,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/tags/*").replace("=", "_").decode("UTF-8")
+            b"refs/tags/*").decode("UTF-8").replace("=", "_")
         self.assertRaises(
             UnexpectedFormData, view._parseFieldName,
             "field.%s._nonsense" % encoded_ref_pattern)
@@ -1507,7 +1507,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/tags/*").replace("=", "_").decode("UTF-8")
+            b"refs/tags/*").decode("UTF-8").replace("=", "_")
         self.assertEqual(
             ("pattern", "refs/tags/*", GitGranteeType.REPOSITORY_OWNER),
             view._parseFieldName(
@@ -1519,7 +1519,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/*").replace("=", "_").decode("UTF-8")
+            b"refs/*").decode("UTF-8").replace("=", "_")
         self.assertRaises(
             UnexpectedFormData, view._parseFieldName,
             "delete.%s.%s" % (encoded_ref_pattern, grantee.id * 2))
@@ -1530,7 +1530,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
         login_person(repository.owner)
         view = create_initialized_view(repository, name="+permissions")
         encoded_ref_pattern = base64.b32encode(
-            b"refs/*").replace("=", "_").decode("UTF-8")
+            b"refs/*").decode("UTF-8").replace("=", "_")
         self.assertEqual(
             ("delete", "refs/*", grantee),
             view._parseFieldName(

@@ -52,7 +52,7 @@ class Gina(LaunchpadCronScript):
         targets = [
             target.category_and_section_names[1] for target in sections]
         if len(targets) == 0:
-            self.logger.warn("No gina_target entries configured.")
+            self.logger.warning("No gina_target entries configured.")
         return targets
 
     def listTargets(self, targets):

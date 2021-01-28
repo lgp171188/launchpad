@@ -56,6 +56,7 @@ from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJobType,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -213,6 +214,27 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             return self.buildqueue_record.lastscore
 
     @property
+    def can_be_retried(self):
+        """See `IOCIRecipeBuild`."""
+        # First check that the behaviour would accept the build if it
+        # succeeded.
+        if self.distro_series.status == SeriesStatus.OBSOLETE:
+            return False
+
+        failed_statuses = [
+            BuildStatus.FAILEDTOBUILD,
+            BuildStatus.MANUALDEPWAIT,
+            BuildStatus.CHROOTWAIT,
+            BuildStatus.FAILEDTOUPLOAD,
+            BuildStatus.CANCELLED,
+            BuildStatus.SUPERSEDED,
+            ]
+
+        # If the build is currently in any of the failed states,
+        # it may be retried.
+        return self.status in failed_statuses
+
+    @property
     def can_be_rescored(self):
         """See `IOCIRecipeBuild`."""
         return (
@@ -230,6 +252,19 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             BuildStatus.NEEDSBUILD,
             ]
         return self.status in cancellable_statuses
+
+    def retry(self):
+        """See `IOCIRecipeBuild`."""
+        assert self.can_be_retried, "Build %s cannot be retried" % self.id
+        self.build_farm_job.status = self.status = BuildStatus.NEEDSBUILD
+        self.build_farm_job.date_finished = self.date_finished = None
+        self.date_started = None
+        self.build_farm_job.builder = self.builder = None
+        self.log = None
+        self.upload_log = None
+        self.dependencies = None
+        self.failure_count = 0
+        self.queueBuild()
 
     def rescore(self, score):
         """See `IOCIRecipeBuild`."""
@@ -437,6 +472,8 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @property
     def registry_upload_status(self):
+        if self.status == BuildStatus.SUPERSEDED:
+            return OCIRecipeBuildRegistryUploadStatus.SUPERSEDED
         job = self.last_registry_upload_job
         if job is None or job.job.status == JobStatus.SUSPENDED:
             return OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED
@@ -478,6 +515,16 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
                 "Cannot upload this build because it has already been "
                 "uploaded.")
         getUtility(IOCIRegistryUploadJobSource).create(self)
+
+    def hasMoreRecentBuild(self):
+        """See `IOCIRecipeBuild`."""
+        recent_builds = IStore(self).find(
+            OCIRecipeBuild,
+            OCIRecipeBuild.recipe == self.recipe,
+            OCIRecipeBuild.processor == self.processor,
+            OCIRecipeBuild.status == BuildStatus.FULLYBUILT,
+            OCIRecipeBuild.date_created > self.date_created)
+        return not recent_builds.is_empty()
 
 
 @implementer(IOCIRecipeBuildSet)

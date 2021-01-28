@@ -85,8 +85,10 @@ exists for it:
     >>> quodlibet.changes.signer is not None
     True
     >>> p = quodlibet.changes.maintainer['person']
-    >>> p.name, p.displayname
-    (u'buildd', u'Ubuntu/i386 Build Daemon')
+    >>> print(p.name)
+    buildd
+    >>> print(p.displayname)
+    Ubuntu/i386 Build Daemon
 
 
 Sourceful Uploads
@@ -254,7 +256,7 @@ archive already.
 # wouldn't have been uploaded in practice because (as you can see below) the
 # .orig was not included in the .changes file.
     >>> import shutil
-    >>> shutil.copy(datadir("ed_0.2.orig.tar.gz"), datadir("ed-0.2-21/"))
+    >>> _ = shutil.copy(datadir("ed_0.2.orig.tar.gz"), datadir("ed-0.2-21/"))
 
     >>> ed_upload = NascentUpload.from_changesfile_path(
     ...     datadir("ed-0.2-21/ed_0.2-21_source.changes"),
@@ -342,38 +344,38 @@ for the archive index generation:
 
 The 'Maintainer:' identity in RFC-822 format, as it was in DSC:
 
-    >>> ed_spr.dsc_maintainer_rfc822
-    u'James Troup <james@nocrew.org>'
+    >>> print(ed_spr.dsc_maintainer_rfc822)
+    James Troup <james@nocrew.org>
 
 Version of debian policy/standards used to build this source package:
 
-    >>> ed_spr.dsc_standards_version
-    u'3.5.8.0'
+    >>> print(ed_spr.dsc_standards_version)
+    3.5.8.0
 
 Format of the included DSC (.dsc) file:
 
-    >>> ed_spr.dsc_format
-    u'1.0'
+    >>> print(ed_spr.dsc_format)
+    1.0
 
 Binaries names claimed to be resulted of this source, line with names
 separated by space:
 
-    >>> ed_spr.dsc_binaries
-    u'ed'
+    >>> print(ed_spr.dsc_binaries)
+    ed
 
 Other DSC fields are also stored in the SourcePackageRelease record.
 
-    >>> ed_spr.builddepends
-    u'dpatch'
+    >>> print(ed_spr.builddepends)
+    dpatch
 
-    >>> ed_spr.builddependsindep
-    u''
+    >>> print(ed_spr.builddependsindep)
+    <BLANKLINE>
 
-    >>> ed_spr.build_conflicts
-    u'foo-bar'
+    >>> print(ed_spr.build_conflicts)
+    foo-bar
 
-    >>> ed_spr.build_conflicts_indep
-    u'biscuit'
+    >>> print(ed_spr.build_conflicts_indep)
+    biscuit
 
 The content of 'debian/copyright' is stored as the 'copyright'
 attribute of SourcePackageRelease (note that its content is filtered
@@ -526,8 +528,8 @@ Upload new source 'multibar', step 1:
     >>> len(multibar_src_queue.sources)
     1
     >>> multibar_spr = multibar_src_queue.sources[0].sourcepackagerelease
-    >>> multibar_spr.title
-    u'multibar - 1.0-1'
+    >>> print(multibar_spr.title)
+    multibar - 1.0-1
 
 Once we have a new queue entry we are able to accept it, step 2:
 
@@ -707,11 +709,11 @@ content, it should have all the required fields except the
     ...     PackageUploadStatus.NEW, name=u'test75874', exact_match=True)[0]
     >>> inst_spr = inst_queue.sources[0].sourcepackagerelease
 
-    >>> inst_spr.dsc_maintainer_rfc822
-    u'Colin Watson <cjwatson@ubuntu.com>'
+    >>> print(inst_spr.dsc_maintainer_rfc822)
+    Colin Watson <cjwatson@ubuntu.com>
 
-    >>> inst_spr.dsc_binaries
-    u'test75874'
+    >>> print(inst_spr.dsc_binaries)
+    test75874
 
     >>> inst_spr.dsc_standards_version is None
     True

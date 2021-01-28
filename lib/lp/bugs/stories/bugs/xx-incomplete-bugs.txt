@@ -171,7 +171,7 @@ This specialized list does not include the search form. So there is no
     >>> user_browser.getControl('Search', index=0).type
     Traceback (most recent call last):
     ...
-    LookupError: label u'Search'
+    LookupError: label ...'Search'
     ...
 
 The 'Report a bug' link is also not present.

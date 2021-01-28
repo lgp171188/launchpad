@@ -610,7 +610,7 @@ class LaunchpadServer(_BaseLaunchpadServer):
             fault = trap_fault(
                 fail, faults.NotFound, faults.PermissionDenied,
                 faults.InvalidSourcePackageName, faults.InvalidProductName)
-            faultString = six.ensure_binary(fault.faultString)
+            faultString = six.ensure_str(fault.faultString)
             return failure.Failure(
                 PermissionDenied(virtual_url_fragment, faultString))
 

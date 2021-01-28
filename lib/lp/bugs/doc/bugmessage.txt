@@ -118,7 +118,7 @@ Note that although the watch was created when the Message was added to
 the bug, the message and the watch are not linked because the message
 was not imported by the bug watch.
 
-    >>> bug_message = bug_one.bug_messages[-1]
+    >>> bug_message = bug_one.bug_messages.last()
     >>> print(bug_message.message == test_message)
     True
     >>> print(bug_message.bugwatch)
@@ -176,9 +176,9 @@ to compare this value for every bug in a large set.
 
 == Retrieving IMessage.id from IBugMessage ==
 
-Each IBugMessage has a messageID attribute, which allows access
+Each IBugMessage has a message_id attribute, which allows access
 to IBugMessage.IMessage.id without the additional query.
 
     >>> bugmessage_one = bugmessageset.get(1)
-    >>> bugmessage_one.messageID == bugmessage_one.message.id
+    >>> bugmessage_one.message_id == bugmessage_one.message.id
     True

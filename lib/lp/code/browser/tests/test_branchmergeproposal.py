@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -70,13 +74,15 @@ from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
     )
+from lp.code.errors import InvalidBranchMergeProposal
+from lp.code.interfaces.branchjob import IBranchScanJobSource
 from lp.code.interfaces.branchmergeproposal import (
     IBranchMergeProposal,
     IMergeProposalNeedsReviewEmailJobSource,
     IMergeProposalUpdatedEmailJobSource,
     )
-from lp.code.interfaces.branchjob import IBranchScanJobSource
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.branchmergeproposaljob import UpdatePreviewDiffJob
 from lp.code.model.diff import PreviewDiff
 from lp.code.tests.helpers import (
@@ -819,6 +825,7 @@ class TestRegisterBranchMergeProposalViewBzr(
                         target_branch.unique_name},
                 **extra)
             request.setPrincipal(owner)
+            transaction.commit()
             view = create_initialized_view(
                 target_branch,
                 name='+register-merge',
@@ -856,10 +863,7 @@ class TestRegisterBranchMergeProposalViewGit(
 
     @staticmethod
     def _getFormValues(target_branch, extras):
-        values = {
-            'target_git_repository': target_branch.repository,
-            'target_git_path': target_branch.path,
-            }
+        values = {'target_git_ref': target_branch}
         values.update(extras)
         return values
 
@@ -871,17 +875,19 @@ class TestRegisterBranchMergeProposalViewGit(
         view = self._createView()
         self.assertEqual(
             target_branch.repository.default_branch.split('/')[-1],
-            view.widgets['target_git_path']._getCurrentValue())
+            view.widgets['target_git_ref'].path_widget._getCurrentValue())
 
     def test_default_branch_no_default_set(self):
         with admin_logged_in():
             self._makeTargetBranch(target_default=True)
         view = self._createView()
-        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
+        self.assertIsNone(
+            view.widgets['target_git_ref'].path_widget._getCurrentValue())
 
     def test_default_branch_no_target(self):
         view = self._createView()
-        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
+        self.assertIsNone(
+            view.widgets['target_git_ref'].path_widget._getCurrentValue())
 
     def test_register_ajax_request_with_confirmation(self):
         # Ajax submits return json data containing info about what the visible
@@ -927,9 +933,9 @@ class TestRegisterBranchMergeProposalViewGit(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository':
+                    'field.target_git_ref.repository':
                         target_branch.repository.unique_name,
-                    'field.target_git_path': target_branch.path,
+                    'field.target_git_ref.path': target_branch.path,
                     },
                 **extra)
             request.setPrincipal(owner)
@@ -942,7 +948,7 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.target_git_path':
+                'field.target_git_ref':
                     ('The target repository and path together cannot be the '
                      'same as the source repository and path.')},
             'form_wide_errors': []},
@@ -957,9 +963,9 @@ class TestRegisterBranchMergeProposalViewGit(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository': '',
-                    'field.target_git_repository-empty-marker': '1',
-                    'field.target_git_path': 'master',
+                    'field.target_git_ref.repository': '',
+                    'field.target_git_ref.repository-empty-marker': '1',
+                    'field.target_git_ref.path': 'master',
                     },
                 **extra)
             request.setPrincipal(owner)
@@ -972,7 +978,7 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.target_git_repository': 'Required input is missing.',
+                'field.target_git_ref': 'Required input is missing.',
                 },
             'form_wide_errors': []},
             simplejson.loads(view.form_result))
@@ -982,13 +988,14 @@ class TestRegisterBranchMergeProposalViewGit(
         owner = self.factory.makePerson()
         target_branch = self._makeTargetBranch(
             owner=owner, information_type=InformationType.USERDATA)
+        transaction.commit()
         extra = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
         with person_logged_in(owner):
             request = LaunchpadTestRequest(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository':
+                    'field.target_git_ref.repository':
                         target_branch.repository.unique_name,
                     },
                 **extra)
@@ -1002,9 +1009,8 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.target_git_path':
-                    ('The target path must be the path of a reference in the '
-                     'target repository.')},
+                'field.target_git_ref':
+                    'Please enter a Git branch path.'},
             'form_wide_errors': []},
             simplejson.loads(view.form_result))
 
@@ -1016,16 +1022,17 @@ class TestRegisterBranchMergeProposalViewGit(
             owner=owner, information_type=InformationType.USERDATA)
         prerequisite_branch = self._makeTargetBranch(
             owner=owner, information_type=InformationType.USERDATA)
+        transaction.commit()
         extra = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
         with person_logged_in(owner):
             request = LaunchpadTestRequest(
                 method='POST',
                 form={
                     'field.actions.register': 'Propose Merge',
-                    'field.target_git_repository.target_git_repository':
+                    'field.target_git_ref.repository':
                         target_branch.repository.unique_name,
-                    'field.target_git_path': target_branch.path,
-                    'field.prerequisite_git_repository':
+                    'field.target_git_ref.path': target_branch.path,
+                    'field.prerequisite_git_ref.repository':
                         prerequisite_branch.repository.unique_name,
                     },
                 **extra)
@@ -1039,9 +1046,8 @@ class TestRegisterBranchMergeProposalViewGit(
         self.assertEqual(
             {'error_summary': 'There is 1 error.',
             'errors': {
-                'field.prerequisite_git_path':
-                    ('The prerequisite path must be the path of a reference '
-                     'in the prerequisite repository.')},
+                'field.prerequisite_git_ref':
+                    'Please enter a Git branch path.'},
             'form_wide_errors': []},
             simplejson.loads(view.form_result))
 
@@ -1255,15 +1261,12 @@ class TestBranchMergeProposalResubmitViewGit(
     def _getFormValues(source_branch, target_branch, prerequisite_branch,
                        extras):
         values = {
-            'source_git_repository': source_branch.repository,
-            'source_git_path': source_branch.path,
-            'target_git_repository': target_branch.repository,
-            'target_git_path': target_branch.path,
+            'source_git_ref': source_branch,
+            'target_git_ref': target_branch
             }
         if prerequisite_branch is not None:
             values.update({
-                'prerequisite_git_repository': prerequisite_branch.repository,
-                'prerequisite_git_path': prerequisite_branch.path,
+                'prerequisite_git_ref': prerequisite_branch
                 })
         else:
             values.update({
@@ -1323,17 +1326,17 @@ class TestResubmitBrowserGit(GitHostingClientMixin, BrowserTestCase):
         """The text of the resubmit page is as expected."""
         bmp = self.factory.makeBranchMergeProposalForGit(registrant=self.user)
         text = self.getMainText(bmp, '+resubmit')
-        expected = (
-            'Resubmit proposal to merge.*'
-            'Source Git repository:.*'
-            'Source Git branch path:.*'
-            'Target Git repository:.*'
-            'Target Git branch path:.*'
-            'Prerequisite Git repository:.*'
-            'Prerequisite Git branch path:.*'
-            'Description.*'
-            'Start afresh.*')
-        self.assertTextMatchesExpressionIgnoreWhitespace(expected, text)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
+            Resubmit proposal to merge.*
+            Source Git branch:.*
+            Repository: \(Find…\) Branch: \(Find…\)
+            Target Git branch:.*
+            Repository: \(Find…\) Branch: \(Find…\)
+            Prerequisite Git branch:.*
+            Repository: \(Find…\) Branch: \(Find…\)
+            Description.*
+            Start afresh.*
+            """, text)
 
     def test_resubmit_controls(self):
         """Proposals can be resubmitted using the browser."""
@@ -1396,8 +1399,8 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         self.assertIs(None, view.preview_diff_text)
 
     def test_preview_diff_utf8(self):
-        """A preview_diff in utf-8 should decoded as utf-8."""
-        text = ''.join(unichr(x) for x in range(255))
+        """A preview_diff in utf-8 should be decoded as utf-8."""
+        text = ''.join(six.unichr(x) for x in range(255))
         diff_bytes = ''.join(unified_diff('', text)).encode('utf-8')
         self.setPreviewDiff(diff_bytes)
         transaction.commit()
@@ -1408,7 +1411,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
     def test_preview_diff_all_chars(self):
         """preview_diff should work on diffs containing all possible bytes."""
-        text = b''.join(chr(x) for x in range(255))
+        text = b''.join(six.int2byte(x) for x in range(255))
         diff_bytes = b''.join(unified_diff(b'', text))
         self.setPreviewDiff(diff_bytes)
         transaction.commit()
@@ -1420,7 +1423,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
     def test_preview_diff_timeout(self):
         # The preview_diff will recover from a timeout set to get the
         # librarian content.
-        text = b''.join(chr(x) for x in range(255))
+        text = b''.join(six.int2byte(x) for x in range(255))
         diff_bytes = b''.join(unified_diff(b'', text))
         preview_diff = self.setPreviewDiff(diff_bytes)
         transaction.commit()
@@ -1440,7 +1443,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # The preview_diff will recover from a LookupError while getting the
         # librarian content.  (This can happen e.g. on staging replicas of
         # the production database.)
-        text = b''.join(chr(x) for x in range(255))
+        text = b''.join(six.int2byte(x) for x in range(255))
         diff_bytes = b''.join(unified_diff(b'', text))
         preview_diff = self.setPreviewDiff(diff_bytes)
         transaction.commit()
@@ -1754,6 +1757,10 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
+    def setUp(self):
+        super(TestBranchMergeProposalBrowserView, self).setUp()
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+
     def test_prerequisite_bzr(self):
         # A prerequisite branch is rendered in the Bazaar case.
         branch = self.factory.makeProductBranch()
@@ -1810,6 +1817,188 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
                     }),
                 ]),
             ))
+
+    def test_merge_guidelines_package(self):
+        # Repository is the default for a package
+        mint = self.factory.makeDistribution(name="mint")
+        eric = self.factory.makePerson(name="eric")
+        other_user = self.factory.makePerson()
+        source_owner = self.factory.makePerson()
+
+        mint_choc = self.factory.makeDistributionSourcePackage(
+            distribution=mint, sourcepackagename="choc")
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=mint_choc, name="choc-repo")
+        source_repository = self.factory.makeGitRepository(
+            owner=source_owner, target=mint_choc, name="choc-repo")
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        [source_ref] = self.factory.makeGitRefs(repository=source_repository,
+                                         paths=["refs/heads/branch"])
+        dsp = repository.target
+        self.repository_set = getUtility(IGitRepositorySet)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, dsp, repository, repository.owner)
+            self.repository_set.setDefaultRepository(dsp, repository)
+        bmp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=source_ref,
+            target_ref=ref)
+        login_person(other_user)
+        view = create_initialized_view(bmp, "+index", principal=other_user)
+        git_add_remote_match = HTMLContains(Tag(
+            'Git remote add text', 'tt',
+            attrs={"id": "remote-add"},
+            text=("git remote add %s "
+                  "git+ssh://%s@git.launchpad.test/~%s/%s/+source/choc/+git/%s"
+                  ) % (source_owner.name,
+                       other_user.name,
+                       source_owner.name,
+                       mint.name,
+                       repository.name)))
+        git_remote_update_match = HTMLContains(
+            Tag(
+                'Git remote update text', 'tt',
+                attrs={"id": "remote-update"},
+                text=("git remote update %s" % source_owner.name)))
+        git_checkout_match = HTMLContains(
+            Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "checkout-cmd"},
+                text="git checkout %s" % bmp.merge_target.name))
+        git_merge_match = HTMLContains(
+            Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"},
+                text="git merge %s/branch" % source_owner.name))
+
+        with person_logged_in(other_user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_add_remote_match)
+            self.assertThat(rendered_view, git_remote_update_match)
+            self.assertThat(rendered_view, git_checkout_match)
+            self.assertThat(rendered_view, git_merge_match)
+
+    def test_merge_guidelines_project(self):
+        # Repository is the default for a project
+        eric = self.factory.makePerson(name="eric")
+        other_user = self.factory.makePerson()
+        source_owner = self.factory.makePerson()
+        fooix = self.factory.makeProduct(name="fooix", owner=eric)
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=fooix, name="fooix-repo")
+        source_repository = self.factory.makeGitRepository(
+            owner=source_owner, target=fooix, name="fooix-repo")
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        [source_ref] = self.factory.makeGitRefs(repository=source_repository,
+                                         paths=["refs/heads/branch"])
+
+        self.repository_set = getUtility(IGitRepositorySet)
+        with person_logged_in(fooix.owner) as user:
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, fooix, repository, user)
+            self.repository_set.setDefaultRepository(fooix, repository)
+        bmp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=source_ref,
+            target_ref=ref)
+        login_person(other_user)
+        view = create_initialized_view(bmp, "+index", principal=other_user)
+        git_add_remote_match = HTMLContains(Tag(
+            'Git remote add text', 'tt',
+            attrs={"id": "remote-add"},
+            text=("git remote add %s "
+                  "git+ssh://%s@git.launchpad.test/~%s/%s/+git/%s"
+                  ) % (source_owner.name,
+                       other_user.name,
+                       source_owner.name,
+                       fooix.name,
+                       repository.name)))
+        git_remote_update_match = HTMLContains(
+            Tag(
+                'Git remote update text', 'tt',
+                attrs={"id": "remote-update"},
+                text=("git remote update %s" % source_owner.name)))
+        git_checkout_match = HTMLContains(
+            Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "checkout-cmd"},
+                text="git checkout %s" % bmp.merge_target.name))
+        git_merge_match = HTMLContains(
+            Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"},
+                text="git merge %s/branch" % source_owner.name))
+
+        with person_logged_in(other_user):
+            rendered_view = view.render()
+            self.assertThat(rendered_view, git_add_remote_match)
+            self.assertThat(rendered_view, git_remote_update_match)
+            self.assertThat(rendered_view, git_checkout_match)
+            self.assertThat(rendered_view, git_merge_match)
+
+    def test_merge_guidelines_anonymous_view(self):
+        # Merge guidelines are mainly intended for maintainers merging
+        # contributions, they might be a bit noisy otherwise, therefore
+        # we do not show them on anonymous views.
+        # There is of course the permissions aspect involved here that you can
+        # do a local merge using only read permissions on the source branch.
+        team = self.factory.makeTeam()
+        source_owner = self.factory.makePerson()
+        other_user = self.factory.makePerson()
+        fooix = self.factory.makeProduct(name="fooix")
+        repository = self.factory.makeGitRepository(
+            owner=team, target=fooix, name="fooix-repo")
+        source_repository = self.factory.makeGitRepository(
+            owner=other_user, target=fooix, name="fooix-repo")
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        [source_ref] = self.factory.makeGitRefs(repository=source_repository,
+                                         paths=["refs/heads/branch"])
+        bmp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=source_ref,
+            target_ref=ref)
+        with person_logged_in(other_user):
+            view = create_initialized_view(bmp, "+index", principal=other_user)
+        git_add_remote_match = HTMLContains(
+            Tag(
+                'Git remote add text', 'tt',
+                attrs={"id": "remote-add"}))
+        git_remote_update_match = HTMLContains(
+            Tag(
+                'Git remote update text', 'tt',
+                attrs={"id": "remote-update"}))
+        git_checkout_match = HTMLContains(
+            Tag(
+                'Checkout command text', 'tt',
+                attrs={"id": "checkout-cmd"},
+                text="git checkout %s" % bmp.merge_target.name))
+        git_merge_match = HTMLContains(
+            Tag(
+                'Merge command text', 'tt',
+                attrs={"id": "merge-cmd"}))
+
+        rendered_view = view.render()
+        self.assertThat(rendered_view, Not(git_add_remote_match))
+        self.assertThat(rendered_view, Not(git_remote_update_match))
+        self.assertThat(rendered_view, Not(git_checkout_match))
+        self.assertThat(rendered_view, Not(git_merge_match))
+
+    def test_merge_guidelines_personal(self):
+        # Attempting to create an MP between personal projects
+        # will fail.
+        repository = self.factory.makeGitRepository(
+            owner=self.user, target=self.user)
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/master"])
+        other_user = self.factory.makePerson()
+        other_repository = self.factory.makeGitRepository(
+            owner=other_user, target=other_user)
+        [other_ref] = self.factory.makeGitRefs(repository=other_repository,
+                                               paths=["refs/heads/branch"])
+        self.assertRaises(InvalidBranchMergeProposal,
+                          self.factory.makeBranchMergeProposalForGit,
+                          source_ref=other_ref, target_ref=ref)
 
 
 class TestBranchMergeProposalChangeStatusView(TestCaseWithFactory):

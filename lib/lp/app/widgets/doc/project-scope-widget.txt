@@ -104,8 +104,8 @@ by getInputValue().
     >>> selected_scope = widget.getInputValue()
     >>> IProjectGroup.providedBy(selected_scope)
     True
-    >>> selected_scope.name
-    u'mozilla'
+    >>> print(selected_scope.name)
+    mozilla
 
 If an non-existant distribution name is provided, a widget error is
 raised:

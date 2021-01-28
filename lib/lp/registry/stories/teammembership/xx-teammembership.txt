@@ -55,7 +55,7 @@ Karl will join the newly created team.
 Since this is an open team, he's automatically approved.
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     You have successfully joined your own team.
 
 Now, the link to join the team is not present anymore and the +join page will
@@ -68,7 +68,7 @@ team.
     LinkNotFoundError
     >>> browser.open('http://launchpad.test/~myemail/+join')
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     You are an active member of this team already.
 
 We have a 'Back' button, though, which just takes the user back to
@@ -99,7 +99,8 @@ approved, though.
     >>> browser.url
     'http://launchpad.test/~myemail/+join'
 
-    >>> print(find_tag_by_id(browser.contents, 'maincontent').renderContents())
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'maincontent').decode_contents())
     <BLANKLINE>
     ...
     One of this team's administrators will have to approve your membership
@@ -121,7 +122,7 @@ hit the 'Cancel' button, going back to the team's page...
     'http://launchpad.test/~myemail'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Your request to join your own team is awaiting approval.
 
 Delegated teams also require approval of direct membership.
@@ -142,7 +143,8 @@ Delegated teams also require approval of direct membership.
     >>> browser.url
     'http://launchpad.test/~myemail/+join'
 
-    >>> print(find_tag_by_id(browser.contents, 'maincontent').renderContents())
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'maincontent').decode_contents())
     <BLANKLINE>
     ...
     One of this team's administrators will have to approve your membership
@@ -154,7 +156,7 @@ Delegated teams also require approval of direct membership.
     'http://launchpad.test/~myemail'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Your request to join your own team is awaiting approval.
 
 If it was a restricted team, users wouldn't even see a link to join the team.
@@ -185,7 +187,7 @@ message explaining that this is a restricted team.
     'http://launchpad.test/~myemail/+join'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     your own team is a restricted team.
     Only a team administrator can add new members.
 
@@ -207,12 +209,12 @@ be there at all.
 
     >>> contents = anon_browser.contents
     >>> for link in find_tag_by_id(contents, 'activemembers').findAll('a'):
-    ...     print(link.renderContents())
+    ...     print(link.decode_contents())
     Karl Tilbury
     Sample Person
 
     >>> for link in find_tag_by_id(contents, 'proposedmembers').findAll('a'):
-    ...     print(link.renderContents())
+    ...     print(link.decode_contents())
     Colin Watson
     James Blackwell
 
@@ -227,9 +229,9 @@ have been invited.
     >>> def print_members(contents, type):
     ...     table = find_tag_by_id(contents, type)
     ...     for link in table.findAll('a'):
-    ...         link_contents = six.ensure_text(link.renderContents())
+    ...         link_contents = link.decode_contents()
     ...         if link_contents != 'Edit' and not link.find('img'):
-    ...             print(link_contents.encode('ascii', 'replace'))
+    ...             print(link_contents)
 
     >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.getLink('All members').click()
@@ -264,7 +266,7 @@ without bounds, so they are paginated.
     >>> browser.open('http://launchpad.test/~admins/+members')
     >>> print_members(browser.contents, 'activemembers')
     Andrew Bennetts
-    Carlos Perell? Mar?n
+    Carlos Perelló Marín
     Dafydd Harries
     Daniel Henrique Debonzi
     Daniel Silverstone
@@ -415,5 +417,5 @@ error message:
     >>> browser2.url
     'http://launchpad.test/~myemail/+member/karl/+index'
     >>> for tag in find_tags_by_class(browser2.contents, 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     The membership request for Karl Tilbury has already been processed.

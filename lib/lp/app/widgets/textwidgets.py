@@ -18,6 +18,7 @@ from zope.formlib.textwidgets import (
     )
 
 from lp.app.errors import UnexpectedFormData
+from lp.services.utils import round_half_up
 
 
 class StrippedTextWidget(TextWidget):
@@ -104,9 +105,9 @@ class LocalDateTimeWidget(TextWidget):
         try:
             year, month, day, hour, minute, second, dummy_tz = parse(input)
             second, micro = divmod(second, 1.0)
-            micro = round(micro * 1000000)
+            micro = round_half_up(micro * 1000000)
             dt = datetime.datetime(year, month, day,
-                                   hour, minute, int(second), int(micro))
+                                   hour, minute, int(second), micro)
         except (DateTimeError, ValueError, IndexError) as v:
             raise ConversionError('Invalid date value', v)
         tz = pytz.timezone(self.timeZoneName)
@@ -122,8 +123,8 @@ class LocalDateTimeWidget(TextWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         Dates are displayed without an associated time zone:
 
@@ -217,14 +218,14 @@ class DelimitedListWidget(TextAreaWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         By default, lists are displayed one item on a line:
 
           >>> names = ['fred', 'bob', 'harry']
-          >>> widget._toFormValue(names)
-          u'fred\\r\\nbob\\r\\nharry'
+          >>> six.ensure_str(widget._toFormValue(names))
+          'fred\\r\\nbob\\r\\nharry'
         """
         if value == self.context.missing_value:
             value = self._missing
@@ -249,8 +250,11 @@ class DelimitedListWidget(TextAreaWidget):
 
         By default, lists are split by whitespace:
 
-          >>> print(widget._toFieldValue(u'fred\\nbob harry'))
-          [u'fred', u'bob', u'harry']
+          >>> for item in widget._toFieldValue(u'fred\\nbob harry'):
+          ...     print("'%s'" % item)
+          'fred'
+          'bob'
+          'harry'
         """
         value = super(
             DelimitedListWidget, self)._toFieldValue(value)

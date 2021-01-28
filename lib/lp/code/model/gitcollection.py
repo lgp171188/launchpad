@@ -364,7 +364,7 @@ class GenericGitCollection:
             "candidate_repositories",
             Select(
                 GitRepository.id,
-                tables=[GitRepository] + self._tables.values(),
+                tables=[GitRepository] + list(self._tables.values()),
                 where=And(*expressions) if expressions else True))
         expressions = [SQL("""
             source_git_repository IN
@@ -544,7 +544,8 @@ class GenericGitCollection:
             path = URI(term).path.strip("/")
         except InvalidURIError:
             path = term
-        return getUtility(IGitLookup).getByUniqueName(path)
+        result = getUtility(IGitLookup).getByPath(path)
+        return result[0]
 
     def search(self, term):
         """See `IGitCollection`."""
