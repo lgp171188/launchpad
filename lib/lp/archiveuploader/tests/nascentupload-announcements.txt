@@ -786,11 +786,10 @@ And then try to upload using the changes file with the malformed name.
 
     >>> bar_src = NascentUpload.from_changesfile_path(
     ...     copyp, sync_policy, DevNullLogger())
-    >>> bar_src.process()
+    >>> bar_src.process()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    EarlyReturnUploadError: An error occurred that prevented further
-    processing.
+    lp.archiveuploader.nascentupload.EarlyReturnUploadError: An error occurred that prevented further processing.
 
     >>> bar_src.logger = FakeLogger()
     >>> result = bar_src.do_accept()
