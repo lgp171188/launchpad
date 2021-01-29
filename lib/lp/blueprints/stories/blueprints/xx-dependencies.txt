@@ -39,14 +39,16 @@ users with launchpad.Edit permission for the blueprint.
   >>> user_browser.open(
   ...   'http://blueprints.launchpad.test/firefox/+spec/canvas')
   >>> user_browser.getLink('Add dependency')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
   >>> user_browser.open(
   ...  'http://blueprints.launchpad.test/firefox/+spec/canvas/+linkdependency')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  Unauthorized: ...
+  zope.security.interfaces.Unauthorized: ...
 
 The page contains a link back to the blueprint, in case we change our
 minds.
@@ -108,14 +110,16 @@ users with launchpad.Edit permission for the blueprint.
   >>> user_browser.open(
   ...   'http://blueprints.launchpad.test/firefox/+spec/canvas')
   >>> user_browser.getLink('Remove dependency')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
   >>> user_browser.open(
   ...   'http://blueprints.launchpad.test/firefox/+spec/canvas/+removedependency')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  Unauthorized: ...
+  zope.security.interfaces.Unauthorized: ...
 
 
 == Corner cases ==

@@ -23,21 +23,24 @@ Regular users can't approve items to be discussed in a sprint.
 
   >>> user_browser.open('http://launchpad.test/sprints/uds-guacamole')
   >>> user_browser.getLink('proposed')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
 
   >>> user_browser.getLink('Blueprints').click()
   >>> user_browser.getLink('Set agenda').click()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
 
   >>> user_browser.open(
   ...     'http://launchpad.test/sprints/uds-guacamole/+settopics')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  Unauthorized:...
+  zope.security.interfaces.Unauthorized: ...
 
 It's possible to delegate the approval of a sprint agenda items to somebody else.
 First choose a driver for the UDS Guacamole sprint.

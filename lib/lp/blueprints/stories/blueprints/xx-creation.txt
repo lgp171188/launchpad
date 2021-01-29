@@ -723,15 +723,17 @@ individual user's blueprint listing page:
 
     >>> user_browser.open('http://blueprints.launchpad.test/~mark')
     >>> print(user_browser.getLink('Register a blueprint'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 It's also not possible to register a blueprint from a group's blueprint
 listing page:
 
     >>> user_browser.open('http://blueprints.launchpad.test/~admins')
     >>> print(user_browser.getLink('Register a blueprint'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
