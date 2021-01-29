@@ -26,7 +26,7 @@ from lp.code.interfaces.codereviewcomment import (
     )
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
-from lp.services.mail.signedmessage import signed_message_from_string
+from lp.services.mail.signedmessage import signed_message_from_bytes
 
 
 def quote_text_as_email(text, width=80):
@@ -135,7 +135,7 @@ class CodeReviewComment(StormBase):
         """See `ICodeReviewComment`."""
         if self.message.raw is None:
             return None
-        return signed_message_from_string(self.message.raw.read())
+        return signed_message_from_bytes(self.message.raw.read())
 
     @property
     def visible(self):

@@ -45,7 +45,7 @@ class AnswerTrackerHandler:
 
         messageset = getUtility(IMessageSet)
         message = messageset.fromEmail(
-            signed_msg.parsed_string,
+            signed_msg.parsed_bytes,
             owner=getUtility(ILaunchBag).user,
             filealias=filealias,
             parsed_message=signed_msg)
