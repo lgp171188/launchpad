@@ -274,6 +274,32 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(ref, self.widget.getInputValue())
 
+    def test_getInputValue_with_branch_validator_valid(self):
+        def validator(ref):
+            return True, ""
+        [ref] = self.factory.makeGitRefs()
+        form = {
+            "field.git_ref.repository": ref.repository.unique_name,
+            "field.git_ref.path": ref.path,
+            }
+        self.widget.setBranchFormatValidator(validator)
+        self.widget.request = LaunchpadTestRequest(form=form)
+        self.assertEqual(ref, self.widget.getInputValue())
+
+    def test_getInputValue_with_branch_validator_invalid(self):
+        def validator(ref):
+            return False, "Not in correct format"
+        [ref] = self.factory.makeGitRefs()
+        form = {
+            "field.git_ref.repository": ref.repository.unique_name,
+            "field.git_ref.path": ref.path,
+            }
+        self.widget.setBranchFormatValidator(validator)
+        self.widget.request = LaunchpadTestRequest(form=form)
+        self.assertGetInputValueError(
+            form,
+            "Not in correct format")
+
     def test_call(self):
         # The __call__ method sets up the widgets.
         markup = self.widget()

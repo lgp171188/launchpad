@@ -54,6 +54,7 @@ from lp.app.browser.tales import (
     GitRepositoryFormatterAPI,
     )
 from lp.app.errors import UnexpectedFormData
+from lp.app.validators.validation import validate_oci_branch_name
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
@@ -754,6 +755,16 @@ class OCIRecipeFormMixin:
             return True
         return False
 
+    def _branch_format_validator(self, ref):
+        result = validate_oci_branch_name(ref.name)
+        if result:
+            return result, ""
+        message = (
+            "Branch does not match format "
+            "'applicationversion-ubuntuversion', eg. 'v1.0-20.04'"
+        )
+        return False, message
+
 
 class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                        OCIRecipeFormMixin):
@@ -805,6 +816,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         path = self.context.getDefaultGitRepositoryPath(self.user)
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
+        widget.setBranchFormatValidator(self._branch_format_validator)
         widget.repository_widget.setRenderedValue(path)
         if widget.error():
             # Do not override more important git_ref errors.
@@ -950,6 +962,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         oci_proj_url = canonical_url(oci_proj)
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
+        widget.setBranchFormatValidator(self._branch_format_validator)
         if widget.error():
             # Do not override more important git_ref errors.
             return
