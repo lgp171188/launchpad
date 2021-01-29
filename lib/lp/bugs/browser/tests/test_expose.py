@@ -86,18 +86,6 @@ class DemoEnum(DBEnumeratedType):
     TRES = DBItem(3, """Three""")
 
 
-class DemoContext:
-
-    return_value = None
-
-    def __init__(self, user):
-        self.user = user
-
-    def userHasBugSubscriptions(self, user):
-        assert user is self.user
-        return self.return_value
-
-
 class TestExposeAdministeredTeams(TestCaseWithFactory):
     """Test the function to expose administered team."""
 

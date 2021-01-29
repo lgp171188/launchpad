@@ -1176,32 +1176,6 @@ class RedirectToEditLanguagesView(LaunchpadView):
             '%s/+editlanguages' % canonical_url(self.user))
 
 
-@delegate_to(IPerson, context='person')
-class PersonWithKeysAndPreferredEmail:
-    """A decorated person that includes GPG keys and preferred emails."""
-
-    # These need to be predeclared to avoid delegates taking them over.
-    # Would be nice if there was a way of allowing writes to just work
-    # (i.e. no proxying of __set__).
-    gpgkeys = None
-    sshkeys = None
-    preferredemail = None
-
-    def __init__(self, person):
-        self.person = person
-        self.gpgkeys = []
-        self.sshkeys = []
-
-    def addGPGKey(self, key):
-        self.gpgkeys.append(key)
-
-    def addSSHKey(self, key):
-        self.sshkeys.append(key)
-
-    def setPreferredEmail(self, email):
-        self.preferredemail = email
-
-
 class PersonRdfView(BaseRdfView):
     """A view that embeds PersonRdfContentsView in a standalone page."""
 
