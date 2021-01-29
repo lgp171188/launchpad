@@ -154,9 +154,10 @@ def valid_webref(web_ref):
     >>> valid_webref('sftp://example.com//absolute/path/maybe')
     True
     >>> valid_webref('other://example.com/moo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LaunchpadValidationError: ...
+    lp.app.validators.LaunchpadValidationError: ...
     """
     if validate_url(web_ref, ['http', 'https', 'ftp', 'sftp']):
         # Allow ftp so valid_webref can be used for download_url, and so

@@ -30,9 +30,10 @@ private.
 
     >>> question = getUtility(IQuestionSet).get(1)
     >>> question.private
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ForbiddenAttribute:...
+    zope.security.interfaces.ForbiddenAttribute: ...
     >>> IObjectPrivacy(question).is_private
     False
 
