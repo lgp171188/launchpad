@@ -426,9 +426,10 @@ As a Launchpad administrator, so can Stub.
     >>> login(marilize.preferredemail.email)
     >>> spam_question.reject(
     ...     marilize, "We don't send free CDs any more.")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 When rejecting a question, a comment explaining the reason is given.
 
@@ -484,9 +485,10 @@ It is not possible to change the status attribute directly.
     >>> login('foo.bar@canonical.com')
     >>> question = ubuntu.newQuestion(**new_question_args)
     >>> question.status = QuestionStatus.INVALID
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ForbiddenAttribute...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
 A user having launchpad.Admin permission on the question can set the question
 status to an arbitrary value, by giving the new status and a comment
@@ -542,9 +544,10 @@ permission, an Unauthorized exception is thrown.
 
     >>> login('test@canonical.com')
     >>> question.setStatus(sample_person, QuestionStatus.EXPIRED, 'Expire.')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 
 Adding Comments Without Changing the Status
@@ -590,9 +593,10 @@ Users without launchpad.Moderator privileges cannot set the assignee.
 
     >>> login('no-priv@canonical.com')
     >>> question.assignee = sample_person
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: (<lp.answers.model.question.Question ...>, 'assignee', 'launchpad.Append')
+    zope.security.interfaces.Unauthorized: (<lp.answers.model.question.Question ...>, 'assignee', 'launchpad.Append')
 
 
 Events
@@ -763,6 +767,7 @@ method.
 
     >>> login(stub.preferredemail.email)
     >>> question.setStatus(stub, QuestionStatus.OPEN, reject_message)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotMessageOwnerError...
+    lp.answers.errors.NotMessageOwnerError: ...

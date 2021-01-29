@@ -38,9 +38,10 @@ the target.
 
     >>> no_priv = getUtility(ILaunchBag).user
     >>> target.newFAQ(no_priv, 'Title', 'Summary', content='Content')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 In practice, this means that only the project's owner (aka maintainer)
 or one of its answer contacts is authorized to create a new FAQ.
