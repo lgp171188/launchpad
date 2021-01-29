@@ -44,9 +44,10 @@ But the source directory isn't available:
 
     >>> browser.open(
     ...     'http://launchpad.test/+tour/source/code-hosting_SVG.svg')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound:...
+    zope.publisher.interfaces.NotFound: ...
 
 
 == +about compatibility ==
