@@ -156,7 +156,10 @@ from lp.services.database.stormexpr import (
     rank_by_fti,
     )
 from lp.services.features import getFeatureFlag
-from lp.services.helpers import shortlist
+from lp.services.helpers import (
+    backslashreplace,
+    shortlist,
+    )
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -269,8 +272,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     redirect_default_traversal = BoolCol(notNull=False, default=False)
 
     def __repr__(self):
-        display_name = six.ensure_str(
-            self.display_name, encoding='ASCII', errors='backslashreplace')
+        display_name = backslashreplace(self.display_name)
         return "<%s '%s' (%s)>" % (
             self.__class__.__name__, display_name, self.name)
 

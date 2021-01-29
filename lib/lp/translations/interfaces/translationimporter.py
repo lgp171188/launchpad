@@ -23,6 +23,7 @@ from zope.schema import (
     TextLine,
     )
 
+from lp.services.helpers import backslashreplace
 from lp.translations.interfaces.translationcommonformat import (
     TranslationImportExportBaseException,
     )
@@ -60,7 +61,7 @@ class TranslationFormatBaseError(TranslationImportExportBaseException):
     def represent(self, default_message):
         """Return human-readable description of error location."""
         if self.filename is not None:
-            safe_filename = self.filename.encode("ascii", "backslashreplace")
+            safe_filename = backslashreplace(self.filename)
 
         if self.line_number is not None and self.line_number > 0:
             if self.filename is not None:
@@ -78,7 +79,7 @@ class TranslationFormatBaseError(TranslationImportExportBaseException):
             location_prefix = ""
 
         if self.message is not None:
-            text = self.message.encode("ascii", "backslashreplace")
+            text = backslashreplace(self.message)
         else:
             text = default_message
 
