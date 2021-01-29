@@ -108,7 +108,7 @@ class TestMaloneHandler(TestCaseWithFactory):
                 handler.extractAndAuthenticateCommands(message,
                     'new@bugs.launchpad.net')
         self.assertEqual(mail_handled, None)
-        self.assertEqual(map(str, commands), [
+        self.assertEqual([str(command) for command in commands], [
             'bug new',
             'affects malone',
             ])

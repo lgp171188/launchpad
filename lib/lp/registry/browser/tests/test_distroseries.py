@@ -1501,7 +1501,9 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
                  "requested. Please give Launchpad some time to "
                  "complete these.").format(dsd.derived_series),
             }
-        observed = map(vars, view.request.response.notifications)
+        observed = [
+            vars(notification)
+            for notification in view.request.response.notifications]
         self.assertEqual([expected], observed)
 
     def test_requestUpgrades_is_efficient(self):
