@@ -18,6 +18,7 @@ from lp.code.mail.codereviewcomment import (
     build_inline_comments_section,
     CodeReviewCommentMailer,
     )
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.mail.sendmail import format_address
 from lp.services.messages.interfaces.message import IMessageSet
@@ -303,7 +304,8 @@ class TestCodeReviewComment(TestCaseWithFactory):
         self.assertEqual(expected_lines, ctrl.body.splitlines()[1:10])
 
     def makeComment(self, email_message):
-        message = getUtility(IMessageSet).fromEmail(email_message.as_string())
+        message = getUtility(IMessageSet).fromEmail(
+            message_as_bytes(email_message))
         bmp = self.factory.makeBranchMergeProposal()
         comment = bmp.createCommentFromMessage(
             message, None, None, email_message)
