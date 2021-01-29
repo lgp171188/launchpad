@@ -105,8 +105,8 @@ class TestStructuralSubscription(TestCaseWithFactory):
     def test_bug_filters(self):
         # The bug_filters attribute returns the BugSubscriptionFilter records
         # associated with this subscription.
-        subscription_filter = BugSubscriptionFilter()
-        subscription_filter.structural_subscription = self.subscription
+        subscription_filter = BugSubscriptionFilter(
+            structural_subscription=self.subscription)
         self.assertContentEqual(
             [subscription_filter, self.original_filter],
             list(self.subscription.bug_filters))
