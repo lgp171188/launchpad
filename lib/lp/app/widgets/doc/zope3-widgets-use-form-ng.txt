@@ -40,18 +40,20 @@ contains more than one argument.
     >>> Zope3WidgetsUseIBrowserFormNGMonkeyPatch.install()
 
     >>> int_widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
     >>> text_field = schema.TextLine(__name__='text')
     >>> request = LaunchpadTestRequest(
     ...     form={'field.text': ['two', 'strings']})
     >>> text_widget = TextWidget(text_field, request)
     >>> text_widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
 Since the SimpleInputWidget._getFormValue is overridden, it also works
 with the Launchpad widgets extending it:
@@ -60,9 +62,10 @@ with the Launchpad widgets extending it:
 
     >>> stripped_text_widget = StrippedTextWidget(text_field, request)
     >>> stripped_text_widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
 Widgets expecting a variable number of values continue to work
 with this monkey patch:

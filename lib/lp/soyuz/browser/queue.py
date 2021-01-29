@@ -10,7 +10,6 @@ __all__ = [
     'QueueItemsView',
     ]
 
-from collections import defaultdict
 from operator import attrgetter
 
 from lazr.delegates import delegate_to
@@ -67,10 +66,6 @@ from lp.soyuz.model.files import (
     SourcePackageReleaseFile,
     )
 from lp.soyuz.model.packagecopyjob import PackageCopyJob
-from lp.soyuz.model.queue import (
-    PackageUploadBuild,
-    PackageUploadSource,
-    )
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
@@ -204,9 +199,9 @@ class QueueItemsView(LaunchpadView):
         archives = load_related(
             Archive, package_copy_jobs, ['source_archive_id'])
         load_related(Distribution, archives, ['distributionID'])
-        person_ids = map(attrgetter('ownerID'), archives)
+        person_ids = [archive.ownerID for archive in archives]
         jobs = load_related(Job, package_copy_jobs, ['job_id'])
-        person_ids.extend(map(attrgetter('requester_id'), jobs))
+        person_ids.extend(job.requester_id for job in jobs)
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
 

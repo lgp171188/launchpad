@@ -29,9 +29,11 @@ import six
 import transaction
 from zope.component import getUtility
 from zope.testing.loggingsupport import Handler
+from zope.testing.renormalizing import OutputChecker
 
 from lp.services.config import config
 from lp.services.database.sqlbase import flush_database_updates
+from lp.services.helpers import backslashreplace
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
     ANONYMOUS,
@@ -79,6 +81,9 @@ class FilePrefixStrippingDocTestParser(doctest.DocTestParser):
 
 
 default_parser = FilePrefixStrippingDocTestParser()
+
+
+default_checker = OutputChecker()
 
 
 class StdoutHandler(Handler):
@@ -147,6 +152,7 @@ def LayeredDocFileSuite(paths, id_extensions=None, **kw):
         id_extensions = []
     kw.setdefault('optionflags', default_optionflags)
     kw.setdefault('parser', default_parser)
+    kw.setdefault('checker', default_checker)
 
     # Make sure that paths are resolved relative to our caller
     kw['package'] = doctest._normalize_module(kw.get('package'))
@@ -264,6 +270,7 @@ def setGlobs(test, future=False):
     test.globs['launchpadlib_credentials_for'] = launchpadlib_credentials_for
     test.globs['oauth_access_token_for'] = oauth_access_token_for
     test.globs['six'] = six
+    test.globs['backslashreplace'] = backslashreplace
 
     if future:
         import __future__

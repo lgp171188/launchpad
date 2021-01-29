@@ -49,17 +49,19 @@ projects' pages in Launchpad. The "project of the day" is listed separately.
 Anonymous users cannot see the link to administer featured projects:
 
     >>> anon_browser.getLink(MANAGE_LINK)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 A user without privileges cannot see the administration link, either:
 
     >>> user_browser.open('http://launchpad.test/')
     >>> user_browser.getLink(MANAGE_LINK)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 But Foo Bar, who is an administrator, can see the management link:
 
@@ -71,9 +73,10 @@ But Foo Bar, who is an administrator, can see the management link:
 No Privilege persons is denied access to this page:
 
     >>> user_browser.open('http://launchpad.test/+featuredprojects')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Administrators can add a project. Here Foo Bar adds apache as a featured
 project:

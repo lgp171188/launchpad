@@ -554,9 +554,10 @@ request:
   ...           'field.actions.change': 'Change'})
   >>> view = UnsafeActionTestView(context, request)
   >>> view.initialize()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  UnsafeFormGetSubmissionError: field.actions.change
+  lp.services.webapp.interfaces.UnsafeFormGetSubmissionError: field.actions.change
 
   >>> request = LaunchpadTestRequest(
   ...     method='POST',

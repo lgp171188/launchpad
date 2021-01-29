@@ -107,7 +107,7 @@ enter keywords that be used to filter the displayed FAQs.
 When no matches are found, a simple message is displayed:
 
     >>> message = find_main_content(browser.contents).find('p')
-    >>> print(extract_text(message).encode('ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(message)))
     There are no FAQs for Ubuntu matching \u201ccrash on boot\u201d.
 
 Otherwise, the listing only contains the matching FAQs.
@@ -178,11 +178,13 @@ distribution FAQs.
 Asking for a non-existent FAQ or an invalid ID will raise a 404 error.
 
     >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/171717')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
     >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/bad')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...

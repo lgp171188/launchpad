@@ -3,6 +3,8 @@
 
 """Helper functions for testing feeds."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'IThing',

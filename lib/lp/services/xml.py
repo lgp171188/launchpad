@@ -5,7 +5,6 @@
 
 __all__ = [
     'XMLValidator',
-    'RelaxNGValidator',
     ]
 
 
@@ -88,9 +87,3 @@ class XMLValidator:
         error_log is the empty string.
         """
         return self._errors
-
-
-class RelaxNGValidator(XMLValidator):
-    """A validator for Relax NG schemas."""
-
-    SCHEMA_ARGUMENT = 'relaxng'

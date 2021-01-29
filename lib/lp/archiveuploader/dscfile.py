@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ DSCFile and related.
@@ -215,7 +215,7 @@ class SignableTagFile:
         try:
             (name, email) = parse_maintainer_bytes(addr, fieldname)
         except ParseMaintError as error:
-            raise UploadError(str(error))
+            raise UploadError(six.text_type(error))
 
         person = getUtility(IPersonSet).getByEmail(email)
         if person and person.private:

@@ -31,11 +31,6 @@ from lp.testing.pages import (
     )
 
 
-class FauxForm:
-    """The simplest fake form, used for testing."""
-    context = None
-
-
 class TestFeatureControlPage(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer

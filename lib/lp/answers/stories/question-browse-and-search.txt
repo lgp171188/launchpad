@@ -41,9 +41,10 @@ For projects that don't have products, the Answers facet is disabled.
 
     >>> browser.open('http://launchpad.test/aaa')
     >>> browser.getLink('Answers')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 == Browsing Questions ==
 
@@ -83,15 +84,17 @@ out.
     >>> 'Next' in browser.contents
     True
     >>> browser.getLink('Next')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> 'Last' in browser.contents
     True
     >>> browser.getLink('Last')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 He decides to go the first page. He remembered one question title that
 might have been remotely related to his problem.
@@ -104,15 +107,17 @@ greyed out:
     >>> 'Previous' in browser.contents
     True
     >>> browser.getLink('Previous')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> 'First' in browser.contents
     True
     >>> browser.getLink('First')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 When he passes the mouse over the question's row, the beginning of the
 description appears in a small pop-up:
@@ -370,9 +375,10 @@ They need to login to access that page:
     ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/'
     ...     '+questions')
     >>> anon_browser.getLink('My questions').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> sample_person_browser = setupBrowser(
     ...     auth='Basic test@canonical.com:test')
@@ -441,9 +447,10 @@ They need to login to access that page:
 
     >>> anon_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> anon_browser.getLink('Need attention').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> sample_person_browser.open(
     ...     'http://launchpad.test/distros/ubuntu/+questions')

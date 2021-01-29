@@ -1314,9 +1314,10 @@ Everything you can do with 'something/fmt:foo', you should be able to do
 with 'None/fmt:foo'.
 
     >>> test_tales('foo/fmt:shorten', foo=None)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: 'you need to traverse a number after fmt:shorten'
+    zope.location.interfaces.LocationError: 'you need to traverse a number after fmt:shorten'
 
     >>> test_tales('foo/fmt:shorten/8', foo=None)
     ''
@@ -1416,10 +1417,10 @@ We don't get a ValueError when we use a value that doesn't appear in the
 DBSchema the item comes from.
 
     >>> test_tales('deb/enumvalue:CHEESEFISH', deb=udeb)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: 'The enumerated type BinaryPackageFormat does not have a
-                     value CHEESEFISH.'
+    zope.location.interfaces.LocationError: 'The enumerated type BinaryPackageFormat does not have a value CHEESEFISH.'
 
 It is possible for dbschemas to have a 'None' value.  This is a bit
 awkward, because when the value is None, we can't do any checking
@@ -1438,10 +1439,10 @@ dbschema items too:
     False
 
     >>> test_tales('deb/enumvalue:CHEESEFISH', deb=wrapped_deb)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: 'The enumerated type BinaryPackageFormat does not have a
-                     value CHEESEFISH.'
+    zope.location.interfaces.LocationError: 'The enumerated type BinaryPackageFormat does not have a value CHEESEFISH.'
 
 
 Formatting timedelta objects

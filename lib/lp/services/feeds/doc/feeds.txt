@@ -98,7 +98,7 @@ found, indicated by the absence of a ComponentLookupError.
     True
     >>> for name in ['thing-feed.atom', 'thing-feed.html']:
     ...     feed_view = getMultiAdapter((thing, request), name=name)
-    ...     print feed_view()
+    ...     print(feed_view())
     a feed view on an IThing
     a feed view on an IThing
 
