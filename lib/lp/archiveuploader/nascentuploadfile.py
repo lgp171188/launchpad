@@ -217,13 +217,12 @@ class NascentUploadFile:
         # Read in the file and compute its md5 and sha1 checksums and remember
         # the size of the file as read-in.
         digesters = dict((n, hashlib.new(n)) for n in self.checksums.keys())
-        ckfile = open(self.filepath, "r")
-        size = 0
-        for chunk in filechunks(ckfile):
-            for digester in six.itervalues(digesters):
-                digester.update(chunk)
-            size += len(chunk)
-        ckfile.close()
+        with open(self.filepath, "rb") as ckfile:
+            size = 0
+            for chunk in filechunks(ckfile):
+                for digester in six.itervalues(digesters):
+                    digester.update(chunk)
+                size += len(chunk)
 
         # Check the size and checksum match what we were told in __init__
         for n in sorted(self.checksums.keys()):
