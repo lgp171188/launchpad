@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Definition of the internet servers that Launchpad uses."""
@@ -1110,7 +1110,8 @@ class LaunchpadAccessLogger(CommonAccessLogger):
                 )
            )
 
-
+# XXX pappacena 2021-01-21: These 4 server definitions can be removed once
+# we are using only gunicorn (and not Zope Server).
 http = wsgi.ServerType(
     ZServerTracelogServer,  # subclass of WSGIHTTPServer
     WSGIPublisherApplication,
@@ -1577,10 +1578,13 @@ def register_launchpad_request_publication_factories():
 
     # We may also have a private XML-RPC server.
     private_port = None
-    for server in config.servers:
-        if server.type == 'PrivateXMLRPC':
-            ip, private_port = server.address
-            break
+    if config.use_gunicorn:
+        private_port = config.vhost.xmlrpc_private.private_port
+    else:
+        for server in config.servers:
+            if server.type == 'PrivateXMLRPC':
+                ip, private_port = server.address
+                break
 
     if private_port is not None:
         factories.append(XMLRPCRequestPublicationFactory(
