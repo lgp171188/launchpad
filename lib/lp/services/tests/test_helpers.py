@@ -5,6 +5,8 @@ from doctest import DocTestSuite
 from textwrap import dedent
 import unittest
 
+from zope.testing.renormalizing import OutputChecker
+
 from lp.services import helpers
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 
@@ -190,7 +192,7 @@ class TruncateTextTest(unittest.TestCase):
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(DocTestSuite())
-    suite.addTest(DocTestSuite(helpers))
+    suite.addTest(DocTestSuite(helpers, checker=OutputChecker()))
     suite.addTest(
         unittest.TestLoader().loadTestsFromTestCase(TruncateTextTest))
     return suite

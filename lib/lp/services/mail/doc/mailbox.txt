@@ -62,10 +62,10 @@ Before we can use it, it has to be opened.
 To prevent two threads opening it the same time, if it's already open,
 we can't open it again:
 
-    >>> mailbox.open()
+    >>> mailbox.open()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    MailBoxError: The mail box is already open.
+    lp.services.mail.mailbox.MailBoxError: The mail box is already open.
 
 There's only one mail in the mail box, and it's the same as we sent
 before:
@@ -103,9 +103,9 @@ Let's delete all mails in the mail box:
 
 If we try to delete a mail that doesn't exist we get an error:
 
-    >>> mailbox.delete(-1)
+    >>> mailbox.delete(-1)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    MailBoxError: No such id: -1
+    lp.services.mail.mailbox.MailBoxError: No such id: -1
 
     >>> mailbox.close()

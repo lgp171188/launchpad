@@ -52,9 +52,10 @@ Size limits can be enforced, although this is turned off by default:
     ...     """
     >>> config.push('max_blob_size', max_blob_size)
     >>> uuid = tsm.new(data)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    BlobTooLarge: 7
+    lp.services.temporaryblobstorage.interfaces.BlobTooLarge: 7
     >>> config_data = config.pop('max_blob_size')
 
 

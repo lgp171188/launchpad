@@ -87,9 +87,10 @@ raise an error. e.g. http://launchpad.test/ubuntu/+tickets/foo
     >>> request = LaunchpadTestRequest()
     >>> view = RenamedView(ubuntu, request, '+tickets')
     >>> view.publishTraverse(request, u'foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    NotFound: Object: <Distribution 'Ubuntu' (ubuntu)>, name: u'foo'
+    zope.publisher.interfaces.NotFound: Object: <Distribution 'Ubuntu' (ubuntu)>, name: u'foo'
 
 
 == Registering from ZCML ==
