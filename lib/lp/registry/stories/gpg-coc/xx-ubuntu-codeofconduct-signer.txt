@@ -25,9 +25,10 @@ A regular user can't see the link to Foo Bar's signed codes of conduct.
     Signed Ubuntu Code of Conduct: Yes
 
     >>> browser.getLink(url='+codesofconduct')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 No-priv hasn't signed the Ubuntu Code of Conduct yet.  Their homepage has a
 link to the Ubuntu Code of Conduct forms.

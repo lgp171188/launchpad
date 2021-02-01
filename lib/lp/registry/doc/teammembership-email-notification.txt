@@ -1017,8 +1017,9 @@ membership statues silently.
 
     >>> setStatus(stevea_ubuntu_team_membership,
     ...     TeamMembershipStatus.DEACTIVATED, reviewer=kamion, silent=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    UserCannotChangeMembershipSilently: ...
+    lp.registry.errors.UserCannotChangeMembershipSilently: ...
 
     >>> print stevea_ubuntu_team_membership.status.title
     Approved

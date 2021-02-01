@@ -124,9 +124,10 @@ If there is a development series alias, it becomes a redirect.
     >>> from zope.component import getUtility
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/devel")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <Distribution ...>, name: u'devel'
+    zope.publisher.interfaces.NotFound: Object: <Distribution ...>, name: u'devel'
 
     >>> with celebrity_logged_in("admin"):
     ...     ubuntu = getUtility(IDistributionSet).getByName(u"ubuntu")
@@ -176,11 +177,13 @@ term) or an unavailable name (only 'primary' and 'partner' exist)
 results in a NotFound error.
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/+archive")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <Distribution ...>, name: u'+archive'
+    zope.publisher.interfaces.NotFound: Object: <Distribution ...>, name: u'+archive'
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/+archive/boing")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <Distribution ...>, name: u'boing'
+    zope.publisher.interfaces.NotFound: Object: <Distribution ...>, name: u'boing'

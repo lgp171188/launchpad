@@ -91,9 +91,10 @@ rights to edit the membership in question) can do it.
 
     >>> landscape_admin_browser.open(
     ...    'http://launchpad.test/~launchpad/+invitation/landscape-developers')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 First, let's accept the invitation sent on behalf of Landscape Developers to
 the Launchpad Developers.

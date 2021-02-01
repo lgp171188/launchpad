@@ -90,9 +90,10 @@ The alias can be retrieved by name.
 Attempting to retrieve an alias that does not exist is an error.
 
     >>> file_alias = rel.getFileAliasByName('bar.txt')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'bar.txt'
+    lp.app.errors.NotFoundError: 'bar.txt'
 
 The ProductReleaseFile can also be retrieved by name.
 
@@ -104,9 +105,10 @@ Attempting to retrieve a ProductReleaseFile  that does not exist is an
 error.
 
     >>> prf = rel.getProductReleaseFileByName('bar.txt')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'bar.txt'
+    lp.app.errors.NotFoundError: 'bar.txt'
 
 Deleting the release file results in the file count being reduced.
 Only the product owner, product series owner, admins, or experts can
@@ -114,9 +116,10 @@ delete a product file.
 
     >>> login(ANONYMOUS)
     >>> rel.files[0].destroySelf()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<ProductReleaseFile...>, 'destroySelf', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<ProductReleaseFile...>, 'destroySelf', 'launchpad.Edit')
     >>> login('foo.bar@canonical.com')
     >>> for release_file in rel.files:
     ...     if release_file.libraryfile.id == file_alias.id:
@@ -140,9 +143,10 @@ Deleting files via a GET method is not allowed.
     >>> firefox = getUtility(IProductSet).getByName('firefox')
     >>> view = getMultiAdapter((firefox,request), name='+download')
     >>> view.initialize()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    UnsafeFormGetSubmissionError: Delete Files
+    lp.services.webapp.interfaces.UnsafeFormGetSubmissionError: Delete Files
 
 There a convenience method for getting all of the releases for a list
 of series.  The releases are returned sorted by release date in
@@ -192,9 +196,10 @@ Only the product owner can create a new release.
     >>> owner_email = firefox.owner.preferredemail.email
     >>> login(ANONYMOUS)
     >>> trunk.milestones[0].createProductRelease(firefox.owner, now)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Milestone ...>, 'createProductRelease', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<Milestone ...>, 'createProductRelease', 'launchpad.Edit')
     >>> login(owner_email)
     >>> milestone = trunk.newMilestone('8.0', code_name='ralph')
     >>> milestone.createProductRelease(firefox.owner, now,

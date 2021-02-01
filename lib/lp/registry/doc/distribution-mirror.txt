@@ -876,9 +876,10 @@ Only mirrors which have never been probed can be deleted this way.
 
     >>> ignored = login_person(cdimage_mirror.owner)
     >>> cdimage_mirror.destroySelf()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> login('karl@canonical.com')
     >>> cdimage_mirror.last_probe_record is not None
@@ -923,10 +924,10 @@ for the status, however, they may not change it:
     >>> de_archive_mirror.canTransitionToCountryMirror()
     True
     >>> de_archive_mirror.transitionToCountryMirror(True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<DistributionMirror at ...>, 'transitionToCountryMirror',
-      'launchpad.Admin')
+    zope.security.interfaces.Unauthorized: (<DistributionMirror at ...>, 'transitionToCountryMirror', 'launchpad.Admin')
 
 Mirror listing administrators may change the status however:
 
@@ -965,10 +966,10 @@ There cannot be multiple country mirrors of one type for one country:
 
     >>> davis_station_archive.transitionToCountryMirror(True)
     >>> archive_mirror2.transitionToCountryMirror(True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    CountryMirrorAlreadySet: Antarctica already has a country Archive mirror
-      set.
+    lp.registry.errors.CountryMirrorAlreadySet: Antarctica already has a country Archive mirror set.
 
 Mirrors which have not been probed may not be marked as country mirrors:
 
@@ -978,10 +979,10 @@ Mirrors which have not been probed may not be marked as country mirrors:
     ...     official_candidate=True)
     >>> linux_au_mirror.status = MirrorStatus.OFFICIAL
     >>> linux_au_mirror.transitionToCountryMirror(True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    MirrorNotProbed: This mirror may not be set as a country mirror as it has
-      not been probed.
+    lp.registry.errors.MirrorNotProbed: This mirror may not be set as a country mirror as it has not been probed.
 
 Mirrors which are not official or do not have an HTTP URL may not be set as
 country mirrors:
@@ -999,14 +1000,14 @@ country mirrors:
     False
 
     >>> osuosl_mirror.transitionToCountryMirror(None)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NoneError: None isn't acceptable as a value for
-      DistributionMirror.country_dns_mirror
+    storm.exceptions.NoneError: None isn't acceptable as a value for DistributionMirror.country_dns_mirror
 
     >>> osuosl_mirror.transitionToCountryMirror(True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    MirrorHasNoHTTPURL: This mirror may not be set as a country mirror as it
-      does not have an HTTP URL set.
+    lp.registry.errors.MirrorHasNoHTTPURL: This mirror may not be set as a country mirror as it does not have an HTTP URL set.
     >>> logout()

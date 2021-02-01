@@ -52,9 +52,10 @@ Other users (apart from Karl) can't see that page.
 
     >>> user_browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...                   'ubuntu-mirror-admins')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 If we change the team's renewal policy it still won't be possible for
 the user to renew that membership because it's not about to expire.
@@ -201,6 +202,7 @@ Any user who's not an admin of landscape-developers can't even see that page.
 
     >>> user_browser.open('http://launchpad.test/~landscape-developers'
     ...                   '/+expiringmembership/ubuntu-mirror-admins')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...

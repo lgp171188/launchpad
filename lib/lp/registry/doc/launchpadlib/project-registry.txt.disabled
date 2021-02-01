@@ -276,10 +276,10 @@ Attributes can be edited, but not by the anonymous user.
 
     >>> mark = lp_anon.people['mark']
     >>> firefox.driver = mark
-    >>> firefox.lp_save()
+    >>> firefox.lp_save()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    HTTPError: HTTP Error 401: Unauthorized...
+    urllib.error.HTTPError: HTTP Error 401: Unauthorized...
 
 A project administrator can modify attributes on the project.
 
@@ -328,12 +328,10 @@ Changing the owner of a project can change other attributes as well.
 Read-only attributes cannot be changed.
 
     >>> firefox.registrant = nopriv
-    >>> firefox.lp_save()
+    >>> firefox.lp_save()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    HTTPError: HTTP Error 400: Bad Request
-    ...
-    registrant_link: You tried to modify a read-only attribute...
+    urllib.error.HTTPError: HTTP Error 400: Bad Request ... registrant_link: You tried to modify a read-only attribute...
 
 "get_timeline" returns a list of dictionaries, corresponding to each
 milestone and release.
