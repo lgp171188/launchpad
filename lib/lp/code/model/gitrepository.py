@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -33,7 +33,11 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import six
-from six.moves.urllib.parse import quote_plus
+from six.moves.urllib.parse import (
+    quote_plus,
+    urlsplit,
+    urlunsplit,
+    )
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
@@ -534,10 +538,22 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         # See also `IGitLookup.getByHostingPath`.
         return str(self.id)
 
-    def getCodebrowseUrl(self):
+    def getCodebrowseUrl(self, username=None, password=None):
         """See `IGitRepository`."""
-        return urlutils.join(
+        url = urlutils.join(
             config.codehosting.git_browse_root, self.shortened_path)
+        if username is None and password is None:
+            return url
+        # XXX cjwatson 2019-03-07: This is ugly and needs
+        # refactoring once we support more general HTTPS
+        # authentication; see also comment in
+        # GitRepository.git_https_url.
+        split = urlsplit(url)
+        netloc = "%s:%s@%s" % (username or "", password or "", split.hostname)
+        if split.port:
+            netloc += ":%s" % split.port
+        return urlunsplit([
+            split.scheme, netloc, split.path, "", ""])
 
     def getCodebrowseUrlForRevision(self, commit):
         return "%s/commit/?id=%s" % (

@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
@@ -1334,6 +1334,23 @@ class TestGitRepositoryURLs(TestCaseWithFactory):
         expected_url = urlutils.join(
             config.codehosting.git_browse_root, repository.shortened_path)
         self.assertEqual(expected_url, repository.getCodebrowseUrl())
+
+    def test_codebrowser_url_with_username_and_password(self):
+        self.pushConfig(
+            "codehosting", git_browse_root="http://git.launchpad.test:99")
+        repository = self.factory.makeGitRepository()
+        expected_url = lambda usr, passw: urlutils.join(
+            "http://%s:%s@git.launchpad.test:99" % (usr, passw),
+            repository.shortened_path)
+        self.assertEqual(
+            expected_url("foo", "bar"),
+            repository.getCodebrowseUrl("foo", "bar"))
+        self.assertEqual(
+            expected_url("", "bar"),
+            repository.getCodebrowseUrl(None, "bar"))
+        self.assertEqual(
+            expected_url("foo", ""),
+            repository.getCodebrowseUrl("foo", ""))
 
     def test_codebrowse_url_for_default(self):
         # The codebrowse URL for the default repository for a target is an

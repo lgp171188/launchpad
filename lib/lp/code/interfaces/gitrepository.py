@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository interfaces."""
@@ -376,8 +376,12 @@ class IGitRepositoryView(IHasRecipes):
             otherwise False.
         """
 
-    def getCodebrowseUrl():
-        """Construct a browsing URL for this Git repository."""
+    def getCodebrowseUrl(username=None, password=None):
+        """Construct a browsing URL for this Git repository.
+
+        :param username: Include the given username in the URL (optional).
+        :param password: Include the given password in the URL (optional).
+        """
 
     def getCodebrowseUrlForRevision(commit):
         """The URL to the commit of the merge to the target branch"""
