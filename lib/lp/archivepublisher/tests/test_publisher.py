@@ -3398,7 +3398,7 @@ class TestPublisherLite(TestCaseWithFactory):
         purposes, the fake object will compare equal to a string holding
         this same text, encoded in the requested encoding.
         """
-        class FakeReleaseData(unicode):
+        class FakeReleaseData(six.text_type):
             def dump(self, output_file, encoding):
                 output_file.write(self.encode(encoding))
 
