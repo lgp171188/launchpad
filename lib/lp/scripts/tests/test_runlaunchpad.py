@@ -232,8 +232,7 @@ class TestAppServerStart(lp.testing.TestCase):
             gunicornify_zope_config_file()
             self.assertEqual(2, mock_zope_config_file.call_count)
             new_file = mock_zope_config_file.call_args[0][0]
-            with open(new_file) as fd:
-                self.assertEqual(dedent("""
+            self.assertEqual(dedent("""
                 site-definition zcml/webapp.zcml
                 # With some comment
                 devmode off
@@ -245,4 +244,4 @@ class TestAppServerStart(lp.testing.TestCase):
                 </zodb>
 
 
-                """), fd.read())
+                """), new_file.read())
