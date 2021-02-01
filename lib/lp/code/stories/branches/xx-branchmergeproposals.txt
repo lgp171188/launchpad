@@ -196,8 +196,9 @@ People not logged in cannot perform reviews.
 
     >>> anon_browser.open(klingon_proposal)
     >>> link = anon_browser.getLink('[Review]')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 People who are logged in can perform reviews.
 
@@ -528,18 +529,20 @@ shown for junk branches.
     >>> nopriv_browser.open(
     ...     'http://code.launchpad.test/~mark/+junk/testdoc')
     >>> nopriv_browser.getLink('Propose for merging').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Even if the user hand crafts the URL to look like a proposal to merge,
 they'll get a 404.
 
     >>> nopriv_browser.open(
     ...     'http://code.launchpad.test/~mark/+junk/testdoc/+register-merge')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 
 Displaying a preview diff
