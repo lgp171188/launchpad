@@ -145,6 +145,7 @@ add only noise to the comment. For the sake of completeness, since this
 has been a problem before, let's look at text_contents of a message
 containing a signature.asc attachment.
 
+    >>> from lp.services.compat import message_as_bytes
     >>> from lp.services.mail.tests.helpers import read_test_message
     >>> signed_msg = read_test_message('signed_detached.txt')
     >>> signed_msg['Message-Id'] = '<signeddetached@testmsg>'
@@ -163,7 +164,7 @@ containing a signature.asc attachment.
     -----END PGP SIGNATURE-----
     ...
 
-    >>> signed_message = msg_set.fromEmail(signed_msg.as_string())
+    >>> signed_message = msg_set.fromEmail(message_as_bytes(signed_msg))
     >>> print signed_message.text_contents
     Some signed content.
 
@@ -196,7 +197,7 @@ doesn't specify a Content-Type, application/octet-stream will be used as
 a default. If the chunk doesn't specify a charset, latin-1 will be
 used as a default.
 
-    >>> raw_msg = """\
+    >>> raw_msg = u"""\
     ... Content-Type: multipart/mixed; charset="latin-1";
     ...               boundary="=====BOUNDARY====="
     ... MIME-Version: 1.0
@@ -217,7 +218,7 @@ used as a default.
     ... MIME-Version: 1.0
     ... Content-Transfer-Encoding: 7bit
     ...
-    ... Plain text without a chăŕŝěţ.
+    ... Plain text without a ch\u0103\u0155\u015D\u011B\u0163.
     ... --=====BOUNDARY=====
     ... Content-Type: text/plain; charset="us-ascii"
     ... Content-Disposition: inline; filename="attachment.txt"
@@ -246,7 +247,7 @@ used as a default.
     ...
     ... some text in another file
     ... --=====BOUNDARY=====
-    ... """
+    ... """.encode('UTF-8')
     >>> msg = msgset.fromEmail(raw_msg)
     >>> for chunk in msg.chunks:
     ...     if chunk.content is not None:
@@ -284,7 +285,7 @@ Let's add another multipart message, this time we include a message in
 the message, like it is done when forwarding an email.
 
     >>> forwarded_msg = read_test_message('forwarded-msg.txt')
-    >>> msg = msgset.fromEmail(forwarded_msg.as_string())
+    >>> msg = msgset.fromEmail(message_as_bytes(forwarded_msg))
     >>> print msg.text_contents
     Forwarding test message.
     <BLANKLINE>
@@ -297,7 +298,7 @@ the parent if it's already in the database, though. To ensure that
 threads aren't broken, if the direct parent of the message isn't in the
 database, the next parent will be used.
 
-    >>> foo_msg = msgset.fromEmail('''\
+    >>> foo_msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -306,7 +307,7 @@ database, the next parent will be used.
     ... Foo Bar
     ... ''')
 
-    >>> baz_msg = msgset.fromEmail('''\
+    >>> baz_msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -326,7 +327,7 @@ We can specify a parent to be used, if no parent could be found for the
 message. This is useful for bugs, where we want all messages except for
 the first one to have a parent.
 
-    >>> bar_msg = msgset.fromEmail('''\
+    >>> bar_msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -340,7 +341,7 @@ the first one to have a parent.
 The fromEmail method handles non-multipart and minimalist messages
 quite happily.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -358,7 +359,7 @@ quite happily.
 
 It also handles the case where the subject line is folded.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Folded
     ...  subject
@@ -376,7 +377,7 @@ However, there are some things it refuses to deal with. In particular, it
 will not create Messages if it cannot determine the owner unless it is
 explicitly told to do so:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: invalid@example.com
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Message-Id: <fnord3>
@@ -388,7 +389,7 @@ explicitly told to do so:
         [...]
     UnknownSender: u'invalid@example.com'
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: invalid@example.com
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Message-Id: <fnord3>
@@ -410,7 +411,7 @@ header, or a missing Message-Id: or Date: header. These are required, and if
 they are missing then the email was sent from a broken email client or
 passed through a broken MTA and we have no choice but to bounce them.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Thu, 16 Jun 2005 14:12:54 +0100
     ... Subject: Dud
@@ -421,7 +422,7 @@ passed through a broken MTA and we have no choice but to bounce them.
         [...]
     InvalidEmailMessage: Missing Message-Id
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Subject: Re: Dud
     ... Message-Id: <fnord6>
@@ -434,7 +435,7 @@ passed through a broken MTA and we have no choice but to bounce them.
 
 Also, we generally insist that a message has a date associated with it.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Dud without a date!
     ... Message-Id: <fnord6>
@@ -453,7 +454,7 @@ otherwise reject the method as invalid.
     >>> from datetime import datetime
     >>> import pytz
 
-    >>> msg_text = '''\
+    >>> msg_bytes = b'''\
     ... From: foo.bar@canonical.com
     ... Subject: I have no date! Oh teh noes!
     ... Message-Id: <therearenofnords>
@@ -464,7 +465,7 @@ otherwise reject the method as invalid.
     >>> date_created = datetime(
     ...     2008, 7, 9, 14, 27, 40, tzinfo=pytz.timezone('UTC'))
     >>> msg = msgset.fromEmail(
-    ...     msg_text, date_created=date_created)
+    ...     msg_bytes, date_created=date_created)
 
     >>> msg.datecreated
     datetime.datetime(2008, 7, 9, 14, 27, 40, tzinfo=<UTC>)
@@ -472,7 +473,7 @@ otherwise reject the method as invalid.
 But, we make sure that we don't create a message with a date that is
 futuristic:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Fri, 17 Jun 2016 10:45:13 +0100
     ... Subject: Re: Back to the future
@@ -486,7 +487,7 @@ futuristic:
 And similarly, we will consider any message that claims to be older than
 1990 to have been created right now:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Tue, 17 Jun 1986 10:45:13 +0100
     ... Subject: Re: Back to the future, again
@@ -500,7 +501,7 @@ And similarly, we will consider any message that claims to be older than
 
 Finally, let's test the goldilocks message, where the date is just right:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Subject: Re: Smells like the present to me
@@ -523,7 +524,8 @@ which often works.
     >>> import os.path
     >>> mail_path = ('../../mail/tests/emails/x-unknown-encoding.txt')
     >>> msg_path = os.path.join(os.path.dirname(__file__), mail_path)
-    >>> raw_msg = open(msg_path).read()
+    >>> with open(msg_path, 'rb') as f:
+    ...     raw_msg = f.read()
     >>> print raw_msg
     MIME-Version: 1.0
     ...

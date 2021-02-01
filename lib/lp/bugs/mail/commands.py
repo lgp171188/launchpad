@@ -59,6 +59,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
+from lp.services.compat import message_as_bytes
 from lp.services.mail.commands import (
     EditEmailCommand,
     EmailCommand,
@@ -98,7 +99,7 @@ class BugEmailCommand(EmailCommand):
 
         if bugid == 'new':
             message = getUtility(IMessageSet).fromEmail(
-                parsed_msg.as_string(),
+                message_as_bytes(parsed_msg),
                 owner=getUtility(ILaunchBag).user,
                 filealias=filealias,
                 parsed_message=parsed_msg)
