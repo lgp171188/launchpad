@@ -86,9 +86,10 @@ The text below was "clear signed" by 0xDFD20543 master key but tampered with:
     ... """
 
     >>> master_sig = gpghandler.getVerifiedSignature(content)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGVerificationError: (7, 8, u'Bad signature')
+    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, u'Bad signature')
 
 If no signed content is found, an exception is raised:
 
@@ -101,9 +102,10 @@ If no signed content is found, an exception is raised:
     ... """
 
     >>> master_sig = gpghandler.getVerifiedSignature(content)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGVerificationError: No signatures found
+    lp.services.gpg.interfaces.GPGVerificationError: No signatures found
 
 
 The text below contains two clear signed sections.  As there are two
@@ -140,14 +142,16 @@ change. -- Guilherme Salgado, 2007-04-05
 (https://lists.ubuntu.com/mailman/private/launchpad/2007-April/015085.html)
 
     >>> master_sig = gpghandler.getVerifiedSignature(content)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGVerificationError...
+    lp.services.gpg.interfaces.GPGVerificationError: ...
 
 #     >>> master_sig = gpghandler.getVerifiedSignature(content)
+#     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
 #     Traceback (most recent call last):
 #     ...
-#     GPGVerificationError: Single signature expected, found multiple signatures
+#     lp.services.gpg.interfaces.GPGVerificationError: Single signature expected, found multiple signatures
 
 The text below was signed by  key that's is not part of the
 imported keyring. Note that we have extra debug information containing
@@ -166,10 +170,10 @@ the GPGME error codes (they may be helpful).
     ... -----END PGP SIGNATURE-----
     ... """
     >>> gpghandler.getVerifiedSignature(content)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGKeyDoesNotExistOnServer: GPG key E192C0543B1BB2EB does not exist on the
-    keyserver.
+    lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer: GPG key E192C0543B1BB2EB does not exist on the keyserver.
 
 Due to unpredictable behaviour between the production system and
 the external keyserver, we have a resilient signature verifier,
@@ -180,12 +184,10 @@ exception. The exception raised by this method will contain debug
 information for the 3 failures.
 
     >>> gpghandler.getVerifiedSignatureResilient(content)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGVerificationError: Verification failed 3 times:
-    ['GPG key E192C0543B1BB2EB does not exist on the keyserver.',
-     'GPG key E192C0543B1BB2EB does not exist on the keyserver.',
-     'GPG key E192C0543B1BB2EB does not exist on the keyserver.']
+    lp.services.gpg.interfaces.GPGVerificationError: Verification failed 3 times: ['GPG key E192C0543B1BB2EB does not exist on the keyserver.', 'GPG key E192C0543B1BB2EB does not exist on the keyserver.', 'GPG key E192C0543B1BB2EB does not exist on the keyserver.']
 
 
 Debugging exceptions

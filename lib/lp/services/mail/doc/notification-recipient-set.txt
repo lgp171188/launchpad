@@ -114,14 +114,16 @@ Requesting the reason for somebody that is not a recipient raises a
 UnknownRecipientError:
 
     >>> recipients.getReason(no_priv)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnknownRecipientError: ...
+    lp.services.mail.interfaces.UnknownRecipientError: ...
 
     >>> recipients.getReason(six.ensure_str('no-priv@canonical.com'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnknownRecipientError: 'no-priv@canonical.com'
+    lp.services.mail.interfaces.UnknownRecipientError: 'no-priv@canonical.com'
 
 Passing something else than an IPerson or a string is forbidden:
 

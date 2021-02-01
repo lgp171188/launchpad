@@ -36,9 +36,10 @@ it involves OpenID, which would complicate this test quite a bit.)
     ...     oauth_token=token.key, oauth_callback='http://launchpad.test/bzr')
     >>> url = "http://launchpad.test/+authorize-token?%s" % urlencode(params)
     >>> browser.open(url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open(url)
@@ -125,11 +126,10 @@ integration has its own section, below.)
     >>> browser.open(
     ...     "http://launchpad.test/+authorize-token?%s&%s"
     ...         % (urlencode(params), allow_permission))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: Consumer "foobar123451432" asked for desktop
-    integration, but didn't say what kind of desktop it is, or name
-    the computer being integrated.
+    zope.security.interfaces.Unauthorized: Consumer "foobar123451432" asked for desktop integration, but didn't say what kind of desktop it is, or name the computer being integrated.
 
 An application may also specify a context, so that the access granted
 by the user is restricted to things related to that context.
@@ -365,17 +365,17 @@ DESKTOP_INTEGRATION, since the whole point is to have a permission
 level that specifically applies across the entire desktop.
 
     >>> print_access_levels_for('allow_permission=WRITE_PRIVATE')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: Desktop integration token requested a permission
-    ("Change Anything") not supported for desktop-wide use.
+    zope.security.interfaces.Unauthorized: Desktop integration token requested a permission ("Change Anything") not supported for desktop-wide use.
 
     >>> print_access_levels_for(
     ...     'allow_permission=WRITE_PUBLIC&' + allow_desktop)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: Desktop integration token requested a permission
-    ("Change Non-Private Data") not supported for desktop-wide use.
+    zope.security.interfaces.Unauthorized: Desktop integration token requested a permission ("Change Non-Private Data") not supported for desktop-wide use.
 
 You can't specify a callback URL when authorizing a desktop-wide
 token, since callback URLs should only be used when integrating
@@ -383,19 +383,19 @@ websites into Launchpad.
 
     >>> params['oauth_callback'] = 'http://launchpad.test/bzr'
     >>> print_access_levels_for(allow_desktop)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: A desktop integration may not specify an OAuth
-    callback URL.
+    zope.security.interfaces.Unauthorized: A desktop integration may not specify an OAuth callback URL.
 
 This is true even if the desktop token isn't asking for the
 DESKTOP_INTEGRATION permission.
 
     >>> print_access_levels_for('allow_permission=WRITE_PRIVATE')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: A desktop integration may not specify an OAuth
-    callback URL.
+    zope.security.interfaces.Unauthorized: A desktop integration may not specify an OAuth callback URL.
 
     >>> del params['oauth_callback']
 

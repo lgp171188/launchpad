@@ -298,10 +298,10 @@ reporting in the web interface, are not ignored in the email interface.
     ... doesn't matter
     ... """)
     >>> msgid = sendmail(msg, ['edit@malone-domain'])
-    >>> handleMailForTest()
+    >>> handleMailForTest()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     ERROR:process-mail:An exception was raised inside the handler:
     ...
-    Unauthorized
+    twisted.cred.error.Unauthorized
 
     >>> print(str(pop_notifications()[-1]))
     From ...
@@ -401,10 +401,10 @@ logged.
     >>> len(stub.test_emails)
     2
 
-    >>> handleMailForTest()
+    >>> handleMailForTest()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     ERROR:...:Upload to Librarian failed...
     ...
-    UploadFailed: ...Connection refused...
+    lp.services.librarian.interfaces.client.UploadFailed: ...Connection refused...
 
     >>> len(stub.test_emails)
     2

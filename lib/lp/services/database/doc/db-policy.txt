@@ -38,10 +38,10 @@ a single master.
     False
 
     >>> ro_janitor.display_name = 'Janice the Janitor'
-    >>> transaction.commit()
+    >>> transaction.commit()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    InternalError: ...
+    storm.database.InternalError: ...
 
     >>> transaction.abort()
 
@@ -81,9 +81,10 @@ resources.
     >>> with SlaveOnlyDatabasePolicy():
     ...     whoops = IMasterStore(Person).find(
     ...         Person, Person.name == 'janitor').one()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    DisallowedStore: master
+    lp.services.database.interfaces.DisallowedStore: master
 
 We can even ensure no database activity occurs at all, for instance
 if we need to guarantee a potentially long running call doesn't access
@@ -94,9 +95,10 @@ database transaction.
     >>> with DatabaseBlockedPolicy():
     ...     whoops = IStore(Person).find(
     ...         Person, Person.name == 'janitor').one()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    DisallowedStore: ('main', 'default')
+    lp.services.database.interfaces.DisallowedStore: ('main', 'default')
 
 Database policies can also be installed and uninstalled using the
 IStoreSelector utility for cases where the 'with' syntax cannot

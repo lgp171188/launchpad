@@ -20,20 +20,20 @@ If a SLAVE_FLAVOR store is requested, it should trap all writes.
     >>> main_slave = getUtility(IStoreSelector).get(MAIN_STORE, SLAVE_FLAVOR)
     >>> janitor = main_slave.find(Person, name='janitor').one()
     >>> janitor.display_name = 'Ben Dover'
-    >>> transaction.commit()
+    >>> transaction.commit()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    InternalError: ...
+    storm.database.InternalError: ...
 
 Test this once more to ensure the settings stick across transactions.
 
     >>> transaction.abort()
     >>> t = transaction.begin()
     >>> main_slave.find(Person, name='janitor').one().display_name = 'BenD'
-    >>> transaction.commit()
+    >>> transaction.commit()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    InternalError: ...
+    storm.database.InternalError: ...
 
 If a MASTER_FLAVOR is requested, it should allow writes to table in that
 Store's replication set.

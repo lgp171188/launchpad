@@ -385,9 +385,10 @@ explicitly told to do so:
     ...
     ... Foo Bar
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    UnknownSender: u'invalid@example.com'
+    lp.services.messages.interfaces.message.UnknownSender: u'invalid@example.com'
 
     >>> msg = msgset.fromEmail(b'''\
     ... From: invalid@example.com
@@ -418,9 +419,10 @@ passed through a broken MTA and we have no choice but to bounce them.
     ...
     ... Moo
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    InvalidEmailMessage: Missing Message-Id
+    lp.services.messages.interfaces.message.InvalidEmailMessage: Missing Message-Id
 
     >>> msg = msgset.fromEmail(b'''\
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -429,9 +431,10 @@ passed through a broken MTA and we have no choice but to bounce them.
     ...
     ... Moo
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    InvalidEmailMessage: No From: or Reply-To: header
+    lp.services.messages.interfaces.message.InvalidEmailMessage: No From: or Reply-To: header
 
 Also, we generally insist that a message has a date associated with it.
 
@@ -442,9 +445,10 @@ Also, we generally insist that a message has a date associated with it.
     ...
     ... Moo
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    InvalidEmailMessage: Invalid date...
+    lp.services.messages.interfaces.message.InvalidEmailMessage: Invalid date...
 
 However, we can override this behaviour by passing a date_created
 parameter to fromEmail(). This is optional, and defaults to None, but it
