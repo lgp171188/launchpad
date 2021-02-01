@@ -76,14 +76,16 @@ right ones.
     ...     'evolution/+pots/evolution-2.2/es/1/+translate')
 
     >>> browser.getLink('First')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.getLink('Prev')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> next = browser.getLink('Next')
     >>> print(next.url)
@@ -131,14 +133,16 @@ And the last one.
     http://.../hoary/+source/evolution/+pots/evolution-2.2/es/21/+translate
 
     >>> browser.getLink('Next')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.getLink('Last')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 And the link to the IPOFile view should be there too:
 
@@ -361,9 +365,10 @@ UnexpectedFormData exception:
     ...  'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
     ...  '+pots/evolution-2.2/es/14/+translate?field.alternative_language=ca&'
     ...  'field.alternative_language=es')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: You specified...
+    lp.app.errors.UnexpectedFormData: You specified...
 
 Let's see what happens when we do a submission with a lock_timestamp
 older than the review date for current translation.

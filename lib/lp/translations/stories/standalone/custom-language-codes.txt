@@ -149,16 +149,18 @@ This can be convenient for debugging.
 However all they get is a read-only version of the page.
 
     >>> user_browser.getLink("Add a custom language code").click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 The page for adding custom language codes is not accessible to them.
 
     >>> user_browser.open(add_page)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 And naturally, if the owner creates a custom language code again, an
 unprivileged user can't remove it.
@@ -177,14 +179,16 @@ unprivileged user can't remove it.
 
     >>> user_browser.getLink("no").click()
     >>> user_browser.getLink("remove custom language code")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(remove_page)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 
 Source packages

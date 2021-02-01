@@ -96,9 +96,10 @@ Administration page is inaccessible.
     ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/evolution-2.2/+admin')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Trying to edit disabled templates brings them to the appropriate page.
 
@@ -115,9 +116,10 @@ Administration page is inaccessible.
     ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/disabled-template/+admin')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Links to the templates
