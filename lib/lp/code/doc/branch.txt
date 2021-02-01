@@ -120,9 +120,10 @@ are writable, but the owner can be set using the `setOwner` method.
 
     >>> login('admin@canonical.com')
     >>> new_branch.registrant = factory.makePerson()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ForbiddenAttribute: ('registrant', <Branch ...>)
+    zope.security.interfaces.ForbiddenAttribute: ('registrant', <Branch ...>)
 
     >>> team = factory.makeTeam(name='new-owner', owner=new_branch.owner)
     >>> new_branch.setOwner(new_owner=team, user=new_branch.owner)
@@ -139,9 +140,10 @@ and -, +, _ and @ are allowed after that.
     >>> namespace.createBranch(
     ...     branch_type=BranchType.HOSTED, name='invalid name!',
     ...     registrant=registrant)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LaunchpadValidationError: Invalid branch name &#x27;invalid name!&#x27;.  Branch ...
+    lp.app.validators.LaunchpadValidationError: Invalid branch name &#x27;invalid name!&#x27;.  Branch ...
 
 
 Determining the recently changed, registered and imported branches
