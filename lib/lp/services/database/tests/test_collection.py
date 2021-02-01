@@ -62,7 +62,7 @@ class CollectionTest(TestCaseWithFactory):
     def test_make_table(self):
         TestTable = make_table(1, 5)
         result = IStore(Person).find(TestTable).order_by(TestTable.id)
-        self.assertEqual(range(1, 5), get_ids(result))
+        self.assertEqual(list(range(1, 5)), get_ids(result))
 
     def test_select_one(self):
         TestTable = make_table(1, 5)

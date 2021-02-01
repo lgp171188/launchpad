@@ -12,7 +12,6 @@ __all__ = [
     'OCIRecipeSet',
     ]
 
-import re
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
@@ -47,6 +46,7 @@ from zope.security.proxy import (
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
+from lp.app.validators.validation import validate_oci_branch_name
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
@@ -201,25 +201,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def is_valid_branch_format(self):
-        name = self.git_ref.name
-        split = name.split('-')
-        # if we've not got at least two components
-        if len(split) < 2:
-            return False
-        app_version = split[0:-1]
-        ubuntu_version = split[-1]
-        # 20.04 format
-        ubuntu_match = re.match("\d{2}\.\d{2}", ubuntu_version)
-        if not ubuntu_match:
-            return False
-        # disallow risks in app version number
-        for risk in ["stable", "candidate", "beta", "edge"]:
-            if risk in app_version:
-                return False
-        # no '/' as they're a delimiter
-        if '/' in app_version:
-            return False
-        return True
+        return validate_oci_branch_name(self.git_ref.name)
 
     @property
     def build_args(self):

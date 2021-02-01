@@ -117,7 +117,12 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             }
         }]
         self.config = {"rootfs": {"diff_ids": ["diff_id_1", "diff_id_2"]}}
-        self.build = self.factory.makeOCIRecipeBuild()
+        # This produces a git ref that does not match the 'valid' OCI branch
+        # format, so will not get multiple tags. Multiple tags are tested
+        # explicitly.
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.build = self.factory.makeOCIRecipeBuild(recipe=recipe)
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
 

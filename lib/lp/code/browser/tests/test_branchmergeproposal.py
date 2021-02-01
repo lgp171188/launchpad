@@ -99,6 +99,7 @@ from lp.registry.enums import (
     PersonVisibility,
     TeamMembershipPolicy,
     )
+from lp.services.compat import message_as_bytes
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
@@ -2189,7 +2190,7 @@ class TestCommentAttachmentRendering(TestCaseWithFactory):
         msg = self.factory.makeEmailMessage(
             body='testing',
             attachments=[('test.diff', 'text/plain', attachment_body)])
-        message = MessageSet().fromEmail(msg.as_string())
+        message = MessageSet().fromEmail(message_as_bytes(msg))
         return CodeReviewDisplayComment(
             bmp.createCommentFromMessage(message, None, None, msg))
 

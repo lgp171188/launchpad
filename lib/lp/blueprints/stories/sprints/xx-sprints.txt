@@ -174,9 +174,10 @@ available to those who have permissions to edit that sprint.
     Ubuntu Below Zero : Meetings
 
     >>> anon_browser.getLink('Change details')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 We will log in as Sample Person and edit the ubz sprint.
 
@@ -498,14 +499,16 @@ Unregistered and anonymous users cannot access the CSV report.
 
     >>> user_browser.open('http://launchpad.test/sprints/ubz')
     >>> user_browser.getLink('Export attendees to CSV').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open('http://launchpad.test/sprints/ubz/+attendees-csv')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Registering somebody for a remote-only sprint doesn't offer the choice of
 physical or remote attendance, and the CSV report always reports such people

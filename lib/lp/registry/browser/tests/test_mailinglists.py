@@ -51,13 +51,13 @@ class MailingListTestCase(TestCaseWithFactory):
                 email='him@eg.dom', name='him', displayname='Him')
         raw = '\n'.join([
             'From: Him <him@eg.dom>',
-            'To: %s' % str(team.mailing_list.address),
+            'To: %s' % team.mailing_list.address,
             'Subject: monkey',
             'Message-ID: <monkey>',
             'Date: Fri, 01 Aug 2000 01:09:00 -0000',
             '',
             'First paragraph.\n\nSecond paragraph.\n\nThird paragraph.'
-            ])
+            ]).encode('ASCII')
         message_set = getUtility(IMessageSet)
         message = message_set.fromEmail(raw)
         transaction.commit()

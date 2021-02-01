@@ -190,7 +190,8 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
     def test_create_new_recipe(self):
         oci_project = self.factory.makeOCIProject()
         oci_project_display = oci_project.display_name
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
@@ -227,9 +228,24 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "Official recipe:\nNo",
             MatchesTagText(content, "official-recipe"))
 
+    def test_create_new_recipe_invalid_format(self):
+        oci_project = self.factory.makeOCIProject()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/invalid'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        browser.getControl("Create OCI recipe").click()
+        self.assertIn("Branch does not match format", browser.contents)
+
     def test_create_new_recipe_with_build_args(self):
         oci_project = self.factory.makeOCIProject()
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -289,7 +305,8 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
     def test_create_new_recipe_processors(self):
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(pillar=self.distribution)
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         processors = browser.getControl(name="field.processors")
@@ -358,7 +375,8 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         distribution = self.factory.makeDistribution(
             oci_project_admin=self.person)
         oci_project = self.factory.makeOCIProject(pillar=distribution)
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -381,11 +399,13 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
 
         # do it once
         oci_project = self.factory.makeOCIProject(pillar=distribution)
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
 
         # and then do it again
         oci_project2 = self.factory.makeOCIProject(pillar=distribution)
-        [git_ref2] = self.factory.makeGitRefs()
+        [git_ref2] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v3.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -429,7 +449,8 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         distribution = self.factory.makeDistribution(
             oci_project_admin=distro_owner)
         oci_project = self.factory.makeOCIProject(pillar=distribution)
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -448,7 +469,8 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
 
     def test_create_recipe_doesnt_override_gitref_errors(self):
         oci_project = self.factory.makeOCIProject()
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -561,7 +583,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             oci_project=oci_project, git_ref=old_git_ref)
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
-        [new_git_ref] = self.factory.makeGitRefs()
+        [new_git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         self.factory.makeOCIPushRule(recipe=recipe)
 
         browser = self.getViewBrowser(recipe, user=self.person)
@@ -595,6 +618,25 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.assertThat(
             "Build schedule:\nBuilt daily\nEdit OCI recipe\n",
             MatchesTagText(content, "build-schedule"))
+
+    def test_edit_recipe_invalid_branch(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository()
+        [old_git_ref] = self.factory.makeGitRefs(repository=repository)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, git_ref=old_git_ref)
+        self.factory.makeTeam(
+            name="new-team", displayname="New Team", members=[self.person])
+        [new_git_ref] = self.factory.makeGitRefs(
+            repository=repository, paths=['/refs/heads/invalid'])
+        self.factory.makeOCIPushRule(recipe=recipe)
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
+        browser.getControl("Update OCI recipe").click()
+        self.assertIn("Branch does not match format", browser.contents)
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing an OCI recipe sets the date_last_modified property.

@@ -137,7 +137,7 @@ class IMessageSet(Interface):
                   restricted=False):
         """Construct a Message from an email message and return it.
 
-        :param email_message: The original email as a string.
+        :param email_message: The original email as a byte string.
         :param owner: Specifies the owner of the new Message. The default
             is calculated using the From: or Reply-To: headers, and will raise
             a UnknownSender error if they cannot be found.

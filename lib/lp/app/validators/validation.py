@@ -9,7 +9,10 @@ __all__ = [
     'can_be_nominated_for_series',
     'valid_cve_sequence',
     'validate_new_team_email',
+    'validate_oci_branch_name',
     ]
+
+import re
 
 from zope.component import getUtility
 
@@ -78,4 +81,26 @@ def validate_new_team_email(email):
     """
     _validate_email(email)
     _check_email_availability(email)
+    return True
+
+
+def validate_oci_branch_name(branch_name):
+    """Check that a git ref name matches appversion-ubuntuversion."""
+    split = branch_name.split('-')
+    # if we've not got at least two components
+    if len(split) < 2:
+        return False
+    app_version = split[0:-1]
+    ubuntu_version = split[-1]
+    # 20.04 format
+    ubuntu_match = re.match("\d{2}\.\d{2}", ubuntu_version)
+    if not ubuntu_match:
+        return False
+    # disallow risks in app version number
+    for risk in ["stable", "candidate", "beta", "edge"]:
+        if risk in app_version:
+            return False
+    # no '/' as they're a delimiter
+    if '/' in app_version:
+        return False
     return True
