@@ -64,9 +64,10 @@ And also by ID.
     >>> print(builderset.get(2).name)
     frog
     >>> print(builderset.get(100).name)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 100
+    lp.app.errors.NotFoundError: 100
 
 The 'new' method will create a new builder in the database.
 
