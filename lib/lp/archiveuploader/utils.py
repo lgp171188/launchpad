@@ -210,10 +210,10 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
 def parse_maintainer_bytes(content, fieldname):
     """Wrapper for parse_maintainer to handle both Unicode and bytestrings.
 
-    It verifies the content type and transforms it to a unicode with
+    It verifies the content type and transforms it to text with
     guess().  Then we can safely call parse_maintainer().
     """
-    if type(content) != unicode:
+    if not isinstance(content, six.text_type):
         content = guess_encoding(content)
     return parse_maintainer(content, fieldname)
 
