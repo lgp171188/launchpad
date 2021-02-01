@@ -4937,7 +4937,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if oci_project is None:
             oci_project = self.makeOCIProject()
         if git_ref is None:
-            [git_ref] = self.makeGitRefs()
+            component = self.getUniqueUnicode()
+            paths = [u'refs/heads/{}-20.04'.format(component)]
+            [git_ref] = self.makeGitRefs(paths=paths)
         if build_file is None:
             build_file = self.getUniqueUnicode(u"build_file_for")
         if build_path is None:
