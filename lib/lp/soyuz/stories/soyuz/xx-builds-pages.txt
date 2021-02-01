@@ -276,9 +276,10 @@ code is prepared to raise the correct exception:
 
     >>> anon_browser.open(
     ...     "http://launchpad.test/+builds/bob/+history?build_state=foo")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: No suitable state found for value "foo"
+    lp.app.errors.UnexpectedFormData: No suitable state found for value "foo"
 
 The code also raises UnexpectedFormData when valid, but duplicated,
 form values are submitted:
@@ -287,10 +288,10 @@ form values are submitted:
     ...     "http://launchpad.test/ubuntu/+builds"
     ...     "?build_text=binutils&build_state=building"
     ...     "&build_text=binutils&build_state=all")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: No suitable state found for value
-    "[u'building', u'all']"
+    lp.app.errors.UnexpectedFormData: No suitable state found for value "[u'building', u'all']"
 
 
 Builder history

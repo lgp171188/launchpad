@@ -57,10 +57,10 @@ have permission to save changes:
     >>> print(bob.active)
     True
     >>> bob.active = False
-    >>> bob.lp_save()
+    >>> bob.lp_save()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    lazr.restfulclient.errors.Unauthorized: ...
 
 'cprov', who is a buildd-admin, is able to change the data:
 

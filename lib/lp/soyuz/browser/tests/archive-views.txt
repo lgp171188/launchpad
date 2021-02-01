@@ -1325,11 +1325,10 @@ value is submitted.
     PPA for No Privileges Person [~no-priv/ubuntu/ppa]
 
     >>> print(archive_widget.getInputValue())
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('destination_archive',
-                       u'Destination PPA',
-                       RequiredMissing('destination_archive'))
+    zope.formlib.interfaces.WidgetInputError: ('destination_archive', u'Destination PPA', RequiredMissing('destination_archive'))
 
 
 Copy private files to public archives

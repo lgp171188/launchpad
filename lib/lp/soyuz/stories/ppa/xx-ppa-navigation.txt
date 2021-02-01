@@ -141,15 +141,17 @@ inactive:
     >>> 'Previous' in anon_browser.contents
     True
     >>> anon_browser.getLink('Previous')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> 'First' in anon_browser.contents
     True
     >>> anon_browser.getLink('First')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 The user does not see the package they are looking for and proceeds to the
 next page.
@@ -166,15 +168,17 @@ This is the last page, so the next and last links are inactive.
     >>> 'Next' in anon_browser.contents
     True
     >>> anon_browser.getLink('Next')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> 'Last' in anon_browser.contents
     True
     >>> anon_browser.getLink('Last')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 The 'First' and 'Previous' links, however, are now active.
 

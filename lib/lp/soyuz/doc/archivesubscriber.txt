@@ -42,9 +42,10 @@ log in as an unprivileged user.
 We can create a new subscription for joesmith to access cprov's PPA like this:
 
     >>> new_sub = cprov.archive.newSubscription(joesmith, cprov)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 That failed because only people who have launchpad.Append (basically, upload
 access) on the context archive are allowed to create subscriptions.
@@ -53,9 +54,10 @@ Users cannot create their own subscriptions either.  Log in as joesmith:
 
     >>> login("joe@example.com")
     >>> new_token = cprov.archive.newSubscription(joesmith, cprov)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 If we log in as cprov it will still not work because his archive is
 public:
@@ -63,9 +65,10 @@ public:
     >>> login("celso.providelo@canonical.com")
     >>> new_sub = cprov.archive.newSubscription(
     ...     joesmith, cprov, description=u"subscription for joesmith")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ArchiveNotPrivate: Only private archives can have subscriptions.
+    lp.soyuz.interfaces.archive.ArchiveNotPrivate: Only private archives can have subscriptions.
 
 If we create a private ppa for Celso, then he can create a
 subscription for joesmith:
@@ -178,10 +181,10 @@ cannot be created:
 
     >>> new_sub = cprov_private_ppa.newSubscription(
     ...     joesmith, cprov, description=u"subscription for joesmith")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    AlreadySubscribed: Joe Smith already has a current subscription for
-    'PPA named p3a for Celso Providelo'.
+    lp.soyuz.interfaces.archive.AlreadySubscribed: Joe Smith already has a current subscription for 'PPA named p3a for Celso Providelo'.
 
 
 Add another subscription for the test user, this time to mark's ppa:
@@ -243,9 +246,10 @@ admins.
     >>> login("no-priv@canonical.com")
 
     >>> sub = sub_set.getBySubscriber(new_sub.subscriber)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Log in as joesmith, who is the person in the subscription.
 
@@ -355,9 +359,10 @@ IPerson:
 
     >>> login("no-priv@canonical.com")
     >>> urls = joesmith.getArchiveSubscriptionURLs(no_priv)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized
+    zope.security.interfaces.Unauthorized
 
 Deactivated tokens are not included with the returned token for a
 subscription:
@@ -383,9 +388,10 @@ Trying to set the properties as the subscribed person will fail:
 
     >>> from lp.services.database.constants import UTC_NOW
     >>> new_sub.date_expires = UTC_NOW
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Log in as someone with launchpad.Edit and it will work:
 
@@ -402,14 +408,16 @@ We can also do this as an admin.
 The subscriber and registrant properties are not editable.
 
     >>> new_sub.subscriber = cprov
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ForbiddenAttribute:...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
     >>> new_sub.registrant = joesmith
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ForbiddenAttribute:...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
 
 Cancelling subscriptions
@@ -421,9 +429,10 @@ IArchive launchpad.Append (as for creating new tokens) or an admin.
 
     >>> login("no-priv@canonical.com")
     >>> new_sub.cancel()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> login("celso.providelo@canonical.com")
     >>> new_sub.cancel(cprov)
@@ -453,9 +462,10 @@ We can cancel subscriptions in bulk:
     ...     cprov_private_ppa.newSubscription(factory.makePerson(), cprov)
     ...     for _ in range(3)]
     >>> sub_set.cancel([subs[0].id, subs[1].id], cprov)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> login("admin@canonical.com")
     >>> sub_set.cancel([subs[0].id, subs[1].id], cprov)

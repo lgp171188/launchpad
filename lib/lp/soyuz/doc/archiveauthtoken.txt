@@ -40,10 +40,10 @@ Create a subscription for Team Brad to joe's archive:
 It is not possible to create a token for the subscribed team.
 
     >>> joe_private_ppa.newAuthToken(teambrad)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NoTokensForTeams: Subscription tokens can be created for individuals
-    only.
+    lp.soyuz.interfaces.archive.NoTokensForTeams: Subscription tokens can be created for individuals only.
 
 But now that the subscription is there, we can create a token as Brad.
 
@@ -57,10 +57,10 @@ By default the tokens are 20 characters long.
 It is not possible to create a second token when one already exists:
 
     >>> new_token = joe_private_ppa.newAuthToken(bradsmith)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ArchiveSubscriptionError: Brad Smith already has a token for
-    PPA for Joe Smith.
+    lp.soyuz.interfaces.archivesubscriber.ArchiveSubscriptionError: Brad Smith already has a token for PPA for Joe Smith.
 
 So deactivate the old token so that we can create a new token:
 
@@ -113,9 +113,10 @@ which applies to the person in the token and launchpad admins.
     >>> login("no-priv@canonical.com")
 
     >>> token =  token_set.get(new_token.id)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Log in as Brad Smith, who is the person in the token.
 
@@ -154,9 +155,10 @@ IArchive launchpad.Append (as for creating new tokens) or an admin.
 
     >>> login("no-priv@canonical.com")
     >>> new_token.deactivate()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> ignored = login_person(joe)
     >>> new_token.deactivate()

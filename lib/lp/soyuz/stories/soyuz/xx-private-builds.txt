@@ -106,9 +106,10 @@ users:
     >>> anon_browser.open(
     ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...     private_build_id)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 But it is fine for authorised users:
 
