@@ -15,9 +15,10 @@ installed implement.
 All the methods need an authentication cookie to be sent.
 
     >>> server.launchpad.bugtracker_version()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ProtocolError: <... 403 Forbidden>
+    xmlrpc.client.ProtocolError: <... 403 Forbidden>
 
 This test transport doesn't validate the cookie, it just ensures that
 some cookie is set.
@@ -307,9 +308,10 @@ Calling `launchpad.get_launchpad_bug()` on a remote bug that doesn't
 exist will result in a Fault being raised.
 
     >>> trac_transport.get_launchpad_bug('12345')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 1001: 'Ticket does not exist'>
+    xmlrpc.client.Fault: <Fault 1001: 'Ticket does not exist'>
 
 Setting the Launchpad bug for a remote bug is done by calling
 `launchpad.set_launchpad_bug()`. This takes two parameters: the remote
@@ -332,7 +334,8 @@ Trying to call `launchpad.set_launchpad_bug()` on a remote bug that
 doesn't exist will result in a Fault.
 
     >>> trac_transport.set_launchpad_bug('12345', 1)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 1001: 'Ticket does not exist'>
+    xmlrpc.client.Fault: <Fault 1001: 'Ticket does not exist'>
 

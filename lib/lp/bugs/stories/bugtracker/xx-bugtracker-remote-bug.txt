@@ -40,9 +40,10 @@ Found page is generated:
 
   >>> browser.handleErrors = True
   >>> browser.open('http://launchpad.test/bugs/bugtrackers/mozilla.org/99999')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  HTTPError: HTTP Error 404: Not Found
+  urllib.error.HTTPError: HTTP Error 404: Not Found
   >>> browser.handleErrors = False
 
 
@@ -94,9 +95,10 @@ user logs in):
 
   >>> anon_browser.open(
   ...     'http://bugs.launchpad.test/bugs/bugtrackers/mozilla.org/2000')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  NotFound:...
+  zope.publisher.interfaces.NotFound: ...
 
 Set the bug back to public:
 

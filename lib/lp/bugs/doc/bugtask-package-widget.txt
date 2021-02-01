@@ -71,9 +71,10 @@ NotFoundError.
 
     >>> gentoo = getUtility(IDistributionSet)['gentoo']
     >>> gentoo.guessPublishedSourcePackageName('evolution')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError...
+    lp.app.errors.NotFoundError: ...
 
 At that point we'll fall back to the vocabulary, so a SourcePackageName
 will still be returned.
@@ -99,10 +100,10 @@ ConversionError saying that the package name doesn't exist.
     ...     form={'field.sourcepackagename': 'no-package'})
     >>> widget = BugTaskSourcePackageNameWidget(
     ...     package_field, package_field.vocabulary, request)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ConversionError...
+    zope.formlib.interfaces.ConversionError: ...
 
 
 BugTaskAlsoAffectsSourcePackageNameWidget
@@ -132,9 +133,10 @@ name isn't the name of a distro, UnexpectedFormData is raised.
     >>> BugTaskAlsoAffectsSourcePackageNameWidget(
     ...     package_field, package_field.vocabulary,
     ...     request).getDistribution().name
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
 A GET request usually won't supply a distribution name at all.
 
@@ -198,9 +200,10 @@ contain, so IDistribution.guessPublishedSourcePackageName will raise a
 NotFoundError.
 
     >>> gentoo_task.distribution.guessPublishedSourcePackageName('evolution')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError...
+    lp.app.errors.NotFoundError: ...
 
 At that point we'll fall back to the vocabulary, so a SourcePackageName
 will still be returned.
@@ -224,7 +227,7 @@ ConversionError saying that the package name doesn't exist.
     ...     form={'field.packagename': 'no-package'})
     >>> widget = FileBugSourcePackageNameWidget(
     ...     package_field, package_field.vocabulary, request)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ConversionError...
+    zope.formlib.interfaces.ConversionError: ...
