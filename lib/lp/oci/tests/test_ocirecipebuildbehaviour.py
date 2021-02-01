@@ -18,10 +18,12 @@ import uuid
 
 import fixtures
 from fixtures import MockPatch
+from pymacaroons import Macaroon
 import pytz
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
+    AfterPreprocessing,
     ContainsDict,
     Equals,
     Is,
@@ -29,6 +31,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesListwise,
     MatchesSetwise,
+    MatchesStructure,
     StartsWith,
     )
 from testtools.twistedsupport import (
@@ -73,13 +76,13 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
+from lp.snappy.tests.test_snapbuildbehaviour import InProcessAuthServerFixture
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -414,6 +417,9 @@ class TestAsyncOCIRecipeBuildBehaviour(
     def test_extraBuildArgs_git_private_repo(self):
         # extraBuildArgs returns appropriate arguments if asked to build a
         # job for a Git branch.
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
         [ref] = self.factory.makeGitRefs()
         ref.repository.transitionToInformationType(
             InformationType.PRIVATESECURITY, ref.repository.owner)
@@ -424,14 +430,11 @@ class TestAsyncOCIRecipeBuildBehaviour(
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
-            with mock.patch.object(job._authserver, 'callRemote') as m_remote:
-                issueMacaroon = defer.Deferred()
-                issueMacaroon.callback("yammy-macaroon-123")
-                m_remote.return_value = issueMacaroon
-                args = yield job.extraBuildArgs()
+            args = yield job.extraBuildArgs()
         # Asserts that nothing here is a zope proxy, to avoid errors when
         # serializing it for XML-RPC call.
         self.assertHasNoZopeSecurityProxy(args)
+        split_browse_root = urlsplit(config.codehosting.git_browse_root)
         self.assertThat(args, MatchesDict({
             "archive_private": Is(False),
             "archives": Equals(expected_archives),
@@ -441,8 +444,20 @@ class TestAsyncOCIRecipeBuildBehaviour(
             "build_path": Equals(job.build.recipe.build_path),
             "build_url": Equals(canonical_url(job.build)),
             "fast_cleanup": Is(True),
-            "git_repository": Equals(ref.repository.getCodebrowseUrl(
-                username="", password="yammy-macaroon-123")),
+            "git_repository": AfterPreprocessing(urlsplit, MatchesStructure(
+                scheme=Equals(split_browse_root.scheme),
+                username=Equals(""),
+                password=AfterPreprocessing(
+                    Macaroon.deserialize, MatchesStructure(
+                        location=Equals(config.vhost.mainsite.hostname),
+                        identifier=Equals("oci-recipe-build"),
+                        caveats=MatchesListwise([
+                            MatchesStructure.byEquality(
+                                caveat_id="lp.oci-recipe-build %s"
+                                          % job.build.id),
+                            ]))),
+                hostname=Equals(split_browse_root.hostname),
+                port=Equals(split_browse_root.port))),
             "git_path": Equals(ref.name),
             "name": Equals(job.build.recipe.name),
             "proxy_url": ProxyURLMatcher(job, self.now),
