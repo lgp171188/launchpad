@@ -11,9 +11,10 @@ Public PPAs do not have an option for managing subscriptions:
     ...     auth="Basic celso.providelo@canonical.com:test")
     >>> cprov_browser.open("http://launchpad.test/~cprov/+archive/ppa")
     >>> cprov_browser.getLink("Manage subscriptions")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Similarly, trying to access the subscriptions page directly will simply
 redirect back to the PPA page with a feedback message:
@@ -141,9 +142,10 @@ create tokens.
 
     >>> joe_browser.open(
     ...     "http://launchpad.test/~teamjoe/+archivesubscriptions")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound...
+    zope.publisher.interfaces.NotFound: ...
 
 
 == Confirming a subscription ==
@@ -216,6 +218,7 @@ subscriptions page.
 
     >>> joe_browser.open(
     ...     "http://launchpad.test/~joesmith/+archivesubscriptions/foo")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound...
+    zope.publisher.interfaces.NotFound: ...

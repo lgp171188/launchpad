@@ -52,9 +52,10 @@ The LP: #<number> entries are also linkified:
     'http://launchpad.test/bugs/999'
 
     >>> user_browser.getLink('#badid').url
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink('#7').url
     'http://launchpad.test/bugs/7'

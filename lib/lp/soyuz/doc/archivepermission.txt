@@ -145,9 +145,10 @@ If the string is not a valid component, a NotFound exception is thrown:
 
     >>> uploaders = permission_set.uploadersForComponent(
     ...     ubuntu.main_archive, "badcomponent")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ComponentNotFound: No such component: 'badcomponent'.
+    lp.soyuz.interfaces.archive.ComponentNotFound: No such component: 'badcomponent'.
 
 If the component argument is not passed, it will return
 ArchivePermission records for all matching components:
@@ -192,9 +193,10 @@ NoSuchSourcePackageName to be thrown.
 
     >>> uploaders = permission_set.uploadersForPackage(
     ...     ubuntu.main_archive, "fakepackage")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NoSuchSourcePackageName: No such source package: 'fakepackage'.
+    lp.registry.errors.NoSuchSourcePackageName: No such source package: 'fakepackage'.
 
 Similarly, packagesForUploader() returns the ArchivePermission records where
 the supplied user has permission to upload to packages.

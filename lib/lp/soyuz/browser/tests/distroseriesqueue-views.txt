@@ -78,9 +78,10 @@ If a invalid integer is posted it raises.
   >>> warty = ubuntu['warty']
   >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
   >>> queue_view.setupQueueList()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  UnexpectedFormData: No suitable status found for value "10"
+  lp.app.errors.UnexpectedFormData: No suitable status found for value "10"
 
 Anonymous users also have access to all queues, including UNAPPROVED
 but they are not allowed to perform any action.

@@ -85,9 +85,10 @@ in Launchpad if it exists.
     celso.providelo@canonical.com
 
     >>> user_browser.getLink('biscuit@canonical.com')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> print(user_browser.getLink('celso.providelo@canonical.com').url)
     http://launchpad.test/~cprov
