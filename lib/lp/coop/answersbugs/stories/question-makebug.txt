@@ -64,9 +64,10 @@ to it.
   >>> browser.contents
   '...<h3>Related bugs</h3>...'
   >>> browser.getLink('Create bug report')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ..
-  LinkNotFoundError...
+  zope.testbrowser.browser.LinkNotFoundError
 
 It works with distribution questions as well.
 
