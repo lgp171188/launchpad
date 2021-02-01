@@ -14,6 +14,9 @@ attrs==19.1.0
 Automat==0.6.0
 backports.functools-lru-cache==1.5
 backports.lzma==0.0.3
+# ztk-versions.cfg uses 3.2.0 on Python 3, but that drops support for Python
+# 3.5.  Pin to 3.1.7 until we no longer care about xenial.
+bcrypt==3.1.7
 beautifulsoup4==4.7.1
 billiard==3.5.0.5
 bleach==3.1.0
@@ -85,7 +88,6 @@ mistune==0.8.3
 mock==1.0.1
 mocker==1.1.1
 monotonic==1.5
-multipart==0.1.1; python_version < "3"
 multipart==0.2.4; python_version >= "3"
 netaddr==0.7.19
 oauth==1.0
@@ -141,7 +143,6 @@ setuptools-scm==3.4.3
 simplejson==3.8.2
 SimpleTAL==4.3; python_version < "3"
 SimpleTAL==5.2; python_version >= "3"
-six==1.15.0
 soupmatchers==0.4
 soupsieve==1.9
 statsd==3.3.0
@@ -181,13 +182,10 @@ zope.app.publication==4.3.1
 zope.app.publisher==4.2.0
 zope.app.server==4.0.0
 zope.app.wsgi==4.3.0
-zope.publisher==6.0.0
-zope.sendmail==5.1
 zope.server==4.0.2
 # lp:~launchpad-committers/zope.session:launchpad
 zope.session==4.3.0+lp1
 zope.testbrowser==5.5.1
-zope.testing==4.8
 # lp:~launchpad-committers/zope.testrunner:launchpad
 zope.testrunner==5.2+lp1
 zope.vocabularyregistry==1.1.1
