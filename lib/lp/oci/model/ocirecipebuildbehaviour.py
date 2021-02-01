@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An `IBuildFarmJobBehaviour` for `OCIRecipeBuild`.
@@ -37,7 +37,9 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIFileSet
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
+from lp.services.twistedsupport import cancel_on_timeout
 from lp.services.webapp import canonical_url
 from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
 from lp.soyuz.adapters.archivedependencies import (
@@ -139,8 +141,18 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
         args['metadata'] = self._getBuildInfoArgs()
 
         if build.recipe.git_ref is not None:
-            args["git_repository"] = (
-                build.recipe.git_repository.git_https_url)
+            if build.recipe.git_repository.private:
+                macaroon_raw = yield cancel_on_timeout(
+                    self._authserver.callRemote(
+                        "issueMacaroon",
+                        "oci-recipe-build", "OCIRecipeBuild", build.id),
+                    config.builddmaster.authentication_timeout)
+                url = build.recipe.git_repository.getCodebrowseUrl(
+                    username=None, password=macaroon_raw)
+                args["git_repository"] = url
+            else:
+                args["git_repository"] = (
+                    build.recipe.git_repository.git_https_url)
         else:
             raise CannotBuild(
                 "Source repository for ~%s/%s has been deleted." %
