@@ -2161,6 +2161,25 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner, data, comment, filename, content_type=content_type,
             description=description, **other_params)
 
+    def makeBugSubscriptionFilter(self, target=None, subscriber=None,
+                                  subscribed_by=None):
+        """Create and return a new bug subscription filter.
+
+        :param target: An `IStructuralSubscriptionTarget`.  Defaults to a
+            new `Product`.
+        :param subscriber: An `IPerson`.  Defaults to a new `Person`.
+        :param subscribed_by: An `IPerson`.  Defaults to `subscriber`.
+        :return: An `IBugSubscriptionFilter`.
+        """
+        if target is None:
+            target = self.makeProduct()
+        if subscriber is None:
+            subscriber = self.makePerson()
+        if subscribed_by is None:
+            subscribed_by = subscriber
+        return removeSecurityProxy(target).addBugSubscriptionFilter(
+            subscriber, subscribed_by)
+
     def makeSignedMessage(self, msgid=None, body=None, subject=None,
             attachment_contents=None, force_transfer_encoding=False,
             email_address=None, signing_context=None, to_address=None):

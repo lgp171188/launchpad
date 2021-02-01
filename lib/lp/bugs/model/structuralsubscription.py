@@ -175,8 +175,7 @@ class StructuralSubscription(Storm):
 
     def newBugFilter(self):
         """See `IStructuralSubscription`."""
-        bug_filter = BugSubscriptionFilter()
-        bug_filter.structural_subscription = self
+        bug_filter = BugSubscriptionFilter(structural_subscription=self)
         # This flush is needed for the web service API.
         IStore(StructuralSubscription).flush()
         return bug_filter
