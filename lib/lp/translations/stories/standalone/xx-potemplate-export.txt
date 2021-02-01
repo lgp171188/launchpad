@@ -7,9 +7,10 @@ Not logged in users can't access the +export page.
   ...     'http://translations.launchpad.test/ubuntu/hoary'
   ...     '/+source/evolution/+pots/evolution-2.2/')
   >>> anon_browser.getLink('download').click()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
 
 Logged in as a regular user, the +export page is accessible.
 

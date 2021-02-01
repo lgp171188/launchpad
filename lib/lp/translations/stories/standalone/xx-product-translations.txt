@@ -85,22 +85,25 @@ are not being used, and provides access to help.
 It omits the registrant-only links ...
 
     >>> unprivileged.getLink(url='/gnomebaker/trunk/+translations-upload')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
     >>> unprivileged.getLink(url='/gnomebaker/+packages')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 ... because you can't do those things.
 
     >>> unprivileged.open(
     ...     'http://translations.launchpad.test/gnomebaker/trunk/'
     ...     '+translations-upload')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 
 If you're not logged in at all, you aren't shown the registrant
