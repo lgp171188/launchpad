@@ -63,9 +63,10 @@ say that there's no need to join since the user is already a member of that
 team.
 
     >>> browser.getLink('Join the team')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
     >>> browser.open('http://launchpad.test/~myemail/+join')
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
     ...     print(tag.decode_contents())
@@ -175,9 +176,10 @@ If it was a restricted team, users wouldn't even see a link to join the team.
     Restricted Team
 
     >>> browser.getLink('Join the team')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 If the user manually crafts the URL to the +join page, they'll only see a
 message explaining that this is a restricted team.

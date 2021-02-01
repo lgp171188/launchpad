@@ -33,9 +33,10 @@ the profile. Sample Person cannot claim it.
 
     >>> login('test@canonical.com')
     >>> matsubara.account.reactivate(comment="test")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...'launchpad.View')
+    zope.security.interfaces.Unauthorized: ...'launchpad.View')
 
 Matsubara can.
 
@@ -128,9 +129,10 @@ even launchpad admins can use it.
 
     >>> login('mark@example.com')
     >>> foobar.deactivate(comment=comment)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...'launchpad.Special')
+    zope.security.interfaces.Unauthorized: ...'launchpad.Special')
 
     >>> login('foo.bar@canonical.com')
     >>> foobar.deactivate(comment=comment)

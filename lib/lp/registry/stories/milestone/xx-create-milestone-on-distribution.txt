@@ -4,9 +4,10 @@ Team (ubuntu-team).
 
     >>> name12_browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> name12_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Let's make the sample user the owner of Ubuntu for this test. The owner
 of the distribution should be able to add milestones for it, of course!

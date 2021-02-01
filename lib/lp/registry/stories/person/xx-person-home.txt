@@ -80,9 +80,10 @@ However, when the user visits someone else's page, they see no such URL.
 And there is no helpful link.
 
     >>> print(user_browser.getLink('openid help').url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Jabber IDs

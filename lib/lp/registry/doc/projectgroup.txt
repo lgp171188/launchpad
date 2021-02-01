@@ -78,9 +78,10 @@ If there is no project with the specified name, a NotFoundError will be
 raised.
 
     >>> projectset['non-existant']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError:...
+    lp.app.errors.NotFoundError: ...
 
 The same will happen if we set a product to be inactive. This is a good
 way of hiding bogus projects, without actually deleting them from the
@@ -94,9 +95,10 @@ the project.
 
 
     >>> gnome = getUtility(IProjectGroupSet)['gnome']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError:...
+    lp.app.errors.NotFoundError: ...
 
 The inactive project will still be accessible using
 IProjectGroupSet.getByName(), though.

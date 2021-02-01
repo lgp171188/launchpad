@@ -42,27 +42,31 @@ page.
 
     >>> anon_browser.open('http://launchpad.test/firefox')
     >>> anon_browser.getLink('Make announcement')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.getLink('Read all announcements').click()
     >>> anon_browser.getLink('Make announcement')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open('http://launchpad.test/ubuntu')
     >>> anon_browser.getLink('Make announcement')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.getLink('Read all announcements').click()
     >>> anon_browser.getLink('Make announcement')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Logged in users can only see it if they have launchpad.Edit on the
@@ -71,15 +75,17 @@ pillar.
     >>> nopriv_browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> nopriv_browser.open('http://launchpad.test/firefox')
     >>> nopriv_browser.getLink('Make announcement')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> nopriv_browser.getLink('Read all announcements').click()
     >>> nopriv_browser.getLink('Make announcement')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> priv_browser = setupBrowser(auth="Basic mark@example.com:test")
     >>> priv_browser.open('http://launchpad.test/ubuntu')
@@ -254,9 +260,10 @@ anon_browser.
     >>> priv_browser.getLink('Kubuntu announcement headline').click()
     >>> link_url = priv_browser.url
     >>> anon_browser.open(link_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 We will show that the anonymous user can see an announcement that was
 published:

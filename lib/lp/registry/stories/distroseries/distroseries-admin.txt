@@ -56,16 +56,18 @@ Registry experts do not have access to the 'Change details' link.
     ...     auth='Basic %s:test' % email)
     >>> registry_browser.open('http://launchpad.test/ubuntu/happy')
     >>> registry_browser.getLink('Change details').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 And navigating directly to +edit is thwarted.
 
     >>> registry_browser.open('http://launchpad.test/ubuntu/happy/+edit')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Registry experts do have access to the administration page.
 
