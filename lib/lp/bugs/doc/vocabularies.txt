@@ -244,9 +244,10 @@ Trying to get a non-existent release will result in a
 NoSuchDistroSeries error.
 
     >>> series_vocabulary.getTermByToken('non-such-release')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NoSuchDistroSeries...
+    lp.registry.errors.NoSuchDistroSeries: ...
 
 
 ProjectProductsVocabularyUsingMalone

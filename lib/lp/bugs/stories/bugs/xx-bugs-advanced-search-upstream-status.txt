@@ -211,10 +211,10 @@ Other values for status_upstream lead to an error.
     >>> anon_browser.open(
     ...     'http://bugs.launchpad.test/ubuntu/+bugs?' + urlencode(
     ...         bookmark_params, True))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: Unexpected value for field 'status_upstream'.
-    Perhaps your bookmarks are out of date or you changed the URL by hand?
+    lp.app.errors.UnexpectedFormData: Unexpected value for field 'status_upstream'. Perhaps your bookmarks are out of date or you changed the URL by hand?
 
 Let's reset the statuses we set.
 

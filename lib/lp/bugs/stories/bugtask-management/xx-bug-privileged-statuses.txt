@@ -39,14 +39,16 @@ those statuses are not shown in the UI:
     ['Confirmed']
 
     >>> status_control.displayValue = ["Won't Fix"]
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ItemNotFoundError: Won't Fix
+    zope.testbrowser.browser.ItemNotFoundError: Won't Fix
 
     >>> status_control.displayValue = ["Triaged"]
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ItemNotFoundError: Triaged
+    zope.testbrowser.browser.ItemNotFoundError: Triaged
 
 == Bug Supervisor ==
 

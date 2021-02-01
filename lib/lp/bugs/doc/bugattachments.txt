@@ -310,9 +310,10 @@ anonymous can read the attachment's attributes, but they can't set them:
     >>> attachment.title
     u'this fixes the bug'
     >>> attachment.title = 'Better Title'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (..., 'title',...
+    zope.security.interfaces.Unauthorized: (..., 'title',...
 
     >>> import transaction
     >>> transaction.abort()
@@ -343,25 +344,28 @@ attachments attributes:
     >>> login("no-priv@canonical.com")
 
     >>> attachment.title
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (..., 'title',...
+    zope.security.interfaces.Unauthorized: (..., 'title',...
     >>> attachment.title = 'Better Title'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (..., 'title',...
+    zope.security.interfaces.Unauthorized: (..., 'title',...
 
 Of course, anonymous is also not allowed to access or set them:
 
     >>> login(ANONYMOUS)
-    >>> attachment.title
+    >>> attachment.title  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (..., 'title',...
+    zope.security.interfaces.Unauthorized: (..., 'title',...
     >>> attachment.title = 'Some info.'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (..., 'title',...
+    zope.security.interfaces.Unauthorized: (..., 'title',...
 
 Sample Person is explicitly subscribed, so they can access the attributes:
 
@@ -656,6 +660,7 @@ A NotFoundError is raised if the file name passed to getFileByName()
 does not match the file name of the Librarian file.
 
     >>> attachment.getFileByName('nonsense')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: u'nonsense'
+    lp.app.errors.NotFoundError: u'nonsense'
