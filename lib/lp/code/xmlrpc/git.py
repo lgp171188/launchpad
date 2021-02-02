@@ -450,16 +450,19 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("translatePath succeeded: %s", result)
         return result
 
-    def notify(self, translated_path):
+    def notify(self, translated_path, loose_objects=None, packs=None):
         """See `IGitAPI`."""
         logger = self._getLogger()
         logger.info("Request received: notify('%s')", translated_path)
-        repository = getUtility(IGitLookup).getByHostingPath(translated_path)
+        repository = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
         if repository is None:
             fault = faults.NotFound(
                 "No repository found for '%s'." % translated_path)
             logger.error("notify failed: %r", fault)
             return fault
+        if loose_objects or packs:
+            repository.setRepackData(loose_objects, packs)
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
         logger.info("notify succeeded")

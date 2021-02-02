@@ -7,11 +7,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import datetime
 import hashlib
 import uuid
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
+import pytz
 import six
 from six.moves import xmlrpc_client
 from six.moves.urllib.parse import quote
@@ -2091,6 +2093,20 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         job_source = getUtility(IGitRefScanJobSource)
         [job] = list(job_source.iterReady())
         self.assertEqual(repository, job.repository)
+
+    def test_notify_set_repack_data(self):
+        # The notify call sets the repack
+        # indicators (loose_objects, packs, date_last_scanned)
+        # when received from Turnip
+        repository = self.factory.makeGitRepository()
+        path = repository.getInternalPath()
+        self.assertIsNone(self.assertDoesNotFault(None, "notify", path, 5, 2))
+
+        self.assertEqual(5, removeSecurityProxy(repository).loose_object_count)
+        self.assertEqual(2, removeSecurityProxy(repository).pack_count)
+        self.assertEqual(
+            datetime.now(pytz.timezone('UTC')).date(),
+            removeSecurityProxy(repository).date_last_scanned.date())
 
     def test_authenticateWithPassword(self):
         self.assertFault(
