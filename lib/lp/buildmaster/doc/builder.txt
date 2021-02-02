@@ -98,8 +98,11 @@ virtualization status, architecture, then name.
 Processor/virtualization.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> queue_sizes['nonvirt']['386']
-    (1L, datetime.timedelta(0, 60))
+    >>> size, duration = queue_sizes['nonvirt']['386']
+    >>> print(size)
+    1
+    >>> print(duration)
+    0:01:00
 
 There are no 'amd64' build queue entries.
 
@@ -142,8 +145,11 @@ Let's re-enable the ubuntu primary archive.
 The build for the ubuntu primary archive shows up again.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> queue_sizes['nonvirt']['386']
-    (1L, datetime.timedelta(0, 60))
+    >>> size, duration = queue_sizes['nonvirt']['386']
+    >>> print(size)
+    1
+    >>> print(duration)
+    0:01:00
 
 All job types are included. If we create a recipe build job, it will
 show up in the calculated queue size.
@@ -152,5 +158,8 @@ show up in the calculated queue size.
     ...     distroseries=ubuntu.currentseries).queueBuild()
     >>> transaction.commit()
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> print(queue_sizes['virt']['386'])
-    (1L, datetime.timedelta(0, 600))
+    >>> size, duration = queue_sizes['virt']['386']
+    >>> print(size)
+    1
+    >>> print(duration)
+    0:10:00
