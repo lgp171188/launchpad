@@ -667,9 +667,9 @@ class ISnapEditableAttributes(IHasOwner):
             "snapcraft.yaml.")))
 
     name = exported(TextLine(
-        title=_("Name"), required=True, readonly=False,
+        title=_("Snap recipe name"), required=True, readonly=False,
         constraint=name_validator,
-        description=_("The name of the snap package.")))
+        description=_("The name of the snap build recipe.")))
 
     description = exported(Text(
         title=_("Description"), required=False, readonly=False,
