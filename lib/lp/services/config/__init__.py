@@ -156,9 +156,7 @@ class LaunchpadConfig:
     @property
     def use_gunicorn(self):
         """When running launchpad server, shall we use gunicorn?"""
-        # XXX pappacena: 2021-01-20: Forced False until we have everything
-        # in place.
-        return False
+        return self.launchpad.use_gunicorn
 
     def setInstance(self, instance_name):
         """Set the instance name where the conf files are stored.
