@@ -688,6 +688,11 @@ class GitRefDatabaseBackedMixin(GitRefMixin):
     def __hash__(self):
         return hash(self.repository) ^ hash(self.path) ^ hash(self.commit_sha1)
 
+    # zope.interface tries to use this during adaptation (e.g. to
+    # ITraversable), and we don't want that to attempt a database lookup via
+    # __getattr__.
+    __conform__ = None
+
 
 @implementer(IGitRef)
 class GitRefDefault(GitRefDatabaseBackedMixin):
