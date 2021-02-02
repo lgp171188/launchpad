@@ -740,7 +740,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         """Special assert function for dealing with email-related errors."""
         view = self.createAddEmailView(email_str)
         error_msg = view.errors[0]
-        if type(error_msg) != unicode:
+        if not isinstance(error_msg, six.text_type):
             error_msg = error_msg.doc()
         self.assertEqual(expected_msg, error_msg)
 
