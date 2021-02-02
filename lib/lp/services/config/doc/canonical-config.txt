@@ -86,8 +86,13 @@ ZConfig.
     >>> config.devmode
     True
 
+    >>> config.use_gunicorn
+    True
+
+config.servers are only available when using Zope server (deprecated).
+
     >>> len(config.servers)
-    4
+    0
 
 
 Working with test configurations
