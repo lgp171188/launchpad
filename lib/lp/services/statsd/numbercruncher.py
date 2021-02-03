@@ -4,12 +4,11 @@
 """Out of process statsd reporting."""
 
 from __future__ import absolute_import, print_function, unicode_literals
-from datetime import datetime
-
 
 __metaclass__ = type
 __all__ = ['NumberCruncher']
 
+from datetime import datetime
 import logging
 
 import pytz

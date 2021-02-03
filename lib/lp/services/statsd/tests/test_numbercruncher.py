@@ -246,11 +246,11 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
             MatchesListwise([
                 MatchesListwise([
                     Equals('codeimport.pending,env=test'),
-                    Not(Equals(0)),
+                    Equals(1),
                     ]),
                 MatchesListwise([
                     Equals('codeimport.overdue,env=test'),
-                    Not(Equals(0)),
+                    Equals(1),
                     ]),
                 ]))
 
@@ -269,10 +269,9 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
                     ]),
                 MatchesListwise([
                     Equals('codeimport.overdue,env=test'),
-                    Not(Equals(0)),
+                    Equals(2),
                     ]),
                 ]))
-
 
     def test_updateCodeImportStats_error(self):
         clock = task.Clock()
@@ -326,6 +325,6 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         cruncher.updateCodeImportStats = FakeMethod()
 
         cruncher.startService()
-        advance = NumberCruncher.LIBRARIAN_INTERVAL + 1
+        advance = NumberCruncher.CODE_IMPORT_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(0, cruncher.updateCodeImportStats.call_count)
