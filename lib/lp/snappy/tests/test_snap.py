@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap packages."""
@@ -1421,6 +1421,7 @@ class TestSnapSet(TestCaseWithFactory):
         [ref] = self.factory.makeGitRefs()
         components = self.makeSnapComponents(git_ref=ref)
         components['private'] = True
+        components['project'] = self.factory.makeProduct()
         snap = getUtility(ISnapSet).new(**components)
         with person_logged_in(components['owner']):
             self.assertTrue(snap.private)
@@ -2472,7 +2473,7 @@ class TestSnapWebservice(TestCaseWithFactory):
     def makeSnap(self, owner=None, distroseries=None, branch=None,
                  git_ref=None, processors=None, webservice=None,
                  private=False, auto_build_archive=None,
-                 auto_build_pocket=None, **kwargs):
+                 auto_build_pocket=None, project=None, **kwargs):
         if owner is None:
             owner = self.person
         if distroseries is None:
@@ -2495,6 +2496,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             kwargs["auto_build_archive"] = api_url(auto_build_archive)
         if auto_build_pocket is not None:
             kwargs["auto_build_pocket"] = auto_build_pocket.title
+        if project is not None:
+            kwargs["project"] = api_url(project)
         logout()
         response = webservice.named_post(
             "/+snaps", "new", owner=owner_url, distro_series=distroseries_url,
@@ -2555,6 +2558,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         # Ensure private Snap creation works.
         team = self.factory.makeTeam(owner=self.person)
         distroseries = self.factory.makeDistroSeries(registrant=team)
+        project = self.factory.makeProduct()
         [ref] = self.factory.makeGitRefs()
         private_webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PRIVATE)
@@ -2562,9 +2566,10 @@ class TestSnapWebservice(TestCaseWithFactory):
         login(ANONYMOUS)
         snap = self.makeSnap(
             owner=team, distroseries=distroseries, git_ref=ref,
-            webservice=private_webservice, private=True)
+            webservice=private_webservice, private=True, project=project)
         with person_logged_in(self.person):
             self.assertTrue(snap["private"])
+            self.assertEndsWith(snap["project_link"], api_url(project))
 
     def test_new_store_options(self):
         # Ensure store-related options in Snap.new work.

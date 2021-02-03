@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package interfaces."""
@@ -36,6 +36,7 @@ __all__ = [
     'SnapBuildRequestStatus',
     'SnapNotOwner',
     'SnapPrivacyMismatch',
+    'SnapPrivacyPillarError',
     'SnapPrivateFeatureDisabled',
     ]
 
@@ -98,6 +99,7 @@ from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import (
     PersonChoice,
@@ -213,6 +215,15 @@ class SnapPrivacyMismatch(Exception):
         super(SnapPrivacyMismatch, self).__init__(
             message or
             "Snap contains private information and cannot be public.")
+
+
+@error_status(http_client.BAD_REQUEST)
+class SnapPrivacyPillarError(Exception):
+    """Private Snaps should be based in a pillar."""
+
+    def __init__(self, message=None):
+        super(SnapPrivacyPillarError, self).__init__(
+            message or "Private Snaps should have a pillar.")
 
 
 class BadSnapSearchContext(Exception):
@@ -658,6 +669,11 @@ class ISnapEditableAttributes(IHasOwner):
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this snap package.")))
 
+    project = exported(ReferenceChoice(
+        title=_('The project that this Snap is associated with.'),
+        schema=IProduct, vocabulary='Product',
+        required=False, readonly=False))
+
     distro_series = exported(Reference(
         IDistroSeries, title=_("Distro Series"),
         required=False, readonly=False,
@@ -868,7 +884,7 @@ class ISnapSet(Interface):
             "git_repository", "git_repository_url", "git_path", "git_ref",
             "auto_build", "auto_build_archive", "auto_build_pocket",
             "private", "store_upload", "store_series", "store_name",
-            "store_channels"])
+            "store_channels", "project"])
     @operation_for_version("devel")
     def new(registrant, owner, distro_series, name, description=None,
             branch=None, git_repository=None, git_repository_url=None,
@@ -876,7 +892,8 @@ class ISnapSet(Interface):
             auto_build_archive=None, auto_build_pocket=None,
             require_virtualized=True, processors=None, date_created=None,
             private=False, store_upload=False, store_series=None,
-            store_name=None, store_secrets=None, store_channels=None):
+            store_name=None, store_secrets=None, store_channels=None,
+            project=None):
         """Create an `ISnap`."""
 
     def exists(owner, name):

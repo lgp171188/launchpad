@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -298,6 +298,9 @@ class Snap(Storm, WebhookTargetMixin):
     owner_id = Int(name='owner', allow_none=False, validator=_validate_owner)
     owner = Reference(owner_id, 'Person.id')
 
+    project_id = Int(name='project', allow_none=True)
+    project = Reference(project_id, 'Product.id')
+
     distro_series_id = Int(name='distro_series', allow_none=True)
     distro_series = Reference(distro_series_id, 'DistroSeries.id')
 
@@ -374,12 +377,14 @@ class Snap(Storm, WebhookTargetMixin):
                  date_created=DEFAULT, private=False, allow_internet=True,
                  build_source_tarball=False, store_upload=False,
                  store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None):
+                 store_channels=None, project=None):
         """Construct a `Snap`."""
         super(Snap, self).__init__()
 
         # Set the private flag first so that other validators can perform
-        # suitable privacy checks.
+        # suitable privacy checks, but pillar should also be set, since it's
+        # mandatory for private snaps.
+        self.project = project
         self.private = private
 
         self.registrant = registrant
@@ -459,6 +464,21 @@ class Snap(Storm, WebhookTargetMixin):
             return self.git_ref
         else:
             return None
+
+    @property
+    def pillar(self):
+        """See `ISnap`."""
+        return self.project if self.project_id else None
+
+    @pillar.setter
+    def pillar(self, pillar):
+        if pillar is None:
+            self.project = None
+        elif IProduct.providedBy(pillar):
+            self.project = pillar
+        else:
+            raise ValueError(
+                'The pillar of a Snap must be an IProduct instance.')
 
     @property
     def available_processors(self):
@@ -1098,7 +1118,7 @@ class SnapSet:
             processors=None, date_created=DEFAULT, private=False,
             allow_internet=True, build_source_tarball=False,
             store_upload=False, store_series=None, store_name=None,
-            store_secrets=None, store_channels=None):
+            store_secrets=None, store_channels=None, project=None):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -1150,7 +1170,7 @@ class SnapSet:
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
             store_name=store_name, store_secrets=store_secrets,
-            store_channels=store_channels)
+            store_channels=store_channels, project=project)
         store.add(snap)
 
         if processors is None:
