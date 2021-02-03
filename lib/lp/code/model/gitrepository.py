@@ -621,9 +621,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """See `IGitRepository`."""
         return self.branches.order_by(Desc(GitRef.committer_date))
 
-    def setRepackData(self, loose_objects, packs):
-        self.loose_object_count = loose_objects
-        self.pack_count = packs
+    def setRepackData(self, loose_object_count, pack_count):
+        self.loose_object_count = loose_object_count
+        self.pack_count = pack_count
         self.date_last_scanned = UTC_NOW
 
     @property

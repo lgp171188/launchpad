@@ -50,14 +50,15 @@ class IGitAPI(Interface):
                 this repository, otherwise False.
         """
 
-    def notify(translated_path, loose_objects=None, packs=None):
+    def notify(translated_path, loose_object_count=None, pack_count=None):
         """Notify of a change to the repository at 'translated_path'.
 
         :param translated_path: The translated path to the repository.  (We
             use translated paths here in order to avoid problems with
             repository names etc. being changed during a push.)
-        :param loose_objects: The number of loose objects for the repository.
-        :param packs: The number of packs for the repository.
+        :param loose_object_count: The number of loose objects for
+            the repository.
+        :param pack_count: The number of packs for the repository.
 
         :returns: A `NotFound` fault if no repository can be found for
             'translated_path'; otherwise None.

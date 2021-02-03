@@ -2096,7 +2096,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
 
     def test_notify_set_repack_data(self):
         # The notify call sets the repack
-        # indicators (loose_objects, packs, date_last_scanned)
+        # indicators (loose_object_count, pack_count, date_last_scanned)
         # when received from Turnip
         repository = self.factory.makeGitRepository()
         path = repository.getInternalPath()
