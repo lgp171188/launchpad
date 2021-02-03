@@ -5,6 +5,8 @@ import doctest
 import re
 import unittest
 
+from zope.testing.renormalizing import OutputChecker
+
 from lp.translations.interfaces.translationimporter import (
     TranslationFormatInvalidInputError,
     TranslationFormatSyntaxError,
@@ -449,7 +451,7 @@ class POBasicTestCase(unittest.TestCase):
 
 def test_suite():
     # Run gettext PO parser doc tests.
-    dt_suite = doctest.DocTestSuite(gettext_po_parser)
+    dt_suite = doctest.DocTestSuite(gettext_po_parser, checker=OutputChecker())
     loader = unittest.TestLoader()
     ut_suite = loader.loadTestsFromTestCase(POBasicTestCase)
     return unittest.TestSuite((ut_suite, dt_suite))

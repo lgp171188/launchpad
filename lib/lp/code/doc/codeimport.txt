@@ -430,9 +430,10 @@ When you ask for an id that is not present ICodeImportSet.get() raises
 lp.app.errors.NotFoundError, rather than some internal database exception.
 
     >>> code_import_set.get(-10)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFoundError: -10
+    lp.app.errors.NotFoundError: -10
 
 
 Canonical URLs
@@ -470,9 +471,10 @@ on those objects.
     >>> print(svn_import.url)
     svn://svn.example.com/trunk
     >>> svn_import.url = 'svn://svn.example.com/branch/1.0'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ForbiddenAttribute: ('url', <CodeImport ...>)
+    zope.security.interfaces.ForbiddenAttribute: ('url', <CodeImport ...>)
 
 Modifications can be done using the CodeImport.updateFromData
 method. If any change were made, this method creates and returns a
@@ -495,9 +497,10 @@ The launchpad.Edit privilege is required to use CodeImport.updateFromData.
 
     >>> login(ANONYMOUS)
     >>> svn_import.updateFromData({}, nopriv)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<CodeImport ...>, 'updateFromData', 'launchpad.Moderate')
+    zope.security.interfaces.Unauthorized: (<CodeImport ...>, 'updateFromData', 'launchpad.Moderate')
 
 We saw above how changes to SVN details are displayed in emails above.
 CVS details are displayed in a similar way.

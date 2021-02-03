@@ -195,11 +195,10 @@ or private, can be the project registrant.
     >>> product = factory.makeProduct(registrant=team_owner)
     >>> product = factory.makeProduct(registrant=public_team)
     >>> product = factory.makeProduct(registrant=priv_team)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PrivatePersonLinkageError: Cannot link person
-    (name=private-team, visibility=PRIVATE) to
-    <Product at...
+    lp.registry.errors.PrivatePersonLinkageError: Cannot link person (name=private-team, visibility=PRIVATE) to <Product at...
 
 
 Maintainer/Owner

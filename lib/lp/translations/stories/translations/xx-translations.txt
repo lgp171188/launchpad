@@ -100,9 +100,10 @@ page, and that it has all the data we are expecting, in terms of languages.
   >>> print(browser.getLink('Xhosa').url)
   http://translations.launchpad.test/ubuntu/hoary/+lang/xh
   >>> browser.getLink('Afrihili')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
 
 We also should see any personal language that is not already translated, but
 which is in the personal pref list. In this example, we tell the system that
@@ -140,13 +141,15 @@ pofile) for evolution-2.2
 pmount and pkgconf-mozilla are not in this page, because it belongs to the next batch.
 
   >>> browser.getLink('pkgconf-mozilla')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
   >>> browser.getLink('pmount')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  LinkNotFoundError
+  zope.testbrowser.browser.LinkNotFoundError
 
 Let's go to next page.
 

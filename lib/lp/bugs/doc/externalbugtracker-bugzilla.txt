@@ -27,10 +27,10 @@ UnparsableBugTrackerVersion is raised:
     >>> from lp.testing.layers import LaunchpadZopelessLayer
     >>> txn = LaunchpadZopelessLayer.txn
     >>> external_bugzilla = Bugzilla('http://example.com/', version='A.B')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnparsableBugTrackerVersion:
-    Failed to parse version u'A.B' for http://...
+    lp.bugs.externalbugtracker.base.UnparsableBugTrackerVersion: Failed to parse version u'A.B' for http://...
 
 The version parsing is carried out by the Bugzilla._parseVersion()
 method, which takes a version string and returns a tuple of
@@ -345,13 +345,15 @@ If the status can't be converted an UnknownRemoteStatusError will be
 returned.
 
     >>> external_bugzilla.convertRemoteStatus('FOO').title
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnknownRemoteStatusError: FOO
+    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: FOO
     >>> external_bugzilla.convertRemoteStatus('CLOSED BAR').title
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnknownRemoteStatusError: CLOSED BAR
+    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: CLOSED BAR
 
 
 Importance Conversion
@@ -462,13 +464,15 @@ However, we still treat as an error if the priority or severity are set
 to some other unexpected string.
 
     >>> external_bugzilla.convertRemoteImportance('foo bar')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnknownRemoteImportanceError: foo bar
+    lp.bugs.externalbugtracker.base.UnknownRemoteImportanceError: foo bar
     >>> external_bugzilla.convertRemoteImportance('%&*@*#&$%!')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnknownRemoteImportanceError: %&*@*#&$%!
+    lp.bugs.externalbugtracker.base.UnknownRemoteImportanceError: %&*@*#&$%!
 
 
 
@@ -738,10 +742,10 @@ bug tracker, an error is logged.
     ...     requests_mock.add('POST', re.compile(r'.*'), body='<invalid xml>')
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugzilla, [bug_watch1, bug_watch2])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnparsableBugData:
-    Failed to parse XML description for https://bugzilla.mozilla.org...
+    lp.bugs.externalbugtracker.base.UnparsableBugData: Failed to parse XML description for https://bugzilla.mozilla.org...
 
 The error is also recorded in each bug watch's last_error_type field so that
 it can be displayed to the user.
@@ -795,6 +799,7 @@ Requesting the product for a bug that doesn't exist raises BugNotFound.
     >>> with external_bugzilla.responses():
     ...     external_bugzilla.initializeRemoteBugDB(['84'])
     >>> external_bugzilla.getRemoteProduct('42')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    BugNotFound: 42
+    lp.bugs.externalbugtracker.base.BugNotFound: 42

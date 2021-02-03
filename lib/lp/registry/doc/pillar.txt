@@ -35,9 +35,10 @@ share their name namespace are Product, ProjectGroup and Distribution.
     >>> 'fnord' in pillar_set
     False
     >>> pillar_set['fnord']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'fnord'
+    lp.app.errors.NotFoundError: 'fnord'
 
 Inactive projects/project groups are not available through PillarNameSet
 unless we use the special getByName() method which returns active/inactive
@@ -52,9 +53,10 @@ pillars.
     >>> 'gimp' in pillar_set
     False
     >>> pillar_set['gimp']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'gimp'
+    lp.app.errors.NotFoundError: 'gimp'
     >>> IProjectGroup.providedBy(pillar_set.getByName('gimp'))
     True
 
@@ -68,9 +70,10 @@ It also works if you use Unicode strings.
     >>> u'launchpad' in pillar_set
     False
     >>> pillar_set[u'launchpad']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: u'launchpad'
+    lp.app.errors.NotFoundError: u'launchpad'
     >>> IProduct.providedBy(pillar_set.getByName(u'launchpad'))
     True
 
@@ -126,13 +129,15 @@ Also, if the pillar is inactive, it can't be retrieved through any of its
 aliases, in the same way that it can't be retrieved through its name.
 
     >>> pillar_set['iceweasel']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError:...
+    lp.app.errors.NotFoundError: ...
     >>> pillar_set['firefox']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError:...
+    lp.app.errors.NotFoundError: ...
 
     # Make firefox active again, to not upset other tests.
     >>> firefox.active = True
@@ -148,9 +153,10 @@ to be able to set its aliases.
     >>> check_permission('launchpad.Edit', firefox)
     True
     >>> firefox.setAliases(['iceweasel'])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Ditto for the Mozilla project.
 
@@ -158,9 +164,10 @@ Ditto for the Mozilla project.
     >>> check_permission('launchpad.Edit', mozilla)
     True
     >>> mozilla.setAliases(['moz'])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 And the same is true for Colin Watson on the Guadalinex distribution.
 
@@ -169,9 +176,10 @@ And the same is true for Colin Watson on the Guadalinex distribution.
     >>> check_permission('launchpad.Edit', guadalinex)
     True
     >>> guadalinex.setAliases(['guada'])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
     # Login as Mark again, to not upset remaining tests.
     >>> login('mark@example.com')

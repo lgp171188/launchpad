@@ -122,9 +122,10 @@ wrong.
     >>> request = LaunchpadTestRequest(form={'field.tags': u'!!!! foo $$$$'})
     >>> tags_widget = BugTagsWidget(bug_tags_field, tag_field, request)
     >>> tags_widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError...
+    zope.formlib.interfaces.WidgetInputError: ...
 
     >>> print(tags_widget._error.doc())
     &#x27;!!!!&#x27; isn&#x27;t a valid tag name. Tags must start with a

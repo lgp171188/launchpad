@@ -14,9 +14,10 @@ if a specific user exists...
     '/'
 
     >>> browser.open('%s/~stimpy' % root_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    HTTPError: HTTP Error 404: Not Found
+    urllib.error.HTTPError: HTTP Error 404: Not Found
 
 ...and when they don't, create them.
 

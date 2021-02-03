@@ -15,49 +15,55 @@ PO files with empty headers are not allowed.
 
     >>> parser = POParser()
     >>> parser.parse('msgid "foo"\nmsgstr ""\n')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TranslationFormatSyntaxError:...
+    lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
 
 PO files with context after msgids are reported as broken.
 
     >>> parser.parse('msgid ""\nmsgstr ""\n'
     ...              'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TranslationFormatSyntaxError:...
+    lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
 
 And a msgctxt followed by msgctxt is caught as well.
 
     >>> parser.parse('msgid ""\nmsgstr ""\n'
     ...              'msgctxt "foo"\nmsgctxt "foo1"\n'
     ...              'msgid "blah"\nmsgstr "bar"\n')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TranslationFormatSyntaxError:...
+    lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
 
 When a string is followed by non-string, non-space data, it is caught
 as an error.
 
     >>> parser.parse('msgid ""\nmsgstr "something"\n'
     ...              '"foo"  whatever\n')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TranslationFormatSyntaxError:...Extra content found after string...
+    lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Extra content found after string...
 
 Unrecognized escape sequences are caught as well.
 
     >>> parser.parse('msgid "\!"\nmsgstr ""\n')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TranslationFormatSyntaxError:...Unknown escape sequence...
+    lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Unknown escape sequence...
 
 Unclosed strings (missing closing quotes) are caught.
 
     >>> parser.parse('msgid ""\nmsgstr "\n')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TranslationFormatSyntaxError:...String not terminated...
+    lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...String not terminated...
 
 
 == POHeader ==
@@ -316,10 +322,10 @@ errors occur:
     ... """
 
     >>> parser.parse(content + chunk2)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TranslationFormatInvalidInputError: Line 13:
-    Could not decode input from UTF-8
+    lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Line 13: Could not decode input from UTF-8
 
 
 == Evil Big5 Multibyte Sequences ==

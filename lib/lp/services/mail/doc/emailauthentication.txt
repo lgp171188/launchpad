@@ -99,9 +99,10 @@ InvalidSignature will be raised:
     >>> name, addr = email.utils.parseaddr(msg['From'])
     >>> from_user = getUtility(IPersonSet).getByEmail(addr)
     >>> principal = authenticateEmail(msg, accept_any_timestamp)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    InvalidSignature:...
+    lp.services.mail.incoming.InvalidSignature: ...
 
 Before the signature is verified, the signed text's line endings should
 be canonicalised to \r\n. In order to ensure that the line endings in
@@ -122,9 +123,10 @@ message.
     >>> from lp.services.gpg.interfaces import IGPGHandler
     >>> getUtility(IGPGHandler).getVerifiedSignature(
     ...     msg.signedContent, msg.signature)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGVerificationError: (7, 8, u'Bad signature')
+    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, u'Bad signature')
 
     >>> getUtility(IGPGHandler).getVerifiedSignature(
     ...     msg.signedContent.replace(b'\n', b'\r\n'), msg.signature)

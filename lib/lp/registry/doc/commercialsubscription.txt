@@ -360,9 +360,10 @@ No Privileges Person cannot access 'forReview'.
     >>> check_permission('launchpad.Moderate', product_set)
     False
     >>> gnome =  product_set.forReview(commercial_member, search_text='gnome')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:... 'forReview', 'launchpad.Moderate'...
+    zope.security.interfaces.Unauthorized: ... 'forReview', 'launchpad.Moderate'...
 
 Members of the registry experts celebrity have permission to review
 IProduct and IProjectGroup objects and access an IProjectGroupSet.

@@ -9,9 +9,10 @@ Anonymous users should not be able to subscribe someone else to a bug.
 
     >>> anon_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> anon_browser.getLink('Subscribe someone else').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 No Privileges wants to subscribe David Allouche to the bug because they know
 that he's interested in that feature.

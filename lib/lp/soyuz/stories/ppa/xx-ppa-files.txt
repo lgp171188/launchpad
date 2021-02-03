@@ -244,9 +244,10 @@ Retrieve file information for using the direct HTTP browsing API.
 Sample Person can't access the file.
 
     >>> browser.open(dsc_file_lp_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized
+    zope.security.interfaces.Unauthorized
 
 The 'No Privileges' user, the PPA owner, can download the DSC file.
 
@@ -267,9 +268,10 @@ Binary files are served via '+files' rather than '+sourcefiles'.
     ...     deb_file.filename)
     >>> logout()
     >>> browser.open(deb_file_lp_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized
+    zope.security.interfaces.Unauthorized
     >>> print(http(br"""
     ... GET %s HTTP/1.1
     ... Authorization: Basic no-priv@canonical.com:test
@@ -323,9 +325,10 @@ binaries across to no-priv's public ppa.
 The filename must be at the end of the URL. No further segments are permitted.
 
     >>> browser.open(file_lp_url + '/foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 
 Compatibility URL Redirection

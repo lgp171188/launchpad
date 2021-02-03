@@ -102,9 +102,10 @@ your teams as members.
 
     >>> browser.open('http://launchpad.test/~ubuntu-team')
     >>> browser.getLink('Add one of my teams')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.open('http://launchpad.test/~ubuntu-team/+add-my-teams')
     >>> print(extract_text(
@@ -116,8 +117,9 @@ your teams as members.
 The page is restricted to logged in users.
 
     >>> anon_browser.open('http://launchpad.test/~ubuntu-team/+add-my-teams')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 You also can't propose a team to itself. Here although Colin Watson is
 usually allowed to propose Guadamen in other team, it doesn't appear in

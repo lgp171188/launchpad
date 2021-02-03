@@ -52,9 +52,10 @@ Authentication
 Some methods require authentication.
 
     >>> server.Test.login_required()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 410: 'Login Required'>
+    xmlrpc.client.Fault: <Fault 410: 'Login Required'>
 
 To be authenticated, we need to provide a login cookie. The test
 transport doesn't validate this cookie, it just checks that it exists.
@@ -439,9 +440,10 @@ add_comment() requires authentication.
 
     >>> bugzilla_transport.expireCookie(bugzilla_transport.auth_cookie)
     >>> server.Launchpad.add_comment({'id': 1, 'comment': "This won't work"})
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 410: 'Login Required'>
+    xmlrpc.client.Fault: <Fault 410: 'Login Required'>
 
 Launchpad.add_comment() will return the integer comment ID of the new comment
 on the remote server.
@@ -470,9 +472,10 @@ If add_comment is called on a bug that doesn't exist a fault will be
 raised.
 
     >>> server.Launchpad.add_comment({'id': 42, 'comment': "This won't work"})
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 101: 'Bug #42 does not exist.'>
+    xmlrpc.client.Fault: <Fault 101: 'Bug #42 does not exist.'>
 
 
 Launchpad.set_link()
@@ -487,9 +490,10 @@ Launchpad.set_link() requires authentication.
 
     >>> bugzilla_transport.expireCookie(bugzilla_transport.auth_cookie)
     >>> server.Launchpad.set_link({'id': 1, 'launchpad_id': 1})
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 410: 'Login Required'>
+    xmlrpc.client.Fault: <Fault 410: 'Login Required'>
 
 Launchpad.set_link() will return  0 if no Launchpad bug has ever linked
 to the remote bug.

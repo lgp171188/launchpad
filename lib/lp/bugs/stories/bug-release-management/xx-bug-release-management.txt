@@ -203,9 +203,10 @@ in the release task.
     >>> ubuntu_edit_url = (
     ...     'http://bugs.launchpad.test/ubuntu/+bug/2/+editstatus')
     >>> user_browser.getLink(url=ubuntu_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> ubuntu_hoary_edit_url = (
     ...     'http://bugs.launchpad.test/ubuntu/hoary/+bug/2/+editstatus')
@@ -254,9 +255,10 @@ the distribution task won't be editable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url) is not None
     True
@@ -270,9 +272,10 @@ general distribution task will remain uneditable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url) is not None
     True
@@ -290,9 +293,10 @@ in the series task.
     >>> firefox_edit_url = (
     ...     'http://bugs.launchpad.test/firefox/+bug/4/+editstatus')
     >>> user_browser.getLink(url=firefox_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> firefox_trunk_edit_url = (
     ...     'http://bugs.launchpad.test/firefox/trunk/+bug/4/+editstatus')
@@ -343,9 +347,10 @@ the distribution task won't be editable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=firefox_trunk_edit_url) is not None
     True
@@ -359,9 +364,10 @@ general distribution task will remain uneditable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=firefox_trunk_edit_url) is not None
     True

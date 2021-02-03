@@ -159,9 +159,10 @@ a WidgetInputError is being raised.
     ...     bugwatch_field, bugwatch_field.vocabulary, request)
 
     >>> bugwatch = bugwatch_widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError:...
+    zope.formlib.interfaces.WidgetInputError: ...
 
 In order to make the widget not raise on error on 'NEW', which is not
 part of the vocabulary, we've overridden _toFieldValue(), so that when

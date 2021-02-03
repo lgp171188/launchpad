@@ -40,9 +40,10 @@ there is no link to the original description.
 
     >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/4')
     >>> user_browser.getLink('original description')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 But if the description is edited, the link appears.
 

@@ -351,14 +351,16 @@ Non-administrators may not change a person's standing.
 
     >>> login('test@canonical.com')
     >>> lifeless.personal_standing = PersonalStanding.POOR
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> lifeless.personal_standing_reason = 'Such a cool guy!'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> login('foo.bar@canonical.com')
     >>> lifeless.personal_standing
@@ -434,9 +436,10 @@ If the given name is already in use by another team/person, an exception
 is raised.
 
     >>> personset.newTeam(ddaa, 'ddaa', 'Just a new team')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NameAlreadyTaken:...
+    lp.registry.errors.NameAlreadyTaken: ...
 
 PersonSet.newTeam() will also fire an ObjectCreatedEvent for the newly
 created team.
@@ -524,9 +527,10 @@ account_status is NOACCOUNT, though.
     AssertionError: Only Person entries whose account_status is NOACCOUNT...
 
     >>> not_a_person.convertToTeam(team_owner=landscape_devs)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    AlreadyConvertedException: foo-o has already been converted to a team.
+    lp.registry.model.person.AlreadyConvertedException: foo-o has already been converted to a team.
 
 
 Team members
@@ -1393,9 +1397,10 @@ error will be raised.
     >>> person_set._newPerson(
     ...     'new-name', 'New Person', True,
     ...     PersonCreationRationale.BUGIMPORT)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NameAlreadyTaken: The name 'new-name' is already taken.
+    lp.registry.errors.NameAlreadyTaken: The name 'new-name' is already taken.
 
 If the name passed to _newPerson() isn't valid an InvalidName error will
 be raised.
@@ -1403,9 +1408,10 @@ be raised.
     >>> person_set._newPerson(
     ...     "ThisIsn'tValid", 'New Person', True,
     ...     PersonCreationRationale.BUGIMPORT)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    InvalidName: ThisIsn'tValid is not a valid name for a person.
+    lp.registry.errors.InvalidName: ThisIsn'tValid is not a valid name for a person.
 
 
 Probationary users

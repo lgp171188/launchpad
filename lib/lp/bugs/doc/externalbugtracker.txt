@@ -345,9 +345,10 @@ is, an error is raised.
 
     >>> bug_watch_updater.updateBugWatches(
     ...     PositiveTimeSkewExternalBugTracker(), [], now=utc_now)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TooMuchTimeSkew: ...
+    lp.bugs.scripts.checkwatches.core.TooMuchTimeSkew: ...
 
     >>> class NegativeTimeSkewExternalBugTracker(TestExternalBugTracker):
     ...
@@ -356,9 +357,10 @@ is, an error is raised.
 
     >>> bug_watch_updater.updateBugWatches(
     ...     NegativeTimeSkewExternalBugTracker(), [], now=utc_now)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TooMuchTimeSkew: ...
+    lp.bugs.scripts.checkwatches.core.TooMuchTimeSkew: ...
 
 The error is in fact raised by the _getRemoteIdsToCheck() method of
 CheckwatchesMaster, which is passed a server_time variable by
@@ -369,9 +371,10 @@ before re-raising the error.
     >>> server_time = utc_now - timedelta(minutes=25)
     >>> bug_watch_updater._getRemoteIdsToCheck(
     ...     NegativeTimeSkewExternalBugTracker(), [], server_time, utc_now)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TooMuchTimeSkew: ...
+    lp.bugs.scripts.checkwatches.core.TooMuchTimeSkew: ...
 
 If it's only a little skewed, it won't raise an error.
 

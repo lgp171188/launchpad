@@ -54,9 +54,10 @@ link to the source package will not be present:
     >>> browser.open(
     ...     'http://launchpad.test/debian/woody/i386/pmount')
     >>> print(browser.getLink(id="source_package"))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 A BinaryPackageRelease once published in a DistroArchSeries is
 represented by a DistroArchSeriesBinaryPackageRelease and easily

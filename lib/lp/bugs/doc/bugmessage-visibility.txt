@@ -42,6 +42,7 @@ field.
     >>> abugmessage.message.visible
     False
     >>> abugmessage.message.visible = True
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Message at ...>, 'visible', 'launchpad.Admin')
+    zope.security.interfaces.Unauthorized: (<Message at ...>, 'visible', 'launchpad.Admin')

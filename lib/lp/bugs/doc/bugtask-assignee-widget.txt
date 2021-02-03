@@ -129,19 +129,19 @@ The chooser widget got its name updated as well.
 If this option is selected, but no value is entered in
 "field.assignee", validation will fail:
 
-    >>> widget.validate()
+    >>> widget.validate()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ...
+    zope.formlib.interfaces.WidgetInputError: ...
 
 Likewise, if a non-existent field.assignee is provided, the validation
 will fail:
 
     >>> request.form['foo.assignee'] = 'name'
-    >>> widget.validate()
+    >>> widget.validate()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ...
+    zope.formlib.interfaces.WidgetInputError: ...
 
 Note, in this case, that the widget will properly select the
 "assign_to" radio button:

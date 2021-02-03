@@ -539,9 +539,11 @@ class ProjectGroupSet:
         >>> getUtility(IProjectGroupSet).get(1).name
         u'apache'
         >>> getUtility(IProjectGroupSet).get(-1)
+        ... # doctest: +NORMALIZE_WHITESPACE
+        ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
         Traceback (most recent call last):
         ...
-        NotFoundError: -1
+        lp.app.errors.NotFoundError: -1
         """
         try:
             projectgroup = ProjectGroup.get(projectgroupid)

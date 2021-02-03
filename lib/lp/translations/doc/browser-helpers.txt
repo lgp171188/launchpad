@@ -136,9 +136,10 @@ parse_cformat_string
     [('interpolation', u'%s'), ('string', u'foo%%bar'),
      ('interpolation', u'%s')]
     >>> parse_cformat_string('%')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnrecognisedCFormatString: %
+    lp.translations.browser.browser_helpers.UnrecognisedCFormatString: %
 
 
 text_to_html
@@ -190,9 +191,10 @@ Test bad format strings are caught and passed through.
 
     >>> text = u'foo %z bar'
     >>> parse_cformat_string(text)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnrecognisedCFormatString: foo %z bar
+    lp.translations.browser.browser_helpers.UnrecognisedCFormatString: foo %z bar
 
     >>> text_to_html(text, ['c-format']) == text
     True

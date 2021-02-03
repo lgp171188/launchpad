@@ -12,9 +12,10 @@ team's administrators:
     OptionA     OptionA     Yes
     ...
     >>> user_browser.getLink('[Edit]')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 And when the poll already started, administrators cannot change the options
 either:

@@ -55,9 +55,10 @@ not be found.
     >>> verifyObject(IThing, thing)
     True
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.xml')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ComponentLookupError: ...
+    zope.interface.interfaces.ComponentLookupError: ...
 
 Set the layer on the request for all subsequent uses.
 
@@ -69,15 +70,15 @@ found.
 
     >>> thing = object()
     >>> verifyObject(IThing, thing)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    MultipleInvalid: ...
-    Does not declaratively implement the interface
-    The lp.services.feeds.tests.helper.IThing.value attribute was not provided
+    zope.interface.exceptions.MultipleInvalid: ... Does not declaratively implement the interface The lp.services.feeds.tests.helper.IThing.value attribute was not provided
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.atom')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ComponentLookupError: ...
+    zope.interface.interfaces.ComponentLookupError: ...
 
 If the name is not one of the supported names the view will not be
 found.
@@ -86,9 +87,10 @@ found.
     >>> verifyObject(IThing, thing)
     True
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.xml')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ComponentLookupError: ...
+    zope.interface.interfaces.ComponentLookupError: ...
 
 If the thing is an IThing and the name is supported the view will be
 found, indicated by the absence of a ComponentLookupError.

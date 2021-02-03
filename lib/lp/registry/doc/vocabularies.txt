@@ -139,9 +139,10 @@ display name.
 You cannot get a term by an other object, such as a team.
 
     >>> list_vocabulary.getTerm(team_one)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ForbiddenAttribute: ...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
 Given a token, we can get back the term.
 
@@ -171,9 +172,10 @@ You are not allowed to ask whether a non-mailing list object is
 contained in this vocabulary.
 
     >>> team_three in list_vocabulary
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ForbiddenAttribute: ...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
 Non-ACTIVE mailing lists are also not contained in the vocabulary.
 

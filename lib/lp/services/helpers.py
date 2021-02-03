@@ -135,9 +135,10 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
     sequences with no more than 2 items.  There were 3 items.
 
     >>> shortlist([1, 2, 3, 4], hardlimit=2)
+    ... # doctest: +NORMALIZE_WHITESPACE,+IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ShortListTooBigError: Hard limit of 2 exceeded.
+    lp.services.helpers.ShortListTooBigError: Hard limit of 2 exceeded.
 
     >>> shortlist(
     ...     [1, 2, 3, 4], 2, hardlimit=4) #doctest: +NORMALIZE_WHITESPACE
@@ -153,10 +154,11 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
     ...
     TypeError: ...
 
-    >>> shortlist(iter(range(10)), 5, hardlimit=8) #doctest: +ELLIPSIS
+    >>> shortlist(iter(range(10)), 5, hardlimit=8)
+    ... # doctest: +ELLIPSIS,+IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ShortListTooBigError: ...
+    lp.services.helpers.ShortListTooBigError: ...
 
     """
     if hardlimit is not None:

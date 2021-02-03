@@ -14,6 +14,7 @@ import os
 
 from lazr.sshserver.events import AvatarEvent
 from lazr.sshserver.session import DoNothingSession
+import six
 from six.moves.urllib.parse import urlparse
 from twisted.internet import process
 from twisted.python import log
@@ -107,7 +108,7 @@ class ExecOnlySession(DoNothingSession):
             executable and arguments is a sequence of command-line arguments
             with the name of the executable as the first value.
         """
-        args = command.split()
+        args = six.ensure_binary(command).split()
         return args[0], args
 
 
@@ -161,8 +162,8 @@ def lookup_command_template(command):
     command_template = python_command + args
 
     if command in (
-            'bzr serve --inet --directory=/ --allow-writes',
-            'brz serve --inet --directory=/ --allow-writes'):
+            b'bzr serve --inet --directory=/ --allow-writes',
+            b'brz serve --inet --directory=/ --allow-writes'):
         return command_template
     # At the moment, only bzr/brz branch serving is allowed.
     raise ForbiddenCommand("Not allowed to execute %r." % (command,))

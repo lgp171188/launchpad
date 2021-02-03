@@ -10,10 +10,10 @@ For example, bug one has more than one Package field.
 
     >>> user_browser.open('http://launchpad.test/bugs/1')
     >>> user_browser.getControl('Package')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    AmbiguityError: label u'Package' matches:
-    ...
+    zope.testbrowser.browser.AmbiguityError: label u'Package' matches: ...
 
 Still, the ids of the fields are unique.
 

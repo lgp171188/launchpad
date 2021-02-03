@@ -39,16 +39,18 @@ unit tests somewhere else at some point. -- Guilherme Salgado, 2006-08-23
 A GPGKeyNotFoundError is raised if we try to import an empty content.
 
     >>> key = gpghandler.importPublicKey('')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGKeyNotFoundError...
+    lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
 
 The same happens for bogus content.
 
     >>> key = gpghandler.importPublicKey('XXXXXXXXX')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGKeyNotFoundError: ...
+    lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
 
 Let's recover some coherent data and verify if it works as expected:
 
@@ -93,9 +95,10 @@ SecretGPGKeyImportDetected exception to be raised.
     >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.sec')
     >>> seckey = open(filepath).read()
     >>> key = gpghandler.importPublicKey(seckey)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    SecretGPGKeyImportDetected: ...
+    lp.services.gpg.interfaces.SecretGPGKeyImportDetected: ...
 
 Now, try to import two public keys, causing a MoreThanOneGPGKeyFound
 exception to be raised.
@@ -103,17 +106,19 @@ exception to be raised.
     >>> filepath = os.path.join(gpgkeysdir, 'foo.bar@canonical.com.pub')
     >>> pubkey2 = open(filepath).read()
     >>> key = gpghandler.importPublicKey('\n'.join([pubkey, pubkey2]))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    MoreThanOneGPGKeyFound: ...
+    lp.services.gpg.interfaces.MoreThanOneGPGKeyFound: ...
 
 Raise a GPGKeyNotFoundError if we try to import a public key with damaged
 preamble.
 
     >>> key = gpghandler.importPublicKey(pubkey[1:])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGKeyNotFoundError: ...
+    lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
 
 Apparently GPGME is able to import an incomplete public key:
 
@@ -128,9 +133,10 @@ But we get an error if the damage is big:
 (what probably happened in bug #2547)
 
     >>> key = gpghandler.importPublicKey(pubkey[:-500])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGKeyNotFoundError: ...
+    lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
 
 
 == Importing secret OpenPGP keys ==
@@ -209,10 +215,10 @@ hit the keyserver and import it automatically.
 An attempt to upload an unknown key will fail.
 
     >>> gpghandler.uploadPublicKey('F' * 40)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGKeyDoesNotExistOnServer: GPG key
-    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF does not exist on the keyserver.
+    lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer: GPG key FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF does not exist on the keyserver.
 
 Uploading the same key more than once is fine, it is handled on the
 keyserver side.
@@ -224,10 +230,10 @@ in a error.
 
     >>> tac.tearDown()
     >>> gpghandler.uploadPublicKey(new_key.fingerprint)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    GPGUploadFailure: Could not reach keyserver at
-    http://localhost:11371...Connection refused...
+    lp.services.gpg.interfaces.GPGUploadFailure: Could not reach keyserver at http://localhost:11371...Connection refused...
 
 
 == Fingerprint sanitizing ==

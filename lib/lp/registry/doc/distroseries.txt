@@ -675,9 +675,10 @@ Ubuntu driver can not create series.
     ...     name='finch', display_name='Finch', title='Ubuntu Finch',
     ...     summary='summary', description='description', version='9.06',
     ...     previous_series=warty, owner=ubuntu.driver)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Owners and admins of base distributions are the only users who can create a
 series.

@@ -20,9 +20,10 @@ To get hold of a PO translation, use POTranslation.getByTranslation.
 However, if the translation doesn't already exist, you'll get an error.
 
     >>> got = POTranslation.getByTranslation("In Xanadu did Kubla Khan")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'In Xanadu did Kubla Khan'
+    lp.app.errors.NotFoundError: 'In Xanadu did Kubla Khan'
 
 If you want to get hold of one, and have it automatically created if it
 doesn't already exist, use POTranslation.getOrCreateTranslation.

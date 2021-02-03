@@ -79,9 +79,10 @@ But trying to access information that requires a logged in user
 results in an error.
 
     >>> print(lp_anon.me.name)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: HTTP Error 401: Unauthorized...
+    lazr.restfulclient.errors.Unauthorized: HTTP Error 401: Unauthorized...
 
 
 Caching

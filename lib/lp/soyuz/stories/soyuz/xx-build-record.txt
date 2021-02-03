@@ -298,9 +298,10 @@ retrying the build is not a possibility anymore.
     Build score:... Rescore build (What's this?)
 
     >>> admin_browser.getLink("Retry this build").click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 In the case of successfully built build records, additionally to the
 appropriate 'Build status' section the user will see 2 new sections,
@@ -353,9 +354,10 @@ linkified. That's because its `DistroArchSeriesBinaryPackageRelease`
 page does not exist yet.
 
     >>> print(anon_browser.getLink('testing-bin-1.0'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 On the other hand, users interested in testing the resulting binaries
 already have access to them.
@@ -381,9 +383,10 @@ Binary upload can also be awaiting approval in UNAPPROVED queue
     testing-bin-1.0
 
     >>> print(anon_browser.getLink('testing-bin-1.0'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> print(anon_browser.getLink('testing-bin_1.0_all.deb').url)
     http://.../+build/.../+files/testing-bin_1.0_all.deb
@@ -405,9 +408,10 @@ xx-queue-pages.txt) this condition is presented in the build page.
     testing-bin-1.0
 
     >>> print(anon_browser.getLink('testing-bin-1.0'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> print(anon_browser.getLink('testing-bin_1.0_all.deb').url)
     http://.../+build/.../+files/testing-bin_1.0_all.deb
@@ -493,9 +497,10 @@ packages, since they do not exist.
     Component: main
 
     >>> print(anon_browser.getLink('ppa-test - 1.0').url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> print(anon_browser.getLink('PPA for Celso Providelo').url)
     http://launchpad.test/~cprov/+archive/ubuntu/ppa
@@ -515,9 +520,10 @@ section for PPA builds.
     ppa-test-bin-1.0
 
     >>> print(anon_browser.getLink('ppa-test-bin-1.0').url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 If the source package was created from a recipe build, link to it.
 

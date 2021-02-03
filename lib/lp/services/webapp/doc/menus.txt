@@ -809,9 +809,10 @@ We also report when the selected facet does not exist with a
 LocationError exception:
 
     >>> test_tales('view/menu:broken/bar', view=view)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: ..., 'broken')
+    zope.location.interfaces.LocationError: ..., 'broken')
 
 We can also get a context menu as menu:context.  It makes no difference
 whether the TALES code is view/menu:context or context/menu:context,
@@ -844,9 +845,10 @@ When there is no menu for a thing, we get an empty iterator.
 And thus, we don't have a facet to navigate to:
 
     >>> test_tales('view/menu:foo/+first', view=view)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: ..., 'foo')
+    zope.location.interfaces.LocationError: ..., 'foo')
 
     >>> view = LaunchpadView(house, request)
     >>> view.__launchpad_facetname__ = 'bar'

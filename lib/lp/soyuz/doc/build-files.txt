@@ -35,16 +35,18 @@ following file type in its context.
 Unsupported filename lookups also result in a `NotFoundError`.
 
     >>> build.getFileByName('biscuit.cookie')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: u'biscuit.cookie'
+    lp.app.errors.NotFoundError: u'biscuit.cookie'
 
 And unreachable files in `NotFoundError`.
 
     >>> build.getFileByName('boing.changes')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: u'boing.changes'
+    lp.app.errors.NotFoundError: u'boing.changes'
 
 Retrieving a binary changesfile.  "test_1.0_i386.changes" is created when
 SoyuzTestPublisher creates the "test" binary publication.

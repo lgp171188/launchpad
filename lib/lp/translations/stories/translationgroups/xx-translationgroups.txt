@@ -20,17 +20,19 @@ page.
 
     >>> anon_browser.open(
     ...     'http://translations.launchpad.test/+groups/+new')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Same for a regular, unprivileged user.
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/+groups/+new')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 OK, best we try again, with administrator rights!
 
@@ -264,14 +266,16 @@ Other users cannot access this page, nor see the menu link to it.
 
     >>> user_browser.open(anon_browser.url)
     >>> user_browser.getLink('Configure Translations').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(ubuntu_owner_browser.url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Let's post to the form, setting the translation group to polyglot and
 closed permissions.
@@ -361,14 +365,16 @@ leads to.
 
     >>> user_browser.open(translations_page_url)
     >>> user_browser.getLink('Configure Translations').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(change_translators_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Now let's post to the form. We should be redirected to the product page.
 
@@ -407,14 +413,16 @@ to access the page it leads to.
 
     >>> user_browser.open(translations_page_url)
     >>> user_browser.getLink('Change permissions').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(gnome_owner_browser.url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Let's post to the form, setting the translation group to polyglot and
 closed permissions.
@@ -606,9 +614,10 @@ Normal users, however, are not.
     'http://translations.launchpad.test/+groups/polyglot/'
 
     >>> user_browser.getLink('Appoint a new translation team')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...   'http://translations.launchpad.test/+groups/polyglot/')
@@ -616,9 +625,10 @@ Normal users, however, are not.
     'http://translations.launchpad.test/+groups/polyglot/'
 
     >>> user_browser.getLink('Change details').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Change a translator in a translation group
@@ -690,9 +700,10 @@ instance Welsh (cy), the change will work.
 
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/+groups/polyglot/cy')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound:...
+    zope.publisher.interfaces.NotFound: ...
 
     >>> browser.getControl('Language').value = ['cy']
     >>> browser.getControl('Change').click()
@@ -1081,9 +1092,10 @@ Try to get the page when unauthenticated.
     >>> browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/' +
     ...         'evolution/+pots/evolution-2.2/af/+upload')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 And now with valid credentials.
 

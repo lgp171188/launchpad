@@ -212,12 +212,10 @@ timeout by sleeping for 200ms with a 100ms statement timeout:
     >>> print current_statement_timeout(store)
     100ms
     >>> store.execute('SELECT pg_sleep(0.200)', noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.200)'
-    Parameters:()
-    Original error: QueryCanceledError('canceling statement due to
-    statement timeout\n',)
+    lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.200)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
 
 Even though the statement timed out, it is recorded in the statement log:
 
@@ -285,12 +283,10 @@ This final invokation, we will actually sleep to ensure that the
 timeout being reported by PostgreSQL is actually working:
 
     >>> store.execute('SELECT pg_sleep(0.2)', noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.2)'
-    Parameters:()
-    Original error: QueryCanceledError('canceling statement due to
-    statement timeout\n',)
+    lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.2)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
     >>> clear_request_started()
 
 
@@ -346,9 +342,10 @@ another query:
 
     >>> set_request_started(time.time() - 60)
     >>> store.execute('SELECT 2', noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    RequestExpired: request expired.
+    lp.services.webapp.adapter.RequestExpired: request expired.
 
 The statement about to be executed is not recorded in the statement log.
 The request time limit was exceeded before the statement was issued to
@@ -365,10 +362,10 @@ transaction will be doomed:
     >>> transaction.get().isDoomed()
     True
     >>> transaction.commit()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    DoomedTransaction: transaction doomed, cannot commit
-    <BLANKLINE>
+    transaction.interfaces.DoomedTransaction: transaction doomed, cannot commit
 
 Cleanup:
 
@@ -409,9 +406,10 @@ remove the timout:
     >>> thread.start()
     >>> _ = started_request.wait()
     >>> store.execute('SELECT 1', noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    RequestExpired: request expired.
+    lp.services.webapp.adapter.RequestExpired: request expired.
     >>> statement_issued.set()
     >>> thread.join()
     >>> clear_request_started()
@@ -449,10 +447,10 @@ config section.  By default we connect as "launchpad"
     >>> store.execute("""
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
     ...     """, noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ProgrammingError: permission denied for relation sourcepackagename
-    <BLANKLINE>
+    storm.database.ProgrammingError: permission denied for relation sourcepackagename
 
 This is not reset at the end of the transaction:
 
@@ -462,10 +460,10 @@ This is not reset at the end of the transaction:
     >>> store.execute("""
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
     ...     """, noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ProgrammingError: permission denied for relation sourcepackagename
-    <BLANKLINE>
+    storm.database.ProgrammingError: permission denied for relation sourcepackagename
     >>> transaction.abort()
 
 So you need to explicitly set the user back to the default:

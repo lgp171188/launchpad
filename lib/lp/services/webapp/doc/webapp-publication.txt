@@ -417,10 +417,10 @@ listens on a particular port.
 
 Find the port the Private XMLRPC service is listening on.
 
-    >>> for server in config.servers:
-    ...     if server.type == 'PrivateXMLRPC':
-    ...         private_port = server.address[1]
+    >>> config.use_gunicorn
+    True
 
+    >>> private_port = config.vhost.xmlrpc_private.private_port
     >>> print_request_and_publication(
     ...     'xmlrpc-private.launchpad.test', method='POST',
     ...     mime_type='application/xml')
@@ -533,9 +533,10 @@ UnexpectedFormData is raised if more than one value was submitted for
 the field:
 
     >>> request.form_ng.getOne('items_field')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData:...
+    lp.app.errors.UnexpectedFormData: ...
 
 None is returned if the field wasn't submitted:
 
@@ -773,9 +774,10 @@ If that happens, though, we'll remove the
     ... except:
     ...     publication.handleException(
     ...         None, request, sys.exc_info(), retry_allowed=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Retry: foo
+    zope.publisher.interfaces.Retry: foo
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
@@ -801,9 +803,10 @@ If that happens, though, we'll remove the
     ...     exc_info = sys.exc_info()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Retry: foo DisconnectionError
+    zope.publisher.interfaces.Retry: foo DisconnectionError
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
@@ -833,9 +836,10 @@ WSGI env.
     ... except:
     ...     publication.handleException(
     ...         None, request, sys.exc_info(), retry_allowed=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Retry: foo
+    zope.publisher.interfaces.Retry: foo
 
     >>> request._orig_env['launchpad.publicationduration']
     0.5
@@ -1161,9 +1165,10 @@ raised, though.
     >>> form2['oauth_nonce'] = '1764572616e48616d6d65724c61686'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TokenException: Expired token...
+    lp.services.oauth.interfaces.TokenException: Expired token...
 
     >>> access_token.date_expires = now + timedelta(days=1)
 
@@ -1172,9 +1177,10 @@ raised, though.
     >>> form2['oauth_nonce'] = '4572616e48616d6d65724c61686176'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TokenException: Unknown access token...
+    lp.services.oauth.interfaces.TokenException: Unknown access token...
 
 The consumer must be registered as well, and the signature must be
 correct.
@@ -1183,18 +1189,20 @@ correct.
     >>> form2['oauth_consumer_key'] += 'z'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: Unknown consumer (foobar123451432z).
+    zope.security.interfaces.Unauthorized: Unknown consumer (foobar123451432z).
 
     >>> form2 = form.copy()
     >>> form2['oauth_signature'] += 'z'
     >>> form2['oauth_nonce'] = '2616e48616d6d65724c61686176457'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TokenException: Invalid signature.
+    lp.services.oauth.interfaces.TokenException: Invalid signature.
 
 Close the bogus request that was started by the call to
 beforeTraversal, in order to ensure we leave our state sane.
