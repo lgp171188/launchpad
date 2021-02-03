@@ -4,12 +4,15 @@
 """Out of process statsd reporting."""
 
 from __future__ import absolute_import, print_function, unicode_literals
+from datetime import datetime
+
 
 __metaclass__ = type
 __all__ = ['NumberCruncher']
 
 import logging
 
+import pytz
 from storm.expr import (
     Count,
     Sum,
@@ -27,6 +30,8 @@ from zope.component import getUtility
 from lp.buildmaster.enums import BuilderCleanStatus
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.manager import PrefetchedBuilderFactory
+from lp.code.enums import CodeImportJobState
+from lp.code.model.codeimportjob import CodeImportJob
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
@@ -40,6 +45,7 @@ class NumberCruncher(service.Service):
     QUEUE_INTERVAL = 60
     BUILDER_INTERVAL = 60
     LIBRARIAN_INTERVAL = 3600
+    CODE_IMPORT_INTERVAL = 60
 
     def __init__(self, clock=None, builder_factory=None):
         if clock is None:
@@ -155,6 +161,27 @@ class NumberCruncher(service.Service):
             self.logger.exception("Failure while updating librarian stats:")
         transaction.abort()
 
+    def updateCodeImportStats(self):
+        """Update stats about code imports.
+
+        This aborts the current transaction before returning.
+        """
+        try:
+            self.logger.debug("Update code import stats.")
+            store = IStore(CodeImportJob)
+            pending = store.find(
+                CodeImportJob,
+                CodeImportJob.state == CodeImportJobState.PENDING).count()
+            overdue = store.find(
+                CodeImportJob,
+                CodeImportJob.date_due < datetime.now(pytz.UTC)).count()
+            self._sendGauge("codeimport.pending", pending)
+            self._sendGauge("codeimport.overdue", overdue)
+            self.logger.debug("Code import stats update complete")
+        except Exception:
+            self.logger.exception("Failure while updating code import stats.")
+        transaction.abort()
+
     def startService(self):
         self.logger.info("Starting number-cruncher service.")
         self.loops = []
@@ -163,6 +190,7 @@ class NumberCruncher(service.Service):
                 (self.QUEUE_INTERVAL, self.updateBuilderQueues),
                 (self.BUILDER_INTERVAL, self.updateBuilderStats),
                 (self.LIBRARIAN_INTERVAL, self.updateLibrarianStats),
+                (self.CODE_IMPORT_INTERVAL, self.updateCodeImportStats),
                 ):
             loop, stopping_deferred = self._startLoop(interval, callback)
             self.loops.append(loop)
