@@ -638,9 +638,9 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
             project = data.get('project', self.context.project)
             private = data.get('private', self.context.private)
             if private and project is None:
-                self.setFieldError(
-                    'project',
-                    'Private Snaps should be associated with a project.')
+                msg = ('Private Snap recipes should be associated '
+                       'with a project.')
+                self.setFieldError('project', msg)
 
     def _needStoreReauth(self, data):
         """Does this change require reauthorizing to the store?"""
