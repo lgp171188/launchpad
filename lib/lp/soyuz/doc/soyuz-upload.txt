@@ -279,65 +279,67 @@ Now continue with the real upload.
 
 Let's check if packages were uploaded correctly.
 
+    >>> from operator import attrgetter
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-    >>> from pprint import pprint
     >>> spn = SourcePackageName.selectOneBy(name="drdsl")
-    >>> spn.name
-    u'drdsl'
+    >>> print(spn.name)
+    drdsl
     >>> spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
-    >>> spr.title
-    u'drdsl - 1.2.0-0ubuntu1'
-    >>> spr.name
-    u'drdsl'
-    >>> spr.version
-    u'1.2.0-0ubuntu1'
-    >>> spr.component.name
-    u'multiverse'
-    >>> spr.section.name
-    u'comm'
-    >>> spr.maintainer.displayname
-    u'Matthias Klose'
-    >>> pprint(sorted([sprf.libraryfile.filename for sprf in spr.files]))
-    [u'drdsl_1.2.0-0ubuntu1.diff.gz',
-     u'drdsl_1.2.0-0ubuntu1.dsc',
-     u'drdsl_1.2.0.orig.tar.gz']
+    >>> print(spr.title)
+    drdsl - 1.2.0-0ubuntu1
+    >>> print(spr.name)
+    drdsl
+    >>> print(spr.version)
+    1.2.0-0ubuntu1
+    >>> print(spr.component.name)
+    multiverse
+    >>> print(spr.section.name)
+    comm
+    >>> print(spr.maintainer.displayname)
+    Matthias Klose
+    >>> for sprf in sorted(spr.files, key=attrgetter('libraryfile.filename')):
+    ...     print(sprf.libraryfile.filename)
+    drdsl_1.2.0-0ubuntu1.diff.gz
+    drdsl_1.2.0-0ubuntu1.dsc
+    drdsl_1.2.0.orig.tar.gz
     >>> spr.format.name
     'DPKG'
     >>> spr.urgency.name
     'LOW'
-    >>> spr.upload_distroseries.name
-    u'breezy-autotest'
+    >>> print(spr.upload_distroseries.name)
+    breezy-autotest
 
 
 Same thing for etherwake:
 
     >>> spn = SourcePackageName.selectOneBy(name="etherwake")
-    >>> spn.name
-    u'etherwake'
+    >>> print(spn.name)
+    etherwake
     >>> spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
-    >>> spr.title
-    u'etherwake - 1.08-1'
-    >>> spr.name
-    u'etherwake'
-    >>> spr.version
-    u'1.08-1'
-    >>> spr.component.name
-    u'universe'
-    >>> spr.section.name
-    u'net'
-    >>> spr.maintainer.displayname
-    u'Alain Schroeder'
-    >>> pprint(sorted([sprf.libraryfile.filename for sprf in spr.files]))
-    [u'etherwake_1.08-1.diff.gz',
-     u'etherwake_1.08-1.dsc',
-     u'etherwake_1.08.orig.tar.gz']
+    >>> print(spr.title)
+    etherwake - 1.08-1
+    >>> print(spr.name)
+    etherwake
+    >>> print(spr.version)
+    1.08-1
+    >>> print(spr.component.name)
+    universe
+    >>> print(spr.section.name)
+    net
+    >>> print(spr.maintainer.displayname)
+    Alain Schroeder
+    >>> for sprf in sorted(spr.files, key=attrgetter('libraryfile.filename')):
+    ...     print(sprf.libraryfile.filename)
+    etherwake_1.08-1.diff.gz
+    etherwake_1.08-1.dsc
+    etherwake_1.08.orig.tar.gz
     >>> spr.format.name
     'DPKG'
     >>> spr.urgency.name
     'LOW'
-    >>> spr.upload_distroseries.name
-    u'breezy-autotest'
+    >>> print(spr.upload_distroseries.name)
+    breezy-autotest
 
 
 Check the four uploads all ended up where we expected.
