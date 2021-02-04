@@ -518,8 +518,8 @@ empty library file, which is what the user expects.
     >>> print(diff.diff_content.filename)
     staging_1.0-1_1.0-1.diff.gz
 
-    >>> get_diff_results(diff)
-    u''
+    >>> print(get_diff_results(diff))
+    <BLANKLINE>
 
 Now we will simulate a version collision when generating the diff.
 

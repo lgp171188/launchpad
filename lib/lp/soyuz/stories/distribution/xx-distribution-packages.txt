@@ -396,8 +396,8 @@ release.
     >>> print(extract_text(first_header_link))
     1.0.9a-4ubuntu1
 
-    >>> first_header_link.get('href')
-    u'/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1'
+    >>> print(first_header_link.get('href'))
+    /ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1
 
 Following the header we get a body with the changelog in it.  Note that
 any email addreses in the changelog are obfuscated because we are not

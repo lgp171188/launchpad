@@ -107,8 +107,10 @@ Useful properties:
 
 Inquire what Distribution Series this archive has published sources to:
 
-    >>> [s.name for s in cprov_archive.series_with_sources]
-    [u'breezy-autotest', u'warty']
+    >>> for s in cprov_archive.series_with_sources:
+    ...     print(s.name)
+    breezy-autotest
+    warty
 
 'purpose' is a read-only attribute, it can't and shouldn't be modified
 once a IArchive is created. Changing those values would affect the way
@@ -172,7 +174,7 @@ We will create a COPY archive and modify its name.
 
     >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
     >>> rebuild_owner = factory.makePerson(
-    ...     name='juergen', displayname=u'J\xc3\xbcrgen')
+    ...     name='juergen', displayname=u'J\xfcrgen')
     >>> rebuild_archive = getUtility(IArchiveSet).new(
     ...     owner=rebuild_owner, purpose=ArchivePurpose.COPY,
     ...     distribution=ubuntu, name='editable-rebuild',
@@ -211,8 +213,8 @@ Valid names work as expected.
 
 Please note that copy archive displayname doesn't follow the name change.
 
-    >>> rebuild_archive.displayname
-    u'Copy archive editable-rebuild for J\xc3\xbcrgen'
+    >>> print(backslashreplace(rebuild_archive.displayname))
+    Copy archive editable-rebuild for J\xfcrgen
 
 The "is_copy" property allows us to ask an archive whether it's a copy
 archive.
@@ -688,14 +690,14 @@ This method can return build records for sources matching the given
     >>> cd_lookup = cprov_archive.getBuildRecords(name=u'cd')
     >>> cd_lookup.count()
     1
-    >>> cd_lookup[0].source_package_release.name
-    u'cdrkit'
+    >>> print(cd_lookup[0].source_package_release.name)
+    cdrkit
 
     >>> ice_lookup = cprov_archive.getBuildRecords(name=u'ice')
     >>> ice_lookup.count()
     1
-    >>> ice_lookup[0].source_package_release.name
-    u'iceweasel'
+    >>> print(ice_lookup[0].source_package_release.name)
+    iceweasel
 
     >>> cprov_archive.getBuildRecords(name=u'foo').count()
     0
@@ -1003,8 +1005,8 @@ corresponds to what we state in our policy, 2048 MiB:
 An archive is also associated with a distribution.  This can be found on
 the distribution property.  The default distribution is "ubuntu":
 
-    >>> sandbox_archive.distribution.name
-    u'ubuntu'
+    >>> print(sandbox_archive.distribution.name)
+    ubuntu
 
 An Archive can be retrieved via IPerson.archive property:
 
