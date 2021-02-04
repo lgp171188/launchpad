@@ -65,12 +65,12 @@ matrix as a python list, with the necessary headers (the option's names).
 
   >>> poll_results = getMultiAdapter((poll, TestRequest()), name="+index")
   >>> for row in poll_results.getPairwiseMatrixWithHeaders():
-  ...     print(row)
-  [None, u'A', u'B', u'C', u'D']
-  [u'A', None, 2L, 2L, 2L]
-  [u'B', 2L, None, 2L, 2L]
-  [u'C', 1L, 1L, None, 1L]
-  [u'D', 2L, 1L, 2L, None]
+  ...     print(pretty(row))
+  [None, 'A', 'B', 'C', 'D']
+  ['A', None, 2, 2, 2]
+  ['B', 2, None, 2, 2]
+  ['C', 1, 1, None, 1]
+  ['D', 2, 1, 2, None]
 
 == Voting on closed polls ==
 

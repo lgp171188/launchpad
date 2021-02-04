@@ -131,10 +131,10 @@ people can start voting.
   >>> votes = poll2.storeCondorcetVote(member3, options, when=opendate)
   >>> options = {a: 1}
   >>> votes = poll2.storeCondorcetVote(member4, options, when=opendate)
+  >>> from zope.security.proxy import removeSecurityProxy
   >>> for row in poll2.getPairwiseMatrix():
-  ...     print row
-  [None, 2L, 2L, 2L]
-  [2L, None, 2L, 2L]
-  [1L, 1L, None, 1L]
-  [2L, 1L, 2L, None]
-
+  ...     print(pretty(removeSecurityProxy(row)))
+  [None, 2, 2, 2]
+  [2, None, 2, 2]
+  [1, 1, None, 1]
+  [2, 1, 2, None]

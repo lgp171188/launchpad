@@ -17,12 +17,14 @@ from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import task
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuilderCleanStatus
 from lp.buildmaster.interactor import BuilderSlave
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.tests.mock_slaves import OkSlave
+from lp.code.enums import CodeImportJobState
 from lp.services.database.isolation import is_transaction_in_progress
 from lp.services.database.policy import DatabaseBlockedPolicy
 from lp.services.log.logger import BufferLogger
@@ -232,6 +234,57 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
             "Failure while updating librarian stats:",
             cruncher.logger.getLogBuffer())
 
+    def test_updateCodeImportStats(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.updateCodeImportStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertEqual(2, self.stats_client.gauge.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.gauge.call_args_list],
+            MatchesListwise([
+                MatchesListwise([
+                    Equals('codeimport.pending,env=test'),
+                    Equals(1),
+                    ]),
+                MatchesListwise([
+                    Equals('codeimport.overdue,env=test'),
+                    Equals(1),
+                    ]),
+                ]))
+
+        job = removeSecurityProxy(self.factory.makeCodeImportJob())
+        job.state = CodeImportJobState.PENDING
+        self.stats_client.gauge.reset_mock()
+        cruncher.updateCodeImportStats()
+
+        self.assertEqual(2, self.stats_client.gauge.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.gauge.call_args_list],
+            MatchesListwise([
+                MatchesListwise([
+                    Equals('codeimport.pending,env=test'),
+                    Equals(2),
+                    ]),
+                MatchesListwise([
+                    Equals('codeimport.overdue,env=test'),
+                    Equals(2),
+                    ]),
+                ]))
+
+    def test_updateCodeImportStats_error(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.logger = BufferLogger()
+        with DatabaseBlockedPolicy():
+            cruncher.updateCodeImportStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertIn(
+            "Failure while updating code import stats.",
+            cruncher.logger.getLogBuffer())
+
     def test_startService_starts_update_queues_loop(self):
         clock = task.Clock()
         cruncher = NumberCruncher(clock=clock)
@@ -264,3 +317,14 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         advance = NumberCruncher.LIBRARIAN_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(0, cruncher.updateLibrarianStats.call_count)
+
+    def test_startService_starts_update_code_import_loop(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+
+        cruncher.updateCodeImportStats = FakeMethod()
+
+        cruncher.startService()
+        advance = NumberCruncher.CODE_IMPORT_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, cruncher.updateCodeImportStats.call_count)
