@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap views."""
@@ -344,6 +344,7 @@ class ISnapEditSchema(Interface):
         'owner',
         'name',
         'private',
+        'project',
         'require_virtualized',
         'allow_internet',
         'build_source_tarball',
@@ -613,6 +614,7 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
     def validate(self, data):
         super(BaseSnapEditView, self).validate(data)
         if data.get('private', self.context.private) is False:
+            # These are the requirements for public snaps.
             if 'private' in data or 'owner' in data:
                 owner = data.get('owner', self.context.owner)
                 if owner is not None and owner.private:
@@ -631,6 +633,14 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
                     self.setFieldError(
                         'private' if 'private' in data else 'git_ref',
                         'A public snap cannot have a private repository.')
+        else:
+            # These are the requirements for private snaps.
+            project = data.get('project', self.context.project)
+            private = data.get('private', self.context.private)
+            if private and project is None:
+                self.setFieldError(
+                    'project',
+                    'Private Snaps should be associated with a project.')
 
     def _needStoreReauth(self, data):
         """Does this change require reauthorizing to the store?"""
@@ -696,7 +706,8 @@ class SnapAdminView(BaseSnapEditView):
 
     page_title = 'Administer'
 
-    field_names = ['private', 'require_virtualized', 'allow_internet']
+    field_names = [
+        'project', 'private', 'require_virtualized', 'allow_internet']
 
     def validate(self, data):
         super(SnapAdminView, self).validate(data)

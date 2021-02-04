@@ -169,6 +169,7 @@ from lp.snappy.interfaces.snap import (
     SnapBuildRequestStatus,
     SnapNotOwner,
     SnapPrivacyMismatch,
+    SnapPrivacyPillarError,
     SnapPrivateFeatureDisabled,
     )
 from lp.snappy.interfaces.snapbase import (
@@ -348,11 +349,6 @@ class Snap(Storm, WebhookTargetMixin):
     require_virtualized = Bool(name='require_virtualized')
 
     def _validate_private(self, attr, value):
-        # XXX 2021-02-03: Once we have the browser interface for that,
-        # we should not allow setting Snap.private to True without setting a
-        # pillar. A validation like this:
-        # if value and not self.pillar:
-        #     raise SnapPrivacyPillarError
         if not getUtility(ISnapSet).isValidPrivacy(
                 value, self.owner, self.branch, self.git_ref):
             raise SnapPrivacyMismatch

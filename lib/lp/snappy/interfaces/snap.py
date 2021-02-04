@@ -670,7 +670,7 @@ class ISnapEditableAttributes(IHasOwner):
         description=_("The owner of this snap package.")))
 
     project = exported(ReferenceChoice(
-        title=_('The project that this Snap is associated with.'),
+        title=_('The project that this Snap is associated with'),
         schema=IProduct, vocabulary='Product',
         required=False, readonly=False))
 
