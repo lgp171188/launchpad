@@ -2558,7 +2558,6 @@ class TestSnapWebservice(TestCaseWithFactory):
         # Ensure private Snap creation works.
         team = self.factory.makeTeam(owner=self.person)
         distroseries = self.factory.makeDistroSeries(registrant=team)
-        project = self.factory.makeProduct()
         [ref] = self.factory.makeGitRefs()
         private_webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PRIVATE)
@@ -2566,10 +2565,9 @@ class TestSnapWebservice(TestCaseWithFactory):
         login(ANONYMOUS)
         snap = self.makeSnap(
             owner=team, distroseries=distroseries, git_ref=ref,
-            webservice=private_webservice, private=True, project=project)
+            webservice=private_webservice, private=True)
         with person_logged_in(self.person):
             self.assertTrue(snap["private"])
-            self.assertEndsWith(snap["project_link"], api_url(project))
 
     def test_new_store_options(self):
         # Ensure store-related options in Snap.new work.
@@ -2651,7 +2649,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap_url, "application/json", json.dumps({"private": False}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            b"Snap contains private information and cannot be public.",
+            b"Snap recipe contains private information and cannot be public.",
             response.body)
 
     def test_cannot_set_private_components_of_public_snap(self):
