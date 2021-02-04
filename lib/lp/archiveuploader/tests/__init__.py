@@ -56,7 +56,7 @@ def insertFakeChangesFile(fileID, path=None):
 
 def insertFakeChangesFileForAllPackageUploads():
     """Ensure all the PackageUpload records point to a valid changes file."""
-    for id in set(pu.changesfile.id for pu in PackageUploadSet()):
+    for id in set(pu.changesfile.content.id for pu in PackageUploadSet()):
         insertFakeChangesFile(id)
 
 
