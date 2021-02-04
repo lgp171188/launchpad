@@ -2651,7 +2651,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap_url, "application/json", json.dumps({"private": False}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            b"Snap contains private information and cannot be public.",
+            b"Snap recipe contains private information and cannot be public.",
             response.body)
 
     def test_cannot_set_private_components_of_public_snap(self):

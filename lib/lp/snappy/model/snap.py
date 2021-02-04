@@ -469,7 +469,7 @@ class Snap(Storm, WebhookTargetMixin):
     @property
     def pillar(self):
         """See `ISnap`."""
-        return self.project if self.project_id else None
+        return self.project
 
     @pillar.setter
     def pillar(self, pillar):

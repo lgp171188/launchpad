@@ -214,7 +214,16 @@ class SnapPrivacyMismatch(Exception):
     def __init__(self, message=None):
         super(SnapPrivacyMismatch, self).__init__(
             message or
-            "Snap contains private information and cannot be public.")
+            "Snap recipe contains private information and cannot be public.")
+
+
+@error_status(http_client.BAD_REQUEST)
+class SnapPrivacyPillarError(Exception):
+    """Private Snaps should be based in a pillar."""
+
+    def __init__(self, message=None):
+        super(SnapPrivacyPillarError, self).__init__(
+            message or "Private Snap recipes should have a pillar.")
 
 
 @error_status(http_client.BAD_REQUEST)
@@ -669,10 +678,10 @@ class ISnapEditableAttributes(IHasOwner):
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this snap package.")))
 
-    project = exported(ReferenceChoice(
-        title=_('The project that this Snap is associated with'),
+    project = ReferenceChoice(
+        title=_('The project that this Snap is associated with.'),
         schema=IProduct, vocabulary='Product',
-        required=False, readonly=False))
+        required=False, readonly=False)
 
     distro_series = exported(Reference(
         IDistroSeries, title=_("Distro Series"),
