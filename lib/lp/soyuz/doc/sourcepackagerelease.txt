@@ -16,10 +16,10 @@ Let's get one from the database:
 
    >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
    >>> spr = SourcePackageRelease.get(20)
-   >>> spr.name
-   u'pmount'
-   >>> spr.version
-   u'0.1-1'
+   >>> print(spr.name)
+   pmount
+   >>> print(spr.version)
+   0.1-1
    >>> spr.dateuploaded
    datetime.datetime(2005, 3, 24, 20, 59, 31, 439579, tzinfo=<UTC>)
 
@@ -89,8 +89,10 @@ Check that the uploaded changesfile works:
 
 Check ISourcePackageRelease.override() behaviour:
 
-   >>> spr.component.name, spr.section.name
-   (u'main', u'web')
+   >>> print(spr.component.name)
+   main
+   >>> print(spr.section.name)
+   web
 
    >>> from lp.soyuz.interfaces.component import IComponentSet
    >>> from lp.soyuz.interfaces.section import ISectionSet
@@ -102,8 +104,10 @@ pair:
 
    >>> spr.override(component=new_comp, section=new_sec)
 
-   >>> spr.component.name, spr.section.name
-   (u'universe', u'mail')
+   >>> print(spr.component.name)
+   universe
+   >>> print(spr.section.name)
+   mail
 
 Abort transaction to avoid error propagation of the new attributes:
 
@@ -163,14 +167,14 @@ ISourcePackageRelease, it will automatically set the
   ...     build_conflicts=None, build_conflicts_indep=None,
   ...     source_package_recipe_build=arg_recipebuild)
 
-  >>> new_spr.upload_distroseries.name
-  u'hoary'
-  >>> new_spr.version
-  u'0.0.99'
+  >>> print(new_spr.upload_distroseries.name)
+  hoary
+  >>> print(new_spr.version)
+  0.0.99
   >>> new_spr.upload_archive.id == hoary.main_archive.id
   True
-  >>> new_spr.copyright
-  u'smashed debian/copyright ...'
+  >>> print(new_spr.copyright)
+  smashed debian/copyright ...
   >>> new_spr.source_package_recipe_build == arg_recipebuild
   True
 
@@ -181,8 +185,8 @@ Throw away the DB changes:
 Let's get a sample SourcePackageRelease:
 
    >>> spr_test = SourcePackageRelease.get(20)
-   >>> spr_test.name
-   u'pmount'
+   >>> print(spr_test.name)
+   pmount
 
 
 == Package sizes ==
@@ -192,8 +196,8 @@ It returns the sum of the size of all files comprising the source package (in
 kilo-bytes).
 
     >>> spr = SourcePackageRelease.get(14)
-    >>> spr.name
-    u'mozilla-firefox'
+    >>> print(spr.name)
+    mozilla-firefox
     >>> spr.getPackageSize()
     9690.0
 

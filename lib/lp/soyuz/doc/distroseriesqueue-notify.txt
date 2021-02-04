@@ -165,10 +165,10 @@ The mail 'Bcc:' address is the uploader.  The announcement has the
 uploader and the Debian derivatives address for the package uploaded.
 
     >>> for msg in msgs:
-    ...     print(extract_addresses(msg['Bcc']))
-    [u'Root <root@localhost>']
-    [u'Root <root@localhost>']
-    [u'netapplet_derivatives@packages.qa.debian.org', u'Root <root@localhost>']
+    ...     print(pretty(extract_addresses(msg['Bcc'])))
+    ['Root <root@localhost>']
+    ['Root <root@localhost>']
+    ['netapplet_derivatives@packages.qa.debian.org', 'Root <root@localhost>']
 
 The mail 'From:' addresses are the uploader (for acknowledgements sent to
 the uploader and the changer) and the changer.

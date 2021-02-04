@@ -277,14 +277,14 @@ Let's check the IPerson entities related to this source upload:
 
     >>> signed_src = signed_queue.sources[0].sourcepackagerelease
 
-    >>> signed_src.creator.displayname
-    u'Daniel Silverstone'
+    >>> print(signed_src.creator.displayname)
+    Daniel Silverstone
 
-    >>> signed_src.maintainer.displayname
-    u'Launchpad team'
+    >>> print(signed_src.maintainer.displayname)
+    Launchpad team
 
-    >>> signed_queue.signing_key.owner.displayname
-    u'Foo Bar'
+    >>> print(signed_queue.signing_key.owner.displayname)
+    Foo Bar
 
 Based on this information we can conclude that source 'bar' is
 maintained by 'Launchpad Team', was modified by 'Daniel Silverstone'
@@ -369,10 +369,14 @@ has a similar behaviour):
     2
     >>> dup_one, dup_two = list(dups)
 
-    >>> dup_one.displayname, dup_one.displayversion
-    (u'cnews', u'1.0')
-    >>> dup_two.displayname, dup_two.displayversion
-    (u'cnews', u'1.0')
+    >>> print(dup_one.displayname)
+    cnews
+    >>> print(dup_one.displayversion)
+    1.0
+    >>> print(dup_two.displayname)
+    cnews
+    >>> print(dup_two.displayversion)
+    1.0
 
 The upload admin can not accept both since we check unique
 (name, version) accross distribution:
