@@ -655,7 +655,6 @@ class TestSnapAdminView(BaseTestSnapView):
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
         login_person(self.person)
         snap = self.factory.makeSnap(registrant=self.person)
-        project = self.factory.makeProduct(name="my-project")
         self.assertTrue(snap.require_virtualized)
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)

@@ -169,7 +169,6 @@ from lp.snappy.interfaces.snap import (
     SnapBuildRequestStatus,
     SnapNotOwner,
     SnapPrivacyMismatch,
-    SnapPrivacyPillarError,
     SnapPrivateFeatureDisabled,
     )
 from lp.snappy.interfaces.snapbase import (

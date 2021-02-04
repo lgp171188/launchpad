@@ -226,15 +226,6 @@ class SnapPrivacyPillarError(Exception):
             message or "Private Snap recipes should have a pillar.")
 
 
-@error_status(http_client.BAD_REQUEST)
-class SnapPrivacyPillarError(Exception):
-    """Private Snaps should be based in a pillar."""
-
-    def __init__(self, message=None):
-        super(SnapPrivacyPillarError, self).__init__(
-            message or "Private Snaps should have a pillar.")
-
-
 class BadSnapSearchContext(Exception):
     """The context is not valid for a snap package search."""
 
