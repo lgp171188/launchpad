@@ -37,52 +37,52 @@ class TestRequestParsing(TestCase):
     def assertMethodAndFileIDAreCorrect(self, request):
         method, path = get_method_and_path(request)
         file_id = get_library_file_id(path)
-        self.assertEqual(method, b'GET')
+        self.assertEqual(method, 'GET')
         self.assertEqual(file_id, '8196569')
 
     def test_return_value(self):
-        request = b'GET /8196569/mediumubuntulogo.png HTTP/1.1'
+        request = 'GET /8196569/mediumubuntulogo.png HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_return_value_for_http_path(self):
-        request = (b'GET http://launchpadlibrarian.net/8196569/'
-                   b'mediumubuntulogo.png HTTP/1.1')
+        request = ('GET http://launchpadlibrarian.net/8196569/'
+                   'mediumubuntulogo.png HTTP/1.1')
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_extra_slashes_are_ignored(self):
-        request = b'GET http://launchpadlibrarian.net//8196569//foo HTTP/1.1'
+        request = 'GET http://launchpadlibrarian.net//8196569//foo HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
-        request = b'GET //8196569//foo HTTP/1.1'
+        request = 'GET //8196569//foo HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_multiple_consecutive_white_spaces(self):
         # Some request strings might have multiple consecutive white spaces,
         # but they're parsed just like if they didn't have the extra spaces.
-        request = b'GET /8196569/mediumubuntulogo.png  HTTP/1.1'
+        request = 'GET /8196569/mediumubuntulogo.png  HTTP/1.1'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_return_value_for_https_path(self):
-        request = (b'GET https://launchpadlibrarian.net/8196569/'
-                   b'mediumubuntulogo.png HTTP/1.1')
+        request = ('GET https://launchpadlibrarian.net/8196569/'
+                   'mediumubuntulogo.png HTTP/1.1')
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_return_value_for_request_missing_http_version(self):
         # HTTP 1.0 requests might omit the HTTP version so we must cope with
         # them.
-        request = b'GET https://launchpadlibrarian.net/8196569/foo.png'
+        request = 'GET https://launchpadlibrarian.net/8196569/foo.png'
         self.assertMethodAndFileIDAreCorrect(request)
 
     def test_requests_for_paths_that_are_not_of_an_lfa_return_none(self):
-        request = b'GET https://launchpadlibrarian.net/ HTTP/1.1'
+        request = 'GET https://launchpadlibrarian.net/ HTTP/1.1'
         self.assertEqual(
             get_library_file_id(get_method_and_path(request)[1]), None)
 
-        request = b'GET /robots.txt HTTP/1.1'
+        request = 'GET /robots.txt HTTP/1.1'
         self.assertEqual(
             get_library_file_id(get_method_and_path(request)[1]), None)
 
-        request = b'GET /@@person HTTP/1.1'
+        request = 'GET /@@person HTTP/1.1'
         self.assertEqual(
             get_library_file_id(get_method_and_path(request)[1]), None)
 
@@ -97,10 +97,10 @@ class TestLibrarianLogFileParsing(TestCase):
         self.logger = BufferLogger()
 
     def test_request_to_lfa_is_parsed(self):
-        fd = io.BytesIO(
-            b'69.233.136.42 - - [13/Jun/2008:14:55:22 +0100] "GET '
-            b'/15018215/ul_logo_64x64.png HTTP/1.1" 200 2261 '
-            b'"https://launchpad.net/~ubuntulite/+archive" "Mozilla"')
+        fd = io.StringIO(
+            '69.233.136.42 - - [13/Jun/2008:14:55:22 +0100] "GET '
+            '/15018215/ul_logo_64x64.png HTTP/1.1" 200 2261 '
+            '"https://launchpad.net/~ubuntulite/+archive" "Mozilla"')
         downloads, parsed_bytes, ignored = parse_file(
             fd, start_position=0, logger=self.logger,
             get_download_key=get_library_file_id)
@@ -116,9 +116,9 @@ class TestLibrarianLogFileParsing(TestCase):
     def test_request_to_non_lfa_is_ignored(self):
         # A request to a path which doesn't map to a LibraryFileAlias (e.g.
         # '/') is ignored.
-        fd = io.BytesIO(
-            b'69.233.136.42 - - [13/Jun/2008:14:55:22 +0100] "GET / HTTP/1.1" '
-            b'200 2261 "https://launchpad.net/~ubuntulite/+archive" "Mozilla"')
+        fd = io.StringIO(
+            '69.233.136.42 - - [13/Jun/2008:14:55:22 +0100] "GET / HTTP/1.1" '
+            '200 2261 "https://launchpad.net/~ubuntulite/+archive" "Mozilla"')
         downloads, parsed_bytes, ignored = parse_file(
             fd, start_position=0, logger=self.logger,
             get_download_key=get_library_file_id)
