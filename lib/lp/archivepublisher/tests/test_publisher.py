@@ -482,7 +482,7 @@ class ByHashHasContents(Matcher):
         mismatch = DirContains(self.expected_hashes.keys()).match(by_hash_path)
         if mismatch is not None:
             return mismatch
-        best_hashname, best_hashattr = self.expected_hashes.items()[-1]
+        best_hashname, best_hashattr = list(self.expected_hashes.items())[-1]
         for hashname, hashattr in self.expected_hashes.items():
             digests = {
                 getattr(hashlib, hashattr)(content).hexdigest(): content

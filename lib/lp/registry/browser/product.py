@@ -2521,7 +2521,7 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
                 [self.source_package_name])
             if len(release_list) != 0:
                 self.widgets['licenses'].source_package_release = (
-                    release_list.items()[0][1])
+                    list(release_list.items())[0][1])
 
     @property
     def source_package_name(self):
