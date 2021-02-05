@@ -33,8 +33,8 @@ But text containing markup is CGI-escaped:
     >>> response = new_response()
     >>> response.addNotification(u'<br/>dirty')
     >>> for notification in response.notifications:
-    ...     notification.message
-    u'&lt;br/&gt;dirty'
+    ...     print(notification.message)
+    &lt;br/&gt;dirty
 
 
 If the object passed to addNotification() publishes the
@@ -47,14 +47,14 @@ appropriate sections escaped and unescaped.
     >>> structured_text = structured(msg, escaped=u'<br/>foo')
     >>> IStructuredString.providedBy(structured_text)
     True
-    >>> structured_text.escapedtext
-    u'<b>&lt;br/&gt;foo</b>'
+    >>> print(structured_text.escapedtext)
+    <b>&lt;br/&gt;foo</b>
 
     >>> response = new_response()
     >>> response.addNotification(structured_text)
     >>> for notification in response.notifications:
-    ...     notification.message
-    u'<b>&lt;br/&gt;foo</b>'
+    ...     print(notification.message)
+    <b>&lt;br/&gt;foo</b>
 
 Passing an object to addNotification() that is an instance of
 zope.i18n.Message will be escaped in the same
@@ -65,8 +65,8 @@ manner as raw text.
     >>> response = new_response()
     >>> response.addNotification(msgtxt)
     >>> for notification in response.notifications:
-    ...     notification.message
-    u'&lt;br/&gt;foo'
+    ...     print(notification.message)
+    &lt;br/&gt;foo
 
 To pass internationalized text that contains markup, one may call
 structured() directly with an internationalized object.  structured()
@@ -77,11 +77,11 @@ may then be passed to addNotification().
     >>> msgid   = _(u'<good/>%(evil)s')
     >>> escapee = '<evil/>'
     >>> text    = structured(msgid, evil=escapee)
-    >>> text.escapedtext
-    u'<good/>&lt;evil/&gt;'
+    >>> print(text.escapedtext)
+    <good/>&lt;evil/&gt;
 
     >>> response = new_response()
     >>> response.addNotification(text)
     >>> for notification in response.notifications:
-    ...     notification.message
-    u'<good/>&lt;evil/&gt;'
+    ...     print(notification.message)
+    <good/>&lt;evil/&gt;

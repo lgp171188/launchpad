@@ -20,8 +20,8 @@ OpenPGP Signature Verification
     True
 
     >>> login('test@canonical.com')
-    >>> bag.user.name
-    u'name12'
+    >>> print(bag.user.name)
+    name12
 
     >>> from zope.component import getUtility
     >>> from lp.services.gpg.interfaces import IGPGHandler

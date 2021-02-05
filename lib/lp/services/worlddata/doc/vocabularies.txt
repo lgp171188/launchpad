@@ -131,8 +131,10 @@ excluded from the vocabulary.
     >>> len(hidden_languages)
     89
 
-    >>> [lang.displayname for lang in difference if lang.visible]
-    [u'English (en)']
+    >>> for lang in difference:
+    ...     if lang.visible:
+    ...         print(lang.displayname)
+    English (en)
 
 The vocabulary will raise a LookupError if asked to return English.
 

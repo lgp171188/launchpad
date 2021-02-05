@@ -526,8 +526,8 @@ The advantage of the IBrowserFormNG API is that it offers methods that
 checks the number of values you are expecting. The getOne() method
 should be used when you expect only one value for the field.
 
-    >>> request.form_ng.getOne('a_field')
-    u'a_value'
+    >>> print(request.form_ng.getOne('a_field'))
+    a_value
 
 UnexpectedFormData is raised if more than one value was submitted for
 the field:
@@ -546,20 +546,24 @@ None is returned if the field wasn't submitted:
 You can provide a default value that is returned if the field wasn't
 submitted:
 
-    >>> request.form_ng.getOne('another_field', u'default')
-    u'default'
+    >>> print(request.form_ng.getOne('another_field', u'default'))
+    default
 
 The getAll() method should be used when you are expecting a list of
 values.
 
-    >>> request.form_ng.getAll('items_field')
-    [u'1', u'2', u'3']
+    >>> for item in request.form_ng.getAll('items_field'):
+    ...     print(item)
+    1
+    2
+    3
 
 If only one value was submitted, it will still be returned as part of
 a list:
 
-    >>> request.form_ng.getAll('a_field')
-    [u'a_value']
+    >>> for item in request.form_ng.getAll('a_field'):
+    ...     print(item)
+    a_value
 
 An empty list is returned when no value was submitted for the field:
 
@@ -569,8 +573,9 @@ An empty list is returned when no value was submitted for the field:
 That method also accepts a default value that is to be returned when
 no value was submitted with the field.
 
-    >>> request.form_ng.getAll('another_field', [u'default'])
-    [u'default']
+    >>> for item in request.form_ng.getAll('another_field', [u'default']):
+    ...     print(item)
+    default
 
 All the submitted field names can be iterated over:
 
@@ -666,8 +671,9 @@ current thread.
     False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
-    >>> publication.callObject(request, TestView(TestContext(), request))
-    u'Result'
+    >>> print(publication.callObject(
+    ...     request, TestView(TestContext(), request)))
+    Result
     >>> publication.afterCall(request, None)
     >>> 'launchpad.publicationduration' in request._orig_env
     True
@@ -732,8 +738,9 @@ completed), we'll have the duration for the traversal and the duration for
 the publication, up to the point where it was forcefully stopped.
 
     >>> publication.afterTraversal(request, None)
-    >>> publication.callObject(request, TestView(TestContext(), request))
-    u'Result'
+    >>> print(publication.callObject(
+    ...     request, TestView(TestContext(), request)))
+    Result
     >>> set_request_started()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
@@ -1149,8 +1156,8 @@ token.
     Guilherme Salgado
     >>> principal.access_level
     <DBItem AccessLevel.WRITE_PUBLIC...
-    >>> principal.scope_url
-    u'/firefox'
+    >>> print(principal.scope_url)
+    /firefox
 
 If the token is expired or doesn't exist, an Unauthorized exception is
 raised, though.
