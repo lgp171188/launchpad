@@ -898,11 +898,11 @@ class IGitRepositoryEdit(IWebhookTarget):
 
     def setRepackData(loose_object_count, pack_count):
         """Sets the repack parameters received from Turnip.
+
         :param loose_object_count: The number of loose objects that
             this repository currently has.
         :param pack_count: The number of packs that
             this repository currently has.
-            be either bytes or text).
         """
 
     @operation_parameters(

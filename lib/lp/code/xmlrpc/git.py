@@ -450,11 +450,31 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("translatePath succeeded: %s", result)
         return result
 
-    def notify(self, translated_path, loose_object_count=None,
-               pack_count=None):
-        """See `IGitAPI`."""
+    @return_fault
+    def _notify(self, requester, translated_path, statistics, auth_params):
         logger = self._getLogger()
-        logger.info("Request received: notify('%s')", translated_path)
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
+        repository = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
+        if repository is None:
+            raise faults.GitRepositoryNotFound(translated_path)
+
+        if requester == LAUNCHPAD_SERVICES and "macaroon" not in auth_params:
+            # For repo creation management operations, we trust
+            # LAUNCHPAD_SERVICES, since it should be just an internal call
+            # to confirm/abort repository creation.
+            return
+
+        verified = self._verifyAuthParams(requester, repository, auth_params)
+        if verified is not None and verified.user is NO_USER:
+            # For internal-services authentication, we check if its using a
+            # suitable macaroon that specifically grants access to this
+            # repository.  This is only permitted for macaroons not bound to
+            # a user.
+            if not _can_internal_issuer_write(verified):
+                raise faults.Unauthorized()
+
         repository = removeSecurityProxy(
             getUtility(IGitLookup).getByHostingPath(translated_path))
         if repository is None:
@@ -462,11 +482,44 @@ class GitAPI(LaunchpadXMLRPCView):
                 "No repository found for '%s'." % translated_path)
             logger.error("notify failed: %r", fault)
             return fault
-        if loose_object_count or pack_count:
-            repository.setRepackData(loose_object_count, pack_count)
+        if statistics:
+            if (statistics.get('loose_object_count')
+                    or statistics.get('pack_count')):
+                repository.setRepackData(
+                    statistics.get('loose_object_count'),
+                    statistics.get('pack_count'))
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
-        logger.info("notify succeeded")
+
+    def notify(self, translated_path, auth_params=None, statistics=None):
+        """See `IGitAPI`."""
+        if not auth_params:
+            logger = self._getLogger()
+            logger.info("Request received: notify('%s')", translated_path)
+            repository = getUtility(
+                IGitLookup).getByHostingPath(translated_path)
+            if repository is None:
+                fault = faults.NotFound(
+                    "No repository found for '%s'." % translated_path)
+                logger.error("notify failed: %r", fault)
+                return fault
+            getUtility(IGitRefScanJobSource).create(
+                removeSecurityProxy(repository))
+            logger.info("notify succeeded")
+        else:
+            logger = self._getLogger(auth_params.get("request-id"))
+            requester_id = _get_requester_id(auth_params)
+            logger.info(
+                "Request received: notify('%s') for %s",
+                translated_path, requester_id)
+            result = run_with_login(
+                requester_id, self._notify,
+                translated_path, statistics, auth_params)
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("notify failed: %r", result)
+            else:
+                logger.info("notify succeeded: %s" % result)
+            return result
 
     @return_fault
     def _getMergeProposalURL(self, requester, translated_path, branch,
