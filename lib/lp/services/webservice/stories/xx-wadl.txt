@@ -27,7 +27,7 @@ does not have any WADL files written to disk.
 Let's write some fake WADL to disk.
 
     >>> fd = open(wadl_filename, "w")
-    >>> fd.write("Some fake WADL.")
+    >>> _ = fd.write("Some fake WADL.")
     >>> fd.close()
 
 When we request the WADL for version "devel", the fake WADL is loaded

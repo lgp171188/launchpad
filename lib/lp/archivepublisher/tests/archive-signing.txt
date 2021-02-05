@@ -398,7 +398,7 @@ file contents, and a clearsigned InRelease file.
     >>> release_path = os.path.join(suite_path, 'Release')
 
     >>> release_file = open(release_path, 'w')
-    >>> release_file.write('This is a fake release file.')
+    >>> _ = release_file.write('This is a fake release file.')
     >>> release_file.close()
 
     >>> _ = archive_signing_key.signRepository(test_suite)
