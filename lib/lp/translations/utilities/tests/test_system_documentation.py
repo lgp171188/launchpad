@@ -13,6 +13,7 @@ import unittest
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    setGlobs,
     setUp,
     tearDown,
     )
@@ -24,7 +25,7 @@ here = os.path.dirname(os.path.realpath(__file__))
 # Files that have special needs can construct their own suite
 special = {
     'gettext_po_parser.txt': LayeredDocFileSuite(
-        '../doc/gettext_po_parser.txt', stdout_logging=False)
+        '../doc/gettext_po_parser.txt', setUp=setGlobs, stdout_logging=False)
     }
 
 

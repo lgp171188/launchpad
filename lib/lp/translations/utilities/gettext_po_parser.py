@@ -725,15 +725,18 @@ class POParser(object):
     def _parseQuotedString(self, string):
         r"""Parse a quoted string, interpreting escape sequences.
 
+          >>> from lp.services.helpers import backslashreplace
+
           >>> parser = POParser()
-          >>> parser._parseQuotedString(u'\"abc\"')
-          u'abc'
-          >>> parser._parseQuotedString(u'\"abc\\ndef\"')
-          u'abc\ndef'
-          >>> parser._parseQuotedString(u'\"ab\x63\"')
-          u'abc'
-          >>> parser._parseQuotedString(u'\"ab\143\"')
-          u'abc'
+          >>> print(parser._parseQuotedString(u'\"abc\"'))
+          abc
+          >>> print(parser._parseQuotedString(u'\"abc\\ndef\"'))
+          abc
+          def
+          >>> print(parser._parseQuotedString(u'\"ab\x63\"'))
+          abc
+          >>> print(parser._parseQuotedString(u'\"ab\143\"'))
+          abc
 
           After the string has been converted to unicode, the backslash
           escaped sequences are still in the encoding that the charset header
@@ -757,8 +760,8 @@ class POParser(object):
           ...     charset = 'UTF-8'
           >>> parser._translation_file = TranslationFileData()
           >>> parser._translation_file.header = FakeHeader()
-          >>> parser._parseQuotedString(utf8_string)
-          u'view \xab${version_title}\xbb'
+          >>> print(backslashreplace(parser._parseQuotedString(utf8_string)))
+          view \xab${version_title}\xbb
 
           Let's see that we raise a TranslationFormatInvalidInputError
           exception when we have an escaped char that is not valid in the

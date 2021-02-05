@@ -12,8 +12,9 @@ Here the person whose activity we're going to look at is Carlos.
 The user can see in the page navigation that Carlos has so far worked
 on six files, five of which are shown on this page.
 
-    >>> extract_text(find_tag_by_id(anon_browser.contents, 'top-navigation'))
-    u'1...5...of...6...results...'
+    >>> print(extract_text(find_tag_by_id(
+    ...     anon_browser.contents, 'top-navigation')))
+    1...5...of...6...results...
 
 The user sees a table with four columns with headings, with five POFiles
 listed which Carlos has contributed to.

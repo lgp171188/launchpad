@@ -214,8 +214,9 @@ Non-KDE style messages get their translations in the usual way.
     >>> current = potmsgset.getCurrentTranslation(
     ...     firefox_potemplate, firefox_serbian_pofile.language,
     ...     firefox_potemplate.translation_side)
-    >>> print current.translations
-    [u'non-plural forms message']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    non-plural forms message
 
 While KDE style plural form message is correctly split into three separate
 plural messages:
@@ -225,8 +226,11 @@ plural messages:
     >>> current = potmsgset.getCurrentTranslation(
     ...     firefox_potemplate, firefox_serbian_pofile.language,
     ...     firefox_potemplate.translation_side)
-    >>> print current.translations
-    [u'%d translation', u'%d translationes', u'%d translations']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    %d translation
+    %d translationes
+    %d translations
 
 === Export ===
 
@@ -473,8 +477,9 @@ We can get the first translation by specifying 'Context' for the context:
     >>> current = potmsgset.getCurrentTranslation(
     ...     firefox_potemplate, firefox_serbian_pofile.language,
     ...     firefox_potemplate.translation_side)
-    >>> print current.translations
-    [u'First translation']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    First translation
 
 And if we ask for a message with context 'Different Context', we get the
 other message and its translation:
@@ -484,8 +489,9 @@ other message and its translation:
     >>> current = potmsgset.getCurrentTranslation(
     ...     firefox_potemplate, firefox_serbian_pofile.language,
     ...     firefox_potemplate.translation_side)
-    >>> print current.translations
-    [u'Second translation']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    Second translation
 
 === Export ===
 
