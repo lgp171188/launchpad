@@ -737,4 +737,4 @@ class TestAuthenticationRequirements(TestCaseWithFactory):
         self.assertEmailQueueLength(0)
         self.assertEqual(
             'I really hope this bug gets fixed.',
-            bug.messages[0].text_contents)
+            bug.bug_messages.last().message.text_contents)
