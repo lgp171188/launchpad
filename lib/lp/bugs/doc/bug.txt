@@ -58,9 +58,10 @@ result set below has only one element.
     >>> print(result_set.count())
     2
 
-    >>> print([(bug.id, bug.title[:40]) for bug in result_set])
-    [(1, u'Firefox does not support SVG'),
-     (6, u'Firefox crashes when Save As dialog for ')]
+    >>> for bug in result_set:
+    ...     print('%d: %s' % (bug.id, bug.title[:40]))
+    1: Firefox does not support SVG
+    6: Firefox crashes when Save As dialog for 
 
 If no bug numbers are specified an empty result set is returned.
 
@@ -244,8 +245,8 @@ So, remembering that we're still logged in as Sample Person (ID 12 in
 the Person table), and that Sample Person is a direct subscriber to the
 firefox_crashes bug, we can still access properties of this bug:
 
-    >>> firefox_crashes.title
-    u'Firefox crashes when Save As dialog for a nonexistent window is closed'
+    >>> print(firefox_crashes.title)
+    Firefox crashes when Save As dialog for a nonexistent window is closed
 
 Note that a search will return all public bugs, omitting bug 14 which is
 private:
@@ -274,11 +275,11 @@ Likewise Foo Bar, an admin, can access the bug.
 
     >>> old_title = firefox_crashes.title
     >>> firefox_crashes.title = "new title"
-    >>> firefox_crashes.title
-    u'new title'
+    >>> print(firefox_crashes.title)
+    new title
     >>> firefox_crashes.title = old_title
-    >>> firefox_crashes.title
-    u'Firefox crashes when Save As dialog for a nonexistent window is closed'
+    >>> print(firefox_crashes.title)
+    Firefox crashes when Save As dialog for a nonexistent window is closed
 
 Bug 14, which is private, is returned by the search results for an
 admin as well:
@@ -314,11 +315,11 @@ Jeff Waugh, a member of the Ubuntu Team, is able to access this bug:
 
     >>> old_title = reflow_problems_bug.title
     >>> reflow_problems_bug.title = "new title"
-    >>> reflow_problems_bug.title
-    u'new title'
+    >>> print(reflow_problems_bug.title)
+    new title
     >>> reflow_problems_bug.title = old_title
-    >>> reflow_problems_bug.title
-    u'Reflow problems with complex page layouts'
+    >>> print(reflow_problems_bug.title)
+    Reflow problems with complex page layouts
 
 Bug #4 is visible to him in searches. Note that bugs #6 and #14 are
 hidden from him.
@@ -410,8 +411,9 @@ When a private bug is filed:
 
 *only* the submitter is directly subscribed:
 
-    >>> [subscriber.name for subscriber in private_bug.getDirectSubscribers()]
-    [u'name16']
+    >>> for subscriber in private_bug.getDirectSubscribers():
+    ...     print(subscriber.name)
+    name16
 
 It's up to the submitter to subscribe the maintainer, if they so choose.
 
@@ -432,8 +434,9 @@ sourcepackage. E.g.
     ...     target=ubuntu.getSourcePackage(evolution))
     >>> added_bug = getUtility(IBugSet).createBug(params)
     >>> private_bug = bugset.get(added_bug.id)
-    >>> [subscriber.name for subscriber in private_bug.getDirectSubscribers()]
-    [u'name16']
+    >>> for subscriber in private_bug.getDirectSubscribers():
+    ...     print(subscriber.name)
+    name16
 
 
 Prevent reporter from being subscribed to filed bugs
@@ -864,30 +867,30 @@ use getBugTask() to get it.
 
     >>> tomcat = getUtility(IProductSet).getByName('tomcat')
     >>> tomcat_task = bug_two.getBugTask(tomcat)
-    >>> tomcat_task.target.name
-    u'tomcat'
+    >>> print(tomcat_task.target.name)
+    tomcat
 
     >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     >>> ubuntu_task = bug_two.getBugTask(ubuntu)
-    >>> ubuntu_task.target.name
-    u'ubuntu'
+    >>> print(ubuntu_task.target.name)
+    ubuntu
 
     >>> ubuntu_hoary = ubuntu.getSeries('hoary')
     >>> ubuntu_hoary_task = bug_two.getBugTask(ubuntu_hoary)
-    >>> ubuntu_hoary_task.target.name
-    u'hoary'
+    >>> print(ubuntu_hoary_task.target.name)
+    hoary
 
     >>> debian = getUtility(IDistributionSet).getByName('debian')
     >>> mozilla_in_debian = debian.getSourcePackage('mozilla-firefox')
     >>> mozilla_in_debian_task = bug_two.getBugTask(mozilla_in_debian)
-    >>> mozilla_in_debian_task.target.displayname
-    u'mozilla-firefox in Debian'
+    >>> print(mozilla_in_debian_task.target.displayname)
+    mozilla-firefox in Debian
 
     >>> debian_woody = debian.getSeries('woody')
     >>> mozilla_in_woody = debian_woody.getSourcePackage('mozilla-firefox')
     >>> mozilla_in_woody_task = bug_two.getBugTask(mozilla_in_woody)
-    >>> mozilla_in_woody_task.target.displayname
-    u'mozilla-firefox in Debian Woody'
+    >>> print(mozilla_in_woody_task.target.displayname)
+    mozilla-firefox in Debian Woody
 
 If the bug isn't targeted to the target, None is returned.
 
@@ -982,12 +985,13 @@ show messages in the bugtask index template in one shot.
     >>> queries = len(CursorWrapper.last_executed_sql)
 
     >>> chunks = bug_two.getMessagesForView(None)
-    >>> for _, _1, chunk in sorted(chunks, key=lambda x:x[2].id):
-    ...    (chunk.id, chunk.message.id, chunk.message.owner.id,
-    ...     chunk.content[:30])
-    (4, 1, 16, u'Problem exists between chair a')
-    (7, 5, 12, u'This would be a real killer fe')
-    (8, 6, 12, u'Oddly enough the bug system se')
+    >>> for _, _, chunk in sorted(chunks, key=lambda x:x[2].id):
+    ...    print('%d %d %d: %s' % (
+    ...        chunk.id, chunk.message.id, chunk.message.owner.id,
+    ...        chunk.content[:30]))
+    4 1 16: Problem exists between chair a
+    7 5 12: This would be a real killer fe
+    8 6 12: Oddly enough the bug system se
 
 It's done in a way that we only issue two queries to fetch all this
 information, too:

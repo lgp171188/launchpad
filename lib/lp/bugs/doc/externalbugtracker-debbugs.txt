@@ -662,10 +662,12 @@ tracker.
 
     >>> transaction.commit()
     >>> debbugs = getUtility(ILaunchpadCelebrities).debbugs
-    >>> [bug.title for bug in debbugs.getBugsWatching('237001')]
-    [u'evolution mail crashes on opening an email with a TIFF attachment']
-    >>> [bug.title for bug in debbugs.getBugsWatching('322535')]
-    [u'evolution: Multiple format string vulnerabilities in Evolution']
+    >>> for bug in debbugs.getBugsWatching('237001'):
+    ...     print(bug.title)
+    evolution mail crashes on opening an email with a TIFF attachment
+    >>> for bug in debbugs.getBugsWatching('322535'):
+    ...     print(bug.title)
+    evolution: Multiple format string vulnerabilities in Evolution
 
 In addition to simply importing the bugs and linking it to the debbugs
 bug, it will also create an Ubuntu task for the imported bugs. This will

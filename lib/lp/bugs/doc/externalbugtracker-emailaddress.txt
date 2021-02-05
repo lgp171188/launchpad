@@ -62,8 +62,8 @@ the local part of an email address (e.g. <local_name>@foobar.com).
     >>> verifyObject(IBugTracker, other_tracker)
     True
 
-    >>> other_tracker.name
-    u'auto-another.bugtracker'
+    >>> print(other_tracker.name)
+    auto-another.bugtracker
 
 
 == Adding a BugWatch to an upstream email address ==
@@ -83,8 +83,12 @@ because BugWatch.remotebug is a NOT NULL field).
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> bug_watch = example_bug.addWatch(bugtracker=email_tracker,
     ...     remotebug='', owner=getUtility(ILaunchpadCelebrities).janitor)
-    >>> bug_watch.bugtracker.name, bug_watch.remotebug, bug_watch.bug.id
-    (u'email-tracker', u'', 15)
+    >>> print(bug_watch.bugtracker.name)
+    email-tracker
+    >>> print(bug_watch.remotebug)
+    <BLANKLINE>
+    >>> bug_watch.bug.id
+    15
 
 By contrast, if the message ID is known it is recorded in the remotebug
 field.
@@ -103,8 +107,13 @@ an email address bug tracker Launchpad can never know a remote bug ID,
 calling getBugsWatching() on an email address bug tracker will always
 return an empty list.
 
-    >>> sorted(watch.remotebug for watch in email_tracker.latestwatches)
-    [u'', u'...launchpad@...']
+    >>> from operator import attrgetter
+
+    >>> for watch in sorted(
+    ...         email_tracker.latestwatches, key=attrgetter('remotebug')):
+    ...     print(watch.remotebug)
+    <BLANKLINE>
+    ...launchpad@...
 
     >>> email_tracker.getBugsWatching('')
     []

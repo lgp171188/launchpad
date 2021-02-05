@@ -773,10 +773,10 @@ information to be fetched from the external Bugzilla instance.
     ...     'RESOLVED', 'FIXED', 'MEDIUM', 'NORMAL')}
     >>> with external_bugzilla.responses():
     ...     external_bugzilla.initializeRemoteBugDB(['84'])
-    >>> external_bugzilla.remote_bug_product['84']
-    u'product-84'
-    >>> external_bugzilla.getRemoteProduct('84')
-    u'product-84'
+    >>> print(external_bugzilla.remote_bug_product['84'])
+    product-84
+    >>> print(external_bugzilla.getRemoteProduct('84'))
+    product-84
 
 Sometimes we might not get the product in the bug listing. In these
 cases getRemoteProduct() returns None.

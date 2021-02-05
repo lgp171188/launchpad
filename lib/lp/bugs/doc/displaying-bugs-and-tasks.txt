@@ -124,18 +124,18 @@ Let's see some examples of how this works:
   >>> test_task.transitionToAssignee(foobar)
   >>> test_task.transitionToStatus(
   ...   BugTaskStatus.NEW, getUtility(ILaunchBag).user)
-  >>> render_bugtask_status(test_task)
-  u'New, assigned to ...Foo Bar...'
+  >>> print(render_bugtask_status(test_task))
+  New, assigned to ...Foo Bar...
 
   >>> test_task.transitionToStatus(
   ...   BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
-  >>> render_bugtask_status(test_task)
-  u'Confirmed, assigned to ...Foo Bar...'
+  >>> print(render_bugtask_status(test_task))
+  Confirmed, assigned to ...Foo Bar...
 
   >>> test_task.transitionToStatus(
   ...   BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
-  >>> render_bugtask_status(test_task)
-  u'Invalid by ...Foo Bar...'
+  >>> print(render_bugtask_status(test_task))
+  Invalid by ...Foo Bar...
 
   >>> test_task.transitionToAssignee(None)
   >>> render_bugtask_status(test_task)
@@ -147,8 +147,8 @@ Let's see some examples of how this works:
   'Fix released (unassigned)'
 
   >>> test_task.transitionToAssignee(foobar)
-  >>> render_bugtask_status(test_task)
-  u'Fix released, assigned to ...Foo Bar...'
+  >>> print(render_bugtask_status(test_task))
+  Fix released, assigned to ...Foo Bar...
 
 Lastly, some cleanup:
 

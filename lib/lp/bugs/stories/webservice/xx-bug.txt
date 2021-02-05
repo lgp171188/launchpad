@@ -65,8 +65,8 @@ Bugs have relationships to other bugs, like "duplicate_of".
 
     >>> bug_six_url = duplicates_of_five[0]['self_link']
     >>> bug_six = webservice.get(bug_six_url).jsonBody()
-    >>> bug_six['duplicate_of_link']
-    u'http://.../bugs/5'
+    >>> print(bug_six['duplicate_of_link'])
+    http://.../bugs/5
 
 To create a new bug we use the createBug operation. This operation
 takes a target parameter which must be a either a Product, a
@@ -246,8 +246,8 @@ URLs are based on their position with respect to the
 bug. /firefox/+bug/5/comments/0 is the first message for bug 5, and it's
 different from /firefox/+bug/1/comments/0.
 
-    >>> messages[0]['self_link']
-    u'http://.../firefox/+bug/5/comments/0'
+    >>> print(messages[0]['self_link'])
+    http://.../firefox/+bug/5/comments/0
 
     >>> message = webservice.get(messages[0]['self_link']).jsonBody()
     >>> message == messages[0]
@@ -367,16 +367,16 @@ It's possible to change the task's assignee.
 The task's importance can be modified directly.
 
     >>> body = webservice.get(bugtask_path).jsonBody()
-    >>> body['importance']
-    u'Low'
+    >>> print(body['importance'])
+    Low
 
     >>> patch = {u'importance': u'High'}
     >>> print(webservice.patch(bugtask_path, 'application/json', dumps(patch)))
     HTTP/1.1 209 Content Returned...
 
     >>> body = webservice.get(bugtask_path).jsonBody()
-    >>> body['importance']
-    u'High'
+    >>> print(body['importance'])
+    High
 
 Only bug supervisors or people who can otherwise edit the bugtask's
 pillar are authorised to edit the importance.
@@ -386,8 +386,8 @@ pillar are authorised to edit the importance.
     HTTP/1.1 401 Unauthorized...
 
     >>> body = webservice.get(bugtask_path).jsonBody()
-    >>> body['importance']
-    u'High'
+    >>> print(body['importance'])
+    High
 
 The task's status can also be modified directly.
 
@@ -1094,16 +1094,16 @@ The collection of bug watches is not exposed as a resource:
 
 We can modify the remote bug.
 
-    >>> bug_watch['remote_bug']
-    u'2000'
+    >>> print(bug_watch['remote_bug'])
+    2000
 
     >>> patch = {u'remote_bug': u'1234'}
     >>> response = webservice.patch(
     ...     bug_watch_2000['self_link'], 'application/json', dumps(patch))
 
     >>> bug_watch = webservice.get(bug_watch_2000['self_link']).jsonBody()
-    >>> bug_watch['remote_bug']
-    u'1234'
+    >>> print(bug_watch['remote_bug'])
+    1234
 
 But we can't change other things, like the URL.
 
