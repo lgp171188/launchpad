@@ -36,6 +36,7 @@ class IAccessArtifact(Interface):
     bug_id = Attribute("bug_id")
     branch_id = Attribute("branch_id")
     gitrepository_id = Attribute("gitrepository_id")
+    snap_id = Attribute("snap_id")
     specification_id = Attribute("specification_id")
 
 

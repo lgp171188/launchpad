@@ -428,7 +428,7 @@ class PillarPersonSharingView(LaunchpadView):
     def _loadSharedArtifacts(self):
         # As a concrete can by linked via more than one policy, we use sets to
         # filter out dupes.
-        (self.bugtasks, self.branches, self.gitrepositories,
+        (self.bugtasks, self.branches, self.gitrepositories, self.snaps,
          self.specifications) = (
             self.sharing_service.getSharedArtifacts(
                 self.pillar, self.person, self.user))
