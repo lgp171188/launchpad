@@ -84,13 +84,16 @@ POTMsgSet and TranslationMessage object, are shared between the two series.
 All current templates were copied from the parent series but the deactivated
 template template3 was not copied.
 
+    >>> from operator import attrgetter
     >>> from lp.translations.interfaces.potemplate import IPOTemplateSet
     >>> carty_templates = getUtility(
     ...     IPOTemplateSet).getSubset(distroseries=carty)
     >>> len(carty_templates)
     2
-    >>> print(sorted([template.name for template in carty_templates]))
-    [u'template1', u'template2']
+    >>> for template in sorted(carty_templates, key=attrgetter('name')):
+    ...     print(template.name)
+    template1
+    template2
     >>> carty_template1 = carty_templates.getPOTemplateByName('template1')
     >>> carty_template2 = carty_templates.getPOTemplateByName('template2')
     >>> carty_template1 == template1
@@ -102,10 +105,11 @@ All POFiles for the copied POTemplates have also been copied.
 
     >>> all_pofiles = sum(
     ...     [list(template.pofiles) for template in carty_templates], [])
-    >>> print(sorted([pofile.path for pofile in all_pofiles]))
-    [u'template1-domain-eo.po',
-    u'template2-domain-de.po',
-    u'template2-domain-eo.po']
+    >>> for pofile in sorted(all_pofiles, key=attrgetter('path')):
+    ...     print(pofile.path)
+    template1-domain-eo.po
+    template2-domain-de.po
+    template2-domain-eo.po
 
 All POTMsgSets from  the parent series that were not obsolete are now found
 in the new series.
@@ -229,8 +233,10 @@ templates of the parent series.
     >>> dartempls = getUtility(IPOTemplateSet).getSubset(distroseries=darty)
     >>> len(dartempls)
     2
-    >>> print(sorted([template.name for template in dartempls]))
-    [u'template1', u'template2']
+    >>> for template in sorted(dartempls, key=attrgetter('name')):
+    ...     print(template.name)
+    template1
+    template2
 
 The script defaults to copying from the given series' previous_series,
 but that can be overridden.
@@ -307,6 +313,6 @@ for package2, and template3 is inactive, so they're both skipped.
     0
     >>> transaction.abort()
     >>> lumpy = DistroSeries.get(lumpy_id)
-    >>> [pot.name for pot in
-    ...  getUtility(IPOTemplateSet).getSubset(distroseries=lumpy)]
-    [u'template1']
+    >>> for pot in getUtility(IPOTemplateSet).getSubset(distroseries=lumpy):
+    ...     print(pot.name)
+    template1

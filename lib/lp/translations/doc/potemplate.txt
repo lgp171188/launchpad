@@ -222,8 +222,8 @@ By default, we should get a path for this pofile, that has some
 information about its potemplate's filename so we don't have conflicts
 with other pofiles.
 
-    >>> pofile.path
-    u'po/evolution-2.2-pt.po'
+    >>> print(pofile.path)
+    po/evolution-2.2-pt.po
 
 Lets try to access untranslated entries here.
 
