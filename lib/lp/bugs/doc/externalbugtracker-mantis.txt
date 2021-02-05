@@ -105,8 +105,9 @@ Let's add a few more watches:
     ...     (int(bug_watch.remotebug), bug_watch.remotestatus)
     ...     for bug_watch in example_bug_tracker.watches)
 
-    >>> expected_remote_statuses
-    {1550: u'assigned: open'}
+    >>> for remotebug, remotestatus in expected_remote_statuses.items():
+    ...     print('%d: %s' % (remotebug, remotestatus))
+    1550: assigned: open
 
     >>> remote_bugs = [
     ...     (1550, dict(status='assigned', resolution='open')),

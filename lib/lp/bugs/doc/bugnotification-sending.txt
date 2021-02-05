@@ -662,10 +662,11 @@ X-Launchpad-Bug headers were added:
     >>> email_notifications = get_email_notifications(notifications)
     >>> for bug_notifications, omitted, messages in email_notifications:
     ...     for message in messages:
-    ...         sorted(message.get_all('X-Launchpad-Bug'))
-    [u'distribution=debian; distroseries=sarge;... milestone=3.1;...',
-     u'distribution=debian; distroseries=woody;...',
-     u'distribution=debian; sourcepackage=mozilla-firefox; component=...']
+    ...         for line in sorted(message.get_all('X-Launchpad-Bug')):
+    ...             print(line)
+    distribution=debian; distroseries=sarge;... milestone=3.1;...
+    distribution=debian; distroseries=woody;...
+    distribution=debian; sourcepackage=mozilla-firefox; component=...
 
 The milestone field in X-Launchpad-Bug won't be filled where no milestone is
 specified:
@@ -707,12 +708,14 @@ email messages, and a third that combines the first two.
 If a bug is tagged, those tags will be included in the message in the
 X-Launchpad-Bug-Tags header.
 
-    >>> bug_three.tags
-    [u'layout-test']
+    >>> for tag in bug_three.tags:
+    ...     print(tag)
+    layout-test
 
     >>> for message in trigger_and_get_email_messages(bug_three):
-    ...     message.get_all('X-Launchpad-Bug-Tags')
-    [u'layout-test']
+    ...     for line in message.get_all('X-Launchpad-Bug-Tags'):
+    ...         print(line)
+    layout-test
 
 If we add a tag to bug three that will also be included in the header.
 The tags will be space-separated to allow the list to be wrapped if it
@@ -723,8 +726,9 @@ gets over-long.
 
     >>> bug_three = getUtility(IBugSet).get(3)
     >>> for message in trigger_and_get_email_messages(bug_three):
-    ...     message.get_all('X-Launchpad-Bug-Tags')
-    [u'another-tag layout-test yet-another']
+    ...     for line in message.get_all('X-Launchpad-Bug-Tags'):
+    ...         print(line)
+    another-tag layout-test yet-another
 
 If we remove the tags from the bug, the X-Launchpad-Bug-Tags header
 won't be included.

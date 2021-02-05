@@ -58,8 +58,8 @@ They are notified that David Allouche has been subscribed.
 
     >>> for tag in find_tags_by_class(user_browser.contents,
     ...     'informational message'):
-    ...     extract_text(tag)
-    u'David Allouche has been subscribed to this bug.'
+    ...     print(extract_text(tag))
+    David Allouche has been subscribed to this bug.
 
 The subscribers portlet now contains the new subscriber's name.
 
@@ -102,8 +102,8 @@ He is notified that Landscape developers team has been subscribed.
 
     >>> for tag in find_tags_by_class(user_browser.contents,
     ...     'informational message'):
-    ...     extract_text(tag)
-    u'Landscape Developers team has been subscribed to this bug.'
+    ...     print(extract_text(tag))
+    Landscape Developers team has been subscribed to this bug.
 
 The subscribers portlet displays the new subscribed team.
 

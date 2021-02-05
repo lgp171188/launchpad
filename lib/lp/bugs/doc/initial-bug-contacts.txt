@@ -42,8 +42,9 @@ Let's login then to add a subscription:
     >>> debian_firefox.addBugSubscription(sample_person, sample_person)
     <...StructuralSubscription object at ...>
 
-    >>> [pbc.subscriber.name for pbc in debian_firefox.bug_subscriptions]
-    [u'name12']
+    >>> for pbc in debian_firefox.bug_subscriptions:
+    ...     print(pbc.subscriber.name)
+    name12
 
 Trying to add a subscription to a package when that person or team is
 already subscribe to that package will return the existing subscription.
@@ -57,9 +58,14 @@ Let's add an ITeam as one of the subscribers:
     >>> debian_firefox.addBugSubscription(ubuntu_team, ubuntu_team)
     <...StructuralSubscription object at ...>
 
-    >>> sorted([
-    ...     sub.subscriber.name for sub in debian_firefox.bug_subscriptions])
-    [u'name12', u'ubuntu-team']
+    >>> from operator import attrgetter
+
+    >>> for sub in sorted(
+    ...         debian_firefox.bug_subscriptions,
+    ...         key=attrgetter('subscriber.name')):
+    ...     print(sub.subscriber.name)
+    name12
+    ubuntu-team
 
 To remove a subscription, use
 IStructuralSubscriptionTarget.removeBugSubscription:
@@ -146,9 +152,14 @@ subscriber to the new package is already subscribed to the bug:
 
 With the source package changed, we can see that daf is now subscribed:
 
-    >>> subscriber_names(bug_one_in_ubuntu_firefox.bug)
-    [u'Dafydd Harries', u'Foo Bar', u'Mark Shuttleworth',
-     u'Sample Person', u'Steve Alexander', u'Ubuntu Team']
+    >>> for name in subscriber_names(bug_one_in_ubuntu_firefox.bug):
+    ...     print(name)
+    Dafydd Harries
+    Foo Bar
+    Mark Shuttleworth
+    Sample Person
+    Steve Alexander
+    Ubuntu Team
 
 daf is sent an email giving him complete information about the bug that
 has just been retargeted, including the title, description, status,
@@ -264,10 +275,15 @@ contact address. Let's add such a team as a subscriber.
 The Ubuntu Gnome team was subscribed to the bug:
 
     >>> stub.test_emails = []
-    >>> subscriber_names(bug_one_in_ubuntu_firefox.bug)
-    [u'Dafydd Harries', u'Foo Bar', u'Mark Shuttleworth',
-     u'Sample Person', u'Steve Alexander', u'Ubuntu Gnome Team',
-     u'Ubuntu Team']
+    >>> for name in subscriber_names(bug_one_in_ubuntu_firefox.bug):
+    ...     print(name)
+    Dafydd Harries
+    Foo Bar
+    Mark Shuttleworth
+    Sample Person
+    Steve Alexander
+    Ubuntu Gnome Team
+    Ubuntu Team
 
 
 Product Bug Supervisors and Bug Tasks
@@ -290,10 +306,11 @@ Then we'll reassign bug #2 in Ubuntu to be in Firefox:
     >>> print(bug_two_in_ubuntu.product.name)
     tomcat
 
-    >>> sorted(
-    ...        [subscription.person.displayname for subscription in
-    ...         bug_two_in_ubuntu.bug.subscriptions])
-    [u'Steve Alexander']
+    >>> for subscription in sorted(
+    ...         bug_two_in_ubuntu.bug.subscriptions,
+    ...         key=attrgetter('person.displayname')):
+    ...     print(subscription.person.displayname)
+    Steve Alexander
 
     >>> with notify_modified(bug_two_in_ubuntu, ["id", "title", "product"]):
     ...     bug_two_in_ubuntu.transitionToTarget(mozilla_firefox, daf)
@@ -320,12 +337,13 @@ will only contain those teams of which the user is an administrator.
 Sample Person is a member of four teams:
 
     >>> sample_person = view.user
-    >>> ["%s: %s" % (membership.team.displayname, membership.status.name)
-    ...     for membership in sample_person.team_memberships]
-    [u'HWDB Team: APPROVED',
-     u'Landscape Developers: ADMIN',
-     u'Launchpad Users: ADMIN',
-     u'Warty Security Team: APPROVED']
+    >>> for membership in sample_person.team_memberships:
+    ...     print('%s: %s' % (
+    ...         membership.team.displayname, membership.status.name))
+    HWDB Team: APPROVED
+    Landscape Developers: ADMIN
+    Launchpad Users: ADMIN
+    Warty Security Team: APPROVED
 
 But is only an administrator of Landscape Developers, so that is the
 only team that will be listed when the user is changing a package bug

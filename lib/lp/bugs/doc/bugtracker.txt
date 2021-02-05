@@ -115,8 +115,8 @@ bug tracker.
     ...     baseurl='http://bugs.example.com', owner=sample_person,
     ...     bugtrackertype=BugTrackerType.BUGZILLA,
     ...     title=None, summary=None, contactdetails=None, name=None)
-    >>> a_bugtracker.name
-    u'auto-bugs.example.com'
+    >>> print(a_bugtracker.name)
+    auto-bugs.example.com
 
 ensureBugTracker() also performs collision-avoidance on the names which
 it generates using make_bugtracker_name(). If another bug tracker is
@@ -128,8 +128,8 @@ collide.
     ...     baseurl='http://bugs.example.com/ni', owner=sample_person,
     ...     bugtrackertype=BugTrackerType.BUGZILLA,
     ...     title=None, summary=None, contactdetails=None, name=None)
-    >>> a_bugtracker.name
-    u'auto-bugs.example.com-1'
+    >>> print(a_bugtracker.name)
+    auto-bugs.example.com-1
 
 
 Top Bug Trackers
@@ -140,10 +140,13 @@ ordered by the number of bugs being monitored by Malone in each of
 them. Use IBugTrackerSet.getMostActiveBugTrackers to get this list.
 
     >>> top_trackers = bugtracker_set.getMostActiveBugTrackers(limit=4)
-    >>> sorted([(tracker.watches.count(), tracker.name)
-    ...         for tracker in top_trackers])
-    [(1, u'ubuntu-bugzilla'), (2, u'gnome-bugzilla'),
-     (4, u'mozilla.org'), (5, u'debbugs')]
+    >>> for tracker in sorted(
+    ...         top_trackers, key=lambda tracker: tracker.watches.count()):
+    ...     print('%d: %s' % (tracker.watches.count(), tracker.name))
+    1: ubuntu-bugzilla
+    2: gnome-bugzilla
+    4: mozilla.org
+    5: debbugs
 
 
 Getting Bug Trackers
@@ -154,16 +157,16 @@ its base URL.
 
     >>> ubuntu_bugzilla = bugtracker_set.queryByBaseURL(
     ...     u'http://bugzilla.ubuntu.com/bugs/')
-    >>> ubuntu_bugzilla.baseurl
-    u'http://bugzilla.ubuntu.com/bugs/'
+    >>> print(ubuntu_bugzilla.baseurl)
+    http://bugzilla.ubuntu.com/bugs/
 
 It's necessary to specify the exact URL, differences in the schema
 (http vs. https) and trailing slashes are accepted.
 
     >>> ubuntu_bugzilla = bugtracker_set.queryByBaseURL(
     ...     u'https://bugzilla.ubuntu.com/bugs')
-    >>> ubuntu_bugzilla.baseurl
-    u'http://bugzilla.ubuntu.com/bugs/'
+    >>> print(ubuntu_bugzilla.baseurl)
+    http://bugzilla.ubuntu.com/bugs/
 
 If no bug tracker can be found None is returned.
 
@@ -187,9 +190,10 @@ aliases.
     ...     'https://norwich.example.com/',
     ...     'http://cambridge.example.com/']
 
-    >>> mozilla_bugzilla.aliases
-    (u'http://cambridge.example.com/',
-     u'https://norwich.example.com/')
+    >>> for alias in mozilla_bugzilla.aliases:
+    ...     print(alias)
+    http://cambridge.example.com/
+    https://norwich.example.com/
 
     >>> mozilla_bugzilla.aliases = []
     >>> mozilla_bugzilla.aliases
@@ -213,12 +217,14 @@ the same effect as assigning an empty list.
     ()
 
     >>> mozilla_bugzilla.aliases = set([u'http://set.example.com/'])
-    >>> mozilla_bugzilla.aliases
-    (u'http://set.example.com/',)
+    >>> for alias in mozilla_bugzilla.aliases:
+    ...     print(alias)
+    http://set.example.com/
 
     >>> mozilla_bugzilla.aliases = (u'http://tuple.example.com/',)
-    >>> mozilla_bugzilla.aliases
-    (u'http://tuple.example.com/',)
+    >>> for alias in mozilla_bugzilla.aliases:
+    ...     print(alias)
+    http://tuple.example.com/
 
 Your ordering is not preserved; aliases are sorted using Python's
 standard unicode ordering.
@@ -226,11 +232,12 @@ standard unicode ordering.
     >>> mozilla_bugzilla.aliases = (
     ...     u'http://%s.example.com/' % domain
     ...     for domain in '111 zzz ccc ZZZ'.split())
-    >>> mozilla_bugzilla.aliases
-    (u'http://111.example.com/',
-     u'http://ZZZ.example.com/',
-     u'http://ccc.example.com/',
-     u'http://zzz.example.com/')
+    >>> for alias in mozilla_bugzilla.aliases:
+    ...     print(alias)
+    http://111.example.com/
+    http://ZZZ.example.com/
+    http://ccc.example.com/
+    http://zzz.example.com/
 
 BugTrackerAliases can also be looked up by bug tracker.
 
@@ -240,10 +247,13 @@ BugTrackerAliases can also be looked up by bug tracker.
 
 Query by bug tracker:
 
-    >>> sorted(alias.base_url for alias in
-    ...        bugtrackeralias_set.queryByBugTracker(mozilla_bugzilla))
-    [u'http://just.example.com/',
-     u'http://magic.example.com/']
+    >>> from operator import attrgetter
+    >>> for alias in sorted(
+    ...         bugtrackeralias_set.queryByBugTracker(mozilla_bugzilla),
+    ...         key=attrgetter('base_url')):
+    ...     print(alias.base_url)
+    http://just.example.com/
+    http://magic.example.com/
 
 The aliases attribute never contains the current baseurl. For example,
 if BugTracker.baseurl is changed to an existing alias of itself, the
@@ -251,13 +261,16 @@ aliases attribute hides the baseurl, although it is still recorded as
 an alias.
 
     >>> mozilla_bugzilla.baseurl = u'http://magic.example.com/'
-    >>> mozilla_bugzilla.aliases
-    (u'http://just.example.com/',)
+    >>> for alias in mozilla_bugzilla.aliases:
+    ...     print(alias)
+    http://just.example.com/
 
-    >>> sorted(alias.base_url for alias in
-    ...        bugtrackeralias_set.queryByBugTracker(mozilla_bugzilla))
-    [u'http://just.example.com/',
-     u'http://magic.example.com/']
+    >>> for alias in sorted(
+    ...         bugtrackeralias_set.queryByBugTracker(mozilla_bugzilla),
+    ...         key=attrgetter('base_url')):
+    ...     print(alias.base_url)
+    http://just.example.com/
+    http://magic.example.com/
 
     >>> mozilla_bugzilla.baseurl = u'https://bugzilla.mozilla.org/'
 
@@ -268,8 +281,8 @@ Pillars for bugtrackers
     >>> trackers = list(bugtracker_set)
     >>> pillars = bugtracker_set.getPillarsForBugtrackers(trackers)
     >>> for t in pillars:
-    ...     print(t.name, [p.name for p in pillars[t]])
-    gnome-bugzilla [u'gnome-terminal', u'gnome']
+    ...     print(t.name, pretty([p.name for p in pillars[t]]))
+    gnome-bugzilla ['gnome-terminal', 'gnome']
 
 
 Imported bug messages

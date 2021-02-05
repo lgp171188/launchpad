@@ -390,18 +390,22 @@ The user parameter indicates which user is performing the search. Only
 bugs that the user has permission to view are returned. A value of None
 indicates the anonymous user.
 
+    >>> from operator import attrgetter
+
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks(
     ...     0, user=None, target=ubuntu)
     >>> visible_bugs = set(bugtask.bug for bugtask in expirable_bugtasks)
-    >>> print(sorted(bug.title for bug in visible_bugs))
-    [u'expirable_distro', u'recent']
+    >>> for bug in sorted(visible_bugs, key=attrgetter('title')):
+    ...     print(bug.title)
+    expirable_distro
+    recent
 
 If one of the bugs is set to private, anonymous users can no longer see
 it as being marked for expiration.
 
     >>> private_bug = ubuntu_bugtask.bug
-    >>> private_bug.title
-    u'expirable_distro'
+    >>> print(private_bug.title)
+    expirable_distro
     >>> private_bug.setPrivate(True, sample_person)
     True
     >>> reset_bug_modified_date(private_bug, 351)
@@ -409,8 +413,9 @@ it as being marked for expiration.
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks(
     ...     0, user=None, target=ubuntu)
     >>> visible_bugs = set(bugtask.bug for bugtask in expirable_bugtasks)
-    >>> print(sorted(bug.title for bug in visible_bugs))
-    [u'recent']
+    >>> for bug in sorted(visible_bugs, key=attrgetter('title')):
+    ...     print(bug.title)
+    recent
 
 No Privileges Person can't see the bug either...
 
@@ -419,8 +424,9 @@ No Privileges Person can't see the bug either...
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks(
     ...     0, user=no_priv, target=ubuntu)
     >>> visible_bugs = set(bugtask.bug for bugtask in expirable_bugtasks)
-    >>> print(sorted(bug.title for bug in visible_bugs))
-    [u'recent']
+    >>> for bug in sorted(visible_bugs, key=attrgetter('title')):
+    ...     print(bug.title)
+    recent
 
 ... unless they're subscribed to the bug.
 
@@ -430,8 +436,10 @@ No Privileges Person can't see the bug either...
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks(
     ...     0, user=no_priv, target=ubuntu)
     >>> visible_bugs = set(bugtask.bug for bugtask in expirable_bugtasks)
-    >>> print(sorted(bug.title for bug in visible_bugs))
-    [u'expirable_distro', u'recent']
+    >>> for bug in sorted(visible_bugs, key=attrgetter('title')):
+    ...     print(bug.title)
+    expirable_distro
+    recent
 
 The Janitor needs to be able to access all bugs, even private ones, in
 order to be able to expire them. If the Janitor is passed as the user,
@@ -445,8 +453,10 @@ even the private bugs are returned.
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks(
     ...     0, user=janitor, target=ubuntu)
     >>> visible_bugs = set(bugtask.bug for bugtask in expirable_bugtasks)
-    >>> print(sorted(bug.title for bug in visible_bugs))
-    [u'expirable_distro', u'recent']
+    >>> for bug in sorted(visible_bugs, key=attrgetter('title')):
+    ...     print(bug.title)
+    expirable_distro
+    recent
 
     >>> private_bug.setPrivate(False, sample_person)
     True
