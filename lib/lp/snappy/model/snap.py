@@ -24,11 +24,14 @@ import six
 from six.moves.urllib.parse import urlsplit
 from storm.expr import (
     And,
+    Coalesce,
     Desc,
+    Join,
     LeftJoin,
     Not,
     Or,
     Select,
+    SQL,
     )
 from storm.locals import (
     Bool,
@@ -59,6 +62,7 @@ from lp.app.browser.tales import (
     )
 from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.security import IAuthorization
+from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
@@ -94,6 +98,10 @@ from lp.code.model.branchcollection import GenericBranchCollection
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
+from lp.registry.interfaces.accesspolicy import (
+    IAccessArtifactGrantSource,
+    IAccessArtifactSource,
+    )
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -105,6 +113,7 @@ from lp.registry.interfaces.role import (
     IHasOwner,
     IPersonRoles,
     )
+from lp.registry.model.accesspolicy import AccessPolicyGrant
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
@@ -123,6 +132,9 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormexpr import (
+    Array,
+    ArrayAgg,
+    ArrayIntersects,
     Greatest,
     IsDistinctFrom,
     NullsLast,
@@ -1052,6 +1064,19 @@ class Snap(Storm, WebhookTargetMixin):
         order_by = Desc(SnapBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    def subscribe(self, person, subscribed_by):
+        """See `ISnap`."""
+        # XXX pappacena 2021-02-05: We may need a "SnapSubscription" here.
+        service = getUtility(IService, "sharing")
+        service.ensureAccessGrants([person], subscribed_by, snaps=[self])
+
+    def unsubscribe(self, person, unsubscribed_by):
+        """See `ISnap`."""
+        service = getUtility(IService, "sharing")
+        service.revokeAccessGrants(
+            self.pillar, person, unsubscribed_by, snaps=[self])
+        IStore(self).flush()
+
     def destroySelf(self):
         """See `ISnap`."""
         store = IStore(Snap)
@@ -1227,6 +1252,10 @@ class SnapSet:
             expressions.append(Snap.owner == owner)
         return IStore(Snap).find(Snap, *expressions)
 
+    def findByIds(self, snap_ids):
+        """See `ISnapSet`."""
+        return IStore(ISnap).find(Snap, Snap.id.is_in(snap_ids))
+
     def findByOwner(self, owner):
         """See `ISnapSet`."""
         return IStore(Snap).find(Snap, Snap.owner == owner)
@@ -1311,7 +1340,8 @@ class SnapSet:
                     Snap.private == False,
                     Snap.owner_id.is_in(Select(
                         TeamParticipation.teamID,
-                        TeamParticipation.person == visible_by_user)))
+                        TeamParticipation.person == visible_by_user)),
+                    *get_private_snap_subscriber_filter(visible_by_user))
 
     def findByURL(self, url, owner=None, visible_by_user=None):
         """See `ISnapSet`."""
@@ -1508,3 +1538,31 @@ class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
                 config.snappy.store_secrets_private_key.encode("UTF-8"))
         else:
             return None
+
+
+def get_private_snap_subscriber_filter(user):
+    """Returns the filter for all private Snaps that the given user is
+    subscribed to (that is, has access without being directly an owner).
+    """
+    artifact_grant_query = Coalesce(
+        ArrayIntersects(
+            SQL("%s.access_grants" % Snap.__storm_table__),
+            Select(
+                ArrayAgg(TeamParticipation.teamID),
+                tables=TeamParticipation,
+                where=(TeamParticipation.person == user)
+            )), False)
+
+    policy_grant_query = Coalesce(
+        ArrayIntersects(
+            Array(SQL("%s.access_policy" % Snap.__storm_table__)),
+            Select(
+                ArrayAgg(AccessPolicyGrant.policy_id),
+                tables=(AccessPolicyGrant,
+                        Join(TeamParticipation,
+                             TeamParticipation.teamID ==
+                             AccessPolicyGrant.grantee_id)),
+                where=(TeamParticipation.person == user)
+            )), False)
+
+    return [Or(artifact_grant_query, policy_grant_query)]

@@ -859,6 +859,12 @@ class ISnapAdminAttributes(Interface):
             "Allow access to external network resources via a proxy.  "
             "Resources hosted on Launchpad itself are always allowed.")))
 
+    def subscribe(person, subscribed_by):
+        """Subscribe a person to this snap recipe."""
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person to this snap recipe."""
+
 
 # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
@@ -902,6 +908,9 @@ class ISnapSet(Interface):
     def isValidPrivacy(private, owner, branch=None, git_ref=None):
         """Whether or not the privacy context is valid."""
 
+    def findByIds(snap_ids):
+        """Return all snap packages with the given ids."""
+
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True),
         name=TextLine(title=_("Snap name"), required=True))
@@ -923,7 +932,8 @@ class ISnapSet(Interface):
         """Return all snap packages relevant to `person`.
 
         This returns snap packages for Bazaar or Git branches owned by
-        `person`, or where `person` is the owner of the snap package.
+        `person`, or where `person` is the owner of the snap
+        package.
 
         :param person: An `IPerson`.
         :param visible_by_user: If not None, only return packages visible by

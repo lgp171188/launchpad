@@ -1,4 +1,4 @@
-# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Model classes for pillar and artifact access policies."""
@@ -98,6 +98,8 @@ class AccessArtifact(StormBase):
     branch = Reference(branch_id, 'Branch.id')
     gitrepository_id = Int(name='gitrepository')
     gitrepository = Reference(gitrepository_id, 'GitRepository.id')
+    snap_id = Int(name="snap")
+    snap = Reference(snap_id, 'Snap.id')
     specification_id = Int(name='specification')
     specification = Reference(specification_id, 'Specification.id')
 
@@ -114,12 +116,15 @@ class AccessArtifact(StormBase):
         from lp.bugs.interfaces.bug import IBug
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.snappy.interfaces.snap import ISnap
         if IBug.providedBy(concrete_artifact):
             col = cls.bug
         elif IBranch.providedBy(concrete_artifact):
             col = cls.branch
         elif IGitRepository.providedBy(concrete_artifact):
             col = cls.gitrepository
+        elif ISnap.providedBy(concrete_artifact):
+            col = cls.snap
         elif ISpecification.providedBy(concrete_artifact):
             col = cls.specification
         else:
@@ -143,6 +148,7 @@ class AccessArtifact(StormBase):
         from lp.bugs.interfaces.bug import IBug
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.snappy.interfaces.snap import ISnap
 
         existing = list(cls.find(concrete_artifacts))
         if len(existing) == len(concrete_artifacts):
@@ -156,18 +162,20 @@ class AccessArtifact(StormBase):
         insert_values = []
         for concrete in needed:
             if IBug.providedBy(concrete):
-                insert_values.append((concrete, None, None, None))
+                insert_values.append((concrete, None, None, None, None))
             elif IBranch.providedBy(concrete):
-                insert_values.append((None, concrete, None, None))
+                insert_values.append((None, concrete, None, None, None))
             elif IGitRepository.providedBy(concrete):
-                insert_values.append((None, None, concrete, None))
+                insert_values.append((None, None, concrete, None, None))
             elif ISpecification.providedBy(concrete):
-                insert_values.append((None, None, None, concrete))
+                insert_values.append((None, None, None, concrete, None))
+            elif ISnap.providedBy(concrete):
+                insert_values.append((None, None, None, None, concrete))
             else:
                 raise ValueError("%r is not a supported artifact" % concrete)
-        new = create(
-            (cls.bug, cls.branch, cls.gitrepository, cls.specification),
-            insert_values, get_objects=True)
+        columns = (cls.bug, cls.branch, cls.gitrepository, cls.specification,
+                   cls.snap)
+        new = create(columns, insert_values, get_objects=True)
         return list(existing) + new
 
     @classmethod

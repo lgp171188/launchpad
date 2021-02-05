@@ -1519,6 +1519,42 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertContentEqual(snaps[:3], snap_set.findByPerson(owners[0]))
         self.assertContentEqual(snaps[3:], snap_set.findByPerson(owners[1]))
 
+    def test_findSnapVisibilityClause_includes_grants(self):
+        grantee, creator = [self.factory.makePerson() for i in range(2)]
+        # All snaps are owned by "creator", and "grantee" will later have
+        # access granted using sharing service.
+        snap_data = dict(registrant=creator, owner=creator, private=True)
+        private_snaps = [self.factory.makeSnap(**snap_data) for _ in range(2)]
+        shared_snaps = [self.factory.makeSnap(**snap_data) for _ in range(2)]
+        snap_data["private"] = False
+        public_snaps = [self.factory.makeSnap(**snap_data) for _ in range(3)]
+
+        with admin_logged_in():
+            for snap in shared_snaps:
+                snap.subscribe(grantee, creator)
+
+        snap_set = getUtility(ISnapSet)
+
+        def all_snaps_visible_by(person):
+            snaps = removeSecurityProxy(snap_set)
+            return IStore(Snap).find(
+                Snap, snaps._findSnapVisibilityClause(person))
+
+        # Creator should get all snaps.
+        self.assertContentEqual(
+            public_snaps + private_snaps + shared_snaps,
+            all_snaps_visible_by(creator))
+
+        # Grantee should get public and shared snaps.
+        self.assertContentEqual(
+            public_snaps + shared_snaps, all_snaps_visible_by(grantee))
+
+        with admin_logged_in():
+            # After revoking, Grantee should have no access to the shared ones.
+            for snap in shared_snaps:
+                snap.unsubscribe(grantee, creator)
+        self.assertContentEqual(public_snaps, all_snaps_visible_by(grantee))
+
     def test_findByProject(self):
         # ISnapSet.findByProject returns all Snaps based on branches or
         # repositories for the given project.
