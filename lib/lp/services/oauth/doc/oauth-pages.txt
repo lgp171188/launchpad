@@ -71,8 +71,8 @@ context either.
     oauth_token...
 
     >>> view.reviewToken(OAuthPermission.READ_PRIVATE, None)
-    >>> token.person.name
-    u'salgado'
+    >>> print(token.person.name)
+    salgado
     >>> print(token.context)
     None
     >>> token.permission
@@ -84,8 +84,8 @@ The context can be a product, and if it's specified it will be carried
 over to the token once it's reviewed.
 
     >>> view, token = get_view_with_fresh_token({'lp.context': 'firefox'})
-    >>> view.token_context.name
-    u'firefox'
+    >>> print(view.token_context.name)
+    firefox
 
     # The context is also stored in a hidden field in the HTML so that
     # it's submitted together with the user's chosen permission.
@@ -95,14 +95,14 @@ over to the token once it's reviewed.
     lp.context firefox
 
     >>> view.reviewToken(OAuthPermission.READ_PUBLIC, None)
-    >>> token.context.name
-    u'firefox'
+    >>> print(token.context.name)
+    firefox
 
 Likewise for a project.
 
     >>> view, token = get_view_with_fresh_token({'lp.context': 'mozilla'})
-    >>> view.token_context.name
-    u'mozilla'
+    >>> print(view.token_context.name)
+    mozilla
 
     # The context is also stored in a hidden field in the HTML so that
     # it's submitted together with the user's chosen permission.
@@ -112,14 +112,14 @@ Likewise for a project.
     lp.context mozilla
 
     >>> view.reviewToken(OAuthPermission.READ_PUBLIC, None)
-    >>> token.context.name
-    u'mozilla'
+    >>> print(token.context.name)
+    mozilla
 
 And a distribution.
 
     >>> view, token = get_view_with_fresh_token({'lp.context': 'ubuntu'})
-    >>> view.token_context.name
-    u'ubuntu'
+    >>> print(view.token_context.name)
+    ubuntu
 
     # The context is also stored in a hidden field in the HTML so that
     # it's submitted together with the user's chosen permission.
@@ -129,16 +129,16 @@ And a distribution.
     lp.context ubuntu
 
     >>> view.reviewToken(OAuthPermission.READ_PUBLIC, None)
-    >>> token.context.name
-    u'ubuntu'
+    >>> print(token.context.name)
+    ubuntu
 
 If the consumer wants to access only things related to a distribution's
 package, it must specify the distribution and the package's name.
 
     >>> view, token = get_view_with_fresh_token(
     ...     {'lp.context': 'ubuntu/evolution'})
-    >>> view.token_context.title
-    u'...evolution... package in Ubuntu'
+    >>> print(view.token_context.title)
+    evolution package in Ubuntu
 
     # The context is also stored in a hidden field in the HTML so that
     # it's submitted together with the user's chosen permission.
@@ -148,8 +148,8 @@ package, it must specify the distribution and the package's name.
     lp.context ubuntu/evolution
 
     >>> view.reviewToken(OAuthPermission.READ_PUBLIC, None)
-    >>> token.context.title
-    u'...evolution... package in Ubuntu'
+    >>> print(token.context.title)
+    evolution package in Ubuntu
 
 An error is raised if the context is not found.
 

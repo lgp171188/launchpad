@@ -73,8 +73,8 @@ simple_sendmail_from_person uses the Person's preferred email address:
     ...     'testing@canonical.com')
     >>> sample_person.setPreferredEmail(testing)
 
-    >>> sample_person.preferredemail.email
-    u'testing@canonical.com'
+    >>> print(sample_person.preferredemail.email)
+    testing@canonical.com
     >>> msgid = simple_sendmail_from_person(
     ...     person=sample_person,
     ...     to_addrs='test@canonical.com',
@@ -131,11 +131,12 @@ Now let's look at the sent email again.
 
     >>> from email.header import decode_header
     >>> subject_str, charset = decode_header(msg['Subject'])[0]
-    >>> subject_str.decode(charset)
-    u'\xc4mnesrad'
+    >>> print(backslashreplace(subject_str.decode(charset)))
+    \xc4mnesrad
 
-    >>> msg.get_payload(decode=True).decode(msg.get_content_charset())
-    u'Inneh\xe5ll'
+    >>> print(backslashreplace(
+    ...     msg.get_payload(decode=True).decode(msg.get_content_charset())))
+    Inneh\xe5ll
 
 
 If we use simple_sendmail_from_person, the person's display_name can
@@ -158,15 +159,16 @@ contain non-ASCII characters:
     >>> from_name_str, charset = decode_header(from_name_encoded)[0]
     >>> from_addr
     'foo.bar@canonical.com'
-    >>> from_name_str.decode(charset)
-    u'F\xf6\xf6 B\u0105r'
+    >>> print(backslashreplace(from_name_str.decode(charset)))
+    F\xf6\xf6 B\u0105r
 
     >>> subject_str, charset = decode_header(msg['Subject'])[0]
-    >>> subject_str.decode(charset)
-    u'\xc4mnesrad'
+    >>> print(backslashreplace(subject_str.decode(charset)))
+    \xc4mnesrad
 
-    >>> msg.get_payload(decode=True).decode(msg.get_content_charset())
-    u'Inneh\xe5ll'
+    >>> print(backslashreplace(
+    ...     msg.get_payload(decode=True).decode(msg.get_content_charset())))
+    Inneh\xe5ll
 
 simple_sendmail_from_person also makes sure that the name gets
 surrounded by quotes and quoted if necessary:

@@ -1018,8 +1018,8 @@ class LaunchpadTestResponse(LaunchpadBrowserResponse):
     True
 
     >>> response.addWarningNotification('Warning Notification')
-    >>> request.notifications[0].message
-    u'Warning Notification'
+    >>> print(request.notifications[0].message)
+    Warning Notification
     """
 
     uuid = 'LaunchpadTestResponse'

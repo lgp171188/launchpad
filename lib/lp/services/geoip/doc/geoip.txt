@@ -11,8 +11,8 @@ from a given IP address.
 The getCountryByAddr() method will return the country of the given IP
 address.
 
-    >>> geoip.getCountryByAddr('201.13.165.145').name
-    u'Brazil'
+    >>> print(geoip.getCountryByAddr('201.13.165.145').name)
+    Brazil
 
 When running tests the IP address will start with '127.', and GeoIP
 would, obviously, fail to find the country for that, so we return None.

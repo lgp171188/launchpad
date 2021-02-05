@@ -17,6 +17,7 @@ from lp.testing.layers import (
     )
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    setGlobs,
     setUp,
     tearDown,
     )
@@ -37,7 +38,7 @@ special = {
         stdout_logging=False, layer=None),
     'test_adapter.txt': LayeredDocFileSuite(
         '../doc/test_adapter.txt',
-        layer=LaunchpadFunctionalLayer),
+        setUp=setGlobs, layer=LaunchpadFunctionalLayer),
 # XXX Julian 2009-05-13, bug=376171
 # Temporarily disabled because of intermittent failures.
 #    'test_adapter_timeout.txt': LayeredDocFileSuite(

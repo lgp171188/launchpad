@@ -68,13 +68,13 @@ decorated results:
     >>> decorated_result_set.config(return_both=True)
     <lp.services.database.decoratedresultset.DecoratedResultSet object at ...>
     >>> for dist in decorated_result_set:
-    ...     print(dist)
-    (<Distribution 'Debian' (debian)>, u'Dist name is: debian')
-    (<Distribution 'Gentoo' (gentoo)>, u'Dist name is: gentoo')
+    ...     print(pretty(dist))
+    (<Distribution 'Debian' (debian)>, 'Dist name is: debian')
+    (<Distribution 'Gentoo' (gentoo)>, 'Dist name is: gentoo')
     ...
-    (<Distribution 'ubuntutest' (ubuntutest)>, u'Dist name is: ubuntutest')
-    >>> decorated_result_set.first()
-    (<Distribution 'Debian' (debian)>, u'Dist name is: debian')
+    (<Distribution 'ubuntutest' (ubuntutest)>, 'Dist name is: ubuntutest')
+    >>> print(pretty(decorated_result_set.first()))
+    (<Distribution 'Debian' (debian)>, 'Dist name is: debian')
 
 This works even if there are multiple levels:
 

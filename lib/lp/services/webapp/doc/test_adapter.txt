@@ -351,8 +351,8 @@ The statement about to be executed is not recorded in the statement log.
 The request time limit was exceeded before the statement was issued to
 the database.
 
-    >>> get_request_statements()
-    [(0, ..., u'SQL-main-master', u'SELECT 2', ...)]
+    >>> print(pretty(get_request_statements()))
+    [(0, ..., 'SQL-main-master', 'SELECT 2', ...)]
 
 
 When a RequestExpired exception is raised, the current
