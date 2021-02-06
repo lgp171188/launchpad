@@ -209,8 +209,8 @@ for the message without a context.
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar')
     >>> current = potmsgset.getCurrentTranslation(
     ...     potemplate, pofile.language, potemplate.translation_side)
-    >>> print current.translations
-    [u'bar with no context']
+    >>> print(pretty(current.translations))
+    ['bar with no context']
 
 If we pass the context parameter to getPOMsgSet, we get the translation for
 a message with context.
@@ -219,8 +219,8 @@ a message with context.
     ...                                                context=u'context')
     >>> current = potmsgset.getCurrentTranslation(
     ...      potemplate, pofile.language, potemplate.translation_side)
-    >>> print current.translations
-    [u'bar with context']
+    >>> print(pretty(current.translations))
+    ['bar with context']
 
 If message has a context, you cannot get it without specifying the context:
 
@@ -234,8 +234,8 @@ If you specify context, it actually works.
     ...                                                context=u'First message')
     >>> current = potmsgset.getCurrentTranslation(
     ...     potemplate, pofile.language, potemplate.translation_side)
-    >>> print current.translations
-    [u'Translation %d']
+    >>> print(pretty(current.translations))
+    ['Translation %d']
 
 And for messages with plural forms, it gets all the translations.
 
@@ -243,8 +243,8 @@ And for messages with plural forms, it gets all the translations.
     ...     u'%d file', u'%d files', context=u'Second message')
     >>> current = potmsgset.getCurrentTranslation(
     ...     potemplate, pofile.language, potemplate.translation_side)
-    >>> print current.translations
-    [u'%d translation', u'%d translationes', u'%d translations']
+    >>> print(pretty(current.translations))
+    ['%d translation', '%d translationes', '%d translations']
 
 == Export ==
 
@@ -377,5 +377,5 @@ if empty context is specified, and not the message with None context.
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar', context=u'')
     >>> print potmsgset.singular_text
     bar
-    >>> potmsgset.context
-    u''
+    >>> print(potmsgset.context)
+    <BLANKLINE>

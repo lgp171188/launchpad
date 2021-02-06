@@ -651,8 +651,11 @@ by tsearch2. All words are also stemmed.
 
     >>> from lp.services.database.nl_search import nl_term_candidates
 
-    >>> nl_term_candidates('When I start firefox, it crashes')
-    [u'start', u'firefox', u'crash']
+    >>> for term in nl_term_candidates('When I start firefox, it crashes'):
+    ...     print(term)
+    start
+    firefox
+    crash
 
 It returns an empty list when there is only stop-words in the query:
 
@@ -661,10 +664,15 @@ It returns an empty list when there is only stop-words in the query:
 
 Except for the hyphenation character, all non-word caracters are ignored:
 
-    >>> nl_term_candidates(
-    ...     "Will the \'\'|\'\' character (inside a ''quoted'' string) "
-    ...     "work???")
-    [u'charact', u'insid', u'quot', u'string', u'work']
+    >>> for term in nl_term_candidates(
+    ...         "Will the \'\'|\'\' character (inside a ''quoted'' string) "
+    ...         "work???"):
+    ...     print(term)
+    charact
+    insid
+    quot
+    string
+    work
 
 
 nl_phrase_search()
@@ -700,9 +708,9 @@ More than 50% of the questions matches firefox:
 
 So firefox will be removed from the final query:
 
-    >>> nl_phrase_search('system is slow when running firefox', Question,
-    ...     fast_enabled=False)
-    u'system|slow|run'
+    >>> print(nl_phrase_search('system is slow when running firefox', Question,
+    ...     fast_enabled=False))
+    system|slow|run
 
     >>> nl_term_candidates('how do I do this?')
     []
@@ -712,14 +720,14 @@ So firefox will be removed from the final query:
 The fast code path does not remove any terms. Rather it uses an & query over
 all the terms combined with an & query for each ordinal-1 subset of the terms:
 
-    >>> nl_phrase_search('system is slow when running firefox on ubuntu',
-    ...     Question)
-    u'(firefox&run&slow&system&ubuntu)|(run&slow&system&ubuntu)|(firefox&slow&system&ubuntu)|(firefox&run&system&ubuntu)|(firefox&run&slow&ubuntu)|(firefox&run&slow&system)'
+    >>> print(nl_phrase_search('system is slow when running firefox on ubuntu',
+    ...     Question))
+    (firefox&run&slow&system&ubuntu)|(run&slow&system&ubuntu)|(firefox&slow&system&ubuntu)|(firefox&run&system&ubuntu)|(firefox&run&slow&ubuntu)|(firefox&run&slow&system)
 
 Short queries are expanded more simply:
 
-    >>> nl_phrase_search('system is slow', Question)
-    u'slow|system'
+    >>> print(nl_phrase_search('system is slow', Question))
+    slow|system
 
 
 Using other constraints
@@ -743,11 +751,11 @@ considered a stop word by tsearch2).
     >>> float(get_questions) / firefox_count > 0.50
     True
 
-    >>> nl_phrase_search(
+    >>> print(nl_phrase_search(
     ...     'firefox gets very slow on flickr', Question,
     ...     [Question.product == firefox_product, Product.active],
-    ...     fast_enabled=False)
-    u'slow|flickr'
+    ...     fast_enabled=False))
+    slow|flickr
 
 When the query only has stop words in it, the returned query will be the empty
 string:
@@ -760,9 +768,9 @@ is done.
 
     >>> IStore(Question).find(Question, Question.product_id == -1).count()
     0
-    >>> nl_phrase_search('firefox is very slow on flickr', Question,
-    ...                  [Question.product == -1])
-    u'(firefox&flickr&slow)|(flickr&slow)|(firefox&slow)|(firefox&flickr)'
+    >>> print(nl_phrase_search('firefox is very slow on flickr', Question,
+    ...                  [Question.product == -1]))
+    (firefox&flickr&slow)|(flickr&slow)|(firefox&slow)|(firefox&flickr)
 
 
 No keywords filtering with few rows
@@ -799,8 +807,8 @@ And more than half of these contain the keyword "firefox" in them:
 But the keyword is still keep because there are only less than 5
 questions:
 
-    >>> nl_phrase_search(
+    >>> print(nl_phrase_search(
     ...     'firefox is slow', Question,
     ...     [Question.distribution == ubuntu,
-    ...      Question.sourcepackagename == firefox_package.sourcepackagename])
-    u'firefox|slow'
+    ...      Question.sourcepackagename == firefox_package.sourcepackagename]))
+    firefox|slow

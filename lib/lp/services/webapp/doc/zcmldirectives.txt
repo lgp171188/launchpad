@@ -302,8 +302,8 @@ an IPermission.
     >>> permission = getUtility(ILaunchpadPermission, 'foo.bar')
     >>> verifyObject(ILaunchpadPermission, permission)
     True
-    >>> permission.access_level
-    u'read'
+    >>> print(permission.access_level)
+    read
 
 
 == Cleaning up the interfaces and objects to test with ==

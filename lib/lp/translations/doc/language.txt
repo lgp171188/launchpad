@@ -22,6 +22,6 @@ concrete language.
     ...     for karma_category_cache in translator.karma_category_caches:
     ...         if (karma_category_cache.category.name == 'translations'):
     ...             karma = karma_category_cache.karmavalue
-    ...     print((translator.displayname, karma))
-    (u'Foo Bar', 164)
-    (u'Carlos Perell\xf3 Mar\xedn', 9)
+    ...     print('%s: %d' % (translator.displayname, karma))
+    Foo Bar: 164
+    Carlos Perelló Marín: 9

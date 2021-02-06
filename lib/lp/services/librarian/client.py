@@ -113,7 +113,9 @@ class FileUploadClient:
         self.state.s_poll.unregister(self.state.s.fileno())
         self.state.s_poll.close()
         del self.state.s_poll
+        self.state.s.close()
         del self.state.s
+        self.state.f.close()
         del self.state.f
 
     def _checkError(self):

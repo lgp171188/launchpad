@@ -125,8 +125,8 @@ database. Only an admin can change the status.
 An Account has at least one OpenID identifier used to generate the
 OpenID identity URL.
 
-    >>> account.openid_identifiers.any().identifier
-    u'no-priv_oid'
+    >>> print(account.openid_identifiers.any().identifier)
+    no-priv_oid
 
 
 Creating new accounts

@@ -56,8 +56,9 @@ As the process is not yet finished, foobar will see this as one of their
 unconfirmed email addresses.
 
     >>> flush_database_updates()
-    >>> foobar.unvalidatedemails
-    [u'foo.bar2@canonical.com']
+    >>> for email in foobar.unvalidatedemails:
+    ...     print(email)
+    foo.bar2@canonical.com
 
 It's possible to create another token for the same purpose, but this
 won't cause that email to show up twice on foobar's list of unconfirmed
@@ -67,8 +68,9 @@ emails.
     ...     foobar, 'foo.bar@canonical.com', 'foo.bar2@canonical.com',
     ...     LoginTokenType.VALIDATEEMAIL)
     >>> flush_database_updates()
-    >>> foobar.unvalidatedemails
-    [u'foo.bar2@canonical.com']
+    >>> for email in foobar.unvalidatedemails:
+    ...     print(email)
+    foo.bar2@canonical.com
 
 Once foobar finished the process, confirming their new email address, we
 mark the token as consumed.
@@ -113,8 +115,9 @@ our own making.
     ...     LoginTokenType.VALIDATEEMAIL)
     >>> flush_database_updates()
 
-    >>> foobar.unvalidatedemails
-    [u'foo.bar2@canonical.com']
+    >>> for email in foobar.unvalidatedemails:
+    ...     print(email)
+    foo.bar2@canonical.com
 
     >>> token3.consume()
     >>> token3.date_consumed is not None

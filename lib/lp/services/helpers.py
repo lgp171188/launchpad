@@ -42,8 +42,11 @@ def text_replaced(text, replacements, _cache={}):
 
     Unicode strings work too.
 
-    >>> text_replaced(u'1 2 3 4', {u'1': u'2', u'2': u'1'})
-    u'2 1 3 4'
+    >>> replaced = text_replaced(u'1 2 3 4', {u'1': u'2', u'2': u'1'})
+    >>> isinstance(replaced, six.text_type)
+    True
+    >>> print(replaced)
+    2 1 3 4
 
     The argument _cache is used as a cache of replacements that were requested
     before, so we only compute regular expressions once.

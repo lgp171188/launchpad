@@ -51,11 +51,11 @@ Make sure that the new result set is actually different:
 But it still contains the expected results:
 
     >>> for distro in result_copy:
-    ...     distro
+    ...     print(distro)
     7 elements in result set
-    u'Dist name is: debian'
+    Dist name is: debian
     ...
-    u'Dist name is: ubuntutest'
+    Dist name is: ubuntutest
 
 == config() ==
 
@@ -80,8 +80,8 @@ but returns a copy of itself:
 The decorated __getitem__ gets the item from the original result set
 and decorates the item before returning it:
 
-    >>> decorated_result_set[0]
-    u'Dist name is: debian'
+    >>> print(decorated_result_set[0])
+    Dist name is: debian
 
 == any() ==
 
@@ -98,9 +98,9 @@ and decorates the result:
 The decorated first() method calls the original result set's first()
 method and decorates the result:
 
-    >>> decorated_result_set.first()
+    >>> print(decorated_result_set.first())
     1 elements in result set
-    u'Dist name is: debian'
+    Dist name is: debian
 
 pre_iter_hook is not called from methods like first() or one() which return
 at most one row:
@@ -115,9 +115,9 @@ at most one row:
 The decorated last() method calls the original result set's last()
 method and decorates the result:
 
-    >>> decorated_result_set.last()
+    >>> print(decorated_result_set.last())
     1 elements in result set
-    u'Dist name is: ubuntutest'
+    Dist name is: ubuntutest
 
 == order_by() ==
 
@@ -128,23 +128,23 @@ method and decorates the result:
     >>> ordered_results = decorated_result_set.order_by(
     ...     Desc(Distribution.name))
     >>> for dist in ordered_results:
-    ...     dist
+    ...     print(dist)
     7 elements in result set
-    u'Dist name is: ubuntutest'
+    Dist name is: ubuntutest
     ...
-    u'Dist name is: debian'
+    Dist name is: debian
 
 == one() ==
 
 The decorated one() method calls the original result set's one()
 method and decorates the result:
 
-    >>> decorated_result_set.config(offset=2, limit=1).one()
+    >>> print(decorated_result_set.config(offset=2, limit=1).one())
     1 elements in result set
-    u'Dist name is: redhat'
+    Dist name is: redhat
 
-    >>> result_decorator(decorated_result_set.result_set.one())
-    u'Dist name is: redhat'
+    >>> print(result_decorator(decorated_result_set.result_set.one()))
+    Dist name is: redhat
 
 == splicing ==
 
@@ -165,9 +165,9 @@ a refined query.
     >>> ubuntu_distros = removeSecurityProxy(decorated_result_set).find(
     ...     "Distribution.name like 'ubuntu%'")
     >>> for dist in ubuntu_distros:
-    ...     dist
-    u'Dist name is: ubuntu'
-    u'Dist name is: ubuntutest'
+    ...     print(dist)
+    Dist name is: ubuntu
+    Dist name is: ubuntutest
 
 
 == get_plain_result_set() ==

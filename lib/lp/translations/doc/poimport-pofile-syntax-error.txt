@@ -40,8 +40,8 @@ Now, is time to create the new potemplate
 
     >>> from lp.registry.model.productrelease import ProductRelease
     >>> release = ProductRelease.get(3)
-    >>> release.milestone.productseries.product.name
-    u'firefox'
+    >>> print(release.milestone.productseries.product.name)
+    firefox
 
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
@@ -92,8 +92,8 @@ The import fails.
 
 And the code composed an email with the notification of the error.
 
-    >>> subject
-    u'Import problem - Welsh (cy) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Welsh (cy) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -148,8 +148,8 @@ explanatory text.
 
 An email describes the problem in relatively helpful terms.
 
-    >>> subject
-    u'Import problem - Frisian (fy) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Frisian (fy) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -218,8 +218,8 @@ The submission is rejected with a syntax error.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -260,8 +260,8 @@ forms.  He receives an email notifying him of a syntax error.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -298,8 +298,8 @@ forms.  The same error is given.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -354,8 +354,8 @@ to get that information corrected if need be.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Arabic (ar) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Arabic (ar) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,

@@ -374,8 +374,8 @@ description.
 
 Let's see the description we have atm:
 
-    >>> potemplate.description
-    u'Template for evolution in hoary'
+    >>> print(potemplate.description)
+    Template for evolution in hoary
 
 We do the update and see the karma being assigned.
 
@@ -385,8 +385,8 @@ We do the update and see the karma being assigned.
 
 And the new one is:
 
-    >>> potemplate.description
-    u'This is a new description'
+    >>> print(potemplate.description)
+    This is a new description
 
 Now, let's ensure that we've covered every one of Rosetta's karma
 actions.

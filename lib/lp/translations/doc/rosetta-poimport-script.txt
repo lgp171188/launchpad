@@ -99,5 +99,5 @@ A new Account for 'danilo@canonical.com' is created.
 
     >>> danilo = getUtility(IPersonSet).getByEmail('danilo@canonical.com',
     ...     filter_status=False)
-    >>> danilo.displayname
-    u'Danilo \u0160egan'
+    >>> print(danilo.displayname)
+    Danilo Šegan

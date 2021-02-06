@@ -569,8 +569,10 @@ we do it directly in the database.
     >>> upstream_message = potmsgset.getCurrentTranslation(
     ...     evolution_potemplate, spanish,
     ...     side=TranslationSide.UPSTREAM)
-    >>> upstream_message.translations
-    [u' tarjetas']
+    >>> for translation in upstream_message.translations:
+    ...     print(translation)
+    ... # doctest: -NORMALIZE_WHITESPACE
+     tarjetas
 
 We replace it with an empty, imported translation:
 
@@ -580,8 +582,9 @@ We replace it with an empty, imported translation:
     >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(upstream_message).is_current_upstream = False
     >>> removeSecurityProxy(empty_upstream_message).is_current_upstream = True
-    >>> empty_upstream_message.translations
-    [u'']
+    >>> for translation in empty_upstream_message.translations:
+    ...     print(translation)
+    <BLANKLINE>
 
     >>> logout()
 
@@ -662,5 +665,5 @@ translation.
     >>> print(extract_text(shared_message_tag))
     shared translation
 
-    >>> extract_text(find_tag_by_id(browser.contents, html_id))
-    u'diverged'
+    >>> print(extract_text(find_tag_by_id(browser.contents, html_id)))
+    diverged

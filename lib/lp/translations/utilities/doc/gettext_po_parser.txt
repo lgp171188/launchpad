@@ -354,17 +354,20 @@ character.
 The Big5 characters in the PO header have been correctly converted and are
 displayed as unicode characters.
 
-    >>> translation_file.header.getRawContent()
-    u'...Last-Translator:   \u7a0b\u5f0f\u932f\u8aa4\n...'
+    >>> print(backslashreplace(translation_file.header.getRawContent()))
+    Project-Id-Version: ...
+    Last-Translator: \u7a0b\u5f0f\u932f\u8aa4
+    ...
 
 The translation of the first message has been interpreted correctly,
 despite the backslash in the second multibyte sequence, because is the same
 as decoding '\xa6\xa8\xa5\\' as BIG5 encoding.
 
-    >>> '\xa6\xa8\xa5\\'.decode('BIG5')
-    u'\u6210\u529f'
-    >>> translation_file.messages[0].translations
-    [u'\u6210\u529f']
+    >>> print(backslashreplace(b'\xa6\xa8\xa5\\'.decode('BIG5')))
+    \u6210\u529f
+    >>> for translation in translation_file.messages[0].translations:
+    ...     print(backslashreplace(translation))
+    \u6210\u529f
 
 
 == Newline Formats ==
@@ -386,8 +389,9 @@ Change the last PO file to use Mac-style newlines:
 Verify that it still parses:
 
     >>> translation_file = parser.parse(content)
-    >>> translation_file.messages[0].translations
-    [u'\u6210\u529f']
+    >>> for translation in translation_file.messages[0].translations:
+    ...     print(backslashreplace(translation))
+    \u6210\u529f
 
 
 == Escape Characters in Strings ==
@@ -420,14 +424,15 @@ the Content-Type field of the header.
 The special symbols and numeric representations of the chars '8', '80' and 'p'
 are decoded correctly.
 
-    >>> translation_file.messages[0].translations
-    [u'\x07\x08\x0b\x0c\t\x0b\\"\'\n8 8 80 p\n']
+    >>> for translation in translation_file.messages[0].translations:
+    ...     print(repr(six.ensure_str(translation)))
+    '\x07\x08\x0b\x0c\t\x0b\\"\'\n8 8 80 p\n'
 
 In this case, the numeric representation are UTF-8 only characters and we can
 see that we get its Unicode equivalent.
 
-    >>> translation_file.messages[1].msgid_singular
-    u'view \xab${version_title}\xbb'
+    >>> print(translation_file.messages[1].msgid_singular)
+    view «${version_title}»
 
 == Plural forms mapping ==
 
@@ -537,5 +542,7 @@ Let's parse a Spanish PO file with an inverted plural formula.
 The messages in the import are now inverted to match the expected plural
 formula for the Spanish language.
 
-    >>> translation_file.messages[0].translations
-    [u'singular translation', u'plural translation']
+    >>> for translation in translation_file.messages[0].translations:
+    ...     print(translation)
+    singular translation
+    plural translation
