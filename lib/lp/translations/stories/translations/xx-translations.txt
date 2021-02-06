@@ -264,7 +264,7 @@ has the right filter preselected.
     >>> print(extract_text(untranslated))
     15
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
-    >>> browser.open(untranslated_link.encode('UTF-8'))
+    >>> browser.open(untranslated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=1).value)
@@ -277,7 +277,7 @@ with the 'with new suggestions' filter selected.
     >>> print(extract_text(unreviewed))
     1
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
-    >>> browser.open(unreviewed_link.encode('UTF-8'))
+    >>> browser.open(unreviewed_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=1).value)
@@ -290,7 +290,7 @@ The number of updated entries points to the translation page with the
     >>> print(extract_text(updated))
     1
     >>> updated_link = extract_link_from_tag(updated, base_href)
-    >>> browser.open(updated_link.encode('UTF-8'))
+    >>> browser.open(updated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=1).value)
@@ -437,7 +437,7 @@ the right filter preselected.
     >>> print(extract_text(untranslated))
     15
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
-    >>> browser.open(untranslated_link.encode('UTF-8'))
+    >>> browser.open(untranslated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=2).value)
@@ -450,7 +450,7 @@ with the 'with new suggestions' filter selected.
     >>> print(extract_text(unreviewed))
     1
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
-    >>> browser.open(unreviewed_link.encode('UTF-8'))
+    >>> browser.open(unreviewed_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=2).value)
@@ -463,7 +463,7 @@ The number of updated entries points to the translation page with the
     >>> print(extract_text(updated))
     1
     >>> updated_link = extract_link_from_tag(updated, base_href)
-    >>> browser.open(updated_link.encode('UTF-8'))
+    >>> browser.open(updated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=2).value)

@@ -91,7 +91,7 @@ A source package has a name, displayname, title, and a summary.
     >>> print firefox_warty.displayname
     mozilla-firefox in Ubuntu Warty
 
-    >>> print firefox_warty.title.encode('ascii', 'ignore')
+    >>> print(firefox_warty.title)
     mozilla-firefox source package in Warty
 
     >>> print firefox_warty.summary

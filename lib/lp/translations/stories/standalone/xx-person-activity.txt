@@ -77,6 +77,6 @@ encoded link to a filtered PO file page.
 
 Because of this, the link actually works.
 
-    >>> user_browser.open(url.encode('ascii'))
+    >>> user_browser.open(url)
     >>> print(user_browser.title)
     Translations by A+b in...Serbian (sr) translation...
