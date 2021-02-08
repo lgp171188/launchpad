@@ -13,13 +13,12 @@ import subprocess
 import sys
 
 
-def run_command(command, args=None, input=None, shell=False):
+def run_command(command, args=None, input=None):
     """Run an external command in a separate process.
 
     :param command: executable to run.
     :param args: optional list of command-line arguments.
     :param input: optional text to feed to command's standard input.
-    :param shell: passed directly to `subprocess.Popen`.
     :return: tuple of return value, standard output, and standard error.
     """
     command_line = [command]
