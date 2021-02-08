@@ -233,7 +233,7 @@ private team.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.publisher.interfaces.NotFound: Object: <...>, name: u'~bassists'
+    zope.publisher.interfaces.NotFound: Object: <...>, name: '~bassists'
 
 The same is true for normal users who are not team members.
 
@@ -241,7 +241,7 @@ The same is true for normal users who are not team members.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.publisher.interfaces.NotFound: Object: <...>, name: u'~bassists'
+    zope.publisher.interfaces.NotFound: Object: <...>, name: '~bassists'
 
 Members who are not owners can see the link.
 
@@ -251,7 +251,7 @@ Members who are not owners can see the link.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.publisher.interfaces.NotFound: Object: <...>, name: u'~bassists'
+    zope.publisher.interfaces.NotFound: Object: <...>, name: '~bassists'
 
     >>> admin_browser.open('http://launchpad.test/~bassists/+addmember')
     >>> admin_browser.getControl('New member').value = 'cprov'
