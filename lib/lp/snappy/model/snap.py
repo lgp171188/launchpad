@@ -98,10 +98,6 @@ from lp.code.model.branchcollection import GenericBranchCollection
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.accesspolicy import (
-    IAccessArtifactGrantSource,
-    IAccessArtifactSource,
-    )
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,

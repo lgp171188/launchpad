@@ -932,8 +932,7 @@ class ISnapSet(Interface):
         """Return all snap packages relevant to `person`.
 
         This returns snap packages for Bazaar or Git branches owned by
-        `person`, or where `person` is the owner of the snap
-        package.
+        `person`, or where `person` is the owner of the snap package.
 
         :param person: An `IPerson`.
         :param visible_by_user: If not None, only return packages visible by
