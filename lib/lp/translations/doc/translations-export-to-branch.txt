@@ -10,8 +10,8 @@ to that branch.
     ...     'cronscripts/translations-export-to-branch.py', [])
     >>> ret_code
     0
-    >>> stdout
-    ''
+    >>> print(stdout)
+    <BLANKLINE>
     >>> print(stderr)
     INFO Creating lockfile:
     /var/lock/launchpad-translations-export-to-branch.lock

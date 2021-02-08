@@ -508,7 +508,7 @@ config.malone.expiration_dbuser.
     >>> process = subprocess.Popen(
     ...     'cronscripts/expire-bugtasks.py', shell=True,
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> (out, err) = process.communicate()
     >>> print(err)
     INFO    Creating lockfile: /var/lock/launchpad-expire-bugtasks.lock

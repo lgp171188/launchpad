@@ -51,7 +51,8 @@ class LoggerheadFixture(Fixture):
             os.path.join("scripts", "start-loggerhead.py"), ["--daemon"],
             # The testrunner-appserver config provides the correct
             # openid_provider_root URL.
-            extra_env={"LPCONFIG": BaseLayer.appserver_config_name})
+            extra_env={"LPCONFIG": BaseLayer.appserver_config_name},
+            universal_newlines=False)
         self._waitForStartup()
 
     def _hasStarted(self):

@@ -1133,7 +1133,7 @@ class TestCheckTeamParticipationScript(TestCase):
         cmd.extend(args)
         process = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE, universal_newlines=True)
         out, err = process.communicate()
         if out != "":
             self.addDetail("stdout", text_content(out))

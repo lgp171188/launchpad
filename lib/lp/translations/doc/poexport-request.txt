@@ -248,7 +248,7 @@ The script is run.
     >>> process = subprocess.Popen([
     ...     sys.executable, 'cronscripts/rosetta-export-queue.py', '-v'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.STDOUT
+    ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )
     >>> (output, empty) = process.communicate()
     >>> print(output)
