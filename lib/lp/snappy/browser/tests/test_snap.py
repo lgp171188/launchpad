@@ -654,6 +654,9 @@ class TestSnapAdminView(BaseTestSnapView):
         commercial_admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
         login_person(self.person)
+        project = self.factory.makeProduct(name="my-project")
+        with person_logged_in(project.owner):
+            project.information_type = InformationType.PROPRIETARY
         snap = self.factory.makeSnap(registrant=self.person)
         self.assertTrue(snap.require_virtualized)
         self.assertFalse(snap.private)

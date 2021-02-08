@@ -720,6 +720,9 @@ class SnapAdminView(BaseSnapEditView):
                     'You do not have permission to create private snaps.')
 
     def updateContextFromData(self, data, context=None, notify_modified=True):
+        if 'project' in data:
+            project = data.pop('project')
+            self.context.setProject(project)
         if 'private' in data:
             private = data.pop('private')
             self.context.setPrivate(private)
