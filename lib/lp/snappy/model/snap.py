@@ -598,6 +598,23 @@ class Snap(Storm, WebhookTargetMixin):
     def store_channels(self, value):
         self._store_channels = value or None
 
+    def visibleByUser(self, user):
+        """See `IGitRepository`."""
+        if not self.private:
+            return True
+        if user is None:
+            return False
+        if user.inTeam(self.owner):
+            return True
+
+        store = IStore(self)
+        visibility_clause = removeSecurityProxy(getUtility(
+            ISnapSet))._findSnapVisibilityClause(user)
+        return not store.find(
+            Snap,
+            Snap.id == self.id,
+            visibility_clause).is_empty()
+
     @staticmethod
     def extractSSOCaveats(macaroon):
         locations = [

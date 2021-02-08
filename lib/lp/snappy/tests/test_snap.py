@@ -42,6 +42,7 @@ from testtools.matchers import (
     )
 import transaction
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -1322,6 +1323,57 @@ class TestSnapDeleteWithBuilds(TestCaseWithFactory):
             snap.destroySelf()
             transaction.commit()
             self.assertRaises(LostObjectError, getattr, webhook, "target")
+
+
+class TestSnapVisibility(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestSnapVisibility, self).setUp()
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+
+    def test_only_owner_can_grant_access(self):
+        owner = self.factory.makePerson()
+        pillar = self.factory.makeProduct(owner=owner)
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, project=pillar, private=True)
+        other_person = self.factory.makePerson()
+        with person_logged_in(owner):
+            snap.subscribe(other_person, owner)
+        with person_logged_in(other_person):
+            self.assertRaises(Unauthorized, getattr, snap, 'subscribe')
+
+    def test_private_is_invisible_by_default(self):
+        owner = self.factory.makePerson()
+        person = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        with person_logged_in(owner):
+            self.assertFalse(snap.visibleByUser(person))
+
+    def test_private_is_visible_by_team_member(self):
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[person])
+        snap = self.factory.makeSnap(private=True, owner=team, registrant=team)
+        with person_logged_in(team):
+            self.assertTrue(snap.visibleByUser(person))
+
+    def test_subscribing_changes_visibility(self):
+        person = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        pillar = self.factory.makeProduct(owner=owner)
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, project=pillar, private=True)
+
+        with person_logged_in(owner):
+            self.assertFalse(snap.visibleByUser(person))
+            snap.subscribe(person, snap.owner)
+            # Calling again should be a no-op
+            snap.subscribe(person, snap.owner)
+            self.assertTrue(snap.visibleByUser(person))
+            snap.unsubscribe(person, snap.owner)
+            self.assertFalse(snap.visibleByUser(person))
 
 
 class TestSnapSet(TestCaseWithFactory):
