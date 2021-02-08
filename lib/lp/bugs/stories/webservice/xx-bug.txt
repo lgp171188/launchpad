@@ -1207,7 +1207,7 @@ a 404 error, but do not generate an OOPS.
     Content-Length: ...
     ...
     <BLANKLINE>
-    Object: <...BugTrackerSet object at ...>, name: u'mozilla.org'
+    Object: <...BugTrackerSet object at ...>, name: 'mozilla.org'
 
 Naturally, if we follow the Location: header then we'll get the
 renamed bug tracker.
