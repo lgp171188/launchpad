@@ -784,7 +784,7 @@ class ForwardsCorrectly:
         request._app_names = ['foo']
         view = StubbedOpenIDLogin(object(), request)
         view()
-        escaped_args = tuple(map(quote, args.items()[0]))
+        escaped_args = tuple(map(quote, list(args.items())[0]))
         expected_fragment = quote('%s=%s' % escaped_args)
         return Contains(
             expected_fragment).match(view.openid_request.return_to)
