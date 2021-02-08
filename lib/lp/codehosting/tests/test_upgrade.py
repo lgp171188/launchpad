@@ -48,7 +48,7 @@ class TestUpgrader(TestCaseWithFactory):
         self.useBzrBranches(direct_database=True)
         branch, tree = self.create_branch_and_tree(format=format)
         tree.commit(
-            'foo', rev_id='prepare-commit', committer='jrandom@example.com')
+            'foo', rev_id=b'prepare-commit', committer='jrandom@example.com')
         if loomify_branch:
             loomify(tree.branch)
             bzr_branch = tree.controldir.open_branch()

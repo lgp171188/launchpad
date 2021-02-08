@@ -392,9 +392,9 @@ class TestBzrSync(BzrSyncTestCase):
     def test_timestamp_parsing(self):
         # Test that the timezone selected does not affect the
         # timestamp recorded in the database.
-        self.commitRevision(rev_id='rev-1',
+        self.commitRevision(rev_id=b'rev-1',
                             timestamp=1000000000.0, timezone=0)
-        self.commitRevision(rev_id='rev-2',
+        self.commitRevision(rev_id=b'rev-2',
                             timestamp=1000000000.0, timezone=28800)
         self.syncAndCount(
             new_revisions=2, new_numbers=2, new_parents=1, new_authors=2)
@@ -478,7 +478,7 @@ class TestBzrSync(BzrSyncTestCase):
     def test_revisionsToInsert_linear(self):
         # If the branch has a linear ancestry, revisionsToInsert() should
         # yield each revision along with a sequence number, starting at 1.
-        self.commitRevision(rev_id='rev-1')
+        self.commitRevision(rev_id=b'rev-1')
         bzrsync = self.makeBzrSync(self.db_branch)
         bzr_history = branch_revision_history(self.bzr_branch)
         added_ancestry = bzrsync.getAncestryDelta(self.bzr_branch)[0]
@@ -822,7 +822,7 @@ class TestRevisionProperty(BzrSyncTestCase):
         # Revisions with properties should have records stored in the
         # RevisionProperty table, accessible through Revision.getProperties().
         properties = {'name': 'value'}
-        self.commitRevision(rev_id='rev1', revprops=properties)
+        self.commitRevision(rev_id=b'rev1', revprops=properties)
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         # Check that properties were saved to the revision.
         bzr_revision = self.bzr_branch.repository.get_revision('rev1')
