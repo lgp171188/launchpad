@@ -367,7 +367,7 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         self.assertEqual(self.revid, remote_revision)
         # Add a single revision to the local branch.
         tree = WorkingTree.open(self.local_branch.base)
-        tree.commit('Empty commit', rev_id='rev2')
+        tree.commit('Empty commit', rev_id=b'rev2')
         # Push the new revision.
         self.push(self.local_branch_path, remote_url)
         self.assertBranchesMatch(self.local_branch_path, remote_url)
@@ -615,7 +615,7 @@ class SmartserverTests(WithScenarios, SSHTestCase):
 
         # Create a new revision on the local branch.
         tree = WorkingTree.open(self.local_branch.base)
-        tree.commit('Empty commit', rev_id='rev2')
+        tree.commit('Empty commit', rev_id=b'rev2')
 
         # Push the local branch to the remote url
         remote_url = self.getTransportURL('~mark/+junk/ro-branch')

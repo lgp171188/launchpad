@@ -38,7 +38,7 @@ class TestSendbranchmail(TestCaseWithFactory):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            tree.commit('Added foo.', rev_id='rev1')
+            tree.commit('Added foo.', rev_id=b'rev1')
         return branch, tree
 
     def test_sendbranchmail(self):
@@ -69,7 +69,7 @@ class TestSendbranchmail(TestCaseWithFactory):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            tree.commit('Added foo.', rev_id='rev2')
+            tree.commit('Added foo.', rev_id=b'rev2')
         job = RevisionsAddedJob.create(
             branch, 'rev1', 'rev2', 'from@example.org')
         transaction.commit()

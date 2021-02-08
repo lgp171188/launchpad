@@ -147,7 +147,7 @@ class TestBugLinking(BzrSyncTestCase):
     def test_newMainlineRevisionAddsBugBranch(self):
         """New mainline revisions with bugs properties create BugBranches."""
         self.commitRevision(
-            rev_id='rev1',
+            rev_id=b'rev1',
             revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.assertBugBranchLinked(self.bug1, self.db_branch)
@@ -155,7 +155,7 @@ class TestBugLinking(BzrSyncTestCase):
     def test_scanningTwiceDoesntMatter(self):
         """Scanning a branch twice is the same as scanning it once."""
         self.commitRevision(
-            rev_id='rev1',
+            rev_id=b'rev1',
             revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
@@ -172,7 +172,7 @@ class TestBugLinking(BzrSyncTestCase):
         # We can link a bug to an official package branch. Test added to catch
         # bug 391303.
         self.commitRevision(
-            rev_id='rev1',
+            rev_id=b'rev1',
             revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
         branch = self.makePackageBranch()
         self.syncBazaarBranchToDatabase(self.bzr_branch, branch)
@@ -181,7 +181,7 @@ class TestBugLinking(BzrSyncTestCase):
     def test_knownMainlineRevisionsDoesntMakeLink(self):
         """Don't add BugBranches for known mainline revision."""
         self.commitRevision(
-            rev_id='rev1',
+            rev_id=b'rev1',
             revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         # Create a new DB branch to sync with.
@@ -196,7 +196,7 @@ class TestBugLinking(BzrSyncTestCase):
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
             self.bzr_tree.commit(
-                u'common parent', committer=author, rev_id='r1',
+                u'common parent', committer=author, rev_id=b'r1',
                 allow_pointless=True)
 
             # Branch from the base revision.
@@ -205,17 +205,17 @@ class TestBugLinking(BzrSyncTestCase):
 
             # Commit to both branches
             self.bzr_tree.commit(
-                u'commit one', committer=author, rev_id='r2',
+                u'commit one', committer=author, rev_id=b'r2',
                 allow_pointless=True)
             new_tree.commit(
-                u'commit two', committer=author, rev_id='r1.1.1',
+                u'commit two', committer=author, rev_id=b'r1.1.1',
                 allow_pointless=True,
                 revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
 
             # Merge and commit.
             self.bzr_tree.merge_from_branch(new_tree.branch)
             self.bzr_tree.commit(
-                u'merge', committer=author, rev_id='r3',
+                u'merge', committer=author, rev_id=b'r3',
                 allow_pointless=True)
 
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
@@ -226,7 +226,7 @@ class TestBugLinking(BzrSyncTestCase):
         self.assertRaises(NotFoundError, getUtility(IBugSet).get, 99999)
         self.assertEqual([], list(self.db_branch.linked_bugs))
         self.commitRevision(
-            rev_id='rev1',
+            rev_id=b'rev1',
             revprops={'bugs': 'https://launchpad.net/bugs/99999 fixed'})
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.assertEqual([], list(self.db_branch.linked_bugs))
@@ -234,7 +234,7 @@ class TestBugLinking(BzrSyncTestCase):
     def test_multipleBugsInProperty(self):
         """Create BugBranch links for *all* bugs in the property."""
         self.commitRevision(
-            rev_id='rev1',
+            rev_id=b'rev1',
             revprops={'bugs': '%s fixed\n%s fixed' % (
                     self.getBugURL(self.bug1), self.getBugURL(self.bug2))})
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)

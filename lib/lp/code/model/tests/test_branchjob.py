@@ -579,7 +579,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         self.addCleanup(job.bzr_branch.unlock)
         self.assertEqual(
             set([b'rev2a-id', b'rev3-id', b'rev2b-id', b'rev2c-id']),
-            job.getMergedRevisionIDs('rev2d-id', graph))
+            job.getMergedRevisionIDs(b'rev2d-id', graph))
 
     def test_findRelatedBMP(self):
         """The related branch merge proposals can be identified."""

@@ -146,7 +146,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            branch_tree.commit(u'another revision', rev_id='another-rev')
+            branch_tree.commit(u'another revision', rev_id=b'another-rev')
         current_proposal_status = proposal.queue_status
         self.assertNotEqual(
             current_proposal_status,
@@ -167,7 +167,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            branch_tree.commit(u'another revision', rev_id='another-rev')
+            branch_tree.commit(u'another revision', rev_id=b'another-rev')
         current_proposal_status = proposal.queue_status
         self.assertNotEqual(
             current_proposal_status,
