@@ -833,6 +833,9 @@ class ISnapEditableAttributes(IHasOwner):
             "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
             "'stable'.")))
 
+    def setProject(project):
+        """Set the pillar project of this snap recipe."""
+
 
 class ISnapAdminAttributes(Interface):
     """`ISnap` attributes that can be edited by admins.
@@ -867,6 +870,9 @@ class ISnapAdminAttributes(Interface):
 
     def unsubscribe(person, unsubscribed_by):
         """Unsubscribe a person to this snap recipe."""
+
+    def setPrivate(private):
+        """Set the current snap recipe as public or private."""
 
 
 # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL

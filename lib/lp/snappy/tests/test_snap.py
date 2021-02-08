@@ -66,9 +66,14 @@ from lp.code.tests.helpers import (
     GitHostingFixture,
     )
 from lp.registry.enums import PersonVisibility
+from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.accesspolicy import (
+    AccessArtifact,
+    AccessArtifactGrant,
+    )
 from lp.services.config import config
 from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.database.constants import (
@@ -1333,6 +1338,15 @@ class TestSnapVisibility(TestCaseWithFactory):
         super(TestSnapVisibility, self).setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
+    def getSnapGrants(self, snap, person=None):
+        conditions = [AccessArtifact.snap == snap]
+        if person is not None:
+            conditions.append(AccessArtifactGrant.grantee == person)
+        return IStore(AccessArtifactGrant).find(
+            AccessArtifactGrant,
+            AccessArtifactGrant.abstract_artifact_id == AccessArtifact.id,
+            *conditions)
+
     def test_only_owner_can_grant_access(self):
         owner = self.factory.makePerson()
         pillar = self.factory.makeProduct(owner=owner)
@@ -1369,11 +1383,46 @@ class TestSnapVisibility(TestCaseWithFactory):
         with person_logged_in(owner):
             self.assertFalse(snap.visibleByUser(person))
             snap.subscribe(person, snap.owner)
-            # Calling again should be a no-op
+            # Calling again should be a no-op.
             snap.subscribe(person, snap.owner)
             self.assertTrue(snap.visibleByUser(person))
             snap.unsubscribe(person, snap.owner)
             self.assertFalse(snap.visibleByUser(person))
+
+    def test_reconcile_set_public(self):
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        another_user = self.factory.makePerson()
+        with admin_logged_in():
+            snap.subscribe(another_user, snap.owner)
+
+        self.assertEqual(1, self.getSnapGrants(snap, another_user).count())
+        with admin_logged_in():
+            snap.setPrivate(False)
+        self.assertEqual(0, self.getSnapGrants(snap, another_user).count())
+
+    def test_reconcile_permissions_setting_project(self):
+        owner = self.factory.makePerson()
+        old_project = self.factory.makeProduct()
+        getUtility(IAccessPolicySource).create(
+            [(old_project, InformationType.PROPRIETARY)])
+
+        snap = self.factory.makeSnap(
+            project=old_project, private=True, registrant=owner, owner=owner)
+
+        new_project = self.factory.makeProduct()
+        getUtility(IAccessPolicySource).create(
+            [(new_project, InformationType.PROPRIETARY)])
+        another_person = self.factory.makePerson()
+        with person_logged_in(owner):
+            snap.subscribe(another_person, owner)
+            self.assertTrue(snap.visibleByUser(another_person))
+            self.assertEqual(1, self.getSnapGrants(snap).count())
+
+            snap.setProject(new_project)
+            self.assertTrue(snap.visibleByUser(another_person))
+            self.assertEqual(1, self.getSnapGrants(snap).count())
 
 
 class TestSnapSet(TestCaseWithFactory):

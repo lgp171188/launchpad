@@ -60,6 +60,7 @@ from lp.app.browser.tales import (
     ArchiveFormatterAPI,
     DateTimeFormatterAPI,
     )
+from lp.app.enums import InformationType
 from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
@@ -109,7 +110,10 @@ from lp.registry.interfaces.role import (
     IHasOwner,
     IPersonRoles,
     )
-from lp.registry.model.accesspolicy import AccessPolicyGrant
+from lp.registry.model.accesspolicy import (
+    AccessPolicyGrant,
+    reconcile_access_for_artifact,
+    )
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
@@ -598,23 +602,6 @@ class Snap(Storm, WebhookTargetMixin):
     def store_channels(self, value):
         self._store_channels = value or None
 
-    def visibleByUser(self, user):
-        """See `IGitRepository`."""
-        if not self.private:
-            return True
-        if user is None:
-            return False
-        if user.inTeam(self.owner):
-            return True
-
-        store = IStore(self)
-        visibility_clause = removeSecurityProxy(getUtility(
-            ISnapSet))._findSnapVisibilityClause(user)
-        return not store.find(
-            Snap,
-            Snap.id == self.id,
-            visibility_clause).is_empty()
-
     @staticmethod
     def extractSSOCaveats(macaroon):
         locations = [
@@ -1077,6 +1064,23 @@ class Snap(Storm, WebhookTargetMixin):
         order_by = Desc(SnapBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    def visibleByUser(self, user):
+        """See `IGitRepository`."""
+        if not self.private:
+            return True
+        if user is None:
+            return False
+        if user.inTeam(self.owner):
+            return True
+
+        store = IStore(self)
+        visibility_clause = removeSecurityProxy(getUtility(
+            ISnapSet))._findSnapVisibilityClause(user)
+        return not store.find(
+            Snap,
+            Snap.id == self.id,
+            visibility_clause).is_empty()
+
     def subscribe(self, person, subscribed_by):
         """See `ISnap`."""
         # XXX pappacena 2021-02-05: We may need a "SnapSubscription" here.
@@ -1089,6 +1093,27 @@ class Snap(Storm, WebhookTargetMixin):
         service.revokeAccessGrants(
             self.pillar, person, unsubscribed_by, snaps=[self])
         IStore(self).flush()
+
+    def _reconcileAccess(self):
+        """Reconcile the snap's sharing information.
+
+        Takes the privacy and pillar and makes the related AccessArtifact
+        and AccessPolicyArtifacts match.
+        """
+        if self.project is None:
+            return
+        info_type = (InformationType.PUBLIC if not self.private
+                     else InformationType.PROPRIETARY)
+        pillars = [self.project]
+        reconcile_access_for_artifact(self, info_type, pillars)
+
+    def setPrivate(self, private):
+        self.private = private
+        self._reconcileAccess()
+
+    def setProject(self, project):
+        self.project = project
+        self._reconcileAccess()
 
     def destroySelf(self):
         """See `ISnap`."""

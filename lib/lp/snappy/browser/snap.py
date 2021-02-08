@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap views."""
@@ -707,6 +707,13 @@ class SnapAdminView(BaseSnapEditView):
                 self.setFieldError(
                     'private',
                     'You do not have permission to create private snaps.')
+
+    def updateContextFromData(self, data, context=None, notify_modified=True):
+        if 'private' in data:
+            private = data.pop('private')
+            self.context.setPrivate(private)
+        super(SnapAdminView, self).updateContextFromData(
+            data, context, notify_modified)
 
 
 class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
