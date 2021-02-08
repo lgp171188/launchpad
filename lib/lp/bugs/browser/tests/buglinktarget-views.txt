@@ -144,7 +144,7 @@ We will give bug #2 a very bad title, then link the cve to the bug.
 The notification contains the escaped bug title.
 
     >>> for notification in request.response.notifications:
-    ...     print(notification.message.encode('utf8'))
+    ...     print(notification.message)
     Added link to bug #2:
     ...&lt;script&gt;window.alert(&quot;Hello!&quot;)&lt;/script&gt;....
 
