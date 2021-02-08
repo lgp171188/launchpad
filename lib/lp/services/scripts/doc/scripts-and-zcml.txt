@@ -12,7 +12,7 @@ to demonstrate this:
     >>> import tempfile
     >>> from textwrap import dedent
     >>> script_file = tempfile.NamedTemporaryFile()
-    >>> script_file.write(dedent("""\
+    >>> _ = script_file.write(dedent("""\
     ...     from __future__ import absolute_import, print_function
     ...
     ...     from lp.services.scripts import execute_zcml_for_scripts
