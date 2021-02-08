@@ -661,6 +661,7 @@ class TestSnapAdminView(BaseTestSnapView):
 
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
+        browser.getControl(name='field.project').value = "my-project"
         browser.getControl("Require virtualized builders").selected = False
         browser.getControl("Private").selected = True
         browser.getControl("Allow external network access").selected = False
@@ -670,6 +671,21 @@ class TestSnapAdminView(BaseTestSnapView):
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
         self.assertFalse(snap.allow_internet)
+
+    def test_admin_snap_private_without_project(self):
+        # Cannot make snap private if it doesn't have a project associated.
+        login_person(self.person)
+        snap = self.factory.makeSnap(registrant=self.person)
+        commercial_admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser.getLink("Administer snap package").click()
+        browser.getControl(name='field.project').value = ''
+        browser.getControl("Private").selected = True
+        browser.getControl("Update snap package").click()
+        self.assertEqual(
+            'Private Snap recipes should be associated with a project.',
+            extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
     def test_admin_snap_privacy_mismatch(self):
         # Cannot make snap public if it still contains private information.

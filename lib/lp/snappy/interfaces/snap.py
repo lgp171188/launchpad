@@ -673,7 +673,7 @@ class ISnapEditableAttributes(IHasOwner):
         description=_("The owner of this snap package.")))
 
     project = ReferenceChoice(
-        title=_('The project that this Snap is associated with.'),
+        title=_('The project that this Snap is associated with'),
         schema=IProduct, vocabulary='Product',
         required=False, readonly=False)
 
@@ -899,7 +899,7 @@ class ISnapSet(Interface):
             "git_repository", "git_repository_url", "git_path", "git_ref",
             "auto_build", "auto_build_archive", "auto_build_pocket",
             "private", "store_upload", "store_series", "store_name",
-            "store_channels"])
+            "store_channels", "project"])
     @operation_for_version("devel")
     def new(registrant, owner, distro_series, name, description=None,
             branch=None, git_repository=None, git_repository_url=None,
