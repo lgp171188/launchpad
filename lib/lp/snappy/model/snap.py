@@ -61,7 +61,10 @@ from lp.app.browser.tales import (
     DateTimeFormatterAPI,
     )
 from lp.app.enums import InformationType
-from lp.app.errors import IncompatibleArguments
+from lp.app.errors import (
+    IncompatibleArguments,
+    SubscriptionPrivacyViolation,
+    )
 from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
@@ -193,6 +196,7 @@ from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snapbuild import SnapBuild
 from lp.snappy.model.snapjob import SnapJob
+from lp.snappy.model.snapsubscription import SnapSubscription
 from lp.soyuz.interfaces.archive import ArchiveDisabled
 from lp.soyuz.model.archive import (
     Archive,
@@ -1081,9 +1085,35 @@ class Snap(Storm, WebhookTargetMixin):
             Snap.id == self.id,
             visibility_clause).is_empty()
 
+    def _getSubscription(self, person):
+        """Returns person's subscription to this snap recipe, or None if no
+        subscription is available.
+        """
+        if person is None:
+            return None
+        return Store.of(self).find(
+            SnapSubscription,
+            SnapSubscription.person == person,
+            SnapSubscription.snap == self).one()
+
+    def _userCanBeSubscribed(self, person):
+        """Checks if the given person can subscribe to this snap recipe."""
+        return not (
+            self.private and
+            person.is_team and
+            person.anyone_can_join())
+
     def subscribe(self, person, subscribed_by):
         """See `ISnap`."""
-        # XXX pappacena 2021-02-05: We may need a "SnapSubscription" here.
+        if not self._userCanBeSubscribed(person):
+            raise SubscriptionPrivacyViolation(
+                "Open and delegated teams cannot be subscribed to private "
+                "snap recipes.")
+        subscription = self._getSubscription(person)
+        if subscription is None:
+            subscription = SnapSubscription(
+                person=person, snap=self, subscribed_by=subscribed_by)
+            Store.of(subscription).flush()
         service = getUtility(IService, "sharing")
         service.ensureAccessGrants([person], subscribed_by, snaps=[self])
 
@@ -1092,6 +1122,12 @@ class Snap(Storm, WebhookTargetMixin):
         service = getUtility(IService, "sharing")
         service.revokeAccessGrants(
             self.pillar, person, unsubscribed_by, snaps=[self])
+        subscription = self._getSubscription(person)
+        # It should never be None, since we always create a SnapSubscription
+        # on Snap.subscribe. But just in case...
+        if subscription is not None:
+            store = Store.of(subscription)
+            store.remove(subscription)
         IStore(self).flush()
 
     def _reconcileAccess(self):
