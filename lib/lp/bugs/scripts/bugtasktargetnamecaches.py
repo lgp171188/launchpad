@@ -93,7 +93,7 @@ class BugTaskTargetNameCachesTunableLoop(object):
         store = IMasterStore(BugTask)
 
         # Transpose the target rows into lists of object IDs to retrieve.
-        ids_to_cache = zip(*(target for (target, names) in chunk))
+        ids_to_cache = list(zip(*(target for (target, names) in chunk)))
         for index, cls in enumerate(target_classes):
             # Get all of the objects that we will need into the cache.
             list(store.find(cls, cls.id.is_in(set(ids_to_cache[index]))))
