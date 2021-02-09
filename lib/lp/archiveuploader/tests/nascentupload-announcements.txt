@@ -216,9 +216,6 @@ changes file is enclosed as an attachment.
     Content-Type: text/plain; charset="utf-8"
     Content-Transfer-Encoding: quoted-printable
     <BLANKLINE>
-    -----BEGIN PGP SIGNED MESSAGE-----
-    Hash: SHA1
-    <BLANKLINE>
     Format: 1.7
     Date: Thu, 16 Feb 2006 15:34:09 +0000
     Source: bar
@@ -242,14 +239,6 @@ changes file is enclosed as an attachment.
      5d533778b698edc1a122098a98c8490e 512 devel optional bar_1.0-1.dsc
      fc1464e5985b962a042d5354452f361d 164 devel optional bar_1.0.orig.tar.gz
      1e35b810764f140af9616de8274e6e73 537 devel optional bar_1.0-1.diff.gz
-    <BLANKLINE>
-    -----BEGIN PGP SIGNATURE-----
-    Version: GnuPG v1.4.3 (GNU/Linux)
-    <BLANKLINE>
-    iD8DBQFFt7D9jn63CGxkqMURAk1BAJwIQfOMS+l9lDDwPORtuZb3hFI2OgCaArNc
-    oH5uIHeKtedJa5Ekpcfi2bY=3D
-    =3DDMqI
-    -----END PGP SIGNATURE-----
     <BLANKLINE>
 
 A PPA upload will contain the X-Launchpad-PPA header.
@@ -732,9 +721,6 @@ And what follows is the content of the attachment.
     Content-Type: text/plain; charset="utf-8"
     Content-Transfer-Encoding: quoted-printable
     <BLANKLINE>
-    -----BEGIN PGP SIGNED MESSAGE-----
-    Hash: SHA1
-    <BLANKLINE>
     Format: 1.7
     Date: Thu, 30 Mar 2006 01:36:14 +0100
     Source: bar
@@ -762,14 +748,6 @@ And what follows is the content of the attachment.
     <BLANKLINE>
      a4932aa84fdb62819b49f3dda163fc0d 514 devel optional bar_1.0-10.dsc
      ac6b4efe44e31f47ec9f0d0fac6935f4 622 devel optional bar_1.0-10.diff.gz
-    <BLANKLINE>
-    -----BEGIN PGP SIGNATURE-----
-    Version: GnuPG v1.4.6 (GNU/Linux)
-    <BLANKLINE>
-    iD8DBQFGjOzNjn63CGxkqMURAlDZAJ9CusNQWwbTJr7JHYV4Ka1JbWwmJACeLbs5
-    Hzkb2pxxwYzKs7uyCiFONlo=3D
-    =3D9dL/
-    -----END PGP SIGNATURE-----
     <BLANKLINE>
 
 The attempt to upload a package with a malformed changes file name will

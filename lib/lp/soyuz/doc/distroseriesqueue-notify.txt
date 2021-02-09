@@ -199,6 +199,19 @@ The mail body contains the same list of files again:
     listed in this package's changelog.
     <BLANKLINE>
 
+All the emails have the PGP signature stripped from the .changes file to
+avoid replay attacks.
+
+    >>> print(msgs[0].get_payload(1).get_payload(decode=True).decode('UTF-8'))
+    Format: 1.7
+    ...
+    >>> print(msgs[1].get_payload(1).get_payload(decode=True).decode('UTF-8'))
+    Format: 1.7
+    ...
+    >>> print(msgs[2].get_payload(1).get_payload(decode=True).decode('UTF-8'))
+    Format: 1.7
+    ...
+
 notify() will also work without passing the changes_file_object
 parameter provided that everything is already committed to the database
 (which is not the case when nascent upload runs).  This example
