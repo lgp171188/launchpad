@@ -7,6 +7,7 @@
 
 from textwrap import dedent
 
+import six
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -66,9 +67,9 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
         notifications = pop_notifications()
         self.assertEqual(2, len(notifications))
         msg = notifications[1].get_payload(0)
-        body = msg.get_payload(decode=True)
-        self.assertIn("Changed-By: Loïc", body)
-        self.assertIn("Signed-By: Stéphane", body)
+        body = six.ensure_text(msg.get_payload(decode=True))
+        self.assertIn(u"Changed-By: Loïc", body)
+        self.assertIn(u"Signed-By: Stéphane", body)
 
     def test_calculate_subject_customfile(self):
         lfa = self.factory.makeLibraryFileAlias()
@@ -225,7 +226,7 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
             summary_text="Rejected by archive administrator.")
         mailer.sendAll()
         [notification] = pop_notifications()
-        body = notification.get_payload(decode=True)
+        body = six.ensure_text(notification.get_payload(decode=True))
         self.assertEqual('Blamer <blamer@example.com>', notification['To'])
         expected_body = dedent("""\
             Rejected:

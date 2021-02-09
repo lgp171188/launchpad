@@ -191,4 +191,4 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
                     'user': user.display_name,
                     'fingerprint': gpgkey.fingerprint,
                     },
-            notification.get_payload(decode=True))
+            notification.get_payload(decode=True).decode("UTF-8"))

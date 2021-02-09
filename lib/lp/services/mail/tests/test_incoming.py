@@ -7,6 +7,7 @@ import logging
 import os
 import unittest
 
+import six
 from testtools.matchers import (
     Equals,
     Is,
@@ -110,7 +111,8 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = notification.get_payload()[0].get_payload(decode=True)
+        body = six.ensure_text(
+            notification.get_payload()[0].get_payload(decode=True))
         self.assertIn(
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
@@ -143,7 +145,8 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = notification.get_payload()[0].get_payload(decode=True)
+        body = six.ensure_text(
+            notification.get_payload()[0].get_payload(decode=True))
         self.assertIn(
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
@@ -176,7 +179,8 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = notification.get_payload()[0].get_payload(decode=True)
+        body = six.ensure_text(
+            notification.get_payload()[0].get_payload(decode=True))
         self.assertIn(
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
@@ -202,7 +206,8 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = notification.get_payload()[0].get_payload(decode=True)
+        body = six.ensure_text(
+            notification.get_payload()[0].get_payload(decode=True))
         self.assertIn("The mail you sent to Launchpad is too long.", body)
         self.assertIn("was 55 MB and the limit is 10 MB.", body)
 

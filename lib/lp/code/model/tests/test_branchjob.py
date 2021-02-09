@@ -18,6 +18,7 @@ from breezy.revision import NULL_REVISION
 from breezy.transport import get_transport
 from fixtures import MockPatch
 import pytz
+import six
 from storm.locals import Store
 import transaction
 from zope.component import getUtility
@@ -332,7 +333,8 @@ class TestBranchUpgradeJob(TestCaseWithFactory):
         (mail,) = pop_notifications()
         self.assertEqual(
             'Launchpad error while upgrading a branch', mail['subject'])
-        self.assertIn('Not a branch', mail.get_payload(decode=True))
+        self.assertIn(
+            'Not a branch', six.ensure_text(mail.get_payload(decode=True)))
 
 
 class TestRevisionMailJob(TestCaseWithFactory):
@@ -384,7 +386,7 @@ class TestRevisionMailJob(TestCaseWithFactory):
                 'url': canonical_url(branch),
                 'identity': branch.bzr_identity,
                 },
-            mail.get_payload(decode=True))
+            six.ensure_text(mail.get_payload(decode=True)))
 
     def test_revno_string(self):
         """Ensure that revnos can be strings."""

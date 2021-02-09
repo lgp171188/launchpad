@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from email import message_from_string
 import textwrap
 
+import six
 import transaction
 
 from lp.code.enums import (
@@ -51,7 +52,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    :pserver:anonymouse@cvs.example.com:/cvsroot, a_module\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_svn_to_bzr_import(self):
         # Test the email for a new Subversion-to-Bazaar import.
@@ -74,7 +76,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    svn://svn.example.com/fooix/trunk\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_git_to_bzr_import(self):
         # Test the email for a new git-to-Bazaar import.
@@ -97,7 +100,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    git://git.example.com/fooix.git\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_git_to_git_import(self):
         # Test the email for a new git-to-git import.
@@ -122,7 +126,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    git://git.example.com/fooix.git\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_new_source_package_import(self):
         # Test the email for a new sourcepackage import.
@@ -150,7 +155,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    git://git.example.com/fooix.git\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
 
 class TestUpdatedCodeImports(TestCaseWithFactory):
@@ -174,7 +180,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
                 'details': details,
                 'unique_name': unique_name,
                 },
-            msg.get_payload(decode=True))
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def assertDifferentDetailsEmail(self, old_details, new_details,
                                     unique_name):
@@ -198,7 +204,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
                 'new_details': new_details,
                 'unique_name': unique_name,
                 },
-            msg.get_payload(decode=True))
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_cvs_to_bzr_import_same_details(self):
         code_import = self.factory.makeProductCodeImport(
