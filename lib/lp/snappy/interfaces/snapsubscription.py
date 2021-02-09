@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap subscription model."""
@@ -11,19 +11,15 @@ __all__ = [
 ]
 
 from lazr.restful.fields import Reference
-from lp.snappy.interfaces.snap import ISnap
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Interface
 from zope.schema import (
-    Choice,
     Datetime,
     Int,
     )
 
 from lp import _
 from lp.services.fields import PersonChoice
+from lp.snappy.interfaces.snap import ISnap
 
 
 class ISnapSubscription(Interface):

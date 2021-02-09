@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for merge_people."""
@@ -8,6 +8,7 @@ from operator import attrgetter
 
 import pytz
 from testtools.matchers import (
+    Equals,
     MatchesSetwise,
     MatchesStructure,
     )
@@ -48,7 +49,10 @@ from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
     )
-from lp.snappy.interfaces.snap import ISnapSet
+from lp.snappy.interfaces.snap import (
+    ISnapSet,
+    SNAP_TESTING_FLAGS,
+    )
 from lp.soyuz.enums import ArchiveStatus
 from lp.soyuz.interfaces.livefs import (
     ILiveFSSet,
@@ -56,6 +60,7 @@ from lp.soyuz.interfaces.livefs import (
     )
 from lp.testing import (
     celebrity_logged_in,
+    login_admin,
     login_person,
     person_logged_in,
     TestCaseWithFactory,
@@ -663,6 +668,34 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.assertIsNone(snaps[1].git_repository)
         self.assertIsNone(snaps[1].git_path)
         self.assertEqual(u'foo-1', snaps[1].name)
+
+    def test_merge_snapsubscription(self):
+        # Checks that merging users moves subscriptions.
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        snap = removeSecurityProxy(self.factory.makeSnap(
+            name=u'foo', private=True))
+        self._do_premerge(duplicate, mergee)
+        login_admin()
+        snap.subscribe(duplicate, snap.owner)
+        self.assertTrue(snap.visibleByUser(duplicate))
+        self.assertThat(snap._getSubscription(duplicate), MatchesStructure(
+            snap=Equals(snap),
+            person=Equals(duplicate)
+        ))
+        self.assertFalse(snap.visibleByUser(mergee))
+        self.assertIsNone(snap._getSubscription(mergee))
+
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+
+        self.assertTrue(snap.visibleByUser(mergee))
+        self.assertThat(snap._getSubscription(mergee), MatchesStructure(
+            snap=Equals(snap),
+            person=Equals(mergee)
+        ))
+        self.assertFalse(snap.visibleByUser(duplicate))
+        self.assertIsNone(snap._getSubscription(duplicate))
 
     def test_merge_moves_oci_recipes(self):
         # When person/teams are merged, oci recipes owned by the from

@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap subscription model."""
@@ -11,14 +11,18 @@ __all__ = [
 ]
 
 import pytz
+from storm.properties import (
+    DateTime,
+    Int,
+    )
+from storm.references import Reference
+from zope.interface import implementer
+
 from lp.registry.interfaces.person import validate_person
 from lp.registry.interfaces.role import IPersonRoles
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.stormbase import StormBase
 from lp.snappy.interfaces.snapsubscription import ISnapSubscription
-from storm.properties import Int, DateTime
-from storm.references import Reference
-from zope.interface import implementer
 
 
 @implementer(ISnapSubscription)
