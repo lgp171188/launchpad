@@ -3142,7 +3142,7 @@ class TestTargetNameCache(TestCase):
         process = subprocess.Popen(
             'cronscripts/update-bugtask-targetnamecaches.py', shell=True,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE, universal_newlines=True)
         (out, err) = process.communicate()
 
         self.assertTrue(err.startswith(("INFO    Creating lockfile: "

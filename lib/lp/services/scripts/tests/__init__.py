@@ -44,7 +44,8 @@ def find_lp_scripts():
     return sorted(scripts)
 
 
-def run_script(script_relpath, args, expect_returncode=0, extra_env=None):
+def run_script(script_relpath, args, expect_returncode=0, extra_env=None,
+               universal_newlines=True):
     """Run a script for testing purposes.
 
     :param script_relpath: The relative path to the script, from the tree
@@ -54,6 +55,8 @@ def run_script(script_relpath, args, expect_returncode=0, extra_env=None):
         is returned, and exception will be raised.
     :param extra_env: A dictionary of extra environment variables to provide
         to the script, or None.
+    :param universal_newlines: Passed to `subprocess.Popen`, defaulting to
+        True.
     """
     script = os.path.join(config.root, script_relpath)
     args = [script] + args
@@ -61,7 +64,8 @@ def run_script(script_relpath, args, expect_returncode=0, extra_env=None):
     if extra_env is not None:
         env.update(extra_env)
     process = subprocess.Popen(
-        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
+        universal_newlines=universal_newlines)
     stdout, stderr = process.communicate()
     if process.returncode != expect_returncode:
         raise AssertionError('Failed:\n%s\n%s' % (stdout, stderr))

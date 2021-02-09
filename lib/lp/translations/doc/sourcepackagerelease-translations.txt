@@ -101,7 +101,7 @@ The first one, approves the import.
     >>> process = subprocess.Popen([
     ...     sys.executable, 'cronscripts/rosetta-approve-imports.py'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.STDOUT
+    ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )
     >>> (output, empty) = process.communicate()
     >>> print(output)
@@ -117,7 +117,7 @@ The second one, executes the import.
     >>> process = subprocess.Popen([
     ...     sys.executable, 'cronscripts/rosetta-poimport.py'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.STDOUT
+    ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )
     >>> (output, empty) = process.communicate()
     >>> print(output)
