@@ -10,6 +10,20 @@ ALTER TABLE Snap
 
 COMMENT ON COLUMN Snap.project IS 'The project which is the pillar for this Snap';
 
+CREATE TABLE SnapSubscription (
+    id serial NOT NULL PRIMARY KEY,
+    person integer NOT NULL REFERENCES Person(id),
+    snap integer NOT NULL REFERENCES Snap(id),
+    date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
+    subscribed_by integer NOT NULL REFERENCES Person(id)
+);
+
+CREATE UNIQUE INDEX snapsubscription__person_snap__key
+    ON SnapSubscription(snap, person);
+
+CREATE INDEX snapsubscription__person__idx
+    ON SnapSubscription(person);
+
 ALTER TABLE AccessArtifact
     ADD COLUMN snap integer REFERENCES snap;
 
