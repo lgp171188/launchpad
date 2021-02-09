@@ -1,4 +1,4 @@
-<!-- Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -41,6 +41,15 @@
         provides="lp.snappy.interfaces.snap.ISnapSet">
         <allow interface="lp.snappy.interfaces.snap.ISnapSet" />
     </securedutility>
+
+    <!-- SnapSubscription -->
+
+    <class class="lp.snappy.model.snapsubscription.SnapSubscription">
+      <allow interface="lp.snappy.interfaces.snapsubscription.ISnapSubscription"/>
+      <require
+          permission="zope.Public"
+          set_schema="lp.snappy.interfaces.snapsubscription.ISnapSubscription"/>
+    </class>
 
     <!-- SnapBuildRequest -->
     <class class="lp.snappy.model.snap.SnapBuildRequest">

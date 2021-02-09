@@ -1350,9 +1350,6 @@ class TestSnapVisibility(TestCaseWithFactory):
             AccessArtifactGrant.abstract_artifact_id == AccessArtifact.id,
             *conditions)
 
-    def getSnapSubscription(self, snap, person):
-        return removeSecurityProxy(snap)._getSubscription(person)
-
     def test_only_owner_can_grant_access(self):
         owner = self.factory.makePerson()
         pillar = self.factory.makeProduct(owner=owner)
@@ -1389,20 +1386,18 @@ class TestSnapVisibility(TestCaseWithFactory):
         with person_logged_in(owner):
             self.assertFalse(snap.visibleByUser(person))
             snap.subscribe(person, snap.owner)
-            self.assertThat(
-                self.getSnapSubscription(snap, person),
-                MatchesStructure(
-                    person=Equals(person),
-                    snap=Equals(snap),
-                    subscribed_by=Equals(snap.owner),
-                    date_created=IsInstance(datetime)))
+            self.assertThat(snap.getSubscription(person), MatchesStructure(
+                person=Equals(person),
+                snap=Equals(snap),
+                subscribed_by=Equals(snap.owner),
+                date_created=IsInstance(datetime)))
             # Calling again should be a no-op.
             snap.subscribe(person, snap.owner)
             self.assertTrue(snap.visibleByUser(person))
 
             snap.unsubscribe(person, snap.owner)
             self.assertFalse(snap.visibleByUser(person))
-            self.assertIsNone(self.getSnapSubscription(snap, person))
+            self.assertIsNone(snap.getSubscription(person))
 
     def test_reconcile_set_public(self):
         owner = self.factory.makePerson()
@@ -1413,7 +1408,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             snap.subscribe(another_user, snap.owner)
             self.assertEqual(1, self.getSnapGrants(snap, another_user).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_user),
+                snap.getSubscription(another_user),
                 MatchesStructure(
                     person=Equals(another_user),
                     snap=Equals(snap),
@@ -1423,7 +1418,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             snap.information_type = InformationType.PUBLIC
             self.assertEqual(0, self.getSnapGrants(snap, another_user).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_user),
+                snap.getSubscription(another_user),
                 MatchesStructure(
                     person=Equals(another_user),
                     snap=Equals(snap),
@@ -1448,7 +1443,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             self.assertTrue(snap.visibleByUser(another_person))
             self.assertEqual(1, self.getSnapGrants(snap).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_person),
+                snap.getSubscription(another_person),
                 MatchesStructure(
                     person=Equals(another_person),
                     snap=Equals(snap),
@@ -1459,7 +1454,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             self.assertTrue(snap.visibleByUser(another_person))
             self.assertEqual(1, self.getSnapGrants(snap).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_person),
+                snap.getSubscription(another_person),
                 MatchesStructure(
                     person=Equals(another_person),
                     snap=Equals(snap),

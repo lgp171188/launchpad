@@ -1098,6 +1098,18 @@ class Snap(Storm, WebhookTargetMixin):
         order_by = Desc(SnapBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def subscriptions(self):
+        return Store.of(self).find(
+            SnapSubscription, SnapSubscription.snap == self)
+
+    @property
+    def subscribers(self):
+        return Store.of(self).find(
+            Person,
+            SnapSubscription.person_id == Person.id,
+            SnapSubscription.snap == self)
+
     def visibleByUser(self, user):
         """See `IGitRepository`."""
         if not self.private:
@@ -1115,7 +1127,11 @@ class Snap(Storm, WebhookTargetMixin):
             Snap.id == self.id,
             visibility_clause).is_empty()
 
-    def _getSubscription(self, person):
+    def hasSubscription(self, person):
+        """See `ISnap`."""
+        return self.getSubscription(person) is not None
+
+    def getSubscription(self, person):
         """Returns person's subscription to this snap recipe, or None if no
         subscription is available.
         """
@@ -1146,7 +1162,7 @@ class Snap(Storm, WebhookTargetMixin):
             raise SubscriptionPrivacyViolation(
                 "Open and delegated teams cannot be subscribed to private "
                 "snap recipes.")
-        subscription = self._getSubscription(person)
+        subscription = self.getSubscription(person)
         if subscription is None:
             subscription = SnapSubscription(
                 person=person, snap=self, subscribed_by=subscribed_by)
@@ -1162,7 +1178,7 @@ class Snap(Storm, WebhookTargetMixin):
         service = getUtility(IService, "sharing")
         service.revokeAccessGrants(
             self.pillar, person, unsubscribed_by, snaps=[self])
-        subscription = self._getSubscription(person)
+        subscription = self.getSubscription(person)
         if (not ignore_permissions
                 and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
             raise UserCannotUnsubscribePerson(

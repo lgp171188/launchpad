@@ -64,6 +64,7 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.interfaces.gitref import IGitRef
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
@@ -133,6 +134,13 @@ class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
             return None
         return build
 
+    @stepthrough("+subscription")
+    def traverse_subscription(self, name):
+        """Traverses to an `ISnapSubscription`."""
+        person = getUtility(IPersonSet).getByName(name)
+        if person is not None:
+            return self.context.getSubscription(person)
+
 
 class SnapBreadcrumb(NameBreadcrumb):
 
@@ -187,11 +195,28 @@ class SnapContextMenu(ContextMenu):
 
     facet = 'overview'
 
-    links = ('request_builds',)
+    links = ('request_builds', 'add_subscriber', 'subscription')
 
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
         return Link('+request-builds', 'Request builds', icon='add')
+
+    @enabled_with_permission("launchpad.AnyPerson")
+    def subscription(self):
+        if self.context.hasSubscription(self.user):
+            url = "+edit-subscription"
+            text = "Edit your subscription"
+            icon = "edit"
+        else:
+            url = "+subscribe"
+            text = "Subscribe yourself"
+            icon = "add"
+        return Link(url, text, icon=icon)
+
+    @enabled_with_permission("launchpad.AnyPerson")
+    def add_subscriber(self):
+        text = "Subscribe someone else"
+        return Link("+addsubscriber", text, icon="add")
 
 
 class SnapView(LaunchpadView):

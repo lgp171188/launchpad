@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security policies for using content objects."""
@@ -214,6 +214,7 @@ from lp.snappy.interfaces.snappyseries import (
     ISnappySeries,
     ISnappySeriesSet,
     )
+from lp.snappy.interfaces.snapsubscription import ISnapSubscription
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthToken
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
@@ -3337,6 +3338,30 @@ class AdminSnap(AuthorizationBase):
         return (
             user.in_ppa_self_admins
             and EditSnap(self.obj).checkAuthenticated(user))
+
+
+class SnapSubscriptionEdit(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = ISnapSubscription
+
+    def checkAuthenticated(self, user):
+        """Is the user able to edit a Snap recipe subscription?
+
+        Any team member can edit a Snap recipe subscription for their
+        team.
+        Launchpad Admins can also edit any Snap recipe subscription.
+        The owner of the subscribed Snap can edit the subscription. If
+        the Snap owner is a team, then members of the team can edit
+        the subscription.
+        """
+        return (user.inTeam(self.obj.snap.owner) or
+                user.inTeam(self.obj.person) or
+                user.inTeam(self.obj.subscribed_by) or
+                user.in_admin)
+
+
+class SnapSubscriptionView(SnapSubscriptionEdit):
+    permission = 'launchpad.View'
 
 
 class ViewSnapBuildRequest(DelegatedAuthorization):

@@ -570,9 +570,21 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    subscriptions = CollectionField(
+        title=_("SnapSubscriptions associated with this repository."),
+        readonly=True,
+        # Really IGitSubscription, patched in _schema_circular_imports.py.
+        value_type=Reference(Interface))
+
     subscribers = CollectionField(
-        title=_("Persons subscribed to this repository."),
+        title=_("Persons subscribed to this snap recipe."),
         readonly=True, value_type=Reference(IPerson))
+
+    def getSubscription(person):
+        """Returns the person's snap subscription for this snap recipe."""
+
+    def hasSubscription(person):
+        """Is this person subscribed to the snap recipe?"""
 
     def visibleByUser(user):
         """Can the specified user see this snap recipe?"""
