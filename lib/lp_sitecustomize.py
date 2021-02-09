@@ -189,6 +189,8 @@ def main(instance_name=None):
     # through actually using itertools.groupby.
     grouper = type(list(itertools.groupby([0]))[0][1])
     checker.BasicTypes[grouper] = checker._iteratorChecker
+    # Work around https://github.com/zopefoundation/zope.security/issues/75.
+    checker.BasicTypes[type(().__repr__)] = checker._callableChecker
 
     # XXX cjwatson 2020-11-20: Remove this once we upgrade to a version of
     # Breezy with
