@@ -534,7 +534,7 @@ makes it write out the emails it sends.
     >>> process = subprocess.Popen(
     ...     'cronscripts/send-bug-notifications.py -v', shell=True,
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> (out, err) = process.communicate()
     >>> process.returncode
     0

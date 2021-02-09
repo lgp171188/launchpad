@@ -65,7 +65,8 @@ class TestGettextMOExporter(TestCaseWithFactory):
 
         # The file can even be converted back to PO format.
         retval, text, stderr = run_command(
-            '/usr/bin/msgunfmt', args=['-'], input=output.read())
+            '/usr/bin/msgunfmt', args=['-'], input=output.read(),
+            universal_newlines=False)
 
         self.assertEqual(0, retval)
         self.assertIn('MIME-Version', text)

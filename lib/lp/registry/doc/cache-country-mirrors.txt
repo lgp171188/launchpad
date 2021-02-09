@@ -19,10 +19,13 @@ files are saved.
     >>> directory = tempfile.mkdtemp()
     >>> process = Popen(
     ...     'scripts/cache-country-mirrors.py -q %s' % directory,
-    ...     shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    ...     shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+    ...     universal_newlines=True)
     >>> (out, err) = process.communicate()
-    >>> out, err
-    ('', '')
+    >>> print(out)
+    <BLANKLINE>
+    >>> print(err)
+    <BLANKLINE>
     >>> process.returncode
     0
 

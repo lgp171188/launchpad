@@ -5,8 +5,7 @@
 
 __metaclass__ = type
 
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 import transaction
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
@@ -144,8 +143,8 @@ class TestPersonMergeJob(TestCaseWithFactory):
             "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s" % (
                 IPersonMergeJobSource.getName()))
 
-        self.addDetail("stdout", Content(UTF8_TEXT, lambda: [out]))
-        self.addDetail("stderr", Content(UTF8_TEXT, lambda: [err]))
+        self.addDetail("stdout", text_content(out))
+        self.addDetail("stderr", text_content(err))
 
         self.assertEqual(0, exit_code)
         IStore(self.from_person).invalidate()

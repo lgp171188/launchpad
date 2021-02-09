@@ -246,7 +246,8 @@ just upload number 1.
     ...     "-C", "sync", "-J", upload_dir_1_name, temp_dir,
     ...     ],
     ...     stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True)
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -269,7 +270,8 @@ Now continue with the real upload.
     ...     "-C", "sync", temp_dir,
     ...     ],
     ...     stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True)
 
     >>> stdout, stderr = process.communicate()
     >>> if process.returncode != 0:
@@ -456,7 +458,8 @@ Invoke Publisher script against the 'ubuntutest' distribution:
     >>> process = subprocess.Popen([sys.executable, script, "-vvCq",
     ...                             "-d", "ubuntutest"],
     ...                            stdout=subprocess.PIPE,
-    ...                            stderr=subprocess.PIPE)
+    ...                            stderr=subprocess.PIPE,
+    ...                            universal_newlines=True)
     >>> stdout, stderr = process.communicate()
     >>> print(stdout)
     <BLANKLINE>
@@ -554,7 +557,8 @@ Invoke Publisher script again to land our changes in the archive
     >>> process = subprocess.Popen([sys.executable, script, "-vvCq",
     ...                             "-d", "ubuntutest"],
     ...                            stdout=subprocess.PIPE,
-    ...                            stderr=subprocess.PIPE)
+    ...                            stderr=subprocess.PIPE,
+    ...                            universal_newlines=True)
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
