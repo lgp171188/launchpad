@@ -51,15 +51,10 @@ from zope.formlib.boolwidgets import CheckBoxWidget
 from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import implementer
 from zope.lifecycleevent import ObjectCreatedEvent
-from zope.schema import (
-    Bool,
-    Password,
-    TextLine,
-    )
+from zope.schema import Bool
 from zope.security.checker import canWrite
 from zope.security.interfaces import Unauthorized
 
-from lp import _
 from lp.answers.browser.faqtarget import FAQTargetNavigationMixin
 from lp.answers.browser.questiontarget import QuestionTargetTraversalMixin
 from lp.app.browser.launchpadform import (
@@ -104,6 +99,9 @@ from lp.registry.browser.pillar import (
     PillarBugsMenu,
     PillarNavigationMixin,
     PillarViewMixin,
+    )
+from lp.registry.browser.widgets.ocicredentialswidget import (
+    OCICredentialsWidget,
     )
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
@@ -1013,6 +1011,7 @@ class DistributionEditView(RegistryEditFormView,
         'translation_focus',
         'default_traversal_policy',
         'redirect_default_traversal',
+        'oci_registry_credentials',
         ]
 
     custom_widget_icon = CustomWidgetFactory(
@@ -1023,106 +1022,12 @@ class DistributionEditView(RegistryEditFormView,
         ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
     custom_widget_require_virtualized = CheckBoxWidget
     custom_widget_processors = LabeledMultiCheckBoxWidget
+    custom_widget_oci_registry_credentials = OCICredentialsWidget
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
         return 'Change %s details' % self.context.displayname
-
-    def createOCICredentials(self):
-        return form.Fields(
-            TextLine(
-                __name__='oci_credentials_url',
-                title=u"Registry URL",
-                description=(
-                    u"URL for the OCI registry to upload images to."
-                ),
-                required=False),
-            TextLine(
-                __name__='oci_credentials_region',
-                title=u"Region",
-                description=u"Region for the OCI Registry.",
-                required=False),
-            TextLine(
-                __name__='oci_credentials_username',
-                title=u"Username",
-                description=u"Username for the OCI Registry.",
-                required=False),
-            Password(
-                __name__='oci_credentials_password',
-                title=u"Password",
-                description=u"Password for the OCI Registry.",
-                required=False),
-            Password(
-                __name__='oci_credentials_confirm_password',
-                title=u"Confirm password",
-                required=False),
-            Bool(
-                __name__='oci_credentials_delete',
-                title=u"Delete",
-                description=u"Delete these credentials.",
-                required=False,)
-            )
-
-    def changeOCICredentials(self, data):
-        delete = data.pop("oci_credentials_delete", None)
-        if delete and self.context.oci_registry_credentials:
-            credentials = self.context.oci_registry_credentials
-            self.context.oci_registry_credentials = None
-            credentials.destroySelf()
-            return
-
-        url = data.pop("oci_credentials_url", None)
-        username = data.pop("oci_credentials_username", None)
-        region = data.pop("oci_credentials_region", None)
-        # validated against confirm password in validateOCICredentials
-        password = data.pop("oci_credentials_password", None)
-        if "oci_credentials_confirm_password" in data:
-            del data["oci_credentials_confirm_password"]
-
-        # If we're not deleting, but don't have a url, then don't do anything
-        if not url:
-            return
-
-        current_credentials = self.context.oci_registry_credentials
-        if current_credentials:
-            current_credentials.url = url
-            current_credentials.setCredentials({
-                "username": username,
-                "password": password,
-                "region": region})
-            return
-        credentials = getUtility(IOCIRegistryCredentialsSet).new(
-            self.context.owner,
-            self.context.owner,
-            url,
-            {"username": username,
-             "password": password,
-             "region": region})
-        self.context.oci_registry_credentials = credentials
-
-    def validateOCICredentials(self, data):
-        # if we're deleting credentials, we don't need to validate
-        if data.get("oci_credentials_delete"):
-            return
-        url = data.get("oci_credentials_url")
-        username = data.get("oci_credentials_username")
-        if username and not url:
-            self.setFieldError(
-                'oci_credentials_url',
-                _("A URL is required if a username is present."))
-        password = data.get("oci_credentials_password")
-        confirm_password = data.get("oci_credentials_confirm_password")
-        if password != confirm_password:
-            self.setFieldError(
-                "oci_credentials_password",
-                _("Passwords must match."))
-        existing_credentials = self.context.oci_registry_credentials
-        if existing_credentials and not url:
-            self.setFieldError(
-                "oci_credentials_url",
-                _("URL must be specified. "
-                  "Delete credentials to unset URL."))
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
@@ -1132,22 +1037,14 @@ class DistributionEditView(RegistryEditFormView,
             getUtility(IProcessorSet).getAll(),
             u"The architectures on which the distribution's main archive can "
             u"build.")
-        self.form_fields += self.createOCICredentials()
 
     @property
     def initial_values(self):
-        data = {
+        return {
             'require_virtualized':
                 self.context.main_archive.require_virtualized,
-            'processors': self.context.main_archive.processors,
+            'processors': self.context.main_archive.processors
             }
-        # Do OCI initial values
-        oci_credentials = self.context.oci_registry_credentials
-        if oci_credentials:
-            data["oci_credentials_url"] = oci_credentials.url
-            data["oci_credentials_username"] = oci_credentials.username
-            data["oci_credentials_region"] = oci_credentials.region
-        return data
 
     def validate(self, data):
         """Constrain bug expiration to Launchpad Bugs tracker."""
@@ -1157,7 +1054,6 @@ class DistributionEditView(RegistryEditFormView,
         official_malone = data.get('official_malone', False)
         if not official_malone:
             data['enable_bug_expiration'] = False
-        self.validateOCICredentials(data)
 
     def change_archive_fields(self, data):
         # Update context.main_archive.
@@ -1177,7 +1073,14 @@ class DistributionEditView(RegistryEditFormView,
     @action("Change", name='change')
     def change_action(self, action, data):
         self.change_archive_fields(data)
-        self.changeOCICredentials(data)
+        new_credentials = data.pop('oci_registry_credentials', None)
+        old_credentials = self.context.oci_registry_credentials
+        if self.context.oci_registry_credentials != new_credentials:
+            # Remove the old credentials as we're assigning new ones
+            # or clearing them
+            self.context.oci_registry_credentials = new_credentials
+            if old_credentials:
+                old_credentials.destroySelf()
         self.updateContextFromData(data)
 
 

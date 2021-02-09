@@ -5,6 +5,7 @@ __metaclass__ = type
 
 import soupmatchers
 from testtools.matchers import MatchesStructure
+import transaction
 from zope.component import getUtility
 
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
@@ -192,8 +193,12 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
     def setUp(self):
         super(TestDistroEditView, self).setUp()
         self.admin = login_celebrity('admin')
-        self.distribution = self.factory.makeDistribution()
+        self.oci_admins = self.factory.makeTeam(
+            members=[self.admin])
+        self.distribution = self.factory.makeDistribution(
+            oci_project_admin=self.oci_admins)
         self.all_processors = getUtility(IProcessorSet).getAll()
+        self.distributionset = getUtility(IDistributionSet)
         self.setConfig()
 
     def test_edit_distro_init_value_require_virtualized(self):
@@ -264,46 +269,69 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_oci_validation_username_no_url(self):
         edit_form = self.getDefaultEditDict()
-        edit_form["field.oci_credentials_username"] = "username"
+        edit_form["field.oci_registry_credentials.url"] = ""
+        edit_form["field.oci_registry_credentials.username"] = "username"
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = ""
+        edit_form["field.oci_registry_credentials.confirm_password"] = ""
+        edit_form["field.oci_registry_credentials.delete"] = False
 
         view = create_initialized_view(
             self.distribution, '+edit', principal=self.admin,
             method='POST', form=edit_form)
         self.assertEqual(
-            "A URL is required if a username is present.",
-            view.getFieldError("oci_credentials_url"))
+            "A URL is required.",
+            view.getFieldError("oci_registry_credentials"))
 
     def test_oci_validation_different_passwords(self):
         edit_form = self.getDefaultEditDict()
-        edit_form["field.oci_credentials_password"] = "password1"
-        edit_form["field.oci_credentials_confirm_password"] = "password2"
+        edit_form["field.oci_registry_credentials.url"] = "http://test.example"
+        edit_form["field.oci_registry_credentials.username"] = "username"
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = "password1"
+        edit_form["field.oci_registry_credentials.confirm_password"] = "2"
+        edit_form["field.oci_registry_credentials.delete"] = False
+
         view = create_initialized_view(
             self.distribution, '+edit', principal=self.admin,
             method='POST', form=edit_form)
         self.assertEqual(
             "Passwords must match.",
-            view.getFieldError("oci_credentials_password"))
+            view.getFieldError("oci_registry_credentials"))
 
     def test_oci_validation_url_unset(self):
         edit_form = self.getDefaultEditDict()
-        edit_form["field.oci_credentials_url"] = ""
+        edit_form["field.oci_registry_credentials.url"] = ""
+        edit_form["field.oci_registry_credentials.username"] = "username"
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = "password1"
+        edit_form["field.oci_registry_credentials.confirm_password"] = "2"
+        edit_form["field.oci_registry_credentials.delete"] = False
 
         credentials = self.factory.makeOCIRegistryCredentials(
             registrant=self.distribution.owner,
             owner=self.distribution.owner)
         self.distribution.oci_registry_credentials = credentials
+        transaction.commit()
 
         view = create_initialized_view(
             self.distribution, '+edit', principal=self.admin,
             method='POST', form=edit_form)
         self.assertEqual(
-            "URL must be specified. Delete credentials to unset URL.",
-            view.getFieldError("oci_credentials_url"))
+            "A URL is required.",
+            view.getFieldError("oci_registry_credentials"))
+        self.assertEqual(
+            credentials, self.distribution.oci_registry_credentials)
 
     def test_oci_create_credentials_url_only(self):
         edit_form = self.getDefaultEditDict()
         registry_url = self.factory.getUniqueURL()
-        edit_form["field.oci_credentials_url"] = registry_url
+        edit_form["field.oci_registry_credentials.url"] = registry_url
+        edit_form["field.oci_registry_credentials.username"] = ""
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = ""
+        edit_form["field.oci_registry_credentials.confirm_password"] = ""
+        edit_form["field.oci_registry_credentials.delete"] = False
 
         create_initialized_view(
             self.distribution, '+edit', principal=self.admin,
@@ -316,16 +344,42 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
         registry_url = self.factory.getUniqueURL()
         username = self.factory.getUniqueUnicode()
         password = self.factory.getUniqueUnicode()
-        edit_form["field.oci_credentials_url"] = registry_url
-        edit_form["field.oci_credentials_username"] = username
-        edit_form["field.oci_credentials_password"] = password
-        edit_form["field.oci_credentials_confirm_password"] = password
+        edit_form["field.oci_registry_credentials.url"] = registry_url
+        edit_form["field.oci_registry_credentials.username"] = username
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = password
+        edit_form["field.oci_registry_credentials.confirm_password"] = password
+        edit_form["field.oci_registry_credentials.delete"] = False
 
         create_initialized_view(
             self.distribution, '+edit', principal=self.admin,
             method='POST', form=edit_form)
         self.assertEqual(
             username, self.distribution.oci_registry_credentials.username)
+
+    def test_oci_create_credentials_registrant_not_oci_admin(self):
+        distro_admin = self.factory.makePerson()
+        oci_admin = self.factory.makeTeam()
+        distribution = self.factory.makeDistribution(
+            owner=distro_admin,
+            oci_project_admin=oci_admin
+        )
+        edit_form = self.getDefaultEditDict()
+        registry_url = self.factory.getUniqueURL()
+        username = self.factory.getUniqueUnicode()
+        password = self.factory.getUniqueUnicode()
+        edit_form["field.oci_registry_credentials.url"] = registry_url
+        edit_form["field.oci_registry_credentials.username"] = username
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = password
+        edit_form["field.oci_registry_credentials.confirm_password"] = password
+        edit_form["field.oci_registry_credentials.delete"] = False
+
+        create_initialized_view(
+            distribution, '+edit', principal=distro_admin,
+            method='POST', form=edit_form)
+        self.assertEqual(
+            username, distribution.oci_registry_credentials.username)
 
     def test_oci_create_credentials_change_url(self):
         edit_form = self.getDefaultEditDict()
@@ -334,15 +388,20 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
             owner=self.distribution.owner)
         self.distribution.oci_registry_credentials = credentials
         registry_url = self.factory.getUniqueURL()
-        edit_form["field.oci_credentials_url"] = registry_url
+        edit_form["field.oci_registry_credentials.url"] = registry_url
+        edit_form["field.oci_registry_credentials.username"] = ""
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = ""
+        edit_form["field.oci_registry_credentials.confirm_password"] = ""
+        edit_form["field.oci_registry_credentials.delete"] = False
 
         create_initialized_view(
             self.distribution, '+edit', principal=self.admin,
             method='POST', form=edit_form)
         self.assertEqual(
             registry_url, self.distribution.oci_registry_credentials.url)
-        # This should have mutated, not created new credentials records
-        self.assertEqual(
+        # This should have created new records
+        self.assertNotEqual(
             credentials.id, self.distribution.oci_registry_credentials.id)
 
     def test_oci_create_credentials_change_password(self):
@@ -351,11 +410,15 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
             registrant=self.distribution.owner,
             owner=self.distribution.owner)
         self.distribution.oci_registry_credentials = credentials
+        transaction.commit()
         password = self.factory.getUniqueUnicode()
-        edit_form["field.oci_credentials_url"] = credentials.url
-        edit_form["field.oci_credentials_username"] = credentials.username
-        edit_form["field.oci_credentials_password"] = password
-        edit_form["field.oci_credentials_confirm_password"] = password
+        edit_form["field.oci_registry_credentials.url"] = credentials.url
+        edit_form[
+            "field.oci_registry_credentials.username"] = credentials.username
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = password
+        edit_form["field.oci_registry_credentials.confirm_password"] = password
+        edit_form["field.oci_registry_credentials.delete"] = False
 
         create_initialized_view(
             self.distribution, '+edit', principal=self.admin,
@@ -374,7 +437,12 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
             registrant=self.distribution.owner,
             owner=self.distribution.owner)
         self.distribution.oci_registry_credentials = credentials
-        edit_form['field.oci_credentials_delete'] = 'on'
+        edit_form["field.oci_registry_credentials.url"] = ""
+        edit_form["field.oci_registry_credentials.username"] = ""
+        edit_form["field.oci_registry_credentials.region"] = ""
+        edit_form["field.oci_registry_credentials.password"] = ""
+        edit_form["field.oci_registry_credentials.confirm_password"] = ""
+        edit_form["field.oci_registry_credentials.delete"] = "on"
 
         create_initialized_view(
             self.distribution, '+edit', principal=self.admin,

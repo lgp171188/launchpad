@@ -725,7 +725,7 @@ class IDistributionPublic(
         title=_("OCI registry credentials"),
         description=_("Credentials and URL to use for uploading all OCI "
                       "images in this distribution to a registry."),
-        required=False, readonly=True)
+        required=False, readonly=False)
 
 
 @exported_as_webservice_entry(as_of="beta")

@@ -2275,7 +2275,7 @@
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.distribution.DistributionEditView"
         permission="launchpad.Edit"
-        template="../templates/distribution-edit.pt"
+        template="../../app/templates/generic-edit.pt"
         />
     <browser:page
         name="+admin"
