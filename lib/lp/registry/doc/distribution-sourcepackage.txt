@@ -44,7 +44,7 @@ A distribution source package has a name, displayname, title, and a summary.
     >>> print dsp.displayname
     pmount in Ubuntu
 
-    >>> print dsp.title.encode('ascii', 'ignore')
+    >>> print(dsp.title)
     pmount package in Ubuntu
 
     >>> print dsp.summary
