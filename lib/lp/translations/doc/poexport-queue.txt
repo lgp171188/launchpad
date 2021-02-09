@@ -345,7 +345,7 @@ Exporting this pofile yields both messages in the resulting file.
     >>> process_queue(transaction, logging.getLogger())
     INFO:root:Stored file at http://...eo.po
 
-    >>> print(get_newest_librarian_file().read())
+    >>> print(get_newest_librarian_file().read().decode('UTF-8'))
     # Esperanto translation for ...
     ...
     "X-Generator: Launchpad (build ...)\n"
@@ -366,7 +366,7 @@ in Ubuntu compared to upstream.
     >>> process_queue(transaction, logging.getLogger())
     INFO:root:Stored file at http://...eo.po
 
-    >>> print(get_newest_librarian_file().read())
+    >>> print(get_newest_librarian_file().read().decode('UTF-8'))
     # IMPORTANT: This file does NOT contain a complete PO file structure.
     # DO NOT attempt to import this file back into Launchpad.
     ...
