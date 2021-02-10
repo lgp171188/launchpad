@@ -154,7 +154,7 @@ class TestMacaroonAuth(TestCase):
                 base64.b64encode(json.dumps({
                     "openid": "1234567",
                     "email": "user@example.org",
-                    }))))
+                    }).encode("ASCII")).decode("ASCII")))
         logger = BufferLogger()
         MacaroonAuth(
             root_macaroon.serialize(),
@@ -318,7 +318,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
         snappy_series = self.factory.makeSnappySeries()
         responses.add("POST", "http://sca.example/dev/api/acl/", json={})
         self.assertRaisesWithContent(
-            BadRequestPackageUploadResponse, b"{}",
+            BadRequestPackageUploadResponse, "{}",
             self.client.requestPackageUploadPermission,
             snappy_series, "test-snap")
 
@@ -339,7 +339,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
         responses.add("POST", "http://sca.example/dev/api/acl/", status=404)
         self.assertRaisesWithContent(
             BadRequestPackageUploadResponse,
-            b"404 Client Error: Not Found",
+            "404 Client Error: Not Found",
             self.client.requestPackageUploadPermission,
             snappy_series, "test-snap")
 
@@ -352,10 +352,10 @@ class TestSnapStoreClient(TestCaseWithFactory):
             store_name="test-snap", store_secrets=store_secrets)
         snapbuild = self.factory.makeSnapBuild(snap=snap)
         snap_lfa = self.factory.makeLibraryFileAlias(
-            filename="test-snap.snap", content="dummy snap content")
+            filename="test-snap.snap", content=b"dummy snap content")
         self.factory.makeSnapFile(snapbuild=snapbuild, libraryfile=snap_lfa)
         manifest_lfa = self.factory.makeLibraryFileAlias(
-            filename="test-snap.manifest", content="dummy manifest content")
+            filename="test-snap.manifest", content=b"dummy manifest content")
         self.factory.makeSnapFile(
             snapbuild=snapbuild, libraryfile=manifest_lfa)
         snapbuild.updateStatus(BuildStatus.BUILDING)
@@ -380,7 +380,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 form_data={
                     "binary": MatchesStructure.byEquality(
                         name="binary", filename="test-snap.snap",
-                        value="dummy snap content",
+                        value=b"dummy snap content",
                         type="application/octet-stream",
                         )}),
             RequestMatches(
@@ -414,7 +414,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 form_data={
                     "binary": MatchesStructure.byEquality(
                         name="binary", filename="test-snap.snap",
-                        value="dummy snap content",
+                        value=b"dummy snap content",
                         type="application/octet-stream",
                         )}),
             RequestMatches(
@@ -451,7 +451,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 form_data={
                     "binary": MatchesStructure.byEquality(
                         name="binary", filename="test-snap.snap",
-                        value="dummy snap content",
+                        value=b"dummy snap content",
                         type="application/octet-stream",
                         )}),
             RequestMatches(
@@ -491,7 +491,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 form_data={
                     "binary": MatchesStructure.byEquality(
                         name="binary", filename="test-snap.snap",
-                        value="dummy snap content",
+                        value=b"dummy snap content",
                         type="application/octet-stream",
                         )}),
             RequestMatches(
@@ -613,7 +613,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
             err = self.assertRaises(
                 UploadFailedResponse, self.client.upload, snapbuild)
             self.assertEqual("502 Server Error: Bad Gateway", str(err))
-            self.assertEqual(b"The proxy exploded.\n", err.detail)
+            self.assertEqual("The proxy exploded.\n", err.detail)
             self.assertTrue(err.can_retry)
 
     @responses.activate
@@ -691,7 +691,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                      }],
                 })
         self.assertRaisesWithContent(
-            ScanFailedResponse, b"You cannot use that reserved namespace.",
+            ScanFailedResponse, "You cannot use that reserved namespace.",
             self.client.checkStatus, status_url)
 
     @responses.activate
@@ -706,7 +706,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 "url": "http://sca.example/dev/click-apps/1/rev/1/",
                 })
         self.assertRaisesWithContent(
-            ScanFailedResponse, b"Review failed.",
+            ScanFailedResponse, "Review failed.",
             self.client.checkStatus, status_url)
 
     @responses.activate
@@ -729,7 +729,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
         status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
         responses.add("GET", status_url, status=404)
         self.assertRaisesWithContent(
-            BadScanStatusResponse, b"404 Client Error: Not Found",
+            BadScanStatusResponse, "404 Client Error: Not Found",
             self.client.checkStatus, status_url)
 
     @responses.activate
@@ -792,7 +792,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
         responses.add(
             "GET", "http://search.example/api/v1/channels", status=404)
         self.assertRaisesWithContent(
-            BadSearchResponse, b"404 Client Error: Not Found",
+            BadSearchResponse, "404 Client Error: Not Found",
             self.client.listChannels)
 
     @responses.activate
