@@ -249,7 +249,7 @@ class Mantis(ExternalBugTracker):
         # MANTIS_VIEW_ALL_COOKIE set in the previous step to specify
         # what's being viewed.
         try:
-            csv_data = self._getPage("csv_export.php").content
+            csv_data = self._getPage("csv_export.php").text
         except BugTrackerConnectError as value:
             # Some Mantis installations simply return a 500 error
             # when the csv_export.php page is accessed. Since the
@@ -304,7 +304,7 @@ class Mantis(ExternalBugTracker):
         # _checkForApplicationError) then we could be much more
         # specific than this.
         bug_page = BeautifulSoup(
-            self._getPage('view.php?id=%s' % bug_id).content,
+            self._getPage('view.php?id=%s' % bug_id).text,
             parse_only=SoupStrainer('table'))
 
         app_error = self._checkForApplicationError(bug_page)

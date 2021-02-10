@@ -218,7 +218,8 @@ class Roundup(ExternalBugTracker):
         """See `ExternalBugTracker`."""
         bug_id = int(bug_id)
         query_url = self.getSingleBugExportURL(bug_id)
-        reader = csv.DictReader(self._getPage(query_url).iter_lines())
+        reader = csv.DictReader(
+            self._getPage(query_url).iter_lines(decode_unicode=True))
         return (bug_id, next(reader))
 
     def getRemoteBugBatch(self, bug_ids):
@@ -230,7 +231,8 @@ class Roundup(ExternalBugTracker):
         #      export the bug ids needed rather than hitting the remote
         #      tracker for a potentially massive number of bugs.
         query_url = self.getBatchBugExportURL()
-        remote_bugs = csv.DictReader(self._getPage(query_url).iter_lines())
+        remote_bugs = csv.DictReader(
+            self._getPage(query_url).iter_lines(decode_unicode=True))
         bugs = {}
         for remote_bug in remote_bugs:
             # We're only interested in the bug if it's one of the ones in
