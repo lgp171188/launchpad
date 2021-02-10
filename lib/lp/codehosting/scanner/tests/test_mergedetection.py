@@ -11,6 +11,7 @@ import logging
 
 from breezy.revision import NULL_REVISION
 from lazr.lifecycle.event import ObjectModifiedEvent
+import six
 import transaction
 from zope.component import getUtility
 from zope.event import notify
@@ -298,8 +299,9 @@ class TestBranchMergeDetectionHandler(TestCaseWithFactory):
         derived_job = job.makeDerived()
         derived_job.run()
         notifications = pop_notifications()
-        self.assertIn('Work in progress => Merged',
-                      notifications[0].get_payload(decode=True))
+        self.assertIn(
+            'Work in progress => Merged',
+            six.ensure_text(notifications[0].get_payload(decode=True)))
         self.assertEqual(
             config.canonical.noreply_from_address, notifications[0]['From'])
         recipients = set(msg['x-envelope-to'] for msg in notifications)

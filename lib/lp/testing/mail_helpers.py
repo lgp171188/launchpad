@@ -9,6 +9,7 @@ __metaclass__ = type
 
 import operator
 
+import six
 import transaction
 from zope.component import getUtility
 
@@ -119,7 +120,7 @@ def print_emails(include_reply_to=False, group_similar=False,
             print('%s: %s' % (
                 notification_type_header, message[notification_type_header]))
         print('Subject:', message['Subject'])
-        print(body)
+        print(six.ensure_text(body))
         print("-" * 40)
 
 

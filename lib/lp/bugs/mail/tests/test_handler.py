@@ -187,13 +187,13 @@ class TestMaloneHandler(TestCaseWithFactory):
         big_body_text = 'This is really big.' * 10000
         message = self.getFailureForMessage(
             'new@bugs.launchpad.test', body=big_body_text)
-        self.assertIn("The description is too long.", message)
+        self.assertIn(b"The description is too long.", message)
 
     def test_bug_not_found(self):
         # Non-existent bug numbers result in an informative error.
         message = self.getFailureForMessage('1234@bugs.launchpad.test')
         self.assertIn(
-            "There is no such bug in Launchpad: 1234", message)
+            b"There is no such bug in Launchpad: 1234", message)
 
     def test_accessible_private_bug(self):
         # Private bugs are accessible by their subscribers.
@@ -216,7 +216,7 @@ class TestMaloneHandler(TestCaseWithFactory):
                 True, self.factory.makePerson())
         message = self.getFailureForMessage('4@bugs.launchpad.test')
         self.assertIn(
-            "There is no such bug in Launchpad: 4", message)
+            b"There is no such bug in Launchpad: 4", message)
 
 
 class MaloneHandlerProcessTestCase(TestCaseWithFactory):

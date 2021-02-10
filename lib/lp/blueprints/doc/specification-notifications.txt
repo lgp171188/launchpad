@@ -128,7 +128,7 @@ Now let's take a look at what the notification looks like:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Definition Status: Drafting => Pending Approval
@@ -168,7 +168,7 @@ Whiteboard change:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
     Whiteboard set to:
@@ -208,7 +208,7 @@ Definition status and whiteboard change:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Definition Status: Pending Approval => Approved
@@ -248,7 +248,7 @@ Change priority:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Priority: High => Essential
@@ -282,7 +282,7 @@ Change approver, assignee and drafter:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Approver: Mark Shuttleworth => (none)
