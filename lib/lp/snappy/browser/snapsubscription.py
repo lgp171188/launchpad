@@ -56,7 +56,20 @@ class SnapPortletSubscribersContent(LaunchpadView):
             key=lambda subscription: subscription.person.displayname)
 
 
-class SnapSubscriptionEditView(LaunchpadEditFormView):
+class RedirectToSnapMixin:
+    @property
+    def next_url(self):
+        url = canonical_url(self.snap)
+        # If the subscriber can no longer see the Snap recipe, redirect them
+        # away.
+        if not self.snap.visibleByUser(self.user):
+            url = canonical_url(self.snap.project)
+        return url
+
+    cancel_url = next_url
+
+
+class SnapSubscriptionEditView(RedirectToSnapMixin, LaunchpadEditFormView):
     """The view for editing Snap recipe subscriptions."""
     schema = ISnapSubscription
     field_names = []
@@ -86,19 +99,8 @@ class SnapSubscriptionEditView(LaunchpadEditFormView):
             "%s has been unsubscribed from this Snap recipe."
             % self.person.displayname)
 
-    @property
-    def next_url(self):
-        url = canonical_url(self.snap)
-        # If the subscriber can no longer see the Snap recipe, redirect them
-        # away.
-        if not self.snap.visibleByUser(self.person):
-            url = canonical_url(self.snap.pillar)
-        return url
 
-    cancel_url = next_url
-
-
-class _SnapSubscriptionCreationView(LaunchpadFormView):
+class _SnapSubscriptionCreationView(RedirectToSnapMixin, LaunchpadFormView):
     """Contains the common functionality of the Add and Edit views."""
 
     schema = ISnapSubscription
@@ -107,17 +109,6 @@ class _SnapSubscriptionCreationView(LaunchpadFormView):
     def initialize(self):
         self.snap = self.context
         super(_SnapSubscriptionCreationView, self).initialize()
-
-    @property
-    def next_url(self):
-        url = canonical_url(self.snap)
-        # If the subscriber can no longer see the Snap recipe, redirect them
-        # away.
-        if not self.snap.visibleByUser(self.user):
-            url = canonical_url(self.snap.pillar)
-        return url
-
-    cancel_url = next_url
 
 
 class SnapSubscriptionAddView(_SnapSubscriptionCreationView):

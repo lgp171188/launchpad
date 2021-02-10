@@ -3299,17 +3299,13 @@ class ViewSnap(AuthorizationBase):
     permission = 'launchpad.View'
     usedfor = ISnap
 
-    def checkUnauthenticated(self):
-        return not self.obj.private
-
     def checkAuthenticated(self, user):
-        if not self.obj.private:
+        if user.isOwner(self.obj) or user.in_commercial_admin or user.in_admin:
             return True
+        return self.obj.visibleByUser(user.person)
 
-        return (
-            user.isOwner(self.obj) or
-            user.in_commercial_admin or
-            user.in_admin)
+    def checkUnauthenticated(self):
+        return self.obj.visibleByUser(None)
 
 
 class EditSnap(AuthorizationBase):
