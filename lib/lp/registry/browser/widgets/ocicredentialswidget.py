@@ -164,6 +164,10 @@ class OCICredentialsWidget(BrowserWidget, InputWidget):
         # Distribution context allows the distro admin to create
         # credentials assigned to the oci_project_admin
         in_distribution = IDistribution.providedBy(self.context.context)
+        if not in_distribution:
+            raise AssertionError(
+                "Attempting to set OCI registry "
+                "credentials outside of a Distribution.")
         admin = self.context.context.oci_project_admin
         if in_distribution and not admin:
             raise WidgetInputError(
