@@ -583,36 +583,3 @@ form {
       }
     }
   }
-
-   /* ==================
-     OCI Credentials Forms
-  */
-
-  table.credentials-table {
-    max-width: 60%;
-    margin-bottom: 1em;
-    tr.even {
-      background-color: #eee;
-    }
-  }
-  tr {
-    .credentials-url {
-      width: 30%;
-    }
-    .credentials-owner {
-      width: 25%;
-    }
-    .credentials-username {
-      width: 10%;
-    }
-    .credentials-password {
-      width: 15%;
-    }
-    .credentials-confirm-password {
-      width: 15%;
-    }
-    .credentials-delete {
-      width: 5%;
-    }
-  }
-
