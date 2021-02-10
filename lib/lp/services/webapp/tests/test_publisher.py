@@ -6,13 +6,13 @@ from doctest import (
     ELLIPSIS,
     )
 import io
+import json
 from unittest import (
     TestLoader,
     TestSuite,
     )
 
 from lazr.restful.interfaces import IJSONRequestCache
-import simplejson
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -59,7 +59,8 @@ class TestLaunchpadView(TestCaseWithFactory):
 
     def test_getCacheJSON_non_resource_context(self):
         view = LaunchpadView(object(), LaunchpadTestRequest())
-        self.assertEqual('{"related_features": {}}', view.getCacheJSON())
+        self.assertEqual(
+            {"related_features": {}}, json.loads(view.getCacheJSON()))
 
     @staticmethod
     def getCanada():
@@ -78,7 +79,7 @@ class TestLaunchpadView(TestCaseWithFactory):
 
     def test_getCacheJSON_resource_context(self):
         view = LaunchpadView(self.getCanada(), LaunchpadTestRequest())
-        json_dict = simplejson.loads(view.getCacheJSON())['context']
+        json_dict = json.loads(view.getCacheJSON())['context']
         self.assertIsCanada(json_dict)
 
     def test_getCacheJSON_non_resource_object(self):
@@ -87,15 +88,15 @@ class TestLaunchpadView(TestCaseWithFactory):
         IJSONRequestCache(request).objects['my_bool'] = True
         with person_logged_in(self.factory.makePerson()):
             self.assertEqual(
-                '{"related_features": {}, "my_bool": true}',
-                view.getCacheJSON())
+                {"related_features": {}, "my_bool": True},
+                json.loads(view.getCacheJSON()))
 
     def test_getCacheJSON_resource_object(self):
         request = LaunchpadTestRequest()
         view = LaunchpadView(object(), request)
         IJSONRequestCache(request).objects['country'] = self.getCanada()
         with person_logged_in(self.factory.makePerson()):
-            json_dict = simplejson.loads(view.getCacheJSON())['country']
+            json_dict = json.loads(view.getCacheJSON())['country']
         self.assertIsCanada(json_dict)
 
     def test_getCacheJSON_context_overrides_objects(self):
@@ -103,7 +104,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         view = LaunchpadView(self.getCanada(), request)
         IJSONRequestCache(request).objects['context'] = True
         with person_logged_in(self.factory.makePerson()):
-            json_dict = simplejson.loads(view.getCacheJSON())['context']
+            json_dict = json.loads(view.getCacheJSON())['context']
         self.assertIsCanada(json_dict)
 
     def test_getCache_anonymous(self):
@@ -111,7 +112,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         view = LaunchpadView(self.getCanada(), request)
         self.assertIs(None, view.user)
         IJSONRequestCache(request).objects['my_bool'] = True
-        json_dict = simplejson.loads(view.getCacheJSON())
+        json_dict = json.loads(view.getCacheJSON())
         self.assertIsCanada(json_dict['context'])
         self.assertIn('my_bool', json_dict)
 
@@ -127,7 +128,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         # A redirection view by default provides no json cache data.
         request = LaunchpadTestRequest()
         view = RedirectionView(None, request)
-        json_dict = simplejson.loads(view.getCacheJSON())
+        json_dict = json.loads(view.getCacheJSON())
         self.assertEqual({}, json_dict)
 
     def test_getCache_redirected_view(self):
@@ -141,7 +142,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         test_view = TestView(self.getCanada(), request)
         view = RedirectionView(None, request, cache_view=test_view)
         IJSONRequestCache(request).objects['my_bool'] = True
-        json_dict = simplejson.loads(view.getCacheJSON())
+        json_dict = json.loads(view.getCacheJSON())
         self.assertIsCanada(json_dict['context'])
         self.assertIn('my_bool', json_dict)
 
@@ -327,13 +328,17 @@ class TestLaunchpadView(TestCaseWithFactory):
         view = TestView(object(), request)
         with person_logged_in(self.factory.makePerson()):
             self.assertEqual(
-                '{"related_features": {"test_feature": {'
-                '"url": "http://wiki.lp.dev/LEP/sample", '
-                '"is_beta": true, '
-                '"value": "on", '
-                '"title": "title"'
-                '}}}',
-                view.getCacheJSON())
+                {
+                    "related_features": {
+                        "test_feature": {
+                            "is_beta": True,
+                            "title": "title",
+                            "url": "http://wiki.lp.dev/LEP/sample",
+                            "value": "on",
+                            },
+                        },
+                    },
+                json.loads(view.getCacheJSON()))
 
     def test_json_cache_collects_related_features_from_all_views(self):
         # A typical page includes data from more than one view,
@@ -353,12 +358,23 @@ class TestLaunchpadView(TestCaseWithFactory):
         TestView2(object(), request)
         with person_logged_in(self.factory.makePerson()):
             self.assertEqual(
-                '{"related_features": '
-                '{"test_feature_2": {"url": "http://wiki.lp.dev/LEP/sample2",'
-                ' "is_beta": true, "value": "on", "title": "title"}, '
-                '"test_feature": {"url": "http://wiki.lp.dev/LEP/sample", '
-                '"is_beta": true, "value": "on", "title": "title"}}}',
-                view.getCacheJSON())
+                {
+                    "related_features": {
+                        "test_feature": {
+                            "is_beta": True,
+                            "title": "title",
+                            "url": "http://wiki.lp.dev/LEP/sample",
+                            "value": "on",
+                            },
+                        "test_feature_2": {
+                            "is_beta": True,
+                            "title": "title",
+                            "url": "http://wiki.lp.dev/LEP/sample2",
+                            "value": "on",
+                            },
+                        },
+                    },
+                json.loads(view.getCacheJSON()))
 
     def test_view_creation_with_fake_or_none_request(self):
         # LaunchpadView.__init__() does not crash with a FakeRequest.
