@@ -642,7 +642,7 @@ class GitRepositoryEditFormView(LaunchpadEditFormView):
                 try:
                     self.context.setTarget(target, self.user)
                 except GitTargetError as e:
-                    self.setFieldError("target", e.message)
+                    self.setFieldError("target", e.args[0])
                     return
                 changed = True
                 if IPerson.providedBy(target):
