@@ -10,15 +10,23 @@ __all__ = [
     'SnapPortletSubscribersContent'
 ]
 
-from lp.app.browser.launchpadform import LaunchpadEditFormView
-from lp.app.interfaces.services import IService
-from lp.registry.interfaces.person import IPersonSet
-from lp.services.webapp import LaunchpadView, canonical_url
-from lp.services.webapp.authorization import precache_permission_for_objects, \
-    check_permission
-from lp.snappy.interfaces.snapsubscription import ISnapSubscription
 from zope.component._api import getUtility
 from zope.formlib.form import action
+
+from lp.app.browser.launchpadform import (
+    LaunchpadEditFormView,
+    LaunchpadFormView,
+    )
+from lp.registry.interfaces.person import IPersonSet
+from lp.services.webapp import (
+    canonical_url,
+    LaunchpadView,
+    )
+from lp.services.webapp.authorization import (
+    check_permission,
+    precache_permission_for_objects,
+    )
+from lp.snappy.interfaces.snapsubscription import ISnapSubscription
 
 
 class SnapPortletSubscribersContent(LaunchpadView):
@@ -72,7 +80,7 @@ class SnapSubscriptionEditView(LaunchpadEditFormView):
 
     @action("Unsubscribe", name="unsubscribe")
     def unsubscribe_action(self, action, data):
-        """Unsubscribe the team from the repository."""
+        """Unsubscribe the team from the Snap recipe."""
         self.snap.unsubscribe(self.person, self.user)
         self.request.response.addNotification(
             "%s has been unsubscribed from this Snap recipe."
@@ -81,10 +89,94 @@ class SnapSubscriptionEditView(LaunchpadEditFormView):
     @property
     def next_url(self):
         url = canonical_url(self.snap)
-        # If the subscriber can no longer see the repository, redirect them
+        # If the subscriber can no longer see the Snap recipe, redirect them
         # away.
         if not self.snap.visibleByUser(self.person):
             url = canonical_url(self.snap.pillar)
         return url
 
     cancel_url = next_url
+
+
+class _SnapSubscriptionCreationView(LaunchpadFormView):
+    """Contains the common functionality of the Add and Edit views."""
+
+    schema = ISnapSubscription
+    field_names = []
+
+    def initialize(self):
+        self.snap = self.context
+        super(_SnapSubscriptionCreationView, self).initialize()
+
+    @property
+    def next_url(self):
+        url = canonical_url(self.snap)
+        # If the subscriber can no longer see the Snap recipe, redirect them
+        # away.
+        if not self.snap.visibleByUser(self.user):
+            url = canonical_url(self.snap.pillar)
+        return url
+
+    cancel_url = next_url
+
+
+class SnapSubscriptionAddView(_SnapSubscriptionCreationView):
+
+    page_title = label = "Subscribe to Snap recipe"
+
+    @action("Subscribe")
+    def subscribe(self, action, data):
+        # To catch the stale post problem, check that the user is not
+        # subscribed before continuing.
+        if self.context.hasSubscription(self.user):
+            self.request.response.addNotification(
+                "You are already subscribed to this Snap recipe.")
+        else:
+            self.context.subscribe(self.user, self.user)
+
+            self.request.response.addNotification(
+                "You have subscribed to this Snap recipe.")
+
+
+class SnapSubscriptionAddOtherView(_SnapSubscriptionCreationView):
+    """View used to subscribe someone other than the current user."""
+
+    field_names = ["person"]
+    for_input = True
+
+    # Since we are subscribing other people, the current user
+    # is never considered subscribed.
+    user_is_subscribed = False
+
+    page_title = label = "Subscribe to Snap recipe"
+
+    def validate(self, data):
+        if "person" in data:
+            person = data["person"]
+            subscription = self.context.getSubscription(person)
+            if (subscription is None
+                    and not self.context.userCanBeSubscribed(person)):
+                self.setFieldError(
+                    "person",
+                    "Open and delegated teams cannot be subscribed to "
+                    "private Snap recipes.")
+
+    @action("Subscribe", name="subscribe_action")
+    def subscribe_action(self, action, data):
+        """Subscribe the specified user to the Snap recipe.
+
+        The user must be a member of a team in order to subscribe that team
+        to the Snap recipe. Launchpad Admins are special and they can
+        subscribe any team.
+        """
+        person = data["person"]
+        subscription = self.context.getSubscription(person)
+        if subscription is None:
+            self.context.subscribe(person, self.user)
+            self.request.response.addNotification(
+                "%s has been subscribed to this Snap recipe." %
+                person.displayname)
+        else:
+            self.request.response.addNotification(
+                "%s was already subscribed to this Snap recipe with." %
+                person.displayname)

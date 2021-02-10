@@ -586,6 +586,9 @@ class ISnapView(Interface):
     def hasSubscription(person):
         """Is this person subscribed to the snap recipe?"""
 
+    def userCanBeSubscribed(person):
+        """Checks if the given person can be subscribed to this snap recipe."""
+
     def visibleByUser(user):
         """Can the specified user see this snap recipe?"""
 

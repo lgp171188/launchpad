@@ -57,6 +57,18 @@
             permission="launchpad.Edit"
             name="+index"
             template="../templates/snapsubscription-edit.pt"/>
+        <browser:page
+            for="lp.snappy.interfaces.snap.ISnap"
+            class="lp.snappy.browser.snapsubscription.SnapSubscriptionAddView"
+            permission="launchpad.AnyPerson"
+            name="+subscribe"
+            template="../../app/templates/generic-edit.pt"/>
+        <browser:page
+            for="lp.snappy.interfaces.snap.ISnap"
+            class="lp.snappy.browser.snapsubscription.SnapSubscriptionAddOtherView"
+            permission="launchpad.AnyPerson"
+            name="+addsubscriber"
+            template="../../app/templates/generic-edit.pt"/>
         <browser:url
             for="lp.snappy.interfaces.snapsubscription.ISnapSubscription"
             path_expression="string:+subscription/${person/name}"

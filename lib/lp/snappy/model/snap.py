@@ -1142,7 +1142,7 @@ class Snap(Storm, WebhookTargetMixin):
             SnapSubscription.person == person,
             SnapSubscription.snap == self).one()
 
-    def _userCanBeSubscribed(self, person):
+    def userCanBeSubscribed(self, person):
         """Checks if the given person can subscribe to this snap recipe."""
         return not (
             self.private and
@@ -1158,7 +1158,7 @@ class Snap(Storm, WebhookTargetMixin):
 
     def subscribe(self, person, subscribed_by):
         """See `ISnap`."""
-        if not self._userCanBeSubscribed(person):
+        if not self.userCanBeSubscribed(person):
             raise SubscriptionPrivacyViolation(
                 "Open and delegated teams cannot be subscribed to private "
                 "snap recipes.")
