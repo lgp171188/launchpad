@@ -348,7 +348,7 @@ class ChangesFileTests(TestCase):
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         [error] = list(changes.processFiles())
         self.assertEqual(
-            "Mismatch between Checksums-Sha1 and Files fields.", error[0])
+            "Mismatch between Checksums-Sha1 and Files fields.", error.args[0])
 
     def test_processFiles_rejects_duplicate_filenames(self):
         # processFiles ensures that Files lists each file only once.
@@ -356,7 +356,7 @@ class ChangesFileTests(TestCase):
         contents['Files'].append(contents['Files'][0])
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         [error] = list(changes.processFiles())
-        self.assertEqual("Duplicate filenames in Files field.", error[0])
+        self.assertEqual("Duplicate filenames in Files field.", error.args[0])
 
 
 class TestSignatureVerification(TestCase):

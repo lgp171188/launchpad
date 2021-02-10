@@ -50,7 +50,7 @@ Attempting to merge a non-existent team results in an error.
     >>> len(view.errors)
     2
     >>> for error in view.errors:
-    ...     print(error[0])
+    ...     print(error.args[0])
     Invalid value
     Invalid value
 

@@ -791,7 +791,7 @@ class BranchEditFormView(LaunchpadEditFormView):
                 try:
                     self.context.setTarget(self.user, project=target)
                 except BranchTargetError as e:
-                    self.setFieldError('target', e.message)
+                    self.setFieldError('target', e.args[0])
                     return
 
                 changed = True

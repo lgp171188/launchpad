@@ -142,7 +142,7 @@ No one can force account status to an invalid transition:
     ...     'field.actions.change': 'Change',
     ...     }
     >>> view = create_initialized_view(user, '+reviewaccount', form=form)
-    >>> [e[2] for e in view.errors]
+    >>> [e.args[2] for e in view.errors]
     [AccountStatusError(u'The status cannot change from Suspended to Active')]
 
 

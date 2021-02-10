@@ -32,9 +32,9 @@ distroseries being tested.
     ...     print('%d errors' % len(view.errors))
     ...     for error in view.errors:
     ...         try:
-    ...             name, title, message = error
+    ...             name, title, message = error.args
     ...         except ValueError:
-    ...             title, message = error
+    ...             title, message = error.args
     ...         print('%s: %s' % (title, message))
     ...     print('Name:', distroseries.name)
     ...     print('Version:', distroseries.version)
@@ -340,7 +340,7 @@ The distroseries name is unique.
     >>> form['field.version'] = '2009.07'
     >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     sane is already in use by another series.
 
 The distroseries name cannot contain spaces.
@@ -348,7 +348,7 @@ The distroseries name cannot contain spaces.
     >>> form['field.name'] = 'insane name'
     >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     Invalid name 'insane name'...
 
 
@@ -361,7 +361,7 @@ Versions cannot contain spaces.
     >>> form['field.version'] = '6.06 LTS'
     >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     6.06 LTS is not a valid version
 
 The distroseries version must be a valid debversion.
@@ -369,7 +369,7 @@ The distroseries version must be a valid debversion.
     >>> form['field.version'] = 'Hardy-6.06-LTS'
     >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     &#x27;Hardy-6.06-LTS&#x27;: Could not parse version...
 
 The distroseries version is unique to a distribution. Version '2009.06'
@@ -382,7 +382,7 @@ cannot be reused by another Ubuntu series.
     >>> form['field.version'] = '2009.06'
     >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     2009.06 is already in use by another version in this distribution.
 
 But version '2009.06' can be used by another distribution.

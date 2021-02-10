@@ -1369,7 +1369,7 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
                 self.context.validateTransitionToTarget(
                     new_target, check_source_package=False)
             except IllegalTarget as e:
-                self.setFieldError(error_field, e[0])
+                self.setFieldError(error_field, e.args[0])
 
     def updateContextFromData(self, data, context=None):
         """Updates the context object using the submitted form data.
