@@ -54,34 +54,34 @@ class OCICredentialsWidget(BrowserWidget, InputWidget):
         fields = [
             TextLine(
                 __name__='url',
-                title=u"Registry URL",
+                title="Registry URL",
                 description=(
-                    u"URL for the OCI registry to upload images to."
+                    "URL for the OCI registry to upload images to."
                 ),
                 required=False),
             TextLine(
                 __name__='region',
-                title=u"Region",
-                description=u"Region for the OCI Registry.",
+                title="Region",
+                description="Region for the OCI Registry.",
                 required=False),
             TextLine(
                 __name__='username',
-                title=u"Username",
-                description=u"Username for the OCI Registry.",
+                title="Username",
+                description="Username for the OCI Registry.",
                 required=False),
             Password(
                 __name__='password',
-                title=u"Password",
-                description=u"Password for the OCI Registry.",
+                title="Password",
+                description="Password for the OCI Registry.",
                 required=False),
             Password(
                 __name__='confirm_password',
-                title=u"Confirm password",
+                title="Confirm password",
                 required=False),
             Bool(
                 __name__='delete',
-                title=u"Delete",
-                description=u"Delete these credentials.",
+                title="Delete",
+                description="Delete these credentials.",
                 required=False)
             ]
         for field in fields:
