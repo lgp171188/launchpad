@@ -2099,7 +2099,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertIsNone(
             self.assertDoesNotFault(
                 None, "notify", repo.getInternalPath(),
-                auth_params, {'loose_object_count': 5, 'pack_count': 2}))
+                {'loose_object_count': 5, 'pack_count': 2},
+                auth_params))
         end_time = datetime.now(pytz.UTC)
         naked_repo = removeSecurityProxy(repo)
         self.assertEqual(5, naked_repo.loose_object_count)
@@ -2165,8 +2166,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester, macaroon_raw=macaroon.serialize())
                 self.assertFault(
                     faults.Unauthorized, None, "notify",
-                    repository.getInternalPath(), auth_params,
-                    {'loose_object_count': 5, 'pack_count': 2})
+                    repository.getInternalPath(),
+                    {'loose_object_count': 5, 'pack_count': 2},
+                    auth_params)
 
     def test_notify_set_repack_data_code_import(self):
         # We set the repack data on a repository from a code import worker
@@ -2199,8 +2201,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             LAUNCHPAD_SERVICES, macaroon_raw=macaroons[1].serialize())
         self.assertFault(
             faults.Unauthorized, None, "notify",
-            code_imports[0].git_repository.getInternalPath(), auth_params,
-            {'loose_object_count': 5, 'pack_count': 2})
+            code_imports[0].git_repository.getInternalPath(),
+            {'loose_object_count': 5, 'pack_count': 2}, auth_params)
 
     def test_notify_set_repack_data_private_code_import(self):
         self.pushConfig(
@@ -2234,9 +2236,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroon_raw=macaroons[1].serialize())
         self.assertFault(
-            faults.Unauthorized, None, "notify",
-            path, auth_params,
-            {'loose_object_count': 5, 'pack_count': 2})
+            faults.Unauthorized, None, "notify", path,
+            {'loose_object_count': 5, 'pack_count': 2}, auth_params)
 
     def test_authenticateWithPassword(self):
         self.assertFault(

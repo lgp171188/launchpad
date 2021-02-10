@@ -491,7 +491,7 @@ class GitAPI(LaunchpadXMLRPCView):
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
 
-    def notify(self, translated_path, auth_params=None, statistics=None):
+    def notify(self, translated_path, statistics=None, auth_params=None):
         """See `IGitAPI`."""
         logger = self._getLogger()
         logger.info("Request received: notify('%s')", translated_path)
