@@ -1058,7 +1058,7 @@ It is possible to update the content of an entry in the queue.
 
     >>> existing_entry = getFirstEvoEntryByPath(queue, 'foo.pot')
     >>> existing_entry = removeSecurityProxy(existing_entry)
-    >>> print(existing_entry.content.read())
+    >>> print(existing_entry.content.read().decode('UTF-8'))
     Foo template
 
     >>> entry = translationimportqueue.addOrUpdateEntry(
@@ -1069,7 +1069,7 @@ It is possible to update the content of an entry in the queue.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     New content
 
 Not specifying the potemplate in this situation still selects the same entry
@@ -1082,14 +1082,14 @@ on a best match basis. The entry is updated.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     Even newer content
 
 Same goes for pofile entries.
 
     >>> existing_entry = getFirstEvoEntryByPath(queue, 'es.po')
     >>> existing_entry = removeSecurityProxy(existing_entry)
-    >>> print(existing_entry.content.read())
+    >>> print(existing_entry.content.read().decode('UTF-8'))
     Spanish translation
 
     >>> entry = removeSecurityProxy(translationimportqueue.addOrUpdateEntry(
@@ -1098,7 +1098,7 @@ Same goes for pofile entries.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     New po content
 
 Now, attaching the same layout to a different template for the same product,
@@ -1164,7 +1164,7 @@ When uploading to the prouct now, the best matching entry is updated.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     New bar content
 
 Filename filters
