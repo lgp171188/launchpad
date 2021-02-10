@@ -133,7 +133,7 @@ class TestBzrSyncEmail(BzrSyncTestCase):
         self.assertEqual(len(stub.test_emails), 2)
         [recommit_email, uncommit_email] = stub.test_emails
         uncommit_email_body = uncommit_email[2]
-        expected = '1 revision was removed from the branch.'
+        expected = b'1 revision was removed from the branch.'
         self.assertIn(expected, uncommit_email_body)
         subject = (
             'Subject: [Branch %s] Test branch' % self.db_branch.unique_name)
@@ -145,11 +145,11 @@ class TestBzrSyncEmail(BzrSyncTestCase):
         subject = '[Branch %s] Rev 1: second' % self.db_branch.unique_name
         self.assertEmailHeadersEqual(subject, recommit_email_msg['Subject'])
         body_bits = [
-            'revno: 1',
-            'committer: %s' % author,
-            'branch nick: %s' % self.bzr_branch.nick,
-            'message:\n  second',
-            'added:\n  hello.txt',
+            b'revno: 1',
+            ('committer: %s' % author).encode('UTF-8'),
+            ('branch nick: %s' % self.bzr_branch.nick).encode('UTF-8'),
+            b'message:\n  second',
+            b'added:\n  hello.txt',
             ]
         for bit in body_bits:
             self.assertIn(bit, recommit_email_body)

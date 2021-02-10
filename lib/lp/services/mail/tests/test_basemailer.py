@@ -233,15 +233,15 @@ class TestBaseMailer(TestCaseWithFactory):
         good_parts = good.get_payload()
         self.assertEqual(3, len(good_parts))
         self.assertEqual(
-            'attachment1', good_parts[1].get_payload(decode=True))
+            b'attachment1', good_parts[1].get_payload(decode=True))
         self.assertEqual(
-            'attachment2', good_parts[2].get_payload(decode=True))
+            b'attachment2', good_parts[2].get_payload(decode=True))
         # The bad email has the normal attachments stripped off and replaced
         # with the text.
         bad_parts = bad.get_payload()
         self.assertEqual(2, len(bad_parts))
         self.assertEqual(
-            'Excessively large attachments removed.',
+            b'Excessively large attachments removed.',
             bad_parts[1].get_payload(decode=True))
         # And no OOPS is logged.
         self.assertEqual(0, len(self.oopses))

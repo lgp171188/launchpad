@@ -348,7 +348,7 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
             'The source branch of http://code.launchpad.test/~%s/%s/%s/'
             '+merge/%d has no revisions.' % (
                 branch.owner.name, branch.target.name, branch.name, bmp.id),
-            email.get_payload(decode=True))
+            six.ensure_text(email.get_payload(decode=True)))
 
     def test_run_branches_pending_writes(self):
         """If the branches are being written, we retry but don't complain."""
@@ -738,7 +738,7 @@ class TestReviewRequestedEmailJob(TestCaseWithFactory):
         (notification,) = pop_notifications()
         self.assertIn(
             'You have been requested to review the proposed merge',
-            notification.get_payload(decode=True))
+            six.ensure_text(notification.get_payload(decode=True)))
 
 
 class TestMergeProposalUpdatedEmailJob(TestCaseWithFactory):

@@ -199,7 +199,7 @@ class TestCodeHandler(TestCaseWithFactory):
         # the message, and the second is the original message.
         message, original = notification.get_payload()
         self.assertIn(
-            "There is no merge proposal at mp+0@code.launchpad.test\n",
+            b"There is no merge proposal at mp+0@code.launchpad.test\n",
             message.get_payload(decode=True))
 
     def test_processBadVote(self):
@@ -239,7 +239,7 @@ class TestCodeHandler(TestCaseWithFactory):
         --\x20
         For more information about using Launchpad by email, see
         https://help.launchpad.net/EmailInterface
-        or send an email to help@launchpad.net"""),
+        or send an email to help@launchpad.net""").encode("UTF-8"),
                                 message.get_payload(decode=True))
         self.assertEqual(mail['From'], notification['To'])
 
@@ -278,8 +278,8 @@ class TestCodeHandler(TestCaseWithFactory):
         # The returned message is a multipart message, the first part is
         # the message, and the second is the original message.
         message, original = notification.get_payload()
-        self.assertTrue(
-            "You are not a reviewer for the branch" in
+        self.assertIn(
+            b"You are not a reviewer for the branch",
             message.get_payload(decode=True))
 
     def test_processVote(self):
@@ -424,9 +424,9 @@ class TestCodeHandler(TestCaseWithFactory):
             notification['Subject'], 'Error Creating Merge Proposal')
         self.assertEqual(
             notification.get_payload(decode=True),
-            'Your message did not contain a subject.  Launchpad code '
-            'reviews require all\nemails to contain subject lines.  '
-            'Please re-send your email including the\nsubject line.\n\n')
+            b'Your message did not contain a subject.  Launchpad code '
+            b'reviews require all\nemails to contain subject lines.  '
+            b'Please re-send your email including the\nsubject line.\n\n')
         self.assertEqual(notification['to'],
             mail['from'])
         self.assertEqual(0, bmp.all_comments.count())

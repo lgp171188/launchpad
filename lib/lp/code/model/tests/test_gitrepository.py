@@ -1297,7 +1297,7 @@ class TestGitRepositoryModificationNotifications(TestCaseWithFactory):
         for from_addr, to_addrs, message in stub.test_emails:
             body = email.message_from_string(message).get_payload(decode=True)
             for to_addr in to_addrs:
-                bodies_by_recipient[to_addr] = body
+                bodies_by_recipient[to_addr] = six.ensure_text(body)
         # Both the owner and the unprivileged subscriber receive email.
         self.assertContentEqual(
             [owner_address, subscriber_address], bodies_by_recipient.keys())
@@ -2876,7 +2876,7 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         notifications = pop_notifications()
         self.assertIn(
             "Work in progress => Merged",
-            notifications[0].get_payload(decode=True))
+            notifications[0].get_payload(decode=True).decode("UTF-8"))
         self.assertEqual(
             config.canonical.noreply_from_address, notifications[0]["From"])
         recipients = set(msg["x-envelope-to"] for msg in notifications)
