@@ -25,8 +25,11 @@ workers = 2
 threads = 10
 max_requests = 1000
 log_level = "DEBUG"
-reload = True
 
+# Keeping a really long timeout in development to allow us to ipdb calmly.
+timeout = 15 * 60
+
+reload = True
 # Watch config files changes from the source tree.
 reload_extra_files = find_files(CONFIG_DIR, "*")
 for pattern in ["*.zcml", "*.conf"]:
