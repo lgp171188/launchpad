@@ -38,7 +38,7 @@ unit tests somewhere else at some point. -- Guilherme Salgado, 2006-08-23
 
 A GPGKeyNotFoundError is raised if we try to import an empty content.
 
-    >>> key = gpghandler.importPublicKey('')
+    >>> key = gpghandler.importPublicKey(b'')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -46,7 +46,7 @@ A GPGKeyNotFoundError is raised if we try to import an empty content.
 
 The same happens for bogus content.
 
-    >>> key = gpghandler.importPublicKey('XXXXXXXXX')
+    >>> key = gpghandler.importPublicKey(b'XXXXXXXXX')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -57,7 +57,8 @@ Let's recover some coherent data and verify if it works as expected:
     >>> import os
     >>> from lp.testing.gpgkeys import gpgkeysdir
     >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.pub')
-    >>> pubkey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     pubkey = f.read()
     >>> key = gpghandler.importPublicKey(pubkey)
 
     >>> verifyObject(IPymeKey, key)
@@ -83,7 +84,7 @@ Let's recover some coherent data and verify if it works as expected:
 
 Public keys can be exported in ASCII-armored format.
 
-    >>> print key.export()
+    >>> print(six.ensure_text(key.export()))
     -----BEGIN PGP PUBLIC KEY BLOCK-----
     ...
     -----END PGP PUBLIC KEY BLOCK-----
@@ -93,7 +94,8 @@ Now, try to import a secret key, which will cause a
 SecretGPGKeyImportDetected exception to be raised.
 
     >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.sec')
-    >>> seckey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     seckey = f.read()
     >>> key = gpghandler.importPublicKey(seckey)
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
@@ -104,8 +106,9 @@ Now, try to import two public keys, causing a MoreThanOneGPGKeyFound
 exception to be raised.
 
     >>> filepath = os.path.join(gpgkeysdir, 'foo.bar@canonical.com.pub')
-    >>> pubkey2 = open(filepath).read()
-    >>> key = gpghandler.importPublicKey('\n'.join([pubkey, pubkey2]))
+    >>> with open(filepath, 'rb') as f:
+    ...     pubkey2 = f.read()
+    >>> key = gpghandler.importPublicKey(b'\n'.join([pubkey, pubkey2]))
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -146,7 +149,8 @@ does exactly the same job performed by importPublicKey() but
 supporting only ASCII-armored secret keys.
 
     >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.sec')
-    >>> seckey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     seckey = f.read()
     >>> key = gpghandler.importSecretKey(seckey)
 
     >>> verifyObject(IPymeKey, key)
@@ -172,7 +176,7 @@ supporting only ASCII-armored secret keys.
 
 Secret keys can be exported in ASCII-armored format.
 
-    >>> print key.export()
+    >>> print(six.ensure_text(key.export()))
     -----BEGIN PGP PRIVATE KEY BLOCK-----
     ...
     -----END PGP PRIVATE KEY BLOCK-----
@@ -193,7 +197,8 @@ We will set up and use the test-keyserver.
 Import a test key.
 
     >>> filepath = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-    >>> seckey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     seckey = f.read()
     >>> new_key = gpghandler.importSecretKey(seckey)
 
 Upload the just-generated key to the keyserver so that we can reset

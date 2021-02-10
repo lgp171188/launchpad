@@ -167,7 +167,7 @@ to test the export funtions
     ...         self.secret = secret
     ...         self.fingerprint = 'fpr'
     ...     def export(self):
-    ...         return "Secret %s" % self.secret
+    ...         return six.ensure_binary("Secret %s" % self.secret)
 
 exportSecretKey() raises an error if given a public key.
 
@@ -336,7 +336,8 @@ printing the context the key is generated.
     >>> def mock_key_generator(name, logger=None):
     ...     print('Generating:', name)
     ...     key_path = os.path.join(gpgkeysdir, 'sign.only@canonical.com.sec')
-    ...     return gpghandler.importSecretKey(open(key_path).read())
+    ...     with open(key_path, 'rb') as f:
+    ...         return gpghandler.importSecretKey(f.read())
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> naked_gpghandler = removeSecurityProxy(gpghandler)
@@ -428,20 +429,23 @@ keyserver.
     >>> retrieved_key = gpghandler.retrieveKey(
     ...    signing_key.fingerprint)
 
-    >>> signature = gpghandler.getVerifiedSignature(
-    ...     content=open(release_path).read(),
-    ...     signature=open(release_path + '.gpg').read())
+    >>> with open(release_path, 'rb') as release_file:
+    ...     with open(release_path + '.gpg', 'rb') as signature_file:
+    ...         signature = gpghandler.getVerifiedSignature(
+    ...             content=release_file.read(),
+    ...             signature=signature_file.read())
 
     >>> expected_fingerprint = (
     ...     archive_signing_key.archive.signing_key.fingerprint)
     >>> signature.fingerprint == expected_fingerprint
     True
 
-    >>> inline_signature = gpghandler.getVerifiedSignature(
-    ...     content=open(inline_release_path).read())
+    >>> with open(inline_release_path, 'rb') as inline_release_file:
+    ...     inline_signature = gpghandler.getVerifiedSignature(
+    ...         content=inline_release_file.read())
     >>> inline_signature.fingerprint == expected_fingerprint
     True
-    >>> print(inline_signature.plain_data)
+    >>> print(inline_signature.plain_data.decode('UTF-8'))
     This is a fake release file.
     <BLANKLINE>
 

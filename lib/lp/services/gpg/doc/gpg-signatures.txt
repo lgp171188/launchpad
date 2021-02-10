@@ -29,7 +29,7 @@ OpenPGP Signature Verification
 
 The text below was "clear signed" by 0xDFD20543 master key:
 
-    >>> content = """-----BEGIN PGP SIGNED MESSAGE-----
+    >>> content = b"""-----BEGIN PGP SIGNED MESSAGE-----
     ... Hash: SHA1
     ...
     ... Test Message.
@@ -48,7 +48,7 @@ The text below was "clear signed" by 0xDFD20543 master key:
 
 The text below was "clear signed" by a 0x02BA5EF6, a subkey of 0xDFD20543
 
-    >>> content = """-----BEGIN PGP SIGNED MESSAGE-----
+    >>> content = b"""-----BEGIN PGP SIGNED MESSAGE-----
     ... Hash: SHA1
     ...
     ... Test Message.
@@ -72,7 +72,7 @@ The text below was "clear signed" by a 0x02BA5EF6, a subkey of 0xDFD20543
 
 The text below was "clear signed" by 0xDFD20543 master key but tampered with:
 
-    >>> content = """-----BEGIN PGP SIGNED MESSAGE-----
+    >>> content = b"""-----BEGIN PGP SIGNED MESSAGE-----
     ... Hash: SHA1
     ...
     ... Test Message
@@ -93,7 +93,7 @@ The text below was "clear signed" by 0xDFD20543 master key but tampered with:
 
 If no signed content is found, an exception is raised:
 
-    >>> content = """-----BEGIN PGP SIGNED MESSAGE-----
+    >>> content = b"""-----BEGIN PGP SIGNED MESSAGE-----
     ... Hash: SHA1
     ...
     ... Test Message
@@ -112,7 +112,7 @@ The text below contains two clear signed sections.  As there are two
 signing keys involved here, we raise a verification error, since the
 signed text can not be attributed solely to either key:
 
-    >>> content = """
+    >>> content = b"""
     ... -----BEGIN PGP SIGNED MESSAGE-----
     ... Hash: SHA1
     ...
@@ -157,7 +157,7 @@ The text below was signed by  key that's is not part of the
 imported keyring. Note that we have extra debug information containing
 the GPGME error codes (they may be helpful).
 
-    >>> content = """-----BEGIN PGP SIGNED MESSAGE-----
+    >>> content = b"""-----BEGIN PGP SIGNED MESSAGE-----
     ... Hash: SHA1
     ...
     ... Text Message
@@ -198,7 +198,7 @@ with information about the error.  These come directly from the gpgme module
 itself.
 
     >>> from lp.services.gpg.interfaces import GPGVerificationError
-    >>> content = """
+    >>> content = b"""
     ... -----BEGIN PGP SIGNED MESSAGE-----
     ... Hash: SHA1
     ...
