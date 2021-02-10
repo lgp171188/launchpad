@@ -92,7 +92,7 @@ Decrypt a unicode content:
 
 What about a message encrypted for an unknown key.
 
-    >>> cipher = """-----BEGIN PGP MESSAGE-----
+    >>> cipher = b"""-----BEGIN PGP MESSAGE-----
     ... Version: GnuPG v1.2.5 (GNU/Linux)
     ...
     ... hQEOAxkWbKKY/feTEAP+NoZRhb+/2OOd4f0FGRe7XP1HMvsRZ7X0uk/EjCv1CVnn
