@@ -27,15 +27,18 @@ class POBasicTestCase(unittest.TestCase):
     def setUp(self):
         self.parser = gettext_po_parser.POParser()
 
+    def parse(self, content_text):
+        return self.parser.parse(content_text.encode('ASCII'))
+
     def testEmptyFile(self):
         # The parser reports an empty file as an error.
-        self.assertRaises(TranslationFormatSyntaxError, self.parser.parse, '')
+        self.assertRaises(TranslationFormatSyntaxError, self.parse, '')
 
     def testEmptyFileError(self):
         # Trying to import an empty file produces a sensible error
         # message.
         try:
-            self.parser.parse('')
+            self.parse('')
             self.assertTrue(
                 False,
                 "Importing an empty file succeeded; it should have failed.")
@@ -48,10 +51,10 @@ class POBasicTestCase(unittest.TestCase):
         # The parser reports a non-empty file holding no messages as an
         # error.
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse, '# Comment')
+            TranslationFormatSyntaxError, self.parse, '# Comment')
 
     def testSingular(self):
-        translation_file = self.parser.parse(
+        translation_file = self.parse(
             '%smsgid "foo"\nmsgstr "bar"\n' % DEFAULT_HEADER)
         messages = translation_file.messages
         self.assertEqual(len(messages), 1, "incorrect number of messages")
@@ -63,7 +66,7 @@ class POBasicTestCase(unittest.TestCase):
 
     def testNoNewLine(self):
         # note, no trailing newline; this raises a warning
-        translation_file = self.parser.parse(
+        translation_file = self.parse(
             '%smsgid "foo"\nmsgstr "bar"' % DEFAULT_HEADER)
         messages = translation_file.messages
         self.assertEqual(messages[0].msgid_singular, "foo", "incorrect msgid")
@@ -73,37 +76,37 @@ class POBasicTestCase(unittest.TestCase):
 
     def testMissingQuote(self):
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse,
+            TranslationFormatSyntaxError, self.parse,
             '%smsgid "foo"\nmsgstr "bar' % DEFAULT_HEADER)
 
     def testBadNewline(self):
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse,
+            TranslationFormatSyntaxError, self.parse,
             '%smsgid "foo\n"\nmsgstr "bar"\n' % DEFAULT_HEADER)
 
     def testBadBackslash(self):
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse,
+            TranslationFormatSyntaxError, self.parse,
             '%smsgid "foo\\"\nmsgstr "bar"\n' % DEFAULT_HEADER)
 
     def testMissingMsgstr(self):
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse,
+            TranslationFormatSyntaxError, self.parse,
             '%smsgid "foo"\n' % DEFAULT_HEADER)
 
     def testMissingMsgid1(self):
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse,
+            TranslationFormatSyntaxError, self.parse,
             '%smsgid_plural "foos"\n' % DEFAULT_HEADER)
 
     def testFuzzy(self):
-        translation_file = self.parser.parse(
+        translation_file = self.parse(
             '%s#, fuzzy\nmsgid "foo"\nmsgstr "bar"\n' % DEFAULT_HEADER)
         messages = translation_file.messages
         assert 'fuzzy' in messages[0].flags, "missing fuzziness"
 
     def testComment(self):
-        translation_file = self.parser.parse('''
+        translation_file = self.parse('''
             %s
             #. foo/bar.baz\n
             # cake not drugs\n
@@ -117,7 +120,7 @@ class POBasicTestCase(unittest.TestCase):
         assert 'fuzzy' not in messages[0].flags, "incorrect fuzziness"
 
     def testEscape(self):
-        translation_file = self.parser.parse(
+        translation_file = self.parse(
             '%smsgid "foo\\"bar\\nbaz\\\\xyzzy"\nmsgstr"z"\n' % (
                 DEFAULT_HEADER))
         messages = translation_file.messages
@@ -127,11 +130,11 @@ class POBasicTestCase(unittest.TestCase):
     # def badEscapeTest(self):
     #
     #     self.assertRaises(
-    #         TranslationFormatSyntaxError, self.parser.parse,
+    #         TranslationFormatSyntaxError, self.parse,
     #         'msgid "foo\."\nmsgstr "bar"\n')
 
     def testPlural(self):
-        translation_file = self.parser.parse('''
+        translation_file = self.parse('''
             %s"Plural-Forms: nplurals=2; plural=foo;\\n"
 
             msgid "foo"
@@ -161,7 +164,7 @@ class POBasicTestCase(unittest.TestCase):
             msgid_plural "%%d bottles of beer on the wall"
             msgstr[zero] = "%%d flessen"''' % DEFAULT_HEADER
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse, content)
+            TranslationFormatSyntaxError, self.parse, content)
 
     def testNegativePluralCase(self):
         # If a msgid's plural case number is negative, that's a syntax
@@ -173,7 +176,7 @@ class POBasicTestCase(unittest.TestCase):
             msgid_plural "%%d ts"
             msgstr[-1] "%%d bs"''' % DEFAULT_HEADER
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse, content)
+            TranslationFormatSyntaxError, self.parse, content)
 
     def testUnsupportedPluralCase(self):
         # If a msgid's plural case number isn't lower than the maximum
@@ -187,10 +190,10 @@ class POBasicTestCase(unittest.TestCase):
             msgstr[%d] "%%d bs"''' % (
                 DEFAULT_HEADER, TranslationConstants.MAX_PLURAL_FORMS)
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse, content)
+            TranslationFormatSyntaxError, self.parse, content)
 
     def testObsolete(self):
-        translation_file = self.parser.parse(
+        translation_file = self.parse(
             '%s#, fuzzy\n#~ msgid "foo"\n#~ msgstr "bar"\n' % DEFAULT_HEADER)
         messages = translation_file.messages
         self.assertEqual(messages[0].msgid_singular, "foo", "incorrect msgid")
@@ -203,7 +206,7 @@ class POBasicTestCase(unittest.TestCase):
     def testObsoleteChangedMsgid(self):
         # Test "previous msgid" feature in obsolete messages.  These are
         # marked with "#~|"
-        translation_file = self.parser.parse("""
+        translation_file = self.parse("""
             %s
 
             #~| msgid "old"
@@ -216,7 +219,7 @@ class POBasicTestCase(unittest.TestCase):
         self.assertEqual(messages[0].translations, ["nouveau"])
 
     def testMultiLineObsolete(self):
-        translation_file = self.parser.parse(
+        translation_file = self.parse(
             '%s#~ msgid "foo"\n#~ msgstr ""\n#~ "bar"\n' % DEFAULT_HEADER)
         messages = translation_file.messages
         self.assertEqual(messages[0].msgid_singular, "foo")
@@ -226,7 +229,7 @@ class POBasicTestCase(unittest.TestCase):
 
     def testDuplicateMsgid(self):
         self.assertRaises(
-            TranslationFormatInvalidInputError, self.parser.parse,
+            TranslationFormatInvalidInputError, self.parse,
             '''
                 %s
                 msgid "foo"
@@ -238,7 +241,7 @@ class POBasicTestCase(unittest.TestCase):
 
     def testRedundantMsgstr(self):
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse,
+            TranslationFormatSyntaxError, self.parse,
             '''
                 %s
                 msgid "foo"
@@ -248,7 +251,7 @@ class POBasicTestCase(unittest.TestCase):
 
     def testRedundantPlural(self):
         self.assertRaises(
-            TranslationFormatSyntaxError, self.parser.parse,
+            TranslationFormatSyntaxError, self.parse,
             '''
                 %s
                 msgid "%%d foo"
@@ -260,7 +263,7 @@ class POBasicTestCase(unittest.TestCase):
 
     def testSquareBracketAndPlural(self):
         try:
-            self.parser.parse('''
+            self.parse('''
                 %s
                 msgid "foo %%d"
                 msgid_plural "foos %%d"
@@ -274,14 +277,14 @@ class POBasicTestCase(unittest.TestCase):
         # DEFAULT_HEADER already contains a msgid and one msgstr
         # declaring ASCII encoding.  Adding a second msgstr with a
         # different text is an error.
-        self.assertRaises(TranslationFormatSyntaxError, self.parser.parse,
+        self.assertRaises(TranslationFormatSyntaxError, self.parse,
             '''
                 %s
                 msgstr "Content-Type: text/plain; charset=UTF-8\\n
             ''' % DEFAULT_HEADER)
 
     def testUpdateHeader(self):
-        translation_file = self.parser.parse(
+        translation_file = self.parse(
             'msgid ""\nmsgstr "foo: bar\\n"\n')
         translation_file.header.number_plurals = 2
         translation_file.header.plural_form_expression = 'random()'
@@ -328,14 +331,14 @@ class POBasicTestCase(unittest.TestCase):
             msgid "foo"
             msgstr "barf"
             """ % DEFAULT_HEADER
-        translation_file = self.parser.parse(easy_string)
+        translation_file = self.parse(easy_string)
 
         # If we add an escaped newline, this breaks with a syntax error.
         (hard_string, changes) = re.subn("barf", "bar\\\nf", easy_string)
         self.assertEqual(changes, 1,
             "Failed to add 1 escaped newline to test string.")
 
-        translation_file = self.parser.parse(hard_string)
+        translation_file = self.parse(hard_string)
         messages = translation_file.messages
         self.assertEqual(len(messages), 1, "Expected exactly 1 message.")
         self.assertEqual(
@@ -345,7 +348,7 @@ class POBasicTestCase(unittest.TestCase):
         # Test escaped newlines at beginning and end of string, and check for
         # interaction with multiple strings on a line.
         hard_string = re.sub("barf", "\\\nb" "a\\\nr\\\nf\\\n", easy_string)
-        translation_file = self.parser.parse(hard_string)
+        translation_file = self.parse(hard_string)
         messages = translation_file.messages
         self.assertEqual(
             messages[0].translations[TranslationConstants.SINGULAR_FORM],
@@ -354,7 +357,7 @@ class POBasicTestCase(unittest.TestCase):
         # After an escaped newline, any indentation on the continued line is
         # removed.
         hard_string = re.sub("barf", "bar\\\n  f", easy_string)
-        translation_file = self.parser.parse(hard_string)
+        translation_file = self.parse(hard_string)
         messages = translation_file.messages
         self.assertEqual(
             messages[0].translations[TranslationConstants.SINGULAR_FORM],
@@ -363,7 +366,7 @@ class POBasicTestCase(unittest.TestCase):
         # Escaped newlines inside a string do not interfere with the ability
         # to continue the string on the next line.
         hard_string = re.sub("barf", 'b\\\n"\n"arf', easy_string)
-        translation_file = self.parser.parse(hard_string)
+        translation_file = self.parse(hard_string)
         messages = translation_file.messages
         self.assertEqual(
             messages[0].translations[TranslationConstants.SINGULAR_FORM],
@@ -385,7 +388,7 @@ class POBasicTestCase(unittest.TestCase):
         break up long strings into multiple lines in the PO file.
         """
         foos = 9
-        translation_file = self.parser.parse('''
+        translation_file = self.parse('''
             %s
             msgid "foo1"
             msgstr ""
@@ -429,14 +432,14 @@ class POBasicTestCase(unittest.TestCase):
 
     def testGetLastTranslator(self):
         """Tests whether we extract last translator information correctly."""
-        template_file = self.parser.parse(DEFAULT_HEADER)
+        template_file = self.parse(DEFAULT_HEADER)
         # When it's the default one in Gettext (FULL NAME <EMAIL@ADDRESS>),
         # used in templates, we get a tuple with None values.
         name, email = template_file.header.getLastTranslator()
         self.assertIsNone(name, "Didn't detect default Last Translator name")
         self.assertIsNone(email, "Didn't detect default Last Translator email")
 
-        translation_file = self.parser.parse('''
+        translation_file = self.parse('''
             msgid ""
             msgstr ""
             "Last-Translator: Carlos Perello Marin <carlos@canonical.com>\\n"
