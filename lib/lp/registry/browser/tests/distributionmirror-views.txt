@@ -88,7 +88,7 @@ not significant).
     >>> bad_form['field.http_base_url'] = 'http://secret.me'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     The distribution mirror ... is already registered with this URL.
 
 The same is true for a FTP URL.
@@ -99,7 +99,7 @@ The same is true for a FTP URL.
     >>> bad_form['field.ftp_base_url'] = 'ftp://now-here.me'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     The distribution mirror ... is already registered with this URL.
 
 The same is true for a rsync URL.
@@ -109,7 +109,7 @@ The same is true for a rsync URL.
     >>> bad_form['field.rsync_base_url'] = 'rsync://nowhere.me'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     The distribution mirror ... is already registered with this URL.
 
 A mirror must have an ftp, HTTPS or http URL.
@@ -127,7 +127,7 @@ The URL cannot contain a fragment.
     >>> bad_form['field.http_base_url'] = 'http://secret.me/#fragement'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     URIs with fragment identifiers are not allowed.
 
 The URL cannot contain a query string.
@@ -135,7 +135,7 @@ The URL cannot contain a query string.
     >>> bad_form['field.http_base_url'] = 'http://secret.me/?query=string'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     URIs with query strings are not allowed.
 
 The HTTPS URL may not have an HTTP scheme.
@@ -144,7 +144,7 @@ The HTTPS URL may not have an HTTP scheme.
     >>> bad_form['field.https_base_url'] = 'http://secret.me/#fragement'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     The URI scheme &quot;http&quot; is not allowed.
     Only URIs with the following schemes may be used: https
 
@@ -154,7 +154,7 @@ The HTTPS URL cannot contain a fragment.
     >>> bad_form['field.https_base_url'] = 'https://secret.me/#fragement'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     URIs with fragment identifiers are not allowed.
 
 The URL cannot contain a query string.
@@ -163,7 +163,7 @@ The URL cannot contain a query string.
     >>> bad_form['field.https_base_url'] = 'https://secret.me/?query=string'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
-    ...     print(error[2])
+    ...     print(error.args[2])
     URIs with query strings are not allowed.
 
 

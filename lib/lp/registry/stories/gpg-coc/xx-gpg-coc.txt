@@ -113,8 +113,8 @@ message.
 Extract the token URL from the email:
 
     >>> from lp.services.verification.tests.logintoken import (
-    ...     get_token_url_from_string)
-    >>> token_url = get_token_url_from_string(body)
+    ...     get_token_url_from_bytes)
+    >>> token_url = get_token_url_from_bytes(body)
 
 Go to the link sent by email, to validate the email address.
 
@@ -203,7 +203,7 @@ Sample Person should visit to verify their ownership of the key.
     ...
         http://launchpad.test/token/...
 
-    >>> token_url = get_token_url_from_string(body)
+    >>> token_url = get_token_url_from_bytes(body)
 
 Side note: in a little while, Sample User will be asked to sign some
 text which includes the date the token was generated (to avoid replay
@@ -287,7 +287,8 @@ A419AE861E88BC9E04B9C26FBA2B9389DFD20543:
 If they sign the text correctly, they are redirected to their home page.
 
     >>> login(ANONYMOUS)
-    >>> good = gpghandler.signContent(bytes(verification_content), key, 'test')
+    >>> good = gpghandler.signContent(
+    ...     six.ensure_binary(verification_content), key, 'test')
     >>> logout()
 
     >>> browser.getControl('Signed text').value = good

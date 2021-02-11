@@ -16,6 +16,7 @@ import time
 from openid.association import Association
 from openid.store import nonce
 from openid.store.interface import OpenIDStore
+import six
 from storm.properties import (
     Bytes,
     Int,
@@ -39,18 +40,18 @@ class BaseStormOpenIDAssociation:
 
     def __init__(self, server_url, association):
         super(BaseStormOpenIDAssociation, self).__init__()
-        self.server_url = server_url.decode('UTF-8')
-        self.handle = association.handle.decode('ASCII')
+        self.server_url = six.ensure_text(server_url)
+        self.handle = six.ensure_text(association.handle, 'ASCII')
         self.update(association)
 
     def update(self, association):
-        assert self.handle == association.handle.decode('ASCII'), (
+        assert self.handle == six.ensure_text(association.handle, 'ASCII'), (
             "Association handle does not match (expected %r, got %r" %
             (self.handle, association.handle))
         self.secret = association.secret
         self.issued = association.issued
         self.lifetime = association.lifetime
-        self.assoc_type = association.assoc_type.decode('ASCII')
+        self.assoc_type = six.ensure_text(association.assoc_type, 'ASCII')
 
     def as_association(self):
         """Return an equivalent openid-python `Association` object."""
@@ -84,8 +85,8 @@ class BaseStormOpenIDStore(OpenIDStore):
         """See `OpenIDStore`."""
         store = IMasterStore(self.Association)
         db_assoc = store.get(
-            self.Association, (server_url.decode('UTF-8'),
-                               association.handle.decode('ASCII')))
+            self.Association, (six.ensure_text(server_url),
+                               six.ensure_text(association.handle, 'ASCII')))
         if db_assoc is None:
             db_assoc = self.Association(server_url, association)
             store.add(db_assoc)
@@ -95,11 +96,11 @@ class BaseStormOpenIDStore(OpenIDStore):
     def getAssociation(self, server_url, handle=None):
         """See `OpenIDStore`."""
         store = IMasterStore(self.Association)
-        server_url = server_url.decode('UTF-8')
+        server_url = six.ensure_text(server_url)
         if handle is None:
             result = store.find(self.Association, server_url=server_url)
         else:
-            handle = handle.decode('ASCII')
+            handle = six.ensure_text(handle, 'ASCII')
             result = store.find(
                 self.Association, server_url=server_url, handle=handle)
 
@@ -121,7 +122,7 @@ class BaseStormOpenIDStore(OpenIDStore):
         """See `OpenIDStore`."""
         store = IMasterStore(self.Association)
         assoc = store.get(self.Association, (
-                server_url.decode('UTF-8'), handle.decode('ASCII')))
+            six.ensure_text(server_url), six.ensure_text(handle, 'ASCII')))
         if assoc is None:
             return False
         store.remove(assoc)
@@ -133,8 +134,8 @@ class BaseStormOpenIDStore(OpenIDStore):
         if abs(timestamp - time.time()) > nonce.SKEW:
             return False
 
-        server_url = server_url.decode('UTF-8')
-        salt = salt.decode('ASCII')
+        server_url = six.ensure_text(server_url)
+        salt = six.ensure_text(salt, 'ASCII')
 
         store = IMasterStore(self.Nonce)
         old_nonce = store.get(self.Nonce, (server_url, timestamp, salt))

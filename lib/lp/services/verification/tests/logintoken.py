@@ -3,16 +3,19 @@
 
 """Helper functions for logintoken-related tests."""
 
-import email
 import re
+
+import six
+
+from lp.services.compat import message_from_bytes
 
 
 def get_token_url_from_email(email_msg):
     """Return the logintoken URL contained in the given email message."""
-    msg = email.message_from_string(email_msg)
-    return get_token_url_from_string(msg.get_payload())
+    msg = message_from_bytes(email_msg)
+    return get_token_url_from_bytes(msg.get_payload(decode=True))
 
 
-def get_token_url_from_string(s):
-    """Return the logintoken URL contained in the given string."""
-    return re.findall(r'http.*/token/.*', s)[0]
+def get_token_url_from_bytes(buf):
+    """Return the logintoken URL contained in the given byte string."""
+    return six.ensure_str(re.findall(br'http.*/token/.*', buf)[0])

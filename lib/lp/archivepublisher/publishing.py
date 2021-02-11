@@ -941,7 +941,7 @@ class Publisher(object):
                 pocket, component, self.archive):
             stanza = build_source_stanza_fields(
                 spp.sourcepackagerelease, spp.component, spp.section)
-            source_index.write(stanza.makeOutput().encode('utf-8') + '\n\n')
+            source_index.write(stanza.makeOutput().encode('utf-8') + b'\n\n')
 
         source_index.close()
 
@@ -978,7 +978,7 @@ class Publisher(object):
                     bpp.priority, bpp.phased_update_percentage,
                     separate_long_descriptions)
                 indices[subcomp].write(
-                    stanza.makeOutput().encode('utf-8') + '\n\n')
+                    stanza.makeOutput().encode('utf-8') + b'\n\n')
                 if separate_long_descriptions:
                     # If the (Package, Description-md5) pair already exists
                     # in the set, build_translations_stanza_fields will
@@ -990,7 +990,7 @@ class Publisher(object):
                     if translation_stanza is not None:
                         translation_en.write(
                             translation_stanza.makeOutput().encode('utf-8')
-                            + '\n\n')
+                            + b'\n\n')
 
             for index in six.itervalues(indices):
                 index.close()

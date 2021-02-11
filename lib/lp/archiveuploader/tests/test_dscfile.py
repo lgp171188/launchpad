@@ -143,7 +143,7 @@ class TestDSCFileWithDatabase(TestCaseWithFactory):
         dsc = DSCFile(
             path, {}, 426, 'main/editors', 'priority',
             'badhash', '1.0-1', FakeChangesFile(), policy, DevNullLogger())
-        errors = [e[0] for e in dsc.verify()]
+        errors = [e.args[0] for e in dsc.verify()]
         self.assertEqual(
             ['File badhash_1.0-1.tar.gz mentioned in the changes has a SHA256'
              ' mismatch. a29ec2370df83193c3fb2cc9e1287dbfe9feba04108ccfa490bb'

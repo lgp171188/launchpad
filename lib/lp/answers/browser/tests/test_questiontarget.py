@@ -7,13 +7,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import json
 import os
 
 from lazr.restful.interfaces import (
     IJSONRequestCache,
     IWebServiceClientRequest,
     )
-from simplejson import dumps
 import six
 from six.moves.urllib.parse import quote
 from zope.component import getUtility
@@ -276,7 +276,7 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
     def test_data_no_answer_contacts(self):
         question = self.factory.makeQuestion()
         view = create_view(question.target, '+portlet-answercontacts-details')
-        self.assertEqual(dumps([]), view.answercontact_data_js)
+        self.assertEqual([], json.loads(view.answercontact_data_js))
 
     def test_data_person_answercontact(self):
         # answercontact_data_js returns JSON string of a list
@@ -302,7 +302,7 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
                 }
             }
         self.assertEqual(
-            dumps([expected_result]), view.answercontact_data_js)
+            [expected_result], json.loads(view.answercontact_data_js))
 
     def test_data_team_answer_contact(self):
         # For a team answer contacts, answercontact_data_js has is_team set
@@ -329,7 +329,7 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
                 }
             }
         self.assertEqual(
-            dumps([expected_result]), view.answercontact_data_js)
+            [expected_result], json.loads(view.answercontact_data_js))
 
     def test_data_team_answercontact_owner_looks(self):
         # For a team subscription, answercontact_data_js has can_edit
@@ -357,7 +357,7 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
             }
         with person_logged_in(contact.teamowner):
             self.assertEqual(
-                dumps([expected_result]), view.answercontact_data_js)
+                [expected_result], json.loads(view.answercontact_data_js))
 
     def test_data_team_subscription_member_looks(self):
         # For a team subscription, answercontact_data_js has can_edit
@@ -387,7 +387,7 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
             }
         with person_logged_in(contact.teamowner):
             self.assertEqual(
-                dumps([expected_result]), view.answercontact_data_js)
+                [expected_result], json.loads(view.answercontact_data_js))
 
     def test_data_target_owner_answercontact_looks(self):
         # Answercontact_data_js has can_edit set to true for target owner.
@@ -413,7 +413,7 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
             }
         with person_logged_in(distro.owner):
             self.assertEqual(
-                dumps([expected_result]), view.answercontact_data_js)
+                [expected_result], json.loads(view.answercontact_data_js))
 
     def test_data_subscription_lp_admin(self):
         # For a subscription, answercontact_data_js has can_edit
@@ -443,7 +443,7 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
         admin = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
         with person_logged_in(admin):
             self.assertEqual(
-                dumps([expected_result]), view.answercontact_data_js)
+                [expected_result], json.loads(view.answercontact_data_js))
 
 
 class TestQuestionTargetPortletAnswerContacts(TestCaseWithFactory):

@@ -116,7 +116,7 @@ request, with the OAuth consumer name being equal to the User-Agent.
     ...     return http(request)
 
     >>> response = request_with_user_agent(agent)
-    >>> print(response.getOutput())
+    >>> print(six.text_type(response))
     HTTP/1.1 200 Ok
     ...
     {...}
@@ -125,7 +125,7 @@ An unsigned request, like a request signed with the empty string,
 isn't logged in as any particular user:
 
     >>> response = request_with_user_agent(agent, "/devel/people/+me")
-    >>> print(response.getOutput())
+    >>> print(six.text_type(response))
     HTTP/1.1 401 Unauthorized
     ...
     You need to be logged in to view this URL.

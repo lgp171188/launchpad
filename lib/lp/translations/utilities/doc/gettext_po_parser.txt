@@ -14,7 +14,7 @@ The PO parser handles GNU gettext format human readable files.
 PO files with empty headers are not allowed.
 
     >>> parser = POParser()
-    >>> parser.parse('msgid "foo"\nmsgstr ""\n')
+    >>> parser.parse(b'msgid "foo"\nmsgstr ""\n')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -22,8 +22,8 @@ PO files with empty headers are not allowed.
 
 PO files with context after msgids are reported as broken.
 
-    >>> parser.parse('msgid ""\nmsgstr ""\n'
-    ...              'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n')
+    >>> parser.parse(b'msgid ""\nmsgstr ""\n'
+    ...              b'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -31,9 +31,9 @@ PO files with context after msgids are reported as broken.
 
 And a msgctxt followed by msgctxt is caught as well.
 
-    >>> parser.parse('msgid ""\nmsgstr ""\n'
-    ...              'msgctxt "foo"\nmsgctxt "foo1"\n'
-    ...              'msgid "blah"\nmsgstr "bar"\n')
+    >>> parser.parse(b'msgid ""\nmsgstr ""\n'
+    ...              b'msgctxt "foo"\nmsgctxt "foo1"\n'
+    ...              b'msgid "blah"\nmsgstr "bar"\n')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -42,8 +42,8 @@ And a msgctxt followed by msgctxt is caught as well.
 When a string is followed by non-string, non-space data, it is caught
 as an error.
 
-    >>> parser.parse('msgid ""\nmsgstr "something"\n'
-    ...              '"foo"  whatever\n')
+    >>> parser.parse(b'msgid ""\nmsgstr "something"\n'
+    ...              b'"foo"  whatever\n')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -51,7 +51,7 @@ as an error.
 
 Unrecognized escape sequences are caught as well.
 
-    >>> parser.parse('msgid "\!"\nmsgstr ""\n')
+    >>> parser.parse(b'msgid "\!"\nmsgstr ""\n')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -59,7 +59,7 @@ Unrecognized escape sequences are caught as well.
 
 Unclosed strings (missing closing quotes) are caught.
 
-    >>> parser.parse('msgid ""\nmsgstr "\n')
+    >>> parser.parse(b'msgid ""\nmsgstr "\n')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -283,7 +283,7 @@ template.
 
 Parsing a PO template:
 
-    >>> content = """
+    >>> content = b"""
     ... msgid ""
     ... msgstr ""
     ... "Project-Id-Version: Foobar 1.0\\n"
@@ -312,7 +312,7 @@ PO templates, and other PO files that do not specify their encoding,
 are parsed as UTF-8 text.  If they contain non UTF-8 characters, parsing
 errors occur:
 
-    >>> chunk2 = """
+    >>> chunk2 = b"""
     ... #:foo/bar.c:42
     ... msgid "Bar"
     ... msgstr "\xb5\x7b\xa6\xa1\xbf\xf9\xbb\x7e"
@@ -338,7 +338,7 @@ may include backslashes inside multibyte sequences.  These backslashes
 must be interpreted as part of the character rather than as an escape
 character.
 
-    >>> content = """
+    >>> content = b"""
     ... msgid ""
     ... msgstr ""
     ... "Last-Translator:  \xb5\x7b\xa6\xa1\xbf\xf9\xbb\x7e\\n"
@@ -384,7 +384,7 @@ which would cause problems if we naively use '\n' as a line separator.
 
 Change the last PO file to use Mac-style newlines:
 
-    >>> content = content.replace('\n', '\r')
+    >>> content = content.replace(b'\n', b'\r')
 
 Verify that it still parses:
 
@@ -401,7 +401,7 @@ them have special meaning like 'new line': '\n' or 'tabs' '\t' and others are
 just the numeric representation of a character in the declared encoding by
 the Content-Type field of the header.
 
-    >>> content = """
+    >>> content = b"""
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-05-11 20:22+0800\\n"
@@ -521,7 +521,7 @@ Let's parse a Spanish PO file with an inverted plural formula.
 
     >>> spanish_pluralformula = 'n!=1'
 
-    >>> content = """
+    >>> content = b"""
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-05-11 20:22+0800\\n"

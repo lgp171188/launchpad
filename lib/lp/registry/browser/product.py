@@ -2575,7 +2575,8 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
         ProductLicenseMixin.validate(self, data)
         if data.get('disclaim_maintainer') and self.errors:
             # The checkbox supersedes the owner text input.
-            errors = [error for error in self.errors if error[0] == 'owner']
+            errors = [
+                error for error in self.errors if error.args[0] == 'owner']
             for error in errors:
                 self.errors.remove(error)
 
