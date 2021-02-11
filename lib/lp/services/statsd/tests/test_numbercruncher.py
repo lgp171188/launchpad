@@ -7,6 +7,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import datetime
+
+import pytz
 from storm.store import Store
 from testtools.matchers import (
     Equals,
@@ -19,7 +22,10 @@ from twisted.internet import task
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuilderCleanStatus
+from lp.buildmaster.enums import (
+    BuilderCleanStatus,
+    BuildStatus,
+    )
 from lp.buildmaster.interactor import BuilderSlave
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
@@ -30,6 +36,7 @@ from lp.services.database.policy import DatabaseBlockedPolicy
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.numbercruncher import NumberCruncher
 from lp.services.statsd.tests import StatsMixin
+from lp.soyuz.enums import PackagePublishingStatus
 from lp.testing import TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -284,6 +291,42 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         self.assertIn(
             "Failure while updating code import stats.",
             cruncher.logger.getLogBuffer())
+        self.assertFalse(is_transaction_in_progress())
+
+    def test_updatePPABuildLatencyStats(self):
+        archive = self.factory.makeArchive()
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive, status=PackagePublishingStatus.PUBLISHED)
+        bpph.binarypackagerelease.build.updateStatus(
+            BuildStatus.BUILDING, date_started=datetime.now(pytz.UTC))
+        bpph.binarypackagerelease.build.updateStatus(BuildStatus.FULLYBUILT)
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.updatePPABuildLatencyStats()
+        self.assertEqual(4, self.stats_client.gauge.call_count)
+        # The raw values here are non-deterministic and affected
+        # by the test data, so just check that the gauges exist
+        keys = [x[0][0] for x in self.stats_client.gauge.call_args_list]
+        gauges = [
+            "ppa.startdelay,env=test",
+            "ppa.uploaddelay,env=test",
+            "ppa.processaccepted,env=test",
+            "ppa.publishdistro,env=test"]
+        for gauge in gauges:
+            self.assertIn(gauge, keys)
+
+    def test_updatePPABuildLatencyStats_error(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.logger = BufferLogger()
+        with DatabaseBlockedPolicy():
+            cruncher.updatePPABuildLatencyStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertIn(
+            "Failure while update PPA build latency stats.",
+            cruncher.logger.getLogBuffer())
+        self.assertFalse(is_transaction_in_progress())
 
     def test_startService_starts_update_queues_loop(self):
         clock = task.Clock()
@@ -328,3 +371,14 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         advance = NumberCruncher.CODE_IMPORT_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(0, cruncher.updateCodeImportStats.call_count)
+
+    def test_startService_starts_update_ppa_build_latency_loop(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+
+        cruncher.updatePPABuildLatencyStats = FakeMethod()
+
+        cruncher.startService()
+        advance = NumberCruncher.PPA_LATENCY_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, cruncher.updatePPABuildLatencyStats.call_count)
