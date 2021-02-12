@@ -4,19 +4,36 @@
 SET client_min_messages=ERROR;
 
 ALTER TABLE Snap
+    ADD COLUMN information_type integer,
     ADD COLUMN project integer REFERENCES product,
     ADD COLUMN access_policy integer,
     ADD COLUMN access_grants integer[];
 
-COMMENT ON COLUMN Snap.project IS 'The project which is the pillar for this Snap';
+COMMENT ON COLUMN Snap.private IS
+    '(DEPRECATED; use Snap.information_type) Whether or not this snap is private.';
+COMMENT ON COLUMN Snap.project IS
+    'The project which is the pillar for this Snap';
+COMMENT ON COLUMN Snap.information_type IS
+    'Enum describing what type of information is stored, such as type of private or security related data, and used to determine to apply an access policy.';
 
 CREATE TABLE SnapSubscription (
-    id serial NOT NULL PRIMARY KEY,
+    id serial PRIMARY KEY,
     person integer NOT NULL REFERENCES Person(id),
     snap integer NOT NULL REFERENCES Snap(id),
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
     subscribed_by integer NOT NULL REFERENCES Person(id)
 );
+
+COMMENT ON TABLE SnapSubscription IS 'Person subscription for Snap recipes.';
+COMMENT ON COLUMN SnapSubscription.person IS
+    'The person who subscribed to the Snap.';
+COMMENT ON COLUMN SnapSubscription.snap IS
+    'The Snap recipe to which the person subscribed.';
+COMMENT ON COLUMN SnapSubscription.date_created IS
+    'When the subscription was created.';
+COMMENT ON COLUMN SnapSubscription.subscribed_by IS
+    'The person performing the action of subscribing someone to the Snap.';
+
 
 CREATE UNIQUE INDEX snapsubscription__person_snap__key
     ON SnapSubscription(snap, person);
@@ -43,9 +60,17 @@ $$
 DECLARE
     information_type integer;
 BEGIN
+    -- XXX pappacena 2021-002-12: Once we finish filling "information_type" and
+    -- deprecate the usage of "public" column at code level, we will be able to
+    -- drop the "private" column usage here.
     SELECT
-        -- information type: 1 = public; 5 = proprietary
-        CASE WHEN private THEN 5 ELSE 1 END
+        CASE information_type
+            WHEN NULL THEN
+                -- information type: 1 = public; 5 = proprietary
+                CASE WHEN private THEN 5 ELSE 1 END
+            ELSE
+                information_type
+            END
     INTO information_type
     FROM snap WHERE id = snap_id;
 
@@ -90,7 +115,7 @@ $$;
 COMMENT ON FUNCTION accessartifact_denorm_to_artifacts(artifact_id integer) IS
     'Denormalize the policy access and artifact grants to bugs, branches, git repositories, snaps, and specifications.';
 
--- A trigger to handle snap.{private,project} changes.
+-- A trigger to handle snap.{private,information_type,project} changes.
 CREATE OR REPLACE FUNCTION snap_maintain_access_cache_trig() RETURNS trigger
     LANGUAGE plpgsql AS $$
 BEGIN
@@ -100,7 +125,7 @@ END;
 $$;
 
 CREATE TRIGGER snap_maintain_access_cache
-    AFTER INSERT OR UPDATE OF private, project ON Snap
+    AFTER INSERT OR UPDATE OF private, information_type, project ON Snap
     FOR EACH ROW EXECUTE PROCEDURE snap_maintain_access_cache_trig();
 
 
