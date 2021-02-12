@@ -450,6 +450,27 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("translatePath succeeded: %s", result)
         return result
 
+    def _isWritable(self, requester, repository, verified):
+        writable = False
+        if verified is not None and verified.user is NO_USER:
+            # We have verified that the authentication parameters correctly
+            # specify internal-services authentication with a suitable
+            # macaroon that specifically grants access to this repository.
+            # This is only permitted for macaroons not bound to a user.
+            writable = _can_internal_issuer_write(verified)
+            repository = removeSecurityProxy(repository)
+        else:
+            # This isn't an authorised internal service, so perform normal
+            # user authorisation.
+            writable = (
+                    repository.repository_type == GitRepositoryType.HOSTED and
+                    check_permission("launchpad.Edit", repository))
+            if not writable:
+                grants = repository.findRuleGrantsByGrantee(requester)
+                if not grants.is_empty():
+                    writable = True
+        return writable
+
     @return_fault
     def _notify(self, requester, translated_path, statistics, auth_params):
         logger = self._getLogger()
@@ -463,29 +484,12 @@ class GitAPI(LaunchpadXMLRPCView):
             return fault
         if repository is None:
             raise faults.GitRepositoryNotFound(translated_path)
-
         if auth_params is not None:
             verified = self._verifyAuthParams(
                 requester, repository, auth_params)
-            if verified is not None and verified.user is NO_USER:
-                # We have verified that the authentication parameters correctly
-                # specify internal-services authentication with a suitable
-                # macaroon that specifically grants access to this repository.
-                # This is only permitted for macaroons not bound to a user.
-                writable = _can_internal_issuer_write(verified)
-                repository = removeSecurityProxy(repository)
-            else:
-                # This isn't an authorised internal service, so perform normal
-                # user authorisation.
-                writable = (
-                    repository.repository_type == GitRepositoryType.HOSTED and
-                    check_permission("launchpad.Edit", repository))
-                if not writable:
-                    grants = repository.findRuleGrantsByGrantee(requester)
-                    if not grants.is_empty():
-                        writable = True
+            writable = self._isWritable(requester, repository, verified)
             if writable and statistics:
-                repository.setRepackData(
+                removeSecurityProxy(repository).setRepackData(
                     statistics.get('loose_object_count'),
                     statistics.get('pack_count'))
         getUtility(IGitRefScanJobSource).create(
@@ -494,7 +498,12 @@ class GitAPI(LaunchpadXMLRPCView):
     def notify(self, translated_path, statistics=None, auth_params=None):
         """See `IGitAPI`."""
         logger = self._getLogger()
-        logger.info("Request received: notify('%s')", translated_path)
+        if statistics is None:
+            logger.info("Request received: notify('%s')", translated_path)
+        else:
+            logger.info("Request received: notify('%s', '%d', '%d')",
+                    translated_path, statistics.get('loose_object_count'),
+                    statistics.get('pack_count'))
         if auth_params is not None:
             requester_id = _get_requester_id(auth_params)
             result = run_with_login(
@@ -506,8 +515,10 @@ class GitAPI(LaunchpadXMLRPCView):
                 logger.info("notify succeeded: %s" % result)
             return result
         else:
+            # XXX ilasc 2021-02-12: This else block will be removed
+            # once turnip always passes statistics and auth_params
             result = self._notify(
-                None, translated_path, auth_params, statistics)
+                None, translated_path, statistics, auth_params)
         if isinstance(result, xmlrpc_client.Fault):
             logger.error("notify failed: %r", result)
         else:
