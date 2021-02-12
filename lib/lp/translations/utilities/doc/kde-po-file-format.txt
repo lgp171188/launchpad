@@ -48,7 +48,7 @@ Our KDE PO support is built on top of existing gettext support.  As
 such, it has precedence in handling any PO files, but it correctly
 sets the format to regular PO if it's not a KDE style file.
 
-    >>> non_kde_template = r'''
+    >>> non_kde_template = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -58,16 +58,16 @@ sets the format to regular PO if it's not a KDE style file.
     ...
     ... msgid "foo"
     ... msgstr ""
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 Importing this file works, but the format is set to Gettext PO.
 
     >>> entry = import_pofile_or_potemplate(non_kde_template, carlos,
     ...                                     potemplate=firefox_potemplate)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches()
-    >>> print entry.format.title
+    >>> print(entry.format.title)
     PO format
 
 == Plural forms support ==
@@ -78,7 +78,7 @@ Plural forms are supported by using a specially formatted msgid where
 English singular and plural are split with a newline, and the entire
 message is preceded with '_n: ' (space at the end of the string is important).
 
-    >>> plural_forms_template = r'''
+    >>> plural_forms_template = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -111,17 +111,17 @@ message is preceded with '_n: ' (space at the end of the string is important).
     ...
     ... msgid "_n: entry\nentries"
     ... msgstr ""
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 And strangely, importing this file actually works, and format is changed
 to KDE PO format.
 
     >>> entry = import_pofile_or_potemplate(plural_forms_template, carlos,
     ...                                     potemplate=firefox_potemplate)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches()
-    >>> print entry.format.title
+    >>> print(entry.format.title)
     KDE PO format
 
 Messages which are preceded with just '_n:' and no space after it are
@@ -129,10 +129,10 @@ not considered plural forms messages.
 
     >>> potmsgset = firefox_potemplate.getPOTMsgSetByMsgIDText(
     ...     u'_n:bar\nbars')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     _n:bar
     bars
-    >>> print potmsgset.plural_text
+    >>> print(potmsgset.plural_text)
     None
 
 Proper format in messages is to use '_n: ' and separate singular and
@@ -140,9 +140,9 @@ plural with a newline.
 
     >>> potmsgset = firefox_potemplate.getPOTMsgSetByMsgIDText(
     ...     u'%d foo', plural_text=u'%d foos')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     %d foo
-    >>> print potmsgset.plural_text
+    >>> print(potmsgset.plural_text)
     %d foos
 
 To get a non-plural message, we can either not specify plural_text or
@@ -150,9 +150,9 @@ set it as None:
 
     >>> potmsgset = firefox_potemplate.getPOTMsgSetByMsgIDText(
     ...     u'%d foo', plural_text=None)
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     %d foo
-    >>> print potmsgset.plural_text
+    >>> print(potmsgset.plural_text)
     None
 
 For translations, a specially formatted msgstr is used to hold all plural
@@ -160,7 +160,7 @@ forms. They are simply newline-separated strings.
 
     >>> firefox_serbian_pofile = firefox_potemplate.newPOFile('sr')
     >>> firefox_serbian_pofile.path='sr.po'
-    >>> firefox_serbian_pofile_contents = r'''
+    >>> firefox_serbian_pofile_contents = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -192,7 +192,7 @@ forms. They are simply newline-separated strings.
     ... msgid "_n: entry\nentries"
     ... msgstr "singular entry\n\nplural entries"
     ...
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 Importing this file succeeds, even if the number of %d printf specifications
 doesn't match: this is because this is now specially handled with KDE PO
@@ -201,10 +201,10 @@ format support.
     >>> entry = import_pofile_or_potemplate(firefox_serbian_pofile_contents,
     ...                                     carlos,
     ...                                     pofile=firefox_serbian_pofile)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches()
-    >>> print entry.format.title
+    >>> print(entry.format.title)
     KDE PO format
 
 Non-KDE style messages get their translations in the usual way.
@@ -256,8 +256,8 @@ Make sure all the date constants are replaced with real values in database:
 
 Template export turns it back into a KDE-style PO file:
 
-    >>> print export_with_format(
-    ...     firefox_potemplate, TranslationFileFormat.KDEPO)
+    >>> print(export_with_format(
+    ...     firefox_potemplate, TranslationFileFormat.KDEPO))
     #, fuzzy
     msgid ""
     msgstr ""
@@ -307,8 +307,8 @@ But, we can also export it as a regular gettext PO file.  This format
 does not support messages that are identical in all but the plural, so
 those are stripped out.
 
-    >>> print export_with_format(firefox_potemplate,
-    ...                          TranslationFileFormat.PO)
+    >>> print(export_with_format(firefox_potemplate,
+    ...                          TranslationFileFormat.PO))
     #, fuzzy
     msgid ""
     msgstr ""
@@ -343,7 +343,7 @@ those are stripped out.
 
 Exporting a translation is possible in a very similar way.
 
-    >>> print firefox_serbian_pofile.export().decode('utf8')
+    >>> print(firefox_serbian_pofile.export().decode('utf8'))
     msgid ""
     msgstr ""
     ...
@@ -406,7 +406,7 @@ a new line from the rest of the message.
 
 We can have a template with a message with context.
 
-    >>> kde_context_template = r'''
+    >>> kde_context_template = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -418,37 +418,37 @@ We can have a template with a message with context.
     ...
     ... msgid "_: Different Context\nMessage"
     ... msgstr ""
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 Importing this template works and the format is recognized as a KDE PO format.
 
     >>> entry = import_pofile_or_potemplate(kde_context_template, carlos,
     ...                                     potemplate=firefox_potemplate)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches()
-    >>> print entry.format.title
+    >>> print(entry.format.title)
     KDE PO format
 
 Message with context is properly split into msgid and context fields.
 
     >>> potmsgset = firefox_potemplate.getPOTMsgSetByMsgIDText(
     ...     u'Message', context='Context')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     Message
-    >>> print potmsgset.context
+    >>> print(potmsgset.context)
     Context
 
 If we ask for a message without specifying context, we get no results:
 
     >>> potmsgset = firefox_potemplate.getPOTMsgSetByMsgIDText(
     ...     u'Message')
-    >>> print potmsgset
+    >>> print(potmsgset)
     None
 
 We can also import a translated file with message contexts:
 
-    >>> kde_context_translation = r'''
+    >>> kde_context_translation = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -460,13 +460,13 @@ We can also import a translated file with message contexts:
     ...
     ... msgid "_: Different Context\nMessage"
     ... msgstr "Second translation"
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
     >>> entry = import_pofile_or_potemplate(kde_context_translation, carlos,
     ...                                     pofile=firefox_serbian_pofile)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches()
-    >>> print entry.format.title
+    >>> print(entry.format.title)
     KDE PO format
 
 
@@ -497,8 +497,8 @@ other message and its translation:
 
 Exporting a PO template as a KDE PO file joins the context back together:
 
-    >>> print export_with_format(firefox_potemplate,
-    ...                          TranslationFileFormat.KDEPO)
+    >>> print(export_with_format(firefox_potemplate,
+    ...                          TranslationFileFormat.KDEPO))
     #, fuzzy
     msgid ""
     msgstr ""
@@ -520,7 +520,7 @@ Exporting a PO template as a KDE PO file joins the context back together:
 
 And the same happens with a translation:
 
-    >>> print firefox_serbian_pofile.export().decode('utf8')
+    >>> print(firefox_serbian_pofile.export().decode('utf8'))
     msgid ""
     msgstr ""
     ...

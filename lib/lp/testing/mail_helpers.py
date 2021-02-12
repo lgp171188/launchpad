@@ -96,7 +96,7 @@ def print_emails(include_reply_to=False, group_similar=False,
         body = message.get_payload(decode=decode)
         if group_similar:
             # Strip the first line as it's different for each recipient.
-            body = body[body.find('\n') + 1:]
+            body = body[body.find(b'\n' if decode else '\n') + 1:]
         if body in distinct_bodies and group_similar:
             message, existing_recipients = distinct_bodies[body]
             distinct_bodies[body] = (
@@ -125,13 +125,15 @@ def print_emails(include_reply_to=False, group_similar=False,
 
 
 def print_distinct_emails(include_reply_to=False, include_rationale=True,
-                          include_for=False, include_notification_type=True):
+                          include_for=False, include_notification_type=True,
+                          decode=False):
     """A convenient shortcut for `print_emails`(group_similar=True)."""
     return print_emails(group_similar=True,
                         include_reply_to=include_reply_to,
                         include_rationale=include_rationale,
                         include_for=include_for,
-                        include_notification_type=include_notification_type)
+                        include_notification_type=include_notification_type,
+                        decode=decode)
 
 
 def run_mail_jobs():

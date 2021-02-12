@@ -11,7 +11,7 @@ to demonstrate this:
     >>> import subprocess
     >>> import tempfile
     >>> from textwrap import dedent
-    >>> script_file = tempfile.NamedTemporaryFile()
+    >>> script_file = tempfile.NamedTemporaryFile(mode='w')
     >>> _ = script_file.write(dedent("""\
     ...     from __future__ import absolute_import, print_function
     ...

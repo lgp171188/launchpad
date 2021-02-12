@@ -1113,7 +1113,7 @@ NavigationMenus used in the previous TALES section.
     ...      </li>
     ...    </ul>
     ...  </div>"""
-    >>> template_file = tempfile.NamedTemporaryFile()
+    >>> template_file = tempfile.NamedTemporaryFile(mode='w')
     >>> _ = template_file.write(menu_fragment)
     >>> template_file.flush()
 

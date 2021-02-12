@@ -204,30 +204,30 @@ class TestDiff(DiffTestCase):
     def test_text_reads_librarian_content(self):
         # IDiff.text will read at most config.diff.max_read_size bytes from
         # the librarian.
-        content = b''.join(unified_diff(b'', b"1234567890" * 10))
-        diff = self._create_diff(content)
+        content = ''.join(unified_diff('', "1234567890" * 10))
+        diff = self._create_diff(content.encode('UTF-8'))
         self.assertEqual(content, diff.text)
         self.assertTrue(diff.diff_text.restricted)
 
     def test_oversized_normal(self):
         # A diff smaller than config.diff.max_read_size is not oversized.
-        content = b''.join(unified_diff(b'', b"1234567890" * 10))
-        diff = self._create_diff(content)
+        content = ''.join(unified_diff('', "1234567890" * 10))
+        diff = self._create_diff(content.encode('UTF-8'))
         self.assertFalse(diff.oversized)
 
     def test_text_read_limited_by_config(self):
         # IDiff.text will read at most config.diff.max_read_size bytes from
         # the librarian.
         self.pushConfig("diff", max_read_size=25)
-        content = b''.join(unified_diff(b'', b"1234567890" * 10))
-        diff = self._create_diff(content)
+        content = ''.join(unified_diff('', "1234567890" * 10))
+        diff = self._create_diff(content.encode('UTF-8'))
         self.assertEqual(content[:25], diff.text)
 
     def test_oversized_for_big_diff(self):
         # A diff larger than config.diff.max_read_size is oversized.
         self.pushConfig("diff", max_read_size=25)
-        content = b''.join(unified_diff(b'', b"1234567890" * 10))
-        diff = self._create_diff(content)
+        content = ''.join(unified_diff('', "1234567890" * 10))
+        diff = self._create_diff(content.encode('UTF-8'))
         self.assertTrue(diff.oversized)
 
     def test_timeout(self):

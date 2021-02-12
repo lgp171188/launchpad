@@ -286,7 +286,7 @@ translation import queue entries.
     ...     ITranslationImportQueue)
     >>> import_queue = getUtility(ITranslationImportQueue)
     >>> entry = import_queue.addOrUpdateEntry(
-    ...     u'po/sr.po', 'foo', True, public_team,
+    ...     u'po/sr.po', b'foo', True, public_team,
     ...      productseries=product_series)
     >>> product.owner = public_team
     >>> product.owner = priv_team

@@ -25,7 +25,8 @@ here = os.path.dirname(os.path.realpath(__file__))
 # Files that have special needs can construct their own suite
 special = {
     'gettext_po_parser.txt': LayeredDocFileSuite(
-        '../doc/gettext_po_parser.txt', setUp=setGlobs, stdout_logging=False)
+        '../doc/gettext_po_parser.txt',
+        setUp=lambda test: setGlobs(test, future=True), stdout_logging=False)
     }
 
 
@@ -58,7 +59,8 @@ def test_suite():
     for filename in filenames:
         path = os.path.join('../doc/', filename)
         one_test = LayeredDocFileSuite(
-            path, setUp=setUp, tearDown=tearDown,
+            path,
+            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
             layer=LaunchpadFunctionalLayer,
             stdout_logging_level=logging.WARNING
             )
