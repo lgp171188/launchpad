@@ -61,7 +61,7 @@ For example, users can view a textual description of bug 1:
 The textual description contains basic information about that bug, along with
 all tasks related to that bug, presented in an easy-to-digest format:
 
-    >>> text_bug = anon_browser.contents.decode('UTF-8')
+    >>> text_bug = six.ensure_text(anon_browser.contents)
     >>> print(text_bug)
     bug: 1
     title: Firefox does not support SVG
@@ -175,7 +175,7 @@ description of bug 1 directly from the Mozilla Firefox-specific text page:
 The textual report contains the same information as the report provided by the
 parent bug context:
 
-    >>> text_bug_task = anon_browser.contents.decode('UTF-8')
+    >>> text_bug_task = six.ensure_text(anon_browser.contents)
     >>> print(text_bug_task)
     bug: 1
     title: Firefox does not support SVG
