@@ -365,7 +365,7 @@ class Snap(Storm, WebhookTargetMixin):
             raise SnapPrivacyMismatch
         return value
 
-    information_type = DBEnum(
+    _information_type = DBEnum(
         enum=InformationType, default=InformationType.PUBLIC,
         name="information_type",
         validator=_valid_information_type)
@@ -428,6 +428,17 @@ class Snap(Storm, WebhookTargetMixin):
 
     def __repr__(self):
         return "<Snap ~%s/+snap/%s>" % (self.owner.name, self.name)
+
+    @property
+    def information_type(self):
+        if self._information_type is None:
+            return (InformationType.PROPRIETARY if self.private
+                    else InformationType.PUBLIC)
+        return self._information_type
+
+    @information_type.setter
+    def information_type(self, information_type):
+        self._information_type = information_type
 
     @property
     def valid_webhook_event_types(self):
