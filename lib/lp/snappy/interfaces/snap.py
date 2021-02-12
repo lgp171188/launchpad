@@ -845,7 +845,7 @@ class ISnapAdminAttributes(Interface):
 
     information_type = exported(Choice(
         title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=True, default=InformationType.PUBLIC,
+        required=True, readonly=False, default=InformationType.PUBLIC,
         description=_(
             "The type of information contained in this Snap recipe.")))
 
@@ -891,7 +891,7 @@ class ISnapSet(Interface):
             "owner", "distro_series", "name", "description", "branch",
             "git_repository", "git_repository_url", "git_path", "git_ref",
             "auto_build", "auto_build_archive", "auto_build_pocket",
-            "private", "store_upload", "store_series", "store_name",
+            "information_type", "store_upload", "store_series", "store_name",
             "store_channels", "project"])
     @operation_for_version("devel")
     def new(registrant, owner, distro_series, name, description=None,
@@ -899,7 +899,8 @@ class ISnapSet(Interface):
             git_path=None, git_ref=None, auto_build=False,
             auto_build_archive=None, auto_build_pocket=None,
             require_virtualized=True, processors=None, date_created=None,
-            private=False, store_upload=False, store_series=None,
+            information_type=InformationType.PUBLIC, store_upload=False,
+            store_series=None,
             store_name=None, store_secrets=None, store_channels=None,
             project=None):
         """Create an `ISnap`."""

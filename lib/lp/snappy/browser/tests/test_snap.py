@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package views."""
@@ -655,19 +655,23 @@ class TestSnapAdminView(BaseTestSnapView):
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
         login_person(self.person)
         snap = self.factory.makeSnap(registrant=self.person)
+        project = self.factory.makeProduct(name='my-project')
         self.assertTrue(snap.require_virtualized)
+        self.assertIsNone(snap.project)
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
 
+        private = InformationType.PROPRIETARY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = "my-project"
         browser.getControl("Require virtualized builders").selected = False
-        browser.getControl("Private").selected = True
+        browser.getControl(name="field.information_type").value = private
         browser.getControl("Allow external network access").selected = False
         browser.getControl("Update snap package").click()
 
         login_person(self.person)
+        self.assertEqual(project, snap.project)
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
         self.assertFalse(snap.allow_internet)
@@ -678,10 +682,11 @@ class TestSnapAdminView(BaseTestSnapView):
         snap = self.factory.makeSnap(registrant=self.person)
         commercial_admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        private = InformationType.PROPRIETARY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = ''
-        browser.getControl("Private").selected = True
+        browser.getControl(name="field.information_type").value = private
         browser.getControl("Update snap package").click()
         self.assertEqual(
             'Private Snap recipes should be associated with a project.',
@@ -698,9 +703,10 @@ class TestSnapAdminView(BaseTestSnapView):
         # can reach this snap because it's owned by a private team.
         commercial_admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        public = InformationType.PUBLIC.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
-        browser.getControl("Private").selected = False
+        browser.getControl(name="field.information_type").value = public
         browser.getControl("Update snap package").click()
         self.assertEqual(
             'A public snap cannot have a private owner.',
