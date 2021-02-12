@@ -131,6 +131,7 @@ from lp.testing import (
     ANONYMOUS,
     api_url,
     login,
+    login_admin,
     logout,
     person_logged_in,
     record_two_runs,
@@ -1415,6 +1416,24 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.repository_url, snap.git_repository_url)
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
+
+    def test_private_snap_information_type_compatibility(self):
+        login_admin()
+        private_snap = getUtility(ISnapSet).new(
+            private=True, **self.makeSnapComponents())
+        self.assertEqual(
+            InformationType.PROPRIETARY, private_snap.information_type)
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            removeSecurityProxy(private_snap)._information_type)
+
+        public_snap = getUtility(ISnapSet).new(
+            private=False, **self.makeSnapComponents())
+        self.assertEqual(
+            InformationType.PUBLIC, public_snap.information_type)
+        self.assertEqual(
+            InformationType.PUBLIC,
+            removeSecurityProxy(public_snap)._information_type)
 
     def test_private_snap_for_public_sources(self):
         # Creating private snaps for public sources is allowed.
