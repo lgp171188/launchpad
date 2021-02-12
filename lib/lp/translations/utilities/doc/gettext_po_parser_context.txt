@@ -52,7 +52,7 @@ present on both messages (note that two messages with the same msgid,
 where one contains a plural form and the other doesn't, are treated as
 the same message in gettext, and we have to use msgctxt on one of them).
 
-    >>> potemplate_contents = r'''
+    >>> potemplate_contents = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -80,7 +80,7 @@ the same message in gettext, and we have to use msgctxt on one of them).
     ... msgid_plural "%%d files"
     ... msgstr[0] ""
     ... msgstr[1] ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
 
 This file can now be correctly imported:
 
@@ -133,7 +133,7 @@ It also works for plural form messages.
 Importing a PO template with two messages with identical strings, but no
 context differences fails.
 
-    >>> potemplate_contents = r'''
+    >>> potemplate_contents = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -148,7 +148,7 @@ context differences fails.
     ... msgctxt "context"
     ... msgid "bar"
     ... msgstr ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
 
 Importing this file fails because of conflicting messages.
 
@@ -165,7 +165,7 @@ We can also import POFile with context messages.
 
     >>> pofile = potemplate.newPOFile('sr')
     >>> pofile.path='sr.po'
-    >>> pofile_contents = r'''
+    >>> pofile_contents = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -193,7 +193,7 @@ We can also import POFile with context messages.
     ... msgstr[0] "%%d translation"
     ... msgstr[1] "%%d translationes"
     ... msgstr[2] "%%d translations"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
 
 Importing this file succeeds.
 
@@ -338,7 +338,7 @@ It's different from the imported file only in a few headers.
 Messages without msgctxt keyword and with empty value for msgctxt are
 not same.
 
-    >>> potemplate_contents = r'''
+    >>> potemplate_contents = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -352,7 +352,7 @@ not same.
     ... msgctxt ""
     ... msgid "bar"
     ... msgstr ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
 
 This file can now be correctly imported:
 

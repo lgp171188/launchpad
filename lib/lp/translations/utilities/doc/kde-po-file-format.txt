@@ -48,7 +48,7 @@ Our KDE PO support is built on top of existing gettext support.  As
 such, it has precedence in handling any PO files, but it correctly
 sets the format to regular PO if it's not a KDE style file.
 
-    >>> non_kde_template = r'''
+    >>> non_kde_template = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -58,7 +58,7 @@ sets the format to regular PO if it's not a KDE style file.
     ...
     ... msgid "foo"
     ... msgstr ""
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 Importing this file works, but the format is set to Gettext PO.
 
@@ -78,7 +78,7 @@ Plural forms are supported by using a specially formatted msgid where
 English singular and plural are split with a newline, and the entire
 message is preceded with '_n: ' (space at the end of the string is important).
 
-    >>> plural_forms_template = r'''
+    >>> plural_forms_template = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -111,7 +111,7 @@ message is preceded with '_n: ' (space at the end of the string is important).
     ...
     ... msgid "_n: entry\nentries"
     ... msgstr ""
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 And strangely, importing this file actually works, and format is changed
 to KDE PO format.
@@ -160,7 +160,7 @@ forms. They are simply newline-separated strings.
 
     >>> firefox_serbian_pofile = firefox_potemplate.newPOFile('sr')
     >>> firefox_serbian_pofile.path='sr.po'
-    >>> firefox_serbian_pofile_contents = r'''
+    >>> firefox_serbian_pofile_contents = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -192,7 +192,7 @@ forms. They are simply newline-separated strings.
     ... msgid "_n: entry\nentries"
     ... msgstr "singular entry\n\nplural entries"
     ...
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 Importing this file succeeds, even if the number of %d printf specifications
 doesn't match: this is because this is now specially handled with KDE PO
@@ -406,7 +406,7 @@ a new line from the rest of the message.
 
 We can have a template with a message with context.
 
-    >>> kde_context_template = r'''
+    >>> kde_context_template = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -418,7 +418,7 @@ We can have a template with a message with context.
     ...
     ... msgid "_: Different Context\nMessage"
     ... msgstr ""
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
 
 Importing this template works and the format is recognized as a KDE PO format.
 
@@ -448,7 +448,7 @@ If we ask for a message without specifying context, we get no results:
 
 We can also import a translated file with message contexts:
 
-    >>> kde_context_translation = r'''
+    >>> kde_context_translation = (r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -460,7 +460,7 @@ We can also import a translated file with message contexts:
     ...
     ... msgid "_: Different Context\nMessage"
     ... msgstr "Second translation"
-    ... ''' % ISO_FORMATTED_DATE
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
     >>> entry = import_pofile_or_potemplate(kde_context_translation, carlos,
     ...                                     pofile=firefox_serbian_pofile)
     >>> print entry.status.name
