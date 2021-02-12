@@ -493,16 +493,11 @@ class ObjectFactory(
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
-    if sys.version_info[0] >= 3:
-        def getUniqueBytes(self, prefix=None):
-            return six.ensure_binary(self.getUniqueString(prefix=prefix))
+    def getUniqueBytes(self, prefix=None):
+        return six.ensure_binary(self.getUniqueString(prefix=prefix))
 
-        getUniqueUnicode = getUniqueString
-    else:
-        getUniqueBytes = getUniqueString
-
-        def getUniqueUnicode(self, prefix=None):
-            return six.ensure_text(self.getUniqueString(prefix=prefix))
+    def getUniqueUnicode(self, prefix=None):
+        return six.ensure_text(self.getUniqueString(prefix=prefix))
 
     def getUniqueURL(self, scheme=None, host=None):
         """Return a URL unique to this run of the test case."""
