@@ -58,20 +58,20 @@ CREATE OR REPLACE FUNCTION snap_denorm_access(snap_id integer)
     RETURNS void LANGUAGE plpgsql AS
 $$
 DECLARE
-    information_type integer;
+    info_type integer;
 BEGIN
     -- XXX pappacena 2021-002-12: Once we finish filling "information_type" and
     -- deprecate the usage of "public" column at code level, we will be able to
     -- drop the "private" column usage here.
     SELECT
-        CASE information_type
+        CASE snap.information_type
             WHEN NULL THEN
                 -- information type: 1 = public; 5 = proprietary
-                CASE WHEN private THEN 5 ELSE 1 END
+                CASE WHEN snap.private THEN 5 ELSE 1 END
             ELSE
-                information_type
+                snap.information_type
             END
-    INTO information_type
+    INTO info_type
     FROM snap WHERE id = snap_id;
 
     UPDATE Snap
@@ -79,7 +79,7 @@ BEGIN
         FROM
             build_access_cache(
                 (SELECT id FROM accessartifact WHERE snap = snap_id),
-                information_type)
+                info_type)
             AS (policies integer[], grants integer[])
         WHERE id = snap_id;
 END;
