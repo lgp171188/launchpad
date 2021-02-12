@@ -86,7 +86,7 @@ This file can now be correctly imported:
 
     >>> entry = import_pofile_or_potemplate(potemplate_contents, carlos,
     ...                                     potemplate=potemplate)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches() # replace date SQL constant with real date
 
@@ -94,40 +94,40 @@ The method getPOTMsgSetByMsgIDText returns a message without context if
 no context is specified.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     bar
-    >>> print potmsgset.context
+    >>> print(potmsgset.context)
     None
 
 And if all the messages have a context, getPOTMsgSetByMsgIDText returns
 nothing when context is not specified.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%d file')
-    >>> print potmsgset
+    >>> print(potmsgset)
     None
 
 To get a message with a context, we pass a context parameter.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar',
     ...                                                context=u'context')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     bar
-    >>> print potmsgset.context
+    >>> print(potmsgset.context)
     context
 
 It also works for plural form messages.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%d file',
     ...                                                context=u'First message')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     %d file
-    >>> print potmsgset.context
+    >>> print(potmsgset.context)
     First message
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%d file', u'%d files',
     ...                                                context=u'Second message')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     %d file
-    >>> print potmsgset.context
+    >>> print(potmsgset.context)
     Second message
 
 Importing a PO template with two messages with identical strings, but no
@@ -156,7 +156,7 @@ Importing this file fails because of conflicting messages.
     ...                                     potemplate=potemplate)
     INFO We got an error import...
     ...duplicate msgid...
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     FAILED
 
 == Importing PO files ==
@@ -199,7 +199,7 @@ Importing this file succeeds.
 
     >>> entry = import_pofile_or_potemplate(pofile_contents, carlos,
     ...                                     pofile=pofile)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches() # replace date SQL constant with real date
 
@@ -225,7 +225,7 @@ a message with context.
 If message has a context, you cannot get it without specifying the context:
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%file')
-    >>> print potmsgset
+    >>> print(potmsgset)
     None
 
 If you specify context, it actually works.
@@ -251,7 +251,7 @@ And for messages with plural forms, it gets all the translations.
 Make sure exported files are correct.  Exporting a POT file returns exactly
 the same contents, except that header is marked fuzzy.
 
-    >>> print potemplate.export()
+    >>> print(potemplate.export())
     #, fuzzy
     msgid ""
     msgstr ""
@@ -293,7 +293,7 @@ And a Serbian PO file is exported using regular export_pofile call.
 It's different from the imported file only in a few headers.
 
     >>> pofile = potemplate.getPOFileByLang('sr')
-    >>> print pofile.export().decode('UTF-8')
+    >>> print(pofile.export().decode('UTF-8'))
     msgid ""
     msgstr ""
     "Project-Id-Version: PACKAGE VERSION\n"
@@ -358,7 +358,7 @@ This file can now be correctly imported:
 
     >>> entry = import_pofile_or_potemplate(potemplate_contents, carlos,
     ...                                     potemplate=potemplate)
-    >>> print entry.status.name
+    >>> print(entry.status.name)
     IMPORTED
     >>> flush_database_caches() # replace date SQL constant with real date
 
@@ -366,16 +366,16 @@ The method getPOTMsgSetByMsgIDText returns a message without context if
 no context is specified.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     bar
-    >>> print potmsgset.context
+    >>> print(potmsgset.context)
     None
 
 The method getPOTMsgSetByMsgIDText returns a message with empty context
 if empty context is specified, and not the message with None context.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar', context=u'')
-    >>> print potmsgset.singular_text
+    >>> print(potmsgset.singular_text)
     bar
     >>> print(potmsgset.context)
     <BLANKLINE>

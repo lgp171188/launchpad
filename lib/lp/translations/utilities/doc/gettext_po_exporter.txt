@@ -151,7 +151,7 @@ It's time to test the wrapping with the '-' char:
     ...     TranslationConstants.SINGULAR_FORM,
     ...     u"WARNUNG: Unsichere Zugriffsrechte des umgebenden Verzeichnisses"
     ...         u" des Home-Verzeichnisses `%s'\n")
-    >>> print export_translation_message(translation_message)
+    >>> print(export_translation_message(translation_message))
     msgid "WARNING: unsafe enclosing directory permissions on homedir `%s'\n"
     msgstr ""
     "WARNUNG: Unsichere Zugriffsrechte des umgebenden Verzeichnisses des Home-"
@@ -163,7 +163,7 @@ When we changed the wrapping code, we got a bug with this string.
     >>> translation_message.msgid_singular = (
     ...     u"The location and hierarchy of the Evolution contact folders has"
     ...         u" changed since Evolution 1.x.\n\n")
-    >>> print export_translation_message(translation_message)
+    >>> print(export_translation_message(translation_message))
     msgid ""
     "The location and hierarchy of the Evolution contact folders has changed "
     "since Evolution 1.x.\n"
@@ -177,7 +177,7 @@ creating a broken PO message.  This is the test for bug #46156.
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
     ...     u"1234567890abcde word\"1234567890abcdefghij")
-    >>> print export_translation_message(translation_message, wrap_width=20)
+    >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcde "
     "word\"1234567890abcd"
@@ -191,7 +191,7 @@ like \" or \\:
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
     ...     u"1234567890abcdefghij\\klmno")
-    >>> print export_translation_message(translation_message, wrap_width=20)
+    >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcdefghij"
     "\\klmno"
@@ -200,7 +200,7 @@ like \" or \\:
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
     ...     u"1234567890abcdefgh\\ijklmno")
-    >>> print export_translation_message(translation_message, wrap_width=20)
+    >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcdefgh\\"
     "ijklmno"
@@ -209,7 +209,7 @@ like \" or \\:
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
     ...     u"1234567890abcdefg\\\\hijklmno")
-    >>> print export_translation_message(translation_message, wrap_width=20)
+    >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcdefg\\"
     "\\hijklmno"
@@ -220,14 +220,14 @@ For compatibility with msgcat -w, it also wraps on \\ properly.
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
     ...     u"\\\\\\\\\\")
-    >>> print export_translation_message(translation_message, wrap_width=5)
+    >>> print(export_translation_message(translation_message, wrap_width=5))
     msgid ""
     "\\\\"
     "\\\\"
     "\\"
     msgstr ""
 
-    >>> print export_translation_message(translation_message, wrap_width=6)
+    >>> print(export_translation_message(translation_message, wrap_width=6))
     msgid ""
     "\\\\\\"
     "\\\\"
@@ -237,7 +237,7 @@ There are a couple of other characters that will be escaped in the
 output, too.
 
     >>> translation_message.msgid_singular = (u'"\t\r')
-    >>> print export_translation_message(translation_message, wrap_width=10)
+    >>> print(export_translation_message(translation_message, wrap_width=10))
     msgid ""
     "\"\t\r"
     msgstr ""
