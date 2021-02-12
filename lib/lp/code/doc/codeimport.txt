@@ -258,7 +258,7 @@ created if done through the web UI, so we'll add nopriv here.
     ...     {'review_status': CodeImportReviewStatus.REVIEWED,
     ...      'url': 'http://svn.example.com/project/trunk'},
     ...     nopriv)
-    >>> print_emails(group_similar=True)
+    >>> print_emails(group_similar=True, decode=True)
     From: Code Import Person <import@example.com>
     To: david.allouche@canonical.com, ...
     Subject: Code import ~person-name-.../product.../name... status: Reviewed
@@ -268,7 +268,7 @@ created if done through the web UI, so we'll add nopriv here.
     instead of:
         http://svn.example.com/project
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     http://code.launchpad.test/~person.../product.../name...
     You are getting this email because you are a member of the vcs-imports
@@ -284,7 +284,7 @@ created if done through the web UI, so we'll add nopriv here.
     instead of:
         http://svn.example.com/project
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     http://code.launchpad.test/~person.../product.../name...
     You are receiving this email as you are subscribed to the branch.

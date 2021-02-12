@@ -50,7 +50,7 @@ The user receives a confirmation email.
     >>> test_emails = pop_notifications()
     >>> len(test_emails)
     1
-    >>> print_emails(notifications=test_emails)
+    >>> print_emails(notifications=test_emails, decode=True)
     From: ...
     Subject: Launchpad translation download: Evolution trunk
     Hello ...,
@@ -66,7 +66,7 @@ The user receives a confirmation email.
     <BLANKLINE>
       http://translations.launchpad.test/evolution/trunk/+export
     <BLANKLINE>
-    -- =
+    -- 
     Automatic message from Launchpad.net.
     ----------------------------------------
 
