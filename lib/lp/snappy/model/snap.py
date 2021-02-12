@@ -432,12 +432,8 @@ class Snap(Storm, WebhookTargetMixin):
     @property
     def information_type(self):
         if self._information_type is None:
-            # If information_type is not yet filled, we back fill it based
-            # on the (soon-to-be-deprecated) self.private property.
-            naked_self = removeSecurityProxy(self)
-            naked_self._information_type = (
-                InformationType.PROPRIETARY if self.private
-                else InformationType.PUBLIC)
+            return (InformationType.PROPRIETARY if self.private
+                    else InformationType.PUBLIC)
         return self._information_type
 
     @information_type.setter

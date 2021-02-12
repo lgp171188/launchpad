@@ -1423,17 +1423,11 @@ class TestSnapSet(TestCaseWithFactory):
             private=True, **self.makeSnapComponents())
         self.assertEqual(
             InformationType.PROPRIETARY, private_snap.information_type)
-        self.assertEqual(
-            InformationType.PROPRIETARY,
-            removeSecurityProxy(private_snap)._information_type)
 
         public_snap = getUtility(ISnapSet).new(
             private=False, **self.makeSnapComponents())
         self.assertEqual(
             InformationType.PUBLIC, public_snap.information_type)
-        self.assertEqual(
-            InformationType.PUBLIC,
-            removeSecurityProxy(public_snap)._information_type)
 
     def test_private_snap_for_public_sources(self):
         # Creating private snaps for public sources is allowed.
