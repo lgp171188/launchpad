@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git references."""
@@ -72,6 +72,32 @@ from lp.testing.pages import webservice_for_person
 class TestGitRef(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def test_comparison(self):
+        refs = self.factory.makeGitRefs(
+            paths=["refs/heads/master", "refs/heads/next"])
+        refs.extend(self.factory.makeGitRefs())
+        dup_refs = [ref.repository.getRefByPath(ref.path) for ref in refs]
+        remote_refs = [self.factory.makeGitRefRemote() for _ in range(2)]
+        refs.extend(remote_refs)
+        dup_refs.extend([
+            self.factory.makeGitRefRemote(
+                repository_url=ref.repository_url, path=ref.path)
+            for ref in remote_refs])
+        for i, ref in enumerate(refs):
+            for j, dup_ref in enumerate(dup_refs):
+                if i == j:
+                    self.assertEqual(ref, dup_ref)
+                    self.assertEqual(dup_ref, ref)
+                else:
+                    self.assertNotEqual(ref, dup_ref)
+                    self.assertNotEqual(dup_ref, ref)
+        ref_set = set(refs) | set(dup_refs)
+        self.assertEqual(5, len(ref_set))
+        for ref in refs:
+            self.assertIn(ref, ref_set)
+        for dup_ref in dup_refs:
+            self.assertIn(dup_ref, ref_set)
 
     def test_display_name(self):
         [master, personal] = self.factory.makeGitRefs(
