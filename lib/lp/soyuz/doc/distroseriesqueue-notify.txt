@@ -84,9 +84,9 @@ uploader's email address.
 
 The mail body contains a list of files that were accepted:
 
-    >>> print(notification.get_payload(0)) # doctest: -NORMALIZE_WHITESPACE
-    From nobody ...
-    ...
+    >>> print(notification.get_payload(0).get_payload(
+    ...     decode=True).decode('UTF-8'))
+    ... # doctest: -NORMALIZE_WHITESPACE
     NEW: netapplet_1.0-1.dsc
     NEW: netapplet_1.0.orig.tar.gz
     NEW: netapplet_1.0-1.diff.gz
@@ -95,8 +95,7 @@ The mail body contains a list of files that were accepted:
     You may have gotten the distroseries wrong.  If so, you may get warnings
     above if files already exist in other distroseries.
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    -- 
     You are receiving this email because you are the most recent person
     listed in this package's changelog.
     <BLANKLINE>
@@ -184,17 +183,17 @@ the uploader and the changer) and the changer.
 
 The mail body contains the same list of files again:
 
-    >>> print(msgs[0].get_payload(0)) # doctest: -NORMALIZE_WHITESPACE
-    From nobody ...
-    ...
+    >>> print(msgs[0].get_payload(0).get_payload(decode=True).decode('UTF-8'))
+    ... # doctest: -NORMALIZE_WHITESPACE
+    netapplet (1.0-1) ...
+    <BLANKLINE>
      OK: netapplet_1.0-1.dsc
          -> Component: main Section: web
      OK: netapplet_1.0.orig.tar.gz
      OK: netapplet_1.0-1.diff.gz
     <BLANKLINE>
     ...
-    -- =
-    <BLANKLINE>
+    -- 
     You are receiving this email because you are the most recent person
     listed in this package's changelog.
     <BLANKLINE>
@@ -267,10 +266,9 @@ The mail headers are the same as before:
 
 The mail body contains the same list of files again:
 
-    >>> print(changer_notification.get_payload(0))
+    >>> print(changer_notification.get_payload(0).get_payload(
+    ...     decode=True).decode('UTF-8'))
     ... # doctest: -NORMALIZE_WHITESPACE
-    From nobody ...
-    ...
     NEW: netapplet_1.0-1.dsc
     NEW: netapplet_1.0.orig.tar.gz
     NEW: netapplet_1.0-1.diff.gz
@@ -279,15 +277,13 @@ The mail body contains the same list of files again:
     You may have gotten the distroseries wrong.  If so, you may get warnings
     above if files already exist in other distroseries.
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    -- 
     You are receiving this email because you are the most recent person
     listed in this package's changelog.
     <BLANKLINE>
-    >>> print(signer_notification.get_payload(0))
+    >>> print(signer_notification.get_payload(0).get_payload(
+    ...     decode=True).decode('UTF-8'))
     ... # doctest: -NORMALIZE_WHITESPACE
-    From nobody ...
-    ...
     NEW: netapplet_1.0-1.dsc
     NEW: netapplet_1.0.orig.tar.gz
     NEW: netapplet_1.0-1.diff.gz
@@ -296,8 +292,7 @@ The mail body contains the same list of files again:
     You may have gotten the distroseries wrong.  If so, you may get warnings
     above if files already exist in other distroseries.
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    -- 
     You are receiving this email because you made this upload.
     <BLANKLINE>
 
