@@ -57,6 +57,10 @@ from lp.app.browser.tales import (
     ArchiveFormatterAPI,
     DateTimeFormatterAPI,
     )
+from lp.app.enums import (
+    InformationType,
+    PRIVATE_INFORMATION_TYPES,
+    )
 from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
@@ -355,6 +359,17 @@ class Snap(Storm, WebhookTargetMixin):
 
     private = Bool(name='private', validator=_validate_private)
 
+    def _valid_information_type(self, attr, value):
+        if not getUtility(ISnapSet).isValidInformationType(
+                value, self.owner, self.branch, self.git_ref):
+            raise SnapPrivacyMismatch
+        return value
+
+    information_type = DBEnum(
+        enum=InformationType, default=InformationType.PUBLIC,
+        name="information_type",
+        validator=_valid_information_type)
+
     allow_internet = Bool(name='allow_internet', allow_none=False)
 
     build_source_tarball = Bool(name='build_source_tarball', allow_none=False)
@@ -386,6 +401,8 @@ class Snap(Storm, WebhookTargetMixin):
         # mandatory for private snaps.
         self.project = project
         self.private = private
+        self.information_type = (InformationType.PROPRIETARY if private else
+                                 InformationType.PUBLIC)
 
         self.registrant = registrant
         self.owner = owner
@@ -1199,6 +1216,11 @@ class SnapSet:
             return False
 
         return True
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type in PRIVATE_INFORMATION_TYPES
+        return self.isValidPrivacy(private, owner, branch, git_ref)
 
     def _getByName(self, owner, name):
         return IStore(Snap).find(

@@ -89,7 +89,9 @@ from zope.security.interfaces import (
     )
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
 from lp.buildmaster.interfaces.processor import IProcessor
@@ -841,6 +843,12 @@ class ISnapAdminAttributes(Interface):
         title=_("Private"), required=False, readonly=False,
         description=_("Whether or not this snap is private.")))
 
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=True, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this Snap recipe.")))
+
     require_virtualized = exported(Bool(
         title=_("Require virtualized builders"), required=True, readonly=False,
         description=_("Only build this snap package on virtual builders.")))
@@ -866,7 +874,7 @@ class ISnapAdminAttributes(Interface):
 @exported_as_webservice_entry(as_of="beta")
 class ISnap(
     ISnapView, ISnapEdit, ISnapEditableAttributes, ISnapAdminAttributes,
-    IPrivacy):
+    IPrivacy, IInformationType):
     """A buildable snap package."""
 
 
@@ -901,6 +909,10 @@ class ISnapSet(Interface):
 
     def isValidPrivacy(private, owner, branch=None, git_ref=None):
         """Whether or not the privacy context is valid."""
+
+    def isValidInformationType(
+            information_type, owner, branch=None, git_ref=None):
+        """Whether or not the information type context is valid."""
 
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True),
