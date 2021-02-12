@@ -12,6 +12,7 @@ __all__ = [
     'TipChanged',
     ]
 
+import six
 from zope.component.interfaces import (
     IObjectEvent,
     ObjectEvent,
@@ -48,10 +49,7 @@ class NewMainlineRevisions(ScannerEvent):
 
         :param db_branch: The database branch.
         :param bzr_branch: The Bazaar branch.
-        :param db_revision: An `IRevision` for the new revision.
-        :param bzr_revision: The new Bazaar revision.
-        :param revno: The revision number of the new revision, None if not
-            mainline.
+        :param bzr_revisions: The new Bazaar revisions.
         """
         ScannerEvent.__init__(self, db_branch, bzr_branch)
         self.bzr_revisions = bzr_revisions
@@ -83,7 +81,7 @@ class TipChanged(ScannerEvent):
     @property
     def new_tip_revision_id(self):
         """The new tip revision id from this scan."""
-        return self.bzr_branch.last_revision()
+        return six.ensure_text(self.bzr_branch.last_revision())
 
     @staticmethod
     def composeWebhookPayload(branch, old_revid, new_revid):

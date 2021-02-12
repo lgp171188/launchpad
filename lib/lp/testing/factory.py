@@ -1680,7 +1680,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if parent_ids is None:
             parent_ids = []
         if rev_id is None:
-            rev_id = self.getUniqueString('revision-id')
+            rev_id = self.getUniqueUnicode('revision-id')
+        else:
+            rev_id = six.ensure_text(rev_id)
         if log_body is None:
             log_body = self.getUniqueString('log-body')
         return getUtility(IRevisionSet).new(
