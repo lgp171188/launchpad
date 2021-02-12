@@ -446,7 +446,7 @@ The header is not changed.
 
     >>> for i in range(len(stream_list)):
     ...     if stream_list[i].startswith(b'"Content-Type:'):
-    ...         print(stream_list[i])
+    ...         print(stream_list[i].decode("ASCII"))
     "Content-Type: text/plain; charset=EUC-JP\n"
 
 And checking one of the translations, we can see that it's using the
@@ -456,10 +456,8 @@ EUC-JP encoding.
     ...     if (stream_list[i].startswith(b'msgstr') and
     ...         b'prefs.js' in stream_list[i]):
     ...         break
-    >>> stream_list[i]
-    'msgstr "\xc0\xdf\xc4\xea\xa4\xce\xa5\xab...\xa5\xba\xa4\xcb
-    /etc/mozilla/prefs.js
-    \xa4\xac\xcd\xf8\xcd\xd1\xa4\xc7\xa4\xad\xa4\xde\xa4\xb9\xa1\xa3"'
+    >>> print(stream_list[i].decode("EUC-JP"))
+    msgstr "設定のカ...ズに /etc/mozilla/prefs.js が利用できます。"
 
 Now, let's force the UTF-8 encoding.
 
@@ -470,7 +468,7 @@ We can see that the header has been updated to have UTF-8
 
     >>> for i in range(len(stream_list)):
     ...     if stream_list[i].startswith(b'"Content-Type:'):
-    ...         print(stream_list[i])
+    ...         print(stream_list[i].decode("ASCII"))
     "Content-Type: text/plain; charset=UTF-8\n"
 
 And the encoding used is also using UTF-8 chars.
@@ -479,10 +477,8 @@ And the encoding used is also using UTF-8 chars.
     ...     if (stream_list[i].startswith(b'msgstr') and
     ...         b'prefs.js' in stream_list[i]):
     ...         break
-    >>> stream_list[i]
-    'msgstr "\xe8\xa8\xad\xe5\xae\x9a\xe3\x81...\xba\xe3\x81\xab
-    /etc/mozilla/prefs.js
-    \xe3\x81\x8c\xe5\x88\xa9\xe7\x94\xa8\xe3...\x99\xe3\x80\x82"'
+    >>> print(stream_list[i].decode("UTF-8"))
+    msgstr "設定のカ...ズに /etc/mozilla/prefs.js が利用できます。"
 
 There are some situations when a msgid_plural changes, while the msgid
 singular remains unchanged.
