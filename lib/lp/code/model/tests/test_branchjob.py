@@ -1285,7 +1285,7 @@ class TestViaCelery(TestCaseWithFactory):
         db_branch = self.factory.makeAnyBranch()
         self.createBzrBranch(db_branch)
         commit = DirectBranchCommit(db_branch, no_race_check=True)
-        commit.writeFile('foo.pot', 'gibberish')
+        commit.writeFile('foo.pot', b'gibberish')
         with person_logged_in(db_branch.owner):
             # wait for branch scan
             with block_on_job(self):

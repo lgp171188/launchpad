@@ -33,7 +33,7 @@ class TestConfigLookup(TestCase):
 
     def makeLookupFile(self):
         self.temp_lookup_file = NamedTemporaryFile()
-        self.temp_lookup_file.write('\nfrom_disk \n')
+        self.temp_lookup_file.write(b'\nfrom_disk \n')
         self.temp_lookup_file.flush()
         config.CONFIG_LOOKUP_FILES = [
             NamedTemporaryFile().name, self.temp_lookup_file.name]

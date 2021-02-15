@@ -43,7 +43,7 @@ class TestHTTPConnection(http_client.HTTPConnection):
     Only the methods called by xmlrpc_client are overridden.
     """
 
-    _data_to_send = ''
+    _data_to_send = b''
     _response = None
 
     def connect(self):
