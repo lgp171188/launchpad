@@ -73,6 +73,7 @@ from lp.bugs.interfaces.bugtarget import (
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.enums import (
     DistributionDefaultTraversalPolicy,
     VCSType,
@@ -718,6 +719,13 @@ class IDistributionPublic(
     @operation_for_version("devel")
     def newOCIProject(registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
+
+    oci_registry_credentials = Reference(
+        IOCIRegistryCredentials,
+        title=_("OCI registry credentials"),
+        description=_("Credentials and URL to use for uploading all OCI "
+                      "images in this distribution to a registry."),
+        required=False, readonly=False)
 
 
 @exported_as_webservice_entry(as_of="beta")
