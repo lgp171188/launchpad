@@ -38,7 +38,7 @@ share their name namespace are Product, ProjectGroup and Distribution.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'fnord'
+    lp.app.errors.NotFoundError: ...'fnord'
 
 Inactive projects/project groups are not available through PillarNameSet
 unless we use the special getByName() method which returns active/inactive
@@ -56,7 +56,7 @@ pillars.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'gimp'
+    lp.app.errors.NotFoundError: ...'gimp'
     >>> IProjectGroup.providedBy(pillar_set.getByName('gimp'))
     True
 

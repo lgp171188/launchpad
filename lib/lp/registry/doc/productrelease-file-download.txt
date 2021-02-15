@@ -93,7 +93,7 @@ Attempting to retrieve an alias that does not exist is an error.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'bar.txt'
+    lp.app.errors.NotFoundError: ...'bar.txt'
 
 The ProductReleaseFile can also be retrieved by name.
 
@@ -108,7 +108,7 @@ error.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'bar.txt'
+    lp.app.errors.NotFoundError: ...'bar.txt'
 
 Deleting the release file results in the file count being reduced.
 Only the product owner, product series owner, admins, or experts can
