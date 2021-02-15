@@ -94,7 +94,7 @@ After it has been called, the XML-RPC transport will have its
 auth_cookie attribute set.
 
     >>> test_transport.cookie_jar
-    <RequestsCookieJar[Cookie(version=0, name=u'trac_auth'...
+    <RequestsCookieJar[Cookie(version=0, name=...'trac_auth'...
 
 The XML-RPC transport shares its cookiejar with the TracLPPlugin instance.
 This is so that the TracLPPlugin can use the cookiejar when authenticating
@@ -107,7 +107,7 @@ use, meaning that there's no need to manually manipulate cookies.
 So if we look in the TracLPPlugin's CookieJar we'll see the same cookie:
 
     >>> trac._cookie_jar
-    <RequestsCookieJar[Cookie(version=0, name=u'trac_auth'...
+    <RequestsCookieJar[Cookie(version=0, name=...'trac_auth'...
 
 And altering the cookie in the TracLPPlugin's CookieJar will mean, of
 course, that it's altered in the XML-RPC transport's CookieJar, too.
@@ -118,12 +118,12 @@ course, that it's altered in the XML-RPC transport's CookieJar, too.
     ...     domain='http://example.com', path='')
 
     >>> trac._cookie_jar
-    <...CookieJar[Cookie(version=0, name=u'trac_auth',
-    value=u'Look ma, a new cookie!'...>
+    <...CookieJar[Cookie(version=0, name=...'trac_auth',
+    value=...'Look ma, a new cookie!'...>
 
     >>> test_transport.cookie_jar
-    <...CookieJar[Cookie(version=0, name=u'trac_auth',
-    value=u'Look ma, a new cookie!'...>
+    <...CookieJar[Cookie(version=0, name=...'trac_auth',
+    value=...'Look ma, a new cookie!'...>
 
 If authentication fails, a BugTrackerAuthenticationError will be raised.
 
@@ -170,7 +170,7 @@ authentication. Because the cookie is now set, other calls won't cause
 an authorization request.
 
     >>> test_transport.auth_cookie
-    Cookie(version=0, name=u'trac_auth'...)
+    Cookie(version=0, name=...'trac_auth'...)
     >>> trac.getCurrentDBTime()
     datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=<UTC>)
 

@@ -123,14 +123,14 @@ class LookupBranch:
         if self._describe_key_chars.issuperset(as_string):
             return as_string
         else:
-            return repr(key)
+            return repr(as_string)
 
     def _describe_result(self, result):
         """Return a pretty representation of the branch result.
 
         By default, return the representation as returned by `repr`.
         """
-        return repr(result)
+        return repr(str(result))
 
     def __repr__(self):
         """A machine-readable representation of this branch."""
