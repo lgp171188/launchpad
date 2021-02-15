@@ -218,18 +218,10 @@ class GitAPI(LaunchpadXMLRPCView):
             # Internal services must authenticate using a macaroon.
             raise faults.Unauthorized()
 
-    def _performLookup(self, requester, path, auth_params):
-        """Perform a translation path lookup.
-
-        :return: A tuple with the repository object and a dict with
-                 translation information."""
-        repository, extra_path = getUtility(IGitLookup).getByPath(path)
-        if repository is None:
-            return None, None
-
-        verified = self._verifyAuthParams(requester, repository, auth_params)
+    def _isWritable(self, requester, repository, verified):
+        writable = False
+        private = False
         naked_repository = removeSecurityProxy(repository)
-
         if verified is not None and verified.user is NO_USER:
             # We have verified that the authentication parameters correctly
             # specify internal-services authentication with a suitable
@@ -245,7 +237,7 @@ class GitAPI(LaunchpadXMLRPCView):
             try:
                 hosting_path = repository.getInternalPath()
             except Unauthorized:
-                return naked_repository, None
+                raise Unauthorized
             writable = (
                 repository.repository_type == GitRepositoryType.HOSTED and
                 check_permission("launchpad.Edit", repository))
@@ -257,6 +249,25 @@ class GitAPI(LaunchpadXMLRPCView):
                 if not grants.is_empty():
                     writable = True
             private = repository.private
+
+        return writable, hosting_path, private
+
+    def _performLookup(self, requester, path, auth_params):
+        """Perform a translation path lookup.
+
+        :return: A tuple with the repository object and a dict with
+                 translation information."""
+        repository, extra_path = getUtility(IGitLookup).getByPath(path)
+        if repository is None:
+            return None, None
+
+        verified = self._verifyAuthParams(requester, repository, auth_params)
+        naked_repository = removeSecurityProxy(repository)
+        try:
+            writable, hosting_path, private = self._isWritable(
+                requester, repository, verified)
+        except Unauthorized:
+            return naked_repository, None
 
         return naked_repository, {
             "path": hosting_path,
@@ -450,27 +461,6 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("translatePath succeeded: %s", result)
         return result
 
-    def _isWritable(self, requester, repository, verified):
-        writable = False
-        if verified is not None and verified.user is NO_USER:
-            # We have verified that the authentication parameters correctly
-            # specify internal-services authentication with a suitable
-            # macaroon that specifically grants access to this repository.
-            # This is only permitted for macaroons not bound to a user.
-            writable = _can_internal_issuer_write(verified)
-            repository = removeSecurityProxy(repository)
-        else:
-            # This isn't an authorised internal service, so perform normal
-            # user authorisation.
-            writable = (
-                    repository.repository_type == GitRepositoryType.HOSTED and
-                    check_permission("launchpad.Edit", repository))
-            if not writable:
-                grants = repository.findRuleGrantsByGrantee(requester)
-                if not grants.is_empty():
-                    writable = True
-        return writable
-
     @return_fault
     def _notify(self, requester, translated_path, statistics, auth_params):
         logger = self._getLogger()
@@ -487,7 +477,7 @@ class GitAPI(LaunchpadXMLRPCView):
         if auth_params is not None:
             verified = self._verifyAuthParams(
                 requester, repository, auth_params)
-            writable = self._isWritable(requester, repository, verified)
+            writable, _, _ = self._isWritable(requester, repository, verified)
             if writable and statistics:
                 removeSecurityProxy(repository).setRepackData(
                     statistics.get('loose_object_count'),
