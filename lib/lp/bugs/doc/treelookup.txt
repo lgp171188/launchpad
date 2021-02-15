@@ -89,7 +89,7 @@ instances), `LookupTree._verify` also checks that every branch is a
   >>> invalid_tree._verify()
   Traceback (most recent call last):
   ...
-  TypeError: Not a LookupBranch: u'Greenland'
+  TypeError: Not a LookupBranch: ...'Greenland'
 
 
 == Searching ==
@@ -110,7 +110,7 @@ But an exception is raised if it does not reach a leaf.
   >>> tree.find('Snack')
   Traceback (most recent call last):
   ...
-  KeyError: u'Snack'
+  KeyError: ...'Snack'
 
 
 == Development ==

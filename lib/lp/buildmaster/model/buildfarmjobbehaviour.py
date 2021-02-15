@@ -321,7 +321,7 @@ class BuildFarmJobBehaviourBase:
             # subsequent files.
             if not os.path.realpath(out_file_name).startswith(upload_path):
                 raise BuildDaemonError(
-                    "Build returned a file named %r." % filename)
+                    "Build returned a file named '%s'." % filename)
             filenames_to_download.append((sha1, out_file_name))
         yield self._slave.getFiles(filenames_to_download, logger=logger)
 

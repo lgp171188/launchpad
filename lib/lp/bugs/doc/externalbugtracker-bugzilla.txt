@@ -496,7 +496,7 @@ update:
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugzilla, gnome_bugzilla.watches)
     INFO Updating 2 watches for 2 bugs on http://bugzilla.gnome.org/bugs
-    INFO Didn't find bug u'304070' on
+    INFO Didn't find bug '304070' on
     http://bugzilla.gnome.org/bugs (local bugs: 15).
 
     >>> for bug_watch in gnome_bugzilla.watches:
@@ -541,7 +541,7 @@ Then updateBugWatches() will make one request per bug watch:
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugzilla, gnome_bugzilla.watches)
     INFO Updating 7 watches for 7 bugs on http://bugzilla.gnome.org/bugs
-    INFO Didn't find bug u'304070' on
+    INFO Didn't find bug '304070' on
     http://bugzilla.gnome.org/bugs (local bugs: 15).
     POST http://bugzilla.gnome.org/bugs/buglist.cgi
     POST http://bugzilla.gnome.org/bugs/buglist.cgi
@@ -593,7 +593,7 @@ updateBugWatches() issues only one request to update all watches:
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugzilla, gnome_bugzilla.watches)
     INFO Updating 207 watches for 207 bugs...
-    INFO Didn't find bug u'304070' on
+    INFO Didn't find bug '304070' on
     http://bugzilla.gnome.org/bugs (local bugs: 15).
     POST http://bugzilla.gnome.org/bugs/buglist.cgi
 

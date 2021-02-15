@@ -73,7 +73,7 @@ It also works if you use Unicode strings.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: u'launchpad'
+    lp.app.errors.NotFoundError: ...'launchpad'
     >>> IProduct.providedBy(pillar_set.getByName(u'launchpad'))
     True
 

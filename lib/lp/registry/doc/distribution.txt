@@ -592,7 +592,7 @@ Milestones for distros can only be created by distro owners or admins.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<DistroSeries u'woody'>, 'newMilestone', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<DistroSeries ...'woody'>, 'newMilestone', 'launchpad.Edit')
     >>> login('mark@example.com')
     >>> debian_milestone = woody.newMilestone(
     ...     name='woody-rc1', dateexpected=datetime(2028, 10, 1))

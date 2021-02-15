@@ -1344,7 +1344,7 @@ value is submitted.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.WidgetInputError: ('destination_archive', u'Destination PPA', RequiredMissing('destination_archive'))
+    zope.formlib.interfaces.WidgetInputError: ('destination_archive', ...'Destination PPA', RequiredMissing('destination_archive'))
 
 
 Copy private files to public archives
