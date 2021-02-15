@@ -192,7 +192,7 @@ class BuildFarmJobBehaviourBase:
                 # If the requested file is the 'buildlog' compress it
                 # using gzip before storing in Librarian.
                 if file_sha1 == 'buildlog':
-                    out_file = open(out_file_name)
+                    out_file = open(out_file_name, 'rb')
                     filename += '.gz'
                     out_file_name += '.gz'
                     gz_file = gzip.GzipFile(out_file_name, mode='wb')
@@ -201,7 +201,7 @@ class BuildFarmJobBehaviourBase:
 
                 # Open the file, seek to its end position, count and seek to
                 # beginning, ready for adding to the Librarian.
-                out_file = open(out_file_name)
+                out_file = open(out_file_name, 'rb')
                 out_file.seek(0, 2)
                 bytes_written = out_file.tell()
                 out_file.seek(0)

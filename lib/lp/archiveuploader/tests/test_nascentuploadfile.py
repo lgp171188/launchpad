@@ -221,7 +221,7 @@ class PackageUploadFileTestCase(NascentUploadFileTestCase):
     def createChangesFile(self, filename, changes):
         tempdir = self.makeTemporaryDirectory()
         path = os.path.join(tempdir, filename)
-        with open(path, "w") as changes_fd:
+        with open(path, "wb") as changes_fd:
             changes.dump(changes_fd)
         changesfile = ChangesFile(path, self.policy, self.logger)
         self.assertEqual([], list(changesfile.parseChanges()))

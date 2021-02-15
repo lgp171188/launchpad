@@ -343,9 +343,8 @@ class TestNativeArchiveIndexesReparsing(TestNativePublishingBase):
     def write_stanza_and_reparse(self, stanza):
         """Helper method to return the apt_pkg parser for the stanza."""
         index_filename = tempfile.mktemp()
-        index_file = open(index_filename, 'w')
-        index_file.write(stanza.makeOutput().encode('utf-8'))
-        index_file.close()
+        with open(index_filename, 'wb') as index_file:
+            index_file.write(stanza.makeOutput().encode('utf-8'))
 
         parser = apt_pkg.TagFile(open(index_filename))
 

@@ -2139,7 +2139,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # A buildinfo file is attached to the SPR.
         uploadprocessor = self.setupBreezyAndGetUploadProcessor()
         upload_dir = self.queueUpload("bar_1.0-1_buildinfo")
-        with open(os.path.join(upload_dir, "bar_1.0-1_source.buildinfo")) as f:
+        with open(os.path.join(upload_dir, "bar_1.0-1_source.buildinfo"),
+                  "rb") as f:
             buildinfo_contents = f.read()
         self.processUpload(uploadprocessor, upload_dir)
         source_pub = self.publishPackage("bar", "1.0-1")
@@ -2169,7 +2170,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         upload_dir = self.queueUpload(
             "bar_1.0-1_binary_buildinfo", queue_entry=leaf_name)
-        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo")) as f:
+        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo"),
+                  "rb") as f:
             buildinfo_contents = f.read()
         self.options.context = "buildd"
         self.options.builds = True
@@ -2200,7 +2202,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         upload_dir = self.queueUpload(
             "bar_1.0-1_binary_buildinfo_indep", queue_entry=leaf_name)
-        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo")) as f:
+        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo"),
+                  "rb") as f:
             buildinfo_contents = f.read()
         self.options.context = "buildd"
         self.options.builds = True
