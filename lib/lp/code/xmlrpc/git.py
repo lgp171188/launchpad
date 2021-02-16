@@ -220,37 +220,24 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def _isWritable(self, requester, repository, verified):
         writable = False
-        private = False
         naked_repository = removeSecurityProxy(repository)
         if verified is not None and verified.user is NO_USER:
             # We have verified that the authentication parameters correctly
             # specify internal-services authentication with a suitable
-            # macaroon that specifically grants access to this repository,
-            # so we can bypass other checks.  This is only permitted for
-            # macaroons not bound to a user.
-            hosting_path = naked_repository.getInternalPath()
+            # macaroon that specifically grants access to this repository.
+            # This is only permitted for macaroons not bound to a user.
             writable = _can_internal_issuer_write(verified)
-            private = naked_repository.private
         else:
             # This isn't an authorised internal service, so perform normal
             # user authorisation.
-            try:
-                hosting_path = repository.getInternalPath()
-            except Unauthorized:
-                raise Unauthorized
             writable = (
-                repository.repository_type == GitRepositoryType.HOSTED and
-                check_permission("launchpad.Edit", repository))
-            # If we have any grants to this user, they are declared to have
-            # write access at this point. `_checkRefPermissions` will
-            # sort out access to individual refs at a later point in the push.
+                    repository.repository_type == GitRepositoryType.HOSTED and
+                    check_permission("launchpad.Edit", repository))
             if not writable:
                 grants = naked_repository.findRuleGrantsByGrantee(requester)
                 if not grants.is_empty():
                     writable = True
-            private = repository.private
-
-        return writable, hosting_path, private
+        return writable
 
     def _performLookup(self, requester, path, auth_params):
         """Perform a translation path lookup.
@@ -263,11 +250,24 @@ class GitAPI(LaunchpadXMLRPCView):
 
         verified = self._verifyAuthParams(requester, repository, auth_params)
         naked_repository = removeSecurityProxy(repository)
-        try:
-            writable, hosting_path, private = self._isWritable(
-                requester, repository, verified)
-        except Unauthorized:
-            return naked_repository, None
+
+        if verified is not None and verified.user is NO_USER:
+            # We have verified that the authentication parameters correctly
+            # specify internal-services authentication with a suitable
+            # macaroon that specifically grants access to this repository,
+            # so we can bypass other checks.  This is only permitted for
+            # macaroons not bound to a user.
+            hosting_path = naked_repository.getInternalPath()
+            private = naked_repository.private
+        else:
+            # This isn't an authorised internal service, so perform normal
+            # user authorisation.
+            try:
+                hosting_path = repository.getInternalPath()
+            except Unauthorized:
+                return naked_repository, None
+            private = repository.private
+        writable = self._isWritable(requester, repository, verified)
 
         return naked_repository, {
             "path": hosting_path,
@@ -477,7 +477,7 @@ class GitAPI(LaunchpadXMLRPCView):
         if auth_params is not None:
             verified = self._verifyAuthParams(
                 requester, repository, auth_params)
-            writable, _, _ = self._isWritable(requester, repository, verified)
+            writable = self._isWritable(requester, repository, verified)
             if writable and statistics:
                 removeSecurityProxy(repository).setRepackData(
                     statistics.get('loose_object_count'),
