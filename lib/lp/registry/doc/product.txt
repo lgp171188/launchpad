@@ -60,8 +60,8 @@ and the IHasTranslationImports.
 Let's get a product from the sample data. We happen to know that product
 with id 5 should be evolution:
 
-    >>> p.name
-    u'evolution'
+    >>> print(p.name)
+    evolution
 
 Let's call that evo from now onwards just so the tests can be clearer.
 
@@ -73,29 +73,31 @@ later returns only active ones. Both can be used to look up products by their
 aliases, though.
 
     >>> a52dec = productset.getByName('a52dec')
-    >>> a52dec.name
-    u'a52dec'
-    >>> productset['a52dec'].name
-    u'a52dec'
+    >>> print(a52dec.name)
+    a52dec
+    >>> print(productset['a52dec'].name)
+    a52dec
 
     >>> a52dec.setAliases(['a51dec'])
-    >>> a52dec.aliases
-    [u'a51dec']
-    >>> productset['a51dec'].name
-    u'a52dec'
-    >>> productset.getByName('a51dec').name
-    u'a52dec'
+    >>> for alias in a52dec.aliases:
+    ...     print(alias)
+    a51dec
+    >>> print(productset['a51dec'].name)
+    a52dec
+    >>> print(productset.getByName('a51dec').name)
+    a52dec
 
 Since we have some POTemplates for evolution, we should have a primary
 translatable for that product:
 
-    >>> evo.primary_translatable.displayname
-    u'trunk'
+    >>> print(evo.primary_translatable.displayname)
+    trunk
 
 We can also see how many translatables it has:
 
-    >>> print([series.displayname for series in evo.translatable_series])
-    [u'trunk']
+    >>> for series in evo.translatable_series:
+    ...     print(series.displayname)
+    trunk
 
 But for a52dec, where we have no translatable series or Ubuntu package, the
 primary_translatable is nonexistent:
@@ -119,8 +121,8 @@ It should no longer be retrievable via ProductSet's __getitem__:
 
 But it should be retrievable via getByname().
 
-    >>> productset.getByName('a52dec').name
-    u'a52dec'
+    >>> print(productset.getByName('a52dec').name)
+    a52dec
 
 getByName() also accepts an argument to ignore inactive products.
 
@@ -206,15 +208,20 @@ The packaging table allows us to list source and distro source packages
 related to a certain upstream:
 
     >>> alsa = productset.getByName('alsa-utils')
-    >>> [(sp.name, sp.distroseries.name) for sp in alsa.sourcepackages]
-    [(u'alsa-utils', u'sid'), (u'alsa-utils', u'warty')]
-    >>> [(sp.name, sp.distribution.name) for sp in alsa.distrosourcepackages]
-    [(u'alsa-utils', u'debian'), (u'alsa-utils', u'ubuntu')]
+    >>> for sp in alsa.sourcepackages:
+    ...     print(sp.name, sp.distroseries.name)
+    alsa-utils sid
+    alsa-utils warty
+    >>> for sp in alsa.distrosourcepackages:
+    ...     print(sp.name, sp.distribution.name)
+    alsa-utils debian
+    alsa-utils ubuntu
 
 For convenience, you can get just the distro source packages for Ubuntu.
 
-    >>> [(sp.name, sp.distribution.name) for sp in alsa.ubuntu_packages]
-    [(u'alsa-utils', u'ubuntu')]
+    >>> for sp in alsa.ubuntu_packages:
+    ...     print(sp.name, sp.distribution.name)
+    alsa-utils ubuntu
 
 
 External Bug Tracker
@@ -257,8 +264,8 @@ tracker will be returned.
     True
     >>> print(firefox.bug_tracking_usage.name)
     UNKNOWN
-    >>> firefox.getExternalBugTracker().name
-    u'gnome-bugzilla'
+    >>> print(firefox.getExternalBugTracker().name)
+    gnome-bugzilla
 
 
 If Firefox isn't happy with its project group's bug tracker it can choose to
@@ -266,8 +273,8 @@ specify its own.
 
     >>> debbugs = getUtility(IBugTrackerSet).getByName('debbugs')
     >>> firefox.bugtracker = debbugs
-    >>> firefox.getExternalBugTracker().name
-    u'debbugs'
+    >>> print(firefox.getExternalBugTracker().name)
+    debbugs
     >>> print(firefox.bug_tracking_usage.name)
     EXTERNAL
 
@@ -389,8 +396,9 @@ Milestones
 We can use IProduct.milestones to get all milestones associated with any
 ProductSeries of a product.
 
-    >>> [milestone.name for milestone in firefox.milestones]
-    [u'1.0']
+    >>> for milestone in firefox.milestones:
+    ...     print(milestone.name)
+    1.0
 
 Milestones for products can only be created by product/project group owners,
 registry experts, or admins.
@@ -414,13 +422,20 @@ Only milestones which have active=True are returned by the .milestones
 property.
 
     >>> firefox_milestone.active = False
-    >>> [milestone.name for milestone in firefox.milestones]
-    [u'1.0']
+    >>> for milestone in firefox.milestones:
+    ...     print(milestone.name)
+    1.0
 
 To get all milestones of a given product we have the .all_milestones property.
 
-    >>> [milestone.name for milestone in firefox.all_milestones]
-    [u'1.0.0', u'0.9.2', u'0.9.1', u'0.9', u'1.0', u'1.0-rc1']
+    >>> for milestone in firefox.all_milestones:
+    ...     print(milestone.name)
+    1.0.0
+    0.9.2
+    0.9.1
+    0.9
+    1.0
+    1.0-rc1
 
 
 Release

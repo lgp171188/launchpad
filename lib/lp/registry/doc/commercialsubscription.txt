@@ -125,8 +125,8 @@ included as one of the licences.
     >>> bzr.project_reviewed = True
     >>> bzr.license_approved = True
 
-    >>> bzr.license_info
-    u'bar'
+    >>> print(bzr.license_info)
+    bar
     >>> bzr.project_reviewed
     True
     >>> bzr.license_approved

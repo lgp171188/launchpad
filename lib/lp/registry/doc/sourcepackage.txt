@@ -106,8 +106,8 @@ Latest published component
 The 'latest_published_component' attribute indicates the component where
 the package was last published.
 
-    >>> firefox_warty.latest_published_component.name
-    u'main'
+    >>> print(firefox_warty.latest_published_component.name)
+    main
 
 It's worth noting that the returned component is the one in the latest
 publishing record, not the component where the package was last
@@ -143,8 +143,8 @@ upload, even though it gets changed in the publishing record.
     ...     print(release.component.name)
     main
 
-    >>> firefox_warty.latest_published_component.name
-    u'universe'
+    >>> print(firefox_warty.latest_published_component.name)
+    universe
 
 Only PUBLISHED records are considered when looking the latest published
 component. If there are no PUBLISHED records, None is returned.

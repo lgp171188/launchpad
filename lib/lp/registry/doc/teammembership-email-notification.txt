@@ -730,8 +730,8 @@ being the team's owner), the notification they get will contain a link to
 their membership page, where they can extend it.
 
     >>> landscape.renewal_policy = TeamMembershipRenewalPolicy.NONE
-    >>> landscape.teamowner.preferredemail.email
-    u'test@canonical.com'
+    >>> print(landscape.teamowner.preferredemail.email)
+    test@canonical.com
 
     >>> sampleperson_on_landscape = membershipset.getByPersonAndTeam(
     ...     sampleperson, landscape)

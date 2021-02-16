@@ -88,9 +88,13 @@ Mailing lists become active once they have been constructed by Mailman
     >>> list_two.transitionToStatus(MailingListStatus.ACTIVE)
     >>> list_three.transitionToStatus(MailingListStatus.ACTIVE)
     >>> flush_database_updates()
-    >>> sorted(mailing_list.team.displayname
-    ...        for mailing_list in list_vocabulary)
-    [u'Bass Players', u'Drummers', u'Guitar Players']
+    >>> from operator import attrgetter
+    >>> for mailing_list in sorted(
+    ...         list_vocabulary, key=attrgetter('team.displayname')):
+    ...     print(mailing_list.team.displayname)
+    Bass Players
+    Drummers
+    Guitar Players
 
     >>> len(list_vocabulary)
     3
@@ -98,15 +102,22 @@ Mailing lists become active once they have been constructed by Mailman
 Searching for active lists is done through the vocabulary as well.  With
 a search term of None, all active lists are returned.
 
-    >>> sorted(mailing_list.team.displayname
-    ...        for mailing_list in list_vocabulary.search(None))
-    [u'Bass Players', u'Drummers', u'Guitar Players']
+    >>> for mailing_list in sorted(
+    ...         list_vocabulary.search(None),
+    ...         key=attrgetter('team.displayname')):
+    ...     print(mailing_list.team.displayname)
+    Bass Players
+    Drummers
+    Guitar Players
 
 If given, the search term matches the team name.
 
-    >>> sorted(mailing_list.team.displayname
-    ...        for mailing_list in list_vocabulary.search(u'player'))
-    [u'Bass Players', u'Guitar Players']
+    >>> for mailing_list in sorted(
+    ...         list_vocabulary.search(u'player'),
+    ...         key=attrgetter('team.displayname')):
+    ...     print(mailing_list.team.displayname)
+    Bass Players
+    Guitar Players
 
 The IHugeVocabulary interface also requires a search method that returns
 a CountableIterator.
@@ -116,10 +127,10 @@ a CountableIterator.
     >>> isinstance(iter, CountableIterator)
     True
 
-    >>> sorted((term.value.team.name, term.token, term.title)
-    ...         for term in iter)
-    [(u'bass-players', 'bass-players', u'Bass Players'),
-     (u'guitar-players', 'guitar-players', u'Guitar Players')]
+    >>> for term in sorted(iter, key=attrgetter('value.team.name')):
+    ...     print(pretty((term.value.team.name, term.token, term.title)))
+    ('bass-players', 'bass-players', 'Bass Players')
+    ('guitar-players', 'guitar-players', 'Guitar Players')
 
 The vocabulary supports accessing mailing lists by 'term', where the
 term must be a mailing list.  The returned term's value is the mailing
@@ -127,14 +138,14 @@ list object, the token is the team name and the title is the team's
 display name.
 
     >>> term_1 = list_vocabulary.getTerm(list_two)
-    >>> term_1.value.team.displayname
-    u'Guitar Players'
+    >>> print(term_1.value.team.displayname)
+    Guitar Players
 
     >>> term_1.token
     'guitar-players'
 
-    >>> term_1.title
-    u'Guitar Players'
+    >>> print(term_1.title)
+    Guitar Players
 
 You cannot get a term by an other object, such as a team.
 
@@ -147,13 +158,13 @@ You cannot get a term by an other object, such as a team.
 Given a token, we can get back the term.
 
     >>> term_2 = list_vocabulary.getTermByToken(term_1.token)
-    >>> term_2.value.team.displayname
-    u'Guitar Players'
+    >>> print(term_2.value.team.displayname)
+    Guitar Players
 
     >>> term_3 = list_vocabulary.getTerm(list_one)
     >>> term_4 = list_vocabulary.getTermByToken(term_3.token)
-    >>> term_4.value.team.displayname
-    u'Bass Players'
+    >>> print(term_4.value.team.displayname)
+    Bass Players
 
 If you try to get the term by a token not represented in the vocabulary,
 you get an exception.
@@ -219,8 +230,9 @@ Reflects the available distribution series.  Results are ordered by
         ubuntutest/breezy-autotest ubuntutest: Breezy Badger Autotest
              ubuntutest/hoary-test ubuntutest: Mock Hoary
 
-    >>> distroseries_vocabulary.getTermByToken('ubuntu/hoary').value.title
-    u'The Hoary Hedgehog Release'
+    >>> print(distroseries_vocabulary.getTermByToken(
+    ...     'ubuntu/hoary').value.title)
+    The Hoary Hedgehog Release
 
     >>> def getTerms(vocab, search_text):
     ...     [vocab.toTerm(item) for item in vocab.search(search_text)]
@@ -409,8 +421,8 @@ The vocabulary contains only active milestones.
     1.0 True
 
     >>> one_dot_o = firefox.milestones[0]
-    >>> one_dot_o.name
-    u'1.0'
+    >>> print(one_dot_o.name)
+    1.0
 
     >>> one_dot_o.active = False
 
@@ -443,12 +455,13 @@ The list of selectable projects. The results are ordered by displayname.
     >>> project_vocabulary.displayname
     'Select a project group'
 
-    >>> [p.title for p in project_vocabulary.search('mozilla')]
-    [u'The Mozilla Project']
+    >>> for p in project_vocabulary.search('mozilla'):
+    ...     print(p.title)
+    The Mozilla Project
 
     >>> mozilla = project_vocabulary.getTermByToken('mozilla')
-    >>> mozilla.title
-    u'The Mozilla Project'
+    >>> print(mozilla.title)
+    The Mozilla Project
 
   The ProjectGroupVocabulary does not list inactive projects.
 
@@ -457,8 +470,9 @@ The list of selectable projects. The results are ordered by displayname.
     >>> moz_project in project_vocabulary
     True
 
-    >>> [p.title for p in project_vocabulary.search('mozilla')]
-    [u'The Mozilla Project']
+    >>> for p in project_vocabulary.search('mozilla'):
+    ...     print(p.title)
+    The Mozilla Project
 
     >>> moz_project.active = False
     >>> flush_database_updates()
@@ -488,8 +502,8 @@ The list of selectable products releases.
     >>> l = [release_term.title for release_term in evolution_releases]
     >>> release = productrelease_vocabulary.getTermByToken(
     ...     "evolution/trunk/2.1.6")
-    >>> release.title
-    u'evolution trunk 2.1.6'
+    >>> print(release.title)
+    evolution trunk 2.1.6
 
 
 PersonAccountToMergeVocabulary
@@ -522,15 +536,16 @@ empty list.
 Searching for a person without a preferred email will return that
 person's name.
 
-    >>> [person.name for person in vocab.search('salgado')]
-    [u'salgado']
+    >>> for person in vocab.search('salgado'):
+    ...     print(person.name)
+    salgado
 
 A search using the beginning of a person's preferred email will return
 that person that owns that email.
 
-    >>> [(person.name, person.preferredemail.email)
-    ...  for person in vocab.search('foo.bar')]
-    [(u'name16', u'foo.bar@canonical.com')]
+    >>> for person in vocab.search('foo.bar'):
+    ...     print('%s: %s' % (person.name, person.preferredemail.email))
+    name16: foo.bar@canonical.com
 
 A search using part of the host of an email address will not return
 anything, as we only match against the beginning of an email address.
@@ -585,8 +600,10 @@ INACTIVE_ACCOUNT_STATUSES is part of the vocabulary, though.
 
 It is possible to search for alternative names.
 
-    >>> [person.name for person in vocab.search('matsubara OR salgado')]
-    [u'matsubara', u'salgado']
+    >>> for person in vocab.search('matsubara OR salgado'):
+    ...     print(person.name)
+    matsubara
+    salgado
 
 
 AdminMergeablePerson
@@ -626,16 +643,17 @@ All non-merged people and teams.
 This vocabulary includes both validated and unvalidated profiles, as
 well as teams:
 
-    >>> [(p.name, p.is_valid_person) for p in vocab.search('matsubara')]
-    [(u'matsubara', False)]
+    >>> for p in vocab.search('matsubara'):
+    ...     print('%s: %s' % (p.name, p.is_valid_person))
+    matsubara: False
 
-    >>> [(p.name, p.is_valid_person)
-    ...  for p in vocab.search('mark@example.com')]
-    [(u'mark', True)]
+    >>> for p in vocab.search('mark@example.com'):
+    ...     print('%s: %s' % (p.name, p.is_valid_person))
+    mark: True
 
-    >>> [(p.name, getattr(p.teamowner, 'name', None))
-    ...  for p in vocab.search('ubuntu-team')]
-    [(u'ubuntu-team', u'mark')]
+    >>> for p in vocab.search('ubuntu-team'):
+    ...     print('%s: %s' % (p.name, getattr(p.teamowner, 'name', None)))
+    ubuntu-team: mark
 
 But it doesn't include merged accounts:
 
@@ -644,8 +662,10 @@ But it doesn't include merged accounts:
 
 It is possible to search for alternative names.
 
-    >>> [(p.name) for p in vocab.search('matsubara OR salgado')]
-    [u'matsubara', u'salgado']
+    >>> for p in vocab.search('matsubara OR salgado'):
+    ...     print(p.name)
+    matsubara
+    salgado
 
 
 ValidPersonOrTeam
@@ -665,11 +685,11 @@ includes all public teams and private teams the user has permission to view.
 We can do token lookups using either a person's name or a person's email
 address.
 
-    >>> vocab.getTermByToken('name16').value.displayname
-    u'Foo Bar'
+    >>> print(vocab.getTermByToken('name16').value.displayname)
+    Foo Bar
 
-    >>> vocab.getTermByToken('foo.bar@canonical.com').value.displayname
-    u'Foo Bar'
+    >>> print(vocab.getTermByToken('foo.bar@canonical.com').value.displayname)
+    Foo Bar
 
 Almost all teams have the word 'team' as part of their names, so a
 search for 'team' should give us some of them.  Notice that the
@@ -677,11 +697,20 @@ PRIVATE_TEAM 'myteam' is not included in the results.
 
     >>> ignored = login_person(sample_person)
     >>> ephemeral = factory.makeTeam(owner=foo_bar, name='ephemeral-team')
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'ephemeral-team', u'hwdb-team', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam', u'simple-team',
-     u'testing-spanish-team', u'ubuntu-security', u'ubuntu-team',
-     u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    ephemeral-team
+    hwdb-team
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
 
 Valid teams do not include teams that have been merged.
 
@@ -691,11 +720,19 @@ Valid teams do not include teams that have been merged.
     >>> registry_experts = getUtility(ILaunchpadCelebrities).registry_experts
     >>> merge_people(ephemeral, registry_experts, reviewer=ephemeral.teamowner)
     >>> ignored = login_person(sample_person)
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam', u'simple-team',
-     u'testing-spanish-team', u'ubuntu-security', u'ubuntu-team',
-     u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
 
 A PRIVATE team is displayed when the logged in user is a member of the
 team.
@@ -708,30 +745,59 @@ team.
     ...     displayname='Private Team',
     ...     owner=no_priv,
     ...     visibility=PersonVisibility.PRIVATE)
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam', u'private-team',
-     u'simple-team', u'testing-spanish-team', u'ubuntu-security',
-     u'ubuntu-team', u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    private-team
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
 
 The PRIVATE team is also displayed for Launchpad admins or commercial
 admins.
 
     >>> login('foo.bar@canonical.com')
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'myteam', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam',
-     u'private-team', u'public-team', u'simple-team',
-     u'testing-spanish-team', u'ubuntu-security', u'ubuntu-team',
-     u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    myteam
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    private-team
+    public-team
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
     >>> logout()
     >>> login('commercial-member@canonical.com')
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'myteam', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam',
-     u'private-team', u'public-team', u'simple-team',
-     u'testing-spanish-team', u'ubuntu-security', u'ubuntu-team',
-     u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    myteam
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    private-team
+    public-team
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
 
 The PRIVATE team can be looked up via getTermByToken for a member of the
 team.
@@ -743,19 +809,37 @@ team.
 The PRIVATE team is not returned for a user who is not part of the team.
 
     >>> login('owner@canonical.com')
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'myteam', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam', u'simple-team',
-     u'testing-spanish-team', u'ubuntu-security', u'ubuntu-team',
-     u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    myteam
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
 
 The anonymous user will not see the private team either.
 
     >>> login(ANONYMOUS)
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'name18', u'name20', u'name21', u'no-team-memberships',
-     u'otherteam', u'simple-team', u'testing-spanish-team',
-     u'ubuntu-security', u'ubuntu-team', u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
 
 Attempting to lookup the team via getTermByToken results in a
 LookupError, the same as if the team didn't exist, which is really
@@ -773,7 +857,7 @@ Searching for all teams, which requires monkey-patching the
     >>> login('no-priv@canonical.com')
     >>> vocab.allow_null_search = True
     >>> sorted(person.name for person in vocab.search(''))
-    [...u'private-team'...]
+    [...'private-team'...]
 
 A search for 'support' will give us only the persons which have support
 as part of their name or displayname, or the beginning of one of its
@@ -781,8 +865,9 @@ email addresses.
 
     >>> login('foo.bar@canonical.com')
     >>> vocab = get_naked_vocab(None, "ValidPersonOrTeam")
-    >>> sorted(person.name for person in vocab.search('support'))
-    [u'ubuntu-team']
+    >>> for person in vocab.search('support'):
+    ...     print(person.name)
+    ubuntu-team
 
 Matsubara doesn't have a preferred email address; he's not a valid
 Person.
@@ -792,17 +877,21 @@ Person.
 
 'foo.bar@canonical.com' is a valid Person.
 
-    >>> [person.name for person in vocab.search('foo.bar')]
-    [u'name16']
+    >>> for person in vocab.search('foo.bar'):
+    ...     print(person.name)
+    name16
 
 The vocabulary also allows us to search by IRC nickname.
 
     >>> [cjwatson] = vocab.search('cjwatson')
-    >>> cjwatson.name, cjwatson.preferredemail.email
-    (u'kamion', u'colin.watson@ubuntulinux.com')
+    >>> print(cjwatson.name)
+    kamion
+    >>> print(cjwatson.preferredemail.email)
+    colin.watson@ubuntulinux.com
 
-    >>> [ircid.nickname for ircid in cjwatson.ircnicknames]
-    [u'cjwatson']
+    >>> for ircid in cjwatson.ircnicknames:
+    ...     print(ircid.nickname)
+    cjwatson
 
 Since there are so many people and teams a vocabulary that includes them
 all is not very useful when displaying in the user interface.  So we
@@ -810,11 +899,19 @@ limit the number of results.  The results are ordered by rank, displayname and
 the first set of those are the ones returned
 
     >>> login(ANONYMOUS)
-    >>> [person.displayname for person in vocab.search('team')]
-    [u'HWDB Team', u'No Team Memberships', u'Simple Team', u'Ubuntu Team',
-     u'testing Spanish team', u'Hoary Gnome Team', u'Other Team',
-     u'Ubuntu Gnome Team', u'Ubuntu Security Team', u'Warty Gnome Team',
-     u'Warty Security Team']
+    >>> for person in vocab.search('team'):
+    ...     print(person.displayname)
+    HWDB Team
+    No Team Memberships
+    Simple Team
+    Ubuntu Team
+    testing Spanish team
+    Hoary Gnome Team
+    Other Team
+    Ubuntu Gnome Team
+    Ubuntu Security Team
+    Warty Gnome Team
+    Warty Security Team
 
 If a match is done against irc nick, that is ranked higher than a fti match.
 
@@ -824,28 +921,44 @@ If a match is done against irc nick, that is ranked higher than a fti match.
     >>> irc_person = factory.makePerson(name='ircperson')
     >>> irc_id = ircid_set.new(
     ...     irc_person, 'chat.freenode.net', 'team')
-    >>> [person.displayname for person in vocab.search('team')]
-    [u'Ircperson', u'HWDB Team', u'No Team Memberships', u'Simple Team',
-     u'Ubuntu Team', u'testing Spanish team', u'Hoary Gnome Team',
-     u'Other Team', u'Ubuntu Gnome Team', u'Ubuntu Security Team',
-     u'Warty Gnome Team', u'Warty Security Team']
+    >>> for person in vocab.search('team'):
+    ...     print(person.displayname)
+    Ircperson
+    HWDB Team
+    No Team Memberships
+    Simple Team
+    Ubuntu Team
+    testing Spanish team
+    Hoary Gnome Team
+    Other Team
+    Ubuntu Gnome Team
+    Ubuntu Security Team
+    Warty Gnome Team
+    Warty Security Team
 
 A match on launchpad name ranks higher than irc nickname:
     >>> lifeless2 = factory.makePerson(name='anotherlifeless')
     >>> irc_id = ircid_set.new(
     ...     lifeless2, 'chat.freenode.net', 'lifeless')
-    >>> [person.displayname for person in vocab.search('lifeless')]
-    [u'Robert Collins', u'Anotherlifeless']
+    >>> for person in vocab.search('lifeless'):
+    ...     print(person.displayname)
+    Robert Collins
+    Anotherlifeless
 
 A match on displayname ranks higher than email address:
     >>> lifeless3 = factory.makePerson(name='nolife', displayname='RobertC')
-    >>> [person.displayname for person in vocab.search('robertc')]
-    [u'RobertC', u'Robert Collins']
+    >>> for person in vocab.search('robertc'):
+    ...     print(person.displayname)
+    RobertC
+    Robert Collins
 
 But even a partial match on name ranks higher:
     >>> lifeless3 = factory.makePerson(name='robertc2', displayname='RobertC')
-    >>> [person.name for person in vocab.search('robertc')]
-    [u'robertc2', u'nolife', u'lifeless']
+    >>> for person in vocab.search('robertc'):
+    ...     print(person.name)
+    robertc2
+    nolife
+    lifeless
 
     >>> login(ANONYMOUS)
     >>> vocab.LIMIT
@@ -884,11 +997,20 @@ Almost all teams have the word 'team' as part of their names, so a
 search for 'team' will give us some of them. There's also the ircperson
 created earlier with an icr nickname of 'team':
 
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'ircperson', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam',
-     u'simple-team', u'testing-spanish-team', u'ubuntu-security',
-     u'ubuntu-team', u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    ircperson
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    simple-team
+    testing-spanish-team
+    ubuntu-security
+    ubuntu-team
+    warty-gnome
 
 ValidPillarOwner
 ..........
@@ -908,10 +1030,19 @@ search for 'team' will give us some of them. Only restricted or moderated
 teams will be returned in the search results. There's also the ircperson
 created earlier with an icr nickname of 'team':
 
-    >>> sorted(person.name for person in vocab.search('team'))
-    [u'hwdb-team', u'ircperson', u'name18', u'name20', u'name21',
-     u'no-team-memberships', u'otherteam',
-     u'simple-team', u'testing-spanish-team', u'ubuntu-team', u'warty-gnome']
+    >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
+    ...     print(person.name)
+    hwdb-team
+    ircperson
+    name18
+    name20
+    name21
+    no-team-memberships
+    otherteam
+    simple-team
+    testing-spanish-team
+    ubuntu-team
+    warty-gnome
 
 ValidTeam
 .........
@@ -924,96 +1055,102 @@ will be returned.
     >>> vocab.displayname
     'Select a Team'
 
-    >>> sorted((team.displayname, team.teamowner.displayname)
-    ...        for team in vocab.search(None))
-    [(u'Bass Players', u'David Allouche'),
-     (u'Canonical Partner Developers', u'Celso Providelo'),
-     (u'Commercial Subscription Admins', u'Commercial Member'),
-     (u'Commercial Subscription Approvers', u'Brad Crittenden'),
-     (u'Drummers', u'David Allouche'),
-     (u'Flautists', u'David Allouche'),
-     (u'GuadaMen', u'Foo Bar'),
-     (u'Guitar Players', u'David Allouche'),
-     (u'HWDB Team', u'Foo Bar'),
-     (u'Hoary Gnome Team', u'Mark Shuttleworth'),
-     (u'Landscape Developers', u'Sample Person'),
-     (u'Launchpad Administrators', u'Mark Shuttleworth'),
-     (u'Launchpad Beta Testers', u'Launchpad Beta Testers Owner'),
-     (u'Launchpad Buildd Admins', u'Foo Bar'),
-     (u'Launchpad Developers', u'Foo Bar'),
-     (u'Launchpad PPA Admins', u'Commercial Subscription Admins'),
-     (u'Launchpad PPA Self Admins', u'Commercial Subscription Admins'),
-     (u'Launchpad Users', u'Sample Person'),
-     (u'Mailing List Experts', u'Launchpad Administrators'),
-     (u'Mirror Administrators', u'Mark Shuttleworth'),
-     (u'Other Team', u'Owner'),
-     (u'Registry Administrators', u'Mark Shuttleworth'),
-     (u'Rosetta Administrators', u'Launchpad Administrators'),
-     (u'Simple Team', u'One Membership'),
-     (u'Ubuntu Gnome Team', u'Mark Shuttleworth'),
-     (u'Ubuntu Security Team', u'Colin Watson'),
-     (u'Ubuntu Team', u'Mark Shuttleworth'),
-     (u'Ubuntu Technical Board', u'Techboard Owner'),
-     (u'Ubuntu Translators', u'Rosetta Administrators'),
-     (u'VCS imports', u'Robert Collins'),
-     (u'Warty Gnome Team', u'Mark Shuttleworth'),
-     (u'Warty Security Team', u'Mark Shuttleworth'),
-     (u'testing Spanish team', u'Carlos Perell\xf3 Mar\xedn')]
+    >>> for team in sorted(vocab.search(None), key=attrgetter('displayname')):
+    ...     print('%s: %s' % (team.displayname, team.teamowner.displayname))
+    Bass Players: David Allouche
+    Canonical Partner Developers: Celso Providelo
+    Commercial Subscription Admins: Commercial Member
+    Commercial Subscription Approvers: Brad Crittenden
+    Drummers: David Allouche
+    Flautists: David Allouche
+    GuadaMen: Foo Bar
+    Guitar Players: David Allouche
+    HWDB Team: Foo Bar
+    Hoary Gnome Team: Mark Shuttleworth
+    Landscape Developers: Sample Person
+    Launchpad Administrators: Mark Shuttleworth
+    Launchpad Beta Testers: Launchpad Beta Testers Owner
+    Launchpad Buildd Admins: Foo Bar
+    Launchpad Developers: Foo Bar
+    Launchpad PPA Admins: Commercial Subscription Admins
+    Launchpad PPA Self Admins: Commercial Subscription Admins
+    Launchpad Users: Sample Person
+    Mailing List Experts: Launchpad Administrators
+    Mirror Administrators: Mark Shuttleworth
+    Other Team: Owner
+    Registry Administrators: Mark Shuttleworth
+    Rosetta Administrators: Launchpad Administrators
+    Simple Team: One Membership
+    Ubuntu Gnome Team: Mark Shuttleworth
+    Ubuntu Security Team: Colin Watson
+    Ubuntu Team: Mark Shuttleworth
+    Ubuntu Technical Board: Techboard Owner
+    Ubuntu Translators: Rosetta Administrators
+    VCS imports: Robert Collins
+    Warty Gnome Team: Mark Shuttleworth
+    Warty Security Team: Mark Shuttleworth
+    testing Spanish team: Carlos Perelló Marín
 
 Like with ValidPersonOrTeam, you can narrow your search down by
 providing some text to match against the team name.  Still, you only get
 teams back.
 
-    >>> sorted((team.displayname, team.teamowner.displayname)
-    ...         for team in vocab.search('spanish'))
-    [(u'testing Spanish team', u'Carlos Perell\xf3 Mar\xedn')]
+    >>> for team in sorted(
+    ...         vocab.search('spanish'), key=attrgetter('displayname')):
+    ...     print('%s: %s' % (team.displayname, team.teamowner.displayname))
+    testing Spanish team: Carlos Perelló Marín
 
-    >>> sorted((team.displayname, team.teamowner.displayname)
-    ...        for team in vocab.search('spanish OR ubuntu'))
-    [(u'Mirror Administrators', u'Mark Shuttleworth'),
-     (u'Ubuntu Gnome Team', u'Mark Shuttleworth'),
-     (u'Ubuntu Security Team', u'Colin Watson'),
-     (u'Ubuntu Team', u'Mark Shuttleworth'),
-     (u'Ubuntu Technical Board', u'Techboard Owner'),
-     (u'Ubuntu Translators', u'Rosetta Administrators'),
-     (u'testing Spanish team', u'Carlos Perell\xf3 Mar\xedn')]
+    >>> for team in sorted(
+    ...         vocab.search('spanish OR ubuntu'),
+    ...         key=attrgetter('displayname')):
+    ...     print('%s: %s' % (team.displayname, team.teamowner.displayname))
+    Mirror Administrators: Mark Shuttleworth
+    Ubuntu Gnome Team: Mark Shuttleworth
+    Ubuntu Security Team: Colin Watson
+    Ubuntu Team: Mark Shuttleworth
+    Ubuntu Technical Board: Techboard Owner
+    Ubuntu Translators: Rosetta Administrators
+    testing Spanish team: Carlos Perelló Marín
 
-    >>> sorted((team.displayname, team.teamowner.displayname)
-    ...        for team in vocab.search('team'))
-    [(u'HWDB Team', u'Foo Bar'),
-     (u'Hoary Gnome Team', u'Mark Shuttleworth'),
-     (u'Other Team', u'Owner'),
-     (u'Simple Team', u'One Membership'),
-     (u'Ubuntu Gnome Team', u'Mark Shuttleworth'),
-     (u'Ubuntu Security Team', u'Colin Watson'),
-     (u'Ubuntu Team', u'Mark Shuttleworth'),
-     (u'Warty Gnome Team', u'Mark Shuttleworth'),
-     (u'Warty Security Team', u'Mark Shuttleworth'),
-     (u'testing Spanish team', u'Carlos Perell\xf3 Mar\xedn')]
+    >>> for team in sorted(
+    ...         vocab.search('team'), key=attrgetter('displayname')):
+    ...     print('%s: %s' % (team.displayname, team.teamowner.displayname))
+    HWDB Team: Foo Bar
+    Hoary Gnome Team: Mark Shuttleworth
+    Other Team: Owner
+    Simple Team: One Membership
+    Ubuntu Gnome Team: Mark Shuttleworth
+    Ubuntu Security Team: Colin Watson
+    Ubuntu Team: Mark Shuttleworth
+    Warty Gnome Team: Mark Shuttleworth
+    Warty Security Team: Mark Shuttleworth
+    testing Spanish team: Carlos Perelló Marín
 
 A user who is a member of a private team will see that team in their
 search.
 
     >>> login('no-priv@canonical.com')
-    >>> sorted((team.displayname, team.teamowner.displayname)
-    ...        for team in vocab.search('team'))
-    [(u'HWDB Team', u'Foo Bar'),
-     (u'Hoary Gnome Team', u'Mark Shuttleworth'),
-     (u'Other Team', u'Owner'),
-     (u'Private Team', u'No Privileges Person'),
-     (u'Simple Team', u'One Membership'),
-     (u'Ubuntu Gnome Team', u'Mark Shuttleworth'),
-     (u'Ubuntu Security Team', u'Colin Watson'),
-     (u'Ubuntu Team', u'Mark Shuttleworth'),
-     (u'Warty Gnome Team', u'Mark Shuttleworth'),
-     (u'Warty Security Team', u'Mark Shuttleworth'),
-     (u'testing Spanish team', u'Carlos Perell\xf3 Mar\xedn')]
+    >>> for team in sorted(
+    ...         vocab.search('team'), key=attrgetter('displayname')):
+    ...     print('%s: %s' % (team.displayname, team.teamowner.displayname))
+    HWDB Team: Foo Bar
+    Hoary Gnome Team: Mark Shuttleworth
+    Other Team: Owner
+    Private Team: No Privileges Person
+    Simple Team: One Membership
+    Ubuntu Gnome Team: Mark Shuttleworth
+    Ubuntu Security Team: Colin Watson
+    Ubuntu Team: Mark Shuttleworth
+    Warty Gnome Team: Mark Shuttleworth
+    Warty Security Team: Mark Shuttleworth
+    testing Spanish team: Carlos Perelló Marín
 
 You can also search for an email address and get the teams with a match.
 
-    >>> sorted((team.displayname, team.teamowner.displayname)
-    ...         for team in vocab.search('support@'))
-    [(u'Ubuntu Team', u'Mark Shuttleworth')]
+    >>> for team in sorted(
+    ...         vocab.search('support@'), key=attrgetter('displayname')):
+    ...     print('%s: %s' % (team.displayname, team.teamowner.displayname))
+    Ubuntu Team: Mark Shuttleworth
 
 
 ValidPerson

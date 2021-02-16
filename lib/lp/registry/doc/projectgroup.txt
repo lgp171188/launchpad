@@ -38,8 +38,8 @@ While some of them (homepageurl, icon, logo and mugshot) are optional, others
     ...     title='Just a test project', homepageurl=None,
     ...     summary='Mandatory summary', description='blah',
     ...     owner=no_priv)
-    >>> test_project.name
-    u'project-test'
+    >>> print(test_project.name)
+    project-test
 
 
 Looking up existing projects
@@ -51,21 +51,22 @@ inactive projects, while the latter returns only active ones. Both can be
 used to look up projects by their aliases, though.
 
     >>> gnome = projectset['gnome']
-    >>> gnome.name
-    u'gnome'
-    >>> projectset.getByName('gnome').name
-    u'gnome'
+    >>> print(gnome.name)
+    gnome
+    >>> print(projectset.getByName('gnome').name)
+    gnome
 
     # Need to login as an LP admin to set a project's aliases.
     >>> login('foo.bar@canonical.com')
     >>> gnome.setAliases(['dwarf'])
-    >>> gnome.aliases
-    [u'dwarf']
+    >>> for alias in gnome.aliases:
+    ...     print(alias)
+    dwarf
     >>> login(ANONYMOUS)
-    >>> projectset['dwarf'].name
-    u'gnome'
-    >>> projectset.getByName('dwarf').name
-    u'gnome'
+    >>> print(projectset['dwarf'].name)
+    gnome
+    >>> print(projectset.getByName('dwarf').name)
+    gnome
 
 Make sure that a project provides the IProjectGroup interface.
 
@@ -104,8 +105,8 @@ The inactive project will still be accessible using
 IProjectGroupSet.getByName(), though.
 
     >>> gnome = getUtility(IProjectGroupSet).getByName('gnome')
-    >>> gnome.name
-    u'gnome'
+    >>> print(gnome.name)
+    gnome
     >>> gnome.active
     False
 
@@ -122,9 +123,13 @@ The products which are part of a given project are given by a project's
 .products property. Note that only active products are included and they're
 ordered by their names.
 
-    >>> [product.displayname for product in gnome.products]
-    [u'Evolution', u'GNOME Terminal', u'Gnome Applets', u'NetApplet',
-     u'gnomebaker']
+    >>> for product in gnome.products:
+    ...     print(product.displayname)
+    Evolution
+    GNOME Terminal
+    Gnome Applets
+    NetApplet
+    gnomebaker
 
     >>> netapplet = gnome.getProduct('netapplet')
 
@@ -135,8 +140,12 @@ ordered by their names.
     >>> flush_database_updates()
     >>> from lp.services.propertycache import clear_property_cache
     >>> clear_property_cache(gnome)
-    >>> [product.displayname for product in gnome.products]
-    [u'Evolution', u'GNOME Terminal', u'Gnome Applets', u'gnomebaker']
+    >>> for product in gnome.products:
+    ...     print(product.displayname)
+    Evolution
+    GNOME Terminal
+    Gnome Applets
+    gnomebaker
 
     # Re-activate netapplet so that we don't interfere in other tests below.
     >>> netapplet.active = True

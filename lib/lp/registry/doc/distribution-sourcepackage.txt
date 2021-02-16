@@ -24,8 +24,8 @@ distribution object:
 Use IDistribution.getSourcePackage to get a specific package by name:
 
     >>> debian_firefox = debian.getSourcePackage("mozilla-firefox")
-    >>> debian_firefox.name
-    u'mozilla-firefox'
+    >>> print(debian_firefox.name)
+    mozilla-firefox
     >>> IDistributionSourcePackage.providedBy(debian_firefox)
     True
     >>> verifyObject(IDistributionSourcePackage, debian_firefox)
@@ -125,8 +125,10 @@ release.
 
 Releases of 'pmount in Ubuntu':
 
-    >>> [release.version for release in dsp.releases]
-    [u'0.1-2', u'0.1-1']
+    >>> for release in dsp.releases:
+    ...     print(release.version)
+    0.1-2
+    0.1-1
 
 We can also get the releases of 'pmount in Ubuntu' along with the
 relevant publishing information:
@@ -142,19 +144,19 @@ relevant publishing information:
 
 Current release of 'pmount in Ubuntu':
 
-    >>> dsp.currentrelease.version
-    u'0.1-2'
+    >>> print(dsp.currentrelease.version)
+    0.1-2
 
 Check if 'currentrelease' works with version containing letters
 (bug # 6040):
 
     >>> dsp2 = ubuntu.getSourcePackage("alsa-utils")
-    >>> dsp2.currentrelease.version
-    u'1.0.9a-4ubuntu1'
+    >>> print(dsp2.currentrelease.version)
+    1.0.9a-4ubuntu1
 
     >>> dsp3 = ubuntu.getSourcePackage("cnews")
-    >>> dsp3.currentrelease.version
-    u'cr.g7-37'
+    >>> print(dsp3.currentrelease.version)
+    cr.g7-37
 
 === Distribution Source Package Branches ===
 
@@ -174,9 +176,9 @@ for a DSP.
 To list the current 'pmount in Ubuntu' ISourcePackages, use
 get_distroseries_packages():
 
-    >>> [(sp.name, sp.distroseries.name)
-    ...     for sp in dsp.get_distroseries_packages()]
-    [(u'pmount', u'hoary')]
+    >>> for sp in dsp.get_distroseries_packages():
+    ...     print('%s %s' % (sp.name, sp.distroseries.name))
+    pmount hoary
 
 To retrieve a version of 'pmount in Ubuntu' as an
 IDistributionSourcePackageRelease (IDSPR) or None if not found, use

@@ -39,8 +39,8 @@ to No Privileges Person.
     >>> view.errors
     []
 
-    >>> firefox.owner.name
-    u'no-priv'
+    >>> print(firefox.owner.name)
+    no-priv
 
 Ownership can not be transferred to an open team.
 
@@ -57,8 +57,9 @@ Ownership can not be transferred to an open team.
 
     >>> transaction.commit()
     >>> view = create_initialized_view(product, '+edit-people', form=form)
-    >>> view.errors
-    [u'You must choose a valid person or team to be the owner for ...']
+    >>> for error in view.errors:
+    ...     print(error)
+    You must choose a valid person or team to be the owner for ...
 
 
 Assigning to Registry Administrators
@@ -80,8 +81,8 @@ role and transfer it to the Registry Administrators team.
     >>> view.errors
     []
 
-    >>> product.owner.name
-    u'registry'
+    >>> print(product.owner.name)
+    registry
 
 Not specifying the owner/maintainer nor checking the checkbox is an error.
 
@@ -90,8 +91,9 @@ Not specifying the owner/maintainer nor checking the checkbox is an error.
     ...     }
 
     >>> view = create_initialized_view(product, '+edit-people', form=form)
-    >>> view.errors
-    [u'You must specify a maintainer or select the checkbox.']
+    >>> for error in view.errors:
+    ...     print(error)
+    You must specify a maintainer or select the checkbox.
 
 Selecting both the owner/maintainer and the checkbox is also an error.
 
@@ -104,5 +106,6 @@ Selecting both the owner/maintainer and the checkbox is also an error.
     ...     }
 
     >>> view = create_initialized_view(product, '+edit-people', form=form)
-    >>> view.errors
-    [u'You may not specify a new owner if you select the checkbox.']
+    >>> for error in view.errors:
+    ...     print(error)
+    You may not specify a new owner if you select the checkbox.

@@ -64,17 +64,26 @@ methods of PollSubset.
 Here we'll query using three different dates:
 
 Query for open polls in the exact second the poll is opening.
-  >>> [p.name for p in pollsubset.getOpenPolls(when=opendate)]
-  [u'leader-election', u'never-closes', u'never-closes2', u'never-closes3',
-   u'never-closes4']
+  >>> for p in pollsubset.getOpenPolls(when=opendate):
+  ...     print(p.name)
+  leader-election
+  never-closes
+  never-closes2
+  never-closes3
+  never-closes4
 
 Query for closed polls, one second after the poll closes.
-  >>> [p.name for p in pollsubset.getClosedPolls(when=closedate + onesec)]
-  [u'director-2004', u'leader-2004', u'leader-election']
+  >>> for p in pollsubset.getClosedPolls(when=closedate + onesec):
+  ...     print(p.name)
+  director-2004
+  leader-2004
+  leader-election
 
 Query for not-yet-opened polls, one second before the poll opens.
-  >>> [p.name for p in pollsubset.getNotYetOpenedPolls(when=opendate - onesec)]
-  [u'leader-election', u'not-yet-opened']
+  >>> for p in pollsubset.getNotYetOpenedPolls(when=opendate - onesec):
+  ...     print(p.name)
+  leader-election
+  not-yet-opened
 
 All polls must have a set of options for people to choose, and they'll always
 start with zero options. We're responsible for adding new ones.
@@ -85,21 +94,28 @@ Let's add some options to this poll, so people can start voting. :)
   >>> will = poll.newOption(u'wgraham', u'Will Graham')
   >>> jack = poll.newOption(u'jcrawford', u'Jack Crawford')
   >>> francis = poll.newOption(u'fd', u'Francis Dolarhyde')
-  >>> [o.title for o in poll.getActiveOptions()]
-  [u'Francis Dolarhyde', u'Jack Crawford', u'Will Graham']
+  >>> for o in poll.getActiveOptions():
+  ...     print(o.title)
+  Francis Dolarhyde
+  Jack Crawford
+  Will Graham
 
 Now, what happens if the poll is already open and, let's say, Francis Dolarhyde
 is convicted and thus becomes ineligible? We'll have to mark that option as
 inactive, so people can't vote on it.
   >>> francis.active = False
   >>> flush_database_updates()
-  >>> [o.title for o in poll.getActiveOptions()]
-  [u'Jack Crawford', u'Will Graham']
+  >>> for o in poll.getActiveOptions():
+  ...     print(o.title)
+  Jack Crawford
+  Will Graham
 
 If the poll is not yet opened, it's possible to simply remove a given option.
   >>> poll.removeOption(will, when=opendate - onesec)
-  >>> [o.title for o in poll.getAllOptions()]
-  [u'Francis Dolarhyde', u'Jack Crawford']
+  >>> for o in poll.getAllOptions():
+  ...     print(o.title)
+  Francis Dolarhyde
+  Jack Crawford
 
 Any member of the team this poll refers to is eligible to vote, if the poll is
 still open.

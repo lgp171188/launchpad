@@ -315,8 +315,8 @@ through each relevant stage of its existence.
 
     >>> b.goal_decider is None
     False
-    >>> b.goal_decider.name
-    u'carlos'
+    >>> print(b.goal_decider.name)
+    carlos
     >>> b.date_completed is None
     True
 
@@ -328,8 +328,8 @@ change the overall state of the spec to "completed".
     >>> b.implementation_status = SpecificationImplementationStatus.INFORMATIONAL
     >>> print(b.updateLifecycleStatus(jdub).title)
     Complete
-    >>> b.completer.name
-    u'jdub'
+    >>> print(b.completer.name)
+    jdub
     >>> b.date_completed is None
     False
 

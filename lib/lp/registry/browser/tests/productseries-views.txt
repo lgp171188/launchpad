@@ -299,8 +299,10 @@ portion do.
     >>> productseries.branch = factory.makeBranch()
 
     >>> view = create_view(productseries, name='+delete')
-    >>> [milestone.name for milestone in view.milestones]
-    [u'0.2', u'0.1']
+    >>> for milestone in view.milestones:
+    ...     print(milestone.name)
+    0.2
+    0.1
     >>> view.has_bugtasks_and_specifications
     True
     >>> for bugtask in view.bugtasks:
