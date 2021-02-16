@@ -61,7 +61,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
         # Create two branches where the trunk has the branch as a merge.  Also
         # create a merge proposal from the branch to the trunk.
         (db_trunk, trunk_tree), (db_branch, branch_tree) = (
-            self.makeBranchWithMerge('base', 'trunk', 'branch', 'merge'))
+            self.makeBranchWithMerge(b'base', b'trunk', b'branch', b'merge'))
         trunk_id = db_trunk.id
         branch_id = db_branch.id
         self.createProposal(db_branch, db_trunk)
@@ -246,7 +246,7 @@ class TestMergeDetection(TestCaseWithFactory):
         # of the branch is the NULL_REVISION no merge event is emitted for
         # that branch.
         source = self.factory.makeProductBranch(product=self.product)
-        source.last_scanned_id = NULL_REVISION
+        source.last_scanned_id = six.ensure_text(NULL_REVISION)
         self.autoMergeBranches(self.db_branch, ['revid'])
         self.assertEqual([], self.merges)
 

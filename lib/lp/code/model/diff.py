@@ -308,8 +308,9 @@ class Diff(SQLBase):
             for branch in [source_branch] + ignore_branches:
                 stack.enter_context(read_locked(branch))
             diff_ignore_branches(
-                source_branch, ignore_branches, old_revision.revision_id,
-                new_revision.revision_id, diff_content)
+                source_branch, ignore_branches,
+                six.ensure_binary(old_revision.revision_id),
+                six.ensure_binary(new_revision.revision_id), diff_content)
         return cls.fromFileAtEnd(diff_content)
 
 
