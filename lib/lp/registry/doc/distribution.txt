@@ -307,7 +307,7 @@ If we ask for a totally unknown distroseries, we raise NotFoundError
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'unknown'
+    lp.app.errors.NotFoundError: ...'unknown'
 
 If we ask for a plain distroseries, it should come back with the RELEASE
 pocket as the pocket.
@@ -338,7 +338,7 @@ raise NotFoundError for us
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'hoary-bullshit'
+    lp.app.errors.NotFoundError: ...'hoary-bullshit'
 
 
 Upload related stuff

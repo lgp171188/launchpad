@@ -300,8 +300,8 @@ If we manually change the cache, the adapter will be fooled and will
 return the wrong object.
 
     >>> cache[removeSecurityProxy(person.account)] = 'foo'
-    >>> IPerson(person.account)
-    'foo'
+    >>> print(IPerson(person.account))
+    foo
 
 If the cached value is None, though, the adapter will look up the
 correct Person again and update the cache.

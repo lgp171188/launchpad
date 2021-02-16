@@ -346,11 +346,11 @@ And they can be used as dictionary keys also:
     >>> a_map = {}
     >>> a_map[hoary_firefox_one] = 'hoary'
     >>> a_map[warty_firefox] = 'warty'
-    >>> a_map[hoary_firefox_two]
-    'hoary'
+    >>> print(a_map[hoary_firefox_two])
+    hoary
 
-    >>> a_map[warty_firefox]
-    'warty'
+    >>> print(a_map[warty_firefox])
+    warty
 
 
 Direct Packagings

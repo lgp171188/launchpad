@@ -305,7 +305,7 @@ First, we will test a merge where there is no decoration.
 "Skip" should have been updated with the table and unique reference
 column name.
 
-    >>> print skip
+    >>> print(pretty(skip))
     [('personlocation', 'person')]
 
 There should still be no columns that reference the winner or loser.
