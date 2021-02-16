@@ -140,7 +140,7 @@ updateBugWatches() issues only one request to update all watches:
     ...     bug_watch_updater.updateBugWatches(
     ...         mantis, sorted(example_bug_tracker.watches, key=getid))
     INFO Updating 7 watches for 6 bugs on http://bugs.some.where
-    INFO Didn't find bug u'1798' on http://bugs.some.where
+    INFO Didn't find bug '1798' on http://bugs.some.where
     (local bugs: 10).
     GET http://bugs.some.where/view.php?id=1550
     GET http://bugs.some.where/view.php?id=1679

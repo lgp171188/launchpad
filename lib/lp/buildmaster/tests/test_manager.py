@@ -1008,8 +1008,8 @@ class TestSlaveScannerWithoutDB(TestCase):
 
         with ExpectedException(
                 BuildDaemonIsolationError,
-                r"Allegedly clean slave not idle "
-                r"\(u'BuilderStatus.BUILDING' instead\)"):
+                r"Allegedly clean slave not idle \(%r instead\)" %
+                'BuilderStatus.BUILDING'):
             yield scanner.scan()
         self.assertEqual(['status'], slave.call_log)
 
@@ -1170,7 +1170,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         slave = LostBuildingBrokenSlave()
         self.builder.current_build.cancel()
         with ExpectedException(
-                xmlrpc_client.Fault, "<Fault 8002: u'Could not abort'>"):
+                xmlrpc_client.Fault, "<Fault 8002: %r>" % 'Could not abort'):
             yield self._getScanner().checkCancellation(self.vitals, slave)
 
 

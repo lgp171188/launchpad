@@ -270,7 +270,7 @@ to the form:
     >>> anon_browser.getControl(name="build_state").value = ['foo']
     Traceback (most recent call last):
     ...
-    ValueError: Option u'foo' not found ...
+    ValueError: Option ...'foo' not found ...
 
 However even if anonymous user builds an URL with a incorrect value,
 code is prepared to raise the correct exception:
@@ -292,7 +292,7 @@ form values are submitted:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.UnexpectedFormData: No suitable state found for value "[u'building', u'all']"
+    lp.app.errors.UnexpectedFormData: No suitable state found for value "[...'building', ...'all']"
 
 
 Builder history
