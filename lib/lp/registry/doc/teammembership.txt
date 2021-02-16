@@ -470,11 +470,11 @@ good work, so we'll approve their membership.
 
     >>> warty_team = getUtility(IPersonSet).getByName('name20')
     >>> membership = membershipset.getByPersonAndTeam(foobar, warty_team)
-    >>> print membership.status.title
+    >>> print(membership.status.title)
     Proposed
-    >>> print membership.date_created.strftime("%Y-%m-%d")
+    >>> print(membership.date_created.strftime("%Y-%m-%d"))
     2006-01-26
-    >>> print membership.datejoined
+    >>> print(membership.datejoined)
     None
 
 When we approve their membership, the datejoined will contain the date that it
@@ -482,7 +482,7 @@ was approved. It returns True to indicate that the status was changed.
 
     >>> membership.setStatus(TeamMembershipStatus.APPROVED, foobar)
     True
-    >>> print membership.status.title
+    >>> print(membership.status.title)
     Approved
     >>> utc_now = datetime.now(pytz.timezone('UTC'))
     >>> membership.datejoined.date() == utc_now.date()
@@ -502,7 +502,7 @@ made active.
     ...     'launchpad-buildd-admins')
     >>> foobar_on_buildd = membershipset.getByPersonAndTeam(
     ...     foobar, buildd_admins)
-    >>> print foobar_on_buildd.status.title
+    >>> print(foobar_on_buildd.status.title)
     Administrator
     >>> foobar_on_buildd.datejoined <= utc_now
     True
@@ -510,7 +510,7 @@ made active.
     >>> foobar_on_buildd.setStatus(
     ...     TeamMembershipStatus.DEACTIVATED, foobar)
     True
-    >>> print foobar_on_buildd.status.title
+    >>> print(foobar_on_buildd.status.title)
     Deactivated
     >>> foobar_on_buildd.datejoined <= utc_now
     True
@@ -518,7 +518,7 @@ made active.
     >>> foobar_on_buildd.setStatus(
     ...     TeamMembershipStatus.APPROVED, foobar)
     True
-    >>> print foobar_on_buildd.status.title
+    >>> print(foobar_on_buildd.status.title)
     Approved
     >>> foobar_on_buildd.datejoined <= utc_now
     True
@@ -562,7 +562,7 @@ own or administer.
     ...     cprov, buildd_admins)
     >>> buildd_admins.teamowner.name
     u'name16'
-    >>> print cprov_on_buildd.status.title
+    >>> print(cprov_on_buildd.status.title)
     Administrator
     >>> foobar_on_buildd.canChangeExpirationDate(cprov)
     True
@@ -657,9 +657,9 @@ still active.
     >>> karl_on_mirroradmins = membershipset.getByPersonAndTeam(
     ...     karl, mirror_admins)
     >>> tomorrow = datetime.now(pytz.timezone('UTC')) + timedelta(days=1)
-    >>> print karl_on_mirroradmins.status.title
+    >>> print(karl_on_mirroradmins.status.title)
     Approved
-    >>> print karl_on_mirroradmins.dateexpires
+    >>> print(karl_on_mirroradmins.dateexpires)
     None
 
 The member themselves can't change the expiration date of their membership.
@@ -683,7 +683,7 @@ If the team's renewal policy is ONDEMAND, the membership can be renewed
 by the member themselves. (That is only true because this membership is
 active and set to expire tomorrow).
 
-    >>> print karl_on_mirroradmins.team.renewal_policy.name
+    >>> print(karl_on_mirroradmins.team.renewal_policy.name)
     NONE
     >>> karl_on_mirroradmins.canBeRenewedByMember()
     False
@@ -710,7 +710,7 @@ expire soon.
     True
     >>> karl_on_mirroradmins.canBeRenewedByMember()
     False
-    >>> print karl_on_mirroradmins.status.title
+    >>> print(karl_on_mirroradmins.status.title)
     Approved
 
 
@@ -838,8 +838,8 @@ person is an active member of as well as teams those teams are an active
 member of.
 
     >>> login('celso.providelo@canonical.com')
-    >>> print '\n'.join(sorted(
-    ...     team.name for team in salgado.teams_participated_in))
+    >>> print('\n'.join(sorted(
+    ...     team.name for team in salgado.teams_participated_in)))
     admins
     hwdb-team
     landscape-developers
@@ -853,8 +853,8 @@ Adding admins as a member of t1 will make Salgado a member of t1 as well.
     >>> t1.addMember(admins, reviewer=t1.teamowner, force_team_add=True)
     (True, <DBItem TeamMembershipStatus.APPROVED...)
     >>> flush_database_updates()
-    >>> print '\n'.join(sorted(
-    ...     team.name for team in salgado.teams_participated_in))
+    >>> print('\n'.join(sorted(
+    ...     team.name for team in salgado.teams_participated_in)))
     admins
     hwdb-team
     landscape-developers
@@ -869,8 +869,8 @@ for Salgado.
     >>> admins.addMember(t3, reviewer=admins.teamowner, force_team_add=True)
     (True, <DBItem TeamMembershipStatus.APPROVED...)
     >>> flush_database_updates()
-    >>> print '\n'.join(sorted(
-    ...     team.name for team in salgado.teams_participated_in))
+    >>> print('\n'.join(sorted(
+    ...     team.name for team in salgado.teams_participated_in)))
     admins
     hwdb-team
     landscape-developers

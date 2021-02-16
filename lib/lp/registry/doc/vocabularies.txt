@@ -204,7 +204,7 @@ Reflects the available distribution series.  Results are ordered by
     >>> distroseries_vocabulary = get_naked_vocab(
     ...     None, "DistroSeries")
     >>> for term in distroseries_vocabulary:
-    ...     print "%30s %s" % (term.token, term.title)
+    ...     print("%30s %s" % (term.token, term.title))
             ubuntu/breezy-autotest Ubuntu: Breezy Badger Autotest
                      ubuntu/grumpy Ubuntu: The Grumpy Groundhog Release
                       ubuntu/hoary Ubuntu: The Hoary Hedgehog Release
@@ -252,7 +252,7 @@ All the teams the person is an active member of.
     10
 
     >>> for term in person_active_membership:
-    ...     print term.token, term.value.displayname, term.title
+    ...     print(term.token, term.value.displayname, term.title)
     canonical-partner-dev Canonical Partner Developers
         Canonical Partner Developers
     guadamen GuadaMen GuadaMen
@@ -281,7 +281,7 @@ membership is public.
     ...                            displayname="Public Team",
     ...                            visibility=PersonVisibility.PUBLIC)
     >>> for term in person_active_membership:
-    ...     print term.token, term.value.displayname, term.title
+    ...     print(term.token, term.value.displayname, term.title)
     canonical-partner-dev Canonical Partner Developers
         Canonical Partner Developers
     guadamen GuadaMen GuadaMen
@@ -297,7 +297,7 @@ membership is public.
 
     >>> pubteam.visibility = PersonVisibility.PRIVATE
     >>> for term in person_active_membership:
-    ...     print term.token, term.value.displayname, term.title
+    ...     print(term.token, term.value.displayname, term.title)
     canonical-partner-dev Canonical Partner Developers
         Canonical Partner Developers
     guadamen GuadaMen GuadaMen
@@ -311,7 +311,7 @@ membership is public.
     vcs-imports VCS imports VCS imports
 
     >>> term = person_active_membership.getTerm(launchpad_team)
-    >>> print term.token, term.value.displayname, term.title
+    >>> print(term.token, term.value.displayname, term.title)
     launchpad Launchpad Developers Launchpad Developers
 
     >>> term = person_active_membership.getTerm(mirrors_admins)
@@ -320,7 +320,7 @@ membership is public.
     LookupError:...
 
     >>> term = person_active_membership.getTermByToken('launchpad')
-    >>> print term.token, term.value.displayname, term.title
+    >>> print(term.token, term.value.displayname, term.title)
     launchpad Launchpad Developers Launchpad Developers
 
     >>> term = person_active_membership.getTermByToken('mirrors-admins')
@@ -362,7 +362,7 @@ but we need the big default vocabulary for form input validation.
     3
 
     >>> for term in all_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
+    ...     print("%s: %s" % (term.value.target.name, term.value.name))
     debian: 3.1
     debian: 3.1-rc1
     firefox: 1.0
@@ -373,7 +373,7 @@ vocabulary.
     >>> firefox = product_set.getByName('firefox')
     >>> firefox_milestones = get_naked_vocab(firefox, 'Milestone')
     >>> for term in firefox_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
+    ...     print("%s: %s" % (term.value.target.name, term.value.name))
     firefox: 1.0
 
 If the context is a productseries, milestones for the series and for the
@@ -385,7 +385,7 @@ product itself are included in the vocabulary.
     >>> firefox_trunk_milestones = get_naked_vocab(firefox_trunk,
     ...                                                    'Milestone')
     >>> for term in firefox_trunk_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
+    ...     print("%s: %s" % (term.value.target.name, term.value.name))
     firefox: 1.0
     firefox: firefox-milestone-no-series
 
@@ -399,13 +399,13 @@ specification target are in the vocabulary.
     >>> spec_target_milestones = get_naked_vocab(
     ...     canvas_spec, 'Milestone')
     >>> for term in spec_target_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
+    ...     print("%s: %s" % (term.value.target.name, term.value.name))
     firefox: 1.0
 
 The vocabulary contains only active milestones.
 
     >>> for milestone in firefox.milestones:
-    ...     print milestone.name, milestone.active
+    ...     print(milestone.name, milestone.active)
     1.0 True
 
     >>> one_dot_o = firefox.milestones[0]
@@ -429,7 +429,7 @@ All the products in a project.
     ...     mozilla_project,'ProjectProducts')
 
     >>> for term in mozilla_products_vocabulary:
-    ...     print "%s: %s" %(term.token, term.title)
+    ...     print("%s: %s" %(term.token, term.title))
     firefox: Mozilla Firefox
     thunderbird: Mozilla Thunderbird
 
@@ -601,7 +601,7 @@ The set of non-merged people.
 Unlike PersonAccountToMerge, this vocabulary includes people who don't
 have a single email address, as it's fine for admins to merge them.
 
-    >>> print fooperson.preferredemail
+    >>> print(fooperson.preferredemail)
     None
 
     >>> list(fooperson.validatedemails) + list(fooperson.guessedemails)
@@ -737,7 +737,7 @@ The PRIVATE team can be looked up via getTermByToken for a member of the
 team.
 
     >>> term = vocab.getTermByToken('private-team')
-    >>> print term.title
+    >>> print(term.title)
     Private Team
 
 The PRIVATE team is not returned for a user who is not part of the team.
@@ -860,11 +860,11 @@ Search for names with '%' and '?' is supported.
     ...     symbolic_person, 'irc.fnord.net', 'question?')
 
     >>> for person in vocab.search('%percent'):
-    ...     print person.name
+    ...     print(person.name)
     symbolic
 
     >>> for person in vocab.search('question?'):
-    ...     print person.name
+    ...     print(person.name)
     symbolic
 
 ValidOwner
@@ -1032,19 +1032,19 @@ All 'valid' persons who are not a team.
 
     >>> invalid_people = [
     ...     person for person in people if not person.is_valid_person]
-    >>> print len(invalid_people)
+    >>> print(len(invalid_people))
     0
 
 There are two 'Carlos' in the sample data but only one is a valid
 person.
 
     >>> carlos_people = vocab.search('Carlos')
-    >>> print len(list(carlos_people))
+    >>> print(len(list(carlos_people)))
     1
 
     >>> invalid_carlos = [
     ...     person for person in carlos_people if not person.is_valid_person]
-    >>> print len(invalid_carlos)
+    >>> print(len(invalid_carlos))
     0
 
 ValidPerson does not include teams.
@@ -1054,14 +1054,14 @@ ValidPerson does not include teams.
     ...     owner=carlos, name='carlos-team')
     >>> person_or_team_vocab = get_naked_vocab(None, "ValidPersonOrTeam")
     >>> carlos_people_or_team = person_or_team_vocab.search('carlos')
-    >>> print len(list(carlos_people_or_team))
+    >>> print(len(list(carlos_people_or_team)))
     2
 
     >>> carlos_team in carlos_people_or_team
     True
 
     >>> carlos_people = vocab.search('carlos')
-    >>> print len(list(carlos_people))
+    >>> print(len(list(carlos_people)))
     1
 
     >>> carlos_team in carlos_people
@@ -1077,7 +1077,7 @@ heterogeneous.
     >>> vocab = get_naked_vocab(None, "DistributionOrProduct")
     >>> for term in vocab:
     ...     if 'buntu' in term.title:
-    ...         print term.title, '- class', term.value.__class__.__name__
+    ...         print(term.title, '- class', term.value.__class__.__name__)
     Kubuntu - class Distribution
     Ubuntu - class Distribution
     ubuntutest - class Distribution
@@ -1110,7 +1110,7 @@ Inactive projects and project groups are not available.
 
     >>> for term in vocab:
     ...     if 'Tomcat' in term.title:
-    ...         print term.title, '- class', term.value.__class__.__name__
+    ...         print(term.title, '- class', term.value.__class__.__name__)
     Tomcat - class Product
 
     >>> tomcat = product_set.getByName('tomcat')
@@ -1145,7 +1145,7 @@ is heterogeneous.
     >>> vocab = get_naked_vocab(None, "DistributionOrProductOrProjectGroup")
     >>> for term in vocab:
     ...     if 'buntu' in term.title:
-    ...         print term.title, '- class', term.value.__class__.__name__
+    ...         print(term.title, '- class', term.value.__class__.__name__)
     Kubuntu - class Distribution
     Ubuntu - class Distribution
     ubuntutest - class Distribution
@@ -1187,22 +1187,22 @@ Inactive projects and project groups are not available.
     >>> vocab = get_naked_vocab(None, "DistributionOrProductOrProjectGroup")
     >>> for term in vocab:
     ...     if 'Apache' in term.title:
-    ...         print term.title, '- class', term.value.__class__.__name__
+    ...         print(term.title, '- class', term.value.__class__.__name__)
     >>> for term in vocab:
     ...     if 'Tomcat' in term.title:
-    ...         print term.title, '- class', term.value.__class__.__name__
+    ...         print(term.title, '- class', term.value.__class__.__name__)
     >>> product_set.getByName('tomcat').active = True
     >>> getUtility(IProjectGroupSet).getByName('apache').active = True
     >>> flush_database_updates()
     >>> vocab = get_naked_vocab(None, "DistributionOrProductOrProjectGroup")
     >>> for term in vocab:
     ...     if 'Apache' in term.title:
-    ...         print term.title, '- class', term.value.__class__.__name__
+    ...         print(term.title, '- class', term.value.__class__.__name__)
     Apache - class ProjectGroup
 
     >>> for term in vocab:
     ...     if 'Tomcat' in term.title:
-    ...         print term.title, '- class', term.value.__class__.__name__
+    ...         print(term.title, '- class', term.value.__class__.__name__)
     Tomcat - class Product
 
 
@@ -1220,7 +1220,7 @@ _clauseTables).
     9
 
     >>> for term in featured_project_vocabulary:
-    ...     print term.token, term.title
+    ...     print(term.token, term.title)
     applets         Gnome Applets
     bazaar          Bazaar
     firefox         Mozilla Firefox

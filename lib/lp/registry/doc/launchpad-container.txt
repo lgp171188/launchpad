@@ -116,7 +116,7 @@ A branch is within its target.
 But it's not within anything other than its target.
 
     >>> junk = get_branch_namespace(sample_person).getByName('junk.dev')
-    >>> print junk.product
+    >>> print(junk.product)
     None
     >>> ILaunchpadContainer(junk).isWithin('/firefox')
     False

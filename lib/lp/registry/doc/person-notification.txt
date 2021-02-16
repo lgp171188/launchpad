@@ -25,7 +25,7 @@ subject.
     u'mark'
     >>> notification.date_created
     datetime.datetime(...
-    >>> print notification.date_emailed
+    >>> print(notification.date_emailed)
     None
 
 The notifications that need to be sent can be retrieved with

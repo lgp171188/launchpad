@@ -23,13 +23,13 @@ PersonRoles is registered as an unnamed adapter for IPersonRoles.
 
     >>> from lp.registry.interfaces.role import IPersonRoles
     >>> person = factory.makePerson()
-    >>> print IPersonRoles(person)
+    >>> print(IPersonRoles(person))
     <lp.registry.model.personroles.PersonRoles object at ...>
 
 The original Person object can be reached through the person attribute.
 
     >>> roles = IPersonRoles(person)
-    >>> print roles.person is person
+    >>> print(roles.person is person)
     True
 
 
@@ -42,10 +42,10 @@ this celebrity. The following tests are identical.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
-    >>> print person.inTeam(rosetta_experts)
+    >>> print(person.inTeam(rosetta_experts))
     False
 
-    >>> print roles.in_rosetta_experts
+    >>> print(roles.in_rosetta_experts)
     False
 
 The test will succeed once we make person a member of the team. Need to be an
@@ -54,7 +54,7 @@ admin to do that.
     >>> login("foo.bar@canonical.com")
     >>> rosetta_experts.addMember(person, rosetta_experts.teamowner)
     (True, ...Approved>)
-    >>> print roles.in_rosetta_experts
+    >>> print(roles.in_rosetta_experts)
     True
 
 To stay consistent, all attributes are prefixed with "in_" although the
@@ -62,14 +62,14 @@ attribute names of ILaunchpadCelebrities are not all lexically correct
 plurals, nor are all the attributes teams. This makes for odd sounding
 attribute names in IPersonRoles.
 
-    >>> print roles.in_admin
+    >>> print(roles.in_admin)
     False
-    >>> print roles.in_janitor
+    >>> print(roles.in_janitor)
     False
 
     >>> janitor = getUtility(ILaunchpadCelebrities).janitor
     >>> janitor_roles = IPersonRoles(janitor)
-    >>> print janitor_roles.in_janitor
+    >>> print(janitor_roles.in_janitor)
     True
 
 
@@ -81,10 +81,10 @@ be used to check for any non-celebrity team.
     >>> new_team = factory.makeTeam()
     >>> new_team.addMember(person, new_team.teamowner)
     (True, ...Approved>)
-    >>> print person.inTeam(new_team)
+    >>> print(person.inTeam(new_team))
     True
 
-    >>> print roles.inTeam(new_team)
+    >>> print(roles.inTeam(new_team))
     True
 
 
@@ -94,18 +94,18 @@ We can easily check for ownership and drivership. If an object
 provides IHasDrivers, its ancestors' drivers will be checked too.
 
     >>> product = factory.makeProduct(owner=person)
-    >>> print roles.isOwner(product)
+    >>> print(roles.isOwner(product))
     True
 
     >>> driver = factory.makePerson()
     >>> driver_roles = IPersonRoles(driver)
-    >>> print driver_roles.isDriver(product)
+    >>> print(driver_roles.isDriver(product))
     False
     >>> product.driver = driver
-    >>> print driver_roles.isDriver(product)
+    >>> print(driver_roles.isDriver(product))
     True
     >>> productseries = factory.makeProductSeries(product=product)
-    >>> print driver_roles.isDriver(productseries)
+    >>> print(driver_roles.isDriver(productseries))
     True
 
 
@@ -116,7 +116,7 @@ method isOneOf makes checking all of these a breeze.
 
     >>> spec = factory.makeSpecification()
     >>> spec.assignee = person
-    >>> print roles.isOwner(spec)
+    >>> print(roles.isOwner(spec))
     False
-    >>> print roles.isOneOf(spec, ['owner', 'approver', 'assignee'])
+    >>> print(roles.isOneOf(spec, ['owner', 'approver', 'assignee']))
     True
