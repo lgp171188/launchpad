@@ -24,7 +24,7 @@ after publishing, and they can be deleted, permanently.
     >>> tomcat = getUtility(IProductSet).getByName('tomcat')
     >>> derby = getUtility(IProductSet).getByName('derby')
     >>> mark = apache.owner
-    >>> print mark.name
+    >>> print(mark.name)
     mark
 
 
@@ -152,9 +152,9 @@ project group announcements, and vice versa.
     >>> transaction.commit()
 
     >>> for pillar in [tomcat, derby, apache, kubuntu]:
-    ...   print pillar.name
+    ...   print(pillar.name)
     ...   for announcement in pillar.getAnnouncements():
-    ...     print announcement.title
+    ...     print(announcement.title)
     tomcat
     Apache Tomcat JK 1.2.25 Web Server Connector released
     OS Summit Asia 2007 - New Event by Apache and Eclipse
@@ -170,7 +170,7 @@ project group announcements, and vice versa.
 
     >>> for announcement in apache.getAnnouncements(published_only=False):
     ...   if announcement.published is False:
-    ...     print announcement.title
+    ...     print(announcement.title)
     Last Call for OSSummit Asia CFP
     The future Tomcat will yawl all night without interruption
 
@@ -196,17 +196,17 @@ modify() method.
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ...
-    >>> print kubuntu_release.date_last_modified
+    >>> print(kubuntu_release.date_last_modified)
     None
     >>> kubuntu_release.modify(title='Foo!', summary='Foo',
     ...                        url='http://foo.com')
-    >>> print kubuntu_release.title
+    >>> print(kubuntu_release.title)
     Foo!
-    >>> print kubuntu_release.summary,
+    >>> print(kubuntu_release.summary)
     Foo
-    >>> print kubuntu_release.url
+    >>> print(kubuntu_release.url)
     http://foo.com
-    >>> print kubuntu_release.date_last_modified is not None
+    >>> print(kubuntu_release.date_last_modified is not None)
     True
 
 
@@ -220,9 +220,9 @@ updates the date_last_modified and sets the announcement.active flag to False
     >>> transaction_timestamp = get_transaction_timestamp(
     ...     Store.of(apache_asia))
 
-    >>> print apache_asia.date_last_modified
+    >>> print(apache_asia.date_last_modified)
     None
-    >>> print apache_asia.active
+    >>> print(apache_asia.active)
     True
     >>> apache_asia.retract()
     >>> flush_database_updates()
@@ -246,7 +246,7 @@ Announcements which have been retracted can be published again:
 You can also publish an Announcement by setting the publication date to the
 current date and time:
 
-    >>> print apache_oss.date_announced
+    >>> print(apache_oss.date_announced)
     None
     >>> apache_oss.setPublicationDate(NOW)
     >>> apache_oss.date_announced is not None
@@ -261,16 +261,16 @@ And you can reset the date of publication:
 
 You can move an announcement from one pillar to the next:
 
-    >>> print apache_asia.target.name
+    >>> print(apache_asia.target.name)
     apache
     >>> apache_asia.retarget(derby)
-    >>> print apache_asia.target.name
+    >>> print(apache_asia.target.name)
     derby
     >>> apache_asia.retarget(kubuntu)
-    >>> print apache_asia.target.name
+    >>> print(apache_asia.target.name)
     kubuntu
     >>> apache_asia.retarget(apache)
-    >>> print apache_asia.target.name
+    >>> print(apache_asia.target.name)
     apache
 
 
@@ -280,7 +280,7 @@ You can ask an announcement to delete itself permanently.
 
     >>> old_id = kubuntu_release.id
     >>> kubuntu_release.destroySelf()
-    >>> print kubuntu.getAnnouncement(old_id)
+    >>> print(kubuntu.getAnnouncement(old_id))
     None
 
 

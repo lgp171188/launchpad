@@ -51,7 +51,7 @@ A private team can be the assignee for a bug task.
 
     >>> bugtask = bug.default_bugtask
     >>> bugtask.transitionToAssignee(priv_team)
-    >>> print bugtask.assignee.name
+    >>> print(bugtask.assignee.name)
     private-team
 
 Branches
@@ -80,7 +80,7 @@ Private teams can subscribe to branches.
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
     ...     CodeReviewNotificationLevel.STATUS, team_owner)
-    >>> print subscription.person.name
+    >>> print(subscription.person.name)
     private-team
 
 
@@ -106,7 +106,7 @@ Private teams can subscribe to Git repositories.
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
     ...     CodeReviewNotificationLevel.STATUS, team_owner)
-    >>> print subscription.person.name
+    >>> print(subscription.person.name)
     private-team
 
 
@@ -304,13 +304,13 @@ Mixing public and private teams can create interesting situations.
     ...                               visibility=joined_type)
     ...     joiner = factory.makeTeam(owner=team_owner,
     ...                               visibility=joiner_type)
-    ...     print "%s <- %s: " % (joined_type, joiner_type),
+    ...     print("%s <- %s: " % (joined_type, joiner_type), end="")
     ...     try:
     ...         joined.addMember(joiner, reviewer=reviewer)
     ...     except PrivatePersonLinkageError:
-    ...         print "Not Allowed"
+    ...         print("Not Allowed")
     ...     else:
-    ...         print "Allowed"
+    ...         print("Allowed")
 
     >>> public = PersonVisibility.PUBLIC
     >>> private = PersonVisibility.PRIVATE
@@ -320,7 +320,7 @@ Mixing public and private teams can create interesting situations.
     >>> for joined in visibility_list:
     ...     for joiner in visibility_list:
     ...         join_team(joined, joiner)
-    ...     print "---"
+    ...     print("---")
     Public <- Public:  Allowed
     Public <- Private: Allowed
     ---

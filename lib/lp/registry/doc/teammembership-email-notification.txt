@@ -780,10 +780,10 @@ notification is sent to all team admins.
     >>> karl_on_mirroradmins = membershipset.getByPersonAndTeam(
     ...     karl, mirror_admins)
     >>> tomorrow = datetime.now(pytz.timezone('UTC')) + timedelta(days=1)
-    >>> print karl_on_mirroradmins.status.title
+    >>> print(karl_on_mirroradmins.status.title)
     Approved
 
-    >>> print karl_on_mirroradmins.dateexpires
+    >>> print(karl_on_mirroradmins.dateexpires)
     None
 
     >>> ignored = login_person(mirror_admins.teamowner)
@@ -976,7 +976,7 @@ notifications sent) by Launchpad Administrators.
     >>> hwdb_admins = personset.getByName('hwdb-team')
     >>> dumper_hwdb_membership = membershipset.getByPersonAndTeam(dumper,
     ...     hwdb_admins)
-    >>> print dumper_hwdb_membership.status.title
+    >>> print(dumper_hwdb_membership.status.title)
     Approved
 
     >>> ignored = login_person(admin_person)
@@ -986,7 +986,7 @@ notifications sent) by Launchpad Administrators.
     >>> len(stub.test_emails)
     0
 
-    >>> print dumper_hwdb_membership.status.title
+    >>> print(dumper_hwdb_membership.status.title)
     Deactivated
 
 People who are not Launchpad Administrators, may not change other's
@@ -1000,10 +1000,10 @@ membership statues silently.
     ...     kamion, ubuntu_team)
     >>> stevea_ubuntu_team_membership = membershipset.getByPersonAndTeam(
     ...     stevea, ubuntu_team)
-    >>> print kamion_ubuntu_team_membership.status.title
+    >>> print(kamion_ubuntu_team_membership.status.title)
     Administrator
 
-    >>> print stevea_ubuntu_team_membership.status.title
+    >>> print(stevea_ubuntu_team_membership.status.title)
     Approved
 
     >>> setStatus(stevea_ubuntu_team_membership,
@@ -1012,7 +1012,7 @@ membership statues silently.
     Traceback (most recent call last):
     lp.registry.errors.UserCannotChangeMembershipSilently: ...
 
-    >>> print stevea_ubuntu_team_membership.status.title
+    >>> print(stevea_ubuntu_team_membership.status.title)
     Approved
 
 

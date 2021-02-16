@@ -193,8 +193,8 @@ Distributions.
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'mozilla', limit=3):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     ProjectGroup: The Mozilla Project (mozilla)
     Product: Mozilla Firefox (firefox)
     Product: Mozilla Thunderbird (thunderbird)
@@ -205,8 +205,8 @@ Distributions.
     <Product ...>
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'ubuntu', limit=6):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     Distribution: Ubuntu (ubuntu)
     Product: Ubuntu-sekrit (ubuntu-sekrit)
     Distribution: ubuntutest (ubuntutest)
@@ -218,8 +218,8 @@ We can search by any of the pillar's aliases too.
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'iceweasel', limit=5):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     Product: Mozilla Firefox (firefox)
 
 Note that inaccessible private or inactive products and projects won't
@@ -231,15 +231,15 @@ be included in the results.
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'mozilla', limit=3):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     ProjectGroup: The Mozilla Project (mozilla)
     Product: Mozilla Thunderbird (thunderbird)
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'ubuntu', limit=6):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     Distribution: Ubuntu (ubuntu)
     Distribution: ubuntutest (ubuntutest)
     Product: Evolution (evolution)

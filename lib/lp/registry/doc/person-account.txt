@@ -25,7 +25,7 @@ process. Matsubara's account was created during a code import.
     False
     >>> matsubara.account_status
     <DBItem AccountStatus.NOACCOUNT, ...>
-    >>> print matsubara.preferredemail
+    >>> print(matsubara.preferredemail)
     None
 
 The account can only be activated by the user who is claiming
@@ -163,7 +163,7 @@ adds a '-deactivatedaccount' suffix to the person's name...
     >>> [email.email for email in foobar.validatedemails]
     []
 
-    >>> print getattr(foobar.preferredemail, 'email', None)
+    >>> print(getattr(foobar.preferredemail, 'email', None))
     None
 
 ...no signed codes of conduct...

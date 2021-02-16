@@ -49,7 +49,7 @@ product/project group/distribution grouped by categories.
     >>> for category in sorted_categories:
     ...     people = [(person.name, karmavalue) 
     ...               for person, karmavalue in contributors[category]]
-    ...     print "%s: %s" % (category.title, people)
+    ...     print("%s: %s" % (category.title, people))
     Bug Management: [(u'name16', 26), (u'name12', 13)]
     Specification Tracking: [(u'mark', 37)]
 
