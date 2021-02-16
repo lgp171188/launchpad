@@ -121,14 +121,14 @@ complete description of the tree you've created.
   >>> print(tree.describe())
   tree(
       branch(Snack => tree(
-          branch(u'Mars Bar', Snickers => u'Bad')
-          branch(Apple, Banana => u'Good')
+          branch('Mars Bar', Snickers => 'Bad')
+          branch(Apple, Banana => 'Good')
           ))
       branch(Lunch, Dinner => tree(
-          branch(u'Fish and chips', u"Penne all'arrabbiata" => u'Nice')
-          branch(u'Raw liver' => u'Not so nice')
+          branch('Fish and chips', "Penne all'arrabbiata" => 'Nice')
+          branch('Raw liver' => 'Not so nice')
           ))
-      branch(* => u'Make up your mind!')
+      branch(* => 'Make up your mind!')
       )
 
 We can also see that the result of constructing a new lookup using an
@@ -136,16 +136,16 @@ existing one is the same as if we had constructed it independently.
 
   >>> print(breakfast_tree.describe())
   tree(
-      branch(Breakfast => u'Corn flakes')
+      branch(Breakfast => 'Corn flakes')
       branch(Snack => tree(
-          branch(u'Mars Bar', Snickers => u'Bad')
-          branch(Apple, Banana => u'Good')
+          branch('Mars Bar', Snickers => 'Bad')
+          branch(Apple, Banana => 'Good')
           ))
       branch(Lunch, Dinner => tree(
-          branch(u'Fish and chips', u"Penne all'arrabbiata" => u'Nice')
-          branch(u'Raw liver' => u'Not so nice')
+          branch('Fish and chips', "Penne all'arrabbiata" => 'Nice')
+          branch('Raw liver' => 'Not so nice')
           ))
-      branch(* => u'Make up your mind!')
+      branch(* => 'Make up your mind!')
       )
 
 Simple keys are shown without quotes, to aid readability, and default
@@ -173,10 +173,10 @@ branches with keys are candidates for being discarded.
   ...     )
   >>> print(pruned_tree.describe())
   tree(
-      branch(Snack => u'Crisps')
-      branch(Lunch => u'Bread')
-      branch(Dinner => u'Soup')
-      branch(* => u'Eat more fruit and veg')
+      branch(Snack => 'Crisps')
+      branch(Lunch => 'Bread')
+      branch(Dinner => 'Soup')
+      branch(* => 'Eat more fruit and veg')
       )
 
 
@@ -196,10 +196,9 @@ leaves.
   >>> for elems in tree.flatten():
   ...     path, result = elems[:-1], elems[-1]
   ...     print(' => '.join(
-  ...         [repr(node.keys) for node in path] + [repr(result)]))
-  (u'Snack',) => (u'Mars Bar', u'Snickers') => u'Bad'
-  (u'Snack',) => (u'Apple', u'Banana') => u'Good'
-  (u'Lunch', u'Dinner') =>
-      (u'Fish and chips', u"Penne all'arrabbiata") => u'Nice'
-  (u'Lunch', u'Dinner') => (u'Raw liver',) => u'Not so nice'
-  () => u'Make up your mind!'
+  ...         [pretty(node.keys) for node in path] + [pretty(result)]))
+  ('Snack',) => ('Mars Bar', 'Snickers') => 'Bad'
+  ('Snack',) => ('Apple', 'Banana') => 'Good'
+  ('Lunch', 'Dinner') => ('Fish and chips', "Penne all'arrabbiata") => 'Nice'
+  ('Lunch', 'Dinner') => ('Raw liver',) => 'Not so nice'
+  () => 'Make up your mind!'
