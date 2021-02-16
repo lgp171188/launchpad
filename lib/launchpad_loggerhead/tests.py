@@ -34,7 +34,7 @@ SESSION_VAR = 'lh.session'
 
 # See lib/launchpad_loggerhead/wsgi.py for the production mechanism for
 # getting the secret.
-SECRET = 'secret'
+SECRET = b'secret'
 
 
 def session_scribbler(app, test):

@@ -73,10 +73,9 @@ class TestDscFile(TestCase):
 
     def testGoodDebianCopyright(self):
         """Test that a proper copyright file will be accepted"""
-        copyright = "copyright for dummies"
-        file = open(self.copyright_path, "w")
-        file.write(copyright)
-        file.close()
+        copyright = b"copyright for dummies"
+        with open(self.copyright_path, "wb") as f:
+            f.write(copyright)
 
         self.assertEqual(
             copyright, find_copyright(self.tmpdir, DevNullLogger()))
@@ -95,10 +94,9 @@ class TestDscFile(TestCase):
 
     def testGoodDebianChangelog(self):
         """Test that a proper changelog file will be accepted"""
-        changelog = "changelog for dummies"
-        file = open(self.changelog_path, "w")
-        file.write(changelog)
-        file.close()
+        changelog = b"changelog for dummies"
+        with open(self.changelog_path, "wb") as f:
+            f.write(changelog)
 
         self.assertEqual(
             changelog, find_changelog(self.tmpdir, DevNullLogger()))

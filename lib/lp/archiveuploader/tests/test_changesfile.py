@@ -179,11 +179,8 @@ class ChangesFileTests(TestCase):
     def createChangesFile(self, filename, changes):
         tempdir = self.makeTemporaryDirectory()
         path = os.path.join(tempdir, filename)
-        changes_fd = open(path, "w")
-        try:
+        with open(path, "wb") as changes_fd:
             changes.dump(changes_fd)
-        finally:
-            changes_fd.close()
         changesfile = ChangesFile(path, self.policy, self.logger)
         for error in changesfile.parseChanges():
             raise error

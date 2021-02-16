@@ -37,7 +37,8 @@ We can upload branding images with PUT.
     ...     image_file = os.path.join(
     ...         os.path.dirname(canonical.launchpad.__file__),
     ...         'images', filename)
-    ...     return open(image_file).read()
+    ...     with open(image_file, 'rb') as f:
+    ...         return f.read()
 
     >>> print(webservice.put(project['icon_link'], 'image/png',
     ...                      load_image('team.png')))

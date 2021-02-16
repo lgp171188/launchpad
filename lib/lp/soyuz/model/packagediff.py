@@ -91,7 +91,7 @@ def perform_deb_diff(tmp_dir, out_filename, from_files, to_files):
     full_path = os.path.join(tmp_dir, out_filename)
     out_file = None
     try:
-        out_file = open(full_path, 'w')
+        out_file = open(full_path, 'wb')
         process = subprocess.Popen(
             args, stdout=out_file, stderr=subprocess.PIPE,
             preexec_fn=partial(
@@ -115,7 +115,7 @@ def download_file(destination_path, libraryfile):
     :type libraryfile: ``LibraryFileAlias``
     """
     libraryfile.open()
-    destination_file = open(destination_path, 'w')
+    destination_file = open(destination_path, 'wb')
     copy_and_close(libraryfile, destination_file)
 
 
@@ -251,7 +251,7 @@ class PackageDiff(SQLBase):
                 return
 
             # Compress the generated diff.
-            out_file = open(os.path.join(tmp_dir, result_filename))
+            out_file = open(os.path.join(tmp_dir, result_filename), 'rb')
             gzip_result_filename = result_filename + '.gz'
             gzip_file_path = os.path.join(tmp_dir, gzip_result_filename)
             gzip_file = gzip.GzipFile(gzip_file_path, mode='wb')
@@ -262,7 +262,7 @@ class PackageDiff(SQLBase):
 
             # Upload the compressed diff to librarian and update
             # the package diff request.
-            gzip_file = open(gzip_file_path)
+            gzip_file = open(gzip_file_path, 'rb')
             try:
                 librarian_set = getUtility(ILibraryFileAliasSet)
                 self.diff_content = librarian_set.create(

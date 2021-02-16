@@ -726,12 +726,13 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         # SourcePackageFiles should contain also the DSC
         source_files = self.files + [self]
         for uploaded_file in source_files:
-            library_file = self.librarian.create(
-                uploaded_file.filename,
-                uploaded_file.size,
-                open(uploaded_file.filepath, "rb"),
-                uploaded_file.content_type,
-                restricted=self.policy.archive.private)
+            with open(uploaded_file.filepath, "rb") as uploaded_file_obj:
+                library_file = self.librarian.create(
+                    uploaded_file.filename,
+                    uploaded_file.size,
+                    uploaded_file_obj,
+                    uploaded_file.content_type,
+                    restricted=self.policy.archive.private)
             release.addFile(library_file)
 
         return release
@@ -805,7 +806,7 @@ def find_copyright(source_dir, logger):
         raise UploadWarning("No copyright file found.")
 
     logger.debug("Copying copyright contents.")
-    with open(copyright_file) as f:
+    with open(copyright_file, "rb") as f:
         return f.read().strip()
 
 

@@ -290,7 +290,7 @@ The auxiliary function below will facilitate the viewing of diff results.
     ...     jail = tempfile.mkdtemp()
     ...     local = os.path.abspath('')
     ...     jail = tempfile.mkdtemp()
-    ...     fhandle = open(os.path.join(jail, "the.diff.gz"), 'w')
+    ...     fhandle = open(os.path.join(jail, "the.diff.gz"), 'wb')
     ...     copy_and_close(lfa, fhandle)
     ...     os.chdir(jail)
     ...     p = subprocess.Popen(
