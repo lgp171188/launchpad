@@ -593,6 +593,9 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
             environ['PATH_INFO'] = pi.encode('utf-8')
         super(BasicLaunchpadRequest, self).__init__(
             body_instream, environ, response)
+        # Now replace PATH_INFO with the version decoded by sane_environment.
+        if 'PATH_INFO' in self._environ:
+            environ['PATH_INFO'] = self._environ['PATH_INFO']
 
         # Our response always vary based on authentication.
         self.response.setHeader('Vary', 'Cookie, Authorization')
