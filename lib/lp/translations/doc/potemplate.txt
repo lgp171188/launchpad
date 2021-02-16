@@ -290,11 +290,11 @@ export()
 
 Templates can be exported to its native format.
 
-    >>> for line in potemplate.export().split('\n'):
-    ...        if 'X-Launchpad-Export-Date' in line:
-    ...            # Avoid a time bomb in our tests and ignore this field.
-    ...            continue
-    ...        print(line)
+    >>> for line in potemplate.export().decode('ASCII').split('\n'):
+    ...     if 'X-Launchpad-Export-Date' in line:
+    ...         # Avoid a time bomb in our tests and ignore this field.
+    ...         continue
+    ...     print(line)
     #, fuzzy
     msgid ""
     msgstr ""
