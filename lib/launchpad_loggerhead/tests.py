@@ -50,7 +50,7 @@ class SimpleLogInRootApp(RootApp):
     def _complete_login(self, environ, start_response):
         environ[SESSION_VAR]['user'] = 'bob'
         start_response('200 OK', [('Content-type', 'text/plain')])
-        return ['\n']
+        return [b'\n']
 
     def __call__(self, environ, start_response):
         codebrowse_netloc = urlsplit(
@@ -60,7 +60,7 @@ class SimpleLogInRootApp(RootApp):
         else:
             # Return a fake response.
             start_response('200 OK', [('Content-type', 'text/plain')])
-            return ['This is a dummy destination.\n']
+            return [b'This is a dummy destination.\n']
 
 
 class TestLogout(TestCase):
@@ -122,7 +122,7 @@ class TestLogout(TestCase):
         # Now, though, we are redirected to the ``next_to`` destination.
         self.assertEqual(self.browser.url, dummy_root + '+logout')
         self.assertEqual(self.browser.contents,
-                         'This is a dummy destination.\n')
+                         b'This is a dummy destination.\n')
 
 
 class TestWSGI(TestCaseWithFactory):

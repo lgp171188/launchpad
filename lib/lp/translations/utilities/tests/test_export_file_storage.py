@@ -54,7 +54,7 @@ class ExportFileStorageTestCase(unittest.TestCase):
         outfile = storage.export()
         self.assertEqual(outfile.path, '/tmp/a/test/file.po')
         self.assertEqual(outfile.file_extension, 'po')
-        self.assertEqual(outfile.read(), 'test file')
+        self.assertEqual(outfile.read(), b'test file')
 
     def testTarball(self):
         """Test export of tarball."""

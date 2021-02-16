@@ -351,4 +351,4 @@ class TestDuplicateProductReleases(TestCaseWithFactory):
         self.assertEqual([], self.oopses)
         self.assertEqual(400, e.response.status)
         self.assertIn(
-            'A milestone can only have one ProductRelease.', e.content)
+            b'A milestone can only have one ProductRelease.', e.content)

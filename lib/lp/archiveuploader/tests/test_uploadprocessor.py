@@ -403,15 +403,15 @@ class TestUploadProcessorBase(TestCaseWithFactory):
             bar.first().sourcepackagerelease)
         changes_file = changes_lfa.read()
         self.assertTrue(
-            "Format: " in changes_file, "Does not look like a changes file")
+            b"Format: " in changes_file, "Does not look like a changes file")
         self.assertTrue(
-            "-----BEGIN PGP SIGNED MESSAGE-----" not in changes_file,
+            b"-----BEGIN PGP SIGNED MESSAGE-----" not in changes_file,
             "Unexpected PGP header found")
         self.assertTrue(
-            "-----BEGIN PGP SIGNATURE-----" not in changes_file,
+            b"-----BEGIN PGP SIGNATURE-----" not in changes_file,
             "Unexpected start of PGP signature found")
         self.assertTrue(
-            "-----END PGP SIGNATURE-----" not in changes_file,
+            b"-----END PGP SIGNATURE-----" not in changes_file,
             "Unexpected end of PGP signature found")
 
 
@@ -2278,10 +2278,9 @@ class TestUploadHandler(TestUploadProcessorBase):
         self.assertEqual(builder, build.builder)
         self.assertIsNot(None, build.duration)
         log_contents = build.upload_log.read()
-        self.assertTrue('ERROR Exception while processing upload '
-            in log_contents)
-        self.assertFalse('DEBUG Moving upload directory '
-            in log_contents)
+        self.assertIn(
+            b'ERROR Exception while processing upload ', log_contents)
+        self.assertNotIn(b'DEBUG Moving upload directory ', log_contents)
 
     def testBinaryPackageBuilds(self):
         # Properly uploaded binaries should result in the
