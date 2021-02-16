@@ -75,6 +75,7 @@ from fixtures import (
     MonkeyPatch,
     )
 import psycopg2
+import six
 from six.moves.urllib.error import (
     HTTPError,
     URLError,
@@ -1629,7 +1630,8 @@ class AccessLoggingMiddleware:
         # here is gratuitously annoying.  This is similar to parts of
         # wsgiref.util.request_uri, but with slightly more lenient quoting.
         url = quote(
-            environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO', ''),
+            six.ensure_str(
+                environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO', '')),
             safe='/+')
         if environ.get('QUERY_STRING'):
             url += '?' + environ['QUERY_STRING']
