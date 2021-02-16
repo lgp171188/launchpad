@@ -418,5 +418,6 @@ Launchpad form macros do not generate table rows for the GhostWidget.
     >>> request.setPrincipal(factory.makePerson())
     >>> view = GhostWidgetView(firefox, request)
     >>> view.initialize()
-    >>> extract_text(find_tag_by_id(view.render(), 'launchpad-form-widgets'))
-    u''
+    >>> print(extract_text(find_tag_by_id(
+    ...     view.render(), 'launchpad-form-widgets')))
+    <BLANKLINE>

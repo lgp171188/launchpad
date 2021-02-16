@@ -96,8 +96,9 @@ The context is an IAccount, so the is_viewing_person property is False.
 The view displays non-editable user information too so that the admin does
 not need to look in the db.
 
-    >>> view.email_addresses
-    [u'zaphod@example.place']
+    >>> for email in view.email_addresses:
+    ...     print(email)
+    zaphod@example.place
 
 The admin can change the user's account information.
 
@@ -128,9 +129,8 @@ an account is suspended, the preferred email address is disabled.
     >>> transaction.commit()
     >>> user.account_status
     <DBItem AccountStatus.SUSPENDED, ...>
-    >>> user.account_status_history
-    u'... name16: Active -> Suspended:
-    Wanted by the galactic police.\n'
+    >>> six.ensure_str(user.account_status_history)
+    '... name16: Active -> Suspended: Wanted by the galactic police.\n'
     >>> print(user.preferredemail)
     None
 
@@ -161,8 +161,8 @@ user must log in to restore the email addresses using the reactivate step.
     []
     >>> user.account_status
     <DBItem AccountStatus.DEACTIVATED, ...>
-    >>> user.account_status_history
-    u"... name16: Active -> Suspended: Wanted by the galactic police.\n...
+    >>> six.ensure_str(user.account_status_history)
+    "... name16: Active -> Suspended: Wanted by the galactic police.\n...
     name16: Suspended -> Deactivated: Zaphod's a hoopy frood.\n"
     >>> print(user.preferredemail)
     None

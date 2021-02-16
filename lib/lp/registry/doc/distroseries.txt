@@ -43,8 +43,8 @@ To get one specific release by name, use queryByName:
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
     >>> warty = distroseriesset.queryByName(ubuntu, "warty")
-    >>> warty.name
-    u'warty'
+    >>> print(warty.name)
+    warty
     >>> print(distroseriesset.queryByName(ubuntu, "foobar"))
     None
 
@@ -84,8 +84,9 @@ To search the set of IDistroSeriess, use IDistroSeriesSet.search:
 
     >>> ubuntu_releases = distroseriesset.search(
     ...     distribution=ubuntu, isreleased=True, orderBy="-datereleased")
-    >>> [release.name for release in ubuntu_releases]
-    [u'warty']
+    >>> for release in ubuntu_releases:
+    ...     print(release.name)
+    warty
 
     >>> all_ubuntu_releases = distroseriesset.search(distribution=ubuntu)
     >>> all_ubuntu_releases.count()
@@ -399,9 +400,13 @@ Packages can be linked to upstream productseries in specific
 distribution releases. IDistroSeries offers a way to query translatable
 packages that are linked to upstream productseries.
 
+    >>> from operator import attrgetter
     >>> unlinked_translatables = hoary.getUnlinkedTranslatableSourcePackages()
-    >>> sorted(translatable.name for translatable in unlinked_translatables)
-    [u'mozilla', u'pmount']
+    >>> for translatable in sorted(
+    ...         unlinked_translatables, key=attrgetter('name')):
+    ...     print(translatable.name)
+    mozilla
+    pmount
 
 The links to upstream product series can be verified using the
 packagings property:
@@ -531,14 +536,14 @@ publication in question:
     >>> warty_pub_source = warty.main_archive.getPublishedSources(
     ...     distroseries=warty, name=u'mozilla-firefox',
     ...     status=PackagePublishingStatus.PUBLISHED).one()
-    >>> warty_pub_source.sourcepackagerelease.name
-    u'mozilla-firefox'
-    >>> warty_pub_source.sourcepackagerelease.version
-    u'0.9'
-    >>> warty_pub_source.component.name
-    u'main'
-    >>> warty_pub_source.section.name
-    u'web'
+    >>> print(warty_pub_source.sourcepackagerelease.name)
+    mozilla-firefox
+    >>> print(warty_pub_source.sourcepackagerelease.version)
+    0.9
+    >>> print(warty_pub_source.component.name)
+    main
+    >>> print(warty_pub_source.section.name)
+    web
 
     >>> warty_mozilla_pub_binaries = warty_pub_source.getPublishedBinaries()
     >>> warty_mozilla_pub_binaries.count()
@@ -551,14 +556,14 @@ publication in question:
     >>> verifyObject(IBinaryPackagePublishingHistory, warty_mozilla_pub_bin)
     True
 
-    >>> warty_mozilla_pub_bin.binarypackagerelease.name
-    u'mozilla-firefox'
-    >>> warty_mozilla_pub_bin.binarypackagerelease.version
-    u'0.9'
-    >>> warty_mozilla_pub_bin.component.name
-    u'main'
-    >>> warty_mozilla_pub_bin.section.name
-    u'base'
+    >>> print(warty_mozilla_pub_bin.binarypackagerelease.name)
+    mozilla-firefox
+    >>> print(warty_mozilla_pub_bin.binarypackagerelease.version)
+    0.9
+    >>> print(warty_mozilla_pub_bin.component.name)
+    main
+    >>> print(warty_mozilla_pub_bin.section.name)
+    base
 
 DistroSeries.getBinaryPackagePublishing will return
 BinaryPackagePublishingHistory objects for the DistroSeries:
@@ -810,10 +815,10 @@ We test these rules below.
 First, we look at a release where both the distribution and release have
 drivers. Kubuntu should be a good example.
 
-    >>> kubuntu.driver.name
-    u'jblack'
-    >>> krunch.driver.name
-    u'edgar'
+    >>> print(kubuntu.driver.name)
+    jblack
+    >>> print(krunch.driver.name)
+    edgar
     >>> for d in krunch.drivers:
     ...     print(d.name)
     edgar

@@ -198,8 +198,8 @@ A merged person gets a -merged suffix on its name.
     >>> results = store.execute(
     ...     "SELECT p1.name FROM Person as p1, Person as p2 "
     ...     "WHERE p1.id = p2.teamowner and p2.name = 'ubuntu-team'")
-    >>> results.get_one()[0]
-    u'name12'
+    >>> print(results.get_one()[0])
+    name12
 
 The person that has been merged is flagged. We can use this to eliminate
 merged persons from lists etc.
@@ -389,14 +389,16 @@ hand, are carried over just like when merging people.
 
     # test_team has a superteam, one active member and a poll.
 
-    >>> [team.name for team in test_team.super_teams]
-    [u'launchpad']
+    >>> for team in test_team.super_teams:
+    ...     print(team.name)
+    launchpad
 
-    >>> test_team.teamowner.name
-    u'name12'
+    >>> print(test_team.teamowner.name)
+    name12
 
-    >>> [member.name for member in test_team.allmembers]
-    [u'name12']
+    >>> for member in test_team.allmembers:
+    ...     print(member.name)
+    name12
 
     >>> list(IPollSubset(test_team).getAll())
     [<lp.registry.model.poll.Poll object at ...]
@@ -407,11 +409,13 @@ hand, are carried over just like when merging people.
     >>> [team.name for team in landscape.super_teams]
     []
 
-    >>> landscape.teamowner.name
-    u'name12'
+    >>> print(landscape.teamowner.name)
+    name12
 
-    >>> [member.name for member in landscape.allmembers]
-    [u'salgado', u'name12']
+    >>> for member in landscape.allmembers:
+    ...     print(member.name)
+    salgado
+    name12
 
     >>> list(IPollSubset(landscape).getAll())
     []

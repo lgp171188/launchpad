@@ -38,21 +38,22 @@ Or, to grab one by name, use either getByName() or __getitem__().  They both
 can be used to look up distributions by their aliases too.
 
     >>> gentoo = distroset.getByName("gentoo")
-    >>> gentoo.name
-    u'gentoo'
-    >>> distroset["gentoo"].name
-    u'gentoo'
+    >>> print(gentoo.name)
+    gentoo
+    >>> print(distroset["gentoo"].name)
+    gentoo
 
     # Need to login as an LP admin to set a project's aliases.
     >>> login('foo.bar@canonical.com')
     >>> gentoo.setAliases(['jackass'])
-    >>> gentoo.aliases
-    [u'jackass']
+    >>> for alias in gentoo.aliases:
+    ...     print(alias)
+    jackass
     >>> login(ANONYMOUS)
-    >>> distroset['jackass'].name
-    u'gentoo'
-    >>> distroset.getByName('jackass').name
-    u'gentoo'
+    >>> print(distroset['jackass'].name)
+    gentoo
+    >>> print(distroset.getByName('jackass').name)
+    gentoo
 
 Let's make sure a distribution object properly implements its interfaces.
 
@@ -87,8 +88,8 @@ have a SourcePackageName object for it.
     ...                                           SourcePackageRelease)
     >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
     ...     sourcepackagenameID=evo.id, version='1.0')
-    >>> sourcepackagerelease.name
-    u'evolution'
+    >>> print(sourcepackagerelease.name)
+    evolution
 
     >>> evo_ubuntu_rel = ubuntu.getSourcePackageRelease(
     ...                    sourcepackagerelease)
@@ -262,8 +263,9 @@ expected results:
 
     >>> results = ubuntu.searchBinaryPackages(
     ...     u"mozilla-firefox", exact_match=True)
-    >>> print([result.name for result in results])
-    [u'mozilla-firefox']
+    >>> for result in results:
+    ...     print(result.name)
+    mozilla-firefox
 
 An exact match search with no matches on any package name returns
 an empty result set:
@@ -278,10 +280,12 @@ Loosening to substring matches gives another result:
     >>> print(results[0])
     <...DistributionSourcePackageCache instance ...
 
-    >>> print([result.name for result in results])
-    [u'mozilla-firefox']
-    >>> print([result.binpkgnames for result in results])
-    [u'mozilla-firefox mozilla-firefox-data']
+    >>> for result in results:
+    ...     print(result.name)
+    mozilla-firefox
+    >>> for result in results:
+    ...     print(result.binpkgnames)
+    mozilla-firefox mozilla-firefox-data
 
 The results of searchBinaryPackages() are simply ordered alphabetically
 for the moment until we have a better FTI rank to order with.
@@ -579,8 +583,10 @@ We can use IDistribution.milestones to get all milestones associated with any
 series of a distribution.
 
     >>> from datetime import datetime
-    >>> [milestone.name for milestone in debian.milestones]
-    [u'3.1', u'3.1-rc1']
+    >>> for milestone in debian.milestones:
+    ...     print(milestone.name)
+    3.1
+    3.1-rc1
 
     >>> woody = debian['woody']
 
@@ -599,22 +605,29 @@ Milestones for distros can only be created by distro owners or admins.
 
 They're ordered by dateexpected.
 
-    >>> [(milestone.name, milestone.dateexpected.strftime('%Y-%m-%d'))
-    ...  for milestone in debian.milestones]
-    [(u'3.1', '2056-05-16'), (u'3.1-rc1', '2056-02-16'),
-     (u'woody-rc1', '2028-10-01')]
+    >>> for milestone in debian.milestones:
+    ...     print('%s: %s' % (
+    ...         milestone.name, milestone.dateexpected.strftime('%Y-%m-%d')))
+    3.1: 2056-05-16
+    3.1-rc1: 2056-02-16
+    woody-rc1: 2028-10-01
 
 Only milestones which have visible=True are returned by the .milestones
 property.
 
     >>> debian_milestone.active = False
-    >>> [milestone.name for milestone in debian.milestones]
-    [u'3.1', u'3.1-rc1']
+    >>> for milestone in debian.milestones:
+    ...     print(milestone.name)
+    3.1
+    3.1-rc1
 
 To get all milestones of a given distro we have the .all_milestones property.
 
-    >>> [milestone.name for milestone in debian.all_milestones]
-    [u'3.1', u'3.1-rc1', u'woody-rc1']
+    >>> for milestone in debian.all_milestones:
+    ...     print(milestone.name)
+    3.1
+    3.1-rc1
+    woody-rc1
 
 
 Archives

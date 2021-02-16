@@ -95,12 +95,12 @@ show the 5 most active projects.
     >>> foobar = getUtility(IPersonSet).getByName('name16')
     >>> for contrib in foobar.getProjectsAndCategoriesContributedTo(None):
     ...     categories = sorted(cat.name for cat in contrib['categories'])
-    ...     print(contrib['project'].title, categories)
-    Evolution [u'bugs', u'translations']
-    Ubuntu [u'bugs']
-    gnomebaker [u'bugs']
-    Mozilla Thunderbird [u'bugs']
-    Mozilla Firefox [u'bugs']
+    ...     print(contrib['project'].title, pretty(categories))
+    Evolution ['bugs', 'translations']
+    Ubuntu ['bugs']
+    gnomebaker ['bugs']
+    Mozilla Thunderbird ['bugs']
+    Mozilla Firefox ['bugs']
 
 
 Karma Updater

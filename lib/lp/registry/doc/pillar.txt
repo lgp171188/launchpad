@@ -13,22 +13,22 @@ share their name namespace are Product, ProjectGroup and Distribution.
 
     >>> 'ubuntu' in pillar_set
     True
-    >>> pillar_set['ubuntu'].name
-    u'ubuntu'
+    >>> print(pillar_set['ubuntu'].name)
+    ubuntu
     >>> IDistribution.providedBy(pillar_set['ubuntu'])
     True
 
     >>> 'tomcat' in pillar_set
     True
-    >>> pillar_set['tomcat'].name
-    u'tomcat'
+    >>> print(pillar_set['tomcat'].name)
+    tomcat
     >>> IProduct.providedBy(pillar_set['tomcat'])
     True
 
     >>> 'apache' in pillar_set
     True
-    >>> pillar_set['apache'].name
-    u'apache'
+    >>> print(pillar_set['apache'].name)
+    apache
     >>> IProjectGroup.providedBy(pillar_set['apache'])
     True
 
@@ -88,16 +88,19 @@ under different names.
     []
 
     >>> firefox.setAliases(['iceweasel', 'snowchicken'])
-    >>> firefox.aliases
-    [u'iceweasel', u'snowchicken']
+    >>> for alias in firefox.aliases:
+    ...     print(alias)
+    iceweasel
+    snowchicken
 
 Every time setAliases() is called it should be given the full set of aliases
 for that pillar. If one of the pillar's existing aliases is not in the list
 given to setAliases(), it is removed.
 
     >>> firefox.setAliases(['iceweasel'])
-    >>> firefox.aliases
-    [u'iceweasel']
+    >>> for alias in firefox.aliases:
+    ...     print(alias)
+    iceweasel
 
 Just like names, aliases are unique.
 
