@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `Collection`."""
@@ -43,6 +43,7 @@ def make_table(range_start, range_end, table_name=None):
 
         def __init__(self, id):
             self.id = id
+            IStore(self.__class__).add(self)
 
         def __eq__(self, other):
             return self.id == other.id
