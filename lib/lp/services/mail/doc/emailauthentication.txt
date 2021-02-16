@@ -160,9 +160,8 @@ hack can be removed.
      boundary="--------------------EuxKj2iCbKjpUGkD"
     ...
 
-    >>> print(msg.get_payload(i=0).as_string()) #doctest: -NORMALIZE_WHITESPACE
-    Content-Type: multipart/mixed; boundary="--------------------EuxKj2iCbKjpUGkD"
-    ...
+    >>> print(msg.get_payload(i=0)['Content-Type'])
+    multipart/mixed; boundary="--------------------EuxKj2iCbKjpUGkD"
 
     >>> principal = authenticateEmail(msg, accept_any_timestamp)
     >>> print(IPerson(principal).displayname)
