@@ -401,7 +401,7 @@ class TestHandleStatusMixin:
         # directory will not be collected.
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned a file named u'/tmp/myfile.py'."):
+                "Build returned a file named '/tmp/myfile.py'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, 'OK',
@@ -413,7 +413,7 @@ class TestHandleStatusMixin:
         # the upload directory will not be collected.
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned a file named u'../myfile.py'."):
+                "Build returned a file named '../myfile.py'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, 'OK',
@@ -474,7 +474,7 @@ class TestHandleStatusMixin:
             self.build.updateStatus(BuildStatus.BUILDING)
             with ExpectedException(
                     BuildDaemonError,
-                    "Build returned unexpected status: u'ABORTED'"):
+                    "Build returned unexpected status: %r" % 'ABORTED'):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "ABORTED", {})
 
@@ -502,7 +502,7 @@ class TestHandleStatusMixin:
     def test_givenback_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'GIVENBACK'"):
+                "Build returned unexpected status: %r" % 'GIVENBACK'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "GIVENBACK", {})
@@ -511,7 +511,7 @@ class TestHandleStatusMixin:
     def test_builderfail_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'BUILDERFAIL'"):
+                "Build returned unexpected status: %r" % 'BUILDERFAIL'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "BUILDERFAIL", {})
@@ -520,7 +520,7 @@ class TestHandleStatusMixin:
     def test_invalid_status_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'BORKED'"):
+                "Build returned unexpected status: %r" % 'BORKED'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "BORKED", {})

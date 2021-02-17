@@ -207,7 +207,7 @@ class MailController(object):
     def __init__(self, from_addr, to_addrs, subject, body, headers=None,
                  envelope_to=None, bulk=True):
         self.from_addr = from_addr
-        if zisinstance(to_addrs, six.string_types):
+        if zisinstance(to_addrs, (bytes, six.text_type)):
             to_addrs = [to_addrs]
         self.to_addrs = to_addrs
         self.envelope_to = envelope_to

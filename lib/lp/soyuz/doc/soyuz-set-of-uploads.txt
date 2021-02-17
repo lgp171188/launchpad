@@ -284,7 +284,11 @@ succeed.  A helper function, simulate_upload does that with all the checking.
     ...     for message in pop_notifications(commit=False):
     ...         print("To:", sort_addresses(message['to']))
     ...         print("Subject:", message['subject'])
-    ...         print(message.get_payload()[0].as_string())
+    ...         print("Content-Type:",
+    ...               message.get_payload()[0]['content-type'])
+    ...         print()
+    ...         print(message.get_payload()[0].get_payload(
+    ...             decode=True).decode('UTF-8'))
     ...         print()
 
 The 'bar' package' is an arch-all package. We have four stages to the
@@ -334,10 +338,8 @@ Check the email recipient for displayname containing special chars,
     To: "Foo B. Bar" <foo.bar@canonical.com>
     Subject: [ubuntutest/breezy] bar 1.0-4 (Accepted)
     Content-Type: text/plain; charset="utf-8"
-    MIME-Version: 1.0
-    Content-Transfer-Encoding: quoted-printable
     <BLANKLINE>
-    bar (1.0-4) breezy; urgency=3Dlow
+    bar (1.0-4) breezy; urgency=low
     <BLANKLINE>
       * Changer using non-preferred email
     <BLANKLINE>
@@ -347,7 +349,7 @@ Check the email recipient for displayname containing special chars,
     Signed-By: foo.bar@canonical.com (Foo B. Bar)
     http://launchpad.test/ubuntutest/+source/bar/1.0-4
     <BLANKLINE>
-    =3D=3D
+    ==
     <BLANKLINE>
      OK: bar_1.0.orig.tar.gz
      OK: bar_1.0-4.diff.gz
@@ -358,8 +360,7 @@ Check the email recipient for displayname containing special chars,
     <BLANKLINE>
     Thank you for your contribution to ubuntutest.
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    -- 
     You are receiving this email because you made this upload.
     <BLANKLINE>
     <BLANKLINE>

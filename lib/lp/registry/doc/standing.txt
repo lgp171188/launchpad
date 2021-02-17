@@ -235,9 +235,9 @@ standing untouched.
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> stdout, stderr = process.communicate()
-    >>> print stdout
+    >>> print(stdout)
     <BLANKLINE>
-    >>> print stderr
+    >>> print(stderr)
     INFO    Creating lockfile: /var/lock/launchpad-update-personal-standing.lock
     INFO    Updating personal standings
     INFO    Done.
@@ -266,9 +266,9 @@ update-standing script bumps his standing to Good too.
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> stdout, stderr = process.communicate()
-    >>> print stdout
+    >>> print(stdout)
     <BLANKLINE>
-    >>> print stderr
+    >>> print(stderr)
     INFO    Creating lockfile: /var/lock/launchpad-update-personal-standing.lock
     INFO    Updating personal standings
     INFO    Done.

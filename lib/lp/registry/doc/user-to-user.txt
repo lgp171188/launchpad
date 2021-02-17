@@ -114,8 +114,8 @@ sends has a Subject header encoded by RFC 2047.
     >>> entry = Store.of(dave).find(
     ...     UserToUserEmail,
     ...     UserToUserEmail.message_id == u'<dolphin>').one()
-    >>> entry.subject
-    u'Sm\xf6rg\xe5sbord'
+    >>> print(entry.subject)
+    Smörgåsbord
 
 
 == Full names ==

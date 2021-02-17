@@ -13,22 +13,22 @@ share their name namespace are Product, ProjectGroup and Distribution.
 
     >>> 'ubuntu' in pillar_set
     True
-    >>> pillar_set['ubuntu'].name
-    u'ubuntu'
+    >>> print(pillar_set['ubuntu'].name)
+    ubuntu
     >>> IDistribution.providedBy(pillar_set['ubuntu'])
     True
 
     >>> 'tomcat' in pillar_set
     True
-    >>> pillar_set['tomcat'].name
-    u'tomcat'
+    >>> print(pillar_set['tomcat'].name)
+    tomcat
     >>> IProduct.providedBy(pillar_set['tomcat'])
     True
 
     >>> 'apache' in pillar_set
     True
-    >>> pillar_set['apache'].name
-    u'apache'
+    >>> print(pillar_set['apache'].name)
+    apache
     >>> IProjectGroup.providedBy(pillar_set['apache'])
     True
 
@@ -38,7 +38,7 @@ share their name namespace are Product, ProjectGroup and Distribution.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'fnord'
+    lp.app.errors.NotFoundError: ...'fnord'
 
 Inactive projects/project groups are not available through PillarNameSet
 unless we use the special getByName() method which returns active/inactive
@@ -56,7 +56,7 @@ pillars.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: 'gimp'
+    lp.app.errors.NotFoundError: ...'gimp'
     >>> IProjectGroup.providedBy(pillar_set.getByName('gimp'))
     True
 
@@ -73,7 +73,7 @@ It also works if you use Unicode strings.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: u'launchpad'
+    lp.app.errors.NotFoundError: ...'launchpad'
     >>> IProduct.providedBy(pillar_set.getByName(u'launchpad'))
     True
 
@@ -88,16 +88,19 @@ under different names.
     []
 
     >>> firefox.setAliases(['iceweasel', 'snowchicken'])
-    >>> firefox.aliases
-    [u'iceweasel', u'snowchicken']
+    >>> for alias in firefox.aliases:
+    ...     print(alias)
+    iceweasel
+    snowchicken
 
 Every time setAliases() is called it should be given the full set of aliases
 for that pillar. If one of the pillar's existing aliases is not in the list
 given to setAliases(), it is removed.
 
     >>> firefox.setAliases(['iceweasel'])
-    >>> firefox.aliases
-    [u'iceweasel']
+    >>> for alias in firefox.aliases:
+    ...     print(alias)
+    iceweasel
 
 Just like names, aliases are unique.
 
@@ -193,8 +196,8 @@ Distributions.
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'mozilla', limit=3):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     ProjectGroup: The Mozilla Project (mozilla)
     Product: Mozilla Firefox (firefox)
     Product: Mozilla Thunderbird (thunderbird)
@@ -205,8 +208,8 @@ Distributions.
     <Product ...>
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'ubuntu', limit=6):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     Distribution: Ubuntu (ubuntu)
     Product: Ubuntu-sekrit (ubuntu-sekrit)
     Distribution: ubuntutest (ubuntutest)
@@ -218,8 +221,8 @@ We can search by any of the pillar's aliases too.
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'iceweasel', limit=5):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     Product: Mozilla Firefox (firefox)
 
 Note that inaccessible private or inactive products and projects won't
@@ -231,15 +234,15 @@ be included in the results.
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'mozilla', limit=3):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     ProjectGroup: The Mozilla Project (mozilla)
     Product: Mozilla Thunderbird (thunderbird)
 
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'ubuntu', limit=6):
-    ...     print ("%s: %s (%s)"
-    ...            % (row.__class__.__name__, row.title, row.name))
+    ...     print("%s: %s (%s)"
+    ...           % (row.__class__.__name__, row.title, row.name))
     Distribution: Ubuntu (ubuntu)
     Distribution: ubuntutest (ubuntutest)
     Product: Evolution (evolution)

@@ -1340,6 +1340,7 @@ def test_suite():
     suite = TestLoader().loadTestsFromName(__name__)
     bug_249185 = LayeredDocFileSuite(
         'bug-249185.txt', optionflags=default_optionflags,
-        layer=DatabaseFunctionalLayer, setUp=setUp, tearDown=tearDown)
+        layer=DatabaseFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown)
     suite.addTest(bug_249185)
     return suite

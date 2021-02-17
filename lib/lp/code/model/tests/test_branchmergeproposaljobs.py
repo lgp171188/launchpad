@@ -429,7 +429,8 @@ def make_runnable_incremental_diff_job(test_case):
     parent_id = repository.get_revision(source_rev_id).parent_ids[0]
     test_case.factory.makeRevision(rev_id=source_rev_id)
     test_case.factory.makeRevision(rev_id=parent_id)
-    return GenerateIncrementalDiffJob.create(bmp, parent_id, source_rev_id)
+    return GenerateIncrementalDiffJob.create(
+        bmp, six.ensure_text(parent_id), six.ensure_text(source_rev_id))
 
 
 class TestGenerateIncrementalDiffJob(DiffTestCase):

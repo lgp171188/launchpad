@@ -845,7 +845,7 @@ to make that assumption.
     ...     )
     Traceback (most recent call last):
     ...
-    TypeError: Result is not a member of BugTaskStatus: u'Not a BugTaskStatus'
+    TypeError: Result is not a member of BugTaskStatus: ...'Not a BugTaskStatus'
 
 
 Getting the remote product from a remote bug

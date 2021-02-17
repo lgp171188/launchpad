@@ -251,7 +251,7 @@ And for messages with plural forms, it gets all the translations.
 Make sure exported files are correct.  Exporting a POT file returns exactly
 the same contents, except that header is marked fuzzy.
 
-    >>> print(potemplate.export())
+    >>> print(potemplate.export().decode('UTF-8'))
     #, fuzzy
     msgid ""
     msgstr ""

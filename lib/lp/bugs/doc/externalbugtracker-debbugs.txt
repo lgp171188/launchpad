@@ -607,15 +607,15 @@ We can look for the mail that would have been sent.
     >>> print(msg['X-Envelope-To'])
     1234@example.com
 
-    >>> print(str(msg))
-    From ...
-    Content-Type...
-    Message-Id: <123456@launchpad.net>
-    To: 1234@example.com
-    From: debbugs@bugs.launchpad.net
-    Subject: Re: Example bug 1234
-    Date...
-    <BLANKLINE>
+    >>> print(msg['Message-Id'])
+    <123456@launchpad.net>
+    >>> print(msg['To'])
+    1234@example.com
+    >>> print(msg['From'])
+    debbugs@bugs.launchpad.net
+    >>> print(msg['Subject'])
+    Re: Example bug 1234
+    >>> print(msg.get_payload(decode=True).decode('UTF-8'))
     A little fermented curd will do the trick!
 
 

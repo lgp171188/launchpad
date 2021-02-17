@@ -163,7 +163,7 @@ class BuildingSlave(OkSlave):
     def status(self):
         self.call_log.append('status')
         buildlog = xmlrpc_client.Binary(
-            "This is a build log: %d" % self.status_count)
+            b"This is a build log: %d" % self.status_count)
         self.status_count += 1
         return defer.succeed({
             'builder_status': 'BuilderStatus.BUILDING',

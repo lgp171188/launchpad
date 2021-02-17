@@ -242,7 +242,7 @@ class Bugzilla(ExternalBugTracker):
         version_numbers = re.findall('[0-9]+', version)
         if len(version_numbers) == 0:
             raise UnparsableBugTrackerVersion(
-                'Failed to parse version %r for %s' %
+                "Failed to parse version '%s' for %s" %
                 (version, self.baseurl))
 
         return tuple(int(number) for number in version_numbers)

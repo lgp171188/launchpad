@@ -392,7 +392,7 @@ explicitly told to do so:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    lp.services.messages.interfaces.message.UnknownSender: u'invalid@example.com'
+    lp.services.messages.interfaces.message.UnknownSender: ...'invalid@example.com'
 
     >>> msg = msgset.fromEmail(b'''\
     ... From: invalid@example.com

@@ -149,7 +149,7 @@ exception to be thrown.
     >>> print(BasePublishingRecordView.timestamp_map['key_not_there'])
     Traceback (most recent call last):
     ...
-    KeyError: u'key_not_there'
+    KeyError: ...'key_not_there'
 
 The view knows how to render a publication's phased update percentage.
 

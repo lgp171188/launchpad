@@ -537,7 +537,7 @@ class PackageUpload(SQLBase):
         [pub_source] = self.realiseUpload()
         builds = pub_source.createMissingBuilds(logger=logger)
         self._validateBuildsForSource(pub_source.sourcepackagerelease, builds)
-        with open(changesfile_path, 'r') as changesfile_object:
+        with open(changesfile_path, 'rb') as changesfile_object:
             close_bugs_for_queue_item(
                 self, changesfile_object=changesfile_object)
         self._giveKarma()

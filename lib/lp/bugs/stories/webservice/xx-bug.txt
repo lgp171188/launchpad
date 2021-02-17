@@ -1887,7 +1887,7 @@ Pass isExpirable() a string for days_old.
     ...     days_old='sixty'))
     HTTP/1.1 400 Bad Request
     ...
-    days_old: got 'unicode', expected int: u'sixty'
+    days_old: got '...', expected int: ...'sixty'
 
 Can expire
 ----------
