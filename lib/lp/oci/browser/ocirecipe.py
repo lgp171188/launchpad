@@ -257,10 +257,10 @@ class OCIRecipeView(LaunchpadView):
     @property
     def distribution_has_credentials(self):
         if hasattr(self.context, 'oci_project'):
-            project = self.context.oci_project
+            oci_project = self.context.oci_project
         else:
-            project = self.context
-        distro = project.distribution
+            oci_project = self.context
+        distro = oci_project.distribution
         return bool(distro and distro.oci_registry_credentials)
 
 
@@ -777,10 +777,10 @@ class OCIRecipeFormMixin:
     @property
     def distribution_has_credentials(self):
         if hasattr(self.context, 'oci_project'):
-            project = self.context.oci_project
+            oci_project = self.context.oci_project
         else:
-            project = self.context
-        distro = project.distribution
+            oci_project = self.context
+        distro = oci_project.distribution
         return bool(distro and distro.oci_registry_credentials)
 
 
