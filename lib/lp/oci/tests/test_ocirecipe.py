@@ -751,6 +751,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         }, recipe.build_args)
 
     def test_use_distribution_credentials_set(self):
+        self.setConfig()
         distribution = self.factory.makeDistribution()
         credentials = self.factory.makeOCIRegistryCredentials()
         with person_logged_in(distribution.owner):

@@ -151,7 +151,7 @@ class BaseTestOCIRecipeView(BrowserTestCase):
             name="test-person", displayname="Test Person")
 
 
-class TestOCIRecipeAddView(BaseTestOCIRecipeView):
+class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def setUp(self):
         super(TestOCIRecipeAddView, self).setUp()
@@ -162,6 +162,7 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "oci.build_series.%s" % self.distribution.name:
                 self.distroseries.name,
             }))
+        self.setConfig()
 
     def setUpDistroSeries(self):
         """Set up self.distroseries with some available processors."""
@@ -268,7 +269,8 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         credentials = self.factory.makeOCIRegistryCredentials()
         with person_logged_in(oci_project.distribution.owner):
             oci_project.distribution.oci_registry_credentials = credentials
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
