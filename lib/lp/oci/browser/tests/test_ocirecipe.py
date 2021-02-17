@@ -284,7 +284,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Create OCI recipe").click()
         content = find_main_content(browser.contents)
         self.assertThat(
-            "Registry image name\n{}".format(image_name),
+            "Registry image name:\n{}".format(image_name),
             MatchesTagText(content, "image-name"))
 
     def test_create_new_recipe_users_teams_as_owner_options(self):
@@ -783,7 +783,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Update OCI recipe").click()
         content = find_main_content(browser.contents)
         self.assertThat(
-            "Registry image name\n{}".format(image_name),
+            "Registry image name:\n{}".format(image_name),
             MatchesTagText(content, "image-name"))
 
     def test_edit_with_invisible_processor(self):
