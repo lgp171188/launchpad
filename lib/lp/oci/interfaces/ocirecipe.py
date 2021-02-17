@@ -448,7 +448,8 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     image_name = exported(TextLine(
         title=_("Image name"),
         description=_("Image name to use on upload to registry. "
-                      "Defaults to recipe name if not set."),
+                      "Defaults to recipe name if not set. "
+                      "Only used when Distribution credentials are set."),
         required=False,
         readonly=False))
 

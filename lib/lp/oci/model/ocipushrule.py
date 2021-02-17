@@ -75,7 +75,7 @@ class OCIPushRule(Storm):
 
 @implementer(IOCIPushRule)
 class OCIDistributionPushRule:
-    """A none-database instance that is synthesised from data elsewhere."""
+    """A non-database instance that is synthesised from data elsewhere."""
 
     registry_credentials = None
 
