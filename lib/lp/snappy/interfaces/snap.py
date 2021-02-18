@@ -845,7 +845,7 @@ class ISnapAdminAttributes(Interface):
 
     information_type = exported(Choice(
         title=_("Information type"), vocabulary=InformationType,
-        required=False, readonly=False, default=InformationType.PUBLIC,
+        required=True, readonly=False, default=InformationType.PUBLIC,
         description=_(
             "The type of information contained in this Snap recipe.")))
 
@@ -884,6 +884,13 @@ class ISnapSet(Interface):
 
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
+        # Redefining information_type param to make it optional on the API
+        # (although it is mandatory on the UI).
+        information_type=Choice(
+            title=_("Information type"), vocabulary=InformationType,
+            required=False, default=InformationType.PUBLIC,
+            description=_(
+                "The type of information contained in this Snap recipe.")),
         processors=List(
             value_type=Reference(schema=IProcessor), required=False))
     @export_factory_operation(
@@ -891,8 +898,8 @@ class ISnapSet(Interface):
             "owner", "distro_series", "name", "description", "branch",
             "git_repository", "git_repository_url", "git_path", "git_ref",
             "auto_build", "auto_build_archive", "auto_build_pocket",
-            "information_type", "store_upload", "store_series", "store_name",
-            "store_channels", "project"])
+            "store_upload", "store_series", "store_name", "store_channels",
+            "project"])
     @operation_for_version("devel")
     def new(registrant, owner, distro_series, name, description=None,
             branch=None, git_repository=None, git_repository_url=None,
