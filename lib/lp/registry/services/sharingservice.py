@@ -800,12 +800,6 @@ class SharingService:
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(
             artifacts_to_delete, [grantee])
 
-        # XXX: Pappacena 2021-02-05: snaps should not trigger this job,
-        # since we do not have a "SnapSubscription" yet.
-        artifacts = [i for i in artifacts if not ISnap.providedBy(i)]
-        if not artifacts:
-            return
-
         # Create a job to remove subscriptions for artifacts the grantee can no
         # longer see.
         return getUtility(IRemoveArtifactSubscriptionsJobSource).create(

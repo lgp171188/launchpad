@@ -5,6 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'get_private_snap_subscriber_filter',
     'Snap',
     ]
 
@@ -67,6 +68,7 @@ from lp.app.enums import (
 from lp.app.errors import (
     IncompatibleArguments,
     SubscriptionPrivacyViolation,
+    UserCannotUnsubscribePerson,
     )
 from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
@@ -1144,12 +1146,18 @@ class Snap(Storm, WebhookTargetMixin):
         service = getUtility(IService, "sharing")
         service.ensureAccessGrants([person], subscribed_by, snaps=[self])
 
-    def unsubscribe(self, person, unsubscribed_by):
+    def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         service = getUtility(IService, "sharing")
         service.revokeAccessGrants(
             self.pillar, person, unsubscribed_by, snaps=[self])
-        subscription = self._getSubscription(person)
+        subscription = self.getSubscription(person)
+        if (not ignore_permissions
+                and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
+            raise UserCannotUnsubscribePerson(
+                '%s does not have permission to unsubscribe %s.' % (
+                    unsubscribed_by.displayname,
+                    person.displayname))
         # It should never be None, since we always create a SnapSubscription
         # on Snap.subscribe. But just in case...
         if subscription is not None:
