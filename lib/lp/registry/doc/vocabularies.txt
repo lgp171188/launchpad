@@ -281,8 +281,8 @@ All the teams the person is an active member of.
     >>> launchpad_team in person_active_membership
     True
 
-    >>> mirrors_admins = person_set.getByName('mirrors-admins')
-    >>> mirrors_admins in person_active_membership
+    >>> ubuntu_mirror_admins = person_set.getByName('ubuntu-mirror-admins')
+    >>> ubuntu_mirror_admins in person_active_membership
     False
 
 The PersonActiveMembership vocabulary only shows teams where the
@@ -326,7 +326,7 @@ membership is public.
     >>> print(term.token, term.value.displayname, term.title)
     launchpad Launchpad Developers Launchpad Developers
 
-    >>> term = person_active_membership.getTerm(mirrors_admins)
+    >>> term = person_active_membership.getTerm(ubuntu_mirror_admins)
     Traceback (most recent call last):
     ...
     LookupError:...
@@ -335,7 +335,7 @@ membership is public.
     >>> print(term.token, term.value.displayname, term.title)
     launchpad Launchpad Developers Launchpad Developers
 
-    >>> term = person_active_membership.getTermByToken('mirrors-admins')
+    >>> term = person_active_membership.getTermByToken('ubuntu-mirror-admins')
     Traceback (most recent call last):
     ...
     LookupError:...
