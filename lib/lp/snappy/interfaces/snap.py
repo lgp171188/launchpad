@@ -89,7 +89,9 @@ from zope.security.interfaces import (
     )
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
 from lp.buildmaster.interfaces.processor import IProcessor
@@ -841,6 +843,12 @@ class ISnapAdminAttributes(Interface):
         title=_("Private"), required=False, readonly=False,
         description=_("Whether or not this snap is private.")))
 
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=False, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this Snap recipe.")))
+
     require_virtualized = exported(Bool(
         title=_("Require virtualized builders"), required=True, readonly=False,
         description=_("Only build this snap package on virtual builders.")))
@@ -872,7 +880,7 @@ class ISnapAdminAttributes(Interface):
 @exported_as_webservice_entry(as_of="beta")
 class ISnap(
     ISnapView, ISnapEdit, ISnapEditableAttributes, ISnapAdminAttributes,
-    IPrivacy):
+    IPrivacy, IInformationType):
     """A buildable snap package."""
 
 
@@ -889,7 +897,7 @@ class ISnapSet(Interface):
             "owner", "distro_series", "name", "description", "branch",
             "git_repository", "git_repository_url", "git_path", "git_ref",
             "auto_build", "auto_build_archive", "auto_build_pocket",
-            "private", "store_upload", "store_series", "store_name",
+            "information_type", "store_upload", "store_series", "store_name",
             "store_channels", "project"])
     @operation_for_version("devel")
     def new(registrant, owner, distro_series, name, description=None,
@@ -897,7 +905,8 @@ class ISnapSet(Interface):
             git_path=None, git_ref=None, auto_build=False,
             auto_build_archive=None, auto_build_pocket=None,
             require_virtualized=True, processors=None, date_created=None,
-            private=False, store_upload=False, store_series=None,
+            information_type=InformationType.PUBLIC, store_upload=False,
+            store_series=None,
             store_name=None, store_secrets=None, store_channels=None,
             project=None):
         """Create an `ISnap`."""
@@ -910,6 +919,10 @@ class ISnapSet(Interface):
 
     def findByIds(snap_ids):
         """Return all snap packages with the given ids."""
+
+    def isValidInformationType(
+            information_type, owner, branch=None, git_ref=None):
+        """Whether or not the information type context is valid."""
 
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True),

@@ -45,13 +45,20 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
-from lp.app.enums import PRIVATE_INFORMATION_TYPES
+from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
+    InformationType,
+    PRIVATE_INFORMATION_TYPES,
+    PROPRIETARY_INFORMATION_TYPES,
+    )
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.vocabularies import InformationTypeVocabulary
 from lp.app.widgets.itemswidgets import (
     LabeledMultiCheckBoxWidget,
     LaunchpadDropdownWidget,
     LaunchpadRadioWidget,
+    LaunchpadRadioWidgetWithDescription,
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
@@ -343,7 +350,7 @@ class ISnapEditSchema(Interface):
     use_template(ISnap, include=[
         'owner',
         'name',
-        'private',
+        'information_type',
         'project',
         'require_virtualized',
         'allow_internet',
@@ -352,6 +359,7 @@ class ISnapEditSchema(Interface):
         'auto_build_channels',
         'store_upload',
         ])
+
     store_distro_series = Choice(
         vocabulary='SnappyDistroSeries', required=True,
         title='Series')
@@ -521,8 +529,10 @@ class SnapAddView(
             kwargs = {'git_ref': self.context}
         else:
             kwargs = {'branch': self.context}
-        private = not getUtility(
-            ISnapSet).isValidPrivacy(False, data['owner'], **kwargs)
+        private = not getUtility(ISnapSet).isValidPrivacy(
+            False, data['owner'], **kwargs)
+        information_type = (InformationType.PROPRIETARY if private else
+                            InformationType.PUBLIC)
         if not data.get('auto_build', False):
             data['auto_build_archive'] = None
             data['auto_build_pocket'] = None
@@ -533,7 +543,8 @@ class SnapAddView(
             auto_build_archive=data['auto_build_archive'],
             auto_build_pocket=data['auto_build_pocket'],
             auto_build_channels=data['auto_build_channels'],
-            processors=data['processors'], private=private,
+            information_type=information_type,
+            processors=data['processors'],
             build_source_tarball=data['build_source_tarball'],
             store_upload=data['store_upload'],
             store_series=data['store_distro_series'].snappy_series,
@@ -613,31 +624,33 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
 
     def validate(self, data):
         super(BaseSnapEditView, self).validate(data)
-        if data.get('private', self.context.private) is False:
+        info_type = data.get('information_type', self.context.information_type)
+        editing_info_type = 'information_type' in data
+        private = info_type in PRIVATE_INFORMATION_TYPES
+        if private is False:
             # These are the requirements for public snaps.
-            if 'private' in data or 'owner' in data:
+            if 'information_type' in data or 'owner' in data:
                 owner = data.get('owner', self.context.owner)
                 if owner is not None and owner.private:
                     self.setFieldError(
-                        'private' if 'private' in data else 'owner',
+                        'information_type' if editing_info_type else 'owner',
                         'A public snap cannot have a private owner.')
-            if 'private' in data or 'branch' in data:
+            if 'information_type' in data or 'branch' in data:
                 branch = data.get('branch', self.context.branch)
                 if branch is not None and branch.private:
                     self.setFieldError(
-                        'private' if 'private' in data else 'branch',
+                        'information_type' if editing_info_type else 'branch',
                         'A public snap cannot have a private branch.')
-            if 'private' in data or 'git_ref' in data:
+            if 'information_type' in data or 'git_ref' in data:
                 ref = data.get('git_ref', self.context.git_ref)
                 if ref is not None and ref.private:
                     self.setFieldError(
-                        'private' if 'private' in data else 'git_ref',
+                        'information_type' if editing_info_type else 'git_ref',
                         'A public snap cannot have a private repository.')
         else:
-            # These are the requirements for private snaps.
+            # Requirements for private snaps.
             project = data.get('project', self.context.project)
-            private = data.get('private', self.context.private)
-            if private and project is None:
+            if project is None:
                 msg = ('Private Snap recipes should be associated '
                        'with a project.')
                 self.setFieldError('project', msg)
@@ -707,16 +720,30 @@ class SnapAdminView(BaseSnapEditView):
     page_title = 'Administer'
 
     field_names = [
-        'project', 'private', 'require_virtualized', 'allow_internet']
+        'project', 'information_type', 'require_virtualized', 'allow_internet']
+
+    custom_widget_information_type = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription,
+        vocabulary=InformationTypeVocabulary(
+            types=FREE_INFORMATION_TYPES + PROPRIETARY_INFORMATION_TYPES))
+
+    @property
+    def initial_values(self):
+        """Set initial values for the form."""
+        # XXX pappacena 2021-02-12: Until we back fill information_type
+        # database column, it will be NULL, but snap.information_type
+        # property has a fallback to check "private" property. This should
+        # be removed once we back fill snap.information_type.
+        return {'information_type': self.context.information_type}
 
     def validate(self, data):
         super(SnapAdminView, self).validate(data)
         # BaseSnapEditView.validate checks the rules for 'private' in
         # combination with other attributes.
-        if data.get('private', None) is True:
+        if data.get('information_type', None) in PRIVATE_INFORMATION_TYPES:
             if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
                 self.setFieldError(
-                    'private',
+                    'information_type',
                     'You do not have permission to create private snaps.')
 
 
