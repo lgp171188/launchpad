@@ -735,3 +735,6 @@ class OCIRecipeBuildRequest:
         if not zope_isinstance(other, self.__class__):
             return False
         return self.id == other.id
+
+    def __hash__(self):
+        return hash((self.__class__, self.id))

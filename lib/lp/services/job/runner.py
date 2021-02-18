@@ -155,6 +155,9 @@ class BaseRunnableJob(BaseRunnableJobSource):
     def __ne__(self, job):
         return not (self == job)
 
+    def __hash__(self):
+        return hash(tuple([self.__class__] + sorted(self.__dict__.items())))
+
     def __lt__(self, job):
         naked_job = removeSecurityProxy(job)
         if self.__class__ is naked_job.__class__:
