@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person/team merger implementation."""
@@ -672,6 +672,24 @@ def _mergeSnap(cur, from_person, to_person):
         IStore(snaps[0]).flush()
 
 
+def _mergeSnapSubscription(cur, from_id, to_id):
+    # Update only the SnapSubscription that will not conflict.
+    cur.execute('''
+        UPDATE SnapSubscription
+        SET person=%(to_id)d
+        WHERE person=%(from_id)d AND snap NOT IN
+            (
+            SELECT snap
+            FROM SnapSubscription
+            WHERE person = %(to_id)d
+            )
+        ''' % vars())
+    # and delete those left over.
+    cur.execute('''
+        DELETE FROM SnapSubscription WHERE person=%(from_id)d
+        ''' % vars())
+
+
 def _mergeOCIRecipe(cur, from_person, to_person):
     # This shouldn't use removeSecurityProxy
     oci_recipes = getUtility(IOCIRecipeSet).findByOwner(from_person)
@@ -916,6 +934,11 @@ def merge_people(from_person, to_person, reviewer, delete=False):
 
     _mergeSnap(cur, from_person, to_person)
     skip.append(('snap', 'owner'))
+
+    # XXX pappacena 2021-02-18: add tests for this once we have
+    # SnapSubscription model in place.
+    _mergeSnapSubscription(cur, from_id, to_id)
+    skip.append(('snapsubscription', 'person'))
 
     _mergeOCIRecipe(cur, from_person, to_person)
     skip.append(('ocirecipe', 'owner'))
