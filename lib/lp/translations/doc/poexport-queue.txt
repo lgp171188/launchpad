@@ -134,7 +134,19 @@ Those are specially handled and reported.
     ...     raise AssertionError(b"Really nasty \xc3 non-ASCII error!")
     ... except AssertionError:
     ...     result.addFailure()
+
+It's not clear that it's possible to trigger this failure mode normally on
+Python 3 at all, because bytes will just be formatted as b'...'.  For now,
+inject a mock exception in that case so that the test can pass.
+
+    >>> if six.PY3:
+    ...     from lp.services.compat import mock
+    ...     patcher = mock.patch.object(result, 'failure')
+    ...     mock_failure = patcher.start()
+    ...     mock_failure.__str__.side_effect = lambda: b'\xc3'.decode('UTF-8')
     >>> result.notify()
+    >>> if six.PY3:
+    ...     patcher.stop()
 
     >>> test_emails = pop_notifications()
     >>> len(test_emails)

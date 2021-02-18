@@ -669,4 +669,4 @@ does not match the file name of the Librarian file.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: u'nonsense'
+    lp.app.errors.NotFoundError: ...'nonsense'

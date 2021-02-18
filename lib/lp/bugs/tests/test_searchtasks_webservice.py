@@ -107,7 +107,7 @@ class TestProductSearchTasks(TestCaseWithFactory):
             api_version='devel', order_by='date_created')
         self.assertEqual(400, response.status)
         self.assertRaisesWithContent(
-            ValueError, "Unrecognized order_by: u'date_created'",
+            ValueError, "Unrecognized order_by: %r" % u'date_created',
             response.jsonBody)
 
     def test_search_incomplete_status_results(self):

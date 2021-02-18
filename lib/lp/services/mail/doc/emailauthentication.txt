@@ -126,7 +126,7 @@ message.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, u'Bad signature')
+    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, ...'Bad signature')
 
     >>> getUtility(IGPGHandler).getVerifiedSignature(
     ...     msg.signedContent.replace(b'\n', b'\r\n'), msg.signature)
@@ -160,9 +160,8 @@ hack can be removed.
      boundary="--------------------EuxKj2iCbKjpUGkD"
     ...
 
-    >>> print(msg.get_payload(i=0).as_string()) #doctest: -NORMALIZE_WHITESPACE
-    Content-Type: multipart/mixed; boundary="--------------------EuxKj2iCbKjpUGkD"
-    ...
+    >>> print(msg.get_payload(i=0)['Content-Type'])
+    multipart/mixed; boundary="--------------------EuxKj2iCbKjpUGkD"
 
     >>> principal = authenticateEmail(msg, accept_any_timestamp)
     >>> print(IPerson(principal).displayname)

@@ -257,7 +257,7 @@ Make sure all the date constants are replaced with real values in database:
 Template export turns it back into a KDE-style PO file:
 
     >>> print(export_with_format(
-    ...     firefox_potemplate, TranslationFileFormat.KDEPO))
+    ...     firefox_potemplate, TranslationFileFormat.KDEPO).decode('UTF-8'))
     #, fuzzy
     msgid ""
     msgstr ""
@@ -308,7 +308,7 @@ does not support messages that are identical in all but the plural, so
 those are stripped out.
 
     >>> print(export_with_format(firefox_potemplate,
-    ...                          TranslationFileFormat.PO))
+    ...                          TranslationFileFormat.PO).decode('UTF-8'))
     #, fuzzy
     msgid ""
     msgstr ""
@@ -498,7 +498,7 @@ other message and its translation:
 Exporting a PO template as a KDE PO file joins the context back together:
 
     >>> print(export_with_format(firefox_potemplate,
-    ...                          TranslationFileFormat.KDEPO))
+    ...                          TranslationFileFormat.KDEPO).decode('UTF-8'))
     #, fuzzy
     msgid ""
     msgstr ""

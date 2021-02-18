@@ -105,24 +105,24 @@ parent_series_link:
 
     >>> current_series_beta = webservice.get(
     ...     "/ubuntu/hoary", api_version="beta").jsonBody()
-    >>> current_series_beta["parent_series_link"]
-    u'http://.../ubuntu/warty'
+    >>> print(current_series_beta["parent_series_link"])
+    http://.../ubuntu/warty
 
 In the 1.0 version of the API the previous series is obtained via
 parent_series_link:
 
     >>> current_series_1_0 = webservice.get(
     ...     "/ubuntu/hoary", api_version="1.0").jsonBody()
-    >>> current_series_1_0["parent_series_link"]
-    u'http://.../ubuntu/warty'
+    >>> print(current_series_1_0["parent_series_link"])
+    http://.../ubuntu/warty
 
 In the devel version of the API the previous series is obtained via
 parent_series_link:
 
     >>> current_series_devel = webservice.get(
     ...     "/ubuntu/hoary", api_version="devel").jsonBody()
-    >>> current_series_devel["previous_series_link"]
-    u'http://.../ubuntu/warty'
+    >>> print(current_series_devel["previous_series_link"])
+    http://.../ubuntu/warty
 
 
 Creating a milestone on the distroseries

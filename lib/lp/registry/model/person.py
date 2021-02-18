@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for a Person."""
@@ -2353,6 +2353,7 @@ class Person(
             ('productseries', 'owner'),
             ('sharingjob', 'grantee'),
             ('signedcodeofconduct', 'owner'),
+            ('snapbuild', 'requester'),
             ('specificationsubscription', 'person'),
             ('sshkey', 'person'),
             ('structuralsubscription', 'subscriber'),

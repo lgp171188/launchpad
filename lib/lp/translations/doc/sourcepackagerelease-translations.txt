@@ -12,7 +12,7 @@ upload the same sampledata tarball twice, one public and one restricted
     >>> tarball_path = os.path.join(
     ...     os.path.dirname(lp.translations.__file__),
     ...     'doc/sourcepackagerelease-translations.tar.gz')
-    >>> tarball = open(tarball_path)
+    >>> tarball = open(tarball_path, 'rb')
     >>> tarball_size = len(tarball.read())
     >>> _ = tarball.seek(0)
 
@@ -31,6 +31,8 @@ upload the same sampledata tarball twice, one public and one restricted
     ...     file=tarball,
     ...     contentType='application/x-gtar',
     ...     restricted=True)
+
+    >>> tarball.close()
 
 Commit, so uploaded contents are available in the current test.
 

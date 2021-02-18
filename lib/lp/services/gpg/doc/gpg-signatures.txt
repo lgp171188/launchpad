@@ -89,7 +89,7 @@ The text below was "clear signed" by 0xDFD20543 master key but tampered with:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, u'Bad signature')
+    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, ...'Bad signature')
 
 If no signed content is found, an exception is raised:
 
@@ -229,7 +229,7 @@ itself.
     ...     print e.code
     ...     print e.signatures
     ...     print e.source
-    (7, 89, u'Bad data')
+    (7, 89, ...'Bad data')
     89
     [<gpgme.Signature object at ...>]
     7

@@ -493,16 +493,11 @@ class ObjectFactory(
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
-    if sys.version_info[0] >= 3:
-        def getUniqueBytes(self, prefix=None):
-            return six.ensure_binary(self.getUniqueString(prefix=prefix))
+    def getUniqueBytes(self, prefix=None):
+        return six.ensure_binary(self.getUniqueString(prefix=prefix))
 
-        getUniqueUnicode = getUniqueString
-    else:
-        getUniqueBytes = getUniqueString
-
-        def getUniqueUnicode(self, prefix=None):
-            return six.ensure_text(self.getUniqueString(prefix=prefix))
+    def getUniqueUnicode(self, prefix=None):
+        return six.ensure_text(self.getUniqueString(prefix=prefix))
 
     def getUniqueURL(self, scheme=None, host=None):
         """Return a URL unique to this run of the test case."""
@@ -1685,7 +1680,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if parent_ids is None:
             parent_ids = []
         if rev_id is None:
-            rev_id = self.getUniqueString('revision-id')
+            rev_id = self.getUniqueUnicode('revision-id')
+        else:
+            rev_id = six.ensure_text(rev_id)
         if log_body is None:
             log_body = self.getUniqueString('log-body')
         return getUtility(IRevisionSet).new(

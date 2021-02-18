@@ -1168,7 +1168,7 @@ class Publisher(object):
         """
         release_path = os.path.join(
             self._config.distsroot, suite, "Release.new")
-        with open_for_writing(release_path, "w") as release_file:
+        with open_for_writing(release_path, "wb") as release_file:
             release_data.dump(release_file, "utf-8")
 
     def _syncTimestamps(self, suite, all_files):
@@ -1337,7 +1337,7 @@ class Publisher(object):
         release_file["Architecture"] = arch_name
 
         release_path = os.path.join(suite_dir, component, arch_path, "Release")
-        with open_for_writing(release_path, "w") as f:
+        with open_for_writing(release_path, "wb") as f:
             release_file.dump(f, "utf-8")
 
     def _writeSuiteSource(self, distroseries, pocket, component,
@@ -1402,7 +1402,7 @@ class Publisher(object):
             # Schedule i18n files for inclusion in the Release file.
             all_series_files.add(os.path.join(i18n_subpath, i18n_file))
 
-        with open(os.path.join(i18n_dir, "Index"), "w") as f:
+        with open(os.path.join(i18n_dir, "Index"), "wb") as f:
             i18n_index.dump(f, "utf-8")
 
         # Schedule this for inclusion in the Release file.

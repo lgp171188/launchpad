@@ -156,8 +156,8 @@ class TestReuploadPackageTranslations(TestCaseWithFactory):
         # _processPackage will fetch the package's latest translations
         # upload from the Librarian and re-import it.
         translation_files = {
-            'source/po/messages.pot': '# pot',
-            'source/po/nl.po': '# nl',
+            'source/po/messages.pot': b'# pot',
+            'source/po/nl.po': b'# nl',
         }
         queue_summary = self._uploadAndProcess(translation_files)
         self.assertEqual(filter_paths(translation_files), queue_summary)
@@ -165,11 +165,11 @@ class TestReuploadPackageTranslations(TestCaseWithFactory):
     def test_processPackage_filters_paths(self):
         # Uploads are filtered just like other Ubuntu tarballs.
         translation_files = {
-            'source/foo.pot': '# foo',
-            'elsewhere/bar.pot': '# bar',
+            'source/foo.pot': b'# foo',
+            'elsewhere/bar.pot': b'# bar',
         }
         queue_summary = self._uploadAndProcess(translation_files)
-        self.assertEqual({'foo.pot': '# foo'}, queue_summary)
+        self.assertEqual({'foo.pot': b'# foo'}, queue_summary)
 
 
 class TestReuploadScript(TestCaseWithFactory):

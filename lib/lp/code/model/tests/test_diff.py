@@ -18,6 +18,7 @@ from breezy.patches import (
     parse_patches,
     RemoveLine,
     )
+import six
 from six.moves import reload_module
 from testtools.matchers import (
     Equals,
@@ -547,8 +548,10 @@ class TestPreviewDiff(DiffTestCase):
         # Correctly generates a PreviewDiff from a BranchMergeProposal.
         bmp, source_rev_id, target_rev_id = self.createExampleBzrMerge()
         preview = PreviewDiff.fromBranchMergeProposal(bmp)
-        self.assertEqual(source_rev_id, preview.source_revision_id)
-        self.assertEqual(target_rev_id, preview.target_revision_id)
+        self.assertEqual(
+            six.ensure_text(source_rev_id), preview.source_revision_id)
+        self.assertEqual(
+            six.ensure_text(target_rev_id), preview.target_revision_id)
         transaction.commit()
         self.checkExampleBzrMerge(preview.text)
         self.assertEqual({'foo': (5, 0)}, preview.diffstat)

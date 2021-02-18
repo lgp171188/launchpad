@@ -18,7 +18,7 @@ indicated by 'None'.
 
     >>> product_set = getUtility(IProductSet)
     >>> bzr = product_set.getByName('bzr')
-    >>> print bzr.commercial_subscription
+    >>> print(bzr.commercial_subscription)
     None
 
 Make a commercial subscription.
@@ -31,7 +31,7 @@ Commercial subscriptions have zope.Public permissions for reading.
     >>> login(ANONYMOUS)
     >>> check_permission('zope.Public', bzr.commercial_subscription)
     True
-    >>> print bzr.commercial_subscription.product.name
+    >>> print(bzr.commercial_subscription.product.name)
     bzr
 
 For modification, launchpad.Commerical is required.  Anonymous users,
@@ -125,8 +125,8 @@ included as one of the licences.
     >>> bzr.project_reviewed = True
     >>> bzr.license_approved = True
 
-    >>> bzr.license_info
-    u'bar'
+    >>> print(bzr.license_info)
+    bar
     >>> bzr.project_reviewed
     True
     >>> bzr.license_approved
@@ -212,7 +212,7 @@ then display name.
     >>> flush_database_updates()
     >>> for product in product_set.forReview(commercial_member,
     ...                                      search_text='gnome'):
-    ...     print product.displayname
+    ...     print(product.displayname)
     python gnome2 dev
     Evolution
     GNOME Terminal
@@ -224,7 +224,7 @@ The license_info field is also searched for matching search_text:
     >>> bzr.license_info = 'Code in /contrib is under a mit-like licence.'
     >>> for product in product_set.forReview(commercial_member,
     ...                                      search_text='mit'):
-    ...     print product.name
+    ...     print(product.name)
     bzr
 
 The whiteboard field is also searched for matching search_text:
@@ -235,13 +235,13 @@ The whiteboard field is also searched for matching search_text:
     ...         'cc-nc discriminates against commercial uses.')
     >>> for product in product_set.forReview(commercial_member,
     ...                                      search_text='cc-nc'):
-    ...     print product.name
+    ...     print(product.name)
     bzr
 
 You can search for whether the product is active or not.
 
     >>> for product in product_set.forReview(commercial_member, active=False):
-    ...     print product.name
+    ...     print(product.name)
     python-gnome2-dev
     unassigned
 
@@ -249,7 +249,7 @@ You can search for whether the product is marked reviewed or not.
 
     >>> for product in product_set.forReview(commercial_member,
     ...                                      project_reviewed=True):
-    ...     print product.name
+    ...     print(product.name)
     python-gnome2-dev
     unassigned
     alsa-utils
@@ -261,7 +261,7 @@ any one of the licences listed.
     >>> for product in product_set.forReview(
     ...     commercial_member,
     ...     licenses=[License.GNU_GPL_V2, License.BSD]):
-    ...     print product.name
+    ...     print(product.name)
     bzr
 
 It is possible to search for problem project that have been reviewed, but
@@ -270,7 +270,7 @@ not approved
     >>> for product in product_set.forReview(
     ...     commercial_member,
     ...     project_reviewed=True, license_approved=False):
-    ...     print product.name
+    ...     print(product.name)
     python-gnome2-dev
     unassigned
     alsa-utils
@@ -283,7 +283,7 @@ was created.
     ...     search_text='bzr',
     ...     created_after=bzr.datecreated,
     ...     created_before=bzr.datecreated):
-    ...     print product.name
+    ...     print(product.name)
     bzr
 
 You can search for products based on the expiration date of
@@ -295,7 +295,7 @@ its commercial subscription.
     ...     search_text='bzr',
     ...     subscription_expires_after=date_expires,
     ...     subscription_expires_before=date_expires):
-    ...     print product.name
+    ...     print(product.name)
     bzr
 
 You can also search using a datetime.date object, since that is what
@@ -314,7 +314,7 @@ the web form delivers.
     ...     created_before=late_date,
     ...     subscription_modified_after=early_date,
     ...     subscription_modified_before=late_date):
-    ...     print product.name
+    ...     print(product.name)
     bzr
 
 A reviewer can search for projects without a commercial subscription.
@@ -322,7 +322,7 @@ A reviewer can search for projects without a commercial subscription.
     >>> for product in product_set.forReview(
     ...     commercial_member,
     ...     has_subscription=False, licenses=[License.OTHER_PROPRIETARY]):
-    ...     print product.name
+    ...     print(product.name)
     mega-money-maker
 
 You can search for products based on the date when
@@ -334,7 +334,7 @@ their commercial subscription was modified.
     ...     search_text='bzr',
     ...     subscription_modified_after=date_last_modified,
     ...     subscription_modified_before=date_last_modified):
-    ...     print product.name
+    ...     print(product.name)
     bzr
 
 All the products are returned when no parameters are passed in.
@@ -350,7 +350,7 @@ but a clause is included to search specifically for the name.
     >>> new_product = factory.makeProduct(name="abc.com")
     >>> for product in product_set.forReview(commercial_member,
     ...                                      search_text="abc.com"):
-    ...     print product.name
+    ...     print(product.name)
     abc.com
 
 The use of 'forReview' is limited to users with launchpad.Moderate.

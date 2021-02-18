@@ -329,7 +329,7 @@ def branch_changed(db_branch, bzr_branch=None):
         stacked_on = bzr_branch.get_stacked_on_url()
     except (NotStacked, UnstackableBranchFormat):
         stacked_on = None
-    last_revision = bzr_branch.last_revision()
+    last_revision = six.ensure_text(bzr_branch.last_revision())
     formats = get_branch_formats(bzr_branch)
     db_branch.branchChanged(stacked_on, last_revision, *formats)
 

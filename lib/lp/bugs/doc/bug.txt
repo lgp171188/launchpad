@@ -38,7 +38,7 @@ raised:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    lp.app.errors.NotFoundError: u'Unable to locate bug with nickname +bugs.'
+    lp.app.errors.NotFoundError: ...'Unable to locate bug with nickname +bugs.'
 
 It is also possible to retrieve a number of bugs by specifying the bug numbers
 of interest.
