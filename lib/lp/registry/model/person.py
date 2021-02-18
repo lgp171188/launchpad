@@ -5,7 +5,6 @@
 
 __metaclass__ = type
 __all__ = [
-    'AlreadyConvertedException',
     'get_person_visibility_terms',
     'get_recipients',
     'generate_nick',
@@ -187,6 +186,7 @@ from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
 from lp.registry.interfaces.person import (
+    AlreadyConvertedException,
     ImmutableVisibilityError,
     IPerson,
     IPersonSet,
@@ -328,10 +328,6 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
     )
-
-
-class AlreadyConvertedException(Exception):
-    """Raised when an attempt to claim a team that has been claimed."""
 
 
 @implementer(IJoinTeamEvent)
