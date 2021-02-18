@@ -973,7 +973,7 @@ We get a sample tarball to be uploaded into the system.
     ...     'es.po': b'Spanish translation',
     ...     'fr.po': b'French translation',
     ...     }
-    >>> tarfile_content = LaunchpadWriteTarFile.files_to_string(
+    >>> tarfile_content = LaunchpadWriteTarFile.files_to_bytes(
     ...     test_tar_content)
     >>> by_maintainer = True
 
