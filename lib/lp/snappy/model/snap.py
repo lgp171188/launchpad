@@ -60,7 +60,10 @@ from lp.app.browser.tales import (
     ArchiveFormatterAPI,
     DateTimeFormatterAPI,
     )
-from lp.app.enums import InformationType
+from lp.app.enums import (
+    InformationType,
+    PUBLIC_INFORMATION_TYPES,
+    )
 from lp.app.errors import (
     IncompatibleArguments,
     SubscriptionPrivacyViolation,
@@ -363,13 +366,18 @@ class Snap(Storm, WebhookTargetMixin):
 
     require_virtualized = Bool(name='require_virtualized')
 
-    def _validate_private(self, attr, value):
-        if not getUtility(ISnapSet).isValidPrivacy(
+    _private = Bool(name='private')
+
+    def _valid_information_type(self, attr, value):
+        if not getUtility(ISnapSet).isValidInformationType(
                 value, self.owner, self.branch, self.git_ref):
             raise SnapPrivacyMismatch
         return value
 
-    private = Bool(name='private', validator=_validate_private)
+    _information_type = DBEnum(
+        enum=InformationType, default=InformationType.PUBLIC,
+        name="information_type",
+        validator=_valid_information_type)
 
     allow_internet = Bool(name='allow_internet', allow_none=False)
 
@@ -390,18 +398,21 @@ class Snap(Storm, WebhookTargetMixin):
                  description=None, branch=None, git_ref=None, auto_build=False,
                  auto_build_archive=None, auto_build_pocket=None,
                  auto_build_channels=None, require_virtualized=True,
-                 date_created=DEFAULT, private=False, allow_internet=True,
-                 build_source_tarball=False, store_upload=False,
-                 store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None, project=None):
+                 date_created=DEFAULT, information_type=InformationType.PUBLIC,
+                 allow_internet=True, build_source_tarball=False,
+                 store_upload=False, store_series=None, store_name=None,
+                 store_secrets=None, store_channels=None, project=None):
         """Construct a `Snap`."""
         super(Snap, self).__init__()
 
-        # Set the private flag first so that other validators can perform
+        # Set the information type first so that other validators can perform
         # suitable privacy checks, but pillar should also be set, since it's
         # mandatory for private snaps.
+        # Note that we set self._information_type (not self.information_type)
+        # to avoid the call to self._reconcileAccess() while building the
+        # Snap instance.
         self.project = project
-        self.private = private
+        self._information_type = information_type
 
         self.registrant = registrant
         self.owner = owner
@@ -427,6 +438,22 @@ class Snap(Storm, WebhookTargetMixin):
 
     def __repr__(self):
         return "<Snap ~%s/+snap/%s>" % (self.owner.name, self.name)
+
+    @property
+    def information_type(self):
+        if self._information_type is None:
+            return (InformationType.PROPRIETARY if self._private
+                    else InformationType.PUBLIC)
+        return self._information_type
+
+    @information_type.setter
+    def information_type(self, information_type):
+        self._information_type = information_type
+        self._reconcileAccess()
+
+    @property
+    def private(self):
+        return self.information_type not in PUBLIC_INFORMATION_TYPES
 
     @property
     def valid_webhook_event_types(self):
@@ -1138,14 +1165,8 @@ class Snap(Storm, WebhookTargetMixin):
         """
         if self.project is None:
             return
-        info_type = (InformationType.PUBLIC if not self.private
-                     else InformationType.PROPRIETARY)
         pillars = [self.project]
-        reconcile_access_for_artifact(self, info_type, pillars)
-
-    def setPrivate(self, private):
-        self.private = private
-        self._reconcileAccess()
+        reconcile_access_for_artifact(self, self.information_type, pillars)
 
     def setProject(self, project):
         self.project = project
@@ -1214,10 +1235,11 @@ class SnapSet:
             git_path=None, git_ref=None, auto_build=False,
             auto_build_archive=None, auto_build_pocket=None,
             auto_build_channels=None, require_virtualized=True,
-            processors=None, date_created=DEFAULT, private=False,
-            allow_internet=True, build_source_tarball=False,
-            store_upload=False, store_series=None, store_name=None,
-            store_secrets=None, store_channels=None, project=None):
+            processors=None, date_created=DEFAULT,
+            information_type=InformationType.PUBLIC, allow_internet=True,
+            build_source_tarball=False, store_upload=False,
+            store_series=None, store_name=None, store_secrets=None,
+            store_channels=None, project=None):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -1254,7 +1276,8 @@ class SnapSet:
         # IntegrityError due to exceptions being raised during object
         # creation and to ensure that everything relevant is in the Storm
         # cache.
-        if not self.isValidPrivacy(private, owner, branch, git_ref):
+        if not self.isValidInformationType(
+                information_type, owner, branch, git_ref):
             raise SnapPrivacyMismatch
 
         store = IMasterStore(Snap)
@@ -1265,7 +1288,7 @@ class SnapSet:
             auto_build_pocket=auto_build_pocket,
             auto_build_channels=auto_build_channels,
             require_virtualized=require_virtualized, date_created=date_created,
-            private=private, allow_internet=allow_internet,
+            information_type=information_type, allow_internet=allow_internet,
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
             store_name=store_name, store_secrets=store_secrets,
@@ -1298,6 +1321,11 @@ class SnapSet:
             return False
 
         return True
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type not in PUBLIC_INFORMATION_TYPES
+        return self.isValidPrivacy(private, owner, branch, git_ref)
 
     def _getByName(self, owner, name):
         return IStore(Snap).find(
@@ -1403,15 +1431,22 @@ class SnapSet:
         # XXX cjwatson 2016-11-25: This is in principle a poor query, but we
         # don't yet have the access grant infrastructure to do better, and
         # in any case the numbers involved should be very small.
+        # XXX pappacena 2021-02-12: Once we do the migration to back fill
+        # information_type, we should be able to change this.
+        private_snap = SQL(
+            "CASE information_type"
+            "    WHEN NULL THEN private"
+            "    ELSE information_type NOT IN ?"
+            "END", params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
         if visible_by_user is None:
-            return Snap.private == False
+            return private_snap == False
         else:
             roles = IPersonRoles(visible_by_user)
             if roles.in_admin or roles.in_commercial_admin:
                 return True
             else:
                 return Or(
-                    Snap.private == False,
+                    private_snap == False,
                     Snap.owner_id.is_in(Select(
                         TeamParticipation.teamID,
                         TeamParticipation.person == visible_by_user)),
