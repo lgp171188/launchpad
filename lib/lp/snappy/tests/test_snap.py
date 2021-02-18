@@ -2517,7 +2517,7 @@ class TestSnapWebservice(TestCaseWithFactory):
                             InformationType.PUBLIC)
         response = webservice.named_post(
             "/+snaps", "new", owner=owner_url, distro_series=distroseries_url,
-            name="mir", information_type=information_type.value, **kwargs)
+            name="mir", information_type=information_type.title, **kwargs)
         self.assertEqual(201, response.status)
         return webservice.get(response.getHeader("Location")).jsonBody()
 
@@ -2662,7 +2662,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             admin, permission=OAuthPermission.WRITE_PRIVATE)
         admin_webservice.default_api_version = "devel"
         response = admin_webservice.patch(
-            snap_url, "application/json", json.dumps({"private": False}))
+            snap_url, "application/json",
+            json.dumps({"information_type": 'Public'}))
         self.assertEqual(400, response.status)
         self.assertEqual(
             b"Snap recipe contains private information and cannot be public.",

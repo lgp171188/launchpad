@@ -845,7 +845,7 @@ class ISnapAdminAttributes(Interface):
 
     information_type = exported(Choice(
         title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=False, default=InformationType.PUBLIC,
+        required=False, readonly=False, default=InformationType.PUBLIC,
         description=_(
             "The type of information contained in this Snap recipe.")))
 
