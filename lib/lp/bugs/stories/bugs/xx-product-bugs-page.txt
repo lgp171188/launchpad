@@ -116,9 +116,9 @@ loaded using Javascript in a separate request.
     >>> print(extract_text(anon_browser.contents))
     Tags
     1
-    layout-test
-    1
     doc
+    1
+    layout-test
 
 They are there to provide easy navigation for bugs with a certain
 tag...
