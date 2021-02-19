@@ -187,10 +187,11 @@ class Bugzilla(ExternalBugTracker):
         # high bit set for non-ASCII characters, we can now strip out any
         # ASCII control characters without touching encoded Unicode
         # characters.
-        bad_chars = ''.join(chr(i) for i in range(0, 32))
-        for char in '\n\r\t':
-            bad_chars = bad_chars.replace(char, '')
-        trans_map = string.maketrans(bad_chars, ' ' * len(bad_chars))
+        bad_chars = b''.join(six.int2byte(i) for i in range(0, 32))
+        for char in b'\n', b'\r', b'\t':
+            bad_chars = bad_chars.replace(char, b'')
+        maketrans = bytes.maketrans if six.PY3 else string.maketrans
+        trans_map = maketrans(bad_chars, b' ' * len(bad_chars))
         contents = contents.translate(trans_map)
         # Don't use forbid_dtd=True here; Bugzilla XML responses seem to
         # include DOCTYPE declarations.
