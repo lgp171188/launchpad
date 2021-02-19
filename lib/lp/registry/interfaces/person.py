@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
+    'AlreadyConvertedException',
     'IAdminPeopleMergeSchema',
     'IAdminTeamMergeSchema',
     'ICanonicalSSOAPI',
@@ -2671,6 +2672,10 @@ class ICanonicalSSOAPI(Interface):
 
     def getPersonDetailsByOpenIDIdentifier(openid_identifier):
         """Get the details of an LP person based on an OpenID identifier."""
+
+
+class AlreadyConvertedException(Exception):
+    """Raised when attempting to claim a team that has been claimed."""
 
 
 @error_status(http_client.FORBIDDEN)

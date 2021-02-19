@@ -38,6 +38,7 @@ from lp.app.browser.launchpadform import (
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.registry.browser.team import HasRenewalPolicyMixin
 from lp.registry.interfaces.person import (
+    AlreadyConvertedException,
     IPersonSet,
     ITeam,
     )
@@ -212,8 +213,6 @@ class ClaimTeamView(
 
     @action(_('Continue'), name='confirm')
     def confirm_action(self, action, data):
-        # Avoid circular imports.
-        from lp.registry.model.person import AlreadyConvertedException
         try:
             self.claimed_profile.convertToTeam(
                 team_owner=self.context.requester)
