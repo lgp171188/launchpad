@@ -917,6 +917,10 @@ def merge_people(from_person, to_person, reviewer, delete=False):
     _mergeSnap(cur, from_person, to_person)
     skip.append(('snap', 'owner'))
 
+    # XXX pappacena 2021-02-18: add tests for this once we have
+    # SnapSubscription model in place.
+    skip.append(('snapsubscription', 'person'))
+
     _mergeOCIRecipe(cur, from_person, to_person)
     skip.append(('ocirecipe', 'owner'))
 
