@@ -37,11 +37,14 @@ class PersonProduct(HasMergeProposalsMixin):
     def __eq__(self, other):
         return (
             IPersonProduct.providedBy(other) and
-            self.person.id == other.person.id and
-            self.product.id == other.product.id)
+            self.person == other.person and
+            self.product == other.product)
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        return hash((self.person, self.product))
 
     @property
     def private(self):
