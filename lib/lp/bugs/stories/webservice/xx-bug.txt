@@ -1263,10 +1263,11 @@ Bug 1 has no attachments:
 
 An attachment can be added to the bug:
 
+    >>> import io
     >>> response = webservice.named_post(
     ...     bug_one['self_link'], 'addAttachment',
-    ...     data=b"12345", filename="numbers.txt", content_type='foo/bar',
-    ...     comment="The numbers you asked for.")
+    ...     data=io.BytesIO(b"12345"), filename="numbers.txt",
+    ...     content_type='foo/bar', comment="The numbers you asked for.")
     >>> print(response)
     HTTP/1.1 201 Created...
     Content-Length: 0
@@ -1333,7 +1334,7 @@ we must follow to download the data.
     >>> conn.headers['Content-Length']
     '5'
 
-    >>> data
+    >>> six.ensure_str(data)
     '12345'
 
 We can see that a message was created and linked to our
@@ -1378,7 +1379,7 @@ Once an attachment is uploaded, it is not possible to change it.
     ...     data = conn.read()
     ... finally:
     ...     conn.close()
-    >>> data
+    >>> six.ensure_str(data)
     '12345'
 
 But we can remove the attachment altogether.
