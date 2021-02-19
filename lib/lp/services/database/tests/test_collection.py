@@ -5,14 +5,12 @@
 
 __metaclass__ = type
 
-from storm.locals import (
-    Int,
-    Storm,
-    )
+from storm.locals import Int
 
 from lp.registry.model.person import Person
 from lp.services.database.collection import Collection
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.testing import TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -36,7 +34,7 @@ def make_table(range_start, range_end, table_name=None):
        FROM generate_series(%d, %d)
        """ % (table_name, range_start, range_end - 1))
 
-    class TestTable(Storm):
+    class TestTable(StormBase):
         """A test class/table generated on the fly for testing purposes."""
         __storm_table__ = table_name
         id = Int(primary=True)
@@ -44,9 +42,6 @@ def make_table(range_start, range_end, table_name=None):
         def __init__(self, id):
             self.id = id
             IStore(self.__class__).add(self)
-
-        def __eq__(self, other):
-            return self.id == other.id
 
     return TestTable
 

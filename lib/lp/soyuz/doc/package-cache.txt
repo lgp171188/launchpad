@@ -404,7 +404,7 @@ information will be available, no packages information will be cached.
     0
 
     >>> print(cprov.archive.package_description_cache)
-    celso providelo cprov
+    celso cprov providelo
 
 We insert a new source cache with texts containing punctuation and
 duplicated words pointing to Celso's PPA.
@@ -438,7 +438,7 @@ unique and lowercase words free of any punctuation.
     0
 
     >>> print(cprov.archive.package_description_cache)
-    ding providelo celso cdrkit cdrkit-bin dong ubuntu cdrkit-extra cprov
+    cdrkit cdrkit-bin cdrkit-extra celso cprov ding dong providelo ubuntu
 
 Let's remove the unclean cache and update Celso's PPA cache, so
 everything will be back to normal.

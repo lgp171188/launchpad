@@ -98,9 +98,9 @@ files_to_tarfile...
     drei | vier
     eins | zwei
 
-...or a data string.
+...or a byte string.
 
-    >>> data = LaunchpadWriteTarFile.files_to_string(files)
+    >>> data = LaunchpadWriteTarFile.files_to_bytes(files)
     >>> archive = tarfile.open('', 'r', io.BytesIO(data))
     >>> examine_tarfile(archive)
     drei | vier

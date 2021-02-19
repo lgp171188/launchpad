@@ -657,7 +657,6 @@ if it was HTML.
     ...
     wiki_url: The URI scheme &quot;htp&quot; is not allowed.  Only URIs
     with the following schemes may be used: ftp, http, https
-    ...
 
 
 The pillar set

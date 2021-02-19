@@ -41,8 +41,11 @@ class PersonDistributionSourcePackage:
     def __eq__(self, other):
         return (
             IPersonDistributionSourcePackage.providedBy(other) and
-            self.person.id == other.person.id and
+            self.person == other.person and
             self.distro_source_package == other.distro_source_package)
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        return hash((self.person, self.distro_source_package))
