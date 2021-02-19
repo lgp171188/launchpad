@@ -571,6 +571,12 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for this snap recipe.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
 
 class ISnapEdit(IWebhookTarget):
     """`ISnap` methods that require launchpad.Edit permission."""

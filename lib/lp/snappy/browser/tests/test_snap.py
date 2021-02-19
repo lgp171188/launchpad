@@ -720,7 +720,7 @@ class TestSnapAdminView(BaseTestSnapView):
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
 
-        private = InformationType.PROPRIETARY.name
+        private = InformationType.PRIVATESECURITY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = "my-project"
@@ -741,7 +741,7 @@ class TestSnapAdminView(BaseTestSnapView):
         snap = self.factory.makeSnap(registrant=self.person)
         commercial_admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
-        private = InformationType.PROPRIETARY.name
+        private = InformationType.PRIVATESECURITY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = ''

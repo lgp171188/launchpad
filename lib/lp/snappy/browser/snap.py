@@ -45,11 +45,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
-from lp.app.enums import (
-    FREE_INFORMATION_TYPES,
-    PRIVATE_INFORMATION_TYPES,
-    PROPRIETARY_INFORMATION_TYPES,
-    )
+from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.vocabularies import InformationTypeVocabulary
@@ -568,6 +564,16 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
 
     schema = ISnapEditSchema
 
+    def getInformationTypesToShow(self):
+        """Get the information types to display on the edit form.
+
+        We display a customised set of information types: anything allowed
+        by the repository's model, plus the current type.
+        """
+        allowed_types = set(self.context.getAllowedInformationTypes(self.user))
+        allowed_types.add(self.context.information_type)
+        return allowed_types
+
     @property
     def cancel_url(self):
         return canonical_url(self.context)
@@ -722,10 +728,10 @@ class SnapAdminView(BaseSnapEditView):
     field_names = [
         'project', 'information_type', 'require_virtualized', 'allow_internet']
 
+    # See `setUpWidgets` method.
     custom_widget_information_type = CustomWidgetFactory(
         LaunchpadRadioWidgetWithDescription,
-        vocabulary=InformationTypeVocabulary(
-            types=FREE_INFORMATION_TYPES + PROPRIETARY_INFORMATION_TYPES))
+        vocabulary=InformationTypeVocabulary(types=[]))
 
     @property
     def initial_values(self):
@@ -735,6 +741,12 @@ class SnapAdminView(BaseSnapEditView):
         # property has a fallback to check "private" property. This should
         # be removed once we back fill snap.information_type.
         return {'information_type': self.context.information_type}
+
+    def setUpWidgets(self):
+        super(SnapAdminView, self).setUpWidgets()
+        info_type_widget = self.widgets['information_type']
+        info_type_widget.vocabulary = InformationTypeVocabulary(
+            types=self.getInformationTypesToShow())
 
     def validate(self, data):
         super(SnapAdminView, self).validate(data)
