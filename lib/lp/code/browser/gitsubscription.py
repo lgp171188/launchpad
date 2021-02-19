@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -280,7 +280,7 @@ class GitSubscriptionEditView(LaunchpadEditFormView):
         # If the subscriber can no longer see the repository, redirect them
         # away.
         service = getUtility(IService, "sharing")
-        _, _, repositories, _ = service.getVisibleArtifacts(
+        _, _, repositories, _, _ = service.getVisibleArtifacts(
             self.person, gitrepositories=[self.repository],
             ignore_permissions=True)
         if not repositories:

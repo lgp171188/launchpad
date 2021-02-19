@@ -4751,7 +4751,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                  auto_build_archive=None, auto_build_pocket=None,
                  auto_build_channels=None, is_stale=None,
                  require_virtualized=True, processors=None,
-                 date_created=DEFAULT, private=False, information_type=None,
+                 date_created=DEFAULT, private=None, information_type=None,
                  allow_internet=True, build_source_tarball=False,
                  store_upload=False, store_series=None, store_name=None,
                  store_secrets=None, store_channels=None, project=_DEFAULT):
@@ -4779,7 +4779,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if project is _DEFAULT:
             project = None
         assert information_type is None or private is None
-        if private is not None:
+        if information_type is None:
             information_type = (InformationType.PUBLIC if not private
                                 else InformationType.PROPRIETARY)
         snap = getUtility(ISnapSet).new(

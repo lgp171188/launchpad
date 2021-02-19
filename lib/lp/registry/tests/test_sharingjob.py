@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for SharingJobs."""
@@ -40,6 +40,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job
 from lp.services.mail.sendmail import format_address_for_person
+from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     login_person,
     person_logged_in,
@@ -252,9 +253,11 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
     layer = CeleryJobLayer
 
     def setUp(self):
-        self.useFixture(FeatureFixture({
+        features = {
             'jobs.celery.enabled_classes': 'RemoveArtifactSubscriptionsJob',
-        }))
+        }
+        features.update(SNAP_TESTING_FLAGS)
+        self.useFixture(FeatureFixture(features))
         super(RemoveArtifactSubscriptionsJobTestCase, self).setUp()
 
     def test_create(self):
@@ -327,7 +330,7 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             owner=owner, target=product,
             information_type=InformationType.USERDATA)
         snap = self.factory.makeSnap(
-            owner=owner, project=product,
+            owner=owner, registrant=owner, project=product,
             information_type=InformationType.USERDATA)
         specification = self.factory.makeSpecification(
             owner=owner, product=product,
@@ -356,7 +359,7 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             specification.subscribe(artifact_indirect_grantee, owner)
 
         # pick one of the concrete artifacts (bug, branch, Git repository,
-        # or spec) and subscribe the teams and persons.
+        # snap, or spec) and subscribe the teams and persons.
         concrete_artifact, get_pillars, get_subscribers = configure_test(
             bug, branch, gitrepository, snap, specification,
             policy_team_grantee, policy_indirect_grantee,
@@ -455,7 +458,7 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         def get_subscribers(concrete_artifact):
             return concrete_artifact.subscribers
 
-        def configure_test(bug, branch, gitrepository, specification,
+        def configure_test(bug, branch, gitrepository, snap, specification,
                            policy_team_grantee, policy_indirect_grantee,
                            artifact_team_grantee, owner):
             concrete_artifact = gitrepository
@@ -479,7 +482,7 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
     def _assert_snap_change_unsubscribes(self, change_callback):
 
         def get_pillars(concrete_artifact):
-            return [concrete_artifact.target]
+            return [concrete_artifact.project]
 
         def get_subscribers(concrete_artifact):
             return concrete_artifact.subscribers
@@ -489,6 +492,8 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
                            artifact_team_grantee, owner):
             concrete_artifact = snap
             snap.subscribe(policy_team_grantee, owner)
+            snap.subscribe(policy_indirect_grantee, owner)
+            snap.subscribe(artifact_team_grantee, owner)
             return concrete_artifact, get_pillars, get_subscribers
 
         self._assert_artifact_change_unsubscribes(

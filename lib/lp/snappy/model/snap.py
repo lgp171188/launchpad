@@ -123,6 +123,7 @@ from lp.registry.model.accesspolicy import (
     reconcile_access_for_artifact,
     )
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import Person
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
@@ -1132,6 +1133,13 @@ class Snap(Storm, WebhookTargetMixin):
             person.is_team and
             person.anyone_can_join())
 
+    @property
+    def subscribers(self):
+        return Store.of(self).find(
+            Person,
+            SnapSubscription.person_id == Person.id,
+            SnapSubscription.snap == self)
+
     def subscribe(self, person, subscribed_by):
         """See `ISnap`."""
         if not self._userCanBeSubscribed(person):
@@ -1144,14 +1152,17 @@ class Snap(Storm, WebhookTargetMixin):
                 person=person, snap=self, subscribed_by=subscribed_by)
             Store.of(subscription).flush()
         service = getUtility(IService, "sharing")
-        service.ensureAccessGrants([person], subscribed_by, snaps=[self])
+        _, _, _, snaps, _ = service.getVisibleArtifacts(
+            person, snaps=[self], ignore_permissions=True)
+        if not snaps:
+            service.ensureAccessGrants([person], subscribed_by, snaps=[self])
 
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         service = getUtility(IService, "sharing")
         service.revokeAccessGrants(
             self.pillar, person, unsubscribed_by, snaps=[self])
-        subscription = self.getSubscription(person)
+        subscription = self._getSubscription(person)
         if (not ignore_permissions
                 and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
             raise UserCannotUnsubscribePerson(
@@ -1362,9 +1373,12 @@ class SnapSet:
             expressions.append(Snap.owner == owner)
         return IStore(Snap).find(Snap, *expressions)
 
-    def findByIds(self, snap_ids):
+    def findByIds(self, snap_ids, visible_by_user=None):
         """See `ISnapSet`."""
-        return IStore(ISnap).find(Snap, Snap.id.is_in(snap_ids))
+        clauses = [Snap.id.is_in(snap_ids)]
+        if visible_by_user is not None:
+            clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        return IStore(Snap).find(Snap, *clauses)
 
     def findByOwner(self, owner):
         """See `ISnapSet`."""

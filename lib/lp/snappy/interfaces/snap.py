@@ -570,6 +570,10 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    subscribers = CollectionField(
+        title=_("Persons subscribed to this repository."),
+        readonly=True, value_type=Reference(IPerson))
+
     def visibleByUser(user):
         """Can the specified user see this snap recipe?"""
 

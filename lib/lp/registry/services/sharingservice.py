@@ -81,10 +81,7 @@ from lp.services.webapp.authorization import (
     available_with_permission,
     check_permission,
     )
-from lp.snappy.interfaces.snap import (
-    ISnap,
-    ISnapSet,
-    )
+from lp.snappy.interfaces.snap import ISnapSet
 
 
 @implementer(ISharingService)
@@ -332,6 +329,7 @@ class SharingService:
         bug_ids = []
         branch_ids = []
         gitrepository_ids = []
+        snap_ids = []
         for bug in bugs or []:
             if (not ignore_permissions
                 and not check_permission('launchpad.View', bug)):
@@ -344,9 +342,14 @@ class SharingService:
             branch_ids.append(branch.id)
         for gitrepository in gitrepositories or []:
             if (not ignore_permissions
-                and not check_permission('launchpad.View', gitrepository)):
+                    and not check_permission('launchpad.View', gitrepository)):
                 raise Unauthorized
             gitrepository_ids.append(gitrepository.id)
+        for snap in snaps or []:
+            if (not ignore_permissions
+                and not check_permission('launchpad.View', snap)):
+                raise Unauthorized
+            snap_ids.append(snap.id)
         for spec in specifications or []:
             if (not ignore_permissions
                 and not check_permission('launchpad.View', spec)):
@@ -376,6 +379,12 @@ class SharingService:
             visible_gitrepositories = list(
                 wanted_gitrepositories.getRepositories())
 
+        # Load the Snaps.
+        visible_snaps = []
+        if snap_ids:
+            visible_snaps = list(getUtility(ISnapSet).findByIds(
+                snap_ids, visible_by_user=person))
+
         # Load the specifications.
         visible_specs = []
         if specifications:
@@ -387,7 +396,7 @@ class SharingService:
 
         return (
             visible_bugs, visible_branches, visible_gitrepositories,
-            visible_specs)
+            visible_snaps, visible_specs)
 
     def getInvisibleArtifacts(self, person, bugs=None, branches=None,
                               gitrepositories=None):

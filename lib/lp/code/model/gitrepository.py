@@ -983,7 +983,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             subscription.review_level = code_review_level
         # Grant the subscriber access if they can't see the repository.
         service = getUtility(IService, "sharing")
-        _, _, repositories, _ = service.getVisibleArtifacts(
+        _, _, repositories, _, _ = service.getVisibleArtifacts(
             person, gitrepositories=[self], ignore_permissions=True)
         if not repositories:
             service.ensureAccessGrants(
