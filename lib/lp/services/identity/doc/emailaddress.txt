@@ -89,7 +89,7 @@ or the address of a team's mailing list.
     >>> ignored = login_person(foobar)
     >>> emailaddress = emailset.getByEmail('oink@canonical.com')
     >>> emailaddress.destroySelf()
-    >>> print emailset.getByEmail('oink@canonical.com')
+    >>> print(emailset.getByEmail('oink@canonical.com'))
     None
 
 Otherwise, UndeletableEmailAddress is raised.
