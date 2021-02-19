@@ -1207,9 +1207,22 @@ class SnapSet:
 
         return snap
 
-    def isValidPrivacy(self, private, owner, branch=None, git_ref=None):
+    def getSnapSuggestedPrivacy(self, owner, branch=None, git_ref=None):
         """See `ISnapSet`."""
-        # Private snaps may contain anything ...
+        # Public snaps with private sources are not allowed.
+        source = branch or git_ref
+        if source is not None and source.private:
+            return source.information_type
+
+        # Public snaps owned by private teams are not allowed.
+        if owner is not None and owner.private:
+            return InformationType.PROPRIETARY
+
+        return InformationType.PUBLIC
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type not in PUBLIC_INFORMATION_TYPES
         if private:
             # If appropriately enabled via feature flag.
             if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
@@ -1226,11 +1239,6 @@ class SnapSet:
             return False
 
         return True
-
-    def isValidInformationType(self, information_type, owner, branch=None,
-                               git_ref=None):
-        private = information_type not in PUBLIC_INFORMATION_TYPES
-        return self.isValidPrivacy(private, owner, branch, git_ref)
 
     def _getByName(self, owner, name):
         return IStore(Snap).find(

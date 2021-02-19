@@ -47,7 +47,6 @@ from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
 from lp.app.enums import (
     FREE_INFORMATION_TYPES,
-    InformationType,
     PRIVATE_INFORMATION_TYPES,
     PROPRIETARY_INFORMATION_TYPES,
     )
@@ -529,10 +528,8 @@ class SnapAddView(
             kwargs = {'git_ref': self.context}
         else:
             kwargs = {'branch': self.context}
-        private = not getUtility(ISnapSet).isValidPrivacy(
-            False, data['owner'], **kwargs)
-        information_type = (InformationType.PROPRIETARY if private else
-                            InformationType.PUBLIC)
+        information_type = getUtility(ISnapSet).getSnapSuggestedPrivacy(
+            data['owner'], **kwargs)
         if not data.get('auto_build', False):
             data['auto_build_archive'] = None
             data['auto_build_pocket'] = None
@@ -651,7 +648,7 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
             # Requirements for private snaps.
             project = data.get('project', self.context.project)
             if project is None:
-                msg = ('Private Snap recipes should be associated '
+                msg = ('Private Snap recipes must be associated '
                        'with a project.')
                 self.setFieldError('project', msg)
 
@@ -719,6 +716,9 @@ class SnapAdminView(BaseSnapEditView):
 
     page_title = 'Administer'
 
+    # XXX pappacena 2021-02-19: Once we have the whole privacy work in
+    # place, we should move "project" and "information_type" from +admin
+    # page to +edit, to allow common users to edit this.
     field_names = [
         'project', 'information_type', 'require_virtualized', 'allow_internet']
 

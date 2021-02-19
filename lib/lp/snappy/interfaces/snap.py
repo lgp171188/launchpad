@@ -910,8 +910,8 @@ class ISnapSet(Interface):
     def exists(owner, name):
         """Check to see if a matching snap exists."""
 
-    def isValidPrivacy(private, owner, branch=None, git_ref=None):
-        """Whether or not the privacy context is valid."""
+    def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
+        """Which privacy a Snap should have based on its creation params."""
 
     def isValidInformationType(
             information_type, owner, branch=None, git_ref=None):
