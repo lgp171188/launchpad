@@ -231,8 +231,9 @@ should match the files target architectures:
     ...     print f.filename, f
     ed_0.2-20_i386.deb <...DebBinaryUploadFile...>
 
-    >>> [a for a in ed_mismatched_upload.changes.architectures]
-    ['amd64']
+    >>> for a in ed_mismatched_upload.changes.architectures:
+    ...     print(a)
+    amd64
 
 Since the changesfile specify that only 'amd64' will be used and
 there is a file that depends on 'i386' the upload is rejected:
@@ -280,8 +281,10 @@ And because of that it's not considered native.
 But if we check the DSC we will find the reference to the already
 known ORIG file:
 
-    >>> [f.filename for f in ed_upload.changes.dsc.files]
-    ['ed_0.2.orig.tar.gz', 'ed_0.2-21.diff.gz']
+    >>> for f in ed_upload.changes.dsc.files:
+    ...     print(f.filename)
+    ed_0.2.orig.tar.gz
+    ed_0.2-21.diff.gz
 
     >>> success = ed_upload.do_accept()
     >>> success

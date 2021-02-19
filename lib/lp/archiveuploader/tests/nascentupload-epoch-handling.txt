@@ -204,11 +204,11 @@ SourcePackageRelease record store a proper 'version':
 
 For source uploads, Changes.version == DSC.version == SPR.version:
 
-    >>> bar_src_upload.changes.version
-    '1:1.0-9'
+    >>> print(bar_src_upload.changes.version)
+    1:1.0-9
 
-    >>> bar_src_upload.changes.dsc.dsc_version
-    '1:1.0-9'
+    >>> print(bar_src_upload.changes.dsc.dsc_version)
+    1:1.0-9
 
     >>> bar_src_queue = bar_src_upload.queue_root
     >>> bar_spr = bar_src_queue.sources[0].sourcepackagerelease
@@ -247,21 +247,21 @@ The Changesfile version always refers to the source version and the
 binary versions included in the upload can diverge between themselves
 and from the source version.
 
-    >>> bar_bin_upload.changes.version
-    '1:1.0-9'
+    >>> print(bar_bin_upload.changes.version)
+    1:1.0-9
 
     >>> deb_file = bar_bin_upload.changes.files[0]
-    >>> deb_file.filename
-    'bar_6.6.6_i386.deb'
+    >>> print(deb_file.filename)
+    bar_6.6.6_i386.deb
 
-    >>> deb_file.version
-    '1:1.0-9'
+    >>> print(deb_file.version)
+    1:1.0-9
 
-    >>> deb_file.source_version
-    '1:1.0-9'
+    >>> print(deb_file.source_version)
+    1:1.0-9
 
-    >>> deb_file.control_version
-    '1:6.6.6'
+    >>> print(deb_file.control_version)
+    1:6.6.6
 
 Anyway, the proper value for BinaryPackageRelease.version is the
 version stored in the binary control file:

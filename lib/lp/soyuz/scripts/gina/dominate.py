@@ -8,6 +8,7 @@ __all__ = [
     'dominate_imported_source_packages',
     ]
 
+import six
 from zope.component import getUtility
 
 from lp.archivepublisher.domination import Dominator
@@ -27,7 +28,8 @@ def dominate_imported_source_packages(txn, logger, distro_name, series_name,
     for package_name, pub_count in package_counts:
         entries = packages_map.src_map.get(package_name, [])
         live_versions = [
-            entry['Version'] for entry in entries if 'Version' in entry]
+            six.ensure_text(entry['Version'])
+            for entry in entries if 'Version' in entry]
 
         # Gina import just ensured that any live version in the Sources
         # file has a Published publication.  So there should be at least
