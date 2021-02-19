@@ -61,7 +61,7 @@ architecturespecific attribute is hidden, i.e, this binary is
 architecture independent and we don't know at this point, that's why we
 have only on binary.
 
-  >>> for bin_name, archs in firefox_view.binaries().items():
+  >>> for bin_name, archs in sorted(firefox_view.binaries().items()):
   ...    print(bin_name, pretty(archs))
   mozilla-firefox ['hppa', 'i386']
   mozilla-firefox-data ['hppa', 'i386']

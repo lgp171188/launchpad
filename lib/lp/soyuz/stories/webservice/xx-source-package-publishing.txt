@@ -350,7 +350,7 @@ service:
 Create a helper function to print the results:
 
     >>> def print_build_summaries(summaries):
-    ...     for id, summary in summaries.items():
+    ...     for id, summary in sorted(summaries.items()):
     ...         arch_tags = [build['arch_tag'] for build in summary['builds']]
     ...         print("Source ID %s: %s (%s)" % (id, summary['status'],
     ...                                          pretty(arch_tags)))
