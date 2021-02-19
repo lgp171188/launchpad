@@ -18,8 +18,8 @@ COMMENT ON COLUMN Snap.information_type IS
 
 CREATE TABLE SnapSubscription (
     id serial PRIMARY KEY,
-    person integer NOT NULL REFERENCES Person(id),
     snap integer NOT NULL REFERENCES Snap(id),
+    person integer NOT NULL REFERENCES Person(id),
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
     subscribed_by integer NOT NULL REFERENCES Person(id)
 );
@@ -41,17 +41,17 @@ CREATE UNIQUE INDEX snapsubscription__person_snap__key
 CREATE INDEX snapsubscription__person__idx
     ON SnapSubscription(person);
 
+CREATE INDEX snapsubscription__subscribed_by__idx
+    ON SnapSubscription(subscribed_by);
+
 ALTER TABLE AccessArtifact
     ADD COLUMN snap integer REFERENCES snap;
-
-CREATE UNIQUE INDEX accessartifact__snap__key
-    ON AccessArtifact(snap) WHERE snap IS NOT NULL;
 
 
 ALTER TABLE AccessArtifact DROP CONSTRAINT has_artifact;
 ALTER TABLE AccessArtifact
     ADD CONSTRAINT has_artifact CHECK (
-    (null_count(ARRAY[bug, branch, gitrepository, snap, specification]) = 4));
+    (null_count(ARRAY[bug, branch, gitrepository, snap, specification]) = 4)) NOT VALID;
 
 
 CREATE OR REPLACE FUNCTION snap_denorm_access(snap_id integer)
@@ -60,17 +60,15 @@ $$
 DECLARE
     info_type integer;
 BEGIN
-    -- XXX pappacena 2021-002-12: Once we finish filling "information_type" and
+    -- XXX pappacena 2021-02-12: Once we finish filling "information_type" and
     -- deprecate the usage of "public" column at code level, we will be able to
     -- drop the "private" column usage here.
     SELECT
-        CASE snap.information_type
-            WHEN NULL THEN
-                -- information type: 1 = public; 5 = proprietary
-                CASE WHEN snap.private THEN 5 ELSE 1 END
-            ELSE
-                snap.information_type
-            END
+        COALESCE(
+            snap.information_type,
+            -- information type: 1 = public; 5 = proprietary
+            CASE WHEN snap.private THEN 5 ELSE 1 END
+        )
     INTO info_type
     FROM snap WHERE id = snap_id;
 
