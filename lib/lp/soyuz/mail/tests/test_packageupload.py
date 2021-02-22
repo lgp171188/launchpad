@@ -254,10 +254,10 @@ class TestNotification(TestCaseWithFactory):
 
     def test_fetch_information_changes(self):
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Foo Bar <foo.bar@example.com>',
-            'Maintainer': 'Foo Bar <foo.bar@example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Foo Bar <foo.bar@example.com>',
+            'Maintainer': b'Foo Bar <foo.bar@example.com>',
+            'Changes': b' * Foo!',
             }
         info = fetch_information(None, None, changes)
         self.assertEqual('2001-01-01', info['date'])
@@ -272,11 +272,11 @@ class TestNotification(TestCaseWithFactory):
 
     def test_fetch_information_changes_notify_changed_by(self):
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Foo Bar <foo.bar@example.com>',
-            'Maintainer': 'Foo Bar <foo.bar@example.com>',
-            'Changes': ' * Foo!',
-            'Launchpad-Notify-Changed-By': 'yes',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Foo Bar <foo.bar@example.com>',
+            'Maintainer': b'Foo Bar <foo.bar@example.com>',
+            'Changes': b' * Foo!',
+            'Launchpad-Notify-Changed-By': b'yes',
             }
         info = fetch_information(None, None, changes)
         self.assertEqual('2001-01-01', info['date'])
@@ -410,10 +410,10 @@ class TestNotification(TestCaseWithFactory):
         # Test getRecipientsForAction with good email addresses..
         blamer, maintainer, changer = self._setup_recipients()
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer@example.com>',
-            'Maintainer': 'Maintainer <maintainer@example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
             }
         self.assertRecipientsEqual(
             [blamer, maintainer, changer],
@@ -422,10 +422,10 @@ class TestNotification(TestCaseWithFactory):
     def test_getRecipientsForAction_bad_maintainer_email(self):
         blamer, maintainer, changer = self._setup_recipients()
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer@example.com>',
-            'Maintainer': 'Maintainer <maintainer at example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer at example.com>',
+            'Changes': b' * Foo!',
             }
         self.assertRecipientsEqual(
             [blamer, changer], changes, blamer, maintainer, changer)
@@ -434,10 +434,10 @@ class TestNotification(TestCaseWithFactory):
         # Test getRecipientsForAction with invalid changedby email address.
         blamer, maintainer, changer = self._setup_recipients()
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer at example.com>',
-            'Maintainer': 'Maintainer <maintainer@example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer at example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
             }
         self.assertRecipientsEqual(
             [blamer, maintainer], changes, blamer, maintainer, changer)
@@ -447,10 +447,10 @@ class TestNotification(TestCaseWithFactory):
         # to the archive owner.
         _, maintainer, changer = self._setup_recipients()
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer@example.com>',
-            'Maintainer': 'Maintainer <maintainer@example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
             }
         self.assertRecipientsEqual(
             [], changes, None, maintainer, changer,
@@ -461,10 +461,10 @@ class TestNotification(TestCaseWithFactory):
         # signed the upload.
         blamer, maintainer, changer = self._setup_recipients()
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer@example.com>',
-            'Maintainer': 'Maintainer <maintainer@example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
             }
         self.assertRecipientsEqual(
             [blamer], changes, blamer, maintainer, changer,
@@ -475,11 +475,11 @@ class TestNotification(TestCaseWithFactory):
         # notifications go to the changer even for PPA uploads.
         blamer, maintainer, changer = self._setup_recipients()
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer@example.com>',
-            'Maintainer': 'Maintainer <maintainer@example.com>',
-            'Changes': ' * Foo!',
-            'Launchpad-Notify-Changed-By': 'yes',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
+            'Launchpad-Notify-Changed-By': b'yes',
             }
         self.assertRecipientsEqual(
             [blamer, changer], changes, blamer, maintainer, changer,
@@ -500,10 +500,10 @@ class TestNotification(TestCaseWithFactory):
         spr = self.factory.makeSourcePackageRelease(
             component=component, section_name="libs")
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer@example.com>',
-            'Maintainer': 'Maintainer <maintainer@example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
             }
         mailer = PackageUploadMailer.forAction(
             "accepted", blamer, spr, [], [], archive, distroseries,
@@ -545,10 +545,10 @@ class TestNotification(TestCaseWithFactory):
         spr = self.factory.makeSourcePackageRelease(
             component=component, section_name="libs")
         changes = {
-            'Date': '2001-01-01',
-            'Changed-By': 'Changer <changer@example.com>',
-            'Maintainer': 'Maintainer <maintainer@example.com>',
-            'Changes': ' * Foo!',
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
             }
         mailer = PackageUploadMailer.forAction(
             "accepted", blamer, spr, [], [], archive, distroseries,

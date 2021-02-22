@@ -90,18 +90,18 @@ file name.
 
 At this point the changesfile content is already parsed:
 
-    >>> ed_binary_changes.source
-    'ed'
+    >>> print(ed_binary_changes.source)
+    ed
 
-    >>> ed_binary_changes.version
-    '0.2-20'
+    >>> print(ed_binary_changes.version)
+    0.2-20
 
     >>> for item in ed_binary_changes.architectures:
     ...     print(item)
     i386
 
-    >>> ed_binary_changes.suite_name
-    'unstable'
+    >>> print(ed_binary_changes.suite_name)
+    unstable
 
 Push upload targeted suite into policy before the checks, nomally done
 by NascentUpload object:
@@ -129,15 +129,19 @@ At this point we can inspect the list of files contained in the upload.
     ...     print uploaded_file.filename
     ed_0.2-20_i386.deb
 
-    >>> [f.filename for f in ed_binary_changes.binary_package_files]
-    ['ed_0.2-20_i386.deb']
-    >>> [f.filename for f in ed_binary_changes.source_package_files]
-    []
+    >>> for f in ed_binary_changes.binary_package_files:
+    ...     print(f.filename)
+    ed_0.2-20_i386.deb
+    >>> for f in ed_binary_changes.source_package_files:
+    ...     print(f.filename)
 
-    >>> [f.filename for f in ed_source_changes.binary_package_files]
-    []
-    >>> [f.filename for f in ed_source_changes.source_package_files]
-    ['ed_0.2-20.dsc', 'ed_0.2-20.diff.gz', 'ed_0.2.orig.tar.gz']
+    >>> for f in ed_source_changes.binary_package_files:
+    ...     print(f.filename)
+    >>> for f in ed_source_changes.source_package_files:
+    ...     print(f.filename)
+    ed_0.2-20.dsc
+    ed_0.2-20.diff.gz
+    ed_0.2.orig.tar.gz
 
 Similar to what we have in 'processFiles' ChangesFile.verify is also
 a error generator
@@ -364,14 +368,14 @@ in the ChangesFile instance.
 The DSCFile also presents a similar behaviour to access its parsed
 contents:
 
-    >>> ed_source_dsc.source
-    'ed'
-    >>> ed_source_dsc.version
-    '0.2-20'
-    >>> ed_source_dsc.architecture
-    'any'
-    >>> ed_source_dsc.binary
-    'ed'
+    >>> print(ed_source_dsc.source)
+    ed
+    >>> print(ed_source_dsc.version)
+    0.2-20
+    >>> print(ed_source_dsc.architecture)
+    any
+    >>> print(ed_source_dsc.binary)
+    ed
 
 The DSC is GPG-signed most of the time, so we can guarantee who was
 the author. The DSCFile class implements the same address parsing
@@ -482,7 +486,7 @@ changes file:
     ...     'main/net', 'important', 'foo', '1.2', ed_binary_changes,
     ...     modified_insecure_policy, DevNullLogger())
     >>> list(ed_binary_deb.verify())
-    [UploadError('ed_0.2-20_i386.deb
+    [UploadError(...'ed_0.2-20_i386.deb
     control file lists section as main/editors but changes file has
     main/net.',)]
 
@@ -493,7 +497,7 @@ It also checks the priority against the changes file:
     ...     'main/editors', 'extra', 'foo', '1.2', ed_binary_changes,
     ...     modified_insecure_policy, DevNullLogger())
     >>> list(ed_binary_deb.verify())
-    [UploadError('ed_0.2-20_i386.deb
+    [UploadError(...'ed_0.2-20_i386.deb
     control file lists priority as important but changes file has extra.',)]
 
 The timestamp of the files in the .deb are tested against the policy for

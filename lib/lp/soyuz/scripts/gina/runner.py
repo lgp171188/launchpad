@@ -10,6 +10,7 @@ import sys
 import time
 
 import psycopg2
+import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -120,7 +121,7 @@ def run_gina(options, ztm, target_section):
 def attempt_source_package_import(distro, source, package_root,
                                   importer_handler):
     """Attempt to import a source package, and handle typical errors."""
-    package_name = source.get("Package", "unknown")
+    package_name = six.ensure_text(source.get("Package", "unknown"))
     try:
         try:
             do_one_sourcepackage(
