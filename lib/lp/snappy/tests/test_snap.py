@@ -47,6 +47,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.app.errors import SubscriptionPrivacyViolation
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import (
     BuildQueueStatus,
@@ -66,7 +67,10 @@ from lp.code.tests.helpers import (
     BranchHostingFixture,
     GitHostingFixture,
     )
-from lp.registry.enums import PersonVisibility
+from lp.registry.enums import (
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -1375,7 +1379,8 @@ class TestSnapVisibility(TestCaseWithFactory):
 
     def test_private_is_visible_by_team_member(self):
         person = self.factory.makePerson()
-        team = self.factory.makeTeam(members=[person])
+        team = self.factory.makeTeam(
+            members=[person], membership_policy=TeamMembershipPolicy.MODERATED)
         snap = self.factory.makeSnap(private=True, owner=team, registrant=team)
         with person_logged_in(team):
             self.assertTrue(snap.visibleByUser(person))
@@ -1565,12 +1570,23 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
 
+    def test_create_private_snap_with_open_team_as_owner_fails(self):
+        components = self.makeSnapComponents()
+        with admin_logged_in():
+            components['owner'].membership_policy = TeamMembershipPolicy.OPEN
+            components['information_type'] = InformationType.PROPRIETARY
+        self.assertRaises(
+            SubscriptionPrivacyViolation,
+            getUtility(ISnapSet).new, **components)
+
     def test_private_snap_information_type_compatibility(self):
         login_admin()
         private = InformationType.PROPRIETARY
         public = InformationType.PUBLIC
+        components = self.makeSnapComponents()
+        components['owner'].membership_policy = TeamMembershipPolicy.MODERATED
         private_snap = getUtility(ISnapSet).new(
-            information_type=private, **self.makeSnapComponents())
+            information_type=private, **components)
         self.assertEqual(
             InformationType.PROPRIETARY, private_snap.information_type)
 
@@ -1583,8 +1599,11 @@ class TestSnapSet(TestCaseWithFactory):
         # Creating private snaps for public sources is allowed.
         [ref] = self.factory.makeGitRefs()
         components = self.makeSnapComponents(git_ref=ref)
-        components['information_type'] = InformationType.PROPRIETARY
-        components['project'] = self.factory.makeProduct()
+        with admin_logged_in():
+            components['information_type'] = InformationType.PROPRIETARY
+            components['owner'].membership_policy = (
+                TeamMembershipPolicy.MODERATED)
+            components['project'] = self.factory.makeProduct()
         snap = getUtility(ISnapSet).new(**components)
         with person_logged_in(components['owner']):
             self.assertTrue(snap.private)
@@ -2752,7 +2771,9 @@ class TestSnapWebservice(TestCaseWithFactory):
 
     def test_new_private(self):
         # Ensure private Snap creation works.
-        team = self.factory.makeTeam(owner=self.person)
+        team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
+            owner=self.person)
         distroseries = self.factory.makeDistroSeries(registrant=team)
         [ref] = self.factory.makeGitRefs()
         private_webservice = webservice_for_person(
