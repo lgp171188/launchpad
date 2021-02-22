@@ -120,6 +120,7 @@ from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snap import (
+    get_snap_privacy_filter,
     Snap,
     SnapSet,
     )
@@ -1535,7 +1536,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertContentEqual(snaps[:3], snap_set.findByPerson(owners[0]))
         self.assertContentEqual(snaps[3:], snap_set.findByPerson(owners[1]))
 
-    def test_findSnapVisibilityClause_includes_grants(self):
+    def test_get_snap_privacy_filter_includes_grants(self):
         grantee, creator = [self.factory.makePerson() for i in range(2)]
         # All snaps are owned by "creator", and "grantee" will later have
         # access granted using sharing service.
@@ -1549,12 +1550,9 @@ class TestSnapSet(TestCaseWithFactory):
             for snap in shared_snaps:
                 snap.subscribe(grantee, creator)
 
-        snap_set = getUtility(ISnapSet)
-
         def all_snaps_visible_by(person):
-            snaps = removeSecurityProxy(snap_set)
             return IStore(Snap).find(
-                Snap, snaps._findSnapVisibilityClause(person))
+                Snap, get_snap_privacy_filter(person))
 
         # Creator should get all snaps.
         self.assertContentEqual(
