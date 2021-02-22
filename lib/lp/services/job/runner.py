@@ -451,7 +451,7 @@ class JobRunner(BaseJobRunner):
 class RunJobCommand(amp.Command):
 
     arguments = [(b'job_id', amp.Integer())]
-    response = [(b'success', amp.Integer()), (b'oops_id', amp.String())]
+    response = [(b'success', amp.Integer()), (b'oops_id', amp.Unicode())]
 
 
 def import_source(job_source_name):
