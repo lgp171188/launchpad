@@ -127,6 +127,7 @@ from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snap import (
+    get_snap_privacy_filter,
     Snap,
     SnapSet,
     )
@@ -1439,6 +1440,11 @@ class TestSnapVisibility(TestCaseWithFactory):
         snap = self.factory.makeSnap(
             project=old_project, private=True, registrant=owner, owner=owner)
 
+        # Owner automatically gets a grant.
+        with person_logged_in(owner):
+            self.assertTrue(snap.visibleByUser(snap.owner))
+            self.assertEqual(1, self.getSnapGrants(snap).count())
+
         new_project = self.factory.makeProduct()
         getUtility(IAccessPolicySource).create(
             [(new_project, InformationType.PROPRIETARY)])
@@ -1446,7 +1452,7 @@ class TestSnapVisibility(TestCaseWithFactory):
         with person_logged_in(owner):
             snap.subscribe(another_person, owner)
             self.assertTrue(snap.visibleByUser(another_person))
-            self.assertEqual(1, self.getSnapGrants(snap).count())
+            self.assertEqual(2, self.getSnapGrants(snap).count())
             self.assertThat(
                 self.getSnapSubscription(snap, another_person),
                 MatchesStructure(
@@ -1457,7 +1463,7 @@ class TestSnapVisibility(TestCaseWithFactory):
 
             snap.setProject(new_project)
             self.assertTrue(snap.visibleByUser(another_person))
-            self.assertEqual(1, self.getSnapGrants(snap).count())
+            self.assertEqual(2, self.getSnapGrants(snap).count())
             self.assertThat(
                 self.getSnapSubscription(snap, another_person),
                 MatchesStructure(
@@ -1676,7 +1682,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertContentEqual(snaps[:3], snap_set.findByPerson(owners[0]))
         self.assertContentEqual(snaps[3:], snap_set.findByPerson(owners[1]))
 
-    def test_findSnapVisibilityClause_includes_grants(self):
+    def test_get_snap_privacy_filter_includes_grants(self):
         grantee, creator = [self.factory.makePerson() for i in range(2)]
         # All snaps are owned by "creator", and "grantee" will later have
         # access granted using sharing service.
@@ -1690,12 +1696,9 @@ class TestSnapSet(TestCaseWithFactory):
             for snap in shared_snaps:
                 snap.subscribe(grantee, creator)
 
-        snap_set = getUtility(ISnapSet)
-
         def all_snaps_visible_by(person):
-            snaps = removeSecurityProxy(snap_set)
             return IStore(Snap).find(
-                Snap, snaps._findSnapVisibilityClause(person))
+                Snap, get_snap_privacy_filter(person))
 
         # Creator should get all snaps.
         self.assertContentEqual(

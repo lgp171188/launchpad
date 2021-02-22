@@ -935,6 +935,7 @@ def merge_people(from_person, to_person, reviewer, delete=False):
     _mergeSnap(cur, from_person, to_person)
     skip.append(('snap', 'owner'))
 
+
     _mergeSnapSubscription(cur, from_id, to_id)
     skip.append(('snapsubscription', 'person'))
 
