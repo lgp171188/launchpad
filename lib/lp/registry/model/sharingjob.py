@@ -492,9 +492,8 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 sub.repository.unsubscribe(
                     sub.person, self.requestor, ignore_permissions=True)
         if snap_filters:
-            snap_filters.append(Not(
-                Or(*get_snap_privacy_filter(
-                    SnapSubscription.person_id))))
+            snap_filters.append(
+                Not(get_snap_privacy_filter(SnapSubscription.person_id)))
             snap_subscriptions = IStore(SnapSubscription).using(
                 SnapSubscription,
                 Join(Snap, Snap.id == SnapSubscription.snap_id)
