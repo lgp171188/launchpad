@@ -1206,6 +1206,11 @@ class Snap(Storm, WebhookTargetMixin):
         """Delete access grants for this snap recipe prior to deleting it."""
         getUtility(IAccessArtifactSource).delete([self])
 
+    def _deleteSnapSubscriptions(self):
+        subscriptions = Store.of(self).find(
+            SnapSubscription, SnapSubscription.snap == self)
+        subscriptions.remove()
+
     def destroySelf(self):
         """See `ISnap`."""
         store = IStore(Snap)
@@ -1243,6 +1248,7 @@ class Snap(Storm, WebhookTargetMixin):
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
         getUtility(IWebhookSet).delete(self.webhooks)
         self._deleteAccessGrants()
+        self._deleteSnapSubscriptions()
         store.remove(self)
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
