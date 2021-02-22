@@ -43,6 +43,7 @@ from storm.locals import (
     Storm,
     Unicode,
     )
+from twisted.application.service import IService
 import yaml
 from zope.component import (
     getAdapter,
@@ -61,7 +62,9 @@ from lp.app.browser.tales import (
     DateTimeFormatterAPI,
     )
 from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
     InformationType,
+    PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
     )
 from lp.app.errors import IncompatibleArguments
@@ -99,6 +102,10 @@ from lp.code.interfaces.gitrepository import (
     )
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
+from lp.code.model.branchnamespace import (
+    BRANCH_POLICY_ALLOWED_TYPES,
+    BRANCH_POLICY_REQUIRED_GRANTS,
+    )
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
@@ -208,6 +215,17 @@ def snap_modified(snap, event):
     events on snap packages.
     """
     removeSecurityProxy(snap).date_last_modified = UTC_NOW
+
+
+def user_has_special_snap_access(user):
+    """Admins have special access.
+
+    :param user: An `IPerson` or None.
+    """
+    if user is None:
+        return False
+    roles = IPersonRoles(user)
+    return roles.in_admin
 
 
 @implementer(ISnapBuildRequest)
@@ -621,6 +639,24 @@ class Snap(Storm, WebhookTargetMixin):
     @store_channels.setter
     def store_channels(self, value):
         self._store_channels = value or None
+
+    def getAllowedInformationTypes(self, user):
+        """See `ISnap`."""
+        if user_has_special_snap_access(user):
+            # Admins can set any type.
+            return set(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES)
+        if self.pillar is None:
+            return set(FREE_INFORMATION_TYPES)
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            self.project.branch_sharing_policy]
+        if (required_grant is not None
+                and not getUtility(IService, 'sharing').checkPillarAccess(
+                    [self.project], required_grant, self.owner)
+                and (user is None
+                     or not getUtility(IService, 'sharing').checkPillarAccess(
+                            [self.project], required_grant, user))):
+            return []
+        return BRANCH_POLICY_ALLOWED_TYPES[self.project.branch_sharing_policy]
 
     @staticmethod
     def extractSSOCaveats(macaroon):
@@ -1227,9 +1263,22 @@ class SnapSet:
 
         return snap
 
-    def isValidPrivacy(self, private, owner, branch=None, git_ref=None):
+    def getSnapSuggestedPrivacy(self, owner, branch=None, git_ref=None):
         """See `ISnapSet`."""
-        # Private snaps may contain anything ...
+        # Public snaps with private sources are not allowed.
+        source = branch or git_ref
+        if source is not None and source.private:
+            return source.information_type
+
+        # Public snaps owned by private teams are not allowed.
+        if owner is not None and owner.private:
+            return InformationType.PROPRIETARY
+
+        return InformationType.PUBLIC
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type not in PUBLIC_INFORMATION_TYPES
         if private:
             # If appropriately enabled via feature flag.
             if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
@@ -1246,11 +1295,6 @@ class SnapSet:
             return False
 
         return True
-
-    def isValidInformationType(self, information_type, owner, branch=None,
-                               git_ref=None):
-        private = information_type not in PUBLIC_INFORMATION_TYPES
-        return self.isValidPrivacy(private, owner, branch, git_ref)
 
     def _getByName(self, owner, name):
         return IStore(Snap).find(

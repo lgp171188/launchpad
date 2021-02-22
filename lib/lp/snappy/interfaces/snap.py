@@ -67,6 +67,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from lazr.restful.interface import copy_field
 from six.moves import http_client
 from zope.interface import (
     Attribute,
@@ -570,6 +571,12 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for this snap recipe.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
 
 class ISnapEdit(IWebhookTarget):
     """`ISnap` methods that require launchpad.Edit permission."""
@@ -890,13 +897,7 @@ class ISnapSet(Interface):
 
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
-        # Redefining information_type param to make it optional on the API
-        # (although it is mandatory on the UI).
-        information_type=Choice(
-            title=_("Information type"), vocabulary=InformationType,
-            required=False, default=InformationType.PUBLIC,
-            description=_(
-                "The type of information contained in this Snap recipe.")),
+        information_type=copy_field(ISnap["information_type"], required=False),
         processors=List(
             value_type=Reference(schema=IProcessor), required=False))
     @export_factory_operation(
@@ -921,8 +922,8 @@ class ISnapSet(Interface):
     def exists(owner, name):
         """Check to see if a matching snap exists."""
 
-    def isValidPrivacy(private, owner, branch=None, git_ref=None):
-        """Whether or not the privacy context is valid."""
+    def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
+        """Which privacy a Snap should have based on its creation params."""
 
     def findByIds(snap_ids):
         """Return all snap packages with the given ids."""
