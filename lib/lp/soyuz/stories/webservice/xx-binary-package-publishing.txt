@@ -249,9 +249,9 @@ But other URLs result in a 404.
 
 getDailyDownloadTotals returns a dict mapping dates to total counts.
 
-    >>> for key, value in webservice.named_get(
+    >>> for key, value in sorted(webservice.named_get(
     ...         firefox['self_link'],
-    ...         'getDailyDownloadTotals').jsonBody().items():
+    ...         'getDailyDownloadTotals').jsonBody().items()):
     ...     print('%s: %d' % (key, value))
     2010-02-21: 10
     2010-02-23: 8
