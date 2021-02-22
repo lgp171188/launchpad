@@ -188,7 +188,7 @@ a certain string through the magic of fti. For instance:
     ...     print("%-17s rank:%s" % (
     ...         distro_source_package_cache.name,
     ...         type(rank)))
-    mozilla-firefox   rank:<type 'float'>
+    mozilla-firefox   rank:<... 'float'>
 
 The search also matches on exact package names which fti doesn't like,
 and even on substrings:
@@ -202,11 +202,11 @@ and even on substrings:
     ...         distro_source_package_cache.__class__.__name__,
     ...         distro_source_package_cache.name,
     ...         type(rank)))
-    DistributionSourcePackageCache: alsa-utils        rank:<type 'NoneType'>
-    DistributionSourcePackageCache: commercialpackage rank:<type 'NoneType'>
-    DistributionSourcePackageCache: foobar            rank:<type 'NoneType'>
-    DistributionSourcePackageCache: mozilla-firefox   rank:<type 'NoneType'>
-    DistributionSourcePackageCache: netapplet         rank:<type 'NoneType'>
+    DistributionSourcePackageCache: alsa-utils        rank:<... 'NoneType'>
+    DistributionSourcePackageCache: commercialpackage rank:<... 'NoneType'>
+    DistributionSourcePackageCache: foobar            rank:<... 'NoneType'>
+    DistributionSourcePackageCache: mozilla-firefox   rank:<... 'NoneType'>
+    DistributionSourcePackageCache: netapplet         rank:<... 'NoneType'>
 
 The searchSourcePackages() method just returns a decorated version
 of the results from searchSourcePackageCaches():

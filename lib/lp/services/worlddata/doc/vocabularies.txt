@@ -56,7 +56,7 @@ A language token/code may not be used with 'in' tests.
     Traceback (most recent call last):
     ...
     AssertionError: 'in LanguageVocabulary' requires ILanguage
-    as left operand, got <type 'unicode'> instead.
+    as left operand, got <...> instead.
 
 A LookupError is raised when a term is requested by token that does
 not exist.
@@ -106,7 +106,7 @@ A language token/code may not be used with 'in' tests.
     Traceback (most recent call last):
     ...
     AssertionError: 'in TranslatableLanguageVocabulary' requires
-    ILanguage as left operand, got <type 'unicode'> instead.
+    ILanguage as left operand, got <...> instead.
 
 A LookupError is raised when a term is requested by token that does
 not exist.

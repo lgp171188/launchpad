@@ -397,7 +397,7 @@ def quote_like(x):
     >>> quote_like(1)
     Traceback (most recent call last):
         [...]
-    TypeError: Not a string (<type 'int'>)
+    TypeError: Not a string (<... 'int'>)
 
     """
     if not isinstance(x, six.string_types):
