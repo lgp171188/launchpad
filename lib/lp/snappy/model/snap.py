@@ -43,6 +43,7 @@ from storm.locals import (
     Storm,
     Unicode,
     )
+from twisted.application.service import IService
 import yaml
 from zope.component import (
     getAdapter,
@@ -61,7 +62,9 @@ from lp.app.browser.tales import (
     DateTimeFormatterAPI,
     )
 from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
     InformationType,
+    PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
     )
 from lp.app.errors import IncompatibleArguments
@@ -99,9 +102,14 @@ from lp.code.interfaces.gitrepository import (
     )
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
+from lp.code.model.branchnamespace import (
+    BRANCH_POLICY_ALLOWED_TYPES,
+    BRANCH_POLICY_REQUIRED_GRANTS,
+    )
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
+from lp.registry.interfaces.accesspolicy import IAccessArtifactSource
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -211,6 +219,17 @@ def snap_modified(snap, event):
     events on snap packages.
     """
     removeSecurityProxy(snap).date_last_modified = UTC_NOW
+
+
+def user_has_special_snap_access(user):
+    """Admins have special access.
+
+    :param user: An `IPerson` or None.
+    """
+    if user is None:
+        return False
+    roles = IPersonRoles(user)
+    return roles.in_admin
 
 
 @implementer(ISnapBuildRequest)
@@ -628,6 +647,24 @@ class Snap(Storm, WebhookTargetMixin):
     @store_channels.setter
     def store_channels(self, value):
         self._store_channels = value or None
+
+    def getAllowedInformationTypes(self, user):
+        """See `ISnap`."""
+        if user_has_special_snap_access(user):
+            # Admins can set any type.
+            return set(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES)
+        if self.pillar is None:
+            return set(FREE_INFORMATION_TYPES)
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            self.project.branch_sharing_policy]
+        if (required_grant is not None
+                and not getUtility(IService, 'sharing').checkPillarAccess(
+                    [self.project], required_grant, self.owner)
+                and (user is None
+                     or not getUtility(IService, 'sharing').checkPillarAccess(
+                            [self.project], required_grant, user))):
+            return []
+        return BRANCH_POLICY_ALLOWED_TYPES[self.project.branch_sharing_policy]
 
     @staticmethod
     def extractSSOCaveats(macaroon):
@@ -1093,26 +1130,19 @@ class Snap(Storm, WebhookTargetMixin):
 
     def visibleByUser(self, user):
         """See `IGitRepository`."""
-        if not self.private:
-            return True
-        if user is None:
-            return False
-        if user.inTeam(self.owner):
-            return True
-
         store = IStore(self)
-        visibility_clause = removeSecurityProxy(getUtility(
-            ISnapSet))._findSnapVisibilityClause(user)
         return not store.find(
             Snap,
             Snap.id == self.id,
-            visibility_clause).is_empty()
+            get_snap_privacy_filter(user)).is_empty()
 
-    def subscribe(self, person, subscribed_by):
+    def subscribe(self, person, subscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         # XXX pappacena 2021-02-05: We may need a "SnapSubscription" here.
         service = getUtility(IService, "sharing")
-        service.ensureAccessGrants([person], subscribed_by, snaps=[self])
+        service.ensureAccessGrants(
+            [person], subscribed_by, snaps=[self],
+            ignore_permissions=ignore_permissions)
 
     def unsubscribe(self, person, unsubscribed_by):
         """See `ISnap`."""
@@ -1135,6 +1165,10 @@ class Snap(Storm, WebhookTargetMixin):
     def setProject(self, project):
         self.project = project
         self._reconcileAccess()
+
+    def _deleteAccessGrants(self):
+        """Delete access grants for this snap recipe prior to deleting it."""
+        getUtility(IAccessArtifactSource).delete([self])
 
     def destroySelf(self):
         """See `ISnap`."""
@@ -1172,6 +1206,7 @@ class Snap(Storm, WebhookTargetMixin):
             [SnapJob.job_id], And(SnapJob.job == Job.id, SnapJob.snap == self))
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
         getUtility(IWebhookSet).delete(self.webhooks)
+        self._deleteAccessGrants()
         store.remove(self)
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
@@ -1259,6 +1294,9 @@ class SnapSet:
             store_channels=store_channels, project=project)
         store.add(snap)
 
+        # Automatically subscribe the owner to the Snap.
+        snap.subscribe(snap.owner, registrant, ignore_permissions=True)
+
         if processors is None:
             processors = [
                 p for p in snap.available_processors if p.build_by_default]
@@ -1266,9 +1304,22 @@ class SnapSet:
 
         return snap
 
-    def isValidPrivacy(self, private, owner, branch=None, git_ref=None):
+    def getSnapSuggestedPrivacy(self, owner, branch=None, git_ref=None):
         """See `ISnapSet`."""
-        # Private snaps may contain anything ...
+        # Public snaps with private sources are not allowed.
+        source = branch or git_ref
+        if source is not None and source.private:
+            return source.information_type
+
+        # Public snaps owned by private teams are not allowed.
+        if owner is not None and owner.private:
+            return InformationType.PROPRIETARY
+
+        return InformationType.PUBLIC
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type not in PUBLIC_INFORMATION_TYPES
         if private:
             # If appropriately enabled via feature flag.
             if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
@@ -1285,11 +1336,6 @@ class SnapSet:
             return False
 
         return True
-
-    def isValidInformationType(self, information_type, owner, branch=None,
-                               git_ref=None):
-        private = information_type not in PUBLIC_INFORMATION_TYPES
-        return self.isValidPrivacy(private, owner, branch, git_ref)
 
     def _getByName(self, owner, name):
         return IStore(Snap).find(
@@ -1391,37 +1437,12 @@ class SnapSet:
             snaps.order_by(Desc(Snap.date_last_modified))
         return snaps
 
-    def _findSnapVisibilityClause(self, visible_by_user):
-        # XXX cjwatson 2016-11-25: This is in principle a poor query, but we
-        # don't yet have the access grant infrastructure to do better, and
-        # in any case the numbers involved should be very small.
-        # XXX pappacena 2021-02-12: Once we do the migration to back fill
-        # information_type, we should be able to change this.
-        private_snap = SQL(
-            "CASE information_type"
-            "    WHEN NULL THEN private"
-            "    ELSE information_type NOT IN ?"
-            "END", params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
-        if visible_by_user is None:
-            return private_snap == False
-        else:
-            roles = IPersonRoles(visible_by_user)
-            if roles.in_admin or roles.in_commercial_admin:
-                return True
-            else:
-                return Or(
-                    private_snap == False,
-                    Snap.owner_id.is_in(Select(
-                        TeamParticipation.teamID,
-                        TeamParticipation.person == visible_by_user)),
-                    *get_private_snap_subscriber_filter(visible_by_user))
-
     def findByURL(self, url, owner=None, visible_by_user=None):
         """See `ISnapSet`."""
         clauses = [Snap.git_repository_url == url]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def findByURLPrefix(self, url_prefix, owner=None, visible_by_user=None):
@@ -1438,7 +1459,7 @@ class SnapSet:
         clauses = [Or(*prefix_clauses)]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def findByStoreName(self, store_name, owner=None, visible_by_user=None):
@@ -1446,7 +1467,7 @@ class SnapSet:
         clauses = [Snap.store_name == store_name]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def preloadDataForSnaps(self, snaps, user=None):
@@ -1613,10 +1634,26 @@ class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
             return None
 
 
-def get_private_snap_subscriber_filter(user):
+def get_snap_privacy_filter(user):
     """Returns the filter for all private Snaps that the given user is
     subscribed to (that is, has access without being directly an owner).
+
+    :return: A storm condition.
     """
+    # XXX pappacena 2021-02-12: Once we do the migration to back fill
+    # information_type, we should be able to change this.
+    private_snap = SQL(
+        "CASE information_type"
+        "    WHEN NULL THEN private"
+        "    ELSE information_type NOT IN ?"
+        "END", params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
+    if user is None:
+        return private_snap == False
+
+    roles = IPersonRoles(user)
+    if roles.in_admin or roles.in_commercial_admin:
+        return True
+
     artifact_grant_query = Coalesce(
         ArrayIntersects(
             SQL("%s.access_grants" % Snap.__storm_table__),
@@ -1638,4 +1675,4 @@ def get_private_snap_subscriber_filter(user):
                 where=(TeamParticipation.person == user)
             )), False)
 
-    return [Or(artifact_grant_query, policy_grant_query)]
+    return Or(private_snap == False, artifact_grant_query, policy_grant_query)
