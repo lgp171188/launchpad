@@ -80,7 +80,7 @@ class OCIDistributionPushRule:
     registry_credentials = None
 
     def __init__(self, recipe, registry_credentials, image_name):
-        self.id = -1
+        self.id = None  # This is not a database instance
         self.recipe = recipe
         self.registry_credentials = registry_credentials
         self.image_name = image_name
