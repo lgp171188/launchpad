@@ -45,12 +45,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
-from lp.app.enums import (
-    FREE_INFORMATION_TYPES,
-    InformationType,
-    PRIVATE_INFORMATION_TYPES,
-    PROPRIETARY_INFORMATION_TYPES,
-    )
+from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.vocabularies import InformationTypeVocabulary
@@ -529,10 +524,8 @@ class SnapAddView(
             kwargs = {'git_ref': self.context}
         else:
             kwargs = {'branch': self.context}
-        private = not getUtility(ISnapSet).isValidPrivacy(
-            False, data['owner'], **kwargs)
-        information_type = (InformationType.PROPRIETARY if private else
-                            InformationType.PUBLIC)
+        information_type = getUtility(ISnapSet).getSnapSuggestedPrivacy(
+            data['owner'], **kwargs)
         if not data.get('auto_build', False):
             data['auto_build_archive'] = None
             data['auto_build_pocket'] = None
@@ -570,6 +563,16 @@ class SnapAddView(
 class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
 
     schema = ISnapEditSchema
+
+    def getInformationTypesToShow(self):
+        """Get the information types to display on the edit form.
+
+        We display a customised set of information types: anything allowed
+        by the repository's model, plus the current type.
+        """
+        allowed_types = set(self.context.getAllowedInformationTypes(self.user))
+        allowed_types.add(self.context.information_type)
+        return allowed_types
 
     @property
     def cancel_url(self):
@@ -651,7 +654,7 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
             # Requirements for private snaps.
             project = data.get('project', self.context.project)
             if project is None:
-                msg = ('Private Snap recipes should be associated '
+                msg = ('Private Snap recipes must be associated '
                        'with a project.')
                 self.setFieldError('project', msg)
 
@@ -719,13 +722,16 @@ class SnapAdminView(BaseSnapEditView):
 
     page_title = 'Administer'
 
+    # XXX pappacena 2021-02-19: Once we have the whole privacy work in
+    # place, we should move "project" and "information_type" from +admin
+    # page to +edit, to allow common users to edit this.
     field_names = [
         'project', 'information_type', 'require_virtualized', 'allow_internet']
 
+    # See `setUpWidgets` method.
     custom_widget_information_type = CustomWidgetFactory(
         LaunchpadRadioWidgetWithDescription,
-        vocabulary=InformationTypeVocabulary(
-            types=FREE_INFORMATION_TYPES + PROPRIETARY_INFORMATION_TYPES))
+        vocabulary=InformationTypeVocabulary(types=[]))
 
     @property
     def initial_values(self):
@@ -735,6 +741,12 @@ class SnapAdminView(BaseSnapEditView):
         # property has a fallback to check "private" property. This should
         # be removed once we back fill snap.information_type.
         return {'information_type': self.context.information_type}
+
+    def setUpWidgets(self):
+        super(SnapAdminView, self).setUpWidgets()
+        info_type_widget = self.widgets['information_type']
+        info_type_widget.vocabulary = InformationTypeVocabulary(
+            types=self.getInformationTypesToShow())
 
     def validate(self, data):
         super(SnapAdminView, self).validate(data)

@@ -167,14 +167,14 @@ class AccessArtifact(StormBase):
                 insert_values.append((None, concrete, None, None, None))
             elif IGitRepository.providedBy(concrete):
                 insert_values.append((None, None, concrete, None, None))
-            elif ISpecification.providedBy(concrete):
-                insert_values.append((None, None, None, concrete, None))
             elif ISnap.providedBy(concrete):
+                insert_values.append((None, None, None, concrete, None))
+            elif ISpecification.providedBy(concrete):
                 insert_values.append((None, None, None, None, concrete))
             else:
                 raise ValueError("%r is not a supported artifact" % concrete)
-        columns = (cls.bug, cls.branch, cls.gitrepository, cls.specification,
-                   cls.snap)
+        columns = (cls.bug, cls.branch, cls.gitrepository, cls.snap,
+                   cls.specification)
         new = create(columns, insert_values, get_objects=True)
         return list(existing) + new
 

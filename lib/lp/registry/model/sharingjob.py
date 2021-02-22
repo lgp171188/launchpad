@@ -93,7 +93,7 @@ from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.snappy.interfaces.snap import ISnap
 from lp.snappy.model.snap import (
-    get_private_snap_subscriber_filter,
+    get_snap_privacy_filter,
     Snap,
     )
 from lp.snappy.model.snapsubscription import SnapSubscription
@@ -493,7 +493,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     sub.person, self.requestor, ignore_permissions=True)
         if snap_filters:
             snap_filters.append(Not(
-                Or(*get_private_snap_subscriber_filter(
+                Or(*get_snap_privacy_filter(
                     SnapSubscription.person_id))))
             snap_subscriptions = IStore(SnapSubscription).using(
                 SnapSubscription,
