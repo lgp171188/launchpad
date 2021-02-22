@@ -126,7 +126,7 @@ we can deal with the errors later:
 At this point we can inspect the list of files contained in the upload.
 
     >>> for uploaded_file in ed_binary_changes.files:
-    ...     print uploaded_file.filename
+    ...     print(uploaded_file.filename)
     ed_0.2-20_i386.deb
 
     >>> for f in ed_binary_changes.binary_package_files:
@@ -181,14 +181,14 @@ regexp, even though it isn't actually a source file:
 
     >>> from lp.archiveuploader.utils import re_issource
     >>> src_match = re_issource.match('dist-upgrader_1.0.tar.gz')
-    >>> src_match.group(0)
-    'dist-upgrader_1.0.tar.gz'
-    >>> src_match.group(1)
-    'dist-upgrader'
-    >>> src_match.group(2)
-    '1.0'
-    >>> src_match.group(3)
-    'tar.gz'
+    >>> print(src_match.group(0))
+    dist-upgrader_1.0.tar.gz
+    >>> print(src_match.group(1))
+    dist-upgrader
+    >>> print(src_match.group(2))
+    1.0
+    >>> print(src_match.group(3))
+    tar.gz
 
 That's why we recognize them by identifying a set of custom sections:
 
@@ -444,7 +444,7 @@ Sub-DSCFiles are DSCUploadedFile objects.
 We can also inspect the list of files declared in this DSC:
 
     >>> for dsc_file in ed_source_dsc.files:
-    ...     print dsc_file.filename
+    ...     print(dsc_file.filename)
     ed_0.2.orig.tar.gz
     ed_0.2-20.diff.gz
 
@@ -514,7 +514,7 @@ being too new:
     ...     'main/editors', 'important', 'foo', '1.2', ed_binary_changes,
     ...     old_only_policy, DevNullLogger())
     >>> list(ed_binary_deb.verifyDebTimestamp())
-    [UploadError('ed_0.2-20_i386.deb:
+    [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far into the future
     (e.g. control [Thu Jan  3 19:29:01 2008]).',)]
 
@@ -529,6 +529,6 @@ being too new:
     ...     'main/editors', 'important', 'foo', '1.2', ed_binary_changes,
     ...     new_only_policy, DevNullLogger())
     >>> list(ed_binary_deb.verify())
-    [UploadError('ed_0.2-20_i386.deb:
+    [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far in the past
     (e.g. control [Thu Jan  3 19:29:01 2008]).',)]

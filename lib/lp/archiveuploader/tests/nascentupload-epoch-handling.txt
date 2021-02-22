@@ -17,7 +17,7 @@ pocket.
     >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
     >>> hoary = ubuntu.getSeries('hoary')
 
-    >>> print hoary.status.name
+    >>> print(hoary.status.name)
     DEVELOPMENT
 
 
@@ -68,7 +68,7 @@ Upload 'epoched' bar version:
     >>> bar_src_upload = getUploadForSource(
     ...     'suite/bar_1.0-1_epoched/bar_1.0-1_source.changes')
     >>> bar_src_upload.process()
-    >>> print bar_src_upload.rejection_message
+    >>> print(bar_src_upload.rejection_message)
     File bar_1.0-1.diff.gz already exists in Primary Archive for Ubuntu
         Linux, but uploaded version has different contents. See more
         information about this error in

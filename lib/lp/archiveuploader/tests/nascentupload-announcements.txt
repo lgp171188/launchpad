@@ -45,7 +45,7 @@ A helper function to examine emails that were sent:
 
     >>> def print_addrlist(field):
     ...    for entry in sorted([addr.strip() for addr in field.split(',')]):
-    ...        print entry
+    ...        print(entry)
 
 Import the test keys to use 'insecure' policy.
 
@@ -647,10 +647,12 @@ permitted, but RFC2047-encoded.  UTF-8 in the mail content is preserved.
     >>> len(msgs)
     3
 
-    >>> [message['From'].replace('\n ', ' ') for message in msgs]
-    ['Root <root@localhost>', 'Root <root@localhost>',
-    '=?utf-8?q?Non-ascii_changed-by_=C4=8Ciha=C5=99?=
-    <daniel.silverstone@canonical.com>']
+    >>> for message in msgs:
+    ...     print(message['From'].replace('\n ', ' '))
+    Root <root@localhost>
+    Root <root@localhost>
+    =?utf-8?q?Non-ascii_changed-by_=C4=8Ciha=C5=99?=
+    <daniel.silverstone@canonical.com>
 
 UTF-8 text in the changes file that is sent on the email is preserved
 in the MIME encoding. Please note also that the person that signed the
