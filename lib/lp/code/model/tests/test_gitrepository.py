@@ -569,6 +569,21 @@ class TestGitRepository(TestCaseWithFactory):
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
         self.assertEqual(7, recorder1.count)
 
+    def test_getRepositoriesForRepack(self):
+        repository = self.factory.makeGitRepository()
+        repository = removeSecurityProxy(repository)
+        repository.loose_object_count = 3
+        repository.pack_count = 4
+        self.assertEqual(0, len(list(repository.getRepositoriesForRepack())))
+
+        # repository.loose_object_count = 4350
+        # repository.pack_count = 4
+        # self.assertEqual(1, len(list(repository.getRepositoriesForRepack())))
+
+        repository.loose_object_count = 3
+        repository.pack_count = 31
+        self.assertEqual(1, len(list(repository.getRepositoriesForRepack())))
+
 
 class TestGitIdentityMixin(TestCaseWithFactory):
     """Test the defaults and identities provided by GitIdentityMixin."""

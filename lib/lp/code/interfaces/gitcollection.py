@@ -152,6 +152,9 @@ class IGitCollection(Interface):
     def modifiedSince(date):
         """Restrict the collection to repositories modified since `date`."""
 
+    def qualifiesForRepack():
+        """Restrict the collection to repositories that qualify for repack."""
+
     def ownedBy(person):
         """Restrict the collection to repositories owned by 'person'."""
 

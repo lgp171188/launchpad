@@ -487,7 +487,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         namespace.moveRepository(self, user, rename_if_necessary=True)
         self._reconcileAccess()
 
-    def repackRepository(self):
+    def repackRepository(self, logger=None):
         getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
 
     @property
@@ -1730,6 +1730,12 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             getUtility(IReclaimGitRepositorySpaceJobSource).create(
                 repository_name, repository_path)
 
+    def getRepositoriesForRepack(self):
+        """See `IGitRepositorySet`."""
+        collection = getUtility(IAllGitRepositories)
+        collection = collection.qualifiesForRepack()
+        return collection.getRepositories(eager_load=True)
+
 
 class DeletionOperation:
     """Represent an operation to perform as part of branch deletion."""
@@ -1846,6 +1852,12 @@ class GitRepositorySet:
         if modified_since_date is not None:
             collection = collection.modifiedSince(modified_since_date)
         return collection.getRepositories(eager_load=True, sort_by=order_by)
+
+    # def getRepositoriesForRepack(self):
+    #     """See `IGitRepositorySet`."""
+    #     collection = getUtility(IAllGitRepositories)
+    #     collection = collection.qualifiesForRepack()
+    #     return collection.getRepositories(eager_load=True)
 
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""

@@ -61,6 +61,7 @@ from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
+from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
@@ -514,6 +515,12 @@ class GenericGitCollection:
         """See `IGitCollection`."""
         return self._filterBy(
             [GitRepository.date_last_modified > date], symmetric=False)
+
+    def qualifiesForRepack(self):
+        """See `IGitCollection`."""
+        return self._filterBy(
+            [GitRepository.loose_object_count >= config.launchpad.loose_objects_threshold,
+            GitRepository.pack_count >= config.launchpad.packs_threshold], symmetric=False)
 
     def ownedBy(self, person):
         """See `IGitCollection`."""
