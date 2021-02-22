@@ -675,10 +675,11 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
         snap = removeSecurityProxy(self.factory.makeSnap(
+            owner=duplicate, registrant=duplicate,
             name=u'foo', private=True))
         self._do_premerge(duplicate, mergee)
         login_admin()
-        snap.subscribe(duplicate, snap.owner)
+        # Owner should have being subscribed automatically on creation.
         self.assertTrue(snap.visibleByUser(duplicate))
         self.assertThat(snap._getSubscription(duplicate), MatchesStructure(
             snap=Equals(snap),
