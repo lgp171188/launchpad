@@ -25,12 +25,14 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.publishing import Publisher
 from lp.bugs.model.bugsummary import BugSummary
-from lp.code.enums import TargetRevisionControlSystems
+from lp.code.enums import TargetRevisionControlSystems, CodeImportResultStatus
+from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
     get_transaction_timestamp,
@@ -40,6 +42,8 @@ from lp.services.identity.interfaces.account import (
     IAccountSet,
     )
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
+from lp.services.job.interfaces.job import JobType
+from lp.services.job.model.job import Job
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
@@ -605,6 +609,55 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, code_imports[0].registrant)
         self.assertEqual(person, code_imports[1].registrant)
+
+    def test_skips_import_job_requester(self):
+        self.useFixture(GitHostingFixture())
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[person])
+        code_imports = [
+            self.factory.makeCodeImport(
+                registrant=person, target_rcs_type=target_rcs_type, owner=team)
+            for target_rcs_type in (
+                TargetRevisionControlSystems.BZR,
+                TargetRevisionControlSystems.GIT)]
+
+        getUtility(ICodeImportJobWorkflow).requestJob(
+            code_imports[0].import_job, person)
+
+        self.assertEqual(person, code_imports[0].import_job.requesting_user)
+
+        result = self.factory.makeCodeImportResult(
+            code_import=code_imports[0],
+            requesting_user=person,
+            result_status=CodeImportResultStatus.SUCCESS)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertEqual(person, code_imports[0].registrant)
+        self.assertEqual(person, result.requesting_user)
+        self.assertEqual(person, code_imports[0].import_job.requesting_user)
+
+    def test_skip_requester_package_diff_job(self):
+        person = self.factory.makePerson()
+        ppa = self.factory.makeArchive(owner=person)
+        other_person = self.factory.makePerson()
+        from_spr = self.factory.makeSourcePackageRelease(archive=ppa)
+        to_spr = self.factory.makeSourcePackageRelease(archive=ppa)
+        from_spr.requestDiffTo(ppa.owner, to_spr)
+        job = IStore(Job).find(
+            Job, Job.base_job_type == JobType.GENERATE_PACKAGE_DIFF).order_by(
+                Job.id).last()
+        removeSecurityProxy(ppa).owner = other_person
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertEqual(person, job.requester)
 
     def test_skips_specification_owner(self):
         person = self.factory.makePerson()
