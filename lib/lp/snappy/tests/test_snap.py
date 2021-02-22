@@ -1414,6 +1414,11 @@ class TestSnapVisibility(TestCaseWithFactory):
         snap = self.factory.makeSnap(
             project=old_project, private=True, registrant=owner, owner=owner)
 
+        # Owner automatically gets a grant.
+        with person_logged_in(owner):
+            self.assertTrue(snap.visibleByUser(snap.owner))
+            self.assertEqual(1, self.getSnapGrants(snap).count())
+
         new_project = self.factory.makeProduct()
         getUtility(IAccessPolicySource).create(
             [(new_project, InformationType.PROPRIETARY)])
@@ -1421,11 +1426,11 @@ class TestSnapVisibility(TestCaseWithFactory):
         with person_logged_in(owner):
             snap.subscribe(another_person, owner)
             self.assertTrue(snap.visibleByUser(another_person))
-            self.assertEqual(1, self.getSnapGrants(snap).count())
+            self.assertEqual(2, self.getSnapGrants(snap).count())
 
             snap.setProject(new_project)
             self.assertTrue(snap.visibleByUser(another_person))
-            self.assertEqual(1, self.getSnapGrants(snap).count())
+            self.assertEqual(2, self.getSnapGrants(snap).count())
 
 
 class TestSnapSet(TestCaseWithFactory):

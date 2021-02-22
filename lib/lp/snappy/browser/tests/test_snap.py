@@ -722,6 +722,8 @@ class TestSnapAdminView(BaseTestSnapView):
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
 
+        self.factory.makeAccessPolicy(
+            pillar=project, type=InformationType.PRIVATESECURITY)
         private = InformationType.PRIVATESECURITY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
