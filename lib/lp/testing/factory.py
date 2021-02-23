@@ -2528,13 +2528,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeCodeImportResult(self, code_import=None, result_status=None,
                              date_started=None, date_finished=None,
-                             log_excerpt=None, log_alias=None, machine=None):
+                             log_excerpt=None, log_alias=None, machine=None,
+                             requesting_user=None):
         """Create and return a new CodeImportResult."""
         if code_import is None:
             code_import = self.makeCodeImport()
         if machine is None:
             machine = self.makeCodeImportMachine()
-        requesting_user = None
         if log_excerpt is None:
             log_excerpt = self.getUniqueUnicode()
         if result_status is None:
