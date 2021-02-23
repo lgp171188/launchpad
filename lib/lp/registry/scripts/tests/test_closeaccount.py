@@ -25,7 +25,10 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.publishing import Publisher
 from lp.bugs.model.bugsummary import BugSummary
-from lp.code.enums import TargetRevisionControlSystems, CodeImportResultStatus
+from lp.code.enums import (
+    CodeImportResultStatus,
+    TargetRevisionControlSystems,
+    )
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
@@ -621,24 +624,23 @@ class TestCloseAccount(TestCaseWithFactory):
                 TargetRevisionControlSystems.BZR,
                 TargetRevisionControlSystems.GIT)]
 
-        getUtility(ICodeImportJobWorkflow).requestJob(
-            code_imports[0].import_job, person)
-
-        self.assertEqual(person, code_imports[0].import_job.requesting_user)
-
-        result = self.factory.makeCodeImportResult(
-            code_import=code_imports[0],
-            requesting_user=person,
-            result_status=CodeImportResultStatus.SUCCESS)
-        person_id = person.id
-        account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
-        with dbuser('launchpad'):
-            self.runScript(script)
-        self.assertRemoved(account_id, person_id)
-        self.assertEqual(person, code_imports[0].registrant)
-        self.assertEqual(person, result.requesting_user)
-        self.assertEqual(person, code_imports[0].import_job.requesting_user)
+        for code_import in code_imports:
+            getUtility(ICodeImportJobWorkflow).requestJob(
+                code_import.import_job, person)
+            self.assertEqual(person, code_import.import_job.requesting_user)
+            result = self.factory.makeCodeImportResult(
+                code_import=code_import,
+                requesting_user=person,
+                result_status=CodeImportResultStatus.SUCCESS)
+            person_id = person.id
+            account_id = person.account.id
+            script = self.makeScript([six.ensure_str(person.name)])
+            with dbuser('launchpad'):
+                self.runScript(script)
+            self.assertRemoved(account_id, person_id)
+            self.assertEqual(person, code_import.registrant)
+            self.assertEqual(person, result.requesting_user)
+            self.assertEqual(person, code_import.import_job.requesting_user)
 
     def test_skip_requester_package_diff_job(self):
         person = self.factory.makePerson()
@@ -650,6 +652,13 @@ class TestCloseAccount(TestCaseWithFactory):
         job = IStore(Job).find(
             Job, Job.base_job_type == JobType.GENERATE_PACKAGE_DIFF).order_by(
                 Job.id).last()
+        # XXX ilasc 2021-02-23: deleting the ppa in this test by running the
+        # Publisher here results in the "Can't delete non-trivial PPAs
+        # for user" exception. So we just point to another owner here
+        # to simulate ppa owner removal during deletion. The deletion was
+        # successfully performed on the account removal that triggered addition
+        # of skipping the requester on job in dogfood so we need to come back
+        # and fix this test setup as deletion at this point should work.
         removeSecurityProxy(ppa).owner = other_person
         person_id = person.id
         account_id = person.account.id
