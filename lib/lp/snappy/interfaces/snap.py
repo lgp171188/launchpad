@@ -599,6 +599,9 @@ class ISnapView(Interface):
         If the user is a Launchpad admin, any type is acceptable.
         """
 
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person to this snap recipe."""
+
 
 class ISnapEdit(IWebhookTarget):
     """`ISnap` methods that require launchpad.Edit permission."""
@@ -901,9 +904,6 @@ class ISnapAdminAttributes(Interface):
 
     def subscribe(person, subscribed_by):
         """Subscribe a person to this snap recipe."""
-
-    def unsubscribe(person, unsubscribed_by):
-        """Unsubscribe a person to this snap recipe."""
 
 
 # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
