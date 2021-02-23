@@ -57,11 +57,7 @@ default view for the IFooLayer layer.
     ...     pass
     >>> request = Request()
 
-    >>> import types
     >>> class FooView:
-    ...     """classic class that is used for a view on an IFoo"""
-    ...     __metaclass__ = types.ClassType
-    ...
     ...     def __call__(self):
     ...         return "FooView was called"
     >>> lp.testing.FooView = FooView
