@@ -3077,8 +3077,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if name is None:
             name = self.getUniqueUnicode('spr-name')
         if description is None:
-            description = self.getUniqueString(
-                'spr-description').decode('utf8')
+            description = self.getUniqueUnicode('spr-description')
         if daily_build_archive is None:
             daily_build_archive = self.makeArchive(
                 distribution=distroseries.distribution, owner=owner)
