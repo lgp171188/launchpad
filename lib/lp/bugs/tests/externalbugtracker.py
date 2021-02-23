@@ -13,6 +13,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+from operator import itemgetter
 import os
 import random
 import re
@@ -1475,6 +1476,7 @@ class TestTracXMLRPCTransport(RequestsTransport):
             for comment in bug.comments:
                 if comment['id'] in comments:
                     comments_to_return.append(comment)
+        comments_to_return.sort(key=itemgetter('id'))
 
         # For each of the missing ones, return a dict with a type of
         # 'missing'.

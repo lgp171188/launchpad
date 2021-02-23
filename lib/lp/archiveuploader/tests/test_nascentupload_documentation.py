@@ -65,7 +65,7 @@ def testGlobalsSetup(test):
     We can use the getUpload* without unnecessary imports.
     """
     import_public_test_keys()
-    setGlobs(test)
+    setGlobs(test, future=True)
     test.globs['getUploadForSource'] = getUploadForSource
     test.globs['getUploadForBinary'] = getUploadForBinary
     test.globs['getPPAUploadForSource'] = getPPAUploadForSource

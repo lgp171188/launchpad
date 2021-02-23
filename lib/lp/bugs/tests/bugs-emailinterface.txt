@@ -361,7 +361,7 @@ And the person sending the email has received an error message.
     ...     print("Subject: %s" % sent_msg['Subject'])
     ...     print("To: %s" % ', '.join(to_addrs))
     ...     print()
-    ...     print(error_mail.get_payload(decode=True))
+    ...     print(error_mail.get_payload(decode=True).decode('UTF-8'))
 
     >>> print_latest_email()
     Subject: Submit Request Failure
@@ -2070,7 +2070,7 @@ The sent message contains two parts:
 
 The first part is the error message, explaining what went wrong.
 
-    >>> print(failure_msg.get_payload(decode=True))
+    >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email
     interface.
     <BLANKLINE>
@@ -2099,7 +2099,7 @@ error to happen.
     'Original Message Subject'
     >>> msg['Message-Id']
     '<original@msg>'
-    >>> print(msg.get_payload(decode=True))
+    >>> print(msg.get_payload(decode=True).decode('UTF-8'))
     Original message body.
 
 Sometimes the original error was caused by the original message being
@@ -2213,7 +2213,7 @@ failure in an email.
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
     >>> sent_msg = email.message_from_string(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
-    >>> print(failure_msg.get_payload(decode=True))
+    >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email
     interface.
     <BLANKLINE>
@@ -2261,7 +2261,7 @@ And the sender receives an email to let them know about the failing
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
     >>> sent_msg = email.message_from_string(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
-    >>> print(failure_msg.get_payload(decode=True))
+    >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email
     interface.
     <BLANKLINE>
@@ -2335,7 +2335,7 @@ email too. Just send an email to `help@bugs.launchpad.net`.
     ... """
     >>> process_email(submit_mail)
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> print(raw_message)
+    >>> print(raw_message.decode('UTF-8'))
     Content-Type: text/plain; charset="utf-8"
     ...
     To: test@canonical.com
@@ -2355,7 +2355,7 @@ Only mail coming from verified Launchpad users is answered.
     ... help
     ... """
     >>> process_email(submit_mail)
-    >>> 'nobody@nowhere.com' in stub.test_emails[-1][2]
+    >>> b'nobody@nowhere.com' in stub.test_emails[-1][2]
     False
 
 The help text is taken from the Launchpad help wiki as raw text, and
@@ -3014,7 +3014,7 @@ importing machinery.
     >>> comment_date = datetime(
     ...     2008, 5, 19, 16, 19, 12, tzinfo=pytz.timezone('Europe/Prague'))
 
-    >>> initial_mail = b"""From: test@canonical.com
+    >>> initial_mail = ("""From: test@canonical.com
     ... To: %(bug_id)s@malone-domain
     ... Date: %(date)s
     ... Message-Id: <76543@launchpad.net>
@@ -3026,7 +3026,7 @@ importing machinery.
     ... """ % {
     ...     'bug_id': bug_with_watch.id,
     ...     'date': comment_date.strftime('%a %b %d %H:%M:%S %Z %Y'),
-    ...     }
+    ...     }).encode('ASCII')
     >>> message = getUtility(IMessageSet).fromEmail(
     ...     initial_mail, no_priv)
 

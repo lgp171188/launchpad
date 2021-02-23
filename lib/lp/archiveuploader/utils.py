@@ -270,7 +270,7 @@ def parse_file_list(s, field_name, count):
     if s is None:
         return None
     processed = []
-    for line in s.strip().split('\n'):
+    for line in six.ensure_text(s).strip().split('\n'):
         split = line.strip().split()
         if len(split) != count:
             raise UploadError(

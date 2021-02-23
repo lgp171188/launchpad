@@ -300,9 +300,9 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
             return
 
         # We compare the word-splitted content to avoid failures due
-        # to whitepace differences.
+        # to whitespace differences.
         if (signature.plain_data.split()
-            != self.context.validation_phrase.split()):
+                != self.context.validation_phrase.encode('UTF-8').split()):
             self.addError(_(
                 'The signed content does not match the message found '
                 'in the email.'))

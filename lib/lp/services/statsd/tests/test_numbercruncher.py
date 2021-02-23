@@ -14,6 +14,7 @@ from storm.store import Store
 from testtools.matchers import (
     Equals,
     MatchesListwise,
+    MatchesSetwise,
     Not,
     )
 from testtools.twistedsupport import AsynchronousDeferredRunTest
@@ -128,20 +129,20 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         calls = [c[0] for c in self.stats_client.gauge.call_args_list
                  if 'amd64' in c[0][0]]
         self.assertThat(
-            calls, MatchesListwise(
-                [Equals((
+            calls, MatchesSetwise(
+                Equals((
                     'builders,status=disabled,arch=amd64,'
                     'virtualized=True,env=test', 0)),
-                 Equals((
-                     'builders,status=building,arch=amd64,'
-                     'virtualized=True,env=test', 2)),
-                 Equals((
-                     'builders,status=idle,arch=amd64,'
-                     'virtualized=True,env=test', 4)),
-                 Equals((
-                     'builders,status=cleaning,arch=amd64,'
-                     'virtualized=True,env=test', 3))
-                 ]))
+                Equals((
+                    'builders,status=building,arch=amd64,'
+                    'virtualized=True,env=test', 2)),
+                Equals((
+                    'builders,status=idle,arch=amd64,'
+                    'virtualized=True,env=test', 4)),
+                Equals((
+                    'builders,status=cleaning,arch=amd64,'
+                    'virtualized=True,env=test', 3))
+                ))
 
     def test_updateBuilderStats_error(self):
         clock = task.Clock()
@@ -172,11 +173,11 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         self.assertEqual(2, self.stats_client.gauge.call_count)
         self.assertThat(
             [x[0] for x in self.stats_client.gauge.call_args_list],
-            MatchesListwise(
-                [Equals(('buildqueue,virtualized=True,arch={},env=test'.format(
+            MatchesSetwise(
+                Equals(('buildqueue,virtualized=True,arch={},env=test'.format(
                     build.processor.name), 1)),
-                 Equals(('buildqueue,virtualized=False,arch=386,env=test', 1))
-                 ]))
+                Equals(('buildqueue,virtualized=False,arch=386,env=test', 1))
+                ))
 
     def test_updateBuilderQueues_error(self):
         clock = task.Clock()
