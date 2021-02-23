@@ -16,7 +16,8 @@ will put in a temporary module.
     >>> from lp.services.webapp.interfaces import ICanonicalUrlData
     >>> from zope.interface import Interface, Attribute, implementer
 
-    >>> module = types.ModuleType(factory.getUniqueString().replace('-', '_'))
+    >>> module = types.ModuleType(
+    ...     six.ensure_str(factory.getUniqueString().replace('-', '_')))
     >>> sys.modules[module.__name__] = module
 
     >>> class ICountrySet(Interface):
@@ -101,7 +102,7 @@ Configure a browser:url for ITown.  Our first attempt fails because we mistyped
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
-    ...   <include package="zope.component" file="meta.zcml" />
+    ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
     ...       for="{module_name}.ITown"
@@ -171,8 +172,8 @@ Now, there is an ICanonicalUrlData registered for ICountry.
     >>> from lp.testing import verifyObject
     >>> verifyObject(ICanonicalUrlData, country_urldata)
     True
-    >>> country_urldata.path
-    'England'
+    >>> print(country_urldata.path)
+    England
     >>> country_urldata.inside is countryset_instance
     True
 
@@ -222,8 +223,8 @@ Now, there is an ICanonicalUrlData registered for ICountrySet.
     >>> from lp.testing import verifyObject
     >>> verifyObject(ICanonicalUrlData, countryset_urldata)
     True
-    >>> countryset_urldata.path
-    'countries'
+    >>> print(countryset_urldata.path)
+    countries
     >>> countryset_urldata.inside is getUtility(ILaunchpadRoot)
     True
 
@@ -260,7 +261,7 @@ and the objects it is inside of (or in other words, hierarchically below).
 We can see that this is the mainsite rooturl as configured in launchpad.conf.
 
     >>> from lp.services.webapp.vhosts import allvhosts
-    >>> print allvhosts.configs['mainsite'].rooturl
+    >>> print(allvhosts.configs['mainsite'].rooturl)
     http://launchpad.test/
 
 If anywhere in the chain we have an object that cannot be adapted to
@@ -311,7 +312,7 @@ First, let's define a helper function to help us test canonical_url_iterator.
 
     >>> def print_url_iterator(obj):
     ...     for obj in canonical_url_iterator(obj):
-    ...         print obj.__class__.__name__
+    ...         print(obj.__class__.__name__)
 
     >>> print_url_iterator(getUtility(ILaunchpadRoot))
     RootObject
@@ -432,7 +433,7 @@ And if the configuration does provide a rootsite:
     ... <configure
     ...     xmlns="http://namespaces.zope.org/zope"
     ...     xmlns:browser="http://namespaces.zope.org/browser">
-    ...   <include package="zope.component" file="meta.zcml" />
+    ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <utility
     ...       provides="{module_name}.ICountrySet"
@@ -503,7 +504,7 @@ canonical url chain that provides at least one of the interfaces given.
     True
     >>> nearest(town_instance, ICountry) is country_instance
     True
-    >>> print nearest(unrooted_object, ICountry)
+    >>> print(nearest(unrooted_object, ICountry))
     None
 
 

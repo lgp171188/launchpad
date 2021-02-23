@@ -61,13 +61,14 @@ been uploaded over FTP.
     ...         tf = {}
     ...
     ...     if "Source" in tf:
-    ...         package_names.append(tf["Source"])
+    ...         package_names.append(six.ensure_text(tf["Source"]))
     ...
     ...     send_filepaths = [changes_filepath]
     ...     if "Files" in tf:
     ...         send_filepaths.extend(
     ...             [os.path.join(test_files_dir, line.split()[-1])
-    ...              for line in tf["Files"].splitlines() if line])
+    ...              for line in six.ensure_text(tf["Files"]).splitlines()
+    ...              if line])
     ...
     ...     sent_filenames.extend(
     ...         os.path.basename(filepath) for filepath in send_filepaths)
@@ -87,7 +88,7 @@ been uploaded over FTP.
 Check that what we've just uploaded (everything in test_files_dir) is
 what we were expecting to have uploaded.
 
-    >>> package_names
+    >>> print(pretty(package_names))
     ['drdsl', 'etherwake']
 
 At that point we must have a bunch of directories in the upload base

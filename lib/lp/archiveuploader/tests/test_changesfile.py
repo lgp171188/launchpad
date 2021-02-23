@@ -10,6 +10,7 @@ __metaclass__ = type
 import os
 
 from debian.deb822 import Changes
+import six
 from testtools.matchers import (
     Equals,
     MatchesDict,
@@ -281,9 +282,9 @@ class ChangesFileTests(TestCase):
             "mypkg_0.1_i386.changes", contents)
         self.assertEqual([], list(changes.processAddresses()))
         self.assertEqual(
-            "Something changed\n\n"
-            " -- Somebody <somebody@ubuntu.com>  "
-            "Fri, 25 Jun 2010 11:20:22 -0600",
+            b"Something changed\n\n"
+            b" -- Somebody <somebody@ubuntu.com>  "
+            b"Fri, 25 Jun 2010 11:20:22 -0600",
             changes.simulated_changelog)
 
     def test_requires_changed_by(self):
@@ -377,7 +378,7 @@ class TestSignatureVerification(TestCase):
         expected = "\\AFormat: 1.7\n.*foo_1.0-1.diff.gz\\Z"
         self.assertTextMatchesExpressionIgnoreWhitespace(
             expected,
-            changesfile.parsed_content)
+            six.ensure_text(changesfile.parsed_content))
 
     def test_no_signature_rejected(self):
         # An unsigned changes file is rejected.
@@ -399,6 +400,6 @@ class TestSignatureVerification(TestCase):
         expected = "\\AFormat: 1.7\n.*foo_1.0-1.diff.gz\\Z"
         self.assertTextMatchesExpressionIgnoreWhitespace(
             expected,
-            changesfile.parsed_content)
+            six.ensure_text(changesfile.parsed_content))
         self.assertEqual("breezy", changesfile.suite_name)
         self.assertNotIn("evil", changesfile.changes_comment)

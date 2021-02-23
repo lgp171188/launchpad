@@ -29,6 +29,7 @@ import shutil
 import tempfile
 
 import scandir
+import six
 
 from lp.app.validators.version import valid_debian_version
 from lp.archivepublisher.diskpool import poolify
@@ -123,7 +124,7 @@ def read_dsc(package, version, component, distro_name, archive_root):
                                       distro_name, archive_root)
 
     try:
-        with open(dsc_path) as f:
+        with open(dsc_path, "rb") as f:
             dsc = f.read().strip()
 
         fullpath = os.path.join(source_dir, "debian", "changelog")
@@ -331,11 +332,11 @@ class SourcePackageData(AbstractPackageData):
     def __init__(self, **args):
         for k, v in args.items():
             if k == 'Binary':
-                self.binaries = stripseq(v.split(","))
+                self.binaries = stripseq(six.ensure_text(v).split(","))
             elif k == 'Section':
-                self.section = parse_section(v)
+                self.section = parse_section(six.ensure_text(v))
             elif k == 'Urgency':
-                urgency = v
+                urgency = six.ensure_text(v)
                 # This is to handle cases like:
                 #   - debget: 'high (actually works)
                 #   - lxtools: 'low, closes=90239'
@@ -345,23 +346,20 @@ class SourcePackageData(AbstractPackageData):
                     urgency = urgency.split(",")[0]
                 self.urgency = urgency
             elif k == 'Maintainer':
-                displayname, emailaddress = parse_person(v)
                 try:
-                    self.maintainer = (
-                        encoding.guess(displayname),
-                        emailaddress,
-                        )
+                    maintainer = encoding.guess(v)
                 except UnicodeDecodeError:
                     raise DisplayNameDecodingError(
-                        "Could not decode name %s" % displayname)
+                        "Could not decode Maintainer field %r" % v)
+                self.maintainer = parse_person(maintainer)
             elif k == 'Files' or k.startswith('Checksums-'):
                 if not hasattr(self, 'files'):
                     self.files = []
-                    files = v.split("\n")
+                    files = six.ensure_text(v).split("\n")
                     for f in files:
                         self.files.append(stripseq(f.split(" "))[-1])
             else:
-                self.set_field(k, v)
+                self.set_field(k, encoding.guess(v))
 
         if self.section is None:
             self.section = 'misc'
@@ -390,7 +388,7 @@ class SourcePackageData(AbstractPackageData):
         self.copyright = encoding.guess(copyright)
         parsed_changelog = None
         if changelog:
-            parsed_changelog = parse_changelog(changelog.split('\n'))
+            parsed_changelog = parse_changelog(changelog.split(b'\n'))
 
         self.urgency = None
         self.changelog = None
@@ -398,17 +396,21 @@ class SourcePackageData(AbstractPackageData):
         if parsed_changelog and parsed_changelog[0]:
             cldata = parsed_changelog[0]
             if 'changes' in cldata:
-                if cldata["package"] != self.package:
+                cldata_package = six.ensure_text(cldata["package"])
+                cldata_version = six.ensure_text(cldata["version"])
+                if cldata_package != self.package:
                     log.warning(
                         "Changelog package %s differs from %s" %
-                        (cldata["package"], self.package))
-                if cldata["version"] != self.version:
+                        (cldata_package, self.package))
+                if cldata_version != self.version:
                     log.warning(
                         "Changelog version %s differs from %s" %
-                        (cldata["version"], self.version))
+                        (cldata_version, self.version))
                 self.changelog_entry = encoding.guess(cldata["changes"])
                 self.changelog = changelog
                 self.urgency = cldata["urgency"]
+                if self.urgency is not None:
+                    self.urgency = six.ensure_text(self.urgency)
             else:
                 log.warning(
                     "Changelog empty for source %s (%s)" %
@@ -483,11 +485,11 @@ class BinaryPackageData(AbstractPackageData):
     def __init__(self, **args):
         for k, v in args.items():
             if k == "Maintainer":
-                self.maintainer = parse_person(v)
+                self.maintainer = parse_person(encoding.guess(v))
             elif k == "Essential":
-                self.essential = (v == "yes")
+                self.essential = (v == b"yes")
             elif k == 'Section':
-                self.section = parse_section(v)
+                self.section = parse_section(six.ensure_text(v))
             elif k == "Description":
                 self.description = encoding.guess(v)
                 summary = self.description.split("\n")[0].strip()
@@ -495,21 +497,22 @@ class BinaryPackageData(AbstractPackageData):
                     summary = summary + '.'
                 self.summary = summary
             elif k == "Installed-Size":
+                installed_size = six.ensure_text(v)
                 try:
-                    self.installed_size = int(v)
+                    self.installed_size = int(installed_size)
                 except ValueError:
                     raise MissingRequiredArguments("Installed-Size is "
-                        "not a valid integer: %r" % v)
+                        "not a valid integer: %r" % installed_size)
             elif k == "Built-Using":
-                self.built_using = v
+                self.built_using = six.ensure_text(v)
                 # Preserve the original form of Built-Using to avoid
                 # possible unfortunate apt behaviour.  This is most easily
                 # done by adding it to _user_defined as well.
                 if self._user_defined is None:
                     self._user_defined = []
-                self._user_defined.append([k, v])
+                self._user_defined.append([k, self.built_using])
             else:
-                self.set_field(k, v)
+                self.set_field(k, encoding.guess(v))
 
         if self.source:
             # We need to handle cases like "Source: myspell

@@ -8,11 +8,13 @@ __metaclass__ = type
 import re
 import sys
 
-
-first_re = re.compile(r"^([a-z0-9][a-z0-9\\+\\.\\-]+)\s+\(([^ ]+)\)")
-urgency_re = re.compile(r'(?:urgency|priority)=([^ ,;:.]+)')
+import six
 
 from lp.archivepublisher.debversion import Version
+
+
+first_re = re.compile(br"^([a-z0-9][a-z0-9\\+\\.\\-]+)\s+\(([^ ]+)\)")
+urgency_re = re.compile(br'(?:urgency|priority)=([^ ,;:.]+)')
 
 
 def parse_first_line(line):
@@ -33,8 +35,8 @@ def parse_first_line(line):
 
 
 def parse_last_line(line):
-    maint = line[:line.find(">") + 1].strip()
-    date = line[line.find(">") + 1:].strip()
+    maint = line[:line.find(b">") + 1].strip()
+    date = line[line.find(b">") + 1:].strip()
     return (maint, date)
 
 
@@ -48,40 +50,40 @@ def parse_changelog_stanza(firstline, stanza, lastline):
         "urgency": urgency,
         "maintainer": maint,
         "date": date,
-        "changes": "".join(stanza).strip("\n")
+        "changes": b"".join(stanza).strip(b"\n")
     }
 
 
 def parse_changelog(changelines):
     state = 0
-    firstline = ""
+    firstline = b""
     stanza = []
     rets = []
 
     for line in changelines:
         #print line[:-1]
         if state == 0:
-            if (line.startswith(" ") or line.startswith("\t") or
+            if (line.startswith(b" ") or line.startswith(b"\t") or
                 not line.rstrip()):
                 #print "State0 skip"
                 continue
             try:
                 (source, version, urgency) = parse_first_line(line.strip())
-                Version(version)
+                Version(six.ensure_text(version))
             except:
                 stanza.append(line)
                 #print "state0 Exception skip"
                 continue
             firstline = line.strip()
-            stanza = [line, '\n']
+            stanza = [line, b'\n']
             state = 1
             continue
 
         if state == 1:
             stanza.append(line)
-            stanza.append('\n')
+            stanza.append(b'\n')
 
-            if line.startswith(" --") and "@" in line:
+            if line.startswith(b" --") and b"@" in line:
                 #print "state1 accept"
                 # Last line of stanza
                 rets.append(parse_changelog_stanza(firstline,
@@ -93,12 +95,12 @@ def parse_changelog(changelines):
     if state == 1:
         rets[-1]["changes"] += firstline
         if len(rets):
-            rets[-1]["changes"] += "".join(stanza).strip("\n")
+            rets[-1]["changes"] += b"".join(stanza).strip(b"\n")
 
     return rets
 
 
 if __name__ == '__main__':
     import pprint
-    with open(sys.argv[1]) as f:
+    with open(sys.argv[1], "rb") as f:
         pprint.pprint(parse_changelog(f))

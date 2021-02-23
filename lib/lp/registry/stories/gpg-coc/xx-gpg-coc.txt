@@ -508,9 +508,9 @@ Get the token from the body of the email sent.
     >>> msg = email.message_from_string(raw_msg)
     >>> cipher_body = msg.get_payload(decode=1)
     >>> body = decrypt_content(cipher_body, six.ensure_str('test'))
-    >>> link = re.findall(r'http.*/token/.*', body)[0]
+    >>> link = get_token_url_from_bytes(body)
     >>> token = re.sub(r'.*token/', '', link)
-    >>> token_url = 'http://launchpad.test/token/%s' % token.encode('ascii')
+    >>> token_url = 'http://launchpad.test/token/%s' % token
 
 
 Going to the token page will get us redirected to the page of that specific

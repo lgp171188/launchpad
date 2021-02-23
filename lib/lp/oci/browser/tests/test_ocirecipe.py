@@ -151,7 +151,7 @@ class BaseTestOCIRecipeView(BrowserTestCase):
             name="test-person", displayname="Test Person")
 
 
-class TestOCIRecipeAddView(BaseTestOCIRecipeView):
+class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def setUp(self):
         super(TestOCIRecipeAddView, self).setUp()
@@ -162,6 +162,7 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "oci.build_series.%s" % self.distribution.name:
                 self.distroseries.name,
             }))
+        self.setConfig()
 
     def setUpDistroSeries(self):
         """Set up self.distroseries with some available processors."""
@@ -262,6 +263,29 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         self.assertThat(
             "Build-time\nARG variables:\nVAR1=10\nVAR2=20",
             MatchesTagText(content, "build-args"))
+
+    def test_create_new_recipe_with_image_name(self):
+        oci_project = self.factory.makeOCIProject()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        with person_logged_in(oci_project.distribution.owner):
+            oci_project.distribution.oci_registry_credentials = credentials
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['/refs/heads/v2.0-20.04'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+
+        image_name = self.factory.getUniqueUnicode()
+        browser.getControl(name="field.image_name").value = image_name
+        browser.getControl("Create OCI recipe").click()
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Registry image name:\n{}".format(image_name),
+            MatchesTagText(content, "image-name"))
 
     def test_create_new_recipe_users_teams_as_owner_options(self):
         # Teams that the user is in are options for the OCI recipe owner.
@@ -740,6 +764,27 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         login_person(self.person)
         IStore(recipe).reload(recipe)
         self.assertEqual({"VAR1": "xxx", "VAR2": "uu"}, recipe.build_args)
+
+    def test_edit_image_name(self):
+        self.setUpDistroSeries()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        with person_logged_in(self.distribution.owner):
+            self.distribution.oci_registry_credentials = credentials
+            oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+            recipe = self.factory.makeOCIRecipe(
+                registrant=self.person, owner=self.person,
+                oci_project=oci_project)
+            oci_project.setOfficialRecipeStatus(recipe, True)
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        image_name = self.factory.getUniqueUnicode()
+        field = browser.getControl(name="field.image_name")
+        field.value = image_name
+        browser.getControl("Update OCI recipe").click()
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Registry image name:\n{}".format(image_name),
+            MatchesTagText(content, "image-name"))
 
     def test_edit_with_invisible_processor(self):
         # It's possible for existing recipes to have an enabled processor

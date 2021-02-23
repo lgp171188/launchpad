@@ -344,12 +344,12 @@ class PackageUploadFile(NascentUploadFile):
 
         if self.section_name not in valid_sections:
             raise UploadError(
-                "%s: Unknown section %r" % (
+                "%s: Unknown section '%s'" % (
                 self.filename, self.section_name))
 
         if self.component_name not in valid_components:
             raise UploadError(
-                "%s: Unknown component %r" % (
+                "%s: Unknown component '%s'" % (
                 self.filename, self.component_name))
 
     @property
@@ -585,6 +585,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         control_source = self.control.get("Source", None)
         if control_source is not None:
+            control_source = six.ensure_text(control_source)
             if "(" in control_source:
                 src_match = re_extract_src_version.match(control_source)
                 self.source_name = src_match.group(1)
@@ -595,14 +596,20 @@ class BaseBinaryUploadFile(PackageUploadFile):
         else:
             self.source_name = self.control.get("Package")
             self.source_version = self.control.get("Version")
+        if self.source_name is not None:
+            self.source_name = six.ensure_text(self.source_name)
+        if self.source_version is not None:
+            self.source_version = six.ensure_text(self.source_version)
 
         # Store control_version for external use (archive version consistency
         # checks in nascentupload.py)
         self.control_version = self.control.get("Version")
+        if self.control_version is not None:
+            self.control_version = six.ensure_text(self.control_version)
 
     def verifyPackage(self):
         """Check if the binary is in changesfile and its name is valid."""
-        control_package = self.control.get("Package", '')
+        control_package = six.ensure_text(self.control.get("Package", b''))
 
         # Since DDEBs are generated after the original DEBs are processed
         # and considered by `dpkg-genchanges` they are only half-incorporated
@@ -651,36 +658,37 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         Also check if it is a valid architecture in LP context.
         """
-        control_arch = self.control.get("Architecture", '')
+        control_arch = six.ensure_text(self.control.get("Architecture", b''))
         valid_archs = [a.architecturetag
                        for a in self.policy.distroseries.architectures]
 
         if control_arch not in valid_archs and control_arch != "all":
             yield UploadError(
-                "%s: Unknown architecture: %r" % (
+                "%s: Unknown architecture: '%s'" % (
                 self.filename, control_arch))
 
         if control_arch not in self.changes.architectures:
             yield UploadError(
-                "%s: control file lists arch as %r which isn't "
+                "%s: control file lists arch as '%s' which isn't "
                 "in the changes file." % (self.filename, control_arch))
 
         if control_arch != self.architecture:
             yield UploadError(
-                "%s: control file lists arch as %r which doesn't "
-                "agree with version %r in the filename."
+                "%s: control file lists arch as '%s' which doesn't "
+                "agree with version '%s' in the filename."
                 % (self.filename, control_arch, self.architecture))
 
     def verifyDepends(self):
         """Check if control depends field is present and not empty."""
-        control_depends = self.control.get('Depends', "--unset-marker--")
+        control_depends = self.control.get('Depends', b"--unset-marker--")
         if not control_depends:
             yield UploadError(
                 "%s: Depends field present and empty." % self.filename)
 
     def verifySection(self):
         """Check the section & priority match those in changesfile."""
-        control_section_and_component = self.control.get('Section', '')
+        control_section_and_component = six.ensure_text(
+            self.control.get('Section', b''))
         control_component, control_section = splitComponentAndSection(
             control_section_and_component)
         if ((control_component, control_section) !=
@@ -693,7 +701,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
     def verifyPriority(self):
         """Check if priority matches changesfile."""
-        control_priority = self.control.get('Priority', '')
+        control_priority = six.ensure_text(self.control.get('Priority', b''))
         if control_priority and self.priority_name != control_priority:
             yield UploadError(
                 "%s control file lists priority as %s but changes file has "
@@ -896,7 +904,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         is_essential = encoded.get('Essential', '').lower() == 'yes'
         architecturespecific = not self.is_archindep
-        installedsize = int(self.control.get('Installed-Size', '0'))
+        installedsize = int(self.control.get('Installed-Size', b'0'))
         binary_name = getUtility(
             IBinaryPackageNameSet).getOrCreateByName(self.package)
 

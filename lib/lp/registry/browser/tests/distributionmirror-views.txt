@@ -522,7 +522,7 @@ Any user can see the RSS for an archive mirror
     >>> view = create_initialized_view(
     ...     ubuntu, '+archivemirrors-rss', principal=user,
     ...     server_url='http://launchpad.test/ubuntu/+archivemirrors-rss')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     <?xml version="1.0"...?>
     <rss xmlns:mirror="https://launchpad.net/" version="2.0">
       <channel>
@@ -555,7 +555,7 @@ Any user can see the RSS for an CD mirror
     >>> view = create_initialized_view(
     ...     ubuntu, '+cdmirrors-rss', principal=user,
     ...     server_url='http://launchpad.test/ubuntu/+cdmirrors-rss')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     <?xml version="1.0"...?>
     <rss ...
       <channel>

@@ -25,7 +25,7 @@ unchanged:
     >>> response = new_response()
     >>> response.addNotification('clean')
     >>> for notification in response.notifications:
-    ...   print notification.message
+    ...   print(notification.message)
     clean
 
 But text containing markup is CGI-escaped:

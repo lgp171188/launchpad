@@ -9,11 +9,14 @@ child process.  The Zope testing browser fakes its connections in-process, so
 that's not good enough.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'setUp',
     ]
 
+import __future__
 import ssl
 
 from lazr.uri import URI
@@ -32,6 +35,7 @@ from lp.testing.pages import (
     find_tag_by_id,
     print_feedback_messages,
     )
+from lp.testing.systemdocs import PrettyPrinter
 
 
 class Browser(_Browser):
@@ -68,9 +72,12 @@ class Browser(_Browser):
 
 def setUp(test):
     """Set up appserver tests."""
+    for future_item in 'absolute_import', 'print_function', 'unicode_literals':
+        test.globs[future_item] = getattr(__future__, future_item)
     test.globs['Browser'] = Browser
     test.globs['browser'] = Browser()
     test.globs['find_tag_by_id'] = find_tag_by_id
     test.globs['find_main_content'] = find_main_content
     test.globs['print_feedback_messages'] = print_feedback_messages
     test.globs['extract_text'] = extract_text
+    test.globs['pretty'] = PrettyPrinter(width=1).pformat

@@ -364,19 +364,19 @@ class ContainsTests(TestCase):
 
 class EqualsIgnoringWhitespaceTests(TestCase):
 
-    def test_str(self):
-        matcher = EqualsIgnoringWhitespace("abc")
-        self.assertEqual("EqualsIgnoringWhitespace('abc')", str(matcher))
+    def test_bytes(self):
+        matcher = EqualsIgnoringWhitespace(b"abc")
+        self.assertEqual("EqualsIgnoringWhitespace(%r)" % b"abc", str(matcher))
 
-    def test_match_str(self):
-        matcher = EqualsIgnoringWhitespace("one \t two \n three")
-        self.assertIs(None, matcher.match(" one \r two     three "))
+    def test_match_bytes(self):
+        matcher = EqualsIgnoringWhitespace(b"one \t two \n three")
+        self.assertIs(None, matcher.match(b" one \r two     three "))
 
-    def test_mismatch_str(self):
-        matcher = EqualsIgnoringWhitespace("one \t two \n three")
-        mismatch = matcher.match(" one \r three ")
+    def test_mismatch_bytes(self):
+        matcher = EqualsIgnoringWhitespace(b"one \t two \n three")
+        mismatch = matcher.match(b" one \r three ")
         self.assertEqual(
-            "'one three' != 'one two three'",
+            "%r != %r" % (b"one three", b"one two three"),
             mismatch.describe())
 
     def test_match_unicode(self):
@@ -387,7 +387,7 @@ class EqualsIgnoringWhitespaceTests(TestCase):
         matcher = EqualsIgnoringWhitespace(u"one \t two \n \u1234  ")
         mismatch = matcher.match(u" one \r \u1234 ")
         self.assertEqual(
-            u"u'one \\u1234' != u'one two \\u1234'",
+            u"%r != %r" % (u"one \u1234", u"one two \u1234"),
             mismatch.describe())
 
     def test_match_non_string(self):

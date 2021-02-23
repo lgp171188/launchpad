@@ -76,7 +76,10 @@ from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
-from lp.oci.model.ocipushrule import OCIPushRule
+from lp.oci.model.ocipushrule import (
+    OCIDistributionPushRule,
+    OCIPushRule,
+    )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.oci.model.ocirecipejob import OCIRecipeJob
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -162,10 +165,13 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     build_daily = Bool(name="build_daily", default=False)
 
+    _image_name = Unicode(name="image_name", allow_none=True)
+
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
-                 allow_internet=True, build_args=None, build_path=None):
+                 allow_internet=True, build_args=None, build_path=None,
+                 image_name=None):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
@@ -184,6 +190,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.allow_internet = allow_internet
         self.build_args = build_args or {}
         self.build_path = build_path
+        self.image_name = image_name
 
     def __repr__(self):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
@@ -469,10 +476,18 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def push_rules(self):
+        # if we're in a distribution that has credentials set at that level
+        # create a push rule using those credentials
+        if self.use_distribution_credentials:
+            push_rule = OCIDistributionPushRule(
+                self,
+                self.oci_project.distribution.oci_registry_credentials,
+                self.image_name)
+            return [push_rule]
         rules = IStore(self).find(
             OCIPushRule,
             OCIPushRule.recipe == self.id)
-        return rules
+        return list(rules)
 
     @property
     def _pending_states(self):
@@ -533,7 +548,25 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def can_upload_to_registry(self):
-        return not self.push_rules.is_empty()
+        return bool(self.push_rules)
+
+    @property
+    def use_distribution_credentials(self):
+        distribution = self.oci_project.distribution
+        # if we're not in a distribution, we can't use those credentials...
+        if not distribution:
+            return False
+        official = self.official
+        credentials = distribution.oci_registry_credentials
+        return bool(distribution and official and credentials)
+
+    @property
+    def image_name(self):
+        return self._image_name or self.name
+
+    @image_name.setter
+    def image_name(self, value):
+        self._image_name = value
 
     def newPushRule(self, registrant, registry_url, image_name, credentials,
                     credentials_owner=None):
@@ -575,7 +608,8 @@ class OCIRecipeSet:
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True, build_args=None, build_path=None):
+            allow_internet=True, build_args=None, build_path=None,
+            image_name=None):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -600,7 +634,7 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created, allow_internet, build_args, build_path)
+            date_created, allow_internet, build_args, build_path, image_name)
         store.add(oci_recipe)
 
         if processors is None:
@@ -735,3 +769,6 @@ class OCIRecipeBuildRequest:
         if not zope_isinstance(other, self.__class__):
             return False
         return self.id == other.id
+
+    def __hash__(self):
+        return hash((self.__class__, self.id))

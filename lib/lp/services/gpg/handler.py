@@ -347,7 +347,7 @@ class GPGHandler:
         # http://pyme.sourceforge.net/doc/gpgme/Generating-Keys.html
         with gpgme_timeline("genkey", name):
             result = context.genkey(
-                signing_only_param % {'name': name.encode('utf-8')})
+                six.ensure_str(signing_only_param % {'name': name}))
 
         # Right, it might seem paranoid to have this many assertions,
         # but we have to take key generation very seriously.
@@ -432,7 +432,7 @@ class GPGHandler:
             del os.environ['GPG_AGENT_INFO']
 
         def passphrase_cb(uid_hint, passphrase_info, prev_was_bad, fd):
-            os.write(fd, '%s\n' % password)
+            os.write(fd, six.ensure_binary('%s\n' % password))
         context.passphrase_cb = passphrase_cb
 
         # Sign the text.
@@ -469,7 +469,7 @@ class GPGHandler:
         # global one. It should basically consists of be
         # aware of a revoked flag coming from the global
         # key ring, but it needs "specing"
-        key = PymeKey(fingerprint.encode('ascii'))
+        key = PymeKey(fingerprint)
         if not key.exists_in_local_keyring:
             pubkey = self._getPubKey(fingerprint)
             key = self.importPublicKey(pubkey)
@@ -565,13 +565,13 @@ class GPGHandler:
             # We can extract the fact that the key is unknown by looking
             # into the response's content.
             if exc.response.status_code in (404, 500):
-                no_key_message = 'No results found: No keys found'
+                no_key_message = b'No results found: No keys found'
                 if exc.response.content.find(no_key_message) >= 0:
                     raise GPGKeyDoesNotExistOnServer(fingerprint)
                 errorlog.globalErrorUtility.raising(sys.exc_info(), request)
                 raise GPGKeyTemporarilyNotFoundError(fingerprint)
             raise
-        except (TimeoutError, requests.RequestException) as exc:
+        except (TimeoutError, requests.RequestException):
             errorlog.globalErrorUtility.raising(sys.exc_info(), request)
             raise GPGKeyTemporarilyNotFoundError(fingerprint)
         finally:

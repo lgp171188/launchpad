@@ -156,9 +156,8 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
     def test_verifyAndStore_good(self):
         user = self.factory.makePerson()
         gpgkey = self.factory.makeGPGKey(user)
-        signature = PymeSignature(
-            gpgkey.fingerprint,
-            getUtility(ICodeOfConductSet).current_code_of_conduct.content)
+        current = getUtility(ICodeOfConductSet).current_code_of_conduct.content
+        signature = PymeSignature(gpgkey.fingerprint, current.encode("UTF-8"))
         self.useFixture(ZopeUtilityFixture(
             FakeGPGHandlerGood(signature), IGPGHandler))
         self.assertIsNone(
