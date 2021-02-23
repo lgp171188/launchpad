@@ -1292,7 +1292,8 @@ class TestCheckTeamParticipationScript(TestCase):
         filename_out = tempdir.join("info.out")
         fout = bz2.BZ2File(filename_in, "w")
         try:
-            pickle.dump(info, fout, pickle.HIGHEST_PROTOCOL)
+            # Use protocol 2 for Python 2 compatibility.
+            pickle.dump(info, fout, protocol=2)
         finally:
             fout.close()
         code, out, err = self._runScript(
