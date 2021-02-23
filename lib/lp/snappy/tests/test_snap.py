@@ -1361,10 +1361,10 @@ class TestSnapVisibility(TestCaseWithFactory):
         snap = self.factory.makeSnap(
             registrant=owner, owner=owner, project=pillar, private=True)
         other_person = self.factory.makePerson()
-        with person_logged_in(owner):
-            snap.subscribe(other_person, owner)
         with person_logged_in(other_person):
             self.assertRaises(Unauthorized, getattr, snap, 'subscribe')
+        with person_logged_in(owner):
+            snap.subscribe(other_person, owner)
 
     def test_private_is_invisible_by_default(self):
         owner = self.factory.makePerson()
