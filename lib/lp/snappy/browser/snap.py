@@ -35,6 +35,7 @@ from zope.schema import (
     List,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -248,6 +249,13 @@ class SnapView(LaunchpadView):
     @property
     def store_channels(self):
         return ', '.join(self.context.store_channels)
+
+    @property
+    def user_can_see_source(self):
+        try:
+            return self.context.source.visibleByUser(self.user)
+        except Unauthorized:
+            return False
 
 
 def builds_and_requests_for_snap(snap):

@@ -59,9 +59,12 @@
       <dl id="source"
           tal:define="source context/source" tal:condition="source">
         <dt>Source:</dt>
-        <dd>
+        <dd tal:condition="view/user_can_see_source">
           <a tal:replace="structure source/fmt:link"/>
           <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
+        </dd>
+        <dd tal:condition="not: view/user_can_see_source">
+            <span style="font-style: italic">&lt;Redacted&gt;</span>
         </dd>
       </dl>
       <dl id="build_source_tarball"

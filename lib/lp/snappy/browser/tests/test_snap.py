@@ -1571,6 +1571,74 @@ class TestSnapView(BaseTestSnapView):
             Primary Archive for Ubuntu Linux
             """, self.getMainText(build.snap))
 
+    def test_index_for_subscriber_without_git_repo_access(self):
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="snap-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        snap = self.makeSnap(git_ref=ref, private=True)
+        with admin_logged_in():
+            self.makeBuild(
+                snap=snap, status=BuildStatus.FULLYBUILT,
+                duration=timedelta(minutes=30))
+
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            snap.subscribe(subscriber, self.person)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+            Snap packages snap-name
+            .*
+            Snap package information
+            Owner: Test Person
+            Distribution series: Ubuntu Shiny
+            Source: &lt;Redacted&gt;
+            Build source tarball: No
+            Build schedule: \(\?\)
+            Built on request
+            Source archive for automatic builds:
+            Pocket for automatic builds:
+            Builds of this snap package are not automatically uploaded to
+            the store.
+            Latest builds
+            Status When complete Architecture Archive
+            Successfully built 30 minutes ago i386
+            Primary Archive for Ubuntu Linux
+            """, self.getMainText(snap, user=subscriber))
+
+    def test_index_for_subscriber_without_archive_access(self):
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="snap-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        snap = self.makeSnap(git_ref=ref, private=True)
+        with admin_logged_in():
+            archive = self.factory.makeArchive(private=True)
+            self.makeBuild(
+                snap=snap, status=BuildStatus.FULLYBUILT, archive=archive,
+                duration=timedelta(minutes=30))
+
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            snap.subscribe(subscriber, self.person)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+            Snap packages snap-name
+            .*
+            Snap package information
+            Owner: Test Person
+            Distribution series: Ubuntu Shiny
+            Source: &lt;Redacted&gt;
+            Build source tarball: No
+            Build schedule: \(\?\)
+            Built on request
+            Source archive for automatic builds:
+            Pocket for automatic builds:
+            Builds of this snap package are not automatically uploaded to
+            the store.
+            Latest builds
+            Status When complete Architecture Archive
+            This snap package has not been built yet.
+            """, self.getMainText(snap, user=subscriber))
+
     def test_index_git_url(self):
         ref = self.factory.makeGitRefRemote(
             repository_url="https://git.example.org/foo",
