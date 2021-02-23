@@ -354,7 +354,7 @@ Set up example Branch Merge Proposal
 Branch merge proposals should have a canonical URL.  (Based on their source
 branch.)
 
-    >>> print canonical_url(merge_proposal)
+    >>> print(canonical_url(merge_proposal))
     http://code.launchpad.test/~name12/gnome-terminal/main/+merge/...
 
 Create example CodeReviewComment.
@@ -365,7 +365,7 @@ Create example CodeReviewComment.
 CodeReviewComment should have a canonical URL.  (It should extend the URL of
 the merge proposal)
 
-    >>> print canonical_url(comment)
+    >>> print(canonical_url(comment))
     http://code....test/~name12/gnome-terminal/main/+merge/.../comments/...
 
 
@@ -377,7 +377,7 @@ that they import to.
 
     >>> from lp.code.interfaces.codeimport import ICodeImportSet
     >>> code_import = getUtility(ICodeImportSet).get(1)
-    >>> print canonical_url(code_import)
+    >>> print(canonical_url(code_import))
     http://code.launchpad.test/~vcs-imports/gnome-terminal/import/+code-import
 
 Specifications
