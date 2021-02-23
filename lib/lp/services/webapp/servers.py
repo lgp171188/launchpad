@@ -3,6 +3,8 @@
 
 """Definition of the internet servers that Launchpad uses."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import threading
@@ -137,19 +139,19 @@ class StepsToGo(six.Iterator):
     False
     >>> len(stepstogo)
     3
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     foo
     >>> request._traversed_names
     ['foo']
     >>> request.stack
     ['baz', 'bar']
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     bar
     >>> bool(stepstogo)
     True
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     baz
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     None
     >>> bool(stepstogo)
     False

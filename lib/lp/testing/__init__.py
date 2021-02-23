@@ -1377,7 +1377,8 @@ def normalize_whitespace(string):
     # whitespace is roughly 6 times faster than using an uncompiled
     # regex (for the expression \s+), and 4 times faster than a
     # compiled regex.
-    return " ".join(string.split())
+    joiner = b" " if isinstance(string, bytes) else u" "
+    return joiner.join(string.split())
 
 
 def map_branch_contents(branch):

@@ -40,7 +40,7 @@ all the traversal logic.
 The view will serve the file that it traverses to.
 
     >>> view = view.publishTraverse(view.request, 'test.txt')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Text file
 
 It also sets the appropriate headers for cache control on the response.
@@ -58,7 +58,7 @@ identifier.
     >>> view = MyFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'rev6510')
     >>> view = view.publishTraverse(view.request, 'image1.gif')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     GIF file
 
 Requesting a directory raises a NotFound.
@@ -117,7 +117,7 @@ image_extensions property.
     ('.png', '.gif')
 
     >>> view = view.publishTraverse(view.request, 'image2')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     PNG file
     >>> print(view.request.response.getHeader('Content-Type'))
     image/png
@@ -131,12 +131,12 @@ If a file without extension exists, that one will be served.
 
     >>> view = MyImageFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'image3')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Image without extension
 
     >>> view = MyImageFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'image3.gif')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Image with extension
 
 
@@ -165,14 +165,14 @@ Traversing to a file in a subdirectory will now work.
     >>> view = view.publishTraverse(view.request, 'public')
     >>> view = view.publishTraverse(view.request, 'subdir1')
     >>> view = view.publishTraverse(view.request, 'test1.txt')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Sub file 1
 
 But traversing to the subdirectory itself will raise a NotFound.
 
     >>> view = MyTree(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'public')
-    >>> print(view())  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> view()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...

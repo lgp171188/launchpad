@@ -43,7 +43,7 @@ The text below was "clear signed" by 0xDFD20543 master key:
     ... """
 
     >>> master_sig = gpghandler.getVerifiedSignature(content)
-    >>> print master_sig.fingerprint
+    >>> print(master_sig.fingerprint)
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 The text below was "clear signed" by a 0x02BA5EF6, a subkey of 0xDFD20543
@@ -63,7 +63,7 @@ The text below was "clear signed" by a 0x02BA5EF6, a subkey of 0xDFD20543
     >>>
 
     >>> subkey_sig = gpghandler.getVerifiedSignature(content)
-    >>> print subkey_sig.fingerprint
+    >>> print(subkey_sig.fingerprint)
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 
@@ -225,10 +225,10 @@ itself.
     >>> try:
     ...     gpghandler.getVerifiedSignature(content)
     ... except GPGVerificationError as e:
-    ...     print e.args
-    ...     print e.code
-    ...     print e.signatures
-    ...     print e.source
+    ...     print(e.args)
+    ...     print(e.code)
+    ...     print(e.signatures)
+    ...     print(e.source)
     (7, 89, ...'Bad data')
     89
     [<gpgme.Signature object at ...>]

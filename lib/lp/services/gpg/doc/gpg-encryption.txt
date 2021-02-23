@@ -57,7 +57,7 @@ cipher constains the encrypted content.
 Storing the raw password may compromise the security, but is the
 only way we can decrypt the cipher content.
 
-    >>> password = 'test'
+    >>> password = six.ensure_str('test')
     >>> plain = decrypt_content(cipher, password)
 
 voilá, the same content shows up again. 
@@ -69,7 +69,7 @@ Verify if the encrytion process support passing another charset string
 
     >>> content = u'a\xe7ucar'
     >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)
-    >>> plain = decrypt_content(cipher, 'test')    
+    >>> plain = decrypt_content(cipher, six.ensure_str('test'))
     >>> print(backslashreplace(plain.decode('iso-8859-1')))
     a\xe7ucar
 
@@ -85,7 +85,7 @@ Decrypt a unicode content:
     >>> content = u'a\xe7ucar'
     >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)
     >>> cipher = six.ensure_text(cipher)
-    >>> plain = decrypt_content(cipher, 'test')    
+    >>> plain = decrypt_content(cipher, six.ensure_str('test'))
     Traceback (most recent call last):
     ...
     TypeError: Content must be bytes.
@@ -113,7 +113,7 @@ What about a message encrypted for an unknown key.
     ... =LQK5
     ... -----END PGP MESSAGE-----
     ... """
-    >>> plain = decrypt_content(cipher, 'test')    
+    >>> plain = decrypt_content(cipher, six.ensure_str('test'))
     >>> plain is None
     True
 

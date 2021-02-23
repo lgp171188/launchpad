@@ -78,16 +78,16 @@ defined in ILink and IFacetLink.
     >>> ILinkData.providedBy(no_summary_link)
     True
 
-    >>> no_summary_link.target
-    'target'
+    >>> print(no_summary_link.target)
+    target
 
-    >>> no_summary_link.text
-    'text -->'
+    >>> print(no_summary_link.text)
+    text -->
 
-    >>> print no_summary_link.summary
+    >>> print(no_summary_link.summary)
     None
 
-    >>> print no_summary_link.icon
+    >>> print(no_summary_link.icon)
     None
 
     >>> no_summary_link.enabled
@@ -103,17 +103,17 @@ mark is as being "structured".
     >>> ILinkData.providedBy(full_link)
     True
 
-    >>> full_link.target
-    'target'
+    >>> print(full_link.target)
+    target
 
     >>> full_link.text
     <structured-string 'some <b>%s</b> text'>
 
-    >>> full_link.summary
-    'summary'
+    >>> print(full_link.summary)
+    summary
 
-    >>> full_link.icon
-    'icon'
+    >>> print(full_link.icon)
+    icon
 
     >>> full_link.enabled
     False
@@ -142,11 +142,11 @@ not shared or reused.
     >>> link2 = Link('target', 'text', 'summary', icon='icon', enabled=False)
 
     >>> for menu_link in ILink(link1), IFacetLink(link2):
-    ...     print menu_link.name, menu_link.url, menu_link.linked
+    ...     print(menu_link.name, menu_link.url, menu_link.linked)
     ...     menu_link.name = 'name'
     ...     menu_link.url = 'url'
     ...     menu_link.linked = False
-    ...     print menu_link.name, menu_link.url, menu_link.linked
+    ...     print(menu_link.name, menu_link.url, menu_link.linked)
     None None True
     name url False
     None None True
@@ -209,9 +209,9 @@ We can go through each attribute of each of the links, checking that
 they are as we expect.
 
     >>> for link in facetmenu.iterlinks():
-    ...     print '--- link %s ---' % link.name
+    ...     print('--- link %s ---' % link.name)
     ...     for attrname in sorted(IFacetLink.names(all=True)):
-    ...         print '%s: %s' % (attrname, getattr(link, attrname))
+    ...         print('%s: %s' % (attrname, getattr(link, attrname)))
     --- link foo ---
     enabled: True
     escapedtext: Foo
@@ -277,17 +277,17 @@ links.
     >>> IFacetLink.providedBy(adaptedtolink)
     False
 
-    >>> adaptedtolink.target
-    'target'
+    >>> print(adaptedtolink.target)
+    target
 
-    >>> adaptedtolink.text
-    'text'
+    >>> print(adaptedtolink.text)
+    text
 
-    >>> adaptedtolink.summary
-    'summary'
+    >>> print(adaptedtolink.summary)
+    summary
 
-    >>> adaptedtolink.icon
-    'icon'
+    >>> print(adaptedtolink.icon)
+    icon
 
     >>> adaptedtolink.enabled
     True
@@ -333,7 +333,7 @@ Next, we return the link as HTML.
     >>> login(ANONYMOUS, request)
 
     >>> link = Link('+target', 'text-->', 'summary', icon='icon')
-    >>> print ILink(link).render() #doctest: +NORMALIZE_WHITESPACE
+    >>> print(ILink(link).render()) #doctest: +NORMALIZE_WHITESPACE
     <a class="menu-link-None sprite icon" title="summary">text--&gt;</a>
 
     # Clean up our special login.
@@ -342,7 +342,7 @@ Next, we return the link as HTML.
 A menu item can be marked as hidden even though it is enabled.
 
     >>> link = Link('z', 'text', 'summary', icon='icon', hidden=True)
-    >>> print ILink(link).render() #doctest: +NORMALIZE_WHITESPACE
+    >>> print(ILink(link).render()) #doctest: +NORMALIZE_WHITESPACE
     <a class="menu-link-None sprite icon hidden" title="summary">text</a>
 
 
@@ -352,8 +352,8 @@ A link will be selected if its name is passed to the facet menu's
 iterlinks method, or otherwise, if its name is the defaultlink.
 
     >>> for link in facetmenu.iterlinks(selectedfacetname='bar'):
-    ...     print '--- link %s ---' % link.name
-    ...     print 'selected:', link.selected
+    ...     print('--- link %s ---' % link.name)
+    ...     print('selected:', link.selected)
     --- link foo ---
     selected: False
     --- link bar ---
@@ -363,8 +363,8 @@ When a link name is passed in, but no link of that name is in the menu,
 it is not an error.  No link is selected.
 
     >>> for link in facetmenu.iterlinks(selectedfacetname='nosuchname'):
-    ...     print '--- link %s ---' % link.name
-    ...     print 'selected:', link.selected
+    ...     print('--- link %s ---' % link.name)
+    ...     print('selected:', link.selected)
     --- link foo ---
     selected: False
     --- link bar ---
@@ -375,8 +375,8 @@ selected.
 
     >>> facetmenu.defaultlink = 'foo'
     >>> for link in facetmenu.iterlinks():
-    ...     print '--- link %s ---' % link.name
-    ...     print 'selected:', link.selected
+    ...     print('--- link %s ---' % link.name)
+    ...     print('selected:', link.selected)
     --- link foo ---
     selected: True
     --- link bar ---
@@ -386,8 +386,8 @@ Now, 'foo' is still the default, but 'bar' has been selected.  So only
 'bar' will be selected.
 
     >>> for link in facetmenu.iterlinks(selectedfacetname='bar'):
-    ...     print '--- link %s ---' % link.name
-    ...     print 'selected:', link.selected
+    ...     print('--- link %s ---' % link.name)
+    ...     print('selected:', link.selected)
     --- link foo ---
     selected: False
     --- link bar ---
@@ -397,8 +397,8 @@ We still have 'foo' as the default.  This time, 'nosuchlink' has been
 selected. As there is no such link, nothing will be selected.
 
     >>> for link in facetmenu.iterlinks(selectedfacetname='nosuchlink'):
-    ...     print '--- link %s ---' % link.name
-    ...     print 'selected:', link.selected
+    ...     print('--- link %s ---' % link.name)
+    ...     print('selected:', link.selected)
     --- link foo ---
     selected: False
     --- link bar ---
@@ -455,9 +455,9 @@ We can go through each attribute of each of the links, checking that
 they are as we expect.
 
     >>> for link in housefooappmenu.iterlinks():
-    ...     print '--- link %s ---' % link.name
+    ...     print('--- link %s ---' % link.name)
     ...     for attrname in sorted(ILink.names(all=True)):
-    ...         print '%s: %s' % (attrname, getattr(link, attrname))
+    ...         print('%s: %s' % (attrname, getattr(link, attrname)))
     --- link first ---
     enabled: True
     escapedtext: First menu
@@ -522,9 +522,9 @@ We can go through each attribute of each of the links, checking that
 they are as we expect.
 
     >>> for link in housefoocontextmenu.iterlinks():
-    ...     print '--- link %s ---' % link.name
+    ...     print('--- link %s ---' % link.name)
     ...     for attrname in sorted(ILink.names(all=True)):
-    ...         print '%s: %s' % (attrname, getattr(link, attrname))
+    ...         print('%s: %s' % (attrname, getattr(link, attrname)))
     --- link first ---
     enabled: True
     escapedtext: First context menu item
@@ -551,7 +551,8 @@ First, we define a couple of interfaces, and put them in a temporary module.
     >>> import sys
     >>> import types
 
-    >>> module = types.ModuleType(factory.getUniqueString().replace('-', '_'))
+    >>> module = types.ModuleType(
+    ...     six.ensure_str(factory.getUniqueString().replace('-', '_')))
     >>> sys.modules[module.__name__] = module
 
     >>> class IThingHavingFacets(Interface):
@@ -616,12 +617,12 @@ We also need to check that we have no IApplicationMenu adapter named
     ... class SomeOtherThing:
     ...     pass
     >>> something_with_menus = SomeOtherThing()
-    >>> print queryAdapter(something_with_menus, IApplicationMenu, 'foo')
+    >>> print(queryAdapter(something_with_menus, IApplicationMenu, 'foo'))
     None
 
 Same for an IContextMenu adapter.
 
-    >>> print queryAdapter(something_with_menus, IContextMenu, 'foo')
+    >>> print(queryAdapter(something_with_menus, IContextMenu, 'foo'))
     None
 
     >>> from zope.configuration import xmlconfig
@@ -725,7 +726,7 @@ link should appear linked. The request is also set as the menu's
     >>> links = test_tales('view/menu:facet', view=view)
 
     >>> for link in links:
-    ...     print link.url, link.selected, link.linked, link.summary
+    ...     print(link.url, link.selected, link.linked, link.summary)
     http://launchpad.test/sesamestreet/+foo False True None
     http://launchpad.test/sesamestreet/+bar True False More explanation about
                                                       Bar of sesamestreet
@@ -742,7 +743,7 @@ Let's try again, this time with a request from the participation.
 
     >>> links = test_tales('context/menu:facet', context=house)
     >>> for link in links:
-    ...     print link.url, link.selected, link.linked
+    ...     print(link.url, link.selected, link.linked)
     http://launchpad.test/sesamestreet/+foo False True
     http://launchpad.test/sesamestreet/+bar False False
     http://launchpad.test/sesamestreet False True
@@ -772,8 +773,8 @@ name.
     ...     url1='http://launchpad.test/sesamestreet/')
 
     >>> from zope.publisher.defaultview import getDefaultViewName
-    >>> getDefaultViewName(street, request)
-    '+baz'
+    >>> print(getDefaultViewName(street, request))
+    +baz
 
 So, in this example, the last link should not be 'linked' because it is
 equivalent to the default view name for a street.  The TALES
@@ -783,7 +784,7 @@ infrastructure actually calculates a shortened URL for this case.
     >>> view.__launchpad_facetname__ = 'bar'
     >>> links = test_tales('view/menu:facet', view=view)
     >>> for link in links:
-    ...     print link.url, link.linked
+    ...     print(link.url, link.linked)
     http://launchpad.test/sesamestreet/+foo True
     http://launchpad.test/sesamestreet/+bar True
     http://launchpad.test/sesamestreet False
@@ -795,7 +796,7 @@ You can traverse to an individual menu item from the facet menu:
     >>> view = LaunchpadView(house, request)
     >>> view.__launchpad_facetname__ = 'bar'
     >>> link = test_tales('view/menu:foo/first', view=view, request=request)
-    >>> print link.url
+    >>> print(link.url)
     http://launchpad.test/sesamestreet/number73/+first
 
 But if a non-existing entry is requested, a KeyError is raised:
@@ -821,13 +822,13 @@ object.
 
     >>> links = test_tales('view/menu:context', view=view)
     >>> for link in links.values():
-    ...     print link.url
+    ...     print(link.url)
     http://launchpad.test/sesamestreet/number73/+firstcontext
 
 The link is also reachable by name:
 
     >>> link = test_tales('context/menu:context/first', context=house)
-    >>> print link.url
+    >>> print(link.url)
     http://launchpad.test/sesamestreet/number73/+firstcontext
 
 When there is no menu for a thing, we get an empty iterator.
@@ -864,7 +865,7 @@ render() method.
 
     >>> html = test_tales('context/menu:foo/first/render',
     ...                   context=house, view=view, request=request)
-    >>> print html #doctest: +NORMALIZE_WHITESPACE
+    >>> print(html) #doctest: +NORMALIZE_WHITESPACE
     <a...class="menu-link-first"
     ...href="http://127.0.0.1/sesamestreet/number73/+first">First menu</a>
 
@@ -903,8 +904,8 @@ If we're logged in as an anonymous user, then the link will be disabled.
     >>> login(ANONYMOUS)
 
     >>> foolink = somemenu.foo()
-    >>> foolink.text
-    'Admin the foo'
+    >>> print(foolink.text)
+    Admin the foo
 
     >>> foolink.enabled
     False

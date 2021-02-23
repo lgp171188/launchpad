@@ -33,7 +33,7 @@ update bookmarks.
     <BLANKLINE>
     >>> request.response.getStatus()
     301
-    >>> print request.response.getHeader('Location')
+    >>> print(request.response.getHeader('Location'))
     http://launchpad.test/ubuntu/+questions
 
 The view can also work for names registered on the root, and the
@@ -46,7 +46,7 @@ new_name can be a relative path.
     <BLANKLINE>
     >>> request.response.getStatus()
     301
-    >>> print view.request.response.getHeader('Location')
+    >>> print(view.request.response.getHeader('Location'))
     http://launchpad.test/+tour/index.html
 
 
@@ -60,7 +60,7 @@ to the redirected URL.
     >>> view = RenamedView(ubuntu, request, '+questions')
     >>> print(view())
     <BLANKLINE>
-    >>> print request.response.getHeader('Location')
+    >>> print(request.response.getHeader('Location'))
     http://launchpad.test/ubuntu/+questions?field.status=Open
 
 
@@ -74,7 +74,7 @@ change the virtual host used for the redirection.
     ...     ubuntu, request, '+questions', rootsite='answers')
     >>> print(view())
     <BLANKLINE>
-    >>> print request.response.getHeader('Location')
+    >>> print(request.response.getHeader('Location'))
     http://answers.launchpad.test/ubuntu/+questions
 
 
@@ -117,5 +117,5 @@ browser:renamed-page is available for this purpose.
     >>> view = getMultiAdapter((ubuntu, request), name='+old_tickets_page')
     >>> print(view())
     <BLANKLINE>
-    >>> print request.response.getHeader('Location')
+    >>> print(request.response.getHeader('Location'))
     http://answers.launchpad.test/ubuntu/+questions
