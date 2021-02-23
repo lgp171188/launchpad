@@ -20,6 +20,7 @@ import __future__
 import ssl
 
 from lazr.uri import URI
+import six
 from urllib3 import PoolManager
 from wsgiproxy.proxies import TransparentProxy
 from wsgiproxy.urllib3_client import HttpClient
@@ -81,3 +82,4 @@ def setUp(test):
     test.globs['print_feedback_messages'] = print_feedback_messages
     test.globs['extract_text'] = extract_text
     test.globs['pretty'] = PrettyPrinter(width=1).pformat
+    test.globs['six'] = six
