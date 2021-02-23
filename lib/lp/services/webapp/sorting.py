@@ -3,6 +3,8 @@
 
 """This module contains sorting utility functions."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['expand_numbers',
            'sorted_version_numbers',

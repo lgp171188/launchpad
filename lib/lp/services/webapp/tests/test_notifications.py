@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
+import __future__
 from doctest import DocTestSuite
 import unittest
 
@@ -86,6 +87,8 @@ def setUp(test):
         lambda x: mock_browser_request, (INotificationRequest,),
         IBrowserRequest)
 
+    for future_item in 'absolute_import', 'print_function':
+        test.globs[future_item] = getattr(__future__, future_item)
     test.globs['MockResponse'] = MockHTTPApplicationResponse
     test.globs['structured'] = structured
 

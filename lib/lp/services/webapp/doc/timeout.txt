@@ -98,7 +98,7 @@ and a TimeoutError is never raised.
     ... [database]
     ... db_statement_timeout = None'''))
 
-    >>> print timeout_func()
+    >>> print(timeout_func())
     None
 
     >>> wait_a_little()
