@@ -3300,9 +3300,14 @@ class ViewSnap(AuthorizationBase):
     usedfor = ISnap
 
     def checkAuthenticated(self, user):
+        # Check user visibility first: public snaps should be visible to
+        # anyone immediately. Doing this check first can save us some
+        # queries done by the not-so-common cases checked below.
+        if self.obj.visibleByUser(user.person):
+            return True
         if user.isOwner(self.obj) or user.in_commercial_admin or user.in_admin:
             return True
-        return self.obj.visibleByUser(user.person)
+        return False
 
     def checkUnauthenticated(self):
         return self.obj.visibleByUser(None)

@@ -1151,7 +1151,11 @@ class Snap(Storm, WebhookTargetMixin):
             SnapSubscription.snap == self)
 
     def visibleByUser(self, user):
-        """See `IGitRepository`."""
+        """See `ISnap`."""
+        if self.information_type in PUBLIC_INFORMATION_TYPES:
+            return True
+        if user is None:
+            return False
         store = IStore(self)
         return not store.find(
             Snap,
