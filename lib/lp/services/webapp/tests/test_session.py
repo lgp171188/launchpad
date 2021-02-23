@@ -67,7 +67,7 @@ class TestLaunchpadCookieClientIdManager(TestCase):
         request = LaunchpadTestRequest()
         LaunchpadCookieClientIdManager().setRequestId(request, 'some-id')
         self.assertThat(
-            dict(request.response.getHeaders())['Set-Cookie'],
+            dict(request.response.getHeaders())['Set-Cookie'].lower(),
             Contains('; httponly;'))
 
     def test_stable_client_id(self):
