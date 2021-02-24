@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from collections import OrderedDict
 from datetime import datetime
 import hashlib
 import os
@@ -164,11 +165,12 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def makeBehaviour(self, das):
-        files = {
-            'foo.dsc': {'url': 'http://host/foo.dsc', 'sha1': '0'},
-            'bar.tar': {
+        files = OrderedDict([
+            ('foo.dsc', {'url': 'http://host/foo.dsc', 'sha1': '0'}),
+            ('bar.tar', {
                 'url': 'http://host/bar.tar', 'sha1': '0',
-                'username': 'admin', 'password': 'sekrit'}}
+                'username': 'admin', 'password': 'sekrit'}),
+            ])
 
         behaviour = BuildFarmJobBehaviourBase(FakeBuildFarmJob())
         behaviour.composeBuildRequest = FakeMethod(
@@ -182,8 +184,8 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         expected_calls = [
             ('ensurepresent',
              'http://librarian.test/%s' % chroot_filename, '', ''),
-            ('ensurepresent', 'http://host/bar.tar', 'admin', 'sekrit'),
             ('ensurepresent', 'http://host/foo.dsc', '', ''),
+            ('ensurepresent', 'http://host/bar.tar', 'admin', 'sekrit'),
             ('build', 'PACKAGEBUILD-1', 'foobuild',
              hashlib.sha1(six.ensure_binary(chroot_filename)).hexdigest(),
              ['foo.dsc', 'bar.tar'],
