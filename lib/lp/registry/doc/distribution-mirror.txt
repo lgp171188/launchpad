@@ -359,18 +359,18 @@ up on the public mirror listings.
     >>> import transaction
     >>> transaction.commit()
 
-    >>> import email
     >>> from operator import itemgetter
+    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
     2
     >>> stub.test_emails.sort(key=itemgetter(1))  # sort by to_addr
     >>> from_addr, to_addr, raw_message = stub.test_emails.pop()
-    >>> msg = email.message_from_string(raw_message)
+    >>> msg = message_from_bytes(raw_message)
     >>> msg['To']
     'mark@example.com,karl@canonical.com'
     >>> from_addr, to_addr, raw_message = stub.test_emails.pop()
-    >>> msg = email.message_from_string(raw_message)
+    >>> msg = message_from_bytes(raw_message)
     >>> msg['To']
     'mark@example.com'
     >>> valid_mirror.enabled
@@ -400,7 +400,7 @@ single notification to the distribution's mirror admins.
     >>> len(stub.test_emails)
     1
     >>> from_addr, to_addr, raw_message = stub.test_emails.pop()
-    >>> msg = email.message_from_string(raw_message)
+    >>> msg = message_from_bytes(raw_message)
     >>> msg['To']
     'mark@example.com,karl@canonical.com'
 

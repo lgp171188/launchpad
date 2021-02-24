@@ -15,7 +15,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-import email
 from functools import partial
 import hashlib
 import json
@@ -147,6 +146,7 @@ from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.authserver.xmlrpc import AuthServerAPIView
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
@@ -1295,7 +1295,7 @@ class TestGitRepositoryModificationNotifications(TestCaseWithFactory):
                 getUtility(IGitRepositoryModifiedMailJobSource)).runAll()
         bodies_by_recipient = {}
         for from_addr, to_addrs, message in stub.test_emails:
-            body = email.message_from_string(message).get_payload(decode=True)
+            body = message_from_bytes(message).get_payload(decode=True)
             for to_addr in to_addrs:
                 bodies_by_recipient[to_addr] = six.ensure_text(body)
         # Both the owner and the unprivileged subscriber receive email.

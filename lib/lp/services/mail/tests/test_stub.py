@@ -17,9 +17,9 @@ def test_simple_sendmail():
     r"""
     Send an email (faked by TestMailer - no actual email is sent)
 
-    >>> import email
     >>> from email.mime.text import MIMEText
     >>> import transaction
+    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> from lp.services.mail.sendmail import simple_sendmail
 
@@ -66,7 +66,7 @@ def test_simple_sendmail():
 
     >>> sorted_test_emails = sorted(list(stub.test_emails))
     >>> for from_addr, to_addrs, raw_message in sorted_test_emails:
-    ...     print(from_addr, to_addrs, 'nobody@example.com' in raw_message)
+    ...     print(from_addr, to_addrs, b'nobody@example.com' in raw_message)
     bounces@canonical.com ['nobody2@example.com'] True
     bounces@canonical.com ['nobody2@example.com'] False
 
@@ -78,7 +78,7 @@ def test_simple_sendmail():
 
     The message should be a sane RFC2822 document
 
-    >>> message = email.message_from_string(raw_message)
+    >>> message = message_from_bytes(raw_message)
     >>> message['From']
     'nobody@example.com'
     >>> message['To']
