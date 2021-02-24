@@ -12,7 +12,6 @@ from testtools.matchers import (
     Contains,
     ContainsDict,
     Equals,
-    KeysEqual,
     )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -404,7 +403,7 @@ class TestNotification(TestCaseWithFactory):
         observed, _ = PackageUploadMailer.getRecipientsForAction(
             'accepted', info, blamer, None, [], archive, distroseries,
             PackagePublishingPocket.RELEASE)
-        self.assertThat(observed, KeysEqual(*expected))
+        self.assertContentEqual(expected, observed.keys())
 
     def test_getRecipientsForAction_good_emails(self):
         # Test getRecipientsForAction with good email addresses..
