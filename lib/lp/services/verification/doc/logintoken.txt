@@ -46,9 +46,9 @@ Let's create a new LoginToken to confirm an email address for foobar.
 The email does not have a precedence header because the user implicitly
 requested it to complete their task.
 
-    >>> import email
+    >>> from lp.services.compat import message_from_bytes
 
-    >>> msg = email.message_from_string(found_msg)
+    >>> msg = message_from_bytes(found_msg)
     >>> print msg['Precedence']
     None
 

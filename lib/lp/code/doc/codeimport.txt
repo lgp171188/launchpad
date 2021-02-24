@@ -103,8 +103,8 @@ three members of the vcs-imports team.
     >>> vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
     >>> len(get_contact_email_addresses(vcs_imports))
     3
-    >>> import email
-    >>> message = email.message_from_string(stub.test_emails[0][2])
+    >>> from lp.services.compat import message_from_bytes
+    >>> message = message_from_bytes(stub.test_emails[0][2])
     >>> print(message['subject'])
     New code import: ~import-person/widget/trunk-cvs
     >>> print(message['X-Launchpad-Message-Rationale'])

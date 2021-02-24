@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
-import email
 import os
 
 from breezy.uncommit import uncommit
@@ -28,6 +27,7 @@ from lp.codehosting.scanner import events
 from lp.codehosting.scanner.bzrsync import BzrSync
 from lp.codehosting.scanner.tests.test_bzrsync import BzrSyncTestCase
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
@@ -74,7 +74,7 @@ class TestBzrSyncEmail(BzrSyncTestCase):
         self.assertEqual(len(stub.test_emails), 1)
         [initial_email] = stub.test_emails
         expected = 'First scan of the branch detected 0 revisions'
-        message = email.message_from_string(initial_email[2])
+        message = message_from_bytes(initial_email[2])
         email_body = message.get_payload()
         self.assertIn(expected, email_body)
         self.assertEmailHeadersEqual(
@@ -89,7 +89,7 @@ class TestBzrSyncEmail(BzrSyncTestCase):
         [initial_email] = stub.test_emails
         expected = ('First scan of the branch detected 1 revision'
                     ' in the revision history of the=\n branch.')
-        message = email.message_from_string(initial_email[2])
+        message = message_from_bytes(initial_email[2])
         email_body = message.get_payload()
         self.assertIn(expected, email_body)
         self.assertEmailHeadersEqual(
@@ -107,7 +107,7 @@ class TestBzrSyncEmail(BzrSyncTestCase):
         self.assertEqual(len(stub.test_emails), 1)
         [uncommit_email] = stub.test_emails
         expected = '1 revision was removed from the branch.'
-        message = email.message_from_string(uncommit_email[2])
+        message = message_from_bytes(uncommit_email[2])
         email_body = message.get_payload()
         self.assertIn(expected, email_body)
         self.assertEmailHeadersEqual(
@@ -139,7 +139,7 @@ class TestBzrSyncEmail(BzrSyncTestCase):
             'Subject: [Branch %s] Test branch' % self.db_branch.unique_name)
         self.assertIn(expected, uncommit_email_body)
 
-        recommit_email_msg = email.message_from_string(recommit_email[2])
+        recommit_email_msg = message_from_bytes(recommit_email[2])
         recommit_email_body = recommit_email_msg.get_payload()[0].get_payload(
             decode=True)
         subject = '[Branch %s] Rev 1: second' % self.db_branch.unique_name
