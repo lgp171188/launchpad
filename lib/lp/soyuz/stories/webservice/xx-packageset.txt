@@ -220,12 +220,13 @@ sorted by name.
 Package sets may include other package sets (as subsets). At this point,
 however, we only have the 'umbrella' package set. It hence has no subsets.
 
+    >>> from lazr.restful.testing.webservice import pprint_collection
     >>> response = webservice.named_get(
     ...     '/package-sets/ubuntu/hoary/umbrella', 'setsIncluded', {})
-    >>> print(response)
-    HTTP/1.1 200 Ok
-    ...
-    {"total_size": 0, "start": 0, "entries": []}
+    >>> pprint_collection(response.jsonBody())
+    start: 0
+    total_size: 0
+    ---
 
 Let's create a few more package sets and set up a package set hierarchy.
 
