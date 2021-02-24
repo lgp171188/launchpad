@@ -12,6 +12,7 @@ __all__ = [
 
 from zope.component._api import getUtility
 from zope.formlib.form import action
+from zope.security.interfaces import ForbiddenAttribute
 
 from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
@@ -59,12 +60,18 @@ class SnapPortletSubscribersContent(LaunchpadView):
 class RedirectToSnapMixin:
     @property
     def next_url(self):
-        url = canonical_url(self.snap)
-        # If the subscriber can no longer see the Snap recipe, redirect them
-        # away.
-        if not self.snap.visibleByUser(self.user):
-            url = canonical_url(self.snap.project)
-        return url
+        if self.snap.visibleByUser(self.user):
+            return canonical_url(self.snap)
+        # If the subscriber can no longer see the Snap recipe, tries to
+        # redirect to the project page.
+        try:
+            project = self.snap.project
+            if project is not None and project.userCanLimitedView(self.user):
+                return canonical_url(self.snap.project)
+        except ForbiddenAttribute:
+            pass
+        # If not possible, redirect user back to its own page.
+        return canonical_url(self.user)
 
     cancel_url = next_url
 
