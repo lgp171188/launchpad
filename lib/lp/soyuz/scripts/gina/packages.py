@@ -130,7 +130,7 @@ def read_dsc(package, version, component, distro_name, archive_root):
         fullpath = os.path.join(source_dir, "debian", "changelog")
         changelog = None
         if os.path.exists(fullpath):
-            with open(fullpath) as f:
+            with open(fullpath, "rb") as f:
                 changelog = f.read().strip()
         else:
             log.warning(
@@ -142,13 +142,13 @@ def read_dsc(package, version, component, distro_name, archive_root):
         for fullpath in glob.glob(globpath):
             if not os.path.exists(fullpath):
                 continue
-            with open(fullpath) as f:
+            with open(fullpath, "rb") as f:
                 copyright = f.read().strip()
 
         if copyright is None:
             log.warning(
                 "No copyright file found for %s in %s" % (package, source_dir))
-            copyright = ''
+            copyright = b''
     finally:
         shutil.rmtree(source_dir)
 

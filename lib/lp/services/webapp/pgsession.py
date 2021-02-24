@@ -196,7 +196,8 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
 
     def __setitem__(self, key, value):
         key = ensure_unicode(key)
-        pickled_value = pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
+        # Use protocol 2 for Python 2 compatibility.
+        pickled_value = pickle.dumps(value, protocol=2)
 
         self.session_data._ensureClientId()
         self.store.execute(

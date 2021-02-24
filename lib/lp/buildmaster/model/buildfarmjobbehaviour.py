@@ -9,6 +9,7 @@ __all__ = [
     'BuildFarmJobBehaviourBase',
     ]
 
+from collections import OrderedDict
 from datetime import datetime
 import gzip
 import logging
@@ -133,7 +134,7 @@ class BuildFarmJobBehaviourBase:
         chroot = pocket_chroot.chroot
         args["image_type"] = pocket_chroot.image_type.name.lower()
 
-        filename_to_sha1 = {}
+        filename_to_sha1 = OrderedDict()
         dl = []
         dl.append(self._slave.sendFileToSlave(
             logger=logger, url=chroot.http_url, sha1=chroot.content.sha1))

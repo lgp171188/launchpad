@@ -52,7 +52,7 @@ may be accessed using the chunks attribute, or simply by iterating over
 the Message.
 
     >>> for chunk in msg:
-    ...     print pretty([chunk.sequence, chunk.content, chunk.blob])
+    ...     print(pretty([chunk.sequence, chunk.content, chunk.blob]))
     [1, 'The Content', None]
     >>> msg.chunks[0].message == msg
     True
@@ -129,7 +129,7 @@ normal.
     >>> chunks = msg.chunks
     >>> for chunk in chunks:
     ...     if chunk.content:
-    ...         print '%2d - %s' % (chunk.sequence, pretty(chunk.content))
+    ...         print('%2d - %s' % (chunk.sequence, pretty(chunk.content)))
      1 - 'Plain text'
      3 - 'Unicode\u2122 text'
 
@@ -151,7 +151,7 @@ containing a signature.asc attachment.
     >>> from lp.services.mail.tests.helpers import read_test_message
     >>> signed_msg = read_test_message('signed_detached.txt')
     >>> signed_msg['Message-Id'] = '<signeddetached@testmsg>'
-    >>> print signed_msg.as_string()
+    >>> print(signed_msg.as_string())
     Date...
     ...
     Content-Type: multipart/signed; micalg=pgp-sha1;
@@ -167,7 +167,7 @@ containing a signature.asc attachment.
     ...
 
     >>> signed_message = msg_set.fromEmail(message_as_bytes(signed_msg))
-    >>> print signed_message.text_contents
+    >>> print(signed_message.text_contents)
     Some signed content.
 
 Note that the second and forth chunks of the previous message were not
@@ -253,10 +253,10 @@ used as a default.
     >>> msg = msgset.fromEmail(raw_msg)
     >>> for chunk in msg.chunks:
     ...     if chunk.content is not None:
-    ...         print '%d - %s' % (chunk.sequence, pretty(chunk.content))
+    ...         print('%d - %s' % (chunk.sequence, pretty(chunk.content)))
     ...     else:
-    ...         print '%d - file: %s (%s)' % (
-    ...             chunk.sequence, chunk.blob.filename, chunk.blob.mimetype)
+    ...         print('%d - file: %s (%s)' % (
+    ...             chunk.sequence, chunk.blob.filename, chunk.blob.mimetype))
     1 - 'Plain text'
     2 - 'Plain text without a ch\xc4\x83\xc5\x95\xc5\x9d\xc4\x9b\xc5\xa3.'
     3 - file: attachment.txt   (text/plain; charset="us-ascii")
@@ -289,7 +289,7 @@ the message, like it is done when forwarding an email.
 
     >>> forwarded_msg = read_test_message('forwarded-msg.txt')
     >>> msg = msgset.fromEmail(message_as_bytes(forwarded_msg))
-    >>> print msg.text_contents
+    >>> print(msg.text_contents)
     Forwarding test message.
     <BLANKLINE>
     <BLANKLINE>
@@ -517,7 +517,7 @@ Finally, let's test the goldilocks message, where the date is just right:
     ...
     ... Moo
     ... ''')
-    >>> print msg.datecreated
+    >>> print(msg.datecreated)
     2005-06-17 09:45:13+00:00
 
 
@@ -534,7 +534,7 @@ which often works.
     >>> msg_path = os.path.join(os.path.dirname(__file__), mail_path)
     >>> with open(msg_path, 'rb') as f:
     ...     raw_msg = f.read()
-    >>> print raw_msg
+    >>> print(raw_msg)
     MIME-Version: 1.0
     ...
     Content-Type: TEXT/PLAIN; charset=X-UNKNOWN; format=flowed...

@@ -715,12 +715,11 @@ class NascentUpload:
             # very small, and at some point the script infrastructure will
             # only send emails when the script exits successfully.
             if notify:
-                changes_file_object = open(self.changes.filepath, "r")
-                self.queue_root.notify(
-                    summary_text=self.warning_message,
-                    changes_file_object=changes_file_object,
-                    logger=self.logger)
-                changes_file_object.close()
+                with open(self.changes.filepath, "rb") as changes_file_object:
+                    self.queue_root.notify(
+                        summary_text=self.warning_message,
+                        changes_file_object=changes_file_object,
+                        logger=self.logger)
             return True
 
         except QueueInconsistentStateError as e:
@@ -762,7 +761,7 @@ class NascentUpload:
         if not self.queue_root:
             self.queue_root = self._createQueueEntry()
 
-        with open(self.changes.filepath, "r") as changes_file_object:
+        with open(self.changes.filepath, "rb") as changes_file_object:
             self.queue_root.notify(
                 status=PackageUploadStatus.REJECTED,
                 summary_text=self.rejection_message,
