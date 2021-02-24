@@ -21,6 +21,7 @@ __all__ = [
     'WaitingSlave',
     ]
 
+from collections import OrderedDict
 import os
 import sys
 
@@ -360,5 +361,8 @@ class SlaveTestHelpers(fixtures.Fixture):
             'ogrecomponent': 'main',
             }
         return slave.build(
-            build_id, 'binarypackage', chroot_file, {'.dsc': dsc_file},
-            extra_args)
+            build_id, 'binarypackage', chroot_file,
+            # Although a single-element dict obviously has stable ordering,
+            # we use an OrderedDict anyway to test that BuilderSlave
+            # serializes it correctly over XML-RPC.
+            OrderedDict([('.dsc', dsc_file)]), extra_args)

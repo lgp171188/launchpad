@@ -8,7 +8,10 @@ __all__ = [
     'extract_vitals_from_db',
     ]
 
-from collections import namedtuple
+from collections import (
+    namedtuple,
+    OrderedDict,
+    )
 import logging
 import os.path
 import sys
@@ -315,6 +318,8 @@ class BuilderSlave(object):
         :param args: A dictionary of extra arguments. The contents depend on
             the build job type.
         """
+        if isinstance(filemap, OrderedDict):
+            filemap = dict(filemap)
         return self._with_timeout(self._server.callRemote(
             'build', buildid, builder_type, chroot_sha1, filemap, args))
 
