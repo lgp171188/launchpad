@@ -242,7 +242,6 @@ class BasePersonVocabulary:
         If the token contains an '@', treat it like an email. Otherwise,
         treat it like a name.
         """
-        token = ensure_unicode(token)
         if "@" in token:
             # This looks like an email token, so let's do an object
             # lookup based on that.
@@ -471,7 +470,7 @@ class NonMergedPeopleAndTeamsVocabulary(
         if not text:
             return self.emptySelectResults()
 
-        return self._select(ensure_unicode(text))
+        return self._select(text)
 
 
 @implementer(IHugeVocabulary)
@@ -491,7 +490,7 @@ class PersonAccountToMergeVocabulary(
     def __contains__(self, obj):
         return obj in self._select()
 
-    def _select(self, text=""):
+    def _select(self, text=u""):
         """Return `IPerson` objects that match the text."""
         return getUtility(IPersonSet).findPerson(
             text, exclude_inactive_accounts=False,
@@ -505,7 +504,6 @@ class PersonAccountToMergeVocabulary(
         if not text:
             return self.emptySelectResults()
 
-        text = ensure_unicode(text)
         return self._select(text)
 
 
@@ -739,7 +737,6 @@ class ValidPersonOrTeamVocabulary(
             else:
                 return self.emptySelectResults()
 
-        text = ensure_unicode(text)
         return self._doSearch(text=text, vocab_filter=vocab_filter)
 
     def searchForTerms(self, query=None, vocab_filter=None):
