@@ -242,8 +242,8 @@ unfolded before the bug subject is assigned.
     >>> process_email(submit_mail)
     >>> bug = get_latest_added_bug()
 
-    >>> bug.title
-    u'A folded email subject'
+    >>> print(bug.title)
+    A folded email subject
 
 
 Add a comment
@@ -636,8 +636,8 @@ A timestamp and the user that sets the bug private is also recorded:
 
     >>> bug_four.date_made_private
     datetime.datetime(...)
-    >>> bug_four.who_made_private.name
-    u'name12'
+    >>> print(bug_four.who_made_private.name)
+    name12
     >>> bug_attachment.libraryfile.restricted
     True
 
@@ -735,8 +735,9 @@ be subscribed. Examples:
     >>> subscriptions = [subscription.person.name
     ...                  for subscription in bug_four.subscriptions]
     >>> subscriptions.sort()
-    >>> subscriptions
-    [u'name12']
+    >>> for name in subscriptions:
+    ...     print(name)
+    name12
 
 
     >>> submit_commands(bug_four, 'subscribe')
@@ -802,6 +803,7 @@ Unsubscribing from a bug also unsubscribes you from its duplicates. To
 demonstrate, let's first make no_privs an indirect subscriber from bug
 #5, by subscribing them directly to a dupe of bug #5, bug #6.
 
+    >>> from operator import attrgetter
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> login("no-priv@canonical.com")
@@ -812,16 +814,21 @@ demonstrate, let's first make no_privs an indirect subscriber from bug
     >>> bug_six.duplicateof == bug_five
     True
 
-    >>> sorted([subscriber.displayname
-    ...  for subscriber in bug_five.getIndirectSubscribers()])
-    [u'Sample Person']
+    >>> for subscriber in sorted(
+    ...         bug_five.getIndirectSubscribers(),
+    ...         key=attrgetter('displayname')):
+    ...     print(subscriber.displayname)
+    Sample Person
 
     >>> bug_six.subscribe(no_priv, no_priv)
     <lp.bugs.model.bugsubscription.BugSubscription ...>
 
-    >>> sorted([subscriber.displayname
-    ...  for subscriber in bug_five.getIndirectSubscribers()])
-    [u'No Privileges Person', u'Sample Person']
+    >>> for subscriber in sorted(
+    ...         bug_five.getIndirectSubscribers(),
+    ...         key=attrgetter('displayname')):
+    ...     print(subscriber.displayname)
+    No Privileges Person
+    Sample Person
 
 Now, if we unsubscribe no-priv from bug #5, they will actually get
 unsubscribed from bug #6, thus no longer being indirectly subscribed to
@@ -835,9 +842,11 @@ bug #5.
     >>> bug_six.isSubscribed(no_priv)
     False
 
-    >>> sorted([subscriber.displayname
-    ...  for subscriber in bug_five.getIndirectSubscribers()])
-    [u'Sample Person']
+    >>> for subscriber in sorted(
+    ...         bug_five.getIndirectSubscribers(),
+    ...         key=attrgetter('displayname')):
+    ...     print(subscriber.displayname)
+    Sample Person
 
 (Log back in for the tests that follow.)
 
@@ -968,8 +977,8 @@ bug id.
 The bug id can also be the bug's name.
 
     >>> submit_commands(bug_four, 'duplicate blackhole')
-    >>> bug_four.duplicateof.name
-    u'blackhole'
+    >>> print(bug_four.duplicateof.name)
+    blackhole
 
 An error message is sent if a nonexistent bug id is given.
 
@@ -1209,8 +1218,8 @@ Also like the web UI, we can assign a bug to "me", the current user.
     >>> submit_commands(
     ...     bug_four, 'affects debian',
     ...     'assignee me')
-    >>> debian_task.assignee.name
-    u'name12'
+    >>> print(debian_task.assignee.name)
+    name12
 
 To set which source package the bug affects, we use:
 
