@@ -20,7 +20,7 @@ __all__ = [
     'DistroHandler',
     ]
 
-from cStringIO import StringIO
+import io
 import os
 import re
 
@@ -648,7 +648,7 @@ class SourcePackageHandler:
             changelog_lfa = getUtility(ILibraryFileAliasSet).create(
                 "changelog",
                 len(src.changelog),
-                StringIO(src.changelog),
+                io.BytesIO(src.changelog),
                 "text/x-debian-source-changelog")
             spr.changelog = changelog_lfa
 

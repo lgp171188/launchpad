@@ -43,7 +43,7 @@ this doctest.
 
     >>> changes_file_path = datadir(
     ...     'suite/netapplet_1.0-1/netapplet_1.0-1_source.changes')
-    >>> changes_file = open(changes_file_path,'r')
+    >>> changes_file = open(changes_file_path, 'rb')
     >>> from lp.services.log.logger import FakeLogger
     >>> netapplet_upload.notify(
     ...     changes_file_object=changes_file, logger=FakeLogger())
@@ -117,7 +117,7 @@ Now request the email:
 
     >>> changes_file_path = datadir(
     ...     'suite/netapplet_1.0-1-signed/netapplet_1.0-1_source.changes')
-    >>> changes_file = open(changes_file_path,'r')
+    >>> changes_file = open(changes_file_path, 'rb')
     >>> netapplet_upload.setAccepted()
     >>> netapplet_upload.notify(
     ...     changes_file_object=changes_file, logger=FakeLogger())
@@ -217,7 +217,7 @@ parameter provided that everything is already committed to the database
 demonstrates this usage:
 
     >>> from lp.services.librarianserver.testing.server import fillLibrarianFile
-    >>> changes_file = open(changes_file_path,"r")
+    >>> changes_file = open(changes_file_path, "rb")
     >>> fillLibrarianFile(1, content=changes_file.read())
     >>> changes_file.close()
     >>> from lp.soyuz.enums import PackageUploadStatus

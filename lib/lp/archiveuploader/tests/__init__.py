@@ -49,7 +49,7 @@ def insertFakeChangesFile(fileID, path=None):
     """
     if path is None:
         path = datadir("ed-0.2-21/ed_0.2-21_source.changes")
-    with open(path, 'r') as changes_file_obj:
+    with open(path, 'rb') as changes_file_obj:
         test_changes_file = changes_file_obj.read()
     fillLibrarianFile(fileID, content=test_changes_file)
 
