@@ -114,7 +114,10 @@ from lp.code.model.branchnamespace import (
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.accesspolicy import IAccessArtifactSource
+from lp.registry.interfaces.accesspolicy import (
+    IAccessArtifactGrantSource,
+    IAccessArtifactSource,
+    )
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -1136,7 +1139,11 @@ class Snap(Storm, WebhookTargetMixin):
         return self._getBuilds(filter_term, order_by)
 
     def visibleByUser(self, user):
-        """See `IGitRepository`."""
+        """See `ISnap`."""
+        if self.information_type in PUBLIC_INFORMATION_TYPES:
+            return True
+        if user is None:
+            return False
         store = IStore(self)
         return not store.find(
             Snap,
@@ -1189,9 +1196,6 @@ class Snap(Storm, WebhookTargetMixin):
 
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""
-        service = getUtility(IService, "sharing")
-        service.revokeAccessGrants(
-            self.pillar, person, unsubscribed_by, snaps=[self])
         subscription = self._getSubscription(person)
         if (not ignore_permissions
                 and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
@@ -1199,6 +1203,9 @@ class Snap(Storm, WebhookTargetMixin):
                 '%s does not have permission to unsubscribe %s.' % (
                     unsubscribed_by.displayname,
                     person.displayname))
+        artifact = getUtility(IAccessArtifactSource).find([self])
+        getUtility(IAccessArtifactGrantSource).revokeByArtifact(
+            artifact, [person])
         # It should never be None, since we always create a SnapSubscription
         # on Snap.subscribe. But just in case...
         if subscription is not None:
