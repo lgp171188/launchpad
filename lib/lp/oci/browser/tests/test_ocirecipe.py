@@ -768,10 +768,12 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
     def test_edit_image_name(self):
         self.setUpDistroSeries()
         credentials = self.factory.makeOCIRegistryCredentials()
+        original_name = self.factory.getUniqueUnicode()
         with person_logged_in(self.distribution.owner):
             self.distribution.oci_registry_credentials = credentials
             oci_project = self.factory.makeOCIProject(pillar=self.distribution)
             recipe = self.factory.makeOCIRecipe(
+                name=original_name,
                 registrant=self.person, owner=self.person,
                 oci_project=oci_project)
             oci_project.setOfficialRecipeStatus(recipe, True)
@@ -779,6 +781,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             recipe, view_name="+edit", user=recipe.owner)
         image_name = self.factory.getUniqueUnicode()
         field = browser.getControl(name="field.image_name")
+        # Default is the recipe name
+        self.assertEqual(field.value, original_name)
         field.value = image_name
         browser.getControl("Update OCI recipe").click()
         content = find_main_content(browser.contents)
