@@ -970,7 +970,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
                 if file_content is None:
                     raise IndexError  # Same as if missing.
             except IndexError:
-                file_content = self.factory.getUniqueString()
+                file_content = self.factory.getUniqueBytes()
             dname = os.path.dirname(file_name)
             self.tree.controldir.root_transport.clone(dname).create_prefix()
             self.tree.controldir.root_transport.put_bytes(
@@ -1049,9 +1049,9 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # files from the branch but does not add changed directories to the
         # template_files_changed and translation_files_changed lists .
         pot_path = "subdir/foo.pot"
-        pot_content = self.factory.getUniqueString()
+        pot_content = self.factory.getUniqueBytes()
         po_path = "subdir/foo.po"
-        po_content = self.factory.getUniqueString()
+        po_content = self.factory.getUniqueBytes()
         self._makeBranchWithTreeAndFiles(((pot_path, pot_content),
                                           (po_path, po_content)))
         self._makeProductSeries(TranslationsBranchImportMode.NO_IMPORT)

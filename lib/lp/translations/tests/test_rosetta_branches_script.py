@@ -42,7 +42,7 @@ class TestRosettaBranchesScript(TestCaseWithFactory):
 
     def _setup_series_branch(self, pot_path):
         self.useBzrBranches()
-        pot_content = self.factory.getUniqueString()
+        pot_content = self.factory.getUniqueBytes()
         branch, tree = self.create_branch_and_tree()
         tree.controldir.root_transport.put_bytes(pot_path, pot_content)
         tree.add(pot_path)
