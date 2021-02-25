@@ -2116,7 +2116,9 @@ too large.  In that case we cannot really return the entire original
 message as our outgoing message will be too big.  So, we can truncate
 the original message.
 
-    >>> max_return_size = len(str(test_msg)) / 2
+    >>> import math
+
+    >>> max_return_size = int(math.ceil(len(str(test_msg)) / 2))
     >>> send_process_error_notification(
     ...     sampledata.USER_EMAIL, 'Some subject', 'Some error message.',
     ...     test_msg, failing_command=['foo bar'],
@@ -2127,9 +2129,9 @@ the original message.
     >>> failure_msg, original_msg = sent_msg.get_payload()
     >>> msg = original_msg.get_payload()[0]
 
-Fudge due to new line added to the payload.
+Fudge due to new lines added to the payload.
 
-    >>> len(str(msg)) <= (max_return_size + 1)
+    >>> len(str(msg)) <= (max_return_size + 2)
     True
 
 Error handling
