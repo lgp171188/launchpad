@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Testing infrastructure for the Launchpad application.
@@ -4985,7 +4985,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipeBuild(self, requester=None, registrant=None, recipe=None,
                            distro_arch_series=None, date_created=DEFAULT,
                            status=BuildStatus.NEEDSBUILD, builder=None,
-                           duration=None, **kwargs):
+                           duration=None, build_request=None, **kwargs):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -5008,7 +5008,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             recipe = self.makeOCIRecipe(
                 registrant=registrant, oci_project=oci_project, **kwargs)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, distro_arch_series, date_created)
+            requester, recipe, distro_arch_series, date_created, build_request)
         if duration is not None:
             removeSecurityProxy(oci_build).updateStatus(
                 BuildStatus.BUILDING, builder=builder,

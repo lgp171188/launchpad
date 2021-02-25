@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A recipe for building Open Container Initiative images."""
@@ -253,9 +253,9 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         affected_jobs = Select(
             [OCIRecipeJob.job_id],
             And(OCIRecipeJob.job == Job.id, OCIRecipeJob.recipe == self))
-        store.find(Job, Job.id.is_in(affected_jobs)).remove()
         builds = store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self)
         builds.remove()
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
         for push_rule in self.push_rules:
             push_rule.destroySelf()
         getUtility(IWebhookSet).delete(self.webhooks)
