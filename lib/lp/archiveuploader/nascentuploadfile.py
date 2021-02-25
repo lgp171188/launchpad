@@ -17,6 +17,7 @@ __all__ = [
     'splitComponentAndSection',
     ]
 
+from collections import OrderedDict
 import hashlib
 import os
 import subprocess
@@ -85,8 +86,8 @@ class TarFileDateChecker:
 
     def reset(self):
         """Reset local values."""
-        self.future_files = {}
-        self.ancient_files = {}
+        self.future_files = OrderedDict()
+        self.ancient_files = OrderedDict()
 
     def callback(self, member, data):
         """Callback designed to cope with apt_inst.TarFile.go.

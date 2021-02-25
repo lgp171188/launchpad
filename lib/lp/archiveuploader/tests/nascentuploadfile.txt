@@ -516,7 +516,7 @@ being too new:
     >>> list(ed_binary_deb.verifyDebTimestamp())
     [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far into the future
-    (e.g. control [Thu Jan  3 19:29:01 2008]).',)]
+    (e.g. ./ [Thu Jan  3 19:29:00 2008]).',)]
 
 ... as well as for being too old:
 
@@ -531,4 +531,4 @@ being too new:
     >>> list(ed_binary_deb.verify())
     [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far in the past
-    (e.g. control [Thu Jan  3 19:29:01 2008]).',)]
+    (e.g. ./ [Thu Jan  3 19:29:00 2008]).',)]
