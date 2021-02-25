@@ -191,7 +191,7 @@ this case we'll raise an UnexpectedFormData.
 If he removes a key then he will get a security warning email notification
 that the key has been removed.
 
-    >>> import email
+    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> stub.test_emails = []
     >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
@@ -199,7 +199,7 @@ that the key has been removed.
     >>> from_addr, to_addr, msg = stub.test_emails.pop()
     >>> to_addr
     ['guilherme.salgado@canonical.com']
-    >>> payload = email.message_from_string(msg).get_payload()
+    >>> payload = message_from_bytes(msg).get_payload()
     >>> assert payload.startswith('The SSH Key')
 
 

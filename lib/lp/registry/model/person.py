@@ -262,7 +262,6 @@ from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import (
     backslashreplace,
-    ensure_unicode,
     shortlist,
     )
 from lp.services.identity.interfaces.account import (
@@ -3653,7 +3652,7 @@ class PersonSet:
             Person.teamowner != None,
             Person.merged == None,
             EmailAddress.person == Person.id,
-            EmailAddress.email.lower().startswith(ensure_unicode(text)))
+            EmailAddress.email.lower().startswith(text))
         return team_email_query
 
     def _teamNameQuery(self, text):
@@ -3664,14 +3663,13 @@ class PersonSet:
             fti_search(Person, text))
         return team_name_query
 
-    def find(self, text=""):
+    def find(self, text=u""):
         """See `IPersonSet`."""
         if not text:
             # Return an empty result set.
             return EmptyResultSet()
 
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         lower_case_text = text.lower()
         # Teams may not have email addresses, so we need to either use a LEFT
         # OUTER JOIN or do a UNION between four queries. Using a UNION makes
@@ -3713,11 +3711,10 @@ class PersonSet:
         return results.order_by(orderBy)
 
     def findPerson(
-            self, text="", exclude_inactive_accounts=True,
+            self, text=u"", exclude_inactive_accounts=True,
             must_have_email=False, created_after=None, created_before=None):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         store = IStore(Person)
         base_query = And(
             Person.teamowner == None,
@@ -3765,10 +3762,9 @@ class PersonSet:
         combined_results = email_results.union(name_results)
         return combined_results.order_by(orderBy)
 
-    def findTeam(self, text="", preload_for_api=False):
+    def findTeam(self, text=u"", preload_for_api=False):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         # Teams may not have email addresses, so we need to either use a LEFT
         # OUTER JOIN or do a UNION between two queries. Using a UNION makes
         # it a lot faster than with a LEFT OUTER JOIN.
@@ -3803,8 +3799,7 @@ class PersonSet:
         if not emails:
             return EmptyResultSet()
         addresses = [
-            ensure_unicode(address.lower().strip())
-            for address in emails]
+            six.ensure_text(address).lower().strip() for address in emails]
         hidden_query = True
         filter_query = True
         if not include_hidden:

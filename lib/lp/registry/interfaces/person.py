@@ -2425,7 +2425,7 @@ class IPersonSet(Interface):
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def find(text=""):
+    def find(text=u""):
         """Return all non-merged Persons and Teams whose name, displayname or
         email address match <text>.
 
@@ -2448,7 +2448,7 @@ class IPersonSet(Interface):
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def findPerson(text="", exclude_inactive_accounts=True,
+    def findPerson(text=u"", exclude_inactive_accounts=True,
                    must_have_email=False,
                    created_after=None, created_before=None):
         """Return all non-merged Persons with at least one email address whose
@@ -2481,7 +2481,7 @@ class IPersonSet(Interface):
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def findTeam(text="", preload_for_api=False):
+    def findTeam(text=u"", preload_for_api=False):
         """Return all Teams whose name, displayname or email address
         match <text>.
 

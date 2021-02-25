@@ -1046,6 +1046,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                 description=(
                     "Name to use for registry upload. "
                     "Defaults to the name of the recipe."),
+                default=self.context.image_name,
                 required=False, readonly=False))
 
     def validate(self, data):

@@ -38,6 +38,10 @@ from lp.registry.xmlrpc.mailinglist import (
     ENABLED,
     MailingListAPIView,
     )
+from lp.services.compat import (
+    message_as_bytes,
+    message_from_bytes,
+    )
 from lp.services.config import config
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
@@ -462,7 +466,8 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         # and notifies a team admins to moderate it.
         team, sender, message = self.makeMailingListAndHeldMessage()
         pop_notifications()
-        info = self.mailinglist_api.holdMessage('team', message.as_string())
+        info = self.mailinglist_api.holdMessage(
+            'team', message_as_bytes(message))
         notifications = pop_notifications()
         found = self.message_approval_set.getMessageByMessageID('<first-post>')
         self.assertIs(True, info)
@@ -480,7 +485,8 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         # Users can send messages to private teams (did they guess the name)?
         team, sender, message = self.makeMailingListAndHeldMessage(
             private=True)
-        info = self.mailinglist_api.holdMessage('team', message.as_string())
+        info = self.mailinglist_api.holdMessage(
+            'team', message_as_bytes(message))
         found = self.message_approval_set.getMessageByMessageID('<first-post>')
         self.assertIs(True, info)
         self.assertIsNot(None, found)
@@ -489,7 +495,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         # Non-ascii messages headers are re-encoded for moderators.
         team, sender, message = self.makeMailingListAndHeldMessage()
         with person_logged_in(sender):
-            message = message_from_string(dedent("""\
+            message = message_from_bytes(dedent("""\
                 From: \xa9 me <me@eg.dom>
                 To: team@lists.launchpad.test
                 Subject: \xa9 gremlins
@@ -498,7 +504,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
                 I put \xa9 in the body.
                 """).encode('ISO-8859-1'))
         info = self.mailinglist_api.holdMessage(
-            'team', xmlrpc_client.Binary(message.as_string()))
+            'team', xmlrpc_client.Binary(message_as_bytes(message)))
         transaction.commit()
         found = self.message_approval_set.getMessageByMessageID('<\\xa9-me>')
         self.assertIs(True, info)
@@ -521,7 +527,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         # List moderators can approve messages.
         team, sender, message = self.makeMailingListAndHeldMessage()
         pop_notifications()
-        self.mailinglist_api.holdMessage('team', message.as_string())
+        self.mailinglist_api.holdMessage('team', message_as_bytes(message))
         found = self.message_approval_set.getMessageByMessageID('<first-post>')
         found.approve(team.teamowner)
         self.assertEqual(PostedMessageStatus.APPROVAL_PENDING, found.status)
@@ -534,7 +540,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         # List moderators can reject messages.
         team, sender, message = self.makeMailingListAndHeldMessage()
         pop_notifications()
-        self.mailinglist_api.holdMessage('team', message.as_string())
+        self.mailinglist_api.holdMessage('team', message_as_bytes(message))
         found = self.message_approval_set.getMessageByMessageID('<first-post>')
         found.reject(team.teamowner)
         self.assertEqual(PostedMessageStatus.REJECTION_PENDING, found.status)
@@ -547,7 +553,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         # List moderators can discard messages.
         team, sender, message = self.makeMailingListAndHeldMessage()
         pop_notifications()
-        self.mailinglist_api.holdMessage('team', message.as_string())
+        self.mailinglist_api.holdMessage('team', message_as_bytes(message))
         found = self.message_approval_set.getMessageByMessageID('<first-post>')
         found.discard(team.teamowner)
         self.assertEqual(PostedMessageStatus.DISCARD_PENDING, found.status)

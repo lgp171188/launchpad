@@ -306,10 +306,10 @@ report.
     >>> print(report['From'])
     Moritz Muehlenhoff <jmm@inutil.org>
 
-    >>> name, email = external_debbugs.getBugReporter('322535')
+    >>> name, address = external_debbugs.getBugReporter('322535')
     >>> print(name)
     Moritz Muehlenhoff
-    >>> print(email)
+    >>> print(address)
     jmm@inutil.org
 
 The getBugSummaryAndDescription method reads the bug report from the
@@ -418,10 +418,10 @@ same comment.
 If we query the DebBugs database directly we'll see that there are two
 copies of the same comment.
 
-    >>> import email
+    >>> from lp.services.compat import message_from_bytes
     >>> debian_bug = external_debbugs._findBug(bug_watch.remotebug)
     >>> for comment in debian_bug.comments:
-    ...     comment_email = email.message_from_string(comment)
+    ...     comment_email = message_from_bytes(comment)
     ...     print(comment_email['message-id'])
     <20040309081430.98BF411EE67@tux>
     <20040309081430.98BF411EE67@tux>
