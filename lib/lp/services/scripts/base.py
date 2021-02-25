@@ -472,7 +472,11 @@ def cronscript_enabled(control_url, name, log):
     # traceback and continue on using the defaults.
     try:
         with response:
-            cron_config.readfp(io.StringIO(response.text))
+            if sys.version_info[:2] >= (3, 2):
+                read_file = cron_config.read_file
+            else:
+                read_file = cron_config.readfp
+            read_file(io.StringIO(response.text))
     except Exception:
         log.exception("Error parsing %s", control_url)
 
