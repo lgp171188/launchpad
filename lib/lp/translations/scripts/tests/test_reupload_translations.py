@@ -7,8 +7,8 @@
 
 __metaclass__ = type
 
+import io
 import re
-from StringIO import StringIO
 import tarfile
 
 import six
@@ -60,10 +60,10 @@ def upload_tarball(translation_files):
     :param translation_files: A dict mapping filenames to file contents.
     :return: A `LibraryFileAlias`.
     """
-    buf = StringIO()
+    buf = io.BytesIO()
     tarball = tarfile.open('', 'w:gz', buf)
     for name, contents in six.iteritems(translation_files):
-        pseudofile = StringIO(contents)
+        pseudofile = io.BytesIO(contents)
         tarinfo = tarfile.TarInfo()
         tarinfo.name = name
         tarinfo.size = len(contents)

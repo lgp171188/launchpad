@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-from cStringIO import StringIO
+import io
 from tarfile import TarFile
 import unittest
 
@@ -64,7 +64,7 @@ class ExportFileStorageTestCase(unittest.TestCase):
         storage.addFile(
             '/tmp/another/test.po', 'po', b'another test file', mime)
         outfile = storage.export()
-        tarball = TarFile.open(mode='r|gz', fileobj=StringIO(outfile.read()))
+        tarball = TarFile.open(mode='r|gz', fileobj=io.BytesIO(outfile.read()))
         elements = set(tarball.getnames())
         self.assertTrue('/tmp/a/test/file.po' in elements)
         self.assertTrue('/tmp/another/test.po' in elements)
