@@ -21,12 +21,13 @@ from lp.archiveuploader.uploadprocessor import (
     )
 from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
 from lp.services.propertycache import get_property_cache
 
 
-class TestOCIRecipeUploads(TestUploadProcessorBase):
+class TestOCIRecipeUploads(OCIConfigHelperMixin, TestUploadProcessorBase):
 
     def setUp(self):
         super(TestOCIRecipeUploads, self).setUp()
@@ -76,6 +77,40 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
             "OCI upload failed\nGot: %s" % self.log.getLogBuffer())
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
         self.assertTrue(self.build.verifySuccessfulUpload())
+
+    def test_sets_build_and_state_distribution_credentials(self):
+        # The upload processor uploads files and sets the correct status for
+        # an OCIRecipeBuild with distribution credentials.
+        self.switchToAdmin()
+        self.setConfig()
+        distribution = self.factory.makeDistribution()
+        distribution.oci_registry_credentials = (
+            self.factory.makeOCIRegistryCredentials())
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        build = self.factory.makeOCIRecipeBuild(recipe=recipe)
+        oci_project.setOfficialRecipeStatus(recipe, True)
+        Store.of(build).flush()
+        self.switchToUploader()
+
+        self.assertFalse(build.verifySuccessfulUpload())
+        del get_property_cache(build).manifest
+        del get_property_cache(build).digests
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(build.id), "ubuntu")
+        write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
+        write_file(os.path.join(upload_dir, "layer_2.tar.gz"), b"layer_2")
+        write_file(
+            os.path.join(upload_dir, "digests.json"), json.dumps(self.digests))
+        write_file(os.path.join(upload_dir, "manifest.json"), b"manifest")
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", build)
+        result = handler.processOCIRecipe(self.log)
+        self.assertEqual(
+            UploadStatusEnum.ACCEPTED, result,
+            "OCI upload failed\nGot: %s" % self.log.getLogBuffer())
+        self.assertEqual(BuildStatus.FULLYBUILT, build.status)
+        self.assertTrue(build.verifySuccessfulUpload())
 
     def test_requires_digests(self):
         # The upload processor fails if the upload does not contain the
