@@ -1360,8 +1360,7 @@ class SnapSet:
         if ISnap.providedBy(context):
             context = context.source
         if context is None:
-            raise CannotFetchSnapcraftYaml(
-                "Snap source is not defined", unsupported_remote=True)
+            raise CannotFetchSnapcraftYaml("Snap source is not defined")
         try:
             paths = (
                 "snap/snapcraft.yaml",
