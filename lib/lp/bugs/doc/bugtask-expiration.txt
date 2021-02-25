@@ -43,7 +43,7 @@ status. It also requires specifying the user that is doing the search.
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks()
     Traceback (most recent call last):
     ...
-    TypeError: findExpirableBugTasks() takes at least 3 arguments (1 given)
+    TypeError: findExpirableBugTasks() ...
 
 Looking back 9,999 days, findExpirableBugTasks() reports that there are
 no expirable bugtasks in the sampledata.
