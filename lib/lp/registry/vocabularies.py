@@ -242,6 +242,7 @@ class BasePersonVocabulary:
         If the token contains an '@', treat it like an email. Otherwise,
         treat it like a name.
         """
+        token = six.ensure_text(token)
         if "@" in token:
             # This looks like an email token, so let's do an object
             # lookup based on that.
@@ -737,6 +738,7 @@ class ValidPersonOrTeamVocabulary(
             else:
                 return self.emptySelectResults()
 
+        text = six.ensure_text(text)
         return self._doSearch(text=text, vocab_filter=vocab_filter)
 
     def searchForTerms(self, query=None, vocab_filter=None):
