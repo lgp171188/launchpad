@@ -240,7 +240,7 @@ class TestDiff(DiffTestCase):
 
         diff = DiffWithFakeText()
         diff.diff_text.open = FakeMethod()
-        diff.diff_text.read = FakeMethod()
+        diff.diff_text.read = FakeMethod(result=b'')
         diff.diff_text.close = FakeMethod()
         value = None
         original_timeout_function = get_default_timeout_function()
@@ -735,6 +735,7 @@ class TestIncrementalDiff(DiffTestCase):
         incremental_diff = bmp.generateIncrementalDiff(
             old_revision, new_revision)
         transaction.commit()
-        inserted, removed = self.diff_changes(incremental_diff.text)
-        self.assertEqual(['c\n'], inserted)
-        self.assertEqual(['b\n'], removed)
+        inserted, removed = self.diff_changes(
+            incremental_diff.text.encode('UTF-8'))
+        self.assertEqual([b'c\n'], inserted)
+        self.assertEqual([b'b\n'], removed)

@@ -102,7 +102,7 @@ class Diff(SQLBase):
     @property
     def text(self):
         if self.diff_text is None:
-            return ''
+            return u''
         else:
             with reduced_timeout(
                     0.01, webapp_max=2.0,
@@ -110,7 +110,13 @@ class Diff(SQLBase):
                 timeout = get_default_timeout_function()()
             self.diff_text.open(timeout)
             try:
-                return self.diff_text.read(config.diff.max_read_size)
+                diff_bytes = self.diff_text.read(config.diff.max_read_size)
+                # Attempt to decode the diff somewhat intelligently,
+                # although this may not be a great heuristic.
+                try:
+                    return diff_bytes.decode('utf-8')
+                except UnicodeDecodeError:
+                    return diff_bytes.decode('windows-1252', 'replace')
             finally:
                 self.diff_text.close()
 
