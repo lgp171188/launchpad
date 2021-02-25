@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for OCI image building recipe functionality."""
@@ -391,8 +391,10 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         self.setConfig()
         oci_recipe = self.factory.makeOCIRecipe()
         # Create associated builds:
+        build_request = oci_recipe.requestBuilds(oci_recipe.owner, ["386"])
         build_ids = [
-            self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id
+            self.factory.makeOCIRecipeBuild(
+                recipe=oci_recipe, build_request=build_request).id
             for _ in range(3)]
         # Create associated push rules:
         push_rule_ids = [
