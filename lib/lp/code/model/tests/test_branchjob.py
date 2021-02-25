@@ -202,10 +202,10 @@ class TestBranchScanJob(TestCaseWithFactory):
         product = self.factory.makeProduct()
         private_bug = self.factory.makeBug(
             target=product, information_type=InformationType.USERDATA)
-        bug_line = b'https://launchpad.net/bugs/%s fixed' % private_bug.id
+        bug_line = 'https://launchpad.net/bugs/%s fixed' % private_bug.id
         with override_environ(BRZ_EMAIL='me@example.com'):
             bzr_tree.commit(
-                'First commit', rev_id=b'rev1', revprops={b'bugs': bug_line})
+                'First commit', rev_id=b'rev1', revprops={'bugs': bug_line})
         job = BranchScanJob.create(db_branch)
         with dbuser("branchscanner"):
             job.run()
