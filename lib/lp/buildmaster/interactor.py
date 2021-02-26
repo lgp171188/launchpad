@@ -222,7 +222,7 @@ class BuilderSlave(object):
 
     def getURL(self, sha1):
         """Get the URL for a file on the builder with a given SHA-1."""
-        return urlappend(self._file_cache_url, sha1).encode('utf8')
+        return urlappend(self._file_cache_url, sha1)
 
     @defer.inlineCallbacks
     def getFile(self, sha_sum, path_to_write, logger=None):
