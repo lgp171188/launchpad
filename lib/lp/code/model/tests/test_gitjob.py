@@ -222,6 +222,48 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 logger.output, LogsScheduledWebhooks([
                     (hook, "git:push:0.1", payload_matcher)]))
 
+    def test_triggers_webhooks_with_oci_project_as_repository_target(self):
+        # Jobs trigger any relevant webhooks when they're enabled.
+        self.useFixture(FeatureFixture({'code.git.webhooks.enabled': 'on'}))
+        logger = self.useFixture(FakeLogger())
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.factory.makeGitRefs(
+            repository, paths=['refs/heads/master', 'refs/tags/1.0'])
+        hook = self.factory.makeWebhook(
+            target=repository, event_types=['git:push:0.1'])
+        job = GitRefScanJob.create(repository)
+        paths = ('refs/heads/master', 'refs/tags/2.0')
+        self.useFixture(GitHostingFixture(refs=self.makeFakeRefs(paths)))
+        with dbuser('branchscanner'):
+            JobRunner([job]).runAll()
+        delivery = hook.deliveries.one()
+        sha1 = lambda s: hashlib.sha1(s).hexdigest()
+        payload_matcher = MatchesDict({
+            'git_repository': Equals('/' + repository.unique_name),
+            'git_repository_path': Equals(repository.unique_name),
+            'ref_changes': Equals({
+                'refs/tags/1.0': {
+                    'old': {'commit_sha1': sha1(b'refs/tags/1.0')},
+                    'new': None},
+                'refs/tags/2.0': {
+                    'old': None,
+                    'new': {'commit_sha1': sha1(b'refs/tags/2.0')}},
+            })})
+        self.assertThat(
+            delivery,
+            MatchesStructure(
+                event_type=Equals('git:push:0.1'),
+                payload=payload_matcher))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "git:push:0.1", payload_matcher)]))
+
     def test_merge_detection_triggers_webhooks(self):
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: 'on'}))
