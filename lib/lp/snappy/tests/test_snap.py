@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap packages."""
@@ -1730,6 +1730,15 @@ class TestSnapSet(TestCaseWithFactory):
                 getUtility(ISnapSet).findByStoreName(
                     store_names[0], owner=owners[1],
                     visible_by_user=owners[0]))
+
+    def test_getSnapcraftYaml_snap_no_source(self):
+        [git_ref] = self.factory.makeGitRefs()
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with admin_logged_in():
+            git_ref.repository.destroySelf(break_references=True)
+        self.assertRaisesWithContent(
+            CannotFetchSnapcraftYaml, "Snap source is not defined",
+            getUtility(ISnapSet).getSnapcraftYaml, snap)
 
     def test_getSnapcraftYaml_bzr_snap_snapcraft_yaml(self):
         def getInventory(unique_name, dirname, *args, **kwargs):
