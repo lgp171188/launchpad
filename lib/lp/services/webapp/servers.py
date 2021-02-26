@@ -531,7 +531,13 @@ def get_query_string_params(request):
     if query_string is None:
         query_string = ''
 
-    parsed_qs = parse_qs(query_string, keep_blank_values=True)
+    # PEP-3333 specifies that strings must only contain codepoints
+    # representable in ISO-8859-1.
+    kwargs = {}
+    if not six.PY2:
+        kwargs['encoding'] = 'ISO-8859-1'
+        kwargs['errors'] = 'replace'
+    parsed_qs = parse_qs(query_string, keep_blank_values=True, **kwargs)
     # Use BrowserRequest._decode() for decoding the received parameters.
     decoded_qs = {}
     for key, values in six.iteritems(parsed_qs):

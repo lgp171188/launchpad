@@ -184,8 +184,8 @@ surrounded by quotes and quoted if necessary:
 
     >>> from_addr, to_addr, raw_message = stub.test_emails.pop()
     >>> msg = message_from_bytes(raw_message)
-    >>> print(msg['From'])
-    "Foo \[Baz\] \" Bar" <foo.bar@canonical.com>
+    >>> parseaddr(msg['From'])
+    ('Foo [Baz] " Bar', 'foo.bar@canonical.com')
 
 
 If we pass a unicode object to send_mail, it will try and covert it.  If a
