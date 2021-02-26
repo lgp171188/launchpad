@@ -49,7 +49,7 @@ requested it to complete their task.
     >>> from lp.services.compat import message_from_bytes
 
     >>> msg = message_from_bytes(found_msg)
-    >>> print msg['Precedence']
+    >>> print(msg['Precedence'])
     None
 
 As the process is not yet finished, foobar will see this as one of their
@@ -128,7 +128,7 @@ The original date_consumed of the first token will not have changed.
     >>> flush_database_updates()
 
     >>> token = getUtility(ILoginTokenSet).get(token.id)
-    >>> print token.date_consumed
+    >>> print(token.date_consumed)
     2009-01-01 16:56:59+00:00
 
 
@@ -142,7 +142,7 @@ and type associated with it.
     ...     token.email, token.requester, token.tokentype)
     >>> token = getUtility(ILoginTokenSet).get(token.id)
 
-    >>> print tokens.count()
+    >>> print(tokens.count())
     3
 
 This can be limited to searching only unconsumed tokens by passing a
@@ -151,7 +151,7 @@ This can be limited to searching only unconsumed tokens by passing a
     >>> tokens = token_set.searchByEmailRequesterAndType(
     ...     token.email, token.requester, token.tokentype, consumed=False)
 
-    >>> print tokens.count()
+    >>> print(tokens.count())
     0
 
 Passing `consumed=True` will return only consumed tokens.
@@ -159,7 +159,7 @@ Passing `consumed=True` will return only consumed tokens.
     >>> tokens = token_set.searchByEmailRequesterAndType(
     ...     token.email, token.requester, token.tokentype, consumed=True)
 
-    >>> print tokens.count()
+    >>> print(tokens.count())
     3
 
 It's also possible to search for tokens by their fingerprint, requester
@@ -175,7 +175,7 @@ we'll generate one.
     >>> tokens = token_set.searchByFingerprintRequesterAndType(
     ...     fingerprint, token.requester, token.tokentype)
 
-    >>> print tokens.count()
+    >>> print(tokens.count())
     1
 
 Again, this can be limited to unconsumed tokens.
@@ -183,7 +183,7 @@ Again, this can be limited to unconsumed tokens.
     >>> tokens = token_set.searchByFingerprintRequesterAndType(
     ...     fingerprint, token.requester, token.tokentype, consumed=False)
 
-    >>> print tokens.count()
+    >>> print(tokens.count())
     1
 
 Or consumed ones.
@@ -191,7 +191,7 @@ Or consumed ones.
     >>> tokens = token_set.searchByFingerprintRequesterAndType(
     ...     fingerprint, token.requester, token.tokentype, consumed=True)
 
-    >>> print tokens.count()
+    >>> print(tokens.count())
     0
 
 If you pass a nonsense value of `consumed` to either
