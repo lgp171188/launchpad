@@ -2403,7 +2403,7 @@ criteria described below).
     ...         print(lib.__class__.__name__, lib.filename, lib.mimetype,
     ...               end=" ")
     ...         print(attachment.type.name)
-    ...         print(lib.read())
+    ...         print(lib.read().decode('UTF-8'))
     >>> login('test@canonical.com')
     >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
