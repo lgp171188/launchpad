@@ -9,7 +9,11 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import BaseLayer
-from lp.testing.systemdocs import LayeredDocFileSuite
+from lp.testing.systemdocs import (
+    LayeredDocFileSuite,
+    setGlobs,
+    setUp,
+    )
 
 
 here = os.path.dirname(os.path.realpath(__file__))
@@ -18,12 +22,15 @@ here = os.path.dirname(os.path.realpath(__file__))
 special = {
     'limitedlist.txt': LayeredDocFileSuite(
         '../doc/limitedlist.txt',
+        setUp=lambda test: setGlobs(test, future=True),
         layer=BaseLayer),
     'propertycache.txt': LayeredDocFileSuite(
         '../doc/propertycache.txt',
+        setUp=lambda test: setGlobs(test, future=True),
         layer=BaseLayer),
     }
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setUp(test, future=True))
