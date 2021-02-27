@@ -140,8 +140,8 @@ as "a_in_cache" in the cache.
 
     >>> isinstance(Foo.a, CachedProperty)
     True
-    >>> Foo.a.name
-    'a_in_cache'
+    >>> print(Foo.a.name)
+    a_in_cache
     >>> Foo.a.populate
     <function ...a at 0x...>
 

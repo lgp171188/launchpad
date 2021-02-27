@@ -170,7 +170,7 @@ URIs with an authority but a blank path get canonicalised to a path of
 None is an acceptable value for a URI field.
 
   >>> field = URIField(__name__='foo', title=u'Foo')
-  >>> print field.normalize(None)
+  >>> print(field.normalize(None))
   None
 
 
@@ -196,7 +196,7 @@ This widget is registered as an input widget:
   >>> field = IURIFieldTest['field'].bind(context)
   >>> request = LaunchpadTestRequest()
   >>> widget = getMultiAdapter((field, request), IInputWidget)
-  >>> print widget
+  >>> print(widget)
   <lp.app.widgets.textwidgets.URIWidget object at ...>
 
 Multiple values will cause an UnexpectedFormData exception:

@@ -75,7 +75,7 @@ ordering, override the "fail" method.
 
     >>> def alternative_fail(item):
     ...     """Don't raise an error, just print a message."""
-    ...     print "Item %s was out of sequence." % item
+    ...     print("Item %s was out of sequence." % item)
 
     >>> checker = OrderingCheck(key=sort_key)
     >>> checker.fail = alternative_fail
