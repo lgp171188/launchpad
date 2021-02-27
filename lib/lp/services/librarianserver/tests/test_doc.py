@@ -150,4 +150,5 @@ special = {
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setUp(future=True))

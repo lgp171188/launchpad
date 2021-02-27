@@ -75,7 +75,7 @@ is currently zero.
     >>> sprite_util.combineImages(icing)
     >>> sprite_util.savePNG(new_png_file.name)
     >>> image = Image.open(new_png_file.name)
-    >>> print image.size
+    >>> print(image.size)
     (14, 55)
 
 The height will increase when the margin is increased.
@@ -84,7 +84,7 @@ The height will increase when the margin is increased.
     >>> sprite_util.combineImages(icing)
     >>> sprite_util.savePNG(new_png_file.name)
     >>> image = Image.open(new_png_file.name)
-    >>> print image.size
+    >>> print(image.size)
     (14, 455)
 
 
@@ -96,7 +96,7 @@ image file. This allows the css file to be regenerated when the template
 changes without requiring the combined image file to be recreated.
 
     >>> sprite_util.savePositioning(new_positioning_file.name)
-    >>> print new_positioning_file.read()
+    >>> print(new_positioning_file.read())
     /*...
     {
         "../images/add.png": [
@@ -115,13 +115,13 @@ changes without requiring the combined image file to be recreated.
 
 The positions attribute can be cleared and loaded from the file.
 
-    >>> print pretty(sprite_util.positions)
+    >>> print(pretty(sprite_util.positions))
     {'../images/add.png': (0, -114),
      '../images/blue-bar.png': (0, -342),
      '../images/edit.png': (0, -228)}
     >>> sprite_util.positions = None
     >>> sprite_util.loadPositioning(new_positioning_file.name)
-    >>> print pretty(sprite_util.positions)
+    >>> print(pretty(sprite_util.positions))
     {'../images/add.png': [0, -114],
      '../images/blue-bar.png': [0, -342],
      '../images/edit.png': [0, -228]}
@@ -138,7 +138,7 @@ referenced /@@/add.png, which was only added once to the combined file.
 is not group1.png, since its sprite-ref is "group2".
 
     >>> sprite_util.saveConvertedCSS(new_css_file.name, 'group1.png')
-    >>> print new_css_file.read()
+    >>> print(new_css_file.read())
     /*...
     .add {
         background-image: url(group1.png);
