@@ -721,7 +721,9 @@ class BaseBinaryUploadFile(PackageUploadFile):
             yield UploadError(
                 "%s: 'dpkg-deb -I' invocation failed." % self.filename)
             yield UploadError(
-                prefix_multi_line_string(e.output, " [dpkg-deb output:] "))
+                prefix_multi_line_string(
+                    six.ensure_text(e.output, errors="replace"),
+                    " [dpkg-deb output:] "))
 
         try:
             subprocess.check_output(
@@ -730,7 +732,9 @@ class BaseBinaryUploadFile(PackageUploadFile):
             yield UploadError(
                 "%s: 'dpkg-deb -c' invocation failed." % self.filename)
             yield UploadError(
-                prefix_multi_line_string(e.output, " [dpkg-deb output:] "))
+                prefix_multi_line_string(
+                    six.ensure_text(e.output, errors="replace"),
+                    " [dpkg-deb output:] "))
 
     def verifyDebTimestamp(self):
         """Check specific DEB format timestamp checks."""
