@@ -33,8 +33,8 @@ Let's write some fake WADL to disk.
 When we request the WADL for version "devel", the fake WADL is loaded
 from disk.
 
-    >>> print(webservice.get(
-    ...     '/', 'application/vd.sun.wadl+xml', api_version='devel').body)
+    >>> print(six.ensure_text(webservice.get(
+    ...     '/', 'application/vd.sun.wadl+xml', api_version='devel').body))
     Some fake WADL.
 
 The fake WADL is now present in the cache.
@@ -46,8 +46,8 @@ Change the cached value, and we change the document served.
 
     >>> WebServiceApplication.cached_wadl['devel'] = "More fake WADL."
 
-    >>> print(webservice.get(
-    ...     '/', 'application/vd.sun.wadl+xml', api_version='devel').body)
+    >>> print(six.ensure_text(webservice.get(
+    ...     '/', 'application/vd.sun.wadl+xml', api_version='devel').body))
     More fake WADL.
 
 If there's no value in the cache and no cached file on disk, the WADL

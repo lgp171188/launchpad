@@ -96,7 +96,7 @@ image file. This allows the css file to be regenerated when the template
 changes without requiring the combined image file to be recreated.
 
     >>> sprite_util.savePositioning(new_positioning_file.name)
-    >>> print(new_positioning_file.read())
+    >>> print(six.ensure_text(new_positioning_file.read()))
     /*...
     {
         "../images/add.png": [
@@ -138,7 +138,7 @@ referenced /@@/add.png, which was only added once to the combined file.
 is not group1.png, since its sprite-ref is "group2".
 
     >>> sprite_util.saveConvertedCSS(new_css_file.name, 'group1.png')
-    >>> print(new_css_file.read())
+    >>> print(six.ensure_text(new_css_file.read()))
     /*...
     .add {
         background-image: url(group1.png);

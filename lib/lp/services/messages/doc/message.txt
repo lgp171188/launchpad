@@ -269,7 +269,7 @@ as the request. I don't think this is important outside of tests.
 
     >>> import transaction
     >>> transaction.commit()
-    >>> blob.read()
+    >>> six.ensure_str(blob.read())
     '\x00\x01\x02\x03'
 
     >>> print(blob2.read().decode('utf16'))
@@ -534,7 +534,7 @@ which often works.
     >>> msg_path = os.path.join(os.path.dirname(__file__), mail_path)
     >>> with open(msg_path, 'rb') as f:
     ...     raw_msg = f.read()
-    >>> print(raw_msg)
+    >>> print(raw_msg.decode('ISO-8859-1'))
     MIME-Version: 1.0
     ...
     Content-Type: TEXT/PLAIN; charset=X-UNKNOWN; format=flowed...

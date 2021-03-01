@@ -1120,7 +1120,7 @@ Uploading files with an unkown file format notifies the user that it
 cannot be handled.
 
     >>> from io import BytesIO
-    >>> af_file = b'''
+    >>> af_file = '''
     ... # Afrikaans translation for Silky
     ... # Copyright (C) 2004 Free Software Foundation, Inc.
     ... # This file is distributed under the same license as the silky package.
@@ -1144,7 +1144,7 @@ cannot be handled.
     ... #: hello.ycp:20
     ... #, ycp-format
     ... msgid "This program is running as process number %1."
-    ... msgstr "Hierdie program loop as prosesnommer %1."'''
+    ... msgstr "Hierdie program loop as prosesnommer %1."'''.encode('UTF-8')
 
     >>> upload = admin_browser.getControl(name='file')
     >>> upload.add_file(BytesIO(af_file), 'application/msword', 'af.doc')

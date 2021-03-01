@@ -53,11 +53,11 @@ rules.
 Each series and milestone are links that take you to that
 series and milestone page.
 
-    >>> anon_browser.getLink(url='/debian/sarge').text
-    '3.1 \xe2\x80\x9cSarge\xe2\x80\x9d series'
+    >>> print(anon_browser.getLink(url='/debian/sarge').text)
+    3.1 “Sarge” series
 
-    >>> anon_browser.getLink(url='/debian/woody').text
-    '3.0 \xe2\x80\x9cWoody\xe2\x80\x9d series'
+    >>> print(anon_browser.getLink(url='/debian/woody').text)
+    3.0 “Woody” series
 
     >>> anon_browser.getLink(url='/debian/+milestone/3.1').text
     '3.1'
