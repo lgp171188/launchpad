@@ -1358,13 +1358,13 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         team = self.factory.makeTeam(members=[requester])
         self.assertCreates(requester, u"/~%s/+git/random" % team.name)
 
-    def test_translatePath_create_bytestring(self):
-        # ASCII strings come in as bytestrings, not Unicode strings. They
-        # work fine too.
+    def test_translatePath_create_native_string(self):
+        # On Python 2, ASCII strings come in as native strings, not Unicode
+        # strings. They work fine too.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         path = u"/~%s/%s/+git/random" % (requester.name, project.name)
-        self.assertCreates(requester, path.encode('ascii'))
+        self.assertCreates(requester, six.ensure_str(path))
 
     def test_translatePath_anonymous_cannot_create(self):
         # Anonymous users cannot create repositories.
