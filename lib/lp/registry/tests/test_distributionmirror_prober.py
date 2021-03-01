@@ -1246,7 +1246,7 @@ class TestDistroMirrorProberFunctional(TestCaseWithFactory):
         with admin_logged_in():
             record = removeSecurityProxy(mirror.last_probe_record)
 
-        log_lines = record.log_file.read()
+        log_lines = record.log_file.read().decode("UTF-8")
         self.assertEqual(4, len(log_lines.split("\n")))
         self.assertIn(
             "Found all ISO images for series The Hoary Hedgehog Release "
@@ -1284,7 +1284,7 @@ class TestDistroMirrorProberFunctional(TestCaseWithFactory):
         with admin_logged_in():
             record = removeSecurityProxy(mirror.last_probe_record)
 
-        log_lines = record.log_file.read()
+        log_lines = record.log_file.read().decode("UTF-8")
 
         # Make sure that prober output seems reasonable.
         self.assertEqual(85, len(log_lines.split("\n")))
