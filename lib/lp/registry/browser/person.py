@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -69,6 +69,7 @@ import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
+    urljoin,
     )
 from storm.zope.interfaces import IResultSet
 from zope.browserpage import ViewPageTemplateFile
@@ -647,7 +648,17 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     @stepthrough('+snap')
     def traverse_snap(self, name):
         """Traverse to this person's snap packages."""
-        return getUtility(ISnapSet).getByName(self.context, name)
+        snap = getUtility(ISnapSet).getByName(self.context, name)
+        # If it's attached to a pillar, redirect to the Snap URL under
+        # pillar's URL.
+        if snap.project:
+            person_product = getUtility(IPersonProductFactory).create(
+                self.context, snap.project)
+            project_url = canonical_url(person_product)
+            snap_url = urljoin(project_url + '/', '+snap/')
+            snap_url = urljoin(snap_url, snap.name)
+            return self.redirectSubTree(snap_url)
+        return snap
 
 
 class PersonSetNavigation(Navigation):

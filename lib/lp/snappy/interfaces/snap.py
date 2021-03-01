@@ -966,6 +966,9 @@ class ISnapSet(Interface):
     def getByName(owner, name):
         """Return the appropriate `ISnap` for the given objects."""
 
+    def getByPillarAndName(owner, pillar, name):
+        """Returns the appropriate `ISnap` for the given pillar and name."""
+
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True))
     @operation_returns_collection_of(ISnap)

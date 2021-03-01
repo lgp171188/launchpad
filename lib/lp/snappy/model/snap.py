@@ -1436,6 +1436,14 @@ class SnapSet:
             raise NoSuchSnap(name)
         return snap
 
+    def getByPillarAndName(self, owner, pillar, name):
+        conditions = [Snap.owner == owner, Snap.name == name]
+        if IProduct.providedBy(pillar):
+            conditions.append(Snap.project == pillar)
+        else:
+            raise NotImplementedError("Unknown pillar for snap: %s" % pillar)
+        return IStore(Snap).find(Snap, *conditions).one()
+
     def _getSnapsFromCollection(self, collection, owner=None,
                                 visible_by_user=None):
         if IBranchCollection.providedBy(collection):
