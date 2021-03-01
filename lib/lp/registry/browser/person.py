@@ -649,8 +649,8 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     def traverse_snap(self, name):
         """Traverse to this person's snap packages."""
         snap = getUtility(ISnapSet).getByName(self.context, name)
-        # If it's attached to a pillar, redirect to the Snap URL under
-        # pillar's URL.
+        # If it's a snap attached to a pillar, redirect to the Snap
+        # URL under pillar's URL.
         if snap.project:
             person_product = getUtility(IPersonProductFactory).create(
                 self.context, snap.project)

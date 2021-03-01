@@ -69,8 +69,8 @@ from lp.code.tests.helpers import (
     )
 from lp.registry.enums import (
     PersonVisibility,
-    TeamMembershipPolicy,
-    )
+    TeamMembershipPolicy, BranchSharingPolicy,
+)
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -2847,9 +2847,13 @@ class TestSnapWebservice(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch(
             owner=self.person,
             information_type=InformationType.PRIVATESECURITY)
+        project = self.factory.makeProduct(
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, branch=branch,
-            private=True)
+            project=project, information_type=InformationType.PROPRIETARY)
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         with person_logged_in(self.person):
             snap_url = api_url(snap)
@@ -2857,9 +2861,13 @@ class TestSnapWebservice(TestCaseWithFactory):
         admin_webservice = webservice_for_person(
             admin, permission=OAuthPermission.WRITE_PRIVATE)
         admin_webservice.default_api_version = "devel"
-        response = admin_webservice.patch(
-            snap_url, "application/json",
-            json.dumps({"information_type": 'Public'}))
+        data = json.dumps({"information_type": 'Public'})
+        content_type = "application/json"
+        response = admin_webservice.patch(snap_url, content_type, data)
+        # If it's a redirect, try again.
+        if response.status == 301:
+            location = urlsplit(response.getheader('location')).path
+            response = admin_webservice.patch(location, content_type, data)
         self.assertEqual(400, response.status)
         self.assertEqual(
             b"Snap recipe contains private information and cannot be public.",

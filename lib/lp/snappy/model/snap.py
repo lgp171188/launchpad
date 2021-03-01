@@ -1209,6 +1209,9 @@ class Snap(Storm, WebhookTargetMixin):
             service.ensureAccessGrants(
                 [person], subscribed_by, snaps=[self],
                 ignore_permissions=ignore_permissions)
+            # Make sure the new subscriber will have "LimitedView" on this
+            # snap's pillar.
+            self._reconcileAccess()
 
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""

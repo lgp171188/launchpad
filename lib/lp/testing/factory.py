@@ -4782,7 +4782,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if private and project is _DEFAULT:
             # If we are creating a private snap and didn't explictly set a
             # pillar for it, we must create a pillar.
-            project = self.makeProduct()
+            project = self.makeProduct(
+                information_type=InformationType.PROPRIETARY)
         if project is _DEFAULT:
             project = None
         assert information_type is None or private is None
