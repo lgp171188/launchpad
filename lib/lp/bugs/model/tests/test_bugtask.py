@@ -11,7 +11,11 @@ import unittest
 
 from lazr.lifecycle.snapshot import Snapshot
 from storm.store import Store
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesSetwise,
+    MatchesStructure,
+    )
 from testtools.testcase import ExpectedException
 import transaction
 from zope.component import getUtility
@@ -199,12 +203,11 @@ class TestBugTaskCreation(TestCaseWithFactory):
             bug_many, mark,
             [evolution, a_distro, warty],
             status=BugTaskStatus.FIXRELEASED)
-        tasks = [(t.product, t.distribution, t.distroseries) for t in taskset]
-        tasks.sort()
 
-        self.assertEqual(tasks[0][2], warty)
-        self.assertEqual(tasks[1][1], a_distro)
-        self.assertEqual(tasks[2][0], evolution)
+        self.assertThat(taskset, MatchesSetwise(
+            MatchesStructure.byEquality(product=evolution),
+            MatchesStructure.byEquality(distribution=a_distro),
+            MatchesStructure.byEquality(distroseries=warty)))
 
     def test_accesspolicyartifacts_updated(self):
         # createManyTasks updates the AccessPolicyArtifacts related

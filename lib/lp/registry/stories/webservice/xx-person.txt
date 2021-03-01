@@ -303,8 +303,10 @@ Team memberships are first-class objects with their own URLs.
 
 Team memberships also have data fields.
 
-    >>> salgado_landscape = sorted(webservice.get(
-    ...     salgado_memberships).jsonBody()['entries'])[1]
+    >>> salgado_landscape = [
+    ...     entry for entry in webservice.get(
+    ...         salgado_memberships).jsonBody()['entries']
+    ...     if entry['team_link'].endswith('~landscape-developers')][0]
     >>> for key in sorted(salgado_landscape):
     ...     print(key)
     date_expires

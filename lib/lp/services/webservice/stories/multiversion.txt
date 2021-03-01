@@ -46,11 +46,14 @@ In the 'beta' version of the web service, mutator methods like
 IBugTask.transitionToStatus are published as named operations. In
 subsequent versions, those named operations are not published.
 
+  >>> from operator import itemgetter
+
   >>> def get_bugtask_path(version):
   ...     bug_one = webservice.get("/bugs/1", api_version=version).jsonBody()
   ...     bug_one_bugtasks_url = bug_one['bug_tasks_collection_link']
   ...     bug_one_bugtasks = sorted(webservice.get(
-  ...         bug_one_bugtasks_url).jsonBody()['entries'])
+  ...         bug_one_bugtasks_url).jsonBody()['entries'],
+  ...         key=itemgetter('self_link'))
   ...     bugtask_path = bug_one_bugtasks[0]['self_link']
   ...     return bugtask_path
 
