@@ -266,9 +266,9 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
         self.assertIsNotNone(self.archive.signing_key)
         custom_processor = CustomUpload()
         custom_processor.sign(self.archive, "suite", filename)
-        with open(filename) as cleartext_file:
+        with open(filename, "rb") as cleartext_file:
             cleartext = cleartext_file.read()
-            with open("%s.gpg" % filename) as signature_file:
+            with open("%s.gpg" % filename, "rb") as signature_file:
                 signature = getUtility(IGPGHandler).getVerifiedSignature(
                     cleartext, signature_file.read())
         self.assertEqual(

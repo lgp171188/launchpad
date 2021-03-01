@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for OCI image building recipe functionality."""
@@ -391,8 +391,10 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         self.setConfig()
         oci_recipe = self.factory.makeOCIRecipe()
         # Create associated builds:
+        build_request = oci_recipe.requestBuilds(oci_recipe.owner, ["386"])
         build_ids = [
-            self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id
+            self.factory.makeOCIRecipeBuild(
+                recipe=oci_recipe, build_request=build_request).id
             for _ in range(3)]
         # Create associated push rules:
         push_rule_ids = [
@@ -749,6 +751,39 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             "VAR2": "123",
             "VAR3": "A string",
         }, recipe.build_args)
+
+    def test_use_distribution_credentials_set(self):
+        self.setConfig()
+        distribution = self.factory.makeDistribution()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        with person_logged_in(distribution.owner):
+            distribution.oci_registry_credentials = credentials
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        with person_logged_in(distribution.owner):
+            project.setOfficialRecipeStatus(recipe, True)
+        self.assertTrue(recipe.use_distribution_credentials)
+
+    def test_use_distribution_credentials_not_set(self):
+        distribution = self.factory.makeDistribution()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        self.assertFalse(recipe.use_distribution_credentials)
+
+    def test_image_name_set(self):
+        distribution = self.factory.makeDistribution()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        image_name = self.factory.getUniqueUnicode()
+        with person_logged_in(recipe.owner):
+            recipe.image_name = image_name
+        self.assertEqual(image_name, removeSecurityProxy(recipe)._image_name)
+
+    def test_image_name_not_set(self):
+        distribution = self.factory.makeDistribution()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        self.assertEqual(recipe.name, recipe.image_name)
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
@@ -1306,6 +1341,29 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             ws_recipe["push_rules_collection_link"])
         self.assertEqual(
             image_name, push_rules["entries"][0]["image_name"])
+
+    def test_api_set_image_name(self):
+        """Can you set and retrieve the image name via the API?"""
+        self.setConfig()
+
+        image_name = self.factory.getUniqueUnicode()
+
+        with person_logged_in(self.person):
+            oci_project = self.factory.makeOCIProject(
+                registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project, owner=self.person,
+                registrant=self.person)
+            url = api_url(recipe)
+
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'image_name': image_name}))
+
+        self.assertEqual(209, resp.status, resp.body)
+
+        ws_project = self.load_from_api(url)
+        self.assertEqual(image_name, ws_project['image_name'])
 
 
 class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):

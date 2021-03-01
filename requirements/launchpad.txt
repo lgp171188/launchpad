@@ -73,7 +73,7 @@ lazr.delegates==2.0.4
 lazr.enum==1.2
 lazr.jobrunner==0.16
 lazr.lifecycle==1.2
-lazr.restful==1.0.0
+lazr.restful==1.0.1
 lazr.restfulclient==0.14.3
 lazr.sshserver==0.1.11
 lazr.uri==1.0.5
@@ -130,7 +130,7 @@ python-memcached==1.58
 python-openid2==3.2+lp1
 python-swiftclient==3.8.1
 PyYAML==3.10
-rabbitfixture==0.4.2
+rabbitfixture==0.5.0
 requests-file==1.4.3
 requests-toolbelt==0.9.1
 responses==0.9.0

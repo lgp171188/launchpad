@@ -24,16 +24,12 @@ from storm.locals import (
     Or,
     Reference,
     Store,
-    Storm,
     Unicode,
     )
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
@@ -71,6 +67,7 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import (
@@ -91,7 +88,7 @@ from lp.services.webapp.snapshot import notify_modified
 
 
 @implementer(IOCIFile)
-class OCIFile(Storm):
+class OCIFile(StormBase):
 
     __storm_table__ = 'OCIFile'
 
@@ -127,7 +124,7 @@ class OCIFileSet:
 
 
 @implementer(IOCIRecipeBuild)
-class OCIRecipeBuild(PackageBuildMixin, Storm):
+class OCIRecipeBuild(PackageBuildMixin, StormBase):
 
     __storm_table__ = 'OCIRecipeBuild'
 
@@ -189,11 +186,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         self.build_farm_job = build_farm_job
         if build_request is not None:
             self.build_request_id = build_request.id
-
-    def __eq__(self, other):
-        if not zope_isinstance(other, self.__class__):
-            return False
-        return self.id == other.id
 
     @property
     def build_request(self):

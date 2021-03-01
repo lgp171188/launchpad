@@ -3,6 +3,8 @@
 
 """Definition of the internet servers that Launchpad uses."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import threading
@@ -137,19 +139,19 @@ class StepsToGo(six.Iterator):
     False
     >>> len(stepstogo)
     3
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     foo
     >>> request._traversed_names
     ['foo']
     >>> request.stack
     ['baz', 'bar']
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     bar
     >>> bool(stepstogo)
     True
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     baz
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     None
     >>> bool(stepstogo)
     False
@@ -593,6 +595,9 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
             environ['PATH_INFO'] = pi.encode('utf-8')
         super(BasicLaunchpadRequest, self).__init__(
             body_instream, environ, response)
+        # Now replace PATH_INFO with the version decoded by sane_environment.
+        if 'PATH_INFO' in self._environ:
+            environ['PATH_INFO'] = self._environ['PATH_INFO']
 
         # Our response always vary based on authentication.
         self.response.setHeader('Vary', 'Cookie, Authorization')
@@ -1018,8 +1023,8 @@ class LaunchpadTestResponse(LaunchpadBrowserResponse):
     True
 
     >>> response.addWarningNotification('Warning Notification')
-    >>> request.notifications[0].message
-    u'Warning Notification'
+    >>> print(request.notifications[0].message)
+    Warning Notification
     """
 
     uuid = 'LaunchpadTestResponse'

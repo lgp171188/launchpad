@@ -5,6 +5,8 @@
 
 __metaclass__ = type
 
+import sys
+
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet
@@ -43,17 +45,26 @@ class TestNicknameGeneration(TestCaseWithFactory):
         # adding random suffixes to the required length.
         self.assertIs(None, getUtility(IPersonSet).getByName('i'))
         nick = generate_nick('i@example.com')
-        self.assertEqual('i-b', nick)
+        if sys.version_info[0] >= 3:
+            self.assertEqual('i-d', nick)
+        else:
+            self.assertEqual('i-b', nick)
 
     def test_can_create_noncolliding_nicknames(self):
         # Given the same email address, generate_nick doesn't recreate the
         # same nick once that nick is used.
         self.factory.makePerson(name='bar')
         nick = generate_nick('bar@example.com')
-        self.assertEqual('bar-3', nick)
+        if sys.version_info[0] >= 3:
+            self.assertEqual('bar-1', nick)
+        else:
+            self.assertEqual('bar-3', nick)
 
         # If we used the previously created nick and get another bar@ email
         # address, another new nick is generated.
         self.factory.makePerson(name=nick)
         nick = generate_nick('bar@example.com')
-        self.assertEqual('5-bar', nick)
+        if sys.version_info[0] >= 3:
+            self.assertEqual('3-bar', nick)
+        else:
+            self.assertEqual('5-bar', nick)

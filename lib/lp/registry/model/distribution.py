@@ -33,6 +33,10 @@ from storm.expr import (
     SQL,
     )
 from storm.info import ClassAlias
+from storm.locals import (
+    Int,
+    Reference,
+    )
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -270,6 +274,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         enum=DistributionDefaultTraversalPolicy, notNull=False,
         default=DistributionDefaultTraversalPolicy.SERIES)
     redirect_default_traversal = BoolCol(notNull=False, default=False)
+    oci_registry_credentials_id = Int(name='oci_credentials', allow_none=True)
+    oci_registry_credentials = Reference(
+        oci_registry_credentials_id, "OCIRegistryCredentials.id")
 
     def __repr__(self):
         display_name = backslashreplace(self.display_name)

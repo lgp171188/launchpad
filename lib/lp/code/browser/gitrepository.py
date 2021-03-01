@@ -642,7 +642,7 @@ class GitRepositoryEditFormView(LaunchpadEditFormView):
                 try:
                     self.context.setTarget(target, self.user)
                 except GitTargetError as e:
-                    self.setFieldError("target", e.message)
+                    self.setFieldError("target", e.args[0])
                     return
                 changed = True
                 if IPerson.providedBy(target):
@@ -1262,7 +1262,7 @@ class GitRepositoryPermissionsView(LaunchpadFormView):
                 # already been deleted by somebody else.
                 ordered_rules.append((ref_pattern, parsed_rule, rule.position))
         ordered_rules.sort(
-            key=lambda item: (item[1]["action"] != "add", item[2]))
+            key=lambda item: (item[1]["action"] != "add", item[2], item[0]))
 
         for ref_pattern, parsed_rule, position in ordered_rules:
             rule = rule_map.get(parsed_rule["pattern"])

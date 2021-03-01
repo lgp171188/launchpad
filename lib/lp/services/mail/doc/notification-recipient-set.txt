@@ -49,8 +49,10 @@ existing values if they apply to your context.
 The getPersons() method returns the list of recipients sorted by display
 name.
 
-    >>> [person.displayname for person in recipients.getRecipients()]
-    [u'Celso Providelo', u'Sample Person']
+    >>> for person in recipients.getRecipients():
+    ...     print(person.displayname)
+    Celso Providelo
+    Sample Person
 
 It's also possible to iterate over the recipients:
 
@@ -152,8 +154,11 @@ person:
     >>> 'support@ubuntu.com' in recipients
     True
 
-    >>> [person.displayname for person in recipients]
-    [u'Celso Providelo', u'Sample Person', u'Ubuntu Team']
+    >>> for person in recipients:
+    ...     print(person.displayname)
+    Celso Providelo
+    Sample Person
+    Ubuntu Team
 
     >>> recipients.getEmails()
     ['celso.providelo@canonical.com', 'support@ubuntu.com',
@@ -180,8 +185,9 @@ addresses are added to the recipients list, and this recursively.
 
 But looking at the recipients list, only the team is listed:
 
-    >>> [person.displayname for person in recipients]
-    [u'Ubuntu Gnome Team']
+    >>> for person in recipients:
+    ...     print(person.displayname)
+    Ubuntu Gnome Team
 
 So Sample Person is not in the recipients list, even if their email will
 be notified for they're a member of Warty Security Team, itself a member of
@@ -224,8 +230,10 @@ be added with the same rationale:
     >>> recipients = NotificationRecipientSet()
     >>> recipients.add(
     ...     [sample_person, no_priv], 'Notified for fun.', 'Fun')
-    >>> [person.displayname for person in recipients.getRecipients()]
-    [u'No Privileges Person', u'Sample Person']
+    >>> for person in recipients.getRecipients():
+    ...     print(person.displayname)
+    No Privileges Person
+    Sample Person
 
     >>> print_reason(recipients.getReason(no_priv))
     Fun (Notified for fun.)
@@ -243,12 +251,16 @@ NotificationRecipientSet():
     >>> recipients = NotificationRecipientSet()
     >>> recipients.add(
     ...     [sample_person, no_priv, cprov], 'Notified for fun.', 'Fun')
-    >>> [person.displayname for person in recipients.getRecipients()]
-    [u'Celso Providelo', u'No Privileges Person', u'Sample Person']
+    >>> for person in recipients.getRecipients():
+    ...     print(person.displayname)
+    Celso Providelo
+    No Privileges Person
+    Sample Person
 
     >>> recipients.remove([sample_person, cprov])
-    >>> [person.displayname for person in recipients.getRecipients()]
-    [u'No Privileges Person']
+    >>> for person in recipients.getRecipients():
+    ...     print(person.displayname)
+    No Privileges Person
 
     >>> recipients.getEmails()
     ['no-priv@canonical.com']

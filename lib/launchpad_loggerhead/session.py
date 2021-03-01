@@ -63,6 +63,7 @@ class SessionHandler(object):
             # if the value is non-empty *or* if it was non-empty at the start
             # of the request.
             if existed or session:
-                environ[self.session_var] = pickle.dumps(session)
+                # Use protocol 2 for Python 2 compatibility.
+                environ[self.session_var] = pickle.dumps(session, protocol=2)
             return start_response(status, response_headers, exc_info)
         return self.application(environ, response_hook)

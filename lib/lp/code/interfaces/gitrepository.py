@@ -900,6 +900,15 @@ class IGitRepositoryEdit(IWebhookTarget):
             effective permissions on each of the requested references.
         """
 
+    def setRepackData(loose_object_count, pack_count):
+        """Sets the repack parameters received from Turnip.
+
+        :param loose_object_count: The number of loose objects that
+            this repository currently has.
+        :param pack_count: The number of packs that
+            this repository currently has.
+        """
+
     @operation_parameters(
         person=Reference(title=_("Person to check"), schema=IPerson),
         paths=List(title=_("Reference paths"), value_type=TextLine()))

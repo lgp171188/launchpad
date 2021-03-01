@@ -60,8 +60,12 @@ The ArchiveView provides the html for the inline description editing widget.
 For convenience the ArchiveView also includes a build_counters property
 that returns a dict of the build count summary for the archive:
 
-    >>> print(ppa_archive_view.build_counters)
-    {'failed': 1L, 'superseded': 0, 'total': 4L, ...
+    >>> for key, value in sorted(ppa_archive_view.build_counters.items()):
+    ...     print('%s: %d' % (key, value))
+    failed: 1
+    ...
+    superseded: 0
+    total: 4
 
 An ArchiveView also includes an easy way to get any
 IPackageCopyRequest's associated with an archive:
@@ -381,8 +385,11 @@ We can optionally pass the number of days.
 The ArchiveView includes a helper to return the number of packages that
 are building as well as the number of packages waiting to build.
 
-    >>> print(view.num_pkgs_building)
-    {'building': 0, 'waiting': 0, 'total': 0}
+    >>> for key, value in sorted(view.num_pkgs_building.items()):
+    ...     print('%s: %d' % (key, value))
+    building: 0
+    total: 0
+    waiting: 0
 
 Let's set some builds appropriately to see the results.
 
@@ -410,22 +417,31 @@ Let's set some builds appropriately to see the results.
     >>> builds[2].updateStatus(
     ...     BuildStatus.BUILDING, force_invalid_transition=True)
 
-    >>> view.num_pkgs_building
-    {'building': 2, 'waiting': 1, 'total': 3}
+    >>> for key, value in sorted(view.num_pkgs_building.items()):
+    ...     print('%s: %d' % (key, value))
+    building: 2
+    total: 3
+    waiting: 1
 
 Adding a second waiting build for the cdrkit does not add to the number
 of packages that are currently building.
 
     >>> builds[4].updateStatus(BuildStatus.NEEDSBUILD)
-    >>> view.num_pkgs_building
-    {'building': 2, 'waiting': 1, 'total': 3}
+    >>> for key, value in sorted(view.num_pkgs_building.items()):
+    ...     print('%s: %d' % (key, value))
+    building: 2
+    total: 3
+    waiting: 1
 
 But as soon as one of cdrkit's builds start, the package is considered
 to be building:
 
     >>> builds[4].updateStatus(BuildStatus.BUILDING)
-    >>> view.num_pkgs_building
-    {'building': 3, 'waiting': 0, 'total': 3}
+    >>> for key, value in sorted(view.num_pkgs_building.items()):
+    ...     print('%s: %d' % (key, value))
+    building: 3
+    total: 3
+    waiting: 0
 
 The archive index view overrides the default series filter to use the
 distroseries from the browser's user-agent, when applicable.
@@ -1328,7 +1344,7 @@ value is submitted.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.WidgetInputError: ('destination_archive', u'Destination PPA', RequiredMissing('destination_archive'))
+    zope.formlib.interfaces.WidgetInputError: ('destination_archive', ...'Destination PPA', RequiredMissing('destination_archive'))
 
 
 Copy private files to public archives

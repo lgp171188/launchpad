@@ -123,4 +123,5 @@ class TestFeaturesIntoOops(TestCaseWithFactory):
                 self.assertTrue('features.usedScopes' in oops)
                 self.assertTrue('features.usedFlags' in oops)
                 self.assertEqual(
-                    oops['features.usedFlags'], u"{'feature_name': u'value'}")
+                    oops['features.usedFlags'],
+                    u'%r' % {'feature_name': u'value'})

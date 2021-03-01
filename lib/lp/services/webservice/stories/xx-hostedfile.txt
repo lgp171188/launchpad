@@ -12,12 +12,12 @@ The librarian manages hosted files
 Firefox starts out with a link to branding images, but no actual images.
 
     >>> project = webservice.get('/firefox').jsonBody()
-    >>> project['icon_link']
-    u'http://.../firefox/icon'
-    >>> project['logo_link']
-    u'http://.../firefox/logo'
-    >>> project['brand_link']
-    u'http://.../firefox/brand'
+    >>> print(project['icon_link'])
+    http://.../firefox/icon
+    >>> print(project['logo_link'])
+    http://.../firefox/logo
+    >>> print(project['brand_link'])
+    http://.../firefox/brand
 
     >>> print(webservice.get(project['icon_link']))
     HTTP/1.1 404 Not Found
@@ -37,7 +37,8 @@ We can upload branding images with PUT.
     ...     image_file = os.path.join(
     ...         os.path.dirname(canonical.launchpad.__file__),
     ...         'images', filename)
-    ...     return open(image_file).read()
+    ...     with open(image_file, 'rb') as f:
+    ...         return f.read()
 
     >>> print(webservice.put(project['icon_link'], 'image/png',
     ...                      load_image('team.png')))

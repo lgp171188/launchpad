@@ -15,6 +15,7 @@ __all__ = [
     'TranslationFormatInvalidInputError',
     ]
 
+import six
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -83,9 +84,10 @@ class TranslationFormatBaseError(TranslationImportExportBaseException):
         else:
             text = default_message
 
-        return "%s%s" % (location_prefix, text)
+        return u"%s%s" % (location_prefix, text)
 
 
+@six.python_2_unicode_compatible
 class TranslationFormatSyntaxError(TranslationFormatBaseError):
     """A syntax error occurred while parsing a translation file."""
 
@@ -93,6 +95,7 @@ class TranslationFormatSyntaxError(TranslationFormatBaseError):
         return self.represent("Unknown syntax error")
 
 
+@six.python_2_unicode_compatible
 class TranslationFormatInvalidInputError(TranslationFormatBaseError):
     """Some fields in the parsed file contain bad content."""
 

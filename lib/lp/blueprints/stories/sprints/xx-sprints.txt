@@ -382,7 +382,7 @@ Now, Sample Person should be listed as an attendee.
     ...     """Print the attendees listed in the attendees portlet."""
     ...     attendees_portlet = find_portlet(sprint_page, 'Attendees')
     ...     for li in attendees_portlet.findAll('ul')[0].findAll('li'):
-    ...         print(li.a.string.encode('ascii', 'xmlcharrefreplace'))
+    ...         print(li.a.string)
 
     >>> print_attendees(browser.contents)
     Sample Person
@@ -441,7 +441,7 @@ Sample Person registers Salgado as well.
 And verifies that Carlos and Salgado are now listed:
 
     >>> print_attendees(browser.contents)
-    Carlos Perell&#243; Mar&#237;n
+    Carlos Perelló Marín
     Guilherme Salgado
     Sample Person
 

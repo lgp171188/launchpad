@@ -11,6 +11,7 @@ import logging
 
 from breezy.revision import NULL_REVISION
 from lazr.lifecycle.event import ObjectModifiedEvent
+import six
 import transaction
 from zope.component import getUtility
 from zope.event import notify
@@ -60,7 +61,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
         # Create two branches where the trunk has the branch as a merge.  Also
         # create a merge proposal from the branch to the trunk.
         (db_trunk, trunk_tree), (db_branch, branch_tree) = (
-            self.makeBranchWithMerge('base', 'trunk', 'branch', 'merge'))
+            self.makeBranchWithMerge(b'base', b'trunk', b'branch', b'merge'))
         trunk_id = db_trunk.id
         branch_id = db_branch.id
         self.createProposal(db_branch, db_trunk)
@@ -146,7 +147,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            branch_tree.commit(u'another revision', rev_id='another-rev')
+            branch_tree.commit(u'another revision', rev_id=b'another-rev')
         current_proposal_status = proposal.queue_status
         self.assertNotEqual(
             current_proposal_status,
@@ -167,7 +168,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            branch_tree.commit(u'another revision', rev_id='another-rev')
+            branch_tree.commit(u'another revision', rev_id=b'another-rev')
         current_proposal_status = proposal.queue_status
         self.assertNotEqual(
             current_proposal_status,
@@ -245,7 +246,7 @@ class TestMergeDetection(TestCaseWithFactory):
         # of the branch is the NULL_REVISION no merge event is emitted for
         # that branch.
         source = self.factory.makeProductBranch(product=self.product)
-        source.last_scanned_id = NULL_REVISION
+        source.last_scanned_id = six.ensure_text(NULL_REVISION)
         self.autoMergeBranches(self.db_branch, ['revid'])
         self.assertEqual([], self.merges)
 
@@ -298,8 +299,9 @@ class TestBranchMergeDetectionHandler(TestCaseWithFactory):
         derived_job = job.makeDerived()
         derived_job.run()
         notifications = pop_notifications()
-        self.assertIn('Work in progress => Merged',
-                      notifications[0].get_payload(decode=True))
+        self.assertIn(
+            'Work in progress => Merged',
+            six.ensure_text(notifications[0].get_payload(decode=True)))
         self.assertEqual(
             config.canonical.noreply_from_address, notifications[0]['From'])
         recipients = set(msg['x-envelope-to'] for msg in notifications)

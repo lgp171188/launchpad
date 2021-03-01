@@ -143,7 +143,7 @@ as "a_in_cache" in the cache.
     >>> Foo.a.name
     'a_in_cache'
     >>> Foo.a.populate
-    <function a at 0x...>
+    <function ...a at 0x...>
 
     >>> foo.a
     1234
@@ -158,7 +158,7 @@ cache too.
     >>> Foo.b.name
     'b'
     >>> Foo.b.populate
-    <function b at 0x...>
+    <function ...b at 0x...>
 
     >>> foo.b
     5678

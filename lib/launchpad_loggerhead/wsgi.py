@@ -161,7 +161,8 @@ class LoggerheadApplication(Application):
         self._load_brz_plugins()
 
         with open(os.path.join(
-                config.root, config.codebrowse.secret_path)) as secret_file:
+                config.root, config.codebrowse.secret_path),
+                "rb") as secret_file:
             secret = secret_file.read()
 
         app = RootApp(SESSION_VAR)

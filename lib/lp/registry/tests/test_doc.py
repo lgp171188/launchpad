@@ -38,65 +38,68 @@ def peopleKarmaTearDown(test):
 special = {
     'distribution-mirror.txt': LayeredDocFileSuite(
         '../doc/distribution-mirror.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'person-karma.txt': LayeredDocFileSuite(
         '../doc/person-karma.txt',
-        setUp=setUp, tearDown=peopleKarmaTearDown,
+        setUp=lambda test: setUp(test, future=True),
+        tearDown=peopleKarmaTearDown,
         layer=LaunchpadFunctionalLayer,
         stdout_logging_level=logging.WARNING
         ),
     'product.txt': LayeredDocFileSuite(
         '../doc/product.txt',
-        setUp=setUp,
+        setUp=lambda test: setUp(test, future=True),
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'private-team-roles.txt': LayeredDocFileSuite(
         '../doc/private-team-roles.txt',
-        setUp=setUp,
+        setUp=lambda test: setUp(test, future=True),
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'productrelease.txt': LayeredDocFileSuite(
         '../doc/productrelease.txt',
-        setUp=setUp,
+        setUp=lambda test: setUp(test, future=True),
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'productrelease-file-download.txt': LayeredDocFileSuite(
         '../doc/productrelease-file-download.txt',
-        setUp=setUp,
+        setUp=lambda test: setUp(test, future=True),
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'standing.txt': LayeredDocFileSuite(
         '../doc/standing.txt',
         layer=LaunchpadZopelessLayer,
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         ),
     'karmacache.txt': LayeredDocFileSuite(
         '../doc/karmacache.txt',
         layer=LaunchpadZopelessLayer,
-        setUp=setUp, tearDown=tearDown),
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown),
     'sourcepackage.txt': LayeredDocFileSuite(
         '../doc/sourcepackage.txt',
         layer=LaunchpadFunctionalLayer,
-        setUp=setUp, tearDown=tearDown),
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown),
     'distribution-sourcepackage.txt': LayeredDocFileSuite(
         '../doc/distribution-sourcepackage.txt',
         layer=LaunchpadZopelessLayer,
-        setUp=setUp, tearDown=tearDown),
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown),
     }
 
 
 def test_suite():
     suite = build_test_suite(
         here, special, layer=DatabaseFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True),
         pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
     launchpadlib_path = os.path.join(os.path.pardir, 'doc', 'launchpadlib')
-    lplib_suite = build_doctest_suite(here, launchpadlib_path,
-                                      layer=DatabaseFunctionalLayer)
+    lplib_suite = build_doctest_suite(
+        here, launchpadlib_path, layer=DatabaseFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True))
     suite.addTest(lplib_suite)
     return suite

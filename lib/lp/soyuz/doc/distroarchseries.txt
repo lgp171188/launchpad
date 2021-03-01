@@ -88,8 +88,8 @@ Check IDARBP provider
     >>> verifyObject(IDistroArchSeriesBinaryPackage, pmount_hoary_i386)
     True
 
-    >>> pmount_hoary_i386.name
-    u'pmount'
+    >>> print(pmount_hoary_i386.name)
+    pmount
 
 
 Check some properties of DARBP meta class
@@ -109,8 +109,8 @@ Most recent published history row:
     >>> IBinaryPackagePublishingHistory.providedBy(bpph)
     True
 
-    >>> bpph.section.name
-    u'editors'
+    >>> print(bpph.section.name)
+    editors
 
 Perform `post publication` override:
 
@@ -133,8 +133,10 @@ Perform `post publication` override:
 
 Override information about 'pmount' is pending publication:
 
-    >>> pub_hist[0].status.name, pub_hist[0].section.name
-    ('PENDING', u'base')
+    >>> print(pub_hist[0].status.name)
+    PENDING
+    >>> print(pub_hist[0].section.name)
+    base
 
 Supersede current publication:
 

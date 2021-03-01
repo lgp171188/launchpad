@@ -3142,7 +3142,7 @@ class TestTargetNameCache(TestCase):
         process = subprocess.Popen(
             'cronscripts/update-bugtask-targetnamecaches.py', shell=True,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE, universal_newlines=True)
         (out, err) = process.communicate()
 
         self.assertTrue(err.startswith(("INFO    Creating lockfile: "
@@ -3150,7 +3150,8 @@ class TestTargetNameCache(TestCase):
         self.assertTrue('INFO    Updating targetname cache of bugtasks' in err)
         self.assertTrue('INFO    Calculating targets.' in err)
         self.assertTrue('INFO    Will check ' in err)
-        self.assertTrue("INFO    Updating (u'Mozilla Thunderbird',)" in err)
+        self.assertTrue(
+            ('INFO    Updating ' + repr((u'Mozilla Thunderbird',))) in err)
         self.assertTrue('INFO    Updated 1 target names.' in err)
         self.assertTrue('INFO    Finished updating targetname cache' in err)
 

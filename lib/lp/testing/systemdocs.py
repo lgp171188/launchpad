@@ -222,8 +222,9 @@ def stop():
 class PrettyPrinter(pprint.PrettyPrinter, object):
     """A pretty-printer that formats text in the Python 3 style.
 
-    This should only be used when the resulting ambiguity between str and
-    unicode representation on Python 2 is not a problem.
+    This should only be used when the resulting ambiguities between str and
+    unicode representation and between int and long representation on Python
+    2 are not a problem.
     """
 
     def format(self, obj, contexts, maxlevels, level):
@@ -233,6 +234,8 @@ class PrettyPrinter(pprint.PrettyPrinter, object):
                 return '"%s"' % obj, True, False
             else:
                 return "'%s'" % obj.replace("'", "\\'"), True, False
+        elif sys.version_info[0] < 3 and isinstance(obj, long):
+            return repr(int(obj)), True, False
         else:
             return super(PrettyPrinter, self).format(
                 obj, contexts, maxlevels, level)

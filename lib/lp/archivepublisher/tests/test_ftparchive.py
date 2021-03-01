@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import difflib
+from functools import partial
 import gzip
 import os
 import re
@@ -141,10 +142,10 @@ class TestFTPArchive(TestCaseWithFactory):
         self.assertThat(
             result, MatchesListwise([Equals(stanza) for stanza in sample]))
 
-    def _verifyEmpty(self, path, open_func=open):
+    def _verifyEmpty(self, path, open_func=partial(open, mode="rb")):
         """Assert that the given file is empty."""
         with open_func(path) as result_file:
-            self.assertEqual("", result_file.read())
+            self.assertEqual(b"", result_file.read())
 
     def _addRepositoryFile(self, component, sourcename, leafname,
                            samplename=None):
@@ -156,9 +157,9 @@ class TestFTPArchive(TestCaseWithFactory):
         if samplename is None:
             samplename = leafname
         leaf = os.path.join(self._sampledir, samplename)
-        with open(leaf) as leaf_file:
+        with open(leaf, "rb") as leaf_file:
             leafcontent = leaf_file.read()
-        with open(fullpath, "w") as f:
+        with open(fullpath, "wb") as f:
             f.write(leafcontent)
 
     def _setUpFTPArchiveHandler(self):

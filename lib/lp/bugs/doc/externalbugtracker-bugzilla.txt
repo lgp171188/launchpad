@@ -30,7 +30,7 @@ UnparsableBugTrackerVersion is raised:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnparsableBugTrackerVersion: Failed to parse version u'A.B' for http://...
+    lp.bugs.externalbugtracker.base.UnparsableBugTrackerVersion: Failed to parse version 'A.B' for http://...
 
 The version parsing is carried out by the Bugzilla._parseVersion()
 method, which takes a version string and returns a tuple of
@@ -496,7 +496,7 @@ update:
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugzilla, gnome_bugzilla.watches)
     INFO Updating 2 watches for 2 bugs on http://bugzilla.gnome.org/bugs
-    INFO Didn't find bug u'304070' on
+    INFO Didn't find bug '304070' on
     http://bugzilla.gnome.org/bugs (local bugs: 15).
 
     >>> for bug_watch in gnome_bugzilla.watches:
@@ -541,7 +541,7 @@ Then updateBugWatches() will make one request per bug watch:
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugzilla, gnome_bugzilla.watches)
     INFO Updating 7 watches for 7 bugs on http://bugzilla.gnome.org/bugs
-    INFO Didn't find bug u'304070' on
+    INFO Didn't find bug '304070' on
     http://bugzilla.gnome.org/bugs (local bugs: 15).
     POST http://bugzilla.gnome.org/bugs/buglist.cgi
     POST http://bugzilla.gnome.org/bugs/buglist.cgi
@@ -593,7 +593,7 @@ updateBugWatches() issues only one request to update all watches:
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugzilla, gnome_bugzilla.watches)
     INFO Updating 207 watches for 207 bugs...
-    INFO Didn't find bug u'304070' on
+    INFO Didn't find bug '304070' on
     http://bugzilla.gnome.org/bugs (local bugs: 15).
     POST http://bugzilla.gnome.org/bugs/buglist.cgi
 
@@ -773,10 +773,10 @@ information to be fetched from the external Bugzilla instance.
     ...     'RESOLVED', 'FIXED', 'MEDIUM', 'NORMAL')}
     >>> with external_bugzilla.responses():
     ...     external_bugzilla.initializeRemoteBugDB(['84'])
-    >>> external_bugzilla.remote_bug_product['84']
-    u'product-84'
-    >>> external_bugzilla.getRemoteProduct('84')
-    u'product-84'
+    >>> print(external_bugzilla.remote_bug_product['84'])
+    product-84
+    >>> print(external_bugzilla.getRemoteProduct('84'))
+    product-84
 
 Sometimes we might not get the product in the bug listing. In these
 cases getRemoteProduct() returns None.

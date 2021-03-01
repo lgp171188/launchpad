@@ -306,10 +306,10 @@ report.
     >>> print(report['From'])
     Moritz Muehlenhoff <jmm@inutil.org>
 
-    >>> name, email = external_debbugs.getBugReporter('322535')
+    >>> name, address = external_debbugs.getBugReporter('322535')
     >>> print(name)
     Moritz Muehlenhoff
-    >>> print(email)
+    >>> print(address)
     jmm@inutil.org
 
 The getBugSummaryAndDescription method reads the bug report from the
@@ -319,7 +319,7 @@ description as the description.
     >>> print(report['Subject'])
     evolution: Multiple format string vulnerabilities in Evolution
 
-    >>> print(report.get_payload(decode=True))
+    >>> print(six.ensure_text(report.get_payload(decode=True)))
     Package: evolution
     Severity: grave
     Tags: security
@@ -418,10 +418,10 @@ same comment.
 If we query the DebBugs database directly we'll see that there are two
 copies of the same comment.
 
-    >>> import email
+    >>> from lp.services.compat import message_from_bytes
     >>> debian_bug = external_debbugs._findBug(bug_watch.remotebug)
     >>> for comment in debian_bug.comments:
-    ...     comment_email = email.message_from_string(comment)
+    ...     comment_email = message_from_bytes(comment)
     ...     print(comment_email['message-id'])
     <20040309081430.98BF411EE67@tux>
     <20040309081430.98BF411EE67@tux>
@@ -607,15 +607,15 @@ We can look for the mail that would have been sent.
     >>> print(msg['X-Envelope-To'])
     1234@example.com
 
-    >>> print(str(msg))
-    From ...
-    Content-Type...
-    Message-Id: <123456@launchpad.net>
-    To: 1234@example.com
-    From: debbugs@bugs.launchpad.net
-    Subject: Re: Example bug 1234
-    Date...
-    <BLANKLINE>
+    >>> print(msg['Message-Id'])
+    <123456@launchpad.net>
+    >>> print(msg['To'])
+    1234@example.com
+    >>> print(msg['From'])
+    debbugs@bugs.launchpad.net
+    >>> print(msg['Subject'])
+    Re: Example bug 1234
+    >>> print(msg.get_payload(decode=True).decode('UTF-8'))
     A little fermented curd will do the trick!
 
 
@@ -648,7 +648,7 @@ tracker.
     >>> process = subprocess.Popen(
     ...     'scripts/import-debian-bugs.py 237001 322535', shell=True,
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> (out, err) = process.communicate()
     >>> process.returncode
     0
@@ -662,10 +662,12 @@ tracker.
 
     >>> transaction.commit()
     >>> debbugs = getUtility(ILaunchpadCelebrities).debbugs
-    >>> [bug.title for bug in debbugs.getBugsWatching('237001')]
-    [u'evolution mail crashes on opening an email with a TIFF attachment']
-    >>> [bug.title for bug in debbugs.getBugsWatching('322535')]
-    [u'evolution: Multiple format string vulnerabilities in Evolution']
+    >>> for bug in debbugs.getBugsWatching('237001'):
+    ...     print(bug.title)
+    evolution mail crashes on opening an email with a TIFF attachment
+    >>> for bug in debbugs.getBugsWatching('322535'):
+    ...     print(bug.title)
+    evolution: Multiple format string vulnerabilities in Evolution
 
 In addition to simply importing the bugs and linking it to the debbugs
 bug, it will also create an Ubuntu task for the imported bugs. This will

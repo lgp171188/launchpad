@@ -16,15 +16,15 @@ on bugs. Bugs are linked to Messages via the BugMessage table.
     ...     subject='The Title', content='The Content', bug=bug_one,
     ...     owner=current_user)
     >>> msg = bmsg.message
-    >>> msg.subject
-    u'The Title'
+    >>> print(msg.subject)
+    The Title
 
 We can retrieve the text chunks as a unicode string. (However, note that
 if generating HTML you should use the MessageChunks detailed below
 to handle attachments correctly)
 
-    >>> msg.text_contents
-    u'The Content'
+    >>> print(msg.text_contents)
+    The Content
 
 Messages are threaded, although this is not necessarily displayed in the
 UI. Each message has a parent attribute. If the message was created via
@@ -52,8 +52,8 @@ may be accessed using the chunks attribute, or simply by iterating over
 the Message.
 
     >>> for chunk in msg:
-    ...     print repr([chunk.sequence, chunk.content, chunk.blob])
-    [1, u'The Content', None]
+    ...     print(pretty([chunk.sequence, chunk.content, chunk.blob]))
+    [1, 'The Content', None]
     >>> msg.chunks[0].message == msg
     True
 
@@ -124,20 +124,22 @@ normal.
     >>> msg = msg_set.get(
     ...     rfc822msgid="<20050405054002.22134.71562@localhost.localdomain>"
     ...     )[0]
-    >>> msg.title
-    u'Unicode\u2122'
+    >>> print(msg.title)
+    Unicode™
     >>> chunks = msg.chunks
     >>> for chunk in chunks:
     ...     if chunk.content:
-    ...         print '%2d - %r' % (chunk.sequence, chunk.content)
-     1 - u'Plain text'
-     3 - u'Unicode\u2122 text'
+    ...         print('%2d - %s' % (chunk.sequence, pretty(chunk.content)))
+     1 - 'Plain text'
+     3 - 'Unicode\u2122 text'
 
 The text_contents attribute contains only the text parts, since that is
 what we want to display in the UI.
 
-    >>> msg.text_contents
-    u'Plain text\n\nUnicode\u2122 text'
+    >>> print(msg.text_contents)
+    Plain text
+    <BLANKLINE>
+    Unicode™ text
 
 Stripping non-text parts is useful, since a lot of messages will contain
 detach GPG signatures, and they shouldn't be shown in the UI since they
@@ -149,7 +151,7 @@ containing a signature.asc attachment.
     >>> from lp.services.mail.tests.helpers import read_test_message
     >>> signed_msg = read_test_message('signed_detached.txt')
     >>> signed_msg['Message-Id'] = '<signeddetached@testmsg>'
-    >>> print signed_msg.as_string()
+    >>> print(signed_msg.as_string())
     Date...
     ...
     Content-Type: multipart/signed; micalg=pgp-sha1;
@@ -165,7 +167,7 @@ containing a signature.asc attachment.
     ...
 
     >>> signed_message = msg_set.fromEmail(message_as_bytes(signed_msg))
-    >>> print signed_message.text_contents
+    >>> print(signed_message.text_contents)
     Some signed content.
 
 Note that the second and forth chunks of the previous message were not
@@ -176,16 +178,16 @@ of type text/plain, so are stored as blobs.
     >>> chunks[1].content is None
     True
     >>> blob = chunks[1].blob
-    >>> blob.filename
-    u'anna.jpg.exe'
+    >>> print(blob.filename)
+    anna.jpg.exe
     >>> blob.http_url.endswith(u'/anna.jpg.exe')
     True
 
     >>> blob2 = chunks[3].blob
-    >>> blob2.filename
-    u'unnamed'
-    >>> blob2.mimetype
-    u'application/xml; charset="utf16"'
+    >>> print(blob2.filename)
+    unnamed
+    >>> print(blob2.mimetype)
+    application/xml; charset="utf16"
 
 Only those chunks of content type text/plain with content-disposition
 "inline" that have no filename are stored as content. If an inline
@@ -251,12 +253,12 @@ used as a default.
     >>> msg = msgset.fromEmail(raw_msg)
     >>> for chunk in msg.chunks:
     ...     if chunk.content is not None:
-    ...         print '%d - %r' % (chunk.sequence, chunk.content)
+    ...         print('%d - %s' % (chunk.sequence, pretty(chunk.content)))
     ...     else:
-    ...         print '%d - file: %s (%s)' % (
-    ...             chunk.sequence, chunk.blob.filename, chunk.blob.mimetype)
-    1 - u'Plain text'
-    2 - u'Plain text without a ch\xc4\x83\xc5\x95\xc5\x9d\xc4\x9b\xc5\xa3.'
+    ...         print('%d - file: %s (%s)' % (
+    ...             chunk.sequence, chunk.blob.filename, chunk.blob.mimetype))
+    1 - 'Plain text'
+    2 - 'Plain text without a ch\xc4\x83\xc5\x95\xc5\x9d\xc4\x9b\xc5\xa3.'
     3 - file: attachment.txt   (text/plain; charset="us-ascii")
     4 - file: unnamed          (text/plain; charset="us-ascii")
     5 - file: attachment2.txt  (text/plain; charset="us-ascii")
@@ -270,8 +272,9 @@ as the request. I don't think this is important outside of tests.
     >>> blob.read()
     '\x00\x01\x02\x03'
 
-    >>> blob2.read().decode('utf16')
-    u'<?xml version="1.0" encoding="utf16"?>\n<unicode>\u2122</unicode>'
+    >>> print(blob2.read().decode('utf16'))
+    <?xml version="1.0" encoding="utf16"?>
+    <unicode>™</unicode>
 
 
 We can also retrieve a byte-identical copy of the original message
@@ -286,7 +289,7 @@ the message, like it is done when forwarding an email.
 
     >>> forwarded_msg = read_test_message('forwarded-msg.txt')
     >>> msg = msgset.fromEmail(message_as_bytes(forwarded_msg))
-    >>> print msg.text_contents
+    >>> print(msg.text_contents)
     Forwarding test message.
     <BLANKLINE>
     <BLANKLINE>
@@ -349,13 +352,14 @@ quite happily.
     ...
     ... Foo Bar
     ... ''')
-    >>> msg.title
-    u'Test'
+    >>> print(msg.title)
+    Test
     >>> chunks = list(msg.chunks)
     >>> len(chunks)
     1
-    >>> chunks[0].content
-    u'Foo Bar\n'
+    >>> print(chunks[0].content)
+    Foo Bar
+    <BLANKLINE>
 
 It also handles the case where the subject line is folded.
 
@@ -369,8 +373,8 @@ It also handles the case where the subject line is folded.
     ... Foo Bar
     ... ''')
 
-    >>> msg.title
-    u'Folded subject'
+    >>> print(msg.title)
+    Folded subject
 
 
 However, there are some things it refuses to deal with. In particular, it
@@ -388,7 +392,7 @@ explicitly told to do so:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    lp.services.messages.interfaces.message.UnknownSender: u'invalid@example.com'
+    lp.services.messages.interfaces.message.UnknownSender: ...'invalid@example.com'
 
     >>> msg = msgset.fromEmail(b'''\
     ... From: invalid@example.com
@@ -398,8 +402,8 @@ explicitly told to do so:
     ...
     ... Foo Bar
     ... ''', create_missing_persons=True)
-    >>> msg.subject
-    u'Foo Bar Bazarooney!'
+    >>> print(msg.subject)
+    Foo Bar Bazarooney!
 
 When the fromEmail() method creates a new Person entry, it'll set the
 creation_rationale accordingly.
@@ -513,7 +517,7 @@ Finally, let's test the goldilocks message, where the date is just right:
     ...
     ... Moo
     ... ''')
-    >>> print msg.datecreated
+    >>> print(msg.datecreated)
     2005-06-17 09:45:13+00:00
 
 
@@ -530,7 +534,7 @@ which often works.
     >>> msg_path = os.path.join(os.path.dirname(__file__), mail_path)
     >>> with open(msg_path, 'rb') as f:
     ...     raw_msg = f.read()
-    >>> print raw_msg
+    >>> print(raw_msg)
     MIME-Version: 1.0
     ...
     Content-Type: TEXT/PLAIN; charset=X-UNKNOWN; format=flowed...

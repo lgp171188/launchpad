@@ -82,6 +82,9 @@ from lp.bugs.browser.structuralsubscription import (
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
 from lp.registry.browser import (
     add_subscribe_link,
     RegistryEditFormView,
@@ -96,6 +99,9 @@ from lp.registry.browser.pillar import (
     PillarBugsMenu,
     PillarNavigationMixin,
     PillarViewMixin,
+    )
+from lp.registry.browser.widgets.ocicredentialswidget import (
+    OCICredentialsWidget,
     )
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
@@ -1005,6 +1011,7 @@ class DistributionEditView(RegistryEditFormView,
         'translation_focus',
         'default_traversal_policy',
         'redirect_default_traversal',
+        'oci_registry_credentials',
         ]
 
     custom_widget_icon = CustomWidgetFactory(
@@ -1015,6 +1022,7 @@ class DistributionEditView(RegistryEditFormView,
         ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
     custom_widget_require_virtualized = CheckBoxWidget
     custom_widget_processors = LabeledMultiCheckBoxWidget
+    custom_widget_oci_registry_credentials = OCICredentialsWidget
 
     @property
     def label(self):
@@ -1035,7 +1043,7 @@ class DistributionEditView(RegistryEditFormView,
         return {
             'require_virtualized':
                 self.context.main_archive.require_virtualized,
-            'processors': self.context.main_archive.processors,
+            'processors': self.context.main_archive.processors
             }
 
     def validate(self, data):
@@ -1065,6 +1073,14 @@ class DistributionEditView(RegistryEditFormView,
     @action("Change", name='change')
     def change_action(self, action, data):
         self.change_archive_fields(data)
+        new_credentials = data.pop('oci_registry_credentials', None)
+        old_credentials = self.context.oci_registry_credentials
+        if self.context.oci_registry_credentials != new_credentials:
+            # Remove the old credentials as we're assigning new ones
+            # or clearing them
+            self.context.oci_registry_credentials = new_credentials
+            if old_credentials:
+                old_credentials.destroySelf()
         self.updateContextFromData(data)
 
 

@@ -8,8 +8,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = ['NumberCruncher']
 
+from datetime import datetime
 import logging
 
+import pytz
 from storm.expr import (
     Count,
     Sum,
@@ -27,9 +29,13 @@ from zope.component import getUtility
 from lp.buildmaster.enums import BuilderCleanStatus
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.manager import PrefetchedBuilderFactory
+from lp.code.enums import CodeImportJobState
+from lp.code.model.codeimportjob import CodeImportJob
+from lp.soyuz.model.archive import Archive
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
+
 
 NUMBER_CRUNCHER_LOG_NAME = "number-cruncher"
 
@@ -40,6 +46,8 @@ class NumberCruncher(service.Service):
     QUEUE_INTERVAL = 60
     BUILDER_INTERVAL = 60
     LIBRARIAN_INTERVAL = 3600
+    CODE_IMPORT_INTERVAL = 60
+    PPA_LATENCY_INTERVAL = 3600
 
     def __init__(self, clock=None, builder_factory=None):
         if clock is None:
@@ -155,6 +163,71 @@ class NumberCruncher(service.Service):
             self.logger.exception("Failure while updating librarian stats:")
         transaction.abort()
 
+    def updateCodeImportStats(self):
+        """Update stats about code imports.
+
+        This aborts the current transaction before returning.
+        """
+        try:
+            self.logger.debug("Update code import stats.")
+            store = IStore(CodeImportJob)
+            pending = store.find(
+                CodeImportJob,
+                CodeImportJob.state == CodeImportJobState.PENDING).count()
+            overdue = store.find(
+                CodeImportJob,
+                CodeImportJob.date_due < datetime.now(pytz.UTC)).count()
+            self._sendGauge("codeimport.pending", pending)
+            self._sendGauge("codeimport.overdue", overdue)
+            self.logger.debug("Code import stats update complete")
+        except Exception:
+            self.logger.exception("Failure while updating code import stats.")
+        transaction.abort()
+
+    def updatePPABuildLatencyStats(self):
+        """Update stats about build latencies.
+
+        This aborts the current transaction before returning.
+        """
+
+        try:
+            self.logger.debug("Update PPA build latency stats.")
+            query = """
+            SELECT
+                avg(extract(
+                    epoch FROM bpb.date_first_dispatched - bpb.date_created)
+                    )/60,
+                avg(extract(
+                    epoch FROM bpr.datecreated - bpb.date_finished))/60,
+                avg(extract(
+                    epoch FROM bpph.datecreated - bpr.datecreated))/60,
+                avg(extract(
+                    epoch FROM bpph.datepublished - bpph.datecreated))/60
+            FROM
+                archive,
+                binarypackagebuild bpb,
+                binarypackagepublishinghistory bpph,
+                binarypackagerelease bpr
+            WHERE
+                archive.purpose = 2
+                AND bpph.archive = archive.id
+                AND bpph.archive = bpb.archive
+                AND bpr.id = bpph.binarypackagerelease
+                AND bpr.build = bpb.id
+                AND bpb.distro_arch_series = bpph.distroarchseries
+                AND bpph.datepublished >= %s
+            """ % "(NOW() at time zone 'UTC' - interval '1 hour')"
+            results = IStore(Archive).execute(query).get_one()
+            self._sendGauge("ppa.startdelay", results[0])
+            self._sendGauge("ppa.uploaddelay", results[1])
+            self._sendGauge("ppa.processaccepted", results[2])
+            self._sendGauge("ppa.publishdistro", results[3])
+            self.logger.debug("PPA build latency stats update complete.")
+        except Exception:
+            self.logger.exception(
+                "Failure while update PPA build latency stats.")
+        transaction.abort()
+
     def startService(self):
         self.logger.info("Starting number-cruncher service.")
         self.loops = []
@@ -163,6 +236,8 @@ class NumberCruncher(service.Service):
                 (self.QUEUE_INTERVAL, self.updateBuilderQueues),
                 (self.BUILDER_INTERVAL, self.updateBuilderStats),
                 (self.LIBRARIAN_INTERVAL, self.updateLibrarianStats),
+                (self.CODE_IMPORT_INTERVAL, self.updateCodeImportStats),
+                (self.PPA_LATENCY_INTERVAL, self.updatePPABuildLatencyStats),
                 ):
             loop, stopping_deferred = self._startLoop(interval, callback)
             self.loops.append(loop)

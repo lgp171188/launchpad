@@ -28,8 +28,8 @@ A user can set their own time zone:
     >>> self_browser.getControl('Update').click()
 
     >>> login('zzz@foo.com')
-    >>> zzz.time_zone
-    u'Europe/Madrid'
+    >>> print(zzz.time_zone)
+    Europe/Madrid
     >>> logout()
 
 And when they come back to change it later, they'll see it there as the

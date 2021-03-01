@@ -33,7 +33,7 @@ class TestGettextMOExporter(TestCaseWithFactory):
 
             msgid "foo"
             msgstr "bar"
-            """))
+            """).encode("UTF-8"))
         file_data.is_template = is_template
         file_data.language_code = 'my'
         file_data.translation_domain = 'main'
@@ -65,12 +65,13 @@ class TestGettextMOExporter(TestCaseWithFactory):
 
         # The file can even be converted back to PO format.
         retval, text, stderr = run_command(
-            '/usr/bin/msgunfmt', args=['-'], input=output.read())
+            '/usr/bin/msgunfmt', args=['-'], input=output.read(),
+            universal_newlines=False)
 
         self.assertEqual(0, retval)
-        self.assertIn('MIME-Version', text)
-        self.assertIn('msgid', text)
-        self.assertIn('"foo"', text)
+        self.assertIn(b'MIME-Version', text)
+        self.assertIn(b'msgid', text)
+        self.assertIn(b'"foo"', text)
 
     def test_export_template_stays_pot(self):
         # The MO exporter exports templates in their original POT
@@ -84,7 +85,7 @@ class TestGettextMOExporter(TestCaseWithFactory):
         self.assertEqual('application/x-po', output.content_type)
         self.assertTrue(output.path.endswith('.pot'))
         text = output.read()
-        self.assertIn('POT-Creation-Date:', text)
-        self.assertIn('MIME-Version:', text)
-        self.assertIn('msgid', text)
-        self.assertIn('"foo"', text)
+        self.assertIn(b'POT-Creation-Date:', text)
+        self.assertIn(b'MIME-Version:', text)
+        self.assertIn(b'msgid', text)
+        self.assertIn(b'"foo"', text)

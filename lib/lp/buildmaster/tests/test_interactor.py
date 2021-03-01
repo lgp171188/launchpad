@@ -806,7 +806,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         # filename made from the sha1 of the content underneath the
         # 'filecache' directory.
         from twisted.internet import reactor
-        content = "Hello World"
+        content = b"Hello World"
         lf = self.factory.makeLibraryFileAlias(
             'HelloWorld.txt', content=content)
         self.layer.txn.commit()
@@ -911,5 +911,5 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         empty_sha1 = hashlib.sha1(b'').hexdigest()
         self.slave_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
         yield slave.getFiles([(empty_sha1, temp_name)])
-        with open(temp_name) as f:
+        with open(temp_name, 'rb') as f:
             self.assertEqual(b'', f.read())

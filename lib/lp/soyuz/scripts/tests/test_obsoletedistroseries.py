@@ -47,7 +47,8 @@ class TestObsoleteDistroseriesScript(TestCase):
         args = [sys.executable, script, '-y']
         args.extend(extra_args)
         process = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
         stdout, stderr = process.communicate()
         return (process.returncode, stdout, stderr)
 

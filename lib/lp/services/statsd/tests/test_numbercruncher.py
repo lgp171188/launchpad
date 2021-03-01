@@ -7,27 +7,37 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import datetime
+
+import pytz
 from storm.store import Store
 from testtools.matchers import (
     Equals,
     MatchesListwise,
+    MatchesSetwise,
     Not,
     )
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import task
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuilderCleanStatus
+from lp.buildmaster.enums import (
+    BuilderCleanStatus,
+    BuildStatus,
+    )
 from lp.buildmaster.interactor import BuilderSlave
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.tests.mock_slaves import OkSlave
+from lp.code.enums import CodeImportJobState
 from lp.services.database.isolation import is_transaction_in_progress
 from lp.services.database.policy import DatabaseBlockedPolicy
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.numbercruncher import NumberCruncher
 from lp.services.statsd.tests import StatsMixin
+from lp.soyuz.enums import PackagePublishingStatus
 from lp.testing import TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -119,20 +129,20 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         calls = [c[0] for c in self.stats_client.gauge.call_args_list
                  if 'amd64' in c[0][0]]
         self.assertThat(
-            calls, MatchesListwise(
-                [Equals((
+            calls, MatchesSetwise(
+                Equals((
                     'builders,status=disabled,arch=amd64,'
                     'virtualized=True,env=test', 0)),
-                 Equals((
-                     'builders,status=building,arch=amd64,'
-                     'virtualized=True,env=test', 2)),
-                 Equals((
-                     'builders,status=idle,arch=amd64,'
-                     'virtualized=True,env=test', 4)),
-                 Equals((
-                     'builders,status=cleaning,arch=amd64,'
-                     'virtualized=True,env=test', 3))
-                 ]))
+                Equals((
+                    'builders,status=building,arch=amd64,'
+                    'virtualized=True,env=test', 2)),
+                Equals((
+                    'builders,status=idle,arch=amd64,'
+                    'virtualized=True,env=test', 4)),
+                Equals((
+                    'builders,status=cleaning,arch=amd64,'
+                    'virtualized=True,env=test', 3))
+                ))
 
     def test_updateBuilderStats_error(self):
         clock = task.Clock()
@@ -163,11 +173,11 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         self.assertEqual(2, self.stats_client.gauge.call_count)
         self.assertThat(
             [x[0] for x in self.stats_client.gauge.call_args_list],
-            MatchesListwise(
-                [Equals(('buildqueue,virtualized=True,arch={},env=test'.format(
+            MatchesSetwise(
+                Equals(('buildqueue,virtualized=True,arch={},env=test'.format(
                     build.processor.name), 1)),
-                 Equals(('buildqueue,virtualized=False,arch=386,env=test', 1))
-                 ]))
+                Equals(('buildqueue,virtualized=False,arch=386,env=test', 1))
+                ))
 
     def test_updateBuilderQueues_error(self):
         clock = task.Clock()
@@ -232,6 +242,93 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
             "Failure while updating librarian stats:",
             cruncher.logger.getLogBuffer())
 
+    def test_updateCodeImportStats(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.updateCodeImportStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertEqual(2, self.stats_client.gauge.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.gauge.call_args_list],
+            MatchesListwise([
+                MatchesListwise([
+                    Equals('codeimport.pending,env=test'),
+                    Equals(1),
+                    ]),
+                MatchesListwise([
+                    Equals('codeimport.overdue,env=test'),
+                    Equals(1),
+                    ]),
+                ]))
+
+        job = removeSecurityProxy(self.factory.makeCodeImportJob())
+        job.state = CodeImportJobState.PENDING
+        self.stats_client.gauge.reset_mock()
+        cruncher.updateCodeImportStats()
+
+        self.assertEqual(2, self.stats_client.gauge.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.gauge.call_args_list],
+            MatchesListwise([
+                MatchesListwise([
+                    Equals('codeimport.pending,env=test'),
+                    Equals(2),
+                    ]),
+                MatchesListwise([
+                    Equals('codeimport.overdue,env=test'),
+                    Equals(2),
+                    ]),
+                ]))
+
+    def test_updateCodeImportStats_error(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.logger = BufferLogger()
+        with DatabaseBlockedPolicy():
+            cruncher.updateCodeImportStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertIn(
+            "Failure while updating code import stats.",
+            cruncher.logger.getLogBuffer())
+        self.assertFalse(is_transaction_in_progress())
+
+    def test_updatePPABuildLatencyStats(self):
+        archive = self.factory.makeArchive()
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive, status=PackagePublishingStatus.PUBLISHED)
+        bpph.binarypackagerelease.build.updateStatus(
+            BuildStatus.BUILDING, date_started=datetime.now(pytz.UTC))
+        bpph.binarypackagerelease.build.updateStatus(BuildStatus.FULLYBUILT)
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.updatePPABuildLatencyStats()
+        self.assertEqual(4, self.stats_client.gauge.call_count)
+        # The raw values here are non-deterministic and affected
+        # by the test data, so just check that the gauges exist
+        keys = [x[0][0] for x in self.stats_client.gauge.call_args_list]
+        gauges = [
+            "ppa.startdelay,env=test",
+            "ppa.uploaddelay,env=test",
+            "ppa.processaccepted,env=test",
+            "ppa.publishdistro,env=test"]
+        for gauge in gauges:
+            self.assertIn(gauge, keys)
+
+    def test_updatePPABuildLatencyStats_error(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.logger = BufferLogger()
+        with DatabaseBlockedPolicy():
+            cruncher.updatePPABuildLatencyStats()
+
+        self.assertFalse(is_transaction_in_progress())
+        self.assertIn(
+            "Failure while update PPA build latency stats.",
+            cruncher.logger.getLogBuffer())
+        self.assertFalse(is_transaction_in_progress())
+
     def test_startService_starts_update_queues_loop(self):
         clock = task.Clock()
         cruncher = NumberCruncher(clock=clock)
@@ -264,3 +361,25 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         advance = NumberCruncher.LIBRARIAN_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(0, cruncher.updateLibrarianStats.call_count)
+
+    def test_startService_starts_update_code_import_loop(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+
+        cruncher.updateCodeImportStats = FakeMethod()
+
+        cruncher.startService()
+        advance = NumberCruncher.CODE_IMPORT_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, cruncher.updateCodeImportStats.call_count)
+
+    def test_startService_starts_update_ppa_build_latency_loop(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+
+        cruncher.updatePPABuildLatencyStats = FakeMethod()
+
+        cruncher.startService()
+        advance = NumberCruncher.PPA_LATENCY_INTERVAL + 1
+        clock.advance(advance)
+        self.assertNotEqual(0, cruncher.updatePPABuildLatencyStats.call_count)

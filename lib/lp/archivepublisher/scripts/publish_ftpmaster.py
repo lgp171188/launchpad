@@ -496,6 +496,12 @@ class PublishFTPMaster(LaunchpadCronScript):
                             current_path,
                             (math.ceil(st.st_atime), math.ceil(st.st_mtime)))
                         os.unlink(new_path)
+                    # Make sure that the file is world-readable, since
+                    # occasionally files synced from other services have
+                    # been known to end up mode 0o600 or similar and that
+                    # breaks mirroring.
+                    os.chmod(
+                        current_path, os.stat(current_path).st_mode | 0o444)
                     updated = True
         return updated
 

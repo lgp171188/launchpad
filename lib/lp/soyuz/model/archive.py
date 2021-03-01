@@ -1092,7 +1092,7 @@ class Archive(SQLBase):
 
         # Collapse all relevant terms in 'package_description_cache' and
         # update the package counters.
-        self.package_description_cache = " ".join(cache_contents)
+        self.package_description_cache = " ".join(sorted(cache_contents))
         self.sources_cached = sources_cached.count()
         self.binaries_cached = binaries_cached.count()
 

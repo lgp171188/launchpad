@@ -1094,7 +1094,7 @@ NavigationMenus used in the previous TALES section.
     >>> from lp.services.webapp.menu import (
     ...     get_facet, get_current_view)
 
-    >>> menu_fragement = """\
+    >>> menu_fragment = """\
     ...  <div>
     ...    <label
     ...      tal:condition="view/title|nothing"
@@ -1113,8 +1113,8 @@ NavigationMenus used in the previous TALES section.
     ...      </li>
     ...    </ul>
     ...  </div>"""
-    >>> template_file = tempfile.NamedTemporaryFile()
-    >>> template_file.write(menu_fragement)
+    >>> template_file = tempfile.NamedTemporaryFile(mode='w')
+    >>> _ = template_file.write(menu_fragment)
     >>> template_file.flush()
 
     >>> class FacetMenuView(LaunchpadView):

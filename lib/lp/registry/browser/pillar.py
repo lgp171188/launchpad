@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Common views for objects that implement `IPillar`."""
@@ -57,7 +57,10 @@ from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.model.pillar import PillarPerson
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.authorization import (
+    check_permission,
+    precache_permission_for_objects,
+    )
 from lp.services.webapp.batching import (
     BatchNavigator,
     get_batch_properties_for_json_cache,
@@ -376,6 +379,14 @@ class PillarSharingView(LaunchpadView):
         cache.objects['has_edit_permission'] = check_permission(
             "launchpad.Edit", self.context)
         batch_navigator = self.grantees()
+        # Precache LimitedView for all the grantees, partly for performance
+        # but mainly because it's possible that the user won't strictly have
+        # LimitedView on all of them and they should nevertheless be able to
+        # see who has access to pillars they drive.  Fixing this in
+        # PublicOrPrivateTeamsExistence would very likely be too expensive.
+        precache_permission_for_objects(
+            None, 'launchpad.LimitedView',
+            [grantee for grantee, _, _ in batch_navigator.batch])
         cache.objects['grantee_data'] = (
             self._getSharingService().jsonGranteeData(batch_navigator.batch))
         cache.objects.update(

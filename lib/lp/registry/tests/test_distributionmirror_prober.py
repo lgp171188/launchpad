@@ -133,7 +133,7 @@ class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
     def creatorForNetloc(self, hostname, port):
         # check if the hostname is in the the whitelist,
         # otherwise return the default policy
-        if hostname == 'localhost':
+        if hostname == b'localhost':
             return ssl.CertificateOptions(verify=False)
         return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
             hostname, port)
@@ -245,9 +245,9 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         def got_result(result):
             self.assertEqual(http_client.OK, result.code)
+            expected_url = 'https://localhost:%s/valid-mirror/file' % self.port
             self.assertEqual(
-                'https://localhost:%s/valid-mirror/file' % self.port,
-                result.request.absoluteURI)
+                expected_url.encode('UTF-8'), result.request.absoluteURI)
 
         return deferred.addCallback(got_result)
 
@@ -408,10 +408,10 @@ class TestProberProtocolAndFactory(TestCase):
         deferred = prober.probe()
 
         def got_result(result):
-            self.assertTrue(prober.redirection_count == 1)
+            self.assertEqual(1, prober.redirection_count)
             new_url = 'http://localhost:%s/valid-mirror/file' % self.port
-            self.assertTrue(prober.url == new_url)
-            self.assertTrue(result == str(http_client.OK))
+            self.assertEqual(new_url, prober.url)
+            self.assertEqual(http_client.OK, result)
 
         return deferred.addBoth(got_result)
 
@@ -431,9 +431,9 @@ class TestProberProtocolAndFactory(TestCase):
         d = self._createProberAndProbe(self.urls['200'])
 
         def got_result(result):
-            self.assertTrue(
-                result == str(http_client.OK),
-                "Expected a '200' status but got '%s'" % result)
+            self.assertEqual(
+                http_client.OK, result,
+                "Expected a '200' status but got %r" % result)
 
         return d.addCallback(got_result)
 
@@ -865,11 +865,11 @@ class TestRedirectAwareProberFactoryAndProtocol(TestCase):
         protocol.factory = FakeFactory('http://foo.bar/')
         protocol.makeConnection(FakeTransport())
         protocol.dataReceived(
-            "HTTP/1.1 301 Moved Permanently\r\n"
-            "Location: http://foo.baz/\r\n"
-            "Length: 0\r\n"
-            "\r\n")
-        self.assertEqual('http://foo.baz/', protocol.factory.redirectedTo)
+            b"HTTP/1.1 301 Moved Permanently\r\n"
+            b"Location: http://foo.baz/\r\n"
+            b"Length: 0\r\n"
+            b"\r\n")
+        self.assertEqual(b'http://foo.baz/', protocol.factory.redirectedTo)
         self.assertTrue(protocol.transport.disconnecting)
 
 
@@ -909,8 +909,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
 
     def test_mirrorcdimageseries_creation_and_deletion_some_404s(self):
         not_all_success = [
-            (defer.FAILURE,
-             Failure(BadResponseCode(str(http_client.NOT_FOUND)))),
+            (defer.FAILURE, Failure(BadResponseCode(http_client.NOT_FOUND))),
             (defer.SUCCESS, '200')]
         callbacks = self.makeMirrorProberCallbacks()
         all_success = [(defer.SUCCESS, '200'), (defer.SUCCESS, '200')]
@@ -941,7 +940,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 InvalidHTTPSCertificate,
                 InvalidHTTPSCertificateSkipped,
                 ]))
-        exceptions = [BadResponseCode(str(http_client.NOT_FOUND)),
+        exceptions = [BadResponseCode(http_client.NOT_FOUND),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),
                       RedirectToDifferentFile('/foo', '/bar'),
@@ -1000,8 +999,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             self.fail("A timeout shouldn't be propagated. Got %s" % e)
         try:
             callbacks.deleteMirrorSeries(
-                Failure(BadResponseCode(
-                    str(http_client.INTERNAL_SERVER_ERROR))))
+                Failure(BadResponseCode(http_client.INTERNAL_SERVER_ERROR)))
         except Exception as e:
             self.fail(
                 "A bad response code shouldn't be propagated. Got %s" % e)
@@ -1032,7 +1030,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
     def test_mirrorseries_creation_and_deletion(self):
         callbacks = self.makeMirrorProberCallbacks()
         mirror_distro_series_source = callbacks.ensureMirrorSeries(
-             str(http_client.OK))
+             str(int(http_client.OK)))
         self.assertIsNot(
             mirror_distro_series_source, None,
             "If the prober gets a 200 Okay status, a new "
@@ -1040,7 +1038,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             "created.")
 
         callbacks.deleteMirrorSeries(
-            Failure(BadResponseCode(str(http_client.NOT_FOUND))))
+            Failure(BadResponseCode(http_client.NOT_FOUND)))
         # If the prober gets a 404 status, we need to make sure there's no
         # MirrorDistroSeriesSource/MirrorDistroArchSeries referent to
         # that url
