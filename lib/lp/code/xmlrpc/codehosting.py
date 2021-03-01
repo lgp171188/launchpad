@@ -242,7 +242,7 @@ class CodehostingAPI(LaunchpadXMLRPCView):
                 branch = namespace.createBranch(
                     BranchType.HOSTED, branch_name, requester)
             except LaunchpadValidationError as e:
-                return faults.PermissionDenied(six.ensure_binary(e.args[0]))
+                return faults.PermissionDenied(e.args[0])
             except BranchCreationException as e:
                 return faults.PermissionDenied(str(e))
 
