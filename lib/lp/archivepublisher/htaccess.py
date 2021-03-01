@@ -76,7 +76,8 @@ def make_salt(s):
     """
     # As long as the input string is at least one character long, there will
     # be no padding within the first two characters.
-    return base64.b64encode((s or " ").encode("UTF-8"), altchars=b"./")[:2]
+    return base64.b64encode(
+        (s or " ").encode("UTF-8"), altchars=b"./")[:2].decode("ASCII")
 
 
 def htpasswd_credentials_for_archive(archive):

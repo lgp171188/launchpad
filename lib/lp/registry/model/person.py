@@ -4096,8 +4096,8 @@ class SSHKey(SQLBase):
 
     def getFullKeyText(self):
         try:
-            ssh_keytype = getNS(base64.b64decode(self.keytext))[0].decode(
-                'ascii')
+            key_blob = base64.b64decode(self.keytext.encode('UTF-8'))
+            ssh_keytype = getNS(key_blob)[0].decode('ascii')
         except Exception:
             # We didn't always validate keys, so there might be some that
             # can't be loaded this way.

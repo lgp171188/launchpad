@@ -1,7 +1,6 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import base64
 from datetime import datetime
 import os
 import shutil
@@ -507,8 +506,3 @@ class TestGPGHandler(TestCase):
                 line for line in status if line.startswith(validsig_prefix)]
             validsig_tokens = validsig_line[len(validsig_prefix):].split()
             self.assertEqual(gpgme.MD_SHA512, int(validsig_tokens[7]))
-
-
-def construct_url(template, owner_id='', fingerprint=''):
-    owner_id = base64.b64encode(owner_id, altchars='-_')
-    return template.format(owner_id=owner_id, fingerprint=fingerprint)

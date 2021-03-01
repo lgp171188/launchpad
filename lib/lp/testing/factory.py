@@ -4392,7 +4392,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             raise AssertionError(
                 "key_type must be a member of SSH_TEXT_TO_KEY_TYPE, not %r" %
                 key_type)
-        key_text = base64.b64encode(NS(key_type) + b"".join(parameters))
+        key_text = base64.b64encode(
+            NS(key_type) + b"".join(parameters)).decode("ASCII")
         if comment is None:
             comment = self.getUniqueString()
         return "%s %s %s" % (key_type, key_text, comment)
