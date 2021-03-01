@@ -76,7 +76,7 @@ David got a notification, saying that he was subscribed to the bug.
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
     1
-    >>> print(stub.test_emails[0][2])
+    >>> print(six.ensure_text(stub.test_emails[0][2]))
     MIME-Version: 1.0
     ...
     To: david.allouche@canonical.com
