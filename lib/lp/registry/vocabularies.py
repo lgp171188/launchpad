@@ -313,7 +313,6 @@ class ProductVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            query = ensure_unicode(query)
             like_query = query.lower()
             like_query = "'%%%%' || %s || '%%%%'" % quote_like(like_query)
             fti_query = quote(query)
@@ -372,7 +371,6 @@ class ProjectGroupVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            query = ensure_unicode(query)
             like_query = query.lower()
             like_query = "'%%' || %s || '%%'" % quote_like(like_query)
             fti_query = quote(query)
@@ -1862,7 +1860,7 @@ class PillarVocabularyBase(NamedStormHugeVocabulary):
     def searchForTerms(self, query=None, vocab_filter=None):
         if not query:
             return self.emptySelectResults()
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         store = IStore(PillarName)
         origin = [
             PillarName,
