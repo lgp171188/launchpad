@@ -32,17 +32,17 @@ the sampledata.
     None
 
     >>> pofile = potemplate.newPOFile('sr')
-    >>> pofile_content = br'''
+    >>> pofile_content = six.ensure_binary('''
     ... msgid ""
     ... msgstr ""
-    ... "PO-Revision-Date: 2005-06-04 20:41+0100\n"
-    ... "Last-Translator: Danilo Šegan <danilo@canonical.com>\n"
-    ... "Content-Type: text/plain; charset=UTF-8\n"
-    ... "X-Rosetta-Export-Date: %s\n"
+    ... "PO-Revision-Date: 2005-06-04 20:41+0100\\n"
+    ... "Last-Translator: Danilo \u0160egan <danilo@canonical.com>\\n"
+    ... "Content-Type: text/plain; charset=UTF-8\\n"
+    ... "X-Rosetta-Export-Date: %s\\n"
     ...
     ... msgid "Foo %%s"
     ... msgstr "Bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
 
 We clean the import queue.
 

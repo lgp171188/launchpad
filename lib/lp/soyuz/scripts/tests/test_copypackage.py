@@ -2068,9 +2068,9 @@ class TestCopyClosesBugs(TestCaseWithFactory):
 
     def createSource(self, version, archive, pocket, bug_id):
         changes_template = (
-            b"Format: 1.7\n"
-            b"Launchpad-bugs-fixed: %s\n")
-        changes_file_content = changes_template % bug_id
+            "Format: 1.7\n"
+            "Launchpad-bugs-fixed: %s\n")
+        changes_file_content = (changes_template % bug_id).encode("UTF-8")
         source = self.test_publisher.getPubSource(
             sourcename='buggy-source', version=version,
             distroseries=self.hoary_test, archive=archive, pocket=pocket,

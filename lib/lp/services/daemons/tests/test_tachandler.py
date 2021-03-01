@@ -169,7 +169,7 @@ class TacTestSetupTestCase(testtools.TestCase):
         with open(fixture.logfile, "wb") as logfile:
             logfile.write(b"One\n")
             logfile.write(b"Two\n")
-            logfile.write(b"Three, %s\n" % LOG_MAGIC.encode("UTF-8"))
+            logfile.write(("Three, %s\n" % LOG_MAGIC).encode("UTF-8"))
             logfile.write(b"Four\n")
 
         # Truncating the log leaves everything up to and including the line
@@ -177,5 +177,5 @@ class TacTestSetupTestCase(testtools.TestCase):
         fixture.truncateLog()
         with open(fixture.logfile, "rb") as logfile:
             self.assertEqual(
-                b"One\nTwo\nThree, %s\n" % LOG_MAGIC.encode("UTF-8"),
+                ("One\nTwo\nThree, %s\n" % LOG_MAGIC).encode("UTF-8"),
                 logfile.read())
