@@ -1047,8 +1047,8 @@ afterCall() publication hook.)
     >>> request._publication_start = 1.345
     >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
-    >>> request.response.consumeBody()
-    ''
+    >>> print(six.ensure_text(request.response.consumeBody()))
+    <BLANKLINE>
 
 In other cases, like a GET, the body would be unchanged.
 
@@ -1064,7 +1064,7 @@ In other cases, like a GET, the body would be unchanged.
     >>> request._publication_start = 1.345
     >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
-    >>> print(request.response.consumeBody())
+    >>> print(six.ensure_text(request.response.consumeBody()))
     Some boring content.
 
 

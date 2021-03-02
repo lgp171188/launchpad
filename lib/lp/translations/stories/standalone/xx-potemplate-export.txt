@@ -19,8 +19,8 @@ Logged in as a regular user, the +export page is accessible.
   ...     'http://translations.launchpad.test/ubuntu/hoary'
   ...     '/+source/evolution/+pots/evolution-2.2')
   >>> browser.getLink('download').click()
-  >>> browser.title
-  'Download translations : Template \xe2\x80\x9cevolution-2.2...
+  >>> print(browser.title)
+  Download translations : Template “evolution-2.2” ...
 
 If we POST without the appropriate format included, we tell the user off:
 
