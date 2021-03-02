@@ -10,15 +10,18 @@ from wsgiref.simple_server import (
     make_server,
     WSGIRequestHandler,
     )
+
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
-from lp.code.interfaces.codehosting import BRANCH_ID_ALIAS_PREFIX
 from lp.services.config import config
-from lp.services.config.fixture import ConfigFixture, ConfigUseFixture
+from lp.services.config.fixture import (
+    ConfigFixture,
+    ConfigUseFixture,
+    )
+from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
-from lp.services.scripts.tests import run_script
 
 
 class SilentWSGIRequestHandler(WSGIRequestHandler):

@@ -24,10 +24,11 @@ from storm.expr import (
     In,
     Join,
     LeftJoin,
+    Or,
     Select,
     SQL,
-    With, Or,
-)
+    With,
+    )
 from storm.info import ClassAlias
 from storm.store import EmptyResultSet
 from zope.component import getUtility
