@@ -390,12 +390,11 @@ for users to view it.
     >>> con = http_client.HTTPConnection(netloc)
     >>> con.request("HEAD", path)
     >>> resp = con.getresponse()
-    >>> headers = dict(resp.getheaders())
 
-    >>> print(headers['content-encoding'])
+    >>> print(resp.getheader('content-encoding'))
     gzip
 
-    >>> print(headers['content-type'])
+    >>> print(resp.getheader('content-type'))
     text/plain
 
 
