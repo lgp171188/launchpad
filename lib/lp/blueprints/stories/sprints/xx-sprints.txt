@@ -473,18 +473,18 @@ First, we add a couple of IRC nicknames for Carlos.
 
     >>> browser.getLink('Export attendees to CSV').click()
     >>> print(browser.headers['content-type'])
-    text/csv
+    text/csv;charset=...utf-8...
 
     >>> carlos_browser = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> carlos_browser.open('http://launchpad.test/sprints/ubz')
     >>> carlos_browser.getLink('Export attendees to CSV').click()
     >>> print(carlos_browser.headers['content-type'])
-    text/csv
+    text/csv;charset=...utf-8...
 
     >>> admin_browser.open('http://launchpad.test/sprints/ubz')
     >>> admin_browser.getLink('Export attendees to CSV').click()
     >>> print(admin_browser.headers['content-type'])
-    text/csv
+    text/csv;charset=...utf-8...
 
 The resulting CSV file lists physical attendance correctly.
 
