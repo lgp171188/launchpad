@@ -4751,11 +4751,19 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                  auto_build_archive=None, auto_build_pocket=None,
                  auto_build_channels=None, is_stale=None,
                  require_virtualized=True, processors=None,
-                 date_created=DEFAULT, private=False, information_type=None,
+                 date_created=DEFAULT, private=None, information_type=None,
                  allow_internet=True, build_source_tarball=False,
                  store_upload=False, store_series=None, store_name=None,
                  store_secrets=None, store_channels=None, project=_DEFAULT):
         """Make a new Snap."""
+        assert information_type is None or private is None
+        if information_type is None:
+            # Defaults to public information type, unless "private" flag was
+            # passed.
+            information_type = (InformationType.PUBLIC if not private
+                                else InformationType.PROPRIETARY)
+        if private is None:
+            private = information_type not in PUBLIC_INFORMATION_TYPES
         if registrant is None:
             registrant = self.makePerson()
         if owner is None:
@@ -4780,15 +4788,17 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             if auto_build_pocket is None:
                 auto_build_pocket = PackagePublishingPocket.UPDATES
         if private and project is _DEFAULT:
-            # If we are creating a private snap and didn't explictly set a
+            # If we are creating a private snap and didn't explicitly set a
             # pillar for it, we must create a pillar.
-            project = self.makeProduct()
+            branch_sharing = (
+                BranchSharingPolicy.PUBLIC_OR_PROPRIETARY if not private
+                else BranchSharingPolicy.PROPRIETARY)
+            project = self.makeProduct(
+                owner=registrant, registrant=registrant,
+                information_type=information_type,
+                branch_sharing_policy=branch_sharing)
         if project is _DEFAULT:
             project = None
-        assert information_type is None or private is None
-        if private is not None:
-            information_type = (InformationType.PUBLIC if not private
-                                else InformationType.PROPRIETARY)
         snap = getUtility(ISnapSet).new(
             registrant, owner, distroseries, name,
             require_virtualized=require_virtualized, processors=processors,
