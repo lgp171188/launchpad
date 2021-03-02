@@ -1293,6 +1293,7 @@ class SnapSet:
             store_name=store_name, store_secrets=store_secrets,
             store_channels=store_channels, project=project)
         store.add(snap)
+        snap._reconcileAccess()
 
         # Automatically subscribe the owner to the Snap.
         snap.subscribe(snap.owner, registrant, ignore_permissions=True)

@@ -65,7 +65,10 @@ from lp.code.tests.helpers import (
     BranchHostingFixture,
     GitHostingFixture,
     )
-from lp.registry.enums import PersonVisibility
+from lp.registry.enums import (
+    BranchSharingPolicy,
+    PersonVisibility,
+    )
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -1352,9 +1355,8 @@ class TestSnapVisibility(TestCaseWithFactory):
 
     def test_only_owner_can_grant_access(self):
         owner = self.factory.makePerson()
-        pillar = self.factory.makeProduct(owner=owner)
         snap = self.factory.makeSnap(
-            registrant=owner, owner=owner, project=pillar, private=True)
+            registrant=owner, owner=owner, private=True)
         other_person = self.factory.makePerson()
         with person_logged_in(owner):
             snap.subscribe(other_person, owner)
@@ -1372,16 +1374,16 @@ class TestSnapVisibility(TestCaseWithFactory):
     def test_private_is_visible_by_team_member(self):
         person = self.factory.makePerson()
         team = self.factory.makeTeam(members=[person])
-        snap = self.factory.makeSnap(private=True, owner=team, registrant=team)
+        snap = self.factory.makeSnap(private=True, owner=team,
+                                     registrant=person)
         with person_logged_in(team):
             self.assertTrue(snap.visibleByUser(person))
 
     def test_subscribing_changes_visibility(self):
         person = self.factory.makePerson()
         owner = self.factory.makePerson()
-        pillar = self.factory.makeProduct(owner=owner)
         snap = self.factory.makeSnap(
-            registrant=owner, owner=owner, project=pillar, private=True)
+            registrant=owner, owner=owner, private=True)
 
         with person_logged_in(owner):
             self.assertFalse(snap.visibleByUser(person))
@@ -1544,7 +1546,9 @@ class TestSnapSet(TestCaseWithFactory):
         [ref] = self.factory.makeGitRefs()
         components = self.makeSnapComponents(git_ref=ref)
         components['information_type'] = InformationType.PROPRIETARY
-        components['project'] = self.factory.makeProduct()
+        components['project'] = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         snap = getUtility(ISnapSet).new(**components)
         with person_logged_in(components['owner']):
             self.assertTrue(snap.private)
