@@ -32,9 +32,9 @@ class TestSubscribedBySomeoneElseNotification(TestCaseWithFactory):
             person_subscribed, person_subscribing, suppress_notify=False)
         transaction.commit()
         self.assertEqual(len(stub.test_emails), 1)
-        rationale = 'You have been subscribed to a public bug by Foo Suber'
+        rationale = b'You have been subscribed to a public bug by Foo Suber'
         msg = stub.test_emails[-1][2]
-        self.assertTrue(rationale in msg)
+        self.assertIn(rationale, msg)
 
     def test_suppress_notify_true_does_not_notify(self):
         """Test notifications aren't sent when suppress_notify is True."""

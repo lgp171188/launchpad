@@ -54,10 +54,9 @@ class TestAssignmentNotification(TestCaseWithFactory):
         transaction.commit()
         self.assertEqual(len(stub.test_emails), 1, 'email not sent')
         rationale = (
-            'Sample Person (name12) has assigned this bug to you for Rebirth')
+            b'Sample Person (name12) has assigned this bug to you for Rebirth')
         msg = stub.test_emails[-1][2]
-        self.assertTrue(rationale in msg,
-                        '%s not in\n%s\n' % (rationale, msg))
+        self.assertIn(rationale, msg)
 
     def test_self_assignee_notification_message(self):
         """Test notification string when a person is assigned a task by
@@ -68,7 +67,7 @@ class TestAssignmentNotification(TestCaseWithFactory):
         transaction.commit()
         self.assertEqual(1, len(stub.test_emails))
         rationale = (
-            'You have assigned this bug to yourself for Rebirth')
+            b'You have assigned this bug to yourself for Rebirth')
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
         msg = email[2]
@@ -82,10 +81,9 @@ class TestAssignmentNotification(TestCaseWithFactory):
             self.bug_task.transitionToAssignee(self.person_assigned)
         transaction.commit()
         self.assertEqual(len(stub.test_emails), 1, 'email not sent')
-        new_message = '[NEW]'
+        new_message = b'[NEW]'
         msg = stub.test_emails[-1][2]
-        self.assertTrue(new_message in msg,
-                        '%s not in \n%s\n' % (new_message, msg))
+        self.assertIn(new_message, msg)
 
     def test_assignee_new_subscriber(self):
         """Build a list of people who will receive emails about the bug
