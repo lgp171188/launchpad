@@ -608,8 +608,9 @@ and SHA256) for each index published.
 # caused by the absence of published binaries in this suite. It should
 # no happen in real conditions.
 
-    >>> releasefile_contents = open("/var/tmp/archive/ubuntutest/dists/"
-    ...                             "breezy-autotest/Release").read()
+    >>> with open("/var/tmp/archive/ubuntutest/dists/"
+    ...           "breezy-autotest/Release") as f:
+    ...     releasefile_contents = f.read()
     >>> print(releasefile_contents + '\nEND') #doctest: -NORMALIZE_WHITESPACE
     Origin: ubuntutest
     Label: ubuntutest
