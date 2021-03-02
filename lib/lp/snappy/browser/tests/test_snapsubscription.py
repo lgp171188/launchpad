@@ -190,7 +190,7 @@ class TestPrivateSnapSubscriptionViews(BaseTestSnapView):
             information_type=InformationType.PROPRIETARY,
             branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         return self.makeSnap(
-            information_type=InformationType.PRIVATESECURITY,
+            information_type=InformationType.PROPRIETARY,
             project=project)
 
     def test_cannot_subscribe_to_private_snap(self):

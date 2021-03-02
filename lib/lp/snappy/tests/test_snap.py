@@ -68,6 +68,7 @@ from lp.code.tests.helpers import (
     GitHostingFixture,
     )
 from lp.registry.enums import (
+    BranchSharingPolicy,
     PersonVisibility,
     TeamMembershipPolicy,
     )
@@ -1357,9 +1358,8 @@ class TestSnapVisibility(TestCaseWithFactory):
 
     def test_only_owner_can_grant_access(self):
         owner = self.factory.makePerson()
-        pillar = self.factory.makeProduct(owner=owner)
         snap = self.factory.makeSnap(
-            registrant=owner, owner=owner, project=pillar, private=True)
+            registrant=owner, owner=owner, private=True)
         other_person = self.factory.makePerson()
         with person_logged_in(other_person):
             self.assertRaises(Unauthorized, getattr, snap, 'subscribe')
@@ -1378,16 +1378,16 @@ class TestSnapVisibility(TestCaseWithFactory):
         person = self.factory.makePerson()
         team = self.factory.makeTeam(
             members=[person], membership_policy=TeamMembershipPolicy.MODERATED)
-        snap = self.factory.makeSnap(private=True, owner=team, registrant=team)
+        snap = self.factory.makeSnap(private=True, owner=team,
+                                     registrant=person)
         with person_logged_in(team):
             self.assertTrue(snap.visibleByUser(person))
 
     def test_subscribing_changes_visibility(self):
         person = self.factory.makePerson()
         owner = self.factory.makePerson()
-        pillar = self.factory.makeProduct(owner=owner)
         snap = self.factory.makeSnap(
-            registrant=owner, owner=owner, project=pillar, private=True)
+            registrant=owner, owner=owner, private=True)
 
         with person_logged_in(owner):
             self.assertFalse(snap.visibleByUser(person))
@@ -1598,7 +1598,9 @@ class TestSnapSet(TestCaseWithFactory):
             components['information_type'] = InformationType.PROPRIETARY
             components['owner'].membership_policy = (
                 TeamMembershipPolicy.MODERATED)
-            components['project'] = self.factory.makeProduct()
+        components['project'] = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         snap = getUtility(ISnapSet).new(**components)
         with person_logged_in(components['owner']):
             self.assertTrue(snap.private)
