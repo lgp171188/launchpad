@@ -113,7 +113,9 @@ def unpack_dsc(package, version, component, distro_name, archive_root):
         extract_dpkg_source(dsc_path, ".", vendor=distro_name)
     except DpkgSourceError as e:
         if os.path.isdir(source_dir):
-            shutil.rmtree(source_dir)
+            # Coerce to str to avoid https://bugs.python.org/issue24672 on
+            # Python 2.
+            shutil.rmtree(six.ensure_str(source_dir))
         raise ExecutionError("Error %d unpacking source" % e.result)
 
     return source_dir, dsc_path
@@ -150,7 +152,9 @@ def read_dsc(package, version, component, distro_name, archive_root):
                 "No copyright file found for %s in %s" % (package, source_dir))
             copyright = b''
     finally:
-        shutil.rmtree(source_dir)
+        # Coerce to str to avoid https://bugs.python.org/issue24672 on
+        # Python 2.
+        shutil.rmtree(six.ensure_str(source_dir))
 
     return dsc, changelog, copyright
 
