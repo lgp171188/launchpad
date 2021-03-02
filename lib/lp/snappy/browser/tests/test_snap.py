@@ -57,9 +57,11 @@ from lp.code.tests.helpers import (
     GitHostingFixture,
     )
 from lp.registry.enums import (
+    BranchSharingPolicy,
+    BranchSharingPolicy,
     PersonVisibility,
-    TeamMembershipPolicy, BranchSharingPolicy,
-)
+    TeamMembershipPolicy,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
@@ -768,11 +770,11 @@ class TestSnapAdminView(BaseTestSnapView):
             membership_policy=TeamMembershipPolicy.MODERATED,
             owner=self.person, visibility=PersonVisibility.PRIVATE)
         project = self.factory.makeProduct(
-            information_type=InformationType.PROPRIETARY,
-            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=team, project=project,
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PRIVATESECURITY)
         # Note that only LP admins or, in this case, commercial_admins
         # can reach this snap because it's owned by a private team.
         commercial_admin = self.factory.makePerson(
