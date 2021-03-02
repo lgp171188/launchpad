@@ -1430,7 +1430,7 @@ class TestNewBuilders(TestCase):
         factory = LaunchpadObjectFactory()
         for builder_name in new_builders:
             factory.makeBuilder(name=builder_name)
-        self.assertEqual(new_builders, manager.checkForNewBuilders())
+        self.assertContentEqual(new_builders, manager.checkForNewBuilders())
 
     def test_checkForNewBuilders_detects_builder_only_once(self):
         # checkForNewBuilders() only detects a new builder once.
