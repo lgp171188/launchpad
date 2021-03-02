@@ -166,7 +166,9 @@ scheme (and don't require OAuth).
     ...     LaunchpadWebServiceCaller)
     >>> noauth_webservice = LaunchpadWebServiceCaller(
     ...     domain='bugs.launchpad.test')
-    >>> sample_auth = 'Basic %s' % base64.b64encode('test@canonical.com:test')
+    >>> sample_auth = (
+    ...     'Basic %s' %
+    ...     base64.b64encode(b'test@canonical.com:test').decode('ASCII'))
     >>> print(noauth_webservice.get(
     ...     'http://bugs.launchpad.test/api/devel/people/+me',
     ...     headers={'Authorization': sample_auth}))
