@@ -285,7 +285,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         self.client.upload(self.build)
 
-        request = json.loads(responses.calls[1].request.body)
+        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
 
         self.assertThat(request, MatchesDict({
             "layers": MatchesListwise([
