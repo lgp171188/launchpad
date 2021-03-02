@@ -100,8 +100,8 @@ def read_test_file(name):
     """Return the contents of the test file named :name:"""
     file_path = os.path.join(os.path.dirname(__file__), 'testfiles', name)
 
-    test_file = open(file_path, 'r')
-    return test_file.read()
+    with open(file_path) as test_file:
+        return test_file.read()
 
 
 def print_bugwatches(bug_watches, convert_remote_status=None):
@@ -303,9 +303,9 @@ class TestBugzilla(BugTrackerResponsesMixin, Bugzilla):
         url = urlsplit(request.url)
         if (url.path == urlsplit(self.baseurl).path + '/xml.cgi' and
                 parse_qs(url.query).get('id') == ['1']):
-            body = read_test_file(self.version_file)
+            body = read_test_file(self.version_file).encode('UTF-8')
             # Add some latin1 to test bug 61129
-            return 200, {}, body % {'non_ascii_latin1': b'\xe9'}
+            return 200, {}, body % {b'non_ascii_latin1': b'\xe9'}
         else:
             raise AssertionError('Unknown URL: %s' % request.url)
 
@@ -1670,11 +1670,11 @@ class TestDebBugsDB:
             raise debbugs.LogParseFailed(
                 'debbugs-log.pl exited with code 512')
 
-        with open(self.data_file) as f:
+        with open(self.data_file, 'rb') as f:
             comment_data = f.read()
         bug._emails = []
         bug.comments = [comment.strip() for comment in
-            comment_data.split('--\n')]
+            comment_data.split(b'--\n')]
 
 
 class TestDebBugs(DebBugs):
