@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -241,8 +245,14 @@ class TestSourcePackageData(TestCaseWithFactory):
         # but not with DEB_VENDOR=ubuntu.
         with open(os.path.join(
             pool_dir, "foo_1.0.orig.tar.gz"), "wb+") as buffer:
-            orig_tar = LaunchpadWriteTarFile(buffer)
+            orig_tar = LaunchpadWriteTarFile(buffer, encoding="ISO-8859-1")
             orig_tar.add_directory("foo-1.0")
+            # Add a Unicode file name (which becomes non-UTF-8 due to
+            # encoding="ISO-8859-1" above) to ensure that shutil.rmtree is
+            # called in such a way as to cope with non-UTF-8 file names on
+            # Python 2.  See
+            # https://bugs.launchpad.net/launchpad/+bug/1917449.
+            orig_tar.add_file(u"íslenska.alias", b"Non-UTF-8 file name")
             orig_tar.close()
             buffer.seek(0)
             orig_tar_contents = buffer.read()
@@ -296,8 +306,14 @@ class TestSourcePackageData(TestCaseWithFactory):
 
         with open(os.path.join(
             pool_dir, "foo_1.0.orig.tar.gz"), "wb+") as buffer:
-            orig_tar = LaunchpadWriteTarFile(buffer)
+            orig_tar = LaunchpadWriteTarFile(buffer, encoding="ISO-8859-1")
             orig_tar.add_directory("foo-1.0")
+            # Add a Unicode file name (which becomes non-UTF-8 due to
+            # encoding="ISO-8859-1" above) to ensure that shutil.rmtree is
+            # called in such a way as to cope with non-UTF-8 file names on
+            # Python 2.  See
+            # https://bugs.launchpad.net/launchpad/+bug/1917449.
+            orig_tar.add_file(u"íslenska.alias", b"Non-UTF-8 file name")
             orig_tar.close()
             buffer.seek(0)
             orig_tar_contents = buffer.read()
