@@ -169,7 +169,8 @@ So, load the GPG key:
     >>> from lp.testing.gpgkeys import gpgkeysdir
     >>> gpg_handler = getUtility(IGPGHandler)
     >>> key_path = os.path.join(gpgkeysdir, 'ftpmaster@canonical.com.pub')
-    >>> key_data = open(key_path).read()
+    >>> with open(key_path, 'rb') as key_file:
+    ...     key_data = key_file.read()
     >>> key = gpg_handler.importPublicKey(key_data)
     >>> assert key is not None
     >>> print(key.fingerprint)
@@ -580,16 +581,18 @@ Check the publishing history again
 
 Check if the package was moved properly to the component 'multiverse':
 
-    >>> main_sources = gzip.open(
-    ...     "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
-    ...     "/main/source/Sources.gz").read()
+    >>> with gzip.open(
+    ...         "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
+    ...         "/main/source/Sources.gz") as f:
+    ...     main_sources = six.ensure_text(f.read())
     >>> print(main_sources + '\nEND')
     <BLANKLINE>
     END
 
-    >>> multiverse_sources = gzip.open(
-    ...     "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
-    ...     "/multiverse/source/Sources.gz").read()
+    >>> with gzip.open(
+    ...         "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
+    ...         "/multiverse/source/Sources.gz") as f:
+    ...     multiverse_sources = six.ensure_text(f.read())
     >>> print(multiverse_sources + '\nEND')
     Package: drdsl
     ...
@@ -608,8 +611,9 @@ and SHA256) for each index published.
 # caused by the absence of published binaries in this suite. It should
 # no happen in real conditions.
 
-    >>> releasefile_contents = open("/var/tmp/archive/ubuntutest/dists/"
-    ...                             "breezy-autotest/Release").read()
+    >>> with open("/var/tmp/archive/ubuntutest/dists/"
+    ...           "breezy-autotest/Release") as f:
+    ...     releasefile_contents = f.read()
     >>> print(releasefile_contents + '\nEND') #doctest: -NORMALIZE_WHITESPACE
     Origin: ubuntutest
     Label: ubuntutest

@@ -11,6 +11,8 @@ __metaclass__ = type
 
 import os
 
+import six
+
 from lp.services.librarianserver.libraryprotocol import FileUploadProtocol
 from lp.services.librarianserver.storage import WrongDatabaseError
 from lp.services.testing import build_test_suite
@@ -118,7 +120,8 @@ def upload_request(request):
     server.dataReceived(request.replace(b'\n', b'\r\n'))
 
     # Report on what happened
-    print("reply: %r" % server.transport.bytesWritten.rstrip(b'\r\n'))
+    print("reply: %r" %
+          six.ensure_str(server.transport.bytesWritten.rstrip(b'\r\n')))
 
     if server.transport.connectionLost:
         print('connection closed')
@@ -126,7 +129,8 @@ def upload_request(request):
     mockFile = server.fileLibrary.file
     if mockFile is not None and mockFile.stored:
         print("file '%s' stored as %s, contents: %r" % (
-                mockFile.name, mockFile.mimetype, mockFile.bytes))
+                mockFile.name, mockFile.mimetype,
+                six.ensure_str(mockFile.bytes)))
 
     # Cleanup: remove the observer.
     log.removeObserver(log_observer)

@@ -1173,8 +1173,11 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
         # Mark an upstream task on bug #1 "Fix Released"
         bug_one = bugset.get(1)
         firefox_upstream = self._getBugTaskByTarget(bug_one, firefox)
-        self.assertEqual(ServiceUsage.LAUNCHPAD,
-                         firefox_upstream.product.bug_tracking_usage)
+        if (firefox_upstream.product.bug_tracking_usage !=
+                ServiceUsage.LAUNCHPAD):
+            raise AssertionError("%s != %s" % (
+                firefox_upstream.product.bug_tracking_usage,
+                ServiceUsage.LAUNCHPAD))
         self.old_firefox_status = firefox_upstream.status
         firefox_upstream.transitionToStatus(
             BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
@@ -1195,8 +1198,12 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
 
         # Get a debbugs watch.
         watch_debbugs_327452 = bugwatchset.get(9)
-        self.assertEqual(watch_debbugs_327452.bugtracker.name, "debbugs")
-        self.assertEqual(watch_debbugs_327452.remotebug, "327452")
+        if watch_debbugs_327452.bugtracker.name != "debbugs":
+            raise AssertionError(
+                "%r != 'debbugs'" % watch_debbugs_327452.bugtracker.name)
+        if watch_debbugs_327452.remotebug != "327452":
+            raise AssertionError(
+                "%r != '327452'" % watch_debbugs_327452.remotebug)
 
         # Associate the watch to a Fix Released task.
         debian = getUtility(IDistributionSet).getByName("debian")

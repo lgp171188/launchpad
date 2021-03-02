@@ -620,7 +620,8 @@ class SprintAttendeesCsvExportView(LaunchpadView):
         rows = [[six.ensure_str(column)
                  for column in row]
                 for row in rows]
-        self.request.response.setHeader('Content-type', 'text/csv')
+        self.request.response.setHeader(
+            'Content-type', 'text/csv;charset="utf-8"')
         self.request.response.setHeader(
             'Content-disposition',
             'attachment; filename=%s-attendees.csv' % self.context.name)

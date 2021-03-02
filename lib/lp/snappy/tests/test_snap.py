@@ -131,6 +131,7 @@ from lp.testing import (
     ANONYMOUS,
     api_url,
     login,
+    login_admin,
     logout,
     person_logged_in,
     record_two_runs,
@@ -1416,11 +1417,24 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
 
+    def test_private_snap_information_type_compatibility(self):
+        login_admin()
+        private_snap = getUtility(ISnapSet).new(
+            private=True, **self.makeSnapComponents())
+        self.assertEqual(
+            InformationType.PROPRIETARY, private_snap.information_type)
+
+        public_snap = getUtility(ISnapSet).new(
+            private=False, **self.makeSnapComponents())
+        self.assertEqual(
+            InformationType.PUBLIC, public_snap.information_type)
+
     def test_private_snap_for_public_sources(self):
         # Creating private snaps for public sources is allowed.
         [ref] = self.factory.makeGitRefs()
         components = self.makeSnapComponents(git_ref=ref)
         components['private'] = True
+        components['project'] = self.factory.makeProduct()
         snap = getUtility(ISnapSet).new(**components)
         with person_logged_in(components['owner']):
             self.assertTrue(snap.private)
@@ -2655,7 +2669,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             snap_url, "application/json", json.dumps({"private": False}))
         self.assertEqual(400, response.status)
         self.assertEqual(
-            b"Snap contains private information and cannot be public.",
+            b"Snap recipe contains private information and cannot be public.",
             response.body)
 
     def test_cannot_set_private_components_of_public_snap(self):
@@ -3460,7 +3474,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertThat(snap.store_secrets, MatchesDict({
                 "root": Equals(root_macaroon.serialize()),
                 "discharge_encrypted": AfterPreprocessing(
-                    container.decrypt, Equals(discharge_macaroon.serialize())),
+                    lambda data: container.decrypt(data).decode("UTF-8"),
+                    Equals(discharge_macaroon.serialize())),
                 }))
 
     def makeBuildableDistroArchSeries(self, **kwargs):

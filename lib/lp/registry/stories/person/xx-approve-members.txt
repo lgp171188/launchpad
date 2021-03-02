@@ -42,7 +42,7 @@ Person's. A comment is also sent to the applying users and the team admins.
     ['mark@example.com']
     ['mark@example.com']
     ['test@canonical.com']
-    >>> print(raw_msg)
+    >>> print(six.ensure_text(raw_msg))
     Content-Type: text/plain; charset="utf-8"
     ...
     Mark Shuttleworth said:

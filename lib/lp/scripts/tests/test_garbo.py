@@ -1308,7 +1308,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         naked_bug.heat_last_updated = old_update
         IMasterStore(FeatureFlag).add(FeatureFlag(
             'default', 0, 'bugs.heat_updates.cutoff',
-            cutoff.isoformat().decode('ascii')))
+            six.ensure_text(cutoff.isoformat())))
         transaction.commit()
         self.assertEqual(old_update, naked_bug.heat_last_updated)
         self.runHourly()

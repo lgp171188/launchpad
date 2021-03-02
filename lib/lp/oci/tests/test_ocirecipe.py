@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import json
 
 from fixtures import FakeLogger
+import six
 from six import string_types
 from storm.exceptions import LostObjectError
 from storm.store import Store
@@ -738,7 +739,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Makes sure we only store one level of key=pair, flattening to
         # string every value.
         args = {
-            "VAR1": {b"something": [1, 2, 3]},
+            "VAR1": {six.ensure_str("something"): [1, 2, 3]},
             "VAR2": 123,
             "VAR3": "A string",
         }

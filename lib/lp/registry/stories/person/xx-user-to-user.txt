@@ -31,7 +31,7 @@ Salgado receives the email message from No Priv.
     1
     >>> print(to_addrs[0])
     Guilherme Salgado <guilherme.salgado@canonical.com>
-    >>> print(raw_msg)
+    >>> print(six.ensure_text(raw_msg))
     Content-Type: text/plain; charset="us-ascii"
     MIME-Version: 1.0
     Content-Transfer-Encoding: 7bit
@@ -74,7 +74,7 @@ their alternative addresses.
     >>> browser.getControl('Send').click()
 
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> print(raw_msg)
+    >>> print(six.ensure_text(raw_msg))
     Content-Type: text/plain; charset="us-ascii"
     MIME-Version: 1.0
     Content-Transfer-Encoding: 7bit

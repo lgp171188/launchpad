@@ -304,11 +304,10 @@ class CustomUploadFile(NascentUploadFile):
 
     def storeInDatabase(self):
         """Create and return the corresponding LibraryFileAlias reference."""
-        libraryfile = self.librarian.create(
-            self.filename, self.size,
-            open(self.filepath, "rb"),
-            self.content_type,
-            restricted=self.policy.archive.private)
+        with open(self.filepath, "rb") as f:
+            libraryfile = self.librarian.create(
+                self.filename, self.size, f, self.content_type,
+                restricted=self.policy.archive.private)
         return libraryfile
 
     def autoApprove(self):
@@ -945,9 +944,10 @@ class BaseBinaryUploadFile(PackageUploadFile):
             user_defined_fields=user_defined_fields,
             debug_package=debug_package)
 
-        library_file = self.librarian.create(self.filename,
-             self.size, open(self.filepath, "rb"), self.content_type,
-             restricted=self.policy.archive.private)
+        with open(self.filepath, "rb") as f:
+            library_file = self.librarian.create(self.filename,
+                 self.size, f, self.content_type,
+                 restricted=self.policy.archive.private)
         binary.addFile(library_file)
         return binary
 

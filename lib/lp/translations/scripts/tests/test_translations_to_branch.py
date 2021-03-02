@@ -127,8 +127,8 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         self.assertEqual(set(), missing_filenames)
 
         for filename, expected in six.iteritems(expected_contents):
-            contents = branch_contents[filename].lstrip('\n')
-            pattern = dedent(expected.lstrip('\n'))
+            contents = branch_contents[filename].lstrip(b'\n')
+            pattern = dedent(expected.lstrip('\n')).encode('UTF-8')
             if not re.match(pattern, contents, re.MULTILINE):
                 self.assertEqual(pattern, contents)
 

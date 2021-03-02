@@ -140,7 +140,7 @@ class CodeOfConductDownloadView(DataDownloadView):
     causing browsers to download rather than display it.
     """
 
-    content_type = 'text/plain'
+    content_type = 'text/plain;charset="utf-8"'
 
     def getBody(self):
         # Use the context attribute 'content' as data to return.

@@ -843,7 +843,7 @@ class BugzillaAPI(Bugzilla):
 
         # As a sanity check, drop any comments that don't belong to the
         # bug in remote_bug_id.
-        for comment_id, comment in comments.items():
+        for comment_id, comment in list(comments.items()):
             if int(comment['bug_id']) != actual_bug_id:
                 del comments[comment_id]
 

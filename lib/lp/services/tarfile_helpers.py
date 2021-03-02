@@ -49,7 +49,8 @@ class LaunchpadWriteTarFile:
     @classmethod
     def files_to_bytes(cls, files):
         """Turn a dictionary of files into a byte string."""
-        return cls.files_to_stream(files).read()
+        with cls.files_to_stream(files) as stream:
+            return stream.read()
 
     @classmethod
     def files_to_tarfile(cls, files):

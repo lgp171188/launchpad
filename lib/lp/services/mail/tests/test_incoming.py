@@ -2,6 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from doctest import DocTestSuite
+from email.header import (
+    decode_header,
+    Header,
+    make_header,
+    )
 from email.mime.multipart import MIMEMultipart
 import logging
 import os
@@ -16,6 +21,7 @@ import transaction
 from zope.interface import implementer
 from zope.security.management import setSecurityPolicy
 
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.gpg.interfaces import (
     GPGKeyExpired,
@@ -117,7 +123,7 @@ class IncomingTestCase(TestCaseWithFactory):
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
             "Error message:\n\nSignature couldn't be verified: "
-            "(7, 58, u'No data')",
+            "(7, 58, %r)" % u"No data",
             body)
 
     def test_expired_key(self):
@@ -213,8 +219,9 @@ class IncomingTestCase(TestCaseWithFactory):
 
     def test_invalid_to_addresses(self):
         # Invalid To: header should not be handled as an OOPS.
-        raw_mail = open(os.path.join(
-            testmails_path, 'invalid-to-header.txt')).read()
+        with open(os.path.join(testmails_path, 'invalid-to-header.txt'),
+                  'rb') as f:
+            raw_mail = f.read()
         # Due to the way handleMail works, even if we pass a valid To header
         # to the TestMailer, as we're doing here, it falls back to parse all
         # To and CC headers from the raw_mail. Also, TestMailer is used here
@@ -224,20 +231,20 @@ class IncomingTestCase(TestCaseWithFactory):
         self.assertEqual([], self.oopses)
 
     def makeSentMessage(self, sender, to, subject='subject', body='body',
-                           cc=None, handler_domain=None):
+                        cc=None, handler_domain=None):
         if handler_domain is None:
             extra, handler_domain = to.split('@')
         test_handler = FakeHandler()
         mail_handlers.add(handler_domain, test_handler)
         message = MIMEMultipart()
         message['Message-Id'] = '<message-id>'
-        message['To'] = to
-        message['From'] = sender
-        message['Subject'] = subject
+        message['To'] = Header(to)
+        message['From'] = Header(sender)
+        message['Subject'] = Header(subject)
         if cc is not None:
             message['Cc'] = cc
         message.set_payload(body)
-        TestMailer().send(sender, to, message.as_string())
+        TestMailer().send(sender, to, message_as_bytes(message))
         return message, test_handler
 
     def test_invalid_from_address_no_at(self):
@@ -261,20 +268,26 @@ class IncomingTestCase(TestCaseWithFactory):
     def test_invalid_from_address_unicode(self):
         # Invalid From: header such as no "@" is handled.
         message, test_handler = self.makeSentMessage(
-            'm\xeda@eg.dom', 'test@lp.dev')
+            u'm\xeda@eg.dom', 'test@lp.dev')
         handleMail()
         self.assertEqual([], self.oopses)
         self.assertEqual(1, len(test_handler.handledMails))
-        self.assertEqual('m\xeda@eg.dom', test_handler.handledMails[0]['From'])
+        self.assertEqual(
+            u'm\xeda@eg.dom',
+            six.text_type(make_header(decode_header(
+                test_handler.handledMails[0]['From']))))
 
     def test_invalid_cc_address_unicode(self):
         # Invalid Cc: header such as no "@" is handled.
         message, test_handler = self.makeSentMessage(
-            'me@eg.dom', 'test@lp.dev', cc='m\xeda@eg.dom')
+            'me@eg.dom', 'test@lp.dev', cc=u'm\xeda@eg.dom')
         handleMail()
         self.assertEqual([], self.oopses)
         self.assertEqual(1, len(test_handler.handledMails))
-        self.assertEqual('m\xeda@eg.dom', test_handler.handledMails[0]['Cc'])
+        self.assertEqual(
+            u'm\xeda@eg.dom',
+            six.text_type(make_header(decode_header(
+                test_handler.handledMails[0]['Cc']))))
 
 
 class AuthenticateEmailTestCase(TestCaseWithFactory):

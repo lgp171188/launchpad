@@ -217,7 +217,7 @@ class WaitingSlave(OkSlave):
             if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
             if not self.valid_files[hash]:
-                content = b"This is a %s" % hash
+                content = ("This is a %s" % hash).encode("ASCII")
             else:
                 with open(self.valid_files[hash], 'rb') as source:
                     content = source.read()
