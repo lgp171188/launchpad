@@ -262,7 +262,8 @@ def extract_dpkg_source(dsc_filepath, target, vendor=None):
     output, unused = dpkg_source.communicate()
     result = dpkg_source.wait()
     if result != 0:
-        dpkg_output = prefix_multi_line_string(output, "  ")
+        dpkg_output = prefix_multi_line_string(
+            output.decode("UTF-8", errors="replace"), "  ")
         raise DpkgSourceError(result=result, output=dpkg_output, command=args)
 
 
