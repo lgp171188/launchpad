@@ -23,6 +23,7 @@ __all__ = [
     ]
 
 import base64
+import binascii
 from collections import defaultdict
 
 from breezy import urlutils
@@ -990,7 +991,9 @@ class GitRepositoryPermissionsView(LaunchpadFormView):
         field_type = field_bits[0]
         try:
             ref_pattern = decode_form_field_id(field_bits[1])
-        except TypeError:
+        # base64.b32decode raises TypeError for decoding errors on Python 2,
+        # but binascii.Error on Python 3.
+        except (TypeError, binascii.Error):
             raise UnexpectedFormData(
                 "Cannot parse field name: %s" % field_name)
         if len(field_bits) > 2:
