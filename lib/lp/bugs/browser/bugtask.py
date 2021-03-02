@@ -690,10 +690,14 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
         """
         event_groups = self._event_groups
 
+        def activity_sort_key(activity):
+            target = activity.target
+            return (
+                activity.datechanged, 0 if target is None else 1, target,
+                activity.attribute)
+
         def group_activities_by_target(activities):
-            activities = sorted(
-                activities, key=attrgetter(
-                    "datechanged", "target", "attribute"))
+            activities = sorted(activities, key=activity_sort_key)
             return [
                 {"target": target, "activity": list(activity)}
                 for target, activity in groupby(
