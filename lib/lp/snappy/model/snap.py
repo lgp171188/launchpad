@@ -41,7 +41,6 @@ from storm.locals import (
     Storm,
     Unicode,
     )
-from twisted.application.service import IService
 import yaml
 from zope.component import (
     getAdapter,
@@ -67,6 +66,7 @@ from lp.app.enums import (
     )
 from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.security import IAuthorization
+from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
@@ -1254,6 +1254,8 @@ class SnapSet:
         if owner is not None and owner.private:
             return InformationType.PROPRIETARY
 
+        # XXX pappacena 2021-03-02: We need to consider the pillar's branch
+        # sharing policy here instead of suggesting PUBLIC.
         return InformationType.PUBLIC
 
     def isValidInformationType(self, information_type, owner, branch=None,
