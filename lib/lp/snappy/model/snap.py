@@ -1129,7 +1129,7 @@ class Snap(Storm, WebhookTargetMixin):
         return self._getBuilds(filter_term, order_by)
 
     def visibleByUser(self, user):
-        """See `IGitRepository`."""
+        """See `ISnap`."""
         store = IStore(self)
         return not store.find(
             Snap,
