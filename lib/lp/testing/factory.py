@@ -4750,7 +4750,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                  date_created=DEFAULT, private=False, allow_internet=True,
                  build_source_tarball=False, store_upload=False,
                  store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None):
+                 store_channels=None, project=_DEFAULT):
         """Make a new Snap."""
         if registrant is None:
             registrant = self.makePerson()
@@ -4768,6 +4768,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                     distribution=distroseries.distribution, owner=owner)
             if auto_build_pocket is None:
                 auto_build_pocket = PackagePublishingPocket.UPDATES
+        if private and project is _DEFAULT:
+            # If we are creating a private snap and didn't explictly set a
+            # pillar for it, we must create a pillar.
+            project = self.makeProduct()
+        if project is _DEFAULT:
+            project = None
         snap = getUtility(ISnapSet).new(
             registrant, owner, distroseries, name,
             require_virtualized=require_virtualized, processors=processors,
@@ -4779,7 +4785,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
             store_name=store_name, store_secrets=store_secrets,
-            store_channels=store_channels)
+            store_channels=store_channels, project=project)
         if is_stale is not None:
             removeSecurityProxy(snap).is_stale = is_stale
         IStore(snap).flush()

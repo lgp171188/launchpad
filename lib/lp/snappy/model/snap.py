@@ -57,6 +57,10 @@ from lp.app.browser.tales import (
     ArchiveFormatterAPI,
     DateTimeFormatterAPI,
     )
+from lp.app.enums import (
+    InformationType,
+    PRIVATE_INFORMATION_TYPES,
+    )
 from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
@@ -298,6 +302,9 @@ class Snap(Storm, WebhookTargetMixin):
     owner_id = Int(name='owner', allow_none=False, validator=_validate_owner)
     owner = Reference(owner_id, 'Person.id')
 
+    project_id = Int(name='project', allow_none=True)
+    project = Reference(project_id, 'Product.id')
+
     distro_series_id = Int(name='distro_series', allow_none=True)
     distro_series = Reference(distro_series_id, 'DistroSeries.id')
 
@@ -352,6 +359,17 @@ class Snap(Storm, WebhookTargetMixin):
 
     private = Bool(name='private', validator=_validate_private)
 
+    def _valid_information_type(self, attr, value):
+        if not getUtility(ISnapSet).isValidInformationType(
+                value, self.owner, self.branch, self.git_ref):
+            raise SnapPrivacyMismatch
+        return value
+
+    _information_type = DBEnum(
+        enum=InformationType, default=InformationType.PUBLIC,
+        name="information_type",
+        validator=_valid_information_type)
+
     allow_internet = Bool(name='allow_internet', allow_none=False)
 
     build_source_tarball = Bool(name='build_source_tarball', allow_none=False)
@@ -374,13 +392,17 @@ class Snap(Storm, WebhookTargetMixin):
                  date_created=DEFAULT, private=False, allow_internet=True,
                  build_source_tarball=False, store_upload=False,
                  store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None):
+                 store_channels=None, project=None):
         """Construct a `Snap`."""
         super(Snap, self).__init__()
 
         # Set the private flag first so that other validators can perform
-        # suitable privacy checks.
+        # suitable privacy checks, but pillar should also be set, since it's
+        # mandatory for private snaps.
+        self.project = project
         self.private = private
+        self.information_type = (InformationType.PROPRIETARY if private else
+                                 InformationType.PUBLIC)
 
         self.registrant = registrant
         self.owner = owner
@@ -406,6 +428,17 @@ class Snap(Storm, WebhookTargetMixin):
 
     def __repr__(self):
         return "<Snap ~%s/+snap/%s>" % (self.owner.name, self.name)
+
+    @property
+    def information_type(self):
+        if self._information_type is None:
+            return (InformationType.PROPRIETARY if self.private
+                    else InformationType.PUBLIC)
+        return self._information_type
+
+    @information_type.setter
+    def information_type(self, information_type):
+        self._information_type = information_type
 
     @property
     def valid_webhook_event_types(self):
@@ -459,6 +492,21 @@ class Snap(Storm, WebhookTargetMixin):
             return self.git_ref
         else:
             return None
+
+    @property
+    def pillar(self):
+        """See `ISnap`."""
+        return self.project
+
+    @pillar.setter
+    def pillar(self, pillar):
+        if pillar is None:
+            self.project = None
+        elif IProduct.providedBy(pillar):
+            self.project = pillar
+        else:
+            raise ValueError(
+                'The pillar of a Snap must be an IProduct instance.')
 
     @property
     def available_processors(self):
@@ -1098,7 +1146,7 @@ class SnapSet:
             processors=None, date_created=DEFAULT, private=False,
             allow_internet=True, build_source_tarball=False,
             store_upload=False, store_series=None, store_name=None,
-            store_secrets=None, store_channels=None):
+            store_secrets=None, store_channels=None, project=None):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -1150,7 +1198,7 @@ class SnapSet:
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
             store_name=store_name, store_secrets=store_secrets,
-            store_channels=store_channels)
+            store_channels=store_channels, project=project)
         store.add(snap)
 
         if processors is None:
@@ -1179,6 +1227,11 @@ class SnapSet:
             return False
 
         return True
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type in PRIVATE_INFORMATION_TYPES
+        return self.isValidPrivacy(private, owner, branch, git_ref)
 
     def _getByName(self, owner, name):
         return IStore(Snap).find(
