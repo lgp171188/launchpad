@@ -239,8 +239,8 @@ class MailingListAPIView(LaunchpadXMLRPCView):
 
     def holdMessage(self, team_name, bytes):
         """See `IMailingListAPIView`."""
-        # For testing purposes, accept both strings and Binary instances.  In
-        # production, bytes will always be a Binary so that unencoded
+        # For testing purposes, accept both byte strings and Binary instances.
+        # In production, bytes will always be a Binary so that unencoded
         # non-ascii characters in the message can be safely passed across
         # XMLRPC. For most tests though it's much more convenient to just
         # pass 8-bit strings.
@@ -250,7 +250,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         # Although it is illegal for an email header to have unencoded
         # non-ascii characters, it is better to let the list owner
         # process the message than to cause an oops.
-        header_body_separator = re.compile('\r\n\r\n|\r\r|\n\n')
+        header_body_separator = re.compile(br'\r\n\r\n|\r\r|\n\n')
         match = header_body_separator.search(bytes)
         header = bytes[:match.start()]
         header = escape_nonascii_uniquely(header)
