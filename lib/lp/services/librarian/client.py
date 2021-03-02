@@ -134,12 +134,12 @@ class FileUploadClient:
             raise UploadFailed('Server said early: ' + response)
 
     def _sendLine(self, line, check_for_error_responses=True):
-        self.state.f.write(six.ensure_binary(line + '\r\n'))
+        self.state.f.write(line + b'\r\n')
         if check_for_error_responses:
             self._checkError()
 
     def _sendHeader(self, name, value):
-        self._sendLine('%s: %s' % (name, value))
+        self._sendLine(six.ensure_binary('%s: %s' % (name, value)))
 
     def addFile(self, name, size, file, contentType, expires=None,
                 debugID=None, allow_zero_length=False):
@@ -190,7 +190,7 @@ class FileUploadClient:
                 "SELECT nextval('libraryfilealias_id_seq')").get_one()[0]
 
             # Send command
-            self._sendLine('STORE %d %s' % (size, name))
+            self._sendLine(b'STORE %d %s' % (size, name))
 
             # Send headers
             self._sendHeader('Database-Name', databaseName)
@@ -204,7 +204,7 @@ class FileUploadClient:
             # server when no data will be sent. Otherwise
             # _checkError() might consume the "200" response which
             # is supposed to be read below in this method.
-            self._sendLine('', check_for_error_responses=(size > 0))
+            self._sendLine(b'', check_for_error_responses=(size > 0))
 
             # Prepare to the upload the file
             md5_digester = hashlib.md5()
@@ -261,10 +261,11 @@ class FileUploadClient:
             raise TypeError('No data')
         if size <= 0:
             raise UploadFailed('No data')
+        name = six.ensure_binary(name)
         self._connect()
         try:
             database_name = ConnectionString(dbconfig.main_master).dbname
-            self._sendLine('STORE %d %s' % (size, name))
+            self._sendLine(b'STORE %d %s' % (size, name))
             self._sendHeader('Database-Name', database_name)
             self._sendHeader('Content-Type', str(contentType))
             if expires is not None:
@@ -272,7 +273,7 @@ class FileUploadClient:
                 self._sendHeader('File-Expires', str(int(epoch)))
 
             # Send blank line
-            self._sendLine('')
+            self._sendLine(b'')
 
             # Prepare to the upload the file
             bytesWritten = 0
