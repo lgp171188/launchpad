@@ -7,7 +7,6 @@
 
 __metaclass__ = type
 
-
 import _pythonpath
 
 import transaction
@@ -17,7 +16,9 @@ from zope.component import getUtility
 from lp.code.interfaces.gitrepository import IGitRepository, IGitRepositorySet
 
 from lp.services.config import config
+from lp.services.database.constants import UTC_NOW
 from lp.services.scripts.base import LaunchpadCronScript
+from lp.services.timeout import set_default_timeout_function
 from lp.services.webapp.errorlog import globalErrorUtility
 
 
@@ -31,13 +32,15 @@ class RequestGitRepack(LaunchpadCronScript):
 
     def main(self):
         globalErrorUtility.configure(self.name)
-        # set_default_timeout_function(
-        #     lambda: config.request_git_repack.timeout)
-        # repackable_repos = getUtility(IGitRepositorySet).getRepositoriesForRepack()
+        self.logger.info(
+            'Requesting automatic git repository repack.')
+        set_default_timeout_function(
+            lambda: config.request_git_repack.timeout)
         repackable_repos = getUtility(IGitRepository).getRepositoriesForRepack()
 
         for repo in repackable_repos:
             repo.repackRepository(self.logger)
+            repo.date_last_repacked = UTC_NOW
 
         self.logger.info(
             'Requested %d automatic git repository repack.' % len(repackable_repos))

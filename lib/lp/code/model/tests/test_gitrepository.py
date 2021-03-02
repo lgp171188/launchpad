@@ -570,19 +570,39 @@ class TestGitRepository(TestCaseWithFactory):
         self.assertEqual(7, recorder1.count)
 
     def test_getRepositoriesForRepack(self):
+        # The values for the 2 thresholds are defined
+        # under config.codehosting.loose_objects_threshold = 4350
+        # and config.codehosting.packs_threshold = 30
         repository = self.factory.makeGitRepository()
         repository = removeSecurityProxy(repository)
         repository.loose_object_count = 3
         repository.pack_count = 4
         self.assertEqual(0, len(list(repository.getRepositoriesForRepack())))
 
-        # repository.loose_object_count = 4350
-        # repository.pack_count = 4
-        # self.assertEqual(1, len(list(repository.getRepositoriesForRepack())))
+        # If either one of the 2 repack indicators are above
+        # allowed thresholds the repository becomes
+        # a candidate for an auto repack
+        repository.loose_object_count = 4350
+        repository.pack_count = 4
+        self.assertEqual(1, len(list(repository.getRepositoriesForRepack())))
 
         repository.loose_object_count = 3
         repository.pack_count = 31
         self.assertEqual(1, len(list(repository.getRepositoriesForRepack())))
+
+        # adding a second repo with values under admissible thresholds
+        # does not modify the number of candidate repos
+        repository2 = self.factory.makeGitRepository()
+        repository2 = removeSecurityProxy(repository2)
+        repository2.loose_object_count = 3
+        repository2.pack_count = 4
+        self.assertEqual(1, len(list(repository2.getRepositoriesForRepack())))
+
+        # second repo has one metric above threshold
+        # number of candidates increases by 1
+        repository2.loose_object_count = 3
+        repository2.pack_count = 99
+        self.assertEqual(2, len(list(repository.getRepositoriesForRepack())))
 
 
 class TestGitIdentityMixin(TestCaseWithFactory):

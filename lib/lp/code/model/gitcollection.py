@@ -26,8 +26,8 @@ from storm.expr import (
     LeftJoin,
     Select,
     SQL,
-    With,
-    )
+    With, Or,
+)
 from storm.info import ClassAlias
 from storm.store import EmptyResultSet
 from zope.component import getUtility
@@ -519,8 +519,10 @@ class GenericGitCollection:
     def qualifiesForRepack(self):
         """See `IGitCollection`."""
         return self._filterBy(
-            [GitRepository.loose_object_count >= config.launchpad.loose_objects_threshold,
-            GitRepository.pack_count >= config.launchpad.packs_threshold], symmetric=False)
+            [Or(GitRepository.loose_object_count >=
+                config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                config.codehosting.packs_threshold)], symmetric=False)
 
     def ownedBy(self, person):
         """See `IGitCollection`."""
