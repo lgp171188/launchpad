@@ -88,7 +88,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.assertEqual(
             self.signing_service.generated_fingerprint, db_key.fingerprint)
         self.assertEqual(
-            self.signing_service.b64_generated_public_key,
+            self.signing_service.b64_generated_public_key.encode("UTF-8"),
             base64.b64encode(db_key.public_key))
         self.assertEqual("this is my key", db_key.description)
 
