@@ -15,8 +15,10 @@ interesting one):
 
     >>> spph = IStore(SourcePackagePublishingHistory).get(
     ...     SourcePackagePublishingHistory, 8)
-    >>> spph.sourcepackagerelease.name, spph.distroseries.name
-    (u'pmount', u'hoary')
+    >>> print(spph.sourcepackagerelease.name)
+    pmount
+    >>> print(spph.distroseries.name)
+    hoary
 
 None of the sources in the sample data are signed, so we can fake one here
 to make sure verifyObject will work.
@@ -327,8 +329,8 @@ Files published are accessible via the files property:
     >>> ISourcePackageReleaseFile.providedBy(any_pub_file)
     True
 
-    >>> spph.files[0].libraryfile.filename
-    u'alsa-utils_1.0.8-1ubuntu1.dsc'
+    >>> print(spph.files[0].libraryfile.filename)
+    alsa-utils_1.0.8-1ubuntu1.dsc
 
 
 Deletion and obsolescence
@@ -898,8 +900,9 @@ BinaryPackageFile and IBinaryPackagePublishingHistory
     >>> IBinaryPackageFile.providedBy(any_file)
     True
 
-    >>> [pub_file.libraryfile.filename for pub_file in bpph.files]
-    [u'mozilla-firefox_0.9_i386.deb']
+    >>> for pub_file in bpph.files:
+    ...     print(pub_file.libraryfile.filename)
+    mozilla-firefox_0.9_i386.deb
 
 Binary publishing records also have a download count, which contains
 the number of downloads of this binary package release in this archive.
@@ -925,11 +928,12 @@ the number of downloads of this binary package release in this archive.
 We can also use getDownloadCounts to find the raw download counts per
 day and country.
 
-    >>> [(b.day, b.country.name if b.country is not None else None)
-    ...   for b in bpph.getDownloadCounts()]
-    [(datetime.date(2010, 2, 21), u'Australia'),
-     (datetime.date(2010, 2, 21), u'United Kingdom'),
-     (datetime.date(2010, 2, 19), None)]
+    >>> for b in bpph.getDownloadCounts():
+    ...     print(b.day)
+    ...     print(b.country.name if b.country is not None else None)
+    2010-02-21 Australia
+    2010-02-21 United Kingdom
+    2010-02-19 None
 
 getDownloadCounts lets us filter by date.
 

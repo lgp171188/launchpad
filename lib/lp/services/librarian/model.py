@@ -16,6 +16,7 @@ import hashlib
 
 from lazr.delegates import delegate_to
 import pytz
+import six
 from six.moves.urllib.parse import urlparse
 from sqlobject import (
     BoolCol,
@@ -309,7 +310,7 @@ class TimeLimitedToken(StormBase):
     def allocate(url):
         """Allocate a token for url path in the librarian.
 
-        :param url: A url bytestring. e.g.
+        :param url: A url string. e.g.
             https://i123.restricted.launchpad-librarian.net/123/foo.txt
             Note that the token is generated for 123/foo.txt
         :return: A url fragment token ready to be attached to the url.
@@ -317,14 +318,14 @@ class TimeLimitedToken(StormBase):
         """
         store = session_store()
         path = TimeLimitedToken.url_to_token_path(url)
-        token = create_token(32).encode('ascii')
-        store.add(TimeLimitedToken(path, token))
+        token = create_token(32)
+        store.add(TimeLimitedToken(path, token.encode('ascii')))
         # The session isn't part of the main transaction model, and in fact it
         # has autocommit on. The commit here is belts and bracers: after
         # allocation the external librarian must be able to serve the file
         # immediately.
         store.commit()
-        return token
+        return six.ensure_str(token)
 
     @staticmethod
     def url_to_token_path(url):

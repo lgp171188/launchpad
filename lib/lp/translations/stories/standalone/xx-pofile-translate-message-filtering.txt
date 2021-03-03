@@ -428,7 +428,7 @@ suggestions.
     >>> user_browser.getLink("Previous").click()
 
     >>> text = extract_text(find_main_content(user_browser.contents))
-    >>> print(text.encode('UTF-8'))
+    >>> print(text)
     Translating...
     English: current addressbook folder
     Current Chinese (China): (no translation yet)

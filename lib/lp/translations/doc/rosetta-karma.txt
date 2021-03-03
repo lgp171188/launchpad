@@ -121,7 +121,7 @@ Let's say that we have this .po file to import:
     >>> import datetime
     >>> import pytz
     >>> UTC = pytz.timezone('UTC')
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "Content-Type: text/plain; charset=UTF-8\n"
@@ -129,7 +129,7 @@ Let's say that we have this .po file to import:
     ...
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> potemplate = POTemplate.get(1)
     >>> pofile = potemplate.getPOFileByLang('es')
 
@@ -193,7 +193,7 @@ Tell the PO file to import from the file data it has.
 Now, the user is going to upload a local edition of the .po file. In this
 case, we will give karma *only* because the translation change.
 
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "Content-Type: text/plain; charset=UTF-8\n"
@@ -201,7 +201,7 @@ case, we will give karma *only* because the translation change.
     ...
     ... msgid "foo"
     ... msgstr "bars"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
 
 We attach the new file as not comming from upstream.
 
@@ -374,8 +374,8 @@ description.
 
 Let's see the description we have atm:
 
-    >>> potemplate.description
-    u'Template for evolution in hoary'
+    >>> print(potemplate.description)
+    Template for evolution in hoary
 
 We do the update and see the karma being assigned.
 
@@ -385,8 +385,8 @@ We do the update and see the karma being assigned.
 
 And the new one is:
 
-    >>> potemplate.description
-    u'This is a new description'
+    >>> print(potemplate.description)
+    This is a new description
 
 Now, let's ensure that we've covered every one of Rosetta's karma
 actions.

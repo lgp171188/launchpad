@@ -107,10 +107,10 @@ Now create a Launchpad object and observe how it populates the cache.
     >>> launchpad = Launchpad(
     ...     credentials, None, None, 'http://api.launchpad.test/',
     ...     cache=cache)
-    send: 'GET /1.0/ ...accept: application/vnd.sun.wadl+xml...'
+    send: ...'GET /1.0/ ...accept: application/vnd.sun.wadl+xml...'
     reply: 'HTTP/1.0 200 Ok\n'
     ...
-    send: 'GET /1.0/ ...accept: application/json...'
+    send: ...'GET /1.0/ ...accept: application/json...'
     reply: 'HTTP/1.0 200 Ok\n'
     ...
 

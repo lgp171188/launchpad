@@ -3,6 +3,8 @@
 
 """This module contains sorting utility functions."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['expand_numbers',
            'sorted_version_numbers',
@@ -96,10 +98,43 @@ def sorted_version_numbers(sequence, key=_identity):
     bzr-0.9
     foo
 
+    Items in the sequence can also be tuples or lists, allowing for
+    tie-breaking.  In such cases, only the first element in each item is
+    considered as a version.
+
+    >>> bzr_versions = [
+    ...     (series('0.9'), 8), (series('0.9'), 9), (series('0.9'), 10),
+    ...     (series('1.0'), 1)]
+    >>> for version, tiebreak in sorted_version_numbers(
+    ...         bzr_versions, key=lambda item: item[0].name):
+    ...     print(version.name, tiebreak)
+    1.0 1
+    0.9 8
+    0.9 9
+    0.9 10
+
+    >>> bzr_versions = [
+    ...     [series('0.9'), 8], [series('0.9'), 9], [series('0.9'), 10],
+    ...     [series('1.0'), 1]]
+    >>> for version, tiebreak in sorted_version_numbers(
+    ...         bzr_versions, key=lambda item: item[0].name):
+    ...     print(version.name, tiebreak)
+    1.0 1
+    0.9 8
+    0.9 9
+    0.9 10
+
     """
-    return sorted(
-        sequence,
-        key=lambda x: _reversed_number_sort_key(expand_numbers(key(x))))
+    def sort_key(item):
+        k = key(item)
+        if isinstance(k, (tuple, list)):
+            return (
+                (_reversed_number_sort_key(expand_numbers(k[0])),) +
+                tuple(k[1:]))
+        else:
+            return _reversed_number_sort_key(expand_numbers(k))
+
+    return sorted(sequence, key=sort_key)
 
 
 def sorted_dotted_numbers(sequence, key=_identity):

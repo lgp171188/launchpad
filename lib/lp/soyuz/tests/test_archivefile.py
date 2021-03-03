@@ -54,7 +54,7 @@ class TestArchiveFile(TestCaseWithFactory):
         self.assertEqual("dists/foo", archive_file.path)
         archive_file.library_file.open()
         try:
-            self.assertEqual("abc\n", archive_file.library_file.read())
+            self.assertEqual(b"abc\n", archive_file.library_file.read())
         finally:
             archive_file.library_file.close()
         self.assertIsNone(archive_file.scheduled_deletion_date)

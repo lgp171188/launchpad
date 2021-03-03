@@ -49,7 +49,7 @@ class SourceForge(ExternalBugTracker):
 
         for bug_id in bug_ids:
             query_url = self.export_url % bug_id
-            page_data = self._getPage(query_url).content
+            page_data = self._getPage(query_url).text
 
             soup = BeautifulSoup(page_data)
             status_tag = soup.find(text=re.compile('Status:'))

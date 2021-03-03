@@ -7,6 +7,7 @@ import datetime
 from textwrap import dedent
 
 import pytz
+import six
 from testtools.content import text_content
 from testtools.matchers import (
     Equals,
@@ -1454,7 +1455,7 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         [notification] = pop_notifications()
         self.assertEqual(
             target_archive.reference, notification['X-Launchpad-Archive'])
-        body = notification.get_payload(decode=True)
+        body = six.ensure_text(notification.get_payload(decode=True))
         expected = dedent("""\
             Accepted:
              OK: foo_1.0-2.dsc
@@ -2067,9 +2068,9 @@ class TestCopyClosesBugs(TestCaseWithFactory):
 
     def createSource(self, version, archive, pocket, bug_id):
         changes_template = (
-            b"Format: 1.7\n"
-            b"Launchpad-bugs-fixed: %s\n")
-        changes_file_content = changes_template % bug_id
+            "Format: 1.7\n"
+            "Launchpad-bugs-fixed: %s\n")
+        changes_file_content = (changes_template % bug_id).encode("UTF-8")
         source = self.test_publisher.getPubSource(
             sourcename='buggy-source', version=version,
             distroseries=self.hoary_test, archive=archive, pocket=pocket,

@@ -15,6 +15,7 @@ from breezy.tests import TestCaseWithTransport
 from breezy.tests.per_repository import all_repository_format_scenarios
 from breezy.urlutils import local_path_from_url
 from breezy.workingtree import WorkingTree
+import six
 from six.moves import xmlrpc_client
 from six.moves.urllib.request import urlopen
 from testscenarios import (
@@ -123,7 +124,7 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         self.local_branch_path = local_path_from_url(self.local_branch.base)
         self.build_tree(['local/foo'])
         tree.add('foo')
-        self.revid = tree.commit('Added foo')
+        self.revid = six.ensure_text(tree.commit('Added foo'))
 
     def __str__(self):
         return self.id()
@@ -145,12 +146,13 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         variable) and we want to load the plugins that are in rocketfuel
         (mainly so we can test the loom support).
         """
-        return self.run_bzr_subprocess(
+        output, error = self.run_bzr_subprocess(
             args, env_changes={
                 'BRZ_SSH': 'paramiko',
                 'BRZ_PLUGIN_PATH': get_BRZ_PLUGIN_PATH_for_subprocess()
             },
             allow_plugins=True, retcode=retcode)
+        return output.decode('UTF-8'), error.decode('UTF-8')
 
     def _run_bzr_error(self, args):
         """Run bzr expecting an error, returning the error message.
@@ -367,7 +369,7 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         self.assertEqual(self.revid, remote_revision)
         # Add a single revision to the local branch.
         tree = WorkingTree.open(self.local_branch.base)
-        tree.commit('Empty commit', rev_id='rev2')
+        tree.commit('Empty commit', rev_id=b'rev2')
         # Push the new revision.
         self.push(self.local_branch_path, remote_url)
         self.assertBranchesMatch(self.local_branch_path, remote_url)
@@ -604,7 +606,8 @@ class SmartserverTests(WithScenarios, SSHTestCase):
         # We can get information from a read-only branch.
         ro_branch_url = self.createBazaarBranch(
             'mark', '+junk', 'ro-branch')
-        revision = breezy.branch.Branch.open(ro_branch_url).last_revision()
+        revision = breezy.branch.Branch.open(
+            ro_branch_url).last_revision().decode('UTF-8')
         remote_revision = self.getLastRevision(
             self.getTransportURL('~mark/+junk/ro-branch'))
         self.assertEqual(revision, remote_revision)
@@ -615,7 +618,7 @@ class SmartserverTests(WithScenarios, SSHTestCase):
 
         # Create a new revision on the local branch.
         tree = WorkingTree.open(self.local_branch.base)
-        tree.commit('Empty commit', rev_id='rev2')
+        tree.commit('Empty commit', rev_id=b'rev2')
 
         # Push the local branch to the remote url
         remote_url = self.getTransportURL('~mark/+junk/ro-branch')
@@ -626,7 +629,8 @@ class SmartserverTests(WithScenarios, SSHTestCase):
         # Added to catch bug 126245.
         ro_branch_url = self.makeMirroredBranch(
             'testuser', 'firefox', 'mirror')
-        revision = breezy.branch.Branch.open(ro_branch_url).last_revision()
+        revision = breezy.branch.Branch.open(
+            ro_branch_url).last_revision().decode('UTF-8')
         remote_revision = self.getLastRevision(
             self.getTransportURL('~testuser/firefox/mirror'))
         self.assertEqual(revision, remote_revision)
@@ -635,7 +639,8 @@ class SmartserverTests(WithScenarios, SSHTestCase):
         # Users should be able to read mirrored branches even if they don't
         # own those branches.
         ro_branch_url = self.makeMirroredBranch('mark', 'firefox', 'mirror')
-        revision = breezy.branch.Branch.open(ro_branch_url).last_revision()
+        revision = breezy.branch.Branch.open(
+            ro_branch_url).last_revision().decode('UTF-8')
         remote_revision = self.getLastRevision(
             self.getTransportURL('~mark/firefox/mirror'))
         self.assertEqual(revision, remote_revision)

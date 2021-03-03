@@ -191,7 +191,7 @@ class TestAddMilestoneViews(TestCaseWithFactory):
             'field.actions.register': 'Register Milestone',
             }
         view = create_initialized_view(self.series, '+addmilestone', form=form)
-        error_msg = view.errors[0].errors[0]
+        error_msg = view.errors[0].errors.args[0]
         expected_msg = (
             "Date could not be formatted. Provide a date formatted "
             "like YYYY-MM-DD format. The year must be after 1900.")

@@ -133,7 +133,8 @@ The view accepts most of the distribution fields.
      'logo', 'mugshot', 'official_malone', 'enable_bug_expiration',
      'blueprints_usage', 'translations_usage', 'answers_usage',
      'translation_focus',
-     'default_traversal_policy', 'redirect_default_traversal']
+     'default_traversal_policy', 'redirect_default_traversal',
+     'oci_registry_credentials']
 
     >>> del form['field.name']
     >>> del form['field.actions.save']

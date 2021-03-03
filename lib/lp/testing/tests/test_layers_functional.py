@@ -22,6 +22,7 @@ from fixtures import (
     Fixture,
     TestWithFixtures,
     )
+import six
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.request import urlopen
 from zope.component import (
@@ -343,12 +344,12 @@ class LibrarianResetTestCase(TestCase):
         # loaded to work.
         client = LibrarianClient()
         LibrarianTestCase.url = client.remoteAddFile(
-                self.sample_data, len(self.sample_data),
-                io.BytesIO(self.sample_data), 'text/plain'
-                )
+            six.ensure_str(self.sample_data), len(self.sample_data),
+            io.BytesIO(self.sample_data), 'text/plain'
+            )
         self.assertEqual(
-                urlopen(LibrarianTestCase.url).read(), self.sample_data
-                )
+            urlopen(LibrarianTestCase.url).read(), self.sample_data
+            )
         # Perform the librarian specific between-test code:
         LibrarianLayer.testTearDown()
         LibrarianLayer.testSetUp()
@@ -485,9 +486,9 @@ class LayerProcessControllerInvariantsTestCase(BaseTestCase):
     def testAppServerIsAvailable(self):
         # Test that the app server is up and running.
         mainsite = LayerProcessController.appserver_config.vhost.mainsite
-        home_page = urlopen(mainsite.rooturl).read()
-        self.assertTrue(
-            'Is your project registered yet?' in home_page,
+        home_page = six.ensure_text(urlopen(mainsite.rooturl).read())
+        self.assertIn(
+            'Is your project registered yet?', home_page,
             "Home page couldn't be retrieved:\n%s" % home_page)
 
     def testStartingAppServerTwiceRaisesInvariantError(self):

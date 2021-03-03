@@ -286,6 +286,11 @@ class IOCIRecipeView(Interface):
         description=_("Whether the git branch name is the correct "
                       "format for using as a tag name."))
 
+    use_distribution_credentials = Bool(
+        title=_("Use Distribution credentials"), required=True, readonly=True,
+        description=_("Use the credentials on a Distribution for "
+                      "registry upload"))
+
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
 
@@ -438,6 +443,14 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         default=False,
         description=_("If True, this recipe should be built daily."),
+        readonly=False))
+
+    image_name = exported(TextLine(
+        title=_("Image name"),
+        description=_("Image name to use on upload to registry. "
+                      "Defaults to recipe name if not set. "
+                      "Only used when Distribution credentials are set."),
+        required=False,
         readonly=False))
 
 

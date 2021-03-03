@@ -915,7 +915,8 @@ class TestCaseWithFactory(TestCase):
         if parent:
             bzr_branch.pull(parent)
             naked_branch = removeSecurityProxy(db_branch)
-            naked_branch.last_scanned_id = bzr_branch.last_revision()
+            naked_branch.last_scanned_id = six.ensure_text(
+                bzr_branch.last_revision())
         return bzr_branch
 
     def useTempBzrHome(self):
@@ -1319,7 +1320,7 @@ def time_counter(origin=None, delta=timedelta(seconds=5)):
         now += delta
 
 
-def run_script(cmd_line, env=None, cwd=None, universal_newlines=False):
+def run_script(cmd_line, env=None, cwd=None, universal_newlines=True):
     """Run the given command line as a subprocess.
 
     :param cmd_line: A command line suitable for passing to
@@ -1329,6 +1330,7 @@ def run_script(cmd_line, env=None, cwd=None, universal_newlines=False):
         PYTHONPATH will be removed from it because it will break the
         script.
     :param universal_newlines: If True, return stdout and stderr as text.
+        Defaults to True.
     :return: A 3-tuple of stdout, stderr, and the process' return code.
     """
     if env is None:
@@ -1342,7 +1344,7 @@ def run_script(cmd_line, env=None, cwd=None, universal_newlines=False):
     return out, err, process.returncode
 
 
-def run_process(cmd, env=None):
+def run_process(cmd, env=None, universal_newlines=True):
     """Run the given command as a subprocess.
 
     This differs from `run_script` in that it does not execute via a shell and
@@ -1353,6 +1355,8 @@ def run_process(cmd, env=None):
     :param env: An optional environment dict. If none is given, the script
         will get a copy of your present environment. Either way, PYTHONPATH
         will be removed from it because it will break the script.
+    :param universal_newlines: If True, return stdout and stderr as text.
+        Defaults to True.
     :return: A 3-tuple of stdout, stderr, and the process' return code.
     """
     if env is None:
@@ -1361,7 +1365,8 @@ def run_process(cmd, env=None):
     with open(os.devnull, "rb") as devnull:
         process = subprocess.Popen(
             cmd, stdin=devnull, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, env=env)
+            stderr=subprocess.PIPE, env=env,
+            universal_newlines=universal_newlines)
         stdout, stderr = process.communicate()
         return stdout, stderr, process.returncode
 
@@ -1372,7 +1377,8 @@ def normalize_whitespace(string):
     # whitespace is roughly 6 times faster than using an uncompiled
     # regex (for the expression \s+), and 4 times faster than a
     # compiled regex.
-    return " ".join(string.split())
+    joiner = b" " if isinstance(string, bytes) else u" "
+    return joiner.join(string.split())
 
 
 def map_branch_contents(branch):

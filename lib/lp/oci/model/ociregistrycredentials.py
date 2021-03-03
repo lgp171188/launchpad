@@ -174,20 +174,24 @@ class OCIRegistryCredentialsSet:
                 return existing
         return None
 
-    def new(self, registrant, owner, url, credentials):
+    def new(self, registrant, owner, url, credentials, override_owner=False):
         """See `IOCIRegistryCredentialsSet`."""
-        self._checkOwner(registrant, owner)
+        if not override_owner:
+            self._checkOwner(registrant, owner)
         if self._checkForExisting(owner, url, credentials):
             raise OCIRegistryCredentialsAlreadyExist()
         return OCIRegistryCredentials(owner, url, credentials)
 
-    def getOrCreate(self, registrant, owner, url, credentials):
+    def getOrCreate(self, registrant, owner, url, credentials,
+                    override_owner=False):
         """See `IOCIRegistryCredentialsSet`."""
-        self._checkOwner(registrant, owner)
+        if not override_owner:
+            self._checkOwner(registrant, owner)
         existing = self._checkForExisting(owner, url, credentials)
         if existing:
             return existing
-        return self.new(registrant, owner, url, credentials)
+        return self.new(
+            registrant, owner, url, credentials, override_owner=override_owner)
 
     def findByOwner(self, owner):
         """See `IOCIRegistryCredentialsSet`."""

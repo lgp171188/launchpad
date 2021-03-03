@@ -443,7 +443,8 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         store = session_store()
         tokens = store.find(
             TimeLimitedToken,
-            TimeLimitedToken.token == hashlib.sha256(token).hexdigest())
+            TimeLimitedToken.token == hashlib.sha256(
+                token.encode('ASCII')).hexdigest())
         tokens.set(
             TimeLimitedToken.created == SQL("created - interval '1 week'"))
         # Now, as per test_restricted_no_token we should get a 404.

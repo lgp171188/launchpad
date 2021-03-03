@@ -160,13 +160,12 @@ def attach_http_request(report, context):
     #      undo. URL is just too HTTPRequest-specific.
     if safe_hasattr(request, 'URL'):
         # URL's are byte strings, but possibly str() will fail - safe_unicode
-        # handles all those cases, and then we can safely encode it to utf8.
-        # This is strictly double handling as a URL should never have unicode
-        # characters in it anyway (though it may have them % encoded, which is
-        # fine). Better safe than sorry, and the safe_unicode handling won't
-        # cause double-encoding, so it is safe.
-        url = oops.createhooks.safe_unicode(request.URL).encode('utf8')
-        report['url'] = url
+        # handles all those cases.  This is strictly double handling as a
+        # URL should never have unicode characters in it anyway (though it
+        # may have them % encoded, which is fine).  Better safe than sorry,
+        # and the safe_unicode handling won't cause double-encoding, so it
+        # is safe.
+        report['url'] = oops.createhooks.safe_unicode(request.URL)
 
     if WebServiceLayer.providedBy(request) and info is not None:
         webservice_error = getattr(

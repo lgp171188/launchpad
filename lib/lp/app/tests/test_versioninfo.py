@@ -19,6 +19,7 @@ class TestVersionInfo(unittest.TestCase):
         args = [os.path.join(TREE_ROOT, "bin/py"), "-c",
                 "from lp.app.versioninfo import revision;"
                 "print(revision)"]
-        process = subprocess.Popen(args, cwd='/tmp', stdout=subprocess.PIPE)
+        process = subprocess.Popen(
+            args, cwd='/tmp', stdout=subprocess.PIPE, universal_newlines=True)
         (output, errors) = process.communicate(None)
         self.assertEqual(revision, output.rstrip("\n"))

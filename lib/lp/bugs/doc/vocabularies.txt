@@ -147,8 +147,8 @@ This means that if we iterate through the vocabulary with bug one, only
 the trunk will be nominatable:
 
     >>> firefox_bug_one = bug_one.bugtasks[0]
-    >>> firefox_bug_one.target.name
-    u'firefox'
+    >>> print(firefox_bug_one.target.name)
+    firefox
     >>> series_vocabulary = vocabulary_registry.get(
     ...     firefox_bug_one, 'BugNominatableSeries')
     >>> for term in series_vocabulary:
@@ -168,8 +168,8 @@ No series is targeted or nominated on bug 4:
 So if we give bug four to the vocabulary, all series will be returned:
 
     >>> firefox_bug_four = bug_four.bugtasks[0]
-    >>> firefox_bug_four.target.name
-    u'firefox'
+    >>> print(firefox_bug_four.target.name)
+    firefox
     >>> series_vocabulary = vocabulary_registry.get(
     ...     firefox_bug_four, 'BugNominatableSeries')
     >>> for term in series_vocabulary:
@@ -198,8 +198,8 @@ Bug one is nominated for Ubuntu Hoary:
 So Hoary isn't included in the vocabulary:
 
     >>> ubuntu_bug_one = bug_one.bugtasks[1]
-    >>> ubuntu_bug_one.distribution.name
-    u'ubuntu'
+    >>> print(ubuntu_bug_one.distribution.name)
+    ubuntu
     >>> series_vocabulary = vocabulary_registry.get(
     ...     ubuntu_bug_one, 'BugNominatableSeries')
     >>> for term in series_vocabulary:
@@ -224,8 +224,8 @@ The same is true for bug two, where the bug is targeted to Hoary.
     hoary
 
     >>> ubuntu_bug_two = bug_two.bugtasks[1]
-    >>> ubuntu_bug_two.distribution.name
-    u'ubuntu'
+    >>> print(ubuntu_bug_two.distribution.name)
+    ubuntu
     >>> series_vocabulary = vocabulary_registry.get(
     ...     ubuntu_bug_two, 'BugNominatableSeries')
     >>> for term in series_vocabulary:
@@ -302,8 +302,8 @@ treated differently.
     >>> email_bugtracker = getUtility(IBugTrackerSet).getByName('email')
     >>> email_bugwatch = getUtility(IBugWatchSet).createBugWatch(
     ...     bug_twelve, launchbag.user, email_bugtracker, '')
-    >>> email_bugwatch.url
-    u'mailto:bugs@example.com'
+    >>> print(email_bugwatch.url)
+    mailto:bugs@example.com
 
 The title is rendered differently compared to other bug watches.
 

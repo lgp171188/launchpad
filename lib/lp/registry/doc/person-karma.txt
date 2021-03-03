@@ -95,12 +95,12 @@ show the 5 most active projects.
     >>> foobar = getUtility(IPersonSet).getByName('name16')
     >>> for contrib in foobar.getProjectsAndCategoriesContributedTo(None):
     ...     categories = sorted(cat.name for cat in contrib['categories'])
-    ...     print contrib['project'].title, categories
-    Evolution [u'bugs', u'translations']
-    Ubuntu [u'bugs']
-    gnomebaker [u'bugs']
-    Mozilla Thunderbird [u'bugs']
-    Mozilla Firefox [u'bugs']
+    ...     print(contrib['project'].title, pretty(categories))
+    Evolution ['bugs', 'translations']
+    Ubuntu ['bugs']
+    gnomebaker ['bugs']
+    Mozilla Thunderbird ['bugs']
+    Mozilla Firefox ['bugs']
 
 
 Karma Updater
@@ -121,9 +121,9 @@ is updated by the foaf-update-karma-cache.py cronscript.
     >>> process = subprocess.Popen(
     ...     'cronscripts/foaf-update-karma-cache.py', shell=True,
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> (out, err) = process.communicate()
-    >>> print err
+    >>> print(err)
     INFO    Creating lockfile: /var/lock/launchpad-karma-update.lock
     INFO    Updating Launchpad karma caches
     INFO    Step A: Calculating individual KarmaCache entries
@@ -135,7 +135,7 @@ is updated by the foaf-update-karma-cache.py cronscript.
     INFO    Step C: Calculating KarmaCache sums
     INFO    Finished updating Launchpad karma caches
     <BLANKLINE>
-    >>> print out
+    >>> print(out)
     <BLANKLINE>
     >>> process.returncode
     0
@@ -164,14 +164,14 @@ Management category was calculated to be 2.667, but reduced to 2 because this
 was the maximum specified in config.karmacacheupdater.max_scaling.
 
     >>> for karma in salgado.latestKarma():
-    ...     print karma.action.title, karma.action.points
+    ...     print(karma.action.title, karma.action.points)
     Specification Review     10
     Bug Marked as Fixed      10
     Registered Specification 30
     Bug Marked as Duplicate   5
 
     >>> for cache in salgado.karma_category_caches:
-    ...     print "%s: %d" % (cache.category.title, cache.karmavalue)
+    ...     print("%s: %d" % (cache.category.title, cache.karmavalue))
     Bug Management: 30
     Specification Tracking: 40
 

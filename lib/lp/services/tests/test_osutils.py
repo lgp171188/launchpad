@@ -106,8 +106,8 @@ class TestWriteFile(TestCase):
     def test_write_file(self):
         directory = self.makeTemporaryDirectory()
         filename = os.path.join(directory, 'filename')
-        content = self.getUniqueString()
-        write_file(filename, content)
+        content = self.factory.getUniqueUnicode()
+        write_file(filename, content.encode('UTF-8'))
         self.assertThat(filename, FileContains(content))
 
 

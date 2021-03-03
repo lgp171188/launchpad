@@ -680,10 +680,10 @@ result in a NotFound error.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: u'+archive'
+    zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: '+archive'
 
     >>> admin_browser.open("http://launchpad.test/~name16/+archive")
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: u'+archive'
+    zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: '+archive'

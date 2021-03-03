@@ -389,10 +389,10 @@ watch hasn't altered:
     >>> now = datetime.now(pytz.timezone('UTC'))
     >>> bug_watch.lastchanged = now - timedelta(weeks=2)
     >>> old_last_changed = bug_watch.lastchanged
-    >>> bug_watch.remotebug
-    u'153'
-    >>> bug_watch.remotestatus
-    u'new'
+    >>> print(bug_watch.remotebug)
+    153
+    >>> print(bug_watch.remotestatus)
+    new
 
     >>> trac.batch_query_threshold = 0
     >>> with trac.responses():
@@ -401,7 +401,7 @@ watch hasn't altered:
 
     >>> bug_watch.lastchanged == old_last_changed
     True
-    >>> bug_watch.remotebug
-    u'153'
-    >>> bug_watch.remotestatus
-    u'new'
+    >>> print(bug_watch.remotebug)
+    153
+    >>> print(bug_watch.remotestatus)
+    new

@@ -85,7 +85,7 @@ def get_macaroon_ns(message):
         except KeyError as why:
             # An alias for the string 'macaroon' already exists, but it's
             # defined for something other than issuing a discharge macaroon.
-            raise MacaroonNamespaceError(why[0])
+            raise MacaroonNamespaceError(why.args[0])
 
     return MACAROON_NS
 

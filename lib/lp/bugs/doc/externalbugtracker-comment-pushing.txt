@@ -85,8 +85,9 @@ remote server.
     >>> comments = [
     ...     comment.message.text_contents
     ...     for comment in bug_watch.unpushed_comments]
-    >>> print(comments)
-    [u'Pushing, for the purpose of.']
+    >>> for comment in comments:
+    ...     print(comment)
+    Pushing, for the purpose of.
 
 The CheckwatchesMaster method pushBugComments() is responsible for
 calling the addRemoteComment() method of ISupportsCommentPushing for

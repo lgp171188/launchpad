@@ -459,13 +459,14 @@ So searching for the private content on the public librarian will fail:
 
     >>> transaction.commit()
     >>> search_query = "search?digest=%s" % restricted_file.content.sha1
-    >>> print(urlopen(config.librarian.download_url + search_query).read())
+    >>> print(six.ensure_str(
+    ...     urlopen(config.librarian.download_url + search_query).read()))
     0
 
 But on the restricted server, this will work:
 
-    >>> result = urlopen(
-    ...     config.librarian.restricted_download_url + search_query).read()
+    >>> result = six.ensure_str(urlopen(
+    ...     config.librarian.restricted_download_url + search_query).read())
     >>> result = result.splitlines()
     >>> print(result[0])
     3

@@ -239,7 +239,7 @@ class TestPersonSet(TestCaseWithFactory):
         # PersonSet.find() allows to search for OR combined terms.
         person_one = self.factory.makePerson(name='baz')
         person_two = self.factory.makeTeam(name='blah')
-        result = list(self.person_set.find('baz OR blah'))
+        result = list(self.person_set.find(u'baz OR blah'))
         self.assertEqual([person_one, person_two], result)
 
     def test_findPerson__accepts_queries_with_or_operator(self):
@@ -248,11 +248,11 @@ class TestPersonSet(TestCaseWithFactory):
             name='baz', email='one@example.org')
         person_two = self.factory.makePerson(
             name='blah', email='two@example.com')
-        result = list(self.person_set.findPerson('baz OR blah'))
+        result = list(self.person_set.findPerson(u'baz OR blah'))
         self.assertEqual([person_one, person_two], result)
         # Note that these OR searches do not work for email addresses.
         result = list(self.person_set.findPerson(
-            'one@example.org OR two@example.org'))
+            u'one@example.org OR two@example.org'))
         self.assertEqual([], result)
 
     def test_findPerson__case_insensitive_email_address_search(self):
@@ -261,29 +261,29 @@ class TestPersonSet(TestCaseWithFactory):
             name='baz', email='ONE@example.org')
         person_two = self.factory.makePerson(
             name='blah', email='two@example.com')
-        result = list(self.person_set.findPerson('one@example.org'))
+        result = list(self.person_set.findPerson(u'one@example.org'))
         self.assertEqual([person_one], result)
-        result = list(self.person_set.findPerson('TWO@example.com'))
+        result = list(self.person_set.findPerson(u'TWO@example.com'))
         self.assertEqual([person_two], result)
 
     def test_findTeam__accepts_queries_with_or_operator(self):
         # PersonSet.findTeam() allows to search for OR combined terms.
         team_one = self.factory.makeTeam(name='baz', email='ONE@example.org')
         team_two = self.factory.makeTeam(name='blah', email='TWO@example.com')
-        result = list(self.person_set.findTeam('baz OR blah'))
+        result = list(self.person_set.findTeam(u'baz OR blah'))
         self.assertEqual([team_one, team_two], result)
         # Note that these OR searches do not work for email addresses.
         result = list(self.person_set.findTeam(
-            'one@example.org OR two@example.org'))
+            u'one@example.org OR two@example.org'))
         self.assertEqual([], result)
 
     def test_findTeam__case_insensitive_email_address_search(self):
         # A search for email addresses is case insensitve.
         team_one = self.factory.makeTeam(name='baz', email='ONE@example.org')
         team_two = self.factory.makeTeam(name='blah', email='TWO@example.com')
-        result = list(self.person_set.findTeam('one@example.org'))
+        result = list(self.person_set.findTeam(u'one@example.org'))
         self.assertEqual([team_one], result)
-        result = list(self.person_set.findTeam('TWO@example.com'))
+        result = list(self.person_set.findTeam(u'TWO@example.com'))
         self.assertEqual([team_two], result)
 
 

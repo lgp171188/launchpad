@@ -20,6 +20,7 @@ from debian.deb822 import (
     Deb822,
     Dsc,
     )
+import six
 from testtools.matchers import (
     Contains,
     Equals,
@@ -79,7 +80,7 @@ class NascentUploadFileTestCase(TestCaseWithFactory):
         :return: Tuple with path, md5 and size
         """
         path = os.path.join(self.makeTemporaryDirectory(), filename)
-        with open(path, 'w') as f:
+        with open(path, 'wb') as f:
             f.write(contents)
         return (
             path, hashlib.md5(contents).hexdigest(),
@@ -91,7 +92,7 @@ class TestNascentUploadFile(NascentUploadFileTestCase):
     layer = ZopelessDatabaseLayer
 
     def test_checkSizeAndCheckSum_validates_size(self):
-        (path, md5, sha1, size) = self.writeUploadFile('foo', 'bar')
+        (path, md5, sha1, size) = self.writeUploadFile('foo', b'bar')
         nuf = NascentUploadFile(
             path, dict(MD5=md5), size - 1, 'main/devel', None, None, None)
         self.assertRaisesWithContent(
@@ -100,7 +101,7 @@ class TestNascentUploadFile(NascentUploadFileTestCase):
             nuf.checkSizeAndCheckSum)
 
     def test_checkSizeAndCheckSum_validates_md5(self):
-        (path, md5, sha1, size) = self.writeUploadFile('foo', 'bar')
+        (path, md5, sha1, size) = self.writeUploadFile('foo', b'bar')
         nuf = NascentUploadFile(
             path, dict(MD5='deadbeef'), size, 'main/devel', None, None, None)
         self.assertRaisesWithContent(
@@ -110,7 +111,7 @@ class TestNascentUploadFile(NascentUploadFileTestCase):
             nuf.checkSizeAndCheckSum)
 
     def test_checkSizeAndCheckSum_validates_sha1(self):
-        (path, md5, sha1, size) = self.writeUploadFile('foo', 'bar')
+        (path, md5, sha1, size) = self.writeUploadFile('foo', b'bar')
         nuf = NascentUploadFile(
             path, dict(MD5=md5, SHA1='foobar'), size, 'main/devel', None,
             None, None)
@@ -138,7 +139,7 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
     def test_custom_type(self):
         # The mime type gets set according to PackageUploadCustomFormat.
         uploadfile = self.createCustomUploadFile(
-            "bla.txt", "data", "main/raw-installer", "extra")
+            "bla.txt", b"data", "main/raw-installer", "extra")
         self.assertEqual(
             PackageUploadCustomFormat.DEBIAN_INSTALLER,
             uploadfile.custom_type)
@@ -146,7 +147,7 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
     def test_storeInDatabase(self):
         # storeInDatabase creates a library file.
         uploadfile = self.createCustomUploadFile(
-            "bla.txt", "data", "main/raw-installer", "extra")
+            "bla.txt", b"data", "main/raw-installer", "extra")
         self.assertEqual("application/octet-stream", uploadfile.content_type)
         libraryfile = uploadfile.storeInDatabase()
         self.assertEqual("bla.txt", libraryfile.filename)
@@ -155,11 +156,11 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
     def test_debian_installer_verify(self):
         # debian-installer uploads are required to have sensible filenames.
         uploadfile = self.createCustomUploadFile(
-            "debian-installer-images_20120627_i386.tar.gz", "data",
+            "debian-installer-images_20120627_i386.tar.gz", b"data",
             "main/raw-installer", "extra")
         self.assertEqual([], list(uploadfile.verify()))
         uploadfile = self.createCustomUploadFile(
-            "bla.txt", "data", "main/raw-installer", "extra")
+            "bla.txt", b"data", "main/raw-installer", "extra")
         errors = list(uploadfile.verify())
         self.assertEqual(1, len(errors))
         self.assertIsInstance(errors[0], UploadError)
@@ -167,25 +168,25 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
     def test_no_handler_no_verify(self):
         # Uploads without special handlers have no filename checks.
         uploadfile = self.createCustomUploadFile(
-            "bla.txt", "data", "main/raw-meta-data", "extra")
+            "bla.txt", b"data", "main/raw-meta-data", "extra")
         self.assertEqual([], list(uploadfile.verify()))
 
     def test_debian_installer_auto_approved(self):
         # debian-installer uploads are auto-approved.
         uploadfile = self.createCustomUploadFile(
-            "bla.txt", "data", "main/raw-installer", "extra")
+            "bla.txt", b"data", "main/raw-installer", "extra")
         self.assertTrue(uploadfile.autoApprove())
 
     def test_uefi_not_auto_approved(self):
         # UEFI uploads are auto-approved.
         uploadfile = self.createCustomUploadFile(
-            "bla.txt", "data", "main/raw-uefi", "extra")
+            "bla.txt", b"data", "main/raw-uefi", "extra")
         self.assertFalse(uploadfile.autoApprove())
 
     def test_signing_not_auto_approved(self):
         # UEFI uploads are auto-approved.
         uploadfile = self.createCustomUploadFile(
-            "bla.txt", "data", "main/raw-signing", "extra")
+            "bla.txt", b"data", "main/raw-signing", "extra")
         self.assertFalse(uploadfile.autoApprove())
 
 
@@ -221,7 +222,7 @@ class PackageUploadFileTestCase(NascentUploadFileTestCase):
     def createChangesFile(self, filename, changes):
         tempdir = self.makeTemporaryDirectory()
         path = os.path.join(tempdir, filename)
-        with open(path, "w") as changes_fd:
+        with open(path, "wb") as changes_fd:
             changes.dump(changes_fd)
         changesfile = ChangesFile(path, self.policy, self.logger)
         self.assertEqual([], list(changesfile.parseChanges()))
@@ -249,7 +250,8 @@ class DSCFileTests(PackageUploadFileTestCase):
 
     def createDSCFile(self, filename, dsc, component_and_section,
                       priority_name, package, version, changes):
-        (path, md5, sha1, size) = self.writeUploadFile(filename, dsc.dump())
+        (path, md5, sha1, size) = self.writeUploadFile(
+            filename, dsc.dump().encode("UTF-8"))
         if changes:
             self.assertEqual([], list(changes.processAddresses()))
         return DSCFile(
@@ -392,6 +394,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
                   members=None):
         """Return the contents of a dummy .deb file."""
         tempdir = self.makeTemporaryDirectory()
+        control = {k: six.ensure_text(v) for k, v in control.items()}
         if members is None:
             members = [
                 "debian-binary",
@@ -427,7 +430,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         retcode = subprocess.call(
             ["ar", "rc", filename] + members, cwd=tempdir)
         self.assertEqual(0, retcode)
-        with open(os.path.join(tempdir, filename)) as f:
+        with open(os.path.join(tempdir, filename), "rb") as f:
             return f.read()
 
     def createDebBinaryUploadFile(self, filename, component_and_section,
@@ -443,7 +446,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
                 filename, control, control_format, data_format,
                 members=members)
         else:
-            data = "DUMMY DATA"
+            data = b"DUMMY DATA"
         (path, md5, sha1, size) = self.writeUploadFile(filename, data)
         return DebBinaryUploadFile(
             path, dict(MD5=md5), size, component_and_section, priority_name,
@@ -534,8 +537,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         self.assertIsInstance(error, UploadError)
         self.assertEqual(
             "empty_0.1_all.deb: extracting control file raised "
-            "<type 'exceptions.KeyError'>: u'banana not found'."
-            " giving up.", str(error))
+            "%s: %r. giving up." % (KeyError, "banana not found"), str(error))
 
     def test_verifyDebTimestamp_SystemError(self):
         # verifyDebTimestamp produces a reasonable error if we provoke a

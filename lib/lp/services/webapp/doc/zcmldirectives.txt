@@ -57,11 +57,7 @@ default view for the IFooLayer layer.
     ...     pass
     >>> request = Request()
 
-    >>> import types
     >>> class FooView:
-    ...     """classic class that is used for a view on an IFoo"""
-    ...     __metaclass__ = types.ClassType
-    ...
     ...     def __call__(self):
     ...         return "FooView was called"
     >>> lp.testing.FooView = FooView
@@ -101,14 +97,14 @@ its __launchpad_facetname__ attribute.
     >>> cls = get_simplelaunchpadviewclass(context.actions)
     >>> cls
     <class 'zope.browserpage.metaconfigure.SimpleLaunchpadViewClass'>
-    >>> cls.__launchpad_facetname__
-    'FACET'
+    >>> print(cls.__launchpad_facetname__)
+    FACET
 
 Next, a functional/integration test of the overridden directive.
 
-    >>> print queryMultiAdapter((fooobject, request), name='+whatever')
+    >>> print(queryMultiAdapter((fooobject, request), name='+whatever'))
     None
-    >>> print queryMultiAdapter((fooobject, request), name='+mandrill')
+    >>> print(queryMultiAdapter((fooobject, request), name='+mandrill'))
     None
 
     >>> from zope.configuration import xmlconfig
@@ -139,16 +135,16 @@ Next, a functional/integration test of the overridden directive.
     >>> whatever_view = queryMultiAdapter(
     ...     (fooobject, request), name='+whatever')
 
-    >>> print whatever_view.__class__.__name__
+    >>> print(whatever_view.__class__.__name__)
     FooView
-    >>> print whatever_view.__launchpad_facetname__
+    >>> print(whatever_view.__launchpad_facetname__)
     the_evil_facet
     >>> mandrill_view = queryMultiAdapter(
     ...     (fooobject, request), name='+mandrill')
 
-    >>> print mandrill_view.__class__.__name__
+    >>> print(mandrill_view.__class__.__name__)
     SimpleViewClass from ...base-layout.pt
-    >>> print mandrill_view.__launchpad_facetname__
+    >>> print(mandrill_view.__launchpad_facetname__)
     another-mister-lizard
 
 
@@ -184,17 +180,17 @@ its __launchpad_facetname__ attribute.
     >>> cls = get_simplelaunchpadviewclass(context.actions)
     >>> cls
     <class 'zope.browserpage.metaconfigure.SimpleLaunchpadViewClass'>
-    >>> cls.__launchpad_facetname__
-    'FACET'
+    >>> print(cls.__launchpad_facetname__)
+    FACET
     >>> cls2 = context.actions[3][2][1]
     >>> cls2
     <class 'zope.browserpage.metaconfigure.SimpleLaunchpadViewClass'>
-    >>> cls2.__launchpad_facetname__
-    'OUTERFACET'
+    >>> print(cls2.__launchpad_facetname__)
+    OUTERFACET
 
 Next, a functional/integration test of the overridden directive.
 
-    >>> print queryMultiAdapter((fooobject, request), name='+whatever2')
+    >>> print(queryMultiAdapter((fooobject, request), name='+whatever2'))
     None
 
     >>> zcmlcontext = xmlconfig.string("""
@@ -222,16 +218,16 @@ Next, a functional/integration test of the overridden directive.
 
     >>> whatever2_view = queryMultiAdapter(
     ...     (fooobject, request), name='+whatever2')
-    >>> print whatever2_view.__class__.__name__
+    >>> print(whatever2_view.__class__.__name__)
     FooView
-    >>> print whatever2_view.__launchpad_facetname__
+    >>> print(whatever2_view.__launchpad_facetname__)
     another_evil_facet
 
     >>> whatever3_view = queryMultiAdapter(
     ...     (fooobject, request), name='+whatever3')
-    >>> print whatever3_view.__class__.__name__
+    >>> print(whatever3_view.__class__.__name__)
     FooView
-    >>> print whatever3_view.__launchpad_facetname__
+    >>> print(whatever3_view.__launchpad_facetname__)
     outerspace
 
 
@@ -248,12 +244,12 @@ Name some variables to mirror the names used as arguments.
     >>> facet = 'whole-file-facet'
 
     >>> gc = GroupingFacet(context, facet=facet)
-    >>> gc.facet
-    'whole-file-facet'
+    >>> print(gc.facet)
+    whole-file-facet
 
 Next, a functional/integration test of the overridden directive.
 
-    >>> print queryMultiAdapter((fooobject, request), name='+impliedfacet')
+    >>> print(queryMultiAdapter((fooobject, request), name='+impliedfacet'))
     None
 
     >>> zcmlcontext = xmlconfig.string("""
@@ -277,9 +273,9 @@ Next, a functional/integration test of the overridden directive.
 
     >>> impliedfacet_view = queryMultiAdapter(
     ...     (fooobject, request), name='+impliedfacet')
-    >>> print impliedfacet_view.__class__.__name__
+    >>> print(impliedfacet_view.__class__.__name__)
     FooView
-    >>> print impliedfacet_view.__launchpad_facetname__
+    >>> print(impliedfacet_view.__launchpad_facetname__)
     whole-facet
 
 
@@ -302,8 +298,8 @@ an IPermission.
     >>> permission = getUtility(ILaunchpadPermission, 'foo.bar')
     >>> verifyObject(ILaunchpadPermission, permission)
     True
-    >>> permission.access_level
-    u'read'
+    >>> print(permission.access_level)
+    read
 
 
 == Cleaning up the interfaces and objects to test with ==

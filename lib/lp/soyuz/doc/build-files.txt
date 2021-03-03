@@ -38,7 +38,7 @@ Unsupported filename lookups also result in a `NotFoundError`.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: u'biscuit.cookie'
+    lp.app.errors.NotFoundError: ...'biscuit.cookie'
 
 And unreachable files in `NotFoundError`.
 
@@ -46,7 +46,7 @@ And unreachable files in `NotFoundError`.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: u'boing.changes'
+    lp.app.errors.NotFoundError: ...'boing.changes'
 
 Retrieving a binary changesfile.  "test_1.0_i386.changes" is created when
 SoyuzTestPublisher creates the "test" binary publication.

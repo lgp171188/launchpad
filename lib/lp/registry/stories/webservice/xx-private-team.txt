@@ -21,31 +21,33 @@ even exists.
     >>> transaction.commit()
     >>> logout()
 
+    >>> from lazr.restful.testing.webservice import pprint_collection
+
     # XXX: 2008-08-01, salgado: Notice how the total_size is incorrect here.
     # That ought to be fixed at some point.
     >>> member = user_webservice.get("/~private-team-owner").jsonBody()
     >>> response = user_webservice.get(
     ...     member['memberships_details_collection_link'])
-    >>> print(sorted(response.jsonBody().items()))
-    [(u'entries', []),
-     (u'resource_type_link',
-      u'http://.../#team_membership-page-resource'),
-     (u'start', 0),
-     (u'total_size', 1)]
+    >>> pprint_collection(response.jsonBody())
+    resource_type_link: 'http://.../#team_membership-page-resource'
+    start: 0
+    total_size: 1
+    ---
 
     Salgado can see the team since he's a Launchpad admin.
 
     >>> member = webservice.get("/~private-team-owner").jsonBody()
     >>> response = webservice.get(
     ...     member['memberships_details_collection_link'])
-    >>> print(sorted(response.jsonBody().items()))
-    [(u'entries',
-      [{u'status': u'Administrator',...
-        u'team_link': u'http://.../~private-team'...
-     (u'resource_type_link',
-      u'http://.../#team_membership-page-resource'),
-     (u'start', 0),
-     (u'total_size', 1)]
+    >>> pprint_collection(response.jsonBody())
+    resource_type_link: 'http://.../#team_membership-page-resource'
+    start: 0
+    total_size: 1
+    ---
+    ...
+    status: 'Administrator'
+    team_link: 'http://.../~private-team'
+    ...
 
 Similarly, when a public team is a sub-team of a private team, non-members
 cannot see the private team in the public team's super_team's attribute.

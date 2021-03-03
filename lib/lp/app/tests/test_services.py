@@ -56,9 +56,10 @@ class TestServiceFactory(TestCaseWithFactory, FakeAdapterMixin):
         context, view, request = test_traverse(
             'https://launchpad.test/api/devel/+services')
         self.assertEqual(getUtility(IServiceFactory), context)
+        view_text = view().decode('UTF-8')
         self.assertEqual(
             'service_factory',
-            urlparse(json.loads(view())['resource_type_link']).fragment)
+            urlparse(json.loads(view_text)['resource_type_link']).fragment)
 
     def test_invalid_service(self):
         # Test that traversal to an invalid service name fails.

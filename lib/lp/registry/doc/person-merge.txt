@@ -58,7 +58,7 @@ Marilize and save it for later comparison.
     >>> firefox = getUtility(IProductSet).getByName('firefox')
     >>> marilize_karma = marilize.assignKarma('bugfixed', product=firefox)
     >>> saved_marilize_karma_id = marilize_karma.id
-    >>> print marilize_karma.person.name
+    >>> print(marilize_karma.person.name)
     marilize
 
     >>> sampleperson_old_karma = sample.karma
@@ -167,7 +167,7 @@ name12 (Sample Person).
     >>> saved_marilize_karma_id == marilize_karma.id
     True
 
-    >>> print marilize_karma.person.name
+    >>> print(marilize_karma.person.name)
     name12
 
 Note that we don't bother migrating karma caches - it will just be reset
@@ -198,8 +198,8 @@ A merged person gets a -merged suffix on its name.
     >>> results = store.execute(
     ...     "SELECT p1.name FROM Person as p1, Person as p2 "
     ...     "WHERE p1.id = p2.teamowner and p2.name = 'ubuntu-team'")
-    >>> results.get_one()[0]
-    u'name12'
+    >>> print(results.get_one()[0])
+    name12
 
 The person that has been merged is flagged. We can use this to eliminate
 merged persons from lists etc.
@@ -226,13 +226,13 @@ email and mailing list subscription settings.
     1
 
     >>> notification = notifications[0]
-    >>> print notification.person.name
+    >>> print(notification.person.name)
     name12
 
-    >>> print notification.subject
+    >>> print(notification.subject)
     Launchpad accounts merged
 
-    >>> print notification.body
+    >>> print(notification.body)
     The Launchpad account named 'marilize-merged' was merged into the account
     named 'name12'. ...
 
@@ -295,7 +295,7 @@ create, and then delete, the needed two people.
 First, we will test a merge where there is no decoration.
 
     >>> winner, loser = next(endless_supply_of_players)
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     <BLANKLINE>
 
     >>> from lp.registry.personmerge import _merge_person_decoration
@@ -305,12 +305,12 @@ First, we will test a merge where there is no decoration.
 "Skip" should have been updated with the table and unique reference
 column name.
 
-    >>> print skip
+    >>> print(pretty(skip))
     [('personlocation', 'person')]
 
 There should still be no columns that reference the winner or loser.
 
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     <BLANKLINE>
 
 OK, now, this time, we will add some decorator information to the winner
@@ -318,7 +318,7 @@ but not the loser.
 
     >>> winner, loser = next(endless_supply_of_players)
     >>> winner.setLocation(None, None, 'America/Santiago', winner)
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     winner, winner,
 
     >>> _merge_person_decoration(winner, loser, skip,
@@ -327,7 +327,7 @@ but not the loser.
 There should now still be one decorator, with all columns pointing to
 the winner:
 
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     winner, winner,
 
 This time, we will have a decorator for the person that is being merged
@@ -335,7 +335,7 @@ INTO another person, but nothing on the target person.
 
     >>> winner, loser = next(endless_supply_of_players)
     >>> loser.setLocation(None, None, 'America/Santiago', loser)
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     loser, loser,
 
     >>> _merge_person_decoration(winner, loser, skip,
@@ -344,7 +344,7 @@ INTO another person, but nothing on the target person.
 There should now still be one decorator, with all columns pointing to
 the winner:
 
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     winner, winner,
 
 Now, we want to show what happens when there is a decorator for both the
@@ -355,13 +355,13 @@ point to the winner, and the to_person will be unaffected.
     >>> winner, loser = next(endless_supply_of_players)
     >>> winner.setLocation(None, None, 'America/Santiago', winner)
     >>> loser.setLocation(None, None, 'America/New_York', loser)
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     winner, winner,
     loser, loser,
 
     >>> _merge_person_decoration(winner, loser, skip,
     ...     'PersonLocation', 'person', ['last_modified_by',])
-    >>> print decorator_refs(store, winner, loser)
+    >>> print(decorator_refs(store, winner, loser))
     winner, winner,
     loser, winner,
 
@@ -389,14 +389,16 @@ hand, are carried over just like when merging people.
 
     # test_team has a superteam, one active member and a poll.
 
-    >>> [team.name for team in test_team.super_teams]
-    [u'launchpad']
+    >>> for team in test_team.super_teams:
+    ...     print(team.name)
+    launchpad
 
-    >>> test_team.teamowner.name
-    u'name12'
+    >>> print(test_team.teamowner.name)
+    name12
 
-    >>> [member.name for member in test_team.allmembers]
-    [u'name12']
+    >>> for member in test_team.allmembers:
+    ...     print(member.name)
+    name12
 
     >>> list(IPollSubset(test_team).getAll())
     [<lp.registry.model.poll.Poll object at ...]
@@ -407,11 +409,13 @@ hand, are carried over just like when merging people.
     >>> [team.name for team in landscape.super_teams]
     []
 
-    >>> landscape.teamowner.name
-    u'name12'
+    >>> print(landscape.teamowner.name)
+    name12
 
-    >>> [member.name for member in landscape.allmembers]
-    [u'salgado', u'name12']
+    >>> for member in landscape.allmembers:
+    ...     print(member.name)
+    salgado
+    name12
 
     >>> list(IPollSubset(landscape).getAll())
     []

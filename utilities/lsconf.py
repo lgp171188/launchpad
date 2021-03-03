@@ -82,7 +82,7 @@ class Configuration:
                 continue
             if count > 0:
                 # Separate sections by a blank line, or two when verbose.
-                print
+                print()
             print('[%s]' % section.name)
             if verbose and section.optional:
                 print('# This section is optional.\n')

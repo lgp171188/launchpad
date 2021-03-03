@@ -10,8 +10,12 @@ seem worth the trouble.
     >>> from lp.services.orderingcheck import OrderingCheck
 
     >>> def sort_key(item):
-    ...     """Simple sorting key for integers: the integer itself."""
-    ...     return item
+    ...     """Simple sorting key for integers.
+    ...
+    ...     This could just be the integer itself, but in order to support
+    ...     None on Python 3 we need an additional term.
+    ...     """
+    ...     return (0 if item is None else 1, item)
 
 The OrderingCheck makes it clean and easy.  You create an OrderingCheck
 with the same arguments that go into Python's standard sorting
@@ -51,7 +55,7 @@ error.
 Edge cases
 ----------
 
-It is safe to use the None value.  Python places it below any other
+It is safe to use the None value.  sort_key places it below any other
 integer.
 
     >>> checker = OrderingCheck(key=sort_key)
@@ -75,7 +79,7 @@ ordering, override the "fail" method.
 
     >>> def alternative_fail(item):
     ...     """Don't raise an error, just print a message."""
-    ...     print "Item %s was out of sequence." % item
+    ...     print("Item %s was out of sequence." % item)
 
     >>> checker = OrderingCheck(key=sort_key)
     >>> checker.fail = alternative_fail
