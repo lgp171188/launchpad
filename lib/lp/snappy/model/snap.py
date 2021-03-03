@@ -29,6 +29,7 @@ from storm.expr import (
     Not,
     Or,
     Select,
+    SQL,
     )
 from storm.locals import (
     Bool,
@@ -58,11 +59,14 @@ from lp.app.browser.tales import (
     DateTimeFormatterAPI,
     )
 from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
     InformationType,
     PRIVATE_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
     )
 from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.security import IAuthorization
+from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
@@ -95,6 +99,10 @@ from lp.code.interfaces.gitrepository import (
     )
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
+from lp.code.model.branchnamespace import (
+    BRANCH_POLICY_ALLOWED_TYPES,
+    BRANCH_POLICY_REQUIRED_GRANTS,
+    )
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
@@ -200,6 +208,17 @@ def snap_modified(snap, event):
     events on snap packages.
     """
     removeSecurityProxy(snap).date_last_modified = UTC_NOW
+
+
+def user_has_special_snap_access(user):
+    """Admins have special access.
+
+    :param user: An `IPerson` or None.
+    """
+    if user is None:
+        return False
+    roles = IPersonRoles(user)
+    return roles.in_admin
 
 
 @implementer(ISnapBuildRequest)
@@ -351,13 +370,7 @@ class Snap(Storm, WebhookTargetMixin):
 
     require_virtualized = Bool(name='require_virtualized')
 
-    def _validate_private(self, attr, value):
-        if not getUtility(ISnapSet).isValidPrivacy(
-                value, self.owner, self.branch, self.git_ref):
-            raise SnapPrivacyMismatch
-        return value
-
-    private = Bool(name='private', validator=_validate_private)
+    _private = Bool(name='private')
 
     def _valid_information_type(self, attr, value):
         if not getUtility(ISnapSet).isValidInformationType(
@@ -389,20 +402,18 @@ class Snap(Storm, WebhookTargetMixin):
                  description=None, branch=None, git_ref=None, auto_build=False,
                  auto_build_archive=None, auto_build_pocket=None,
                  auto_build_channels=None, require_virtualized=True,
-                 date_created=DEFAULT, private=False, allow_internet=True,
-                 build_source_tarball=False, store_upload=False,
-                 store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None, project=None):
+                 date_created=DEFAULT, information_type=InformationType.PUBLIC,
+                 allow_internet=True, build_source_tarball=False,
+                 store_upload=False, store_series=None, store_name=None,
+                 store_secrets=None, store_channels=None, project=None):
         """Construct a `Snap`."""
         super(Snap, self).__init__()
 
-        # Set the private flag first so that other validators can perform
+        # Set the information type first so that other validators can perform
         # suitable privacy checks, but pillar should also be set, since it's
         # mandatory for private snaps.
         self.project = project
-        self.private = private
-        self.information_type = (InformationType.PROPRIETARY if private else
-                                 InformationType.PUBLIC)
+        self.information_type = information_type
 
         self.registrant = registrant
         self.owner = owner
@@ -432,13 +443,17 @@ class Snap(Storm, WebhookTargetMixin):
     @property
     def information_type(self):
         if self._information_type is None:
-            return (InformationType.PROPRIETARY if self.private
+            return (InformationType.PROPRIETARY if self._private
                     else InformationType.PUBLIC)
         return self._information_type
 
     @information_type.setter
     def information_type(self, information_type):
         self._information_type = information_type
+
+    @property
+    def private(self):
+        return self.information_type not in PUBLIC_INFORMATION_TYPES
 
     @property
     def valid_webhook_event_types(self):
@@ -617,6 +632,24 @@ class Snap(Storm, WebhookTargetMixin):
     @store_channels.setter
     def store_channels(self, value):
         self._store_channels = value or None
+
+    def getAllowedInformationTypes(self, user):
+        """See `ISnap`."""
+        if user_has_special_snap_access(user):
+            # Admins can set any type.
+            return set(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES)
+        if self.pillar is None:
+            return set(FREE_INFORMATION_TYPES)
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            self.project.branch_sharing_policy]
+        if (required_grant is not None
+                and not getUtility(IService, 'sharing').checkPillarAccess(
+                    [self.project], required_grant, self.owner)
+                and (user is None
+                     or not getUtility(IService, 'sharing').checkPillarAccess(
+                            [self.project], required_grant, user))):
+            return []
+        return BRANCH_POLICY_ALLOWED_TYPES[self.project.branch_sharing_policy]
 
     @staticmethod
     def extractSSOCaveats(macaroon):
@@ -1143,10 +1176,11 @@ class SnapSet:
             git_path=None, git_ref=None, auto_build=False,
             auto_build_archive=None, auto_build_pocket=None,
             auto_build_channels=None, require_virtualized=True,
-            processors=None, date_created=DEFAULT, private=False,
-            allow_internet=True, build_source_tarball=False,
-            store_upload=False, store_series=None, store_name=None,
-            store_secrets=None, store_channels=None, project=None):
+            processors=None, date_created=DEFAULT,
+            information_type=InformationType.PUBLIC, allow_internet=True,
+            build_source_tarball=False, store_upload=False,
+            store_series=None, store_name=None, store_secrets=None,
+            store_channels=None, project=None):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -1183,7 +1217,8 @@ class SnapSet:
         # IntegrityError due to exceptions being raised during object
         # creation and to ensure that everything relevant is in the Storm
         # cache.
-        if not self.isValidPrivacy(private, owner, branch, git_ref):
+        if not self.isValidInformationType(
+                information_type, owner, branch, git_ref):
             raise SnapPrivacyMismatch
 
         store = IMasterStore(Snap)
@@ -1194,7 +1229,7 @@ class SnapSet:
             auto_build_pocket=auto_build_pocket,
             auto_build_channels=auto_build_channels,
             require_virtualized=require_virtualized, date_created=date_created,
-            private=private, allow_internet=allow_internet,
+            information_type=information_type, allow_internet=allow_internet,
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
             store_name=store_name, store_secrets=store_secrets,
@@ -1208,9 +1243,24 @@ class SnapSet:
 
         return snap
 
-    def isValidPrivacy(self, private, owner, branch=None, git_ref=None):
+    def getSnapSuggestedPrivacy(self, owner, branch=None, git_ref=None):
         """See `ISnapSet`."""
-        # Private snaps may contain anything ...
+        # Public snaps with private sources are not allowed.
+        source = branch or git_ref
+        if source is not None and source.private:
+            return source.information_type
+
+        # Public snaps owned by private teams are not allowed.
+        if owner is not None and owner.private:
+            return InformationType.PROPRIETARY
+
+        # XXX pappacena 2021-03-02: We need to consider the pillar's branch
+        # sharing policy here instead of suggesting PUBLIC.
+        return InformationType.PUBLIC
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type not in PUBLIC_INFORMATION_TYPES
         if private:
             # If appropriately enabled via feature flag.
             if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
@@ -1227,11 +1277,6 @@ class SnapSet:
             return False
 
         return True
-
-    def isValidInformationType(self, information_type, owner, branch=None,
-                               git_ref=None):
-        private = information_type in PRIVATE_INFORMATION_TYPES
-        return self.isValidPrivacy(private, owner, branch, git_ref)
 
     def _getByName(self, owner, name):
         return IStore(Snap).find(
@@ -1333,15 +1378,22 @@ class SnapSet:
         # XXX cjwatson 2016-11-25: This is in principle a poor query, but we
         # don't yet have the access grant infrastructure to do better, and
         # in any case the numbers involved should be very small.
+        # XXX pappacena 2021-02-12: Once we do the migration to back fill
+        # information_type, we should be able to change this.
+        private_snap = SQL(
+            "CASE information_type"
+            "    WHEN NULL THEN private"
+            "    ELSE information_type NOT IN ?"
+            "END", params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
         if visible_by_user is None:
-            return Snap.private == False
+            return private_snap == False
         else:
             roles = IPersonRoles(visible_by_user)
             if roles.in_admin or roles.in_commercial_admin:
                 return True
             else:
                 return Or(
-                    Snap.private == False,
+                    private_snap == False,
                     Snap.owner_id.is_in(Select(
                         TeamParticipation.teamID,
                         TeamParticipation.person == visible_by_user)))

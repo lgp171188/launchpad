@@ -166,7 +166,8 @@ class TestSnapFeatureFlag(TestCaseWithFactory):
         self.assertRaises(
             SnapPrivateFeatureDisabled, getUtility(ISnapSet).new,
             person, person, None, None,
-            branch=self.factory.makeAnyBranch(), private=True)
+            branch=self.factory.makeAnyBranch(),
+            information_type=InformationType.PROPRIETARY)
 
 
 class TestSnap(TestCaseWithFactory):
@@ -1419,13 +1420,15 @@ class TestSnapSet(TestCaseWithFactory):
 
     def test_private_snap_information_type_compatibility(self):
         login_admin()
+        private = InformationType.PROPRIETARY
+        public = InformationType.PUBLIC
         private_snap = getUtility(ISnapSet).new(
-            private=True, **self.makeSnapComponents())
+            information_type=private, **self.makeSnapComponents())
         self.assertEqual(
             InformationType.PROPRIETARY, private_snap.information_type)
 
         public_snap = getUtility(ISnapSet).new(
-            private=False, **self.makeSnapComponents())
+            information_type=public, **self.makeSnapComponents())
         self.assertEqual(
             InformationType.PUBLIC, public_snap.information_type)
 
@@ -1433,7 +1436,7 @@ class TestSnapSet(TestCaseWithFactory):
         # Creating private snaps for public sources is allowed.
         [ref] = self.factory.makeGitRefs()
         components = self.makeSnapComponents(git_ref=ref)
-        components['private'] = True
+        components['information_type'] = InformationType.PROPRIETARY
         components['project'] = self.factory.makeProduct()
         snap = getUtility(ISnapSet).new(**components)
         with person_logged_in(components['owner']):
@@ -2519,9 +2522,11 @@ class TestSnapWebservice(TestCaseWithFactory):
         if auto_build_pocket is not None:
             kwargs["auto_build_pocket"] = auto_build_pocket.title
         logout()
+        information_type = (InformationType.PROPRIETARY if private else
+                            InformationType.PUBLIC)
         response = webservice.named_post(
             "/+snaps", "new", owner=owner_url, distro_series=distroseries_url,
-            name="mir", private=private, **kwargs)
+            name="mir", information_type=information_type.title, **kwargs)
         self.assertEqual(201, response.status)
         return webservice.get(response.getHeader("Location")).jsonBody()
 
@@ -2666,7 +2671,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             admin, permission=OAuthPermission.WRITE_PRIVATE)
         admin_webservice.default_api_version = "devel"
         response = admin_webservice.patch(
-            snap_url, "application/json", json.dumps({"private": False}))
+            snap_url, "application/json",
+            json.dumps({"information_type": 'Public'}))
         self.assertEqual(400, response.status)
         self.assertEqual(
             b"Snap recipe contains private information and cannot be public.",
