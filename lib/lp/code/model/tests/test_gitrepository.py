@@ -209,7 +209,13 @@ class TestGitRepository(TestCaseWithFactory):
         verifyObject(IGitRepository, repository)
 
     def test_avoids_large_snapshots(self):
-        large_properties = ['refs', 'branches']
+        large_properties = [
+            'refs',
+            'branches',
+            '_api_landing_targets',
+            '_api_landing_candidates',
+            'dependent_landings',
+            ]
         self.assertThat(
             self.factory.makeGitRepository(),
             DoesNotSnapshot(large_properties, IGitRepositoryView))
