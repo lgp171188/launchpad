@@ -67,6 +67,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from lazr.restful.interface import copy_field
 from six.moves import http_client
 from zope.interface import (
     Attribute,
@@ -570,6 +571,12 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for this snap recipe.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
 
 class ISnapEdit(IWebhookTarget):
     """`ISnap` methods that require launchpad.Edit permission."""
@@ -672,7 +679,7 @@ class ISnapEditableAttributes(IHasOwner):
         description=_("The owner of this snap package.")))
 
     project = ReferenceChoice(
-        title=_('The project that this Snap is associated with.'),
+        title=_('The project that this Snap is associated with'),
         schema=IProduct, vocabulary='Product',
         required=False, readonly=False)
 
@@ -845,7 +852,7 @@ class ISnapAdminAttributes(Interface):
 
     information_type = exported(Choice(
         title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=True, default=InformationType.PUBLIC,
+        required=True, readonly=False, default=InformationType.PUBLIC,
         description=_(
             "The type of information contained in this Snap recipe.")))
 
@@ -884,6 +891,7 @@ class ISnapSet(Interface):
 
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
+        information_type=copy_field(ISnap["information_type"], required=False),
         processors=List(
             value_type=Reference(schema=IProcessor), required=False))
     @export_factory_operation(
@@ -891,15 +899,16 @@ class ISnapSet(Interface):
             "owner", "distro_series", "name", "description", "branch",
             "git_repository", "git_repository_url", "git_path", "git_ref",
             "auto_build", "auto_build_archive", "auto_build_pocket",
-            "private", "store_upload", "store_series", "store_name",
-            "store_channels"])
+            "store_upload", "store_series", "store_name", "store_channels",
+            "project"])
     @operation_for_version("devel")
     def new(registrant, owner, distro_series, name, description=None,
             branch=None, git_repository=None, git_repository_url=None,
             git_path=None, git_ref=None, auto_build=False,
             auto_build_archive=None, auto_build_pocket=None,
             require_virtualized=True, processors=None, date_created=None,
-            private=False, store_upload=False, store_series=None,
+            information_type=InformationType.PUBLIC, store_upload=False,
+            store_series=None,
             store_name=None, store_secrets=None, store_channels=None,
             project=None):
         """Create an `ISnap`."""
@@ -907,8 +916,8 @@ class ISnapSet(Interface):
     def exists(owner, name):
         """Check to see if a matching snap exists."""
 
-    def isValidPrivacy(private, owner, branch=None, git_ref=None):
-        """Whether or not the privacy context is valid."""
+    def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
+        """Which privacy a Snap should have based on its creation params."""
 
     def isValidInformationType(
             information_type, owner, branch=None, git_ref=None):

@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package views."""
@@ -85,6 +85,7 @@ from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
     login,
+    login_admin,
     login_person,
     person_logged_in,
     TestCaseWithFactory,
@@ -400,6 +401,64 @@ class TestSnapAddView(BaseTestSnapView):
             extract_text(find_tag_by_id(browser.contents, "privacy"))
         )
 
+    def test_create_new_snap_private_team_with_private_branch(self):
+        # Creating snaps from private branch should make the snap follow its
+        # privacy setting.
+        self.useFixture(BranchHostingFixture(blob=b""))
+        login_person(self.person)
+        private_team = self.factory.makeTeam(
+            name='super-private', owner=self.person,
+            visibility=PersonVisibility.PRIVATE)
+        branch = self.factory.makeAnyBranch(
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PRIVATESECURITY)
+
+        browser = self.getViewBrowser(
+            branch, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "private-snap"
+        browser.getControl("Owner").value = ['super-private']
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("private-snap", extract_text(content.h1))
+        self.assertEqual(
+            'This snap contains Private information',
+            extract_text(find_tag_by_id(browser.contents, "privacy"))
+        )
+        login_admin()
+        snap = getUtility(ISnapSet).getByName(private_team, 'private-snap')
+        self.assertEqual(
+            InformationType.PRIVATESECURITY, snap.information_type)
+
+    def test_create_new_snap_private_team_with_private_git_repo(self):
+        # Creating snaps from private repos should make the snap follow its
+        # privacy setting.
+        self.useFixture(BranchHostingFixture(blob=b""))
+        login_person(self.person)
+        private_team = self.factory.makeTeam(
+            name='super-private', owner=self.person,
+            visibility=PersonVisibility.PRIVATE)
+        [git_ref] = self.factory.makeGitRefs(
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PRIVATESECURITY)
+
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "private-snap"
+        browser.getControl("Owner").value = ['super-private']
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("private-snap", extract_text(content.h1))
+        self.assertEqual(
+            'This snap contains Private information',
+            extract_text(find_tag_by_id(browser.contents, "privacy"))
+        )
+        login_admin()
+        snap = getUtility(ISnapSet).getByName(private_team, 'private-snap')
+        self.assertEqual(
+            InformationType.PRIVATESECURITY, snap.information_type)
+
     def test_create_new_snap_build_source_tarball(self):
         # We can create a new snap and ask for it to build a source tarball.
         self.useFixture(BranchHostingFixture(blob=b""))
@@ -655,21 +714,42 @@ class TestSnapAdminView(BaseTestSnapView):
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
         login_person(self.person)
         snap = self.factory.makeSnap(registrant=self.person)
+        project = self.factory.makeProduct(name='my-project')
         self.assertTrue(snap.require_virtualized)
+        self.assertIsNone(snap.project)
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
 
+        private = InformationType.PRIVATESECURITY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
+        browser.getControl(name='field.project').value = "my-project"
         browser.getControl("Require virtualized builders").selected = False
-        browser.getControl("Private").selected = True
+        browser.getControl(name="field.information_type").value = private
         browser.getControl("Allow external network access").selected = False
         browser.getControl("Update snap package").click()
 
         login_person(self.person)
+        self.assertEqual(project, snap.project)
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
         self.assertFalse(snap.allow_internet)
+
+    def test_admin_snap_private_without_project(self):
+        # Cannot make snap private if it doesn't have a project associated.
+        login_person(self.person)
+        snap = self.factory.makeSnap(registrant=self.person)
+        commercial_admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        private = InformationType.PRIVATESECURITY.name
+        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser.getLink("Administer snap package").click()
+        browser.getControl(name='field.project').value = ''
+        browser.getControl(name="field.information_type").value = private
+        browser.getControl("Update snap package").click()
+        self.assertEqual(
+            'Private snap recipes must be associated with a project.',
+            extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
     def test_admin_snap_privacy_mismatch(self):
         # Cannot make snap public if it still contains private information.
@@ -682,9 +762,10 @@ class TestSnapAdminView(BaseTestSnapView):
         # can reach this snap because it's owned by a private team.
         commercial_admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        public = InformationType.PUBLIC.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
-        browser.getControl("Private").selected = False
+        browser.getControl(name="field.information_type").value = public
         browser.getControl("Update snap package").click()
         self.assertEqual(
             'A public snap cannot have a private owner.',

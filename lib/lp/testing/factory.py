@@ -4748,10 +4748,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                  auto_build_archive=None, auto_build_pocket=None,
                  auto_build_channels=None, is_stale=None,
                  require_virtualized=True, processors=None,
-                 date_created=DEFAULT, private=False, allow_internet=True,
-                 build_source_tarball=False, store_upload=False,
-                 store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None, project=_DEFAULT):
+                 date_created=DEFAULT, private=False, information_type=None,
+                 allow_internet=True, build_source_tarball=False,
+                 store_upload=False, store_series=None, store_name=None,
+                 store_secrets=None, store_channels=None, project=_DEFAULT):
         """Make a new Snap."""
         if registrant is None:
             registrant = self.makePerson()
@@ -4775,13 +4775,18 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             project = self.makeProduct()
         if project is _DEFAULT:
             project = None
+        assert information_type is None or private is None
+        if private is not None:
+            information_type = (InformationType.PUBLIC if not private
+                                else InformationType.PROPRIETARY)
         snap = getUtility(ISnapSet).new(
             registrant, owner, distroseries, name,
             require_virtualized=require_virtualized, processors=processors,
             date_created=date_created, branch=branch, git_ref=git_ref,
             auto_build=auto_build, auto_build_archive=auto_build_archive,
             auto_build_pocket=auto_build_pocket,
-            auto_build_channels=auto_build_channels, private=private,
+            auto_build_channels=auto_build_channels,
+            information_type=information_type,
             allow_internet=allow_internet,
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
