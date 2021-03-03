@@ -236,7 +236,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         except ArbitraryException:
             report = utility.raising(sys.exc_info(), request)
         for key in report['req_vars'].keys():
-            if isinstance(key, str):
+            if isinstance(key, bytes):
                 key.decode('utf8')
             else:
                 self.assertIsInstance(key, six.text_type)
