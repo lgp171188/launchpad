@@ -518,7 +518,7 @@ class IGitRepositoryView(IHasRecipes):
         "A collection of the merge proposals where this repository is "
         "the source.")
     _api_landing_targets = exported(
-        CollectionField(
+        doNotSnapshot(CollectionField(
             title=_("Landing targets"),
             description=_(
                 "A collection of the merge proposals where this repository is "
@@ -526,13 +526,13 @@ class IGitRepositoryView(IHasRecipes):
             readonly=True,
             # Really IBranchMergeProposal, patched in
             # _schema_circular_imports.py.
-            value_type=Reference(Interface)),
+            value_type=Reference(Interface))),
         exported_as="landing_targets")
     landing_candidates = Attribute(
         "A collection of the merge proposals where this repository is "
         "the target.")
     _api_landing_candidates = exported(
-        CollectionField(
+        doNotSnapshot(CollectionField(
             title=_("Landing candidates"),
             description=_(
                 "A collection of the merge proposals where this repository is "
@@ -540,16 +540,16 @@ class IGitRepositoryView(IHasRecipes):
             readonly=True,
             # Really IBranchMergeProposal, patched in
             # _schema_circular_imports.py.
-            value_type=Reference(Interface)),
+            value_type=Reference(Interface))),
         exported_as="landing_candidates")
-    dependent_landings = exported(CollectionField(
+    dependent_landings = exported(doNotSnapshot(CollectionField(
         title=_("Dependent landings"),
         description=_(
             "A collection of the merge proposals that are dependent on this "
             "repository."),
         readonly=True,
         # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
-        value_type=Reference(Interface)))
+        value_type=Reference(Interface))))
 
     def getPrecachedLandingTargets(user):
         """Return precached landing targets.
@@ -898,6 +898,15 @@ class IGitRepositoryEdit(IWebhookTarget):
         :return: A dict mapping reference paths to sets of
             `GitPermissionType`, corresponding to the requested person's
             effective permissions on each of the requested references.
+        """
+
+    def setRepackData(loose_object_count, pack_count):
+        """Sets the repack parameters received from Turnip.
+
+        :param loose_object_count: The number of loose objects that
+            this repository currently has.
+        :param pack_count: The number of packs that
+            this repository currently has.
         """
 
     @operation_parameters(

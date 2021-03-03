@@ -298,7 +298,7 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball(self):
         # Files from the tarball end up in the import queue.
         behaviour = self.makeBehaviour()
-        with open(self.dummy_tar) as f:
+        with open(self.dummy_tar, 'rb') as f:
             behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
@@ -314,7 +314,7 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball_approved(self):
         # Uploaded template files are automatically approved.
         behaviour = self.makeBehaviour()
-        with open(self.dummy_tar) as f:
+        with open(self.dummy_tar, 'rb') as f:
             behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
@@ -325,7 +325,7 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball_importer(self):
         # Files from the tarball are owned by the branch owner.
         behaviour = self.makeBehaviour()
-        with open(self.dummy_tar) as f:
+        with open(self.dummy_tar, 'rb') as f:
             behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)

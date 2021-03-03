@@ -58,6 +58,8 @@ class LaunchBag:
 
     def setLogin(self, login):
         '''See IOpenLaunchBag.'''
+        if isinstance(login, bytes):
+            login = login.decode('UTF-8')
         self._store.login = login
 
     @property

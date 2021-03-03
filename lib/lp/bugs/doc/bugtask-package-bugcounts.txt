@@ -59,8 +59,8 @@ If we file a new unassigned bug on mozilla-firefox both the open and
 open_unassigned count will increase by one.
 
     >>> ubuntu_firefox = ubuntu.getSourcePackage('mozilla-firefox')
-    >>> ubuntu_firefox.bugtargetdisplayname
-    u'mozilla-firefox (Ubuntu)'
+    >>> print(ubuntu_firefox.bugtargetdisplayname)
+    mozilla-firefox (Ubuntu)
 
     >>> login('foo.bar@canonical.com')
     >>> from lp.bugs.interfaces.bug import CreateBugParams

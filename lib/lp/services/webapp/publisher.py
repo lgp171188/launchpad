@@ -504,7 +504,8 @@ class LaunchpadView(UserAttributeCache):
         """See IBrowserPublisher."""
         # By default, a LaunchpadView cannot be traversed through.
         # Those that can be must override this method.
-        raise NotFound(self, name, request=request)
+        raise NotFound(
+            self, six.ensure_str(name, errors='replace'), request=request)
 
     @property
     def recommended_canonical_url(self):
@@ -968,7 +969,8 @@ class Navigation:
         """
         # Avoid circular imports.
         if nextobj is None:
-            raise NotFound(self.context, name)
+            raise NotFound(
+                self.context, six.ensure_str(name, errors='replace'))
         elif isinstance(nextobj, redirection):
             return RedirectionView(
                 nextobj.name, request, status=nextobj.status)
@@ -1188,7 +1190,7 @@ class RenamedView:
 
     def publishTraverse(self, request, name):
         """See zope.publisher.interfaces.browser.IBrowserPublisher."""
-        raise NotFound(self.context, name)
+        raise NotFound(self.context, six.ensure_str(name, errors='replace'))
 
     def browserDefault(self, request):
         """See zope.publisher.interfaces.browser.IBrowserPublisher."""

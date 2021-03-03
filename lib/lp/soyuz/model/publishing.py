@@ -172,11 +172,9 @@ class ArchivePublisherBase:
         """See `IPublishing`"""
         try:
             for pub_file in self.files:
-                # XXX cprov 2006-06-12 bug=49510: The encode should not
-                # be needed when retrieving data from DB.
-                source = self.source_package_name.encode('utf-8')
-                component = self.component.name.encode('utf-8')
-                filename = pub_file.libraryfile.filename.encode('utf-8')
+                source = self.source_package_name
+                component = self.component.name
+                filename = pub_file.libraryfile.filename
                 filealias = pub_file.libraryfile
                 sha1 = filealias.content.sha1
                 path = diskpool.pathFor(component, source, filename)

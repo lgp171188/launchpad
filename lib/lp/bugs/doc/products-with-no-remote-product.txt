@@ -24,8 +24,9 @@ IProductSet.getProductsWithNoneRemoteProduct() is used for this.
     None
 
     >>> products = getUtility(IProductSet).getProductsWithNoneRemoteProduct()
-    >>> [product.name for product in products]
-    [u'no-remote-product']
+    >>> for product in products:
+    ...     print(product.name)
+    no-remote-product
 
 When we update remote_product automatically, different heuristics are
 used depending on which bug tracker is used. Therefore the list of
@@ -42,5 +43,6 @@ products can be filtered by bug tracker type.
     >>> trac_product.bugtracker = trac
     >>> products = getUtility(IProductSet).getProductsWithNoneRemoteProduct(
     ...     bugtracker_type=BugTrackerType.BUGZILLA)
-    >>> [product.name for product in products]
-    [u'bugzilla-product']
+    >>> for product in products:
+    ...     print(product.name)
+    bugzilla-product

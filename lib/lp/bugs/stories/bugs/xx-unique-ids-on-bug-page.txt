@@ -13,7 +13,7 @@ For example, bug one has more than one Package field.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.testbrowser.browser.AmbiguityError: label u'Package' matches: ...
+    zope.testbrowser.browser.AmbiguityError: label ...'Package' matches: ...
 
 Still, the ids of the fields are unique.
 
@@ -29,6 +29,8 @@ Still, the ids of the fields are unique.
 (The "Email me..." option has the same id everywhere since the
 user is not subscribing to the bugtask, but to the bug.)
 
-    >>> non_unique_ids
-    [u'subscribe', u'subscribe']
+    >>> for item in non_unique_ids:
+    ...     print(item)
+    subscribe
+    subscribe
 

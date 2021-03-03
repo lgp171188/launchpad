@@ -319,7 +319,8 @@ def save_bz2_pickle(obj, filename):
     """Save a bz2 compressed pickle of `obj` to `filename`."""
     fout = bz2.BZ2File(filename, "w")
     try:
-        pickle.dump(obj, fout, pickle.HIGHEST_PROTOCOL)
+        # Use protocol 2 for Python 2 compatibility.
+        pickle.dump(obj, fout, protocol=2)
     finally:
         fout.close()
 

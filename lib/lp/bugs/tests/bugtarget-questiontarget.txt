@@ -87,14 +87,14 @@ The bug and the question share identical attributes.
     >>> question.datecreated == bug.datecreated
     True
 
-    >>> question.owner.displayname
-    u'No Privileges Person'
+    >>> print(question.owner.displayname)
+    No Privileges Person
 
-    >>> question.title
-    u'Print is broken'
+    >>> print(question.title)
+    Print is broken
 
-    >>> question.description
-    u'Print is broken'
+    >>> print(question.description)
+    Print is broken
 
 The bug's messages are copied to the question. The comment parameter for
 convertToQuestion is optional. When it is provided, it is added to the
@@ -109,8 +109,8 @@ bug.
     >>> question.messages[-1].text_contents == bug.messages[-1].text_contents
     True
 
-    >>> question.messages[-1].text_contents
-    u'This is a question.'
+    >>> print(question.messages[-1].text_contents)
+    This is a question.
 
 Once converted to a question, the bugtask status is Invalid.
 
@@ -164,14 +164,16 @@ just the question created from the bug.
     >>> question in bug.questions
     True
 
-    >>> bug.title
-    u'Print is broken'
+    >>> print(bug.title)
+    Print is broken
 
-    >>> [bug.title for bug in question.bugs]
-    [u'Print is broken']
+    >>> for bug in question.bugs:
+    ...     print(bug.title)
+    Print is broken
 
-    >>> [question.title for question in bug.questions]
-    [u'Print is broken']
+    >>> for question in bug.questions:
+    ...     print(question.title)
+    Print is broken
 
 
 Only one bugtask must be valid
@@ -210,8 +212,8 @@ provided
     True
 
     >>> question = big_bug.convertToQuestion(sample_person)
-    >>> question.title
-    u'Print is borked'
+    >>> print(question.title)
+    Print is borked
 
     >>> len(bugtasks) == len([
     ...     bt for bt in bugtasks if bt.status.title == 'Invalid'])

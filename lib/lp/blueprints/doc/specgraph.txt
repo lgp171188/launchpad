@@ -270,8 +270,8 @@ the renderGraphvizGraph() method from the view's parent class. The
 method will make an image map when 'cmapx' is passed as an argument; It
 also makes PNG images when it is passed 'png' as an argument.
 
-    >>> graph_view.renderGraphvizGraph('cmapx')
-    '<map id="deptree" name="deptree">...'
+    >>> print(graph_view.renderGraphvizGraph('cmapx').decode('UTF-8'))
+    <map id="deptree" name="deptree">...
 
 The SpecificationTreeImageTag view is indirectly called when the spec's
 +index template calls render().

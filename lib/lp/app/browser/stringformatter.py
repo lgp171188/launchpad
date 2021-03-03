@@ -1084,7 +1084,8 @@ class FormattersAPI:
             # we also have to strip off any padding characters ("=") because
             # Python's URL-safe base 64 encoding includes those and they
             # aren't allowed in IDs either.
-            unique_suffix = urlsafe_b64encode(raw_text)
+            unique_suffix = (
+                urlsafe_b64encode(raw_text.encode('ASCII')).decode('ASCII'))
             # Ensure we put a '-' between the id and base 64 encoding.
             if id_[-1] != '-':
                 id_ += '-'

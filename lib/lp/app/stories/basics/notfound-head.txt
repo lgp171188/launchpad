@@ -9,7 +9,7 @@ errors (such as 404s).
   HTTP/1.1 200 Ok
   >>> print(response.getHeader('Content-Length'))
   0
-  >>> print(response.getBody())
+  >>> print(six.ensure_text(response.getBody()))
   <BLANKLINE>
 
   >>> response = http(r"""
@@ -19,7 +19,7 @@ errors (such as 404s).
   HTTP/1.1 404 Not Found
   >>> print(response.getHeader('Content-Length'))
   0
-  >>> print(response.getBody())
+  >>> print(six.ensure_text(response.getBody()))
   <BLANKLINE>
 
 Register a test page that generates HTTP 500 errors.
@@ -45,7 +45,7 @@ no body.
   HTTP/1.1 500 Internal Server Error
   >>> print(response.getHeader('Content-Length'))
   0
-  >>> print(response.getBody())
+  >>> print(six.ensure_text(response.getBody()))
   <BLANKLINE>
 
 

@@ -13,7 +13,7 @@ The team pages have their own navigation menu.
 
 The default navigation menu is registered for the 'overview' facet.
 
-    >>> print queryAdapter(ubuntu_team, INavigationMenu, name='overview')
+    >>> print(queryAdapter(ubuntu_team, INavigationMenu, name='overview'))
     <...TeamOverviewNavigationMenu ...>
 
     # Set up the test request so the MenuAPI knows what facet to use for

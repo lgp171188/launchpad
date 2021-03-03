@@ -23,8 +23,8 @@ Basics
 
 When there are no bug watches to check, the result is empty.
 
-    >>> pprint(updater._getRemoteIdsToCheck(
-    ...     remote, [], batch_size=2))
+    >>> print(pretty(updater._getRemoteIdsToCheck(
+    ...     remote, [], batch_size=2)))
     {'all_remote_ids': [],
      'remote_ids_to_check': [],
      'unmodified_remote_ids': []}
@@ -38,10 +38,10 @@ bug IDs given.
     ...     ]
     >>> transaction.commit()
 
-    >>> pprint(updater._getRemoteIdsToCheck(
-    ...     remote, bug_watches, batch_size=2))
-    {'all_remote_ids': [u'a', u'b'],
-     'remote_ids_to_check': [u'a', u'b'],
+    >>> print(pretty(updater._getRemoteIdsToCheck(
+    ...     remote, bug_watches, batch_size=2)))
+    {'all_remote_ids': ['a', 'b'],
+     'remote_ids_to_check': ['a', 'b'],
      'unmodified_remote_ids': []}
 
 With more than batch_size watches, it advises to only check a subset
@@ -54,10 +54,10 @@ of the remote bug IDs given.
     ...     ]
     >>> transaction.commit()
 
-    >>> pprint(updater._getRemoteIdsToCheck(
-    ...     remote, bug_watches, batch_size=2))
-    {'all_remote_ids': [u'a', u'b'],
-     'remote_ids_to_check': [u'a', u'b'],
+    >>> print(pretty(updater._getRemoteIdsToCheck(
+    ...     remote, bug_watches, batch_size=2)))
+    {'all_remote_ids': ['a', 'b'],
+     'remote_ids_to_check': ['a', 'b'],
      'unmodified_remote_ids': []}
 
 
@@ -74,8 +74,8 @@ asked which of a list of bugs have been modified since a given date.
     >>> class QueryableRemoteSystem:
     ...     sync_comments = False
     ...     def getModifiedRemoteBugs(self, remote_bug_ids, timestamp):
-    ...         print("getModifiedRemoteBugs(%r, %r)" % (
-    ...             remote_bug_ids, timestamp))
+    ...         print("getModifiedRemoteBugs(%s, %r)" % (
+    ...             pretty(remote_bug_ids), timestamp))
     ...         # Return every *other* bug ID for demo purposes.
     ...         return remote_bug_ids[::2]
 
@@ -89,7 +89,7 @@ remote system is not queried.
     ...     remote, [], batch_size=2,
     ...     server_time=now, now=now)
 
-    >>> pprint(ids_to_check)
+    >>> print(pretty(ids_to_check))
     {'all_remote_ids': [],
      'remote_ids_to_check': [],
      'unmodified_remote_ids': []}
@@ -108,12 +108,12 @@ queried once, and we are advised to check only one of the watches.
     >>> ids_to_check = updater._getRemoteIdsToCheck(
     ...     remote, bug_watches, batch_size=2,
     ...     server_time=now, now=now)
-    getModifiedRemoteBugs([u'a', u'b'], datetime.datetime(...))
+    getModifiedRemoteBugs(['a', 'b'], datetime.datetime(...))
 
-    >>> pprint(ids_to_check)
-    {'all_remote_ids': [u'a', u'b'],
-     'remote_ids_to_check': [u'a'],
-     'unmodified_remote_ids': [u'b']}
+    >>> print(pretty(ids_to_check))
+    {'all_remote_ids': ['a', 'b'],
+     'remote_ids_to_check': ['a'],
+     'unmodified_remote_ids': ['b']}
 
 With just more than batch_size previously checked watches, the remote
 system is queried twice, and we are advised to check two of the
@@ -131,10 +131,10 @@ watches.
     >>> ids_to_check = updater._getRemoteIdsToCheck(
     ...     remote, bug_watches, batch_size=2,
     ...     server_time=now, now=now)
-    getModifiedRemoteBugs([u'a', u'b'], datetime.datetime(...))
-    getModifiedRemoteBugs([u'c'], datetime.datetime(...))
+    getModifiedRemoteBugs(['a', 'b'], datetime.datetime(...))
+    getModifiedRemoteBugs(['c'], datetime.datetime(...))
 
-    >>> pprint(ids_to_check)
-    {'all_remote_ids': [u'a', u'b', u'c'],
-     'remote_ids_to_check': [u'a', u'c'],
-     'unmodified_remote_ids': [u'b']}
+    >>> print(pretty(ids_to_check))
+    {'all_remote_ids': ['a', 'b', 'c'],
+     'remote_ids_to_check': ['a', 'c'],
+     'unmodified_remote_ids': ['b']}

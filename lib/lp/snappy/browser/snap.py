@@ -524,6 +524,10 @@ class SnapAddView(
             kwargs = {'git_ref': self.context}
         else:
             kwargs = {'branch': self.context}
+        # XXX pappacena 2021-03-01: We should consider the pillar's branch
+        # sharing policy when setting the information_type.
+        # Once we move the information_type and pillar edition from the
+        # admin view to the create/edit views, we should change this.
         information_type = getUtility(ISnapSet).getSnapSuggestedPrivacy(
             data['owner'], **kwargs)
         if not data.get('auto_build', False):
@@ -654,7 +658,7 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
             # Requirements for private snaps.
             project = data.get('project', self.context.project)
             if project is None:
-                msg = ('Private Snap recipes must be associated '
+                msg = ('Private snap recipes must be associated '
                        'with a project.')
                 self.setFieldError('project', msg)
 

@@ -52,7 +52,7 @@ class IOCIPushRuleView(Interface):
     permission.
     """
 
-    id = Int(title=_("ID"), required=True, readonly=True)
+    id = Int(title=_("ID"), required=False, readonly=True)
 
     registry_url = exported(TextLine(
         title=_("Registry URL"),

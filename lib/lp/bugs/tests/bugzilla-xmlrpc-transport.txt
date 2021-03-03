@@ -29,8 +29,7 @@ error will be raised.
     >>> server.spam.eggs()
     Traceback (most recent call last):
       ...
-    AttributeError: TestBugzillaXMLRPCTransport instance has no
-    attribute 'eggs'
+    AttributeError: ...TestBugzillaXMLRPCTransport... has no attribute 'eggs'
 
     >>> del bugzilla_transport.methods['spam']
 

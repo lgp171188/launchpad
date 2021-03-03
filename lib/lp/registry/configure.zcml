@@ -1833,6 +1833,7 @@
                 mirror_admin
                 mugshot
                 oci_project_admin
+                oci_registry_credentials
                 official_answers
                 official_blueprints
                 official_malone

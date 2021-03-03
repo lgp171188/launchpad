@@ -59,8 +59,8 @@ validation error.
     >>> view = create_initialized_view(
     ...    series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print(error)
-    (u'Invalid value', InvalidValue("token ...'foo' not found in vocabulary"))
+    ...     print('%s: %r' % (error.error_name, error.original_exception))
+    Invalid value: InvalidValue("token ...'foo' not found in vocabulary")
 
 Providing a valid branch results in a successful linking.
 

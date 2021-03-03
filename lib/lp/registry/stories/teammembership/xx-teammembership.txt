@@ -28,8 +28,9 @@ Regular users can create teams.
 The owner of a team is always added as an administrator of their team.
 
     >>> from lp.registry.model.person import Person
-    >>> [a.name for a in Person.byName('myemail').adminmembers]
-    [u'name12']
+    >>> for a in Person.byName('myemail').adminmembers:
+    ...     print(a.name)
+    name12
 
 
 Joining a team

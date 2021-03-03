@@ -25,7 +25,7 @@ If the permission doesn't exist, it raises an error:
     >>> check_permission('mushroom.Badger', sample_person)
     Traceback (most recent call last):
     ...
-    ValueError: ('Undefined permission ID', 'mushroom.Badger')
+    ValueError: ('Undefined permission ID', ...'mushroom.Badger')
     >>> logout()
 
 

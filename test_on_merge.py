@@ -185,7 +185,7 @@ def run_test_process():
                 # nb: select.error doesn't expose a named 'errno' attribute,
                 # at least in python 2.6.5; see
                 # <http://mail.python.org/pipermail/python-dev/2000-October/009671.html>
-                if e[0] == errno.EINTR:
+                if e.args[0] == errno.EINTR:
                     continue
                 else:
                     raise

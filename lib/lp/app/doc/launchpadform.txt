@@ -475,7 +475,7 @@ template and thus is way simpler.
   >>> from zope.browserpage import ViewPageTemplateFile
   >>> file, filename = mkstemp()
   >>> f = open(filename, 'w')
-  >>> f.write(u'<div metal:use-macro="context/@@launchpad_form/form" />')
+  >>> _ = f.write(u'<div metal:use-macro="context/@@launchpad_form/form" />')
   >>> f.close()
 
 By default, all widgets are visible.

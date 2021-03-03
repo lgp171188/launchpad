@@ -10,8 +10,8 @@ using Javascript after page load.
     >>> for a_tag in tags_portlet('a'):
     ...     print(a_tag.decode_contents())
     crash
-    pebcak
     dataloss
+    pebcak
 
 If we click on a tag, only bugs with that tag are displayed:
 

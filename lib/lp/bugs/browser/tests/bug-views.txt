@@ -161,11 +161,11 @@ grab a new view to actually see them:
     ...     (latest_ubuntu_bugtask, request), name="+index")
     >>> print(len(ubuntu_bugview.comments))
     3
-    >>> [ (c.index, c.owner.name, c.text_contents)
-    ...  for c in ubuntu_bugview.comments ]
-    [(0, u'name16', u'a bug in a bin pkg'),
-     (1, u'name16', u'I can reproduce this bug.'),
-     (2, u'name16', u'I can reproduce this bug.')]
+    >>> for c in ubuntu_bugview.comments:
+    ...     print("%d %s: %s" % (c.index, c.owner.name, c.text_contents))
+    0 name16: a bug in a bin pkg
+    1 name16: I can reproduce this bug.
+    2 name16: I can reproduce this bug.
 
 
 Description and Comment Display
@@ -207,8 +207,9 @@ indentical to the second, we really only display one comment:
 
     >>> print(len(comments))
     1
-    >>> [(c.index, c.owner.name, c.text_contents) for c in comments]
-    [(1, u'name16', u'I can reproduce this bug.')]
+    >>> for c in comments:
+    ...     print("%d %s: %s" % (c.index, c.owner.name, c.text_contents))
+    1 name16: I can reproduce this bug.
 
 (Unregister our listener, since we no longer need it.)
 
@@ -295,18 +296,22 @@ librarian file of the attachment.
     ...     bug=bug_seven, description='patch 2', is_patch=True,
     ...     filename='p2')
     >>> view = BugView(bug_seven, request)
-    >>> [attachment['attachment'].title
-    ...  for attachment in view.regular_attachments]
-    [u'attachment 1', u'attachment 2']
-    >>> [patch['attachment'].title for patch in view.patches]
-    [u'patch 1', u'patch 2']
-    >>> [attachment['file'].http_url
-    ...  for attachment in view.regular_attachments]
-    [u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a1',
-     u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a2']
-    >>> [patch['file'].http_url for patch in view.patches]
-    [u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p1',
-     u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p2']
+    >>> for attachment in view.regular_attachments:
+    ...     print(attachment['attachment'].title)
+    attachment 1
+    attachment 2
+    >>> for patch in view.patches:
+    ...     print(patch['attachment'].title)
+    patch 1
+    patch 2
+    >>> for attachment in view.regular_attachments:
+    ...     print(attachment['file'].http_url)
+    http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a1
+    http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a2
+    >>> for patch in view.patches:
+    ...     print(patch['file'].http_url)
+    http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p1
+    http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p2
 
 
 Bug Navigation
@@ -609,8 +614,8 @@ initialize the test harness.
     ...         print('EDIT BUG')
 
     >>> firefox_task = bug_one.bugtasks[0]
-    >>> firefox_task.bugtargetdisplayname
-    u'Mozilla Firefox'
+    >>> print(firefox_task.bugtargetdisplayname)
+    Mozilla Firefox
     >>> from lp.testing.deprecated import LaunchpadFormHarness
     >>> bug_edit = LaunchpadFormHarness(firefox_task, BugEditViewTest)
 
@@ -637,12 +642,13 @@ and the bug will have been edited.
     False
     >>> bug_edit.wasRedirected()
     True
-    >>> bug_one.title
-    u'New title'
-    >>> bug_one.description
-    u'New description.'
-    >>> bug_one.tags
-    [u'doc']
+    >>> print(bug_one.title)
+    New title
+    >>> print(bug_one.description)
+    New description.
+    >>> for tag in bug_one.tags:
+    ...     print(tag)
+    doc
 
 Emails are sent out by adding entries to the bugnotification table. We
 need to know how many messages are currently in that table.
@@ -661,8 +667,10 @@ once.
     False
     >>> bug_edit.wasRedirected()
     True
-    >>> bug_one.tags
-    [u'doc', u'new-tag']
+    >>> for tag in bug_one.tags:
+    ...     print(tag)
+    doc
+    new-tag
 
 Since the 'new-tag' was added, a new entry in the bugnotification table
 should exist.
@@ -671,8 +679,8 @@ should exist.
     ...     BugNotification, bug=bug_one).order_by(BugNotification.id)
     >>> start_bugnotification_count == bn_set.count() - 1
     True
-    >>> bn_set.last().message.text_contents
-    u'** Tags added: new-tag'
+    >>> print(bn_set.last().message.text_contents)
+    ** Tags added: new-tag
 
 
 Displaying BugActivity interleaved with comments

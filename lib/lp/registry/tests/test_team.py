@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for PersonSet."""
@@ -585,6 +585,16 @@ class TestVisibilityConsistencyWarning(TestCaseWithFactory):
         transaction.commit()
         self.assertEqual(
             None,
+            self.team.visibilityConsistencyWarning(PersonVisibility.PRIVATE))
+
+    def test_no_warning_for_SnapBuild_requester(self):
+        # Sometimes snap recipe builds can end up having their requester set
+        # to a team for one reason or another.  This doesn't cause a
+        # warning, since the requester does not expose team membership
+        # information.
+        self.factory.makeSnapBuild(
+            requester=self.team, snap=self.factory.makeSnap())
+        self.assertIsNone(
             self.team.visibilityConsistencyWarning(PersonVisibility.PRIVATE))
 
 

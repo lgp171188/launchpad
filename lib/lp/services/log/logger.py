@@ -132,7 +132,7 @@ class FakeLogger:
         prefix = LEVEL_PREFIXES.get(level, "%d>" % level)
         print(prefix, self._format_message(msg, *stuff), file=output_file)
 
-        if 'exc_info' in kw:
+        if kw.get('exc_info', False):
             traceback.print_exc(file=output_file)
 
     def log(self, level, *stuff, **kw):

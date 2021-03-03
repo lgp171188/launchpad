@@ -29,11 +29,11 @@ the new name. The redirection status is 301 (Moved permently) which
 will make search engines discards the old URLs and some browser to
 update bookmarks.
 
-    >>> view()
-    u''
+    >>> print(view())
+    <BLANKLINE>
     >>> request.response.getStatus()
     301
-    >>> print request.response.getHeader('Location')
+    >>> print(request.response.getHeader('Location'))
     http://launchpad.test/ubuntu/+questions
 
 The view can also work for names registered on the root, and the
@@ -42,11 +42,11 @@ new_name can be a relative path.
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
     >>> root = getUtility(ILaunchpadRoot)
     >>> view = RenamedView(root, LaunchpadTestRequest(), '+tour/index.html')
-    >>> view()
-    u''
+    >>> print(view())
+    <BLANKLINE>
     >>> request.response.getStatus()
     301
-    >>> print view.request.response.getHeader('Location')
+    >>> print(view.request.response.getHeader('Location'))
     http://launchpad.test/+tour/index.html
 
 
@@ -58,9 +58,9 @@ to the redirected URL.
     >>> request = LaunchpadTestRequest(
     ...     QUERY_STRING='field.status=Open')
     >>> view = RenamedView(ubuntu, request, '+questions')
-    >>> view()
-    u''
-    >>> print request.response.getHeader('Location')
+    >>> print(view())
+    <BLANKLINE>
+    >>> print(request.response.getHeader('Location'))
     http://launchpad.test/ubuntu/+questions?field.status=Open
 
 
@@ -72,9 +72,9 @@ change the virtual host used for the redirection.
     >>> request = LaunchpadTestRequest()
     >>> view = RenamedView(
     ...     ubuntu, request, '+questions', rootsite='answers')
-    >>> view()
-    u''
-    >>> print request.response.getHeader('Location')
+    >>> print(view())
+    <BLANKLINE>
+    >>> print(request.response.getHeader('Location'))
     http://answers.launchpad.test/ubuntu/+questions
 
 
@@ -90,7 +90,7 @@ raise an error. e.g. http://launchpad.test/ubuntu/+tickets/foo
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    zope.publisher.interfaces.NotFound: Object: <Distribution 'Ubuntu' (ubuntu)>, name: u'foo'
+    zope.publisher.interfaces.NotFound: Object: <Distribution 'Ubuntu' (ubuntu)>, name: 'foo'
 
 
 == Registering from ZCML ==
@@ -115,7 +115,7 @@ browser:renamed-page is available for this purpose.
     >>> from zope.component import getMultiAdapter
     >>> request = LaunchpadTestRequest()
     >>> view = getMultiAdapter((ubuntu, request), name='+old_tickets_page')
-    >>> view()
-    u''
-    >>> print request.response.getHeader('Location')
+    >>> print(view())
+    <BLANKLINE>
+    >>> print(request.response.getHeader('Location'))
     http://answers.launchpad.test/ubuntu/+questions

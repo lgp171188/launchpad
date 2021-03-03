@@ -4,12 +4,14 @@ Just to show that we're actually talking to the appserver, first check to see
 if a specific user exists...
 
     >>> browser = Browser()
-    >>> browser.addHeader('Authorization', 'Basic foo.bar@canonical.com:test')
+    >>> browser.addHeader(
+    ...     'Authorization',
+    ...     six.ensure_str('Basic foo.bar@canonical.com:test'))
     >>> from lp.testing.layers import BaseLayer
     >>> root_url = BaseLayer.appserver_root_url()
     >>> browser.open(root_url)
-    >>> browser.vhost
-    'http://launchpad.test'
+    >>> print(browser.vhost)
+    http://launchpad.test
     >>> browser.urlpath
     '/'
 
@@ -25,7 +27,7 @@ if a specific user exists...
     >>> browser.getControl(name='field.name').value = 'stimpy'
     >>> browser.getControl('Display Name').value = 'Stimpson J. Cat'
     >>> browser.getControl('Create').click()
-    >>> browser.vhost
-    'http://launchpad.test'
+    >>> print(browser.vhost)
+    http://launchpad.test
     >>> browser.urlpath
     '/~stimpy'

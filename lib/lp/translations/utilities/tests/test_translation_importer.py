@@ -235,7 +235,7 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         existing_translation = self.factory.makeCurrentTranslationMessage(
             pofile=pofile, potmsgset=potmsgset1)
 
-        text = b"""
+        text = six.ensure_binary("""
             msgid ""
             msgstr ""
             "MIME-Version: 1.0\\n"
@@ -245,7 +245,7 @@ class TranslationImporterTestCase(TestCaseWithFactory):
 
             msgid "%s"
             msgstr "A translation."
-        """ % potmsgset2.msgid_singular.msgid
+        """ % potmsgset2.msgid_singular.msgid)
 
         entry = self.factory.makeTranslationImportQueueEntry(
             'foo.po', potemplate=template, pofile=pofile,

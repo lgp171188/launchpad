@@ -85,9 +85,10 @@ both a source and binary package of that name.
     ...     "mozilla-firefox")
     >>> package_name_terms.count()
     2
-    >>> [(term.token, term.title) for term in package_name_terms]
-    [('mozilla-firefox', u'mozilla-firefox'),
-     ('mozilla-firefox-data', u'mozilla-firefox-data')]
+    >>> for term in package_name_terms:
+    ...     print('%s: %s' % (term.token, term.title))
+    mozilla-firefox: mozilla-firefox
+    mozilla-firefox-data: mozilla-firefox-data
 
 Searching for "mozilla" should return the binary package name above, and
 the source package named "mozilla".
@@ -95,19 +96,21 @@ the source package named "mozilla".
     >>> package_name_terms = package_name_vocabulary.searchForTerms("mozilla")
     >>> package_name_terms.count()
     3
-    >>> [(term.token, term.title) for term in package_name_terms]
-    [('mozilla', u'mozilla'),
-     ('mozilla-firefox', u'mozilla-firefox'),
-     ('mozilla-firefox-data', u'mozilla-firefox-data')]
+    >>> for term in package_name_terms:
+    ...     print('%s: %s' % (term.token, term.title))
+    mozilla: mozilla
+    mozilla-firefox: mozilla-firefox
+    mozilla-firefox-data: mozilla-firefox-data
 
 The search does a case-insensitive, substring match.
 
     >>> package_name_terms = package_name_vocabulary.searchForTerms("lInuX")
     >>> package_name_terms.count()
     2
-    >>> [(term.token, term.title) for term in package_name_terms]
-    [('linux-2.6.12', u'linux-2.6.12'),
-     ('linux-source-2.6.15', u'linux-source-2.6.15')]
+    >>> for term in package_name_terms:
+    ...     print('%s: %s' % (term.token, term.title))
+    linux-2.6.12: linux-2.6.12
+    linux-source-2.6.15: linux-source-2.6.15
 
 
 SourcePackageNameVocabulary
@@ -123,14 +126,17 @@ of any distribution.
     >>> spn_terms = spn_vocabulary.searchForTerms("mozilla")
     >>> len(spn_terms)
     2
-    >>> [(term.token, term.title) for term in spn_terms]
-    [('mozilla', u'mozilla'), ('mozilla-firefox', u'mozilla-firefox')]
+    >>> for term in spn_terms:
+    ...     print('%s: %s' % (term.token, term.title))
+    mozilla: mozilla
+    mozilla-firefox: mozilla-firefox
 
     >>> spn_terms = spn_vocabulary.searchForTerms("pmount")
     >>> len(spn_terms)
     1
-    >>> [(term.token, term.title) for term in spn_terms]
-    [('pmount', u'pmount')]
+    >>> for term in spn_terms:
+    ...     print('%s: %s' % (term.token, term.title))
+    pmount: pmount
 
 
 Processor
@@ -164,8 +170,12 @@ collection. It provides the IHugeVocabulary interface.
 
 Iterations over the PPA vocabulary will return on PPA archives.
 
-    >>> sorted([term.value.owner.name for term in vocabulary])
-    [u'cprov', u'mark', u'no-priv']
+    >>> from operator import attrgetter
+    >>> for term in sorted(vocabulary, key=attrgetter('value.owner.name')):
+    ...     print(term.value.owner.name)
+    cprov
+    mark
+    no-priv
 
 PPA vocabulary terms contain:
 

@@ -1,7 +1,6 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import base64
 from datetime import datetime
 import os
 import shutil
@@ -62,7 +61,7 @@ class FakeGenerateKey(Fixture):
 
     def __init__(self, keyfile):
         filepath = os.path.join(gpgkeysdir, keyfile)
-        with open(filepath) as f:
+        with open(filepath, "rb") as f:
             self.secret_key = f.read()
 
     def _setUp(self):
@@ -483,7 +482,7 @@ class TestGPGHandler(TestCase):
         for key_name, password in secret_keys:
             self.gpg_handler.resetLocalState()
             secret_key = import_secret_test_key(key_name)
-            content = "abc\n"
+            content = b"abc\n"
             signed_content = self.gpg_handler.signContent(
                 content, secret_key, password)
             signature = self.gpg_handler.getVerifiedSignature(signed_content)
@@ -499,15 +498,11 @@ class TestGPGHandler(TestCase):
                     [get_gpg_path(), "--quiet", "--status-fd", "1",
                      "--verify"],
                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                    stderr=devnull, universal_newlines=True)
-            status = gpg_proc.communicate(signed_content)[0].splitlines()
+                    stderr=devnull)
+            output = six.ensure_text(gpg_proc.communicate(signed_content)[0])
+            status = output.splitlines()
             validsig_prefix = "[GNUPG:] VALIDSIG "
             [validsig_line] = [
                 line for line in status if line.startswith(validsig_prefix)]
             validsig_tokens = validsig_line[len(validsig_prefix):].split()
             self.assertEqual(gpgme.MD_SHA512, int(validsig_tokens[7]))
-
-
-def construct_url(template, owner_id='', fingerprint=''):
-    owner_id = base64.b64encode(owner_id, altchars='-_')
-    return template.format(owner_id=owner_id, fingerprint=fingerprint)

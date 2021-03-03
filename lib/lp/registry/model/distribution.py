@@ -33,6 +33,10 @@ from storm.expr import (
     SQL,
     )
 from storm.info import ClassAlias
+from storm.locals import (
+    Int,
+    Reference,
+    )
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -270,6 +274,31 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         enum=DistributionDefaultTraversalPolicy, notNull=False,
         default=DistributionDefaultTraversalPolicy.SERIES)
     redirect_default_traversal = BoolCol(notNull=False, default=False)
+    oci_registry_credentials_id = Int(name='oci_credentials', allow_none=True)
+    oci_registry_credentials = Reference(
+        oci_registry_credentials_id, "OCIRegistryCredentials.id")
+
+    def __init__(self, name, display_name, title, description, summary,
+                 domainname, members, owner, registrant, mugshot=None,
+                 logo=None, icon=None, vcs=None):
+        try:
+            self.name = name
+            self.display_name = display_name
+            self._title = title
+            self.description = description
+            self.summary = summary
+            self.domainname = domainname
+            self.members = members
+            self.mirror_admin = owner
+            self.owner = owner
+            self.registrant = registrant
+            self.mugshot = mugshot
+            self.logo = logo
+            self.icon = icon
+            self.vcs = vcs
+        except Exception:
+            IStore(self).remove(self)
+            raise
 
     def __repr__(self):
         display_name = backslashreplace(self.display_name)
@@ -1548,18 +1577,18 @@ class DistributionSet:
         distro = Distribution(
             name=name,
             display_name=display_name,
-            _title=title,
+            title=title,
             description=description,
             summary=summary,
             domainname=domainname,
             members=members,
-            mirror_admin=owner,
             owner=owner,
             registrant=registrant,
             mugshot=mugshot,
             logo=logo,
             icon=icon,
             vcs=vcs)
+        IStore(distro).add(distro)
         getUtility(IArchiveSet).new(distribution=distro,
             owner=owner, purpose=ArchivePurpose.PRIMARY)
         policies = itertools.product(

@@ -28,11 +28,11 @@ class SmokeTestWadlAndDocGeneration(TestCase):
         config = getUtility(IWebServiceConfiguration)
         for version in config.active_versions:
             wadl = generate_wadl(version)
-            self.assertThat(wadl[:40], StartsWith('<?xml '))
+            self.assertThat(wadl[:40], StartsWith(b'<?xml '))
         WebServiceApplication.cached_wadl = preexisting_wadl_cache
 
     def test_json(self):
         config = getUtility(IWebServiceConfiguration)
         for version in config.active_versions:
             json = generate_json(version)
-            self.assertThat(json, StartsWith('{"'))
+            self.assertThat(json, StartsWith(b'{"'))

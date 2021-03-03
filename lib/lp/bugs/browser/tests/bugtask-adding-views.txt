@@ -33,8 +33,9 @@ our meta view.
 
 We haven't posted the form, so we'll see one button.
 
-    >>> [action.label for action in add_task_view.actions]
-    [u'Continue']
+    >>> for action in add_task_view.actions:
+    ...     print(action.label)
+    Continue
 
 Since we gave the view an upstream product as its context, it can't
 guess which product we want to add, so it will ask us to specify it.
@@ -59,8 +60,8 @@ that product is required:
     ...     'field.__visited_steps__': 'choose_product'}
     >>> add_task_view = get_and_setup_view(
     ...     firefox_task, '+choose-affected-product', form)
-    >>> add_task_view.getFieldError('product')
-    u'Required input is missing.'
+    >>> print(add_task_view.getFieldError('product'))
+    Required input is missing.
 
 
 If we supply a valid product, it will move on to the next step.
@@ -88,8 +89,8 @@ If the validation fails, an error will be displayed.
     ...     firefox_task, '+choose-affected-product', form)
     >>> add_task_view.step_name
     'choose_product'
-    >>> add_task_view.getFieldError('product')
-    u'A fix for this bug has already been requested for Mozilla Firefox'
+    >>> print(add_task_view.getFieldError('product'))
+    A fix for this bug has already been requested for Mozilla Firefox
 
 
 When adding a product from an upstream task, we always have to choose
@@ -117,8 +118,8 @@ selected.
     ...     method='GET')
     >>> add_task_view.step_name
     'specify_remote_bug_url'
-    >>> add_task_view.widgets['product'].getInputValue().name
-    u'firefox'
+    >>> print(add_task_view.widgets['product'].getInputValue().name)
+    firefox
 
 If some package doesn't have a packaging link, a product will have to
 be chosen manually, and the user may choose to link the package to the
@@ -252,8 +253,8 @@ tried to create a bugtask without a bug watch.
 
     >>> len(add_task_view.errors)
     1
-    >>> add_task_view.getFieldError('bug_url')
-    u'Required input is missing.'
+    >>> print(add_task_view.getFieldError('bug_url'))
+    Required input is missing.
     >>> add_task_view.next_url is None
     True
 
@@ -370,8 +371,8 @@ attributes got initialized to Unknown. The bugtask will be synced with
 the bug watch's status later.
 
     >>> alsa_task = bug_four.bugtasks[0]
-    >>> alsa_task.bugtargetname
-    u'alsa-utils'
+    >>> print(alsa_task.bugtargetname)
+    alsa-utils
     >>> alsa_task.product.bug_tracking_usage
     <DBItem ServiceUsage.UNKNOWN, (10) Unknown>
     >>> alsa_task.bugwatch == bug_four.watches[0]
@@ -416,8 +417,8 @@ confirmation page.
     ...     firefox_task, '+choose-affected-product', form)
     >>> add_task_view.errors
     []
-    >>> add_task_view.getTarget().displayname
-    u'Mozilla Thunderbird'
+    >>> print(add_task_view.getTarget().displayname)
+    Mozilla Thunderbird
 
 If we request a fix in a source package, the distribution's display
 name is returned.
@@ -427,8 +428,8 @@ name is returned.
     ...     'field.sourcepackagename': u'evolution'}
     >>> add_task_view = get_and_setup_view(
     ...     firefox_task, '+distrotask', form)
-    >>> add_task_view.getTarget().displayname
-    u'Debian'
+    >>> print(add_task_view.getTarget().displayname)
+    Debian
 
 
 The form also accept binary package names to be entered. The binary
@@ -503,8 +504,9 @@ bugs.foo.org, we'll present 'The Foo Product' as a candidate.
     >>> add_task_view = create_view(
     ...     firefox_task, '+affects-new-product', form=form, method='POST')
     >>> add_task_view.initialize()
-    >>> [product.name for product in add_task_view.existing_products]
-    [u'foo-product']
+    >>> for product in add_task_view.existing_products:
+    ...     print(product.name)
+    foo-product
 
     # Now we choose to register the product anyway, as it's not one of the
     # existing ones.
@@ -527,15 +529,18 @@ we'll present only the ones whose name is similar to what the user entered.
     >>> add_task_view.initialize()
     >>> add_task_view.MAX_PRODUCTS_TO_DISPLAY
     10
-    >>> [product.name for product in add_task_view.existing_products]
-    [u'bar-product', u'foo-product']
+    >>> for product in add_task_view.existing_products:
+    ...     print(product.name)
+    bar-product
+    foo-product
 
     >>> add_task_view = create_view(
     ...     firefox_task, '+affects-new-product', form=form, method='POST')
     >>> add_task_view.MAX_PRODUCTS_TO_DISPLAY = 1
     >>> add_task_view.initialize()
-    >>> [product.name for product in add_task_view.existing_products]
-    [u'foo-product']
+    >>> for product in add_task_view.existing_products:
+    ...     print(product.name)
+    foo-product
 
 Here another user will choose to report a bug on the existing project.
 Note that we use another user to make sure our code doesn't attempt to

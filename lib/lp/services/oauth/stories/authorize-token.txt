@@ -198,8 +198,8 @@ person set.
     # transaction.
     >>> login(ANONYMOUS)
     >>> token = consumer.getRequestToken(token.key)
-    >>> token.person.name
-    u'no-priv'
+    >>> print(token.person.name)
+    no-priv
     >>> token.permission
     <DBItem OAuthPermission.READ_PUBLIC...
     >>> token.is_reviewed

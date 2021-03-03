@@ -55,8 +55,8 @@ So, let's pretend that we filed bug 4 just now:
 Let's take a look at what the notification email looks like:
 
     >>> subject, body = generate_bug_add_email(bug_four)
-    >>> subject
-    u'[Bug 4] [NEW] Reflow problems with complex page layouts'
+    >>> print(subject)
+    [Bug 4] [NEW] Reflow problems with complex page layouts
 
     >>> print(body)
     Public bug reported:
@@ -77,8 +77,8 @@ as well.
     >>> bug_four.tags = [u'foo', u'bar']
 
     >>> subject, body = generate_bug_add_email(bug_four)
-    >>> subject
-    u'[Bug 4] [NEW] Reflow problems with complex page layouts'
+    >>> print(subject)
+    [Bug 4] [NEW] Reflow problems with complex page layouts
 
     >>> print(body)
     Public bug reported:
@@ -98,8 +98,8 @@ New security related bugs are sent with a prominent warning:
     ...     InformationType.PUBLICSECURITY, getUtility(ILaunchBag).user)
 
     >>> subject, body = generate_bug_add_email(bug_four)
-    >>> subject
-    u'[Bug 4] [NEW] Reflow problems with complex page layouts'
+    >>> print(subject)
+    [Bug 4] [NEW] Reflow problems with complex page layouts
 
     >>> print(body)
     *** This bug is a security vulnerability ***
@@ -451,8 +451,8 @@ pair of handy functions defined in mailnotification.py:
 
 The Reply-To address generation is straightforward:
 
-    >>> get_bugmail_replyto_address(bug_four)
-    u'Bug 4 <4@bugs.launchpad.net>'
+    >>> print(get_bugmail_replyto_address(bug_four))
+    Bug 4 <4@bugs.launchpad.net>
 
 In order to send DMARC-compliant bug notifications, the From address generator
 is also quite straightforward and uses the bug's email address for the From
@@ -461,12 +461,12 @@ address, while adjusting the friendly display name field.
 This applies for all users.  For example, Stuart has four email addresses:
 
     >>> stub = getUtility(IPersonSet).getByName("stub")
-    >>> [(email.email, email.status.name) for email
-    ...     in getUtility(IEmailAddressSet).getByPerson(stub)]
-    [(u'stuart.bishop@canonical.com', 'PREFERRED'),
-     (u'stuart@stuartbishop.net', 'VALIDATED'),
-     (u'stub@fastmail.fm', 'NEW'),
-     (u'zen@shangri-la.dropbear.id.au', 'OLD')]
+    >>> for email in getUtility(IEmailAddressSet).getByPerson(stub):
+    ...     print(email.email, email.status.name)
+    stuart.bishop@canonical.com PREFERRED
+    stuart@stuartbishop.net VALIDATED
+    stub@fastmail.fm NEW
+    zen@shangri-la.dropbear.id.au OLD
 
 However, because of DMARC compliance, we only use the bug's email address in the
 From field, with Stuart's name in the 'display name' portion of the email address:

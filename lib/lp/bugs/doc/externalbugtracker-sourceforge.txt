@@ -215,9 +215,11 @@ been checked.
 
     >>> transaction.commit()
 
+    >>> from operator import attrgetter
     >>> with sourceforge.responses(trace_calls=True):
     ...     bug_watch_updater.updateBugWatches(
-    ...         sourceforge, sorted(example_bug_tracker.watches))
+    ...         sourceforge,
+    ...         sorted(example_bug_tracker.watches, key=attrgetter('id')))
     INFO Updating 1 watches for 1 bugs on http://bugs.some.where
     GET http://bugs.some.where/support/tracker.php?aid=1722251
 

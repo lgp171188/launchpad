@@ -44,7 +44,7 @@ class PoolTestingFile:
         self.pool = pool
         self.sourcename = sourcename
         self.filename = filename
-        self.contents = sourcename
+        self.contents = sourcename.encode("UTF-8")
 
     def addToPool(self, component):
         return self.pool.addFile(

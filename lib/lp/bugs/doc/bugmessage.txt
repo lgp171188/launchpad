@@ -18,8 +18,8 @@ An individual IBugMessage can be retrieved with
 IBugMessageSet.get:
 
     >>> bugmessage_four = bugmessageset.get(4)
-    >>> bugmessage_four.message.subject
-    u"Fantastic idea, I'd really like to see this"
+    >>> print(bugmessage_four.message.subject)
+    Fantastic idea, I'd really like to see this
 
 You can get all the imported comments for a bug using
 getImportedBugMessages. Imported comments are comments being linked to a
@@ -60,8 +60,8 @@ To create a bug message, use IBugMessageSet.createMessage:
     ...     content="text message content",
     ...     owner=sample_person,
     ...     bug=bug_one)
-    >>> test_message.message.subject
-    u'test message subject'
+    >>> print(test_message.message.subject)
+    test message subject
 
 The parent gets set to the initial message of the bug:
 

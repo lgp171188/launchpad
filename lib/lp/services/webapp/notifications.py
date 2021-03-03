@@ -60,8 +60,9 @@ class NotificationRequest:
     >>> notifications = NotificationList()
     >>> session['notifications'] = notifications
     >>> notifications.append(Notification(0, 'Fnord'))
-    >>> [notification.message for notification in request.notifications]
-    ['Fnord']
+    >>> for notification in request.notifications:
+    ...     print(notification.message)
+    Fnord
 
     Note that NotificationRequest.notifications also returns any notifications
     that have been added so far in this request, making it the single source
@@ -69,8 +70,10 @@ class NotificationRequest:
 
     >>> response = INotificationResponse(request)
     >>> response.addNotification('Aargh')
-    >>> [notification.message for notification in request.notifications]
-    ['Fnord', u'Aargh']
+    >>> for notification in request.notifications:
+    ...     print(notification.message)
+    Fnord
+    Aargh
     """
 
     @property
@@ -263,17 +266,17 @@ class NotificationList(list):
     >>> notifications.append(Notification(error, u'An error'))
     >>> notifications.append(Notification(debug, u'A debug message'))
     >>> for notification in notifications:
-    ...     print(repr(notification.message))
-    u'An error'
-    u'A debug message'
+    ...     print(notification.message)
+    An error
+    A debug message
 
     The __getitem__ method is also overloaded to allow TALES expressions
     to easily retrieve lists of notifications that match a particular
     notification level.
 
     >>> for notification in notifications['debug']:
-    ...     print(repr(notification.message))
-    u'A debug message'
+    ...     print(notification.message)
+    A debug message
     """
 
     created = None

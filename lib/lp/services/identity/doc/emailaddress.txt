@@ -53,8 +53,8 @@ Registering a new email address works -- and preserves case -- though:
 
     >>> emailaddress = emailset.new(
     ...     'oink@Canonical.com', foobar)
-    >>> emailaddress.email
-    u'oink@Canonical.com'
+    >>> print(emailaddress.email)
+    oink@Canonical.com
 
 Generating SHA1 hashes for RDF output is easy:
 
@@ -65,13 +65,19 @@ There's a convenience method on IEmailAddressSet to pull preferred email
 addresses for a set of people:
 
     >>> guadamen = personset.getByName('guadamen')
-    >>> [emailaddress.email for emailaddress in
-    ...  emailset.getPreferredEmailForPeople(guadamen.allmembers)]
-    [u'celso.providelo@canonical.com', u'colin.watson@ubuntulinux.com',
-     u'daniel.silverstone@canonical.com', u'edgar@monteparadiso.hr',
-     u'foo.bar@canonical.com', u'jeff.waugh@ubuntulinux.com',
-     u'limi@plone.org', u'mark@example.com',
-     u'steve.alexander@ubuntulinux.com', u'support@ubuntu.com']
+    >>> for emailaddress in emailset.getPreferredEmailForPeople(
+    ...         guadamen.allmembers):
+    ...     print(emailaddress.email)
+    celso.providelo@canonical.com
+    colin.watson@ubuntulinux.com
+    daniel.silverstone@canonical.com
+    edgar@monteparadiso.hr
+    foo.bar@canonical.com
+    jeff.waugh@ubuntulinux.com
+    limi@plone.org
+    mark@example.com
+    steve.alexander@ubuntulinux.com
+    support@ubuntu.com
 
 
 Deleting email addresses
@@ -83,7 +89,7 @@ or the address of a team's mailing list.
     >>> ignored = login_person(foobar)
     >>> emailaddress = emailset.getByEmail('oink@canonical.com')
     >>> emailaddress.destroySelf()
-    >>> print emailset.getByEmail('oink@canonical.com')
+    >>> print(emailset.getByEmail('oink@canonical.com'))
     None
 
 Otherwise, UndeletableEmailAddress is raised.

@@ -79,9 +79,9 @@ class TestPlacelessAuth(ContainerPlacelessSetup, testtools.TestCase):
         testtools.TestCase.tearDown(self)
 
     def _make(self, login, pwd):
-        dict = {
-            'HTTP_AUTHORIZATION':
-            'Basic %s' % base64.b64encode('%s:%s' % (login, pwd))}
+        auth = base64.b64encode(
+            ('%s:%s' % (login, pwd)).encode('ASCII')).decode('ASCII')
+        dict = {'HTTP_AUTHORIZATION': 'Basic %s' % auth}
         request = TestRequest(**dict)
         return getUtility(IPlacelessAuthUtility), request
 

@@ -37,7 +37,7 @@ But if you want you can use any of the available commands as well.
 
 Let's take an example where we file a bug on Firefox:
 
-    >>> submit_mail = """From: Foo Bar <foo.bar@canonical.com>
+    >>> submit_mail = b"""From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: A bug in Firefox
@@ -71,10 +71,10 @@ Now if we pass the message to the Malone handler, we can see that the
 bug got submitted correctly:
 
     >>> from lp.bugs.mail.handler import MaloneHandler
+    >>> from lp.services.compat import message_from_bytes
     >>> handler = MaloneHandler()
     >>> def construct_email(raw_mail):
-    ...     msg = email.message_from_string(
-    ...         raw_mail, _class=MockSignedMessage)
+    ...     msg = message_from_bytes(raw_mail, _class=MockSignedMessage)
     ...     if 'Message-Id' not in msg:
     ...         msg['Message-Id'] = factory.makeUniqueRFC822MsgId()
     ...     return msg
@@ -155,7 +155,7 @@ If we would file a bug on Ubuntu instead, we would submit a mail like
 this:
 
     >>> login(sampledata.USER_EMAIL)
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: A bug in Ubuntu's Mozilla package
@@ -204,7 +204,7 @@ It's possible to file a bug on more than product/package at once:
     ...         distroseries=debian.currentseries,
     ...         sourcepackagename=evolution_dsp.sourcepackagename)
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Affects many packages
@@ -231,7 +231,7 @@ It's possible to file a bug on more than product/package at once:
 If the subject is folded (i.e spans more than one line), it will be
 unfolded before the bug subject is assigned.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:43 BST 2005
     ... Subject: A folded
@@ -242,8 +242,8 @@ unfolded before the bug subject is assigned.
     >>> process_email(submit_mail)
     >>> bug = get_latest_added_bug()
 
-    >>> bug.title
-    u'A folded email subject'
+    >>> print(bug.title)
+    A folded email subject
 
 
 Add a comment
@@ -255,7 +255,7 @@ emails to this address in order to add new comments to the bug. Note
 that we can interleave commands in the comment as well. If the comment
 includes commands, the email has to be OpenPGP-signed.
 
-    >>> comment_mail = """From: test@canonical.com
+    >>> comment_mail = b"""From: test@canonical.com
     ... To: 1@malone-domain
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Message-Id: <yada-yada-test1>
@@ -296,7 +296,7 @@ For that you can send mails to edit@malone-domain.
     >>> bug_five = bugset.get(5)
     >>> bug_four_comments = bug_four.messages.count()
     >>> bug_five_comments = bug_five.messages.count()
-    >>> edit_mail = """From: test@canonical.com
+    >>> edit_mail = b"""From: test@canonical.com
     ... To: edit@malone-domain
     ... Date: Fri Jun 17 10:10:23 BST 2005
     ... Subject: Not important
@@ -331,7 +331,7 @@ The email handler requires that a bug be specified to be changed. If no
 bug is specified, no edits occur and a message is sent to the user telling
 them what happened.
 
-    >>> edit_mail = """From: test@canonical.com
+    >>> edit_mail = b"""From: test@canonical.com
     ... To: edit@malone-domain
     ... Date: Fri Jun 17 10:10:23 BST 2005
     ... Subject: Not important
@@ -356,12 +356,12 @@ And the person sending the email has received an error message.
     ...     if not stub.test_emails:
     ...         raise AssertionError("No emails queued!")
     ...     from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    ...     sent_msg = email.message_from_string(raw_message)
+    ...     sent_msg = message_from_bytes(raw_message)
     ...     error_mail, original_mail = sent_msg.get_payload()
     ...     print("Subject: %s" % sent_msg['Subject'])
     ...     print("To: %s" % ', '.join(to_addrs))
     ...     print()
-    ...     print(error_mail.get_payload(decode=True))
+    ...     print(error_mail.get_payload(decode=True).decode('UTF-8'))
 
     >>> print_latest_email()
     Subject: Submit Request Failure
@@ -410,7 +410,7 @@ principal with that.
 
 Now we send a comment containing commands.
 
-    >>> comment_mail = """From: test@canonical.com
+    >>> comment_mail = b"""From: test@canonical.com
     ... To: 1@malone-domain
     ... Date: Fri Dec 17 10:20:23 BST 2005
     ... Message-Id: <yada-yada-test2>
@@ -457,8 +457,7 @@ The same will happen if we send the same email without signing it:
     >>> class MockUnsignedMessage(email.message.Message):
     ...     signedMessage = None
     ...     signature = None
-    >>> msg = email.message_from_string(
-    ...     comment_mail, _class=MockUnsignedMessage)
+    >>> msg = message_from_bytes(comment_mail, _class=MockUnsignedMessage)
     >>> handler.process(
     ...     msg, msg['To'],
     ...     )
@@ -479,7 +478,7 @@ The same will happen if we send the same email without signing it:
 If we don't include any commands in the comment, it will be added
 to the bug:
 
-    >>> comment_mail = """From: test@canonical.com
+    >>> comment_mail = b"""From: test@canonical.com
     ... To: 1@malone-domain
     ... Date: Fri Dec 17 10:20:23 BST 2005
     ... Message-Id: <yada-yada-test3>
@@ -510,13 +509,14 @@ us to play with. First we define a function to easily submit commands
 to edit bug 4:
 
     >>> def construct_command_email(bug, *commands):
-    ...     edit_mail = ("From: test@canonical.com\n"
-    ...                  "To: edit@malone-domain\n"
-    ...                  "Date: Fri Jun 17 10:10:23 BST 2005\n"
-    ...                  "Subject: Not important\n"
-    ...                  "\n"
-    ...                  " bug %d\n" % bug.id)
-    ...     edit_mail += ' ' + '\n '.join(commands)
+    ...     edit_mail = (b"From: test@canonical.com\n"
+    ...                  b"To: edit@malone-domain\n"
+    ...                  b"Date: Fri Jun 17 10:10:23 BST 2005\n"
+    ...                  b"Subject: Not important\n"
+    ...                  b"\n"
+    ...                  b" bug %d\n" % bug.id)
+    ...     edit_mail += b' ' + b'\n '.join(
+    ...         six.ensure_binary(command) for command in commands)
     ...     return construct_email(edit_mail)
 
     >>> def submit_command_email(msg):
@@ -636,8 +636,8 @@ A timestamp and the user that sets the bug private is also recorded:
 
     >>> bug_four.date_made_private
     datetime.datetime(...)
-    >>> bug_four.who_made_private.name
-    u'name12'
+    >>> print(bug_four.who_made_private.name)
+    name12
     >>> bug_attachment.libraryfile.restricted
     True
 
@@ -735,8 +735,9 @@ be subscribed. Examples:
     >>> subscriptions = [subscription.person.name
     ...                  for subscription in bug_four.subscriptions]
     >>> subscriptions.sort()
-    >>> subscriptions
-    [u'name12']
+    >>> for name in subscriptions:
+    ...     print(name)
+    name12
 
 
     >>> submit_commands(bug_four, 'subscribe')
@@ -802,6 +803,7 @@ Unsubscribing from a bug also unsubscribes you from its duplicates. To
 demonstrate, let's first make no_privs an indirect subscriber from bug
 #5, by subscribing them directly to a dupe of bug #5, bug #6.
 
+    >>> from operator import attrgetter
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> login("no-priv@canonical.com")
@@ -812,16 +814,21 @@ demonstrate, let's first make no_privs an indirect subscriber from bug
     >>> bug_six.duplicateof == bug_five
     True
 
-    >>> sorted([subscriber.displayname
-    ...  for subscriber in bug_five.getIndirectSubscribers()])
-    [u'Sample Person']
+    >>> for subscriber in sorted(
+    ...         bug_five.getIndirectSubscribers(),
+    ...         key=attrgetter('displayname')):
+    ...     print(subscriber.displayname)
+    Sample Person
 
     >>> bug_six.subscribe(no_priv, no_priv)
     <lp.bugs.model.bugsubscription.BugSubscription ...>
 
-    >>> sorted([subscriber.displayname
-    ...  for subscriber in bug_five.getIndirectSubscribers()])
-    [u'No Privileges Person', u'Sample Person']
+    >>> for subscriber in sorted(
+    ...         bug_five.getIndirectSubscribers(),
+    ...         key=attrgetter('displayname')):
+    ...     print(subscriber.displayname)
+    No Privileges Person
+    Sample Person
 
 Now, if we unsubscribe no-priv from bug #5, they will actually get
 unsubscribed from bug #6, thus no longer being indirectly subscribed to
@@ -835,9 +842,11 @@ bug #5.
     >>> bug_six.isSubscribed(no_priv)
     False
 
-    >>> sorted([subscriber.displayname
-    ...  for subscriber in bug_five.getIndirectSubscribers()])
-    [u'Sample Person']
+    >>> for subscriber in sorted(
+    ...         bug_five.getIndirectSubscribers(),
+    ...         key=attrgetter('displayname')):
+    ...     print(subscriber.displayname)
+    Sample Person
 
 (Log back in for the tests that follow.)
 
@@ -968,8 +977,8 @@ bug id.
 The bug id can also be the bug's name.
 
     >>> submit_commands(bug_four, 'duplicate blackhole')
-    >>> bug_four.duplicateof.name
-    u'blackhole'
+    >>> print(bug_four.duplicateof.name)
+    blackhole
 
 An error message is sent if a nonexistent bug id is given.
 
@@ -1209,8 +1218,8 @@ Also like the web UI, we can assign a bug to "me", the current user.
     >>> submit_commands(
     ...     bug_four, 'affects debian',
     ...     'assignee me')
-    >>> debian_task.assignee.name
-    u'name12'
+    >>> print(debian_task.assignee.name)
+    name12
 
 To set which source package the bug affects, we use:
 
@@ -1843,7 +1852,7 @@ signing the mail:
 A submit without specifying on what we want to file the bug on:
 
     >>> login(sampledata.USER_EMAIL)
-    >>> submit_mail_no_bugtask = """From: test@canonical.com
+    >>> submit_mail_no_bugtask = b"""From: test@canonical.com
     ... To: new@malone
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: A bug without a product or distribution
@@ -1861,7 +1870,7 @@ A submit without specifying on what we want to file the bug on:
 
 Submit a bug on a distribution that doesn't exist:
 
-    >>> submit_mail_distro_not_found = """From: test@canonical.com
+    >>> submit_mail_distro_not_found = b"""From: test@canonical.com
     ... To: new@malone
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: A bug with a non existing distribution
@@ -1884,7 +1893,7 @@ Submit a bug on a distribution that doesn't exist:
 
 An empty unsigned mail to new@malone:
 
-    >>> submit_empty = """From: test@canonical.com
+    >>> submit_empty = b"""From: test@canonical.com
     ... To: new@malone
     ... Date: Fri Jun 17 10:20:27 BST 2005
     ... Subject: An empty mail
@@ -1905,7 +1914,7 @@ If we submit an email with no affects command, it is rejected.
 
     >>> from lp.bugs.model.bug import Bug
     >>> before_count = Bug.select().count()
-    >>> submit_mail = """From: Foo Bar <foo.bar@canonical.com>
+    >>> submit_mail = b"""From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: A bug with no affects
@@ -1938,7 +1947,7 @@ XXX: Gavin Panella 2009-07-24 bug=404010: The need for this test
 arises from the implementation of MaloneHandler.
 
     >>> before_count = Bug.select().count()
-    >>> submit_mail = """From: Foo Bar <foo.bar@canonical.com>
+    >>> submit_mail = b"""From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: A bug with no affects
@@ -1971,7 +1980,7 @@ XXX: Gavin Panella 2009-07-24 bug=404010: The need for this test
 arises from the implementation of MaloneHandler.
 
     >>> before_count = Bug.select().count()
-    >>> submit_mail = """\
+    >>> submit_mail = b"""\
     ... From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
@@ -2004,7 +2013,7 @@ reached. For example, unsubscribing oneself from a private bug then
 linking a CVE.
 
     >>> before_count = Bug.select().count()
-    >>> submit_mail = """\
+    >>> submit_mail = b"""\
     ... From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
@@ -2033,7 +2042,7 @@ Let's take a closer look at send_process_error_notification(), which is
 used to send the error messages. It needs the message that caused the
 error, so let's create one.
 
-    >>> test_msg = email.message_from_string("""From: foo.bar@canonical.com
+    >>> test_msg = message_from_bytes(b"""From: foo.bar@canonical.com
     ... To: bugs@launchpad.net
     ... Message-Id: <original@msg>
     ... Subject: Original Message Subject
@@ -2056,7 +2065,7 @@ The To and Subject headers got set to the values we provided:
 
     >>> transaction.commit()
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = email.message_from_string(raw_message)
+    >>> sent_msg = message_from_bytes(raw_message)
     >>> sent_msg['To']
     'test@canonical.com'
     >>> sent_msg['Subject']
@@ -2070,7 +2079,7 @@ The sent message contains two parts:
 
 The first part is the error message, explaining what went wrong.
 
-    >>> print(failure_msg.get_payload(decode=True))
+    >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email
     interface.
     <BLANKLINE>
@@ -2099,7 +2108,7 @@ error to happen.
     'Original Message Subject'
     >>> msg['Message-Id']
     '<original@msg>'
-    >>> print(msg.get_payload(decode=True))
+    >>> print(msg.get_payload(decode=True).decode('UTF-8'))
     Original message body.
 
 Sometimes the original error was caused by the original message being
@@ -2107,20 +2116,22 @@ too large.  In that case we cannot really return the entire original
 message as our outgoing message will be too big.  So, we can truncate
 the original message.
 
-    >>> max_return_size = len(str(test_msg)) / 2
+    >>> import math
+
+    >>> max_return_size = int(math.ceil(len(str(test_msg)) / 2))
     >>> send_process_error_notification(
     ...     sampledata.USER_EMAIL, 'Some subject', 'Some error message.',
     ...     test_msg, failing_command=['foo bar'],
     ...     max_return_size=max_return_size)
     >>> transaction.commit()
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = email.message_from_string(raw_message)
+    >>> sent_msg = message_from_bytes(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
     >>> msg = original_msg.get_payload()[0]
 
-Fudge due to new line added to the payload.
+Fudge due to new lines added to the payload.
 
-    >>> len(str(msg)) <= (max_return_size + 1)
+    >>> len(str(msg)) <= (max_return_size + 2)
     True
 
 Error handling
@@ -2134,7 +2145,7 @@ that action we used to have a bug (See bug #126943).
 First, we create a new firefox bug.
 
     >>> login(sampledata.USER_EMAIL)
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2006
     ... Subject: Another bug in Firefox
@@ -2187,7 +2198,7 @@ Sample Person sends an email with several commands. First comes an
 that doesn't exist (and so is guaranteed to result in a failure) and
 finally, the status of the selected bug task is set to 'confirmed'.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = ("""From: Sample Person <test@canonical.com>
     ... To: %s@bugs.canonical.com
     ... Date: Thu Apr 3 11:53:23 BST 2008
     ... Subject: A new bug in Firefox
@@ -2196,7 +2207,7 @@ finally, the status of the selected bug task is set to 'confirmed'.
     ...  affects firefox
     ...  subscribe nonexistentuser
     ...  status confirmed
-    ... """ % ff_bug.id
+    ... """ % ff_bug.id).encode('ASCII')
     >>> process_email(submit_mail)
 
 The 'affects' and 'status' commands were processed successfully - the
@@ -2211,9 +2222,9 @@ The 'subscribe' command failed, and the user is being notified of the
 failure in an email.
 
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = email.message_from_string(raw_message)
+    >>> sent_msg = message_from_bytes(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
-    >>> print(failure_msg.get_payload(decode=True))
+    >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email
     interface.
     <BLANKLINE>
@@ -2235,7 +2246,7 @@ fail, and 'status triaged' which is OK. 'security' commands cause the
 entire email to not to be processed, though.
 
     >>> transaction.commit()
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = ("""From: Sample Person <test@canonical.com>
     ... To: %s@bugs.canonical.com
     ... Date: Thu Apr 3 11:53:23 BST 2008
     ... Subject: A new bug in Firefox
@@ -2244,7 +2255,7 @@ entire email to not to be processed, though.
     ...  affects firefox
     ...  status triaged
     ...  security maybe
-    ... """ % ff_bug.id
+    ... """ % ff_bug.id).encode('ASCII')
     >>> process_email(submit_mail)
 
 The status hasn't changed.
@@ -2259,9 +2270,9 @@ And the sender receives an email to let them know about the failing
 'security' command.
 
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = email.message_from_string(raw_message)
+    >>> sent_msg = message_from_bytes(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
-    >>> print(failure_msg.get_payload(decode=True))
+    >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email
     interface.
     <BLANKLINE>
@@ -2294,7 +2305,7 @@ We send an email with four commands: 'affects', to choose the target,
 'importance', to set the importance to high, 'done', to stop reading,
 and 'status', which will be ignored.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = ("""From: Sample Person <test@canonical.com>
     ... To: %s@bugs.canonical.com
     ... Date: Thu Apr 3 11:53:23 BST 2008
     ... Subject: A new bug in Firefox
@@ -2304,7 +2315,7 @@ and 'status', which will be ignored.
     ...  importance high
     ...  done
     ...  status triaged
-    ... """ % ff_bug.id
+    ... """ % ff_bug.id).encode('UTF-8')
     >>> process_email(submit_mail)
 
 The target (Firefox) is selected and the importance set, but the status
@@ -2326,7 +2337,7 @@ Requesting help
 It's possible to ask for the help document for the email interface via
 email too. Just send an email to `help@bugs.launchpad.net`.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: help@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2006
     ... Subject: help
@@ -2335,7 +2346,7 @@ email too. Just send an email to `help@bugs.launchpad.net`.
     ... """
     >>> process_email(submit_mail)
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> print(raw_message)
+    >>> print(raw_message.decode('UTF-8'))
     Content-Type: text/plain; charset="utf-8"
     ...
     To: test@canonical.com
@@ -2347,7 +2358,7 @@ email too. Just send an email to `help@bugs.launchpad.net`.
 
 Only mail coming from verified Launchpad users is answered.
 
-    >>> submit_mail = """From: Not a User <nobody@nowhere.com>
+    >>> submit_mail = b"""From: Not a User <nobody@nowhere.com>
     ... To: help@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2006
     ... Subject: help
@@ -2355,7 +2366,7 @@ Only mail coming from verified Launchpad users is answered.
     ... help
     ... """
     >>> process_email(submit_mail)
-    >>> 'nobody@nowhere.com' in stub.test_emails[-1][2]
+    >>> b'nobody@nowhere.com' in stub.test_emails[-1][2]
     False
 
 The help text is taken from the Launchpad help wiki as raw text, and
@@ -2392,9 +2403,9 @@ criteria described below).
     ...         print(lib.__class__.__name__, lib.filename, lib.mimetype,
     ...               end=" ")
     ...         print(attachment.type.name)
-    ...         print(lib.read())
+    ...         print(lib.read().decode('UTF-8'))
     >>> login('test@canonical.com')
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2425,7 +2436,7 @@ criteria described below).
 
 An email may contain more than one attachment; all of them are stored.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2483,7 +2494,7 @@ If a text/html attachment does not have a filename, it is not stored.
 This is the HTML representation of the main text, it is not an
 attachment.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2514,7 +2525,7 @@ If the content-disposition header of a message part begins with
 "attachment" it is stored as a bug attachment, even if the
 content-disposition header does not provide a filename.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2544,7 +2555,7 @@ it is stored as a bug attachment, if the header additionally provides
 a filename. This ensures that a message part containing debug information
 and the content type text/plain is stored as a bug attchment.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2576,7 +2587,7 @@ and the content type text/plain is stored as a bug attchment.
 If the content-disposition header of a message part begins with "inline",
 but has no filename, it is not stored as a bug attachment.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2603,7 +2614,7 @@ but has no filename, it is not stored as a bug attachment.
 If an attachment has no content disposition header, it is not stored
 as a bug attachment.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2633,7 +2644,7 @@ If an attachment has one of the content types application/applefile
 application/pkcs7-signature, application/x-pkcs7-signature,
 text/x-vcard, application/ms-tnef, it is not stored.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2683,7 +2694,7 @@ text/x-vcard, application/ms-tnef, it is not stored.
     >>> print_attachments(get_latest_added_bug().attachments)
     No attachments
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2722,7 +2733,7 @@ text/x-vcard, application/ms-tnef, it is not stored.
 
 Attachments sent in replies to existing bugs are stored too.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: 1@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2754,7 +2765,7 @@ Attachments sent in replies to existing bugs are stored too.
 If an attachment has the content type text/x-diff or text/x-patch,
 it is considered to contain a patch.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2795,7 +2806,7 @@ it is considered to contain a patch.
 
 Mail attachments without a filename are named "unnamed".
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2837,7 +2848,7 @@ Mail attachments without a filename are named "unnamed".
 If an email has two attachments with the same filename, the names are
 not changed.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2871,7 +2882,7 @@ not changed.
 
 Base64 encoded attachments are decoded before being stored.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -2903,7 +2914,7 @@ Some mail clients append a filename to the content type of attachments.
 The content type of the PGP signature is properly detected and thus no bug
 attachment is created.
 
-    >>> submit_mail = """From: Sample Person <test@canonical.com>
+    >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
     ... Subject: Another bug in Firefox
@@ -3014,7 +3025,7 @@ importing machinery.
     >>> comment_date = datetime(
     ...     2008, 5, 19, 16, 19, 12, tzinfo=pytz.timezone('Europe/Prague'))
 
-    >>> initial_mail = b"""From: test@canonical.com
+    >>> initial_mail = ("""From: test@canonical.com
     ... To: %(bug_id)s@malone-domain
     ... Date: %(date)s
     ... Message-Id: <76543@launchpad.net>
@@ -3026,7 +3037,7 @@ importing machinery.
     ... """ % {
     ...     'bug_id': bug_with_watch.id,
     ...     'date': comment_date.strftime('%a %b %d %H:%M:%S %Z %Y'),
-    ...     }
+    ...     }).encode('ASCII')
     >>> message = getUtility(IMessageSet).fromEmail(
     ...     initial_mail, no_priv)
 
@@ -3038,7 +3049,7 @@ been submitted.
     >>> comment_date = datetime(
     ...     2008, 5, 20, 11, 24, 12, tzinfo=pytz.timezone('Europe/Prague'))
 
-    >>> reply_mail = """From: test@canonical.com
+    >>> reply_mail = ("""From: test@canonical.com
     ... To: %(bug_id)s@malone-domain
     ... Date: %(date)s
     ... Message-Id: <1234567890@launchpad.net>
@@ -3051,7 +3062,7 @@ been submitted.
     ...     'bug_id': bug_with_watch.id,
     ...     'date': comment_date.strftime('%a %b %d %H:%M:%S %Z %Y'),
     ...     'rfc822msgid': str(message.rfc822msgid),
-    ...     }
+    ...     }).encode('ASCII')
 
     >>> process_email(reply_mail)
     >>> transaction.commit()
@@ -3087,7 +3098,7 @@ to the bug and will not have its bugwatch field set.
     >>> comment_date = datetime(
     ...     2008, 5, 21, 11, 9, 12, tzinfo=pytz.timezone('Europe/Prague'))
 
-    >>> initial_mail = b"""From: test@canonical.com
+    >>> initial_mail = ("""From: test@canonical.com
     ... To: %(bug_id)s@malone-domain
     ... Date: %(date)s
     ... Message-Id: <912876543@launchpad.net>
@@ -3097,14 +3108,14 @@ to the bug and will not have its bugwatch field set.
     ... """ % {
     ...     'bug_id': bug_with_watch.id,
     ...     'date': comment_date.strftime('%a %b %d %H:%M:%S %Z %Y'),
-    ...     }
+    ...     }).encode('ASCII')
     >>> message = getUtility(IMessageSet).fromEmail(
     ...     initial_mail, no_priv)
 
     >>> comment_date = datetime(
     ...     2008, 5, 21, 12, 52, 12, tzinfo=pytz.timezone('Europe/Prague'))
 
-    >>> reply_mail = """From: test@canonical.com
+    >>> reply_mail = ("""From: test@canonical.com
     ... To: %(bug_id)s@malone-domain
     ... Date: %(date)s
     ... Message-Id: <asu90ik1234567890@launchpad.net>
@@ -3115,7 +3126,7 @@ to the bug and will not have its bugwatch field set.
     ... """ % {
     ...     'bug_id': bug_with_watch.id,
     ...     'date': comment_date.strftime('%a %b %d %H:%M:%S %Z %Y'),
-    ...     }
+    ...     }).encode('ASCII')
 
     >>> process_email(reply_mail)
     >>> transaction.commit()
