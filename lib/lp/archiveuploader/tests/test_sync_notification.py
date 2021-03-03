@@ -54,7 +54,8 @@ class FakeChangesFile:
         self.filename = os.path.basename(file_path)
         self.architectures = ['i386']
         self.suite_name = '-'.join([spph.distroseries.name, spph.pocket.name])
-        self.raw_content = open(file_path).read()
+        with open(file_path, 'rb') as f:
+            self.raw_content = f.read()
         self.signingkey = None
 
     parseChanges = FakeMethod([])

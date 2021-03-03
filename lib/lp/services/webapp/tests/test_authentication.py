@@ -100,5 +100,6 @@ def test_suite():
     suite = unittest.TestLoader().loadTestsFromName(__name__)
     suite.addTest(LayeredDocFileSuite(
         'test_launchpad_login_source.txt',
-        layer=LaunchpadFunctionalLayer, setUp=setUp, tearDown=tearDown))
+        layer=LaunchpadFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown))
     return suite

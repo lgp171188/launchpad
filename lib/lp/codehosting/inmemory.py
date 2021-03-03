@@ -718,7 +718,7 @@ class FakeCodehosting:
         except LaunchpadFault as e:
             return e
         except LaunchpadValidationError as e:
-            return faults.PermissionDenied(six.ensure_binary(e.args[0]))
+            return faults.PermissionDenied(e.args[0])
 
     def requestMirror(self, requester_id, branch_id):
         self._branch_set.get(branch_id).requestMirror()

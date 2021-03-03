@@ -66,10 +66,10 @@ The most common case will be that the user is sent to the guided
     >>> filebug_path = (
     ...    '/ubuntu/+source/mozilla-firefox/+filebug/%s' % blob_token)
     >>> filebug_url = 'http://%s%s' % (filebug_host, filebug_path)
-    >>> contents = str(http(
-    ...     b"GET %s HTTP/1.1\nHostname: %s\n"
-    ...     b"Authorization: Basic test@canonical.com:test\n\n"
-    ...     % (filebug_path, filebug_host)))
+    >>> contents = str(http(six.ensure_binary(
+    ...     "GET %s HTTP/1.1\nHostname: %s\n"
+    ...     "Authorization: Basic test@canonical.com:test\n\n"
+    ...     % (filebug_path, filebug_host))))
 
 At first, the user will be shown a message telling them that the extra
 data is being processed.

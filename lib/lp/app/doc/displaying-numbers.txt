@@ -82,5 +82,5 @@ Here's a set of exhaustive examples:
     >>> test_tales('foo/fmt:float/bong', foo=12345.67890)
     Traceback (most recent call last):
     ...
-    ValueError: ... float...: bong
+    ValueError: ... float...bong...
 

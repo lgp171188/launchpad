@@ -11,7 +11,6 @@ from lp.soyuz.model.archive import Archive
 
 # PPA owners or particular PPAs that we never want to expire.
 BLACKLISTED_PPAS = """
-adobe-isv
 bzr
 bzr-beta-ppa
 bzr-nightly-ppa
@@ -34,8 +33,11 @@ wheelbarrow
 # Particular PPAs (not owners, unlike the whitelist) that should be
 # expired even if they're private.
 WHITELISTED_PPAS = """
+adobe-isv/flash64
+adobe-isv/ppa
 kubuntu-ninjas/ppa
 landscape/lds-trunk
+moblin/moblin-private-beta
 """.split()
 
 

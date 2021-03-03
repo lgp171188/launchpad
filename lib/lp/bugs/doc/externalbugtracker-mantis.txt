@@ -105,8 +105,9 @@ Let's add a few more watches:
     ...     (int(bug_watch.remotebug), bug_watch.remotestatus)
     ...     for bug_watch in example_bug_tracker.watches)
 
-    >>> expected_remote_statuses
-    {1550: u'assigned: open'}
+    >>> for remotebug, remotestatus in expected_remote_statuses.items():
+    ...     print('%d: %s' % (remotebug, remotestatus))
+    1550: assigned: open
 
     >>> remote_bugs = [
     ...     (1550, dict(status='assigned', resolution='open')),
@@ -139,7 +140,7 @@ updateBugWatches() issues only one request to update all watches:
     ...     bug_watch_updater.updateBugWatches(
     ...         mantis, sorted(example_bug_tracker.watches, key=getid))
     INFO Updating 7 watches for 6 bugs on http://bugs.some.where
-    INFO Didn't find bug u'1798' on http://bugs.some.where
+    INFO Didn't find bug '1798' on http://bugs.some.where
     (local bugs: 10).
     GET http://bugs.some.where/view.php?id=1550
     GET http://bugs.some.where/view.php?id=1679

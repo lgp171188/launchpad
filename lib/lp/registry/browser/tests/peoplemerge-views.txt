@@ -50,7 +50,7 @@ Attempting to merge a non-existent team results in an error.
     >>> len(view.errors)
     2
     >>> for error in view.errors:
-    ...     print(error[0])
+    ...     print(error.args[0])
     Invalid value
     Invalid value
 
@@ -143,8 +143,10 @@ and it is only rendered if canDelete() returns True.
     >>> view.field_names
     ['dupe_person']
 
-    >>> view.default_values
-    {'field.delete': True, 'field.dupe_person': u'deletable'}
+    >>> for key, value in sorted(view.default_values.items()):
+    ...     print('%s: %s' % (key, value))
+    field.delete: True
+    field.dupe_person: deletable
 
     >>> content = find_tag_by_id(view.render(), 'maincontent')
     >>> print(find_tag_by_id(content, 'field.dupe_person'))
@@ -188,8 +190,8 @@ And there is a person merge job setup to delete them.
     >>> job = merge_job_source.find(deletable_team).any()
     >>> job.metadata['delete']
     True
-    >>> job.from_person.name
-    u'deletable'
+    >>> print(job.from_person.name)
+    deletable
 
 The delete team view cannot be hacked to delete another team, or change
 the team that the merge operation is performed with.

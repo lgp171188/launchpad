@@ -47,8 +47,8 @@ user in the launch bag:
     >>> from_user = getUtility(IPersonSet).getByEmail(addr)
     >>> launchbag.user == from_user
     True
-    >>> launchbag.login
-    'test@canonical.com'
+    >>> print(launchbag.login)
+    test@canonical.com
 
 In the above email the GPG signature was detached from the actual
 message. Inline signatures are supported as well.
@@ -61,8 +61,8 @@ message. Inline signatures are supported as well.
     >>> from_user = getUtility(IPersonSet).getByEmail(addr)
     >>> launchbag.user == from_user
     True
-    >>> launchbag.login
-    'test@canonical.com'
+    >>> print(launchbag.login)
+    test@canonical.com
 
 As well as signed multipart messages:
 
@@ -74,8 +74,8 @@ As well as signed multipart messages:
     >>> from_user = getUtility(IPersonSet).getByEmail(addr)
     >>> launchbag.user == from_user
     True
-    >>> launchbag.login
-    'foo.bar@canonical.com'
+    >>> print(launchbag.login)
+    foo.bar@canonical.com
 
 When dealing with inline signatures, lines that begin with a '-'
 character in the signed content are required to be escaped, so we need
@@ -89,8 +89,8 @@ to deal with it if we receive a dash escaped message.
     >>> from_user = getUtility(IPersonSet).getByEmail(addr)
     >>> launchbag.user == from_user
     True
-    >>> launchbag.login
-    'test@canonical.com'
+    >>> print(launchbag.login)
+    test@canonical.com
 
 If the signature is invalid, that is it won't verify properly,
 InvalidSignature will be raised:
@@ -126,7 +126,7 @@ message.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, u'Bad signature')
+    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, ...'Bad signature')
 
     >>> getUtility(IGPGHandler).getVerifiedSignature(
     ...     msg.signedContent.replace(b'\n', b'\r\n'), msg.signature)
@@ -160,9 +160,8 @@ hack can be removed.
      boundary="--------------------EuxKj2iCbKjpUGkD"
     ...
 
-    >>> print(msg.get_payload(i=0).as_string()) #doctest: -NORMALIZE_WHITESPACE
-    Content-Type: multipart/mixed; boundary="--------------------EuxKj2iCbKjpUGkD"
-    ...
+    >>> print(msg.get_payload(i=0)['Content-Type'])
+    multipart/mixed; boundary="--------------------EuxKj2iCbKjpUGkD"
 
     >>> principal = authenticateEmail(msg, accept_any_timestamp)
     >>> print(IPerson(principal).displayname)
@@ -192,8 +191,8 @@ An unsigned email:
 
     >>> print(launchbag.user.displayname)
     Foo Bar
-    >>> launchbag.login
-    'foo.bar@canonical.com'
+    >>> print(launchbag.login)
+    foo.bar@canonical.com
 
 An email which is signed with a key that isn't associated with the
 authenticated user:
@@ -205,8 +204,8 @@ authenticated user:
 
     >>> print(launchbag.user.displayname)
     Sample Person
-    >>> launchbag.login
-    'testing@canonical.com'
+    >>> print(launchbag.login)
+    testing@canonical.com
 
 Of course, if the email is signed with a key which is associated with
 the user, IWeaklyAuthenticatedPrincipal won't be provided by the
@@ -219,5 +218,5 @@ principal.
 
     >>> print(launchbag.user.displayname)
     Sample Person
-    >>> launchbag.login
-    'test@canonical.com'
+    >>> print(launchbag.login)
+    test@canonical.com

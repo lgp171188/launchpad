@@ -183,7 +183,7 @@ class TestBuildNotify(TestCaseWithFactory):
             build.archive.reference, build.status.title, duration, build_log,
             builder, source, "-- ", build.title, canonical_url(build)))
         expected_body += "\n" + REASONS[reason] + "\n"
-        self.assertEqual(expected_body, body)
+        self.assertEqual(expected_body.encode("UTF-8"), body)
 
     def _assert_mails_are_correct(self, build, reasons, ppa=False):
         notifications = pop_notifications()

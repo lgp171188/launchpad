@@ -229,14 +229,14 @@ stored in a filesystem tree (such as an export tarball).  The path ends
 with the actual file name and should include a language code.
 
     >>> pofile_xh = potemplate.getPOFileByLang('xh')
-    >>> pofile_xh.path
-    u'xh.po'
+    >>> print(pofile_xh.path)
+    xh.po
 
 To change this path, use setPathIfUnique().
 
     >>> pofile_xh.setPathIfUnique('xh2.po')
-    >>> pofile_xh.path
-    u'xh2.po'
+    >>> print(pofile_xh.path)
+    xh2.po
 
 The path must be unique within its distribution series package or
 product release series, so that a single file system tree can contain
@@ -250,8 +250,8 @@ Here we try to copy the path of another translation of the same template
 but the PO file correctly retains its original path.
 
     >>> pofile_xh.setPathIfUnique(pofile.path)
-    >>> pofile_xh.path
-    u'xh2.po'
+    >>> print(pofile_xh.path)
+    xh2.po
 
 
 updateHeader()
@@ -285,9 +285,9 @@ We can get an ITranslationHeaderData from the file format importer.
 
 Before doing any change, we can see what's right now in the database:
 
-    >>> pofile.topcomment.splitlines()[:2]
-    [u' traducci\xf3n de es.po al Spanish',
-     u' translation of es.po to Spanish']
+    >>> print(pretty(pofile.topcomment.splitlines()[:2]))
+    [' traducci\xf3n de es.po al Spanish',
+     ' translation of es.po to Spanish']
 
     >>> print(pofile.header)
     Project-Id-Version: es
@@ -302,8 +302,8 @@ Let's update the header with the new one.
 
 The new comment is now applied.
 
-    >>> pofile.topcomment
-    u' This is the top comment.'
+    >>> print(pretty(pofile.topcomment))
+    ' This is the top comment.'
 
 And the new header contains the new string.
 
@@ -446,7 +446,7 @@ The header is not changed.
 
     >>> for i in range(len(stream_list)):
     ...     if stream_list[i].startswith(b'"Content-Type:'):
-    ...         print(stream_list[i])
+    ...         print(stream_list[i].decode("ASCII"))
     "Content-Type: text/plain; charset=EUC-JP\n"
 
 And checking one of the translations, we can see that it's using the
@@ -456,10 +456,8 @@ EUC-JP encoding.
     ...     if (stream_list[i].startswith(b'msgstr') and
     ...         b'prefs.js' in stream_list[i]):
     ...         break
-    >>> stream_list[i]
-    'msgstr "\xc0\xdf\xc4\xea\xa4\xce\xa5\xab...\xa5\xba\xa4\xcb
-    /etc/mozilla/prefs.js
-    \xa4\xac\xcd\xf8\xcd\xd1\xa4\xc7\xa4\xad\xa4\xde\xa4\xb9\xa1\xa3"'
+    >>> print(stream_list[i].decode("EUC-JP"))
+    msgstr "設定のカ...ズに /etc/mozilla/prefs.js が利用できます。"
 
 Now, let's force the UTF-8 encoding.
 
@@ -470,7 +468,7 @@ We can see that the header has been updated to have UTF-8
 
     >>> for i in range(len(stream_list)):
     ...     if stream_list[i].startswith(b'"Content-Type:'):
-    ...         print(stream_list[i])
+    ...         print(stream_list[i].decode("ASCII"))
     "Content-Type: text/plain; charset=UTF-8\n"
 
 And the encoding used is also using UTF-8 chars.
@@ -479,10 +477,8 @@ And the encoding used is also using UTF-8 chars.
     ...     if (stream_list[i].startswith(b'msgstr') and
     ...         b'prefs.js' in stream_list[i]):
     ...         break
-    >>> stream_list[i]
-    'msgstr "\xe8\xa8\xad\xe5\xae\x9a\xe3\x81...\xba\xe3\x81\xab
-    /etc/mozilla/prefs.js
-    \xe3\x81\x8c\xe5\x88\xa9\xe7\x94\xa8\xe3...\x99\xe3\x80\x82"'
+    >>> print(stream_list[i].decode("UTF-8"))
+    msgstr "設定のカ...ズに /etc/mozilla/prefs.js が利用できます。"
 
 There are some situations when a msgid_plural changes, while the msgid
 singular remains unchanged.
@@ -704,21 +700,21 @@ created by a certain person.
     >>> carlos = person_set.getByName('carlos')
     >>> translationmessages = evolution_es.getTranslationsFilteredBy(carlos)
     >>> for translationmessage in translationmessages:
-    ...     print(translationmessage.translations)
-    [u'libreta de direcciones de Evolution']
-    [u'carpeta de libretas de direcciones actual']
-    [u'lalalala']
-    [u'tiene ']
-    [u' tarjetas']
-    [u'La ubicaci\xf3n y jerarqu\xeda de las carpetas de contactos de
+    ...     print(pretty(removeSecurityProxy(translationmessage.translations)))
+    ['libreta de direcciones de Evolution']
+    ['carpeta de libretas de direcciones actual']
+    ['lalalala']
+    ['tiene ']
+    [' tarjetas']
+    ['La ubicaci\xf3n y jerarqu\xeda de las carpetas de contactos de
     Evolution ha cambiado desde Evolution 1.x.\n\nTenga paciencia mientras
     Evolution migra sus carpetas...']
-    [u'%d contacto', u'%d contactos']
-    [u'Abrir %d contacto abrir\xe1 %d ventanas nuevas tambi\xe9n.\n\xbfQuiere
+    ['%d contacto', '%d contactos']
+    ['Abrir %d contacto abrir\xe1 %d ventanas nuevas tambi\xe9n.\n\xbfQuiere
     realmente mostrar este contacto?',
-    u'Abrir %d contactos abrir\xe1 %d ventanas nuevas tambi\xe9n.\n\xbfQuiere
+    'Abrir %d contactos abrir\xe1 %d ventanas nuevas tambi\xe9n.\n\xbfQuiere
     realmente mostrar todos estos contactos?']
-    [u'Contrase\xf1a de EncFS: ']
+    ['Contrase\xf1a de EncFS: ']
 
 If the passed person is None, the call fails with an assertion.
 
@@ -749,9 +745,9 @@ it is created with a dummy translation
     >>> current = potmsgset.getCurrentTranslation(
     ...     alsa_template, alsa_translation.language,
     ...     alsa_template.translation_side)
-    >>> print(current.translations)
-    [u'This is a dummy translation so that
-    the credits are counted as translated.']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    This is a dummy translation so that the credits are counted as translated.
 
 If we submit an upstream translation, the translation for this message
 is updated.
@@ -763,8 +759,9 @@ is updated.
     >>> current = potmsgset.getCurrentTranslation(
     ...     alsa_template, alsa_translation.language,
     ...     alsa_template.translation_side)
-    >>> print(current.translations)
-    [u'Happy translator']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    Happy translator
 
 If we submit non-upstream translation, it's rejected.
 
@@ -778,8 +775,9 @@ If we submit non-upstream translation, it's rejected.
     >>> current = potmsgset.getCurrentTranslation(
     ...     alsa_template, alsa_translation.language,
     ...     alsa_template.translation_side)
-    >>> print(current.translations)
-    [u'Happy translator']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    Happy translator
 
 
 POFileToTranslationFileDataAdapter
@@ -839,8 +837,8 @@ of the imported one stored in POFile.header.
 We can see that last translator is Carlos, just like the updated header
 says:
 
-    >>> evolution_ja.lasttranslator.displayname
-    u'Carlos Perell\xf3 Mar\xedn'
+    >>> print(backslashreplace(evolution_ja.lasttranslator.displayname))
+    Carlos Perell\xf3 Mar\xedn
 
 And the PO Revision Date matches when was the PO file last changed.
 

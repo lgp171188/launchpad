@@ -91,12 +91,12 @@ Now we actually demonstrate the behaviour.  The view did raise a TimeoutError.
 
 The exception view did not.
 
-    >>> print timeout_in_exception_view
+    >>> print(timeout_in_exception_view)
     False
 
 The OOPS has the SQL from the main view.
 
-    >>> print oops_capture.oopses[-1]['timeline']
+    >>> print(oops_capture.oopses[-1]['timeline'])
     [(0, 0, 'SELECT ... FROM ... WHERE ...'), ...]
 
 All that's left is to clean up after ourselves.

@@ -253,8 +253,8 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
                     bqs[1],
                     self.bq_set.findBuildCandidates(processors[1], True, 3))
             self.assertEqual(
-                "invalid buildmaster.minimum_score u'nonsense'\n"
-                "invalid buildmaster.minimum_score u'nonsense'\n",
+                "invalid buildmaster.minimum_score: nonsense\n"
+                "invalid buildmaster.minimum_score: nonsense\n",
                 logger.output)
 
 

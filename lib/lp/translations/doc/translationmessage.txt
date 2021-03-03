@@ -70,8 +70,8 @@ forms per language (3 for Serbian, as specified in the language).
     >>> potmsgset_plural = factory.makePOTMsgSet(
     ...     potemplate=potemplate, singular=u"singular", plural=u"plural")
 
-    >>> potmsgset_plural.plural_text
-    u'plural'
+    >>> print(potmsgset_plural.plural_text)
+    plural
     >>> serbian.pluralforms
     3
     >>> current_sr = potmsgset_plural.getCurrentTranslationMessageOrDummy(
@@ -210,8 +210,9 @@ For a regular single-form message, that's always one.
     >>> login('foo.bar@canonical.com')
     >>> message = potmsgset.getCurrentTranslation(
     ...     potemplate, serbian, potemplate.translation_side)
-    >>> message.translations
-    [u'new']
+    >>> for translation in message.translations:
+    ...     print(translation)
+    new
 
 If the message has no actual translation, the translations attribute
 contains just a None.
@@ -230,8 +231,10 @@ For a message with plurals, it's the POFile's number of plural forms.
     >>> plural_message = factory.makeCurrentTranslationMessage(
     ...     potmsgset=plural_potmsgset, pofile=pofile_es,
     ...     translations=[u'%d contacto', u'%d contactos'])
-    >>> plural_message.translations
-    [u'%d contacto', u'%d contactos']
+    >>> for translation in plural_message.translations:
+    ...     print(translation)
+    %d contacto
+    %d contactos
 
 If the message does not translate all those forms, we get None entries
 in the list.

@@ -24,6 +24,7 @@ import os
 
 import gpgme
 import scandir
+import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.gpg import IGPGKeySet
@@ -139,7 +140,7 @@ def decrypt_content(content, password):
     plain = BytesIO()
 
     def passphrase_cb(uid_hint, passphrase_info, prev_was_bad, fd):
-        os.write(fd, '%s\n' % password)
+        os.write(fd, six.ensure_binary('%s\n' % password))
 
     ctx.passphrase_cb = passphrase_cb
 

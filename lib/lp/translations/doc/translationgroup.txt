@@ -44,12 +44,12 @@ Here's our translation group.
 
 We can access all details of the new TranslationGroup.
 
-    >>> group.title
-    u'Foo Translators'
-    >>> group.translation_guide_url
-    u'https://help.launchpad.net/'
-    >>> group.owner.name
-    u'carlos'
+    >>> print(group.title)
+    Foo Translators
+    >>> print(group.translation_guide_url)
+    https://help.launchpad.net/
+    >>> print(group.owner.name)
+    carlos
 
 Let's make it the translation group for Evolution.
 

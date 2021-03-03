@@ -1290,9 +1290,10 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
 
     def getRevisionsSinceReviewStart(self):
         """Get the grouped revisions since the review started."""
+        all_comments = list(self.all_comments)
         entries = [
-            ((comment.date_created, -1), comment) for comment
-            in self.all_comments]
+            ((comment.date_created, i - len(all_comments)), comment)
+            for i, comment in enumerate(all_comments)]
         entries.extend(self._getNewerRevisions())
         entries.sort()
         current_group = []

@@ -140,12 +140,12 @@ def notify_message_held(message_approval, event):
         simple_sendmail(from_address, address, subject, body)
 
 
-def encode(value):
-    """Encode string for transport in a mail header.
+def make_header(value):
+    """Prepare string for transport in a mail header.
 
     :param value: The raw email header value.
     :type value: unicode
-    :return: The encoded header.
+    :return: The header.
     :rtype: `email.header.Header`
     """
     try:
@@ -175,7 +175,7 @@ def send_direct_contact_email(
     """
     # Craft the email message.  Start by checking whether the subject and
     # message bodies are ASCII or not.
-    subject_header = encode(subject)
+    subject_header = make_header(subject)
     try:
         body.encode('us-ascii')
         charset = 'us-ascii'
@@ -185,7 +185,7 @@ def send_direct_contact_email(
     person_set = getUtility(IPersonSet)
     sender = person_set.getByEmail(sender_email)
     assert sender is not None, 'No person for sender %s' % sender_email
-    sender_name = str(encode(sender.displayname))
+    sender_name = make_header(sender.displayname).encode()
     # Do a single authorization/quota check for the sender.  We consume one
     # quota credit per contact, not per recipient.
     authorization = IDirectEmailAuthorization(sender)
@@ -210,9 +210,9 @@ def send_direct_contact_email(
     mailwrapper = MailWrapper(width=72)
     message = None
     for recipient_email, recipient in recipients_set.getRecipientPersons():
-        recipient_name = str(encode(recipient.displayname))
+        recipient_name = make_header(recipient.displayname).encode()
         reason, rationale_header = recipients_set.getReason(recipient_email)
-        reason = str(encode(reason)).replace('\n ', '\n')
+        reason = make_header(reason).encode().replace('\n ', '\n')
         formatted_body = mailwrapper.format(body, force_wrap=True)
         formatted_body += additions % reason
         formatted_body = formatted_body.encode(charset)

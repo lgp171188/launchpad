@@ -26,8 +26,8 @@ Sample Person has public and secret keys set.
     True
 
     >>> login('test@canonical.com')
-    >>> bag.user.name
-    u'name12'
+    >>> print(bag.user.name)
+    name12
 
     >>> from lp.services.gpg.interfaces import IGPGHandler
     >>> gpghandler = getUtility(IGPGHandler)
@@ -46,8 +46,8 @@ property, since both are generating using GPGKeyset.getGPGKeys)
 
 Note fingerprint is also unicode.
 
-    >>> fingerprint
-    u'A419AE861E88BC9E04B9C26FBA2B9389DFD20543'
+    >>> print(fingerprint)
+    A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
     >>> key = gpghandler.retrieveKey(fingerprint)
     >>> cipher = gpghandler.encryptContent(content.encode('utf-8'), key)
@@ -57,21 +57,21 @@ cipher constains the encrypted content.
 Storing the raw password may compromise the security, but is the
 only way we can decrypt the cipher content.
 
-    >>> password = 'test'
+    >>> password = six.ensure_str('test')
     >>> plain = decrypt_content(cipher, password)
 
 voilá, the same content shows up again. 
     
-    >>> plain.decode('utf-8')
-    u'\ufcber'	
+    >>> print(backslashreplace(plain.decode('utf-8')))
+    \ufcber
 
 Verify if the encrytion process support passing another charset string
 
     >>> content = u'a\xe7ucar'
     >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)
-    >>> plain = decrypt_content(cipher, 'test')    
-    >>> plain.decode('iso-8859-1')
-    u'a\xe7ucar'
+    >>> plain = decrypt_content(cipher, six.ensure_str('test'))
+    >>> print(backslashreplace(plain.decode('iso-8859-1')))
+    a\xe7ucar
 
 Let's try to pass unicode and see if it fails
 
@@ -85,14 +85,14 @@ Decrypt a unicode content:
     >>> content = u'a\xe7ucar'
     >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)
     >>> cipher = six.ensure_text(cipher)
-    >>> plain = decrypt_content(cipher, 'test')    
+    >>> plain = decrypt_content(cipher, six.ensure_str('test'))
     Traceback (most recent call last):
     ...
     TypeError: Content must be bytes.
 
 What about a message encrypted for an unknown key.
 
-    >>> cipher = """-----BEGIN PGP MESSAGE-----
+    >>> cipher = b"""-----BEGIN PGP MESSAGE-----
     ... Version: GnuPG v1.2.5 (GNU/Linux)
     ...
     ... hQEOAxkWbKKY/feTEAP+NoZRhb+/2OOd4f0FGRe7XP1HMvsRZ7X0uk/EjCv1CVnn
@@ -113,7 +113,7 @@ What about a message encrypted for an unknown key.
     ... =LQK5
     ... -----END PGP MESSAGE-----
     ... """
-    >>> plain = decrypt_content(cipher, 'test')    
+    >>> plain = decrypt_content(cipher, six.ensure_str('test'))
     >>> plain is None
     True
 

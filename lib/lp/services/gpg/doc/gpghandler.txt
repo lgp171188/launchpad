@@ -38,7 +38,7 @@ unit tests somewhere else at some point. -- Guilherme Salgado, 2006-08-23
 
 A GPGKeyNotFoundError is raised if we try to import an empty content.
 
-    >>> key = gpghandler.importPublicKey('')
+    >>> key = gpghandler.importPublicKey(b'')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -46,7 +46,7 @@ A GPGKeyNotFoundError is raised if we try to import an empty content.
 
 The same happens for bogus content.
 
-    >>> key = gpghandler.importPublicKey('XXXXXXXXX')
+    >>> key = gpghandler.importPublicKey(b'XXXXXXXXX')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -57,33 +57,34 @@ Let's recover some coherent data and verify if it works as expected:
     >>> import os
     >>> from lp.testing.gpgkeys import gpgkeysdir
     >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.pub')
-    >>> pubkey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     pubkey = f.read()
     >>> key = gpghandler.importPublicKey(pubkey)
 
     >>> verifyObject(IPymeKey, key)
     True
 
-    >>> print key.fingerprint
+    >>> print(key.fingerprint)
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
-    >>> print key.secret
+    >>> print(key.secret)
     False
 
-    >>> print key.can_encrypt
+    >>> print(key.can_encrypt)
     True
 
-    >>> print key.can_sign
+    >>> print(key.can_sign)
     True
 
-    >>> print key.can_certify
+    >>> print(key.can_certify)
     True
 
-    >>> print key.can_authenticate
+    >>> print(key.can_authenticate)
     False
 
 Public keys can be exported in ASCII-armored format.
 
-    >>> print key.export()
+    >>> print(six.ensure_text(key.export()))
     -----BEGIN PGP PUBLIC KEY BLOCK-----
     ...
     -----END PGP PUBLIC KEY BLOCK-----
@@ -93,7 +94,8 @@ Now, try to import a secret key, which will cause a
 SecretGPGKeyImportDetected exception to be raised.
 
     >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.sec')
-    >>> seckey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     seckey = f.read()
     >>> key = gpghandler.importPublicKey(seckey)
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
@@ -104,8 +106,9 @@ Now, try to import two public keys, causing a MoreThanOneGPGKeyFound
 exception to be raised.
 
     >>> filepath = os.path.join(gpgkeysdir, 'foo.bar@canonical.com.pub')
-    >>> pubkey2 = open(filepath).read()
-    >>> key = gpghandler.importPublicKey('\n'.join([pubkey, pubkey2]))
+    >>> with open(filepath, 'rb') as f:
+    ...     pubkey2 = f.read()
+    >>> key = gpghandler.importPublicKey(b'\n'.join([pubkey, pubkey2]))
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -126,7 +129,7 @@ Apparently GPGME is able to import an incomplete public key:
     >>> assert key is not None
     >>> verifyObject(IPymeKey, key)
     True
-    >>> print key.fingerprint
+    >>> print(key.fingerprint)
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 But we get an error if the damage is big:
@@ -146,33 +149,34 @@ does exactly the same job performed by importPublicKey() but
 supporting only ASCII-armored secret keys.
 
     >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.sec')
-    >>> seckey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     seckey = f.read()
     >>> key = gpghandler.importSecretKey(seckey)
 
     >>> verifyObject(IPymeKey, key)
     True
 
-    >>> print key.fingerprint
+    >>> print(key.fingerprint)
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
-    >>> print key.secret
+    >>> print(key.secret)
     True
 
-    >>> print key.can_encrypt
+    >>> print(key.can_encrypt)
     True
 
-    >>> print key.can_sign
+    >>> print(key.can_sign)
     True
 
-    >>> print key.can_certify
+    >>> print(key.can_certify)
     True
 
-    >>> print key.can_authenticate
+    >>> print(key.can_authenticate)
     False
 
 Secret keys can be exported in ASCII-armored format.
 
-    >>> print key.export()
+    >>> print(six.ensure_text(key.export()))
     -----BEGIN PGP PRIVATE KEY BLOCK-----
     ...
     -----END PGP PRIVATE KEY BLOCK-----
@@ -193,7 +197,8 @@ We will set up and use the test-keyserver.
 Import a test key.
 
     >>> filepath = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-    >>> seckey = open(filepath).read()
+    >>> with open(filepath, 'rb') as f:
+    ...     seckey = f.read()
     >>> new_key = gpghandler.importSecretKey(seckey)
 
 Upload the just-generated key to the keyserver so that we can reset
@@ -241,31 +246,31 @@ in a error.
 The GPG handler offers a convenience method to sanitize key
 fingerprints:
 
-    >>> print gpghandler.sanitizeFingerprint("XXXXX")
+    >>> print(gpghandler.sanitizeFingerprint("XXXXX"))
     None
 
     >>> fingerprint = 'C858 2652 1A6E F6A6 037B  B3F7 9FF2 583E 681B 6469'
-    >>> print gpghandler.sanitizeFingerprint(fingerprint)
+    >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     C85826521A6EF6A6037BB3F79FF2583E681B6469
 
     >>> fingerprint = 'c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469'
-    >>> print gpghandler.sanitizeFingerprint(fingerprint)
+    >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     C85826521A6EF6A6037BB3F79FF2583E681B6469
 
-    >>> print gpghandler.sanitizeFingerprint('681B 6469')
+    >>> print(gpghandler.sanitizeFingerprint('681B 6469'))
     None
 
-    >>> print gpghandler.sanitizeFingerprint('abnckjdiue')
+    >>> print(gpghandler.sanitizeFingerprint('abnckjdiue'))
     None
 
     >>> non_ascii_chars = u'\xe9\xe1\xed'
     >>> fingerprint = ('c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469 %s'
     ...                % non_ascii_chars)
-    >>> print gpghandler.sanitizeFingerprint(fingerprint)
+    >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     C85826521A6EF6A6037BB3F79FF2583E681B6469
 
     >>> fingerprint = (
     ...     '%s c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469 %s'
     ...     % (non_ascii_chars, non_ascii_chars))
-    >>> print gpghandler.sanitizeFingerprint(fingerprint)
+    >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     None

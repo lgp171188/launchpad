@@ -337,9 +337,19 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     _default_branch = Unicode(name='default_branch', allow_none=True)
 
+    loose_object_count = Int(name='loose_object_count', allow_none=True)
+    pack_count = Int(name='pack_count', allow_none=True)
+
+    date_last_repacked = DateTime(
+        name='date_last_repacked', tzinfo=pytz.UTC, allow_none=True)
+    date_last_scanned = DateTime(
+        name='date_last_scanned', tzinfo=pytz.UTC, allow_none=True)
+
     def __init__(self, repository_type, registrant, owner, target, name,
                  information_type, date_created, reviewer=None,
-                 description=None, status=None):
+                 description=None, status=None, loose_object_count=None,
+                 pack_count=None, date_last_scanned=None,
+                 date_last_repacked=None):
         super(GitRepository, self).__init__()
         self.repository_type = repository_type
         self.registrant = registrant
@@ -366,6 +376,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
                        else GitRepositoryStatus.AVAILABLE)
         self.owner_default = False
         self.target_default = False
+        self.loose_object_count = loose_object_count
+        self.pack_count = pack_count
+        self.date_last_repacked = date_last_repacked
+        self.date_last_scanned = date_last_scanned
 
     def _createOnHostingService(
             self, clone_from_repository=None, async_create=False):
@@ -622,6 +636,11 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     def branches_by_date(self):
         """See `IGitRepository`."""
         return self.branches.order_by(Desc(GitRef.committer_date))
+
+    def setRepackData(self, loose_object_count, pack_count):
+        self.loose_object_count = loose_object_count
+        self.pack_count = pack_count
+        self.date_last_scanned = UTC_NOW
 
     @property
     def default_branch(self):

@@ -35,7 +35,7 @@ First, we'll set up various imports and stub objects.
 There have been no logins, so launchbag.login will be None.
 
 >>> launchbag = getUtility(ILaunchBag)
->>> print launchbag.login
+>>> print(launchbag.login)
 None
 
 Let's send a basic auth login event.
@@ -47,19 +47,19 @@ Let's send a basic auth login event.
 
 Now, launchbag.login will be 'foo.bar@canonical.com'.
 
->>> print launchbag.login
+>>> print(launchbag.login)
 foo.bar@canonical.com
 
 Login should be set back to None on a logout.
 
 >>> event = LoggedOutEvent(request)
 >>> notify(event)
->>> print launchbag.login
+>>> print(launchbag.login)
 None
 
 'user' will also be set to None:
 
->>> print launchbag.user
+>>> print(launchbag.user)
 None
 
 Let's do a cookie auth principal identification.  In this case, the login
@@ -68,7 +68,7 @@ will be cookie@example.com.
 >>> event = CookieAuthPrincipalIdentifiedEvent(
 ...     principal, request, 'cookie@example.com')
 >>> notify(event)
->>> print launchbag.login
+>>> print(launchbag.login)
 cookie@example.com
 
 

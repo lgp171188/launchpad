@@ -185,7 +185,7 @@ class BazaarProductView(LaunchpadView):
         if len(product_info) == 0:
             return
         now = datetime.today()
-        counts = sorted(zip(*product_info)[1])
+        counts = sorted(list(zip(*product_info))[1])
         size_mapping = {
             0.2: 'smallest',
             0.4: 'small',

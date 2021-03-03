@@ -287,8 +287,8 @@ This time, we get the view object for the page that was registered.
 
     >>> navigation.publishTraverse(request, 'thingview')
     <...ThingSetView object...>
-    >>> navigation.publishTraverse(request, 'thingview')()
-    'a view on a thingset'
+    >>> print(navigation.publishTraverse(request, 'thingview')())
+    a view on a thingset
 
 
 == stepto traversals ==
@@ -328,10 +328,10 @@ Let's create a subclass of ThingSetNavigation, and add a 'stepto'.
 
     >>> navigation2.publishTraverse(request, 'ttt')
     <Thing 'TTT'>
-    >>> navigation2.publishTraverse(request, 'thingview')()
-    'a view on a thingset'
-    >>> navigation2.publishTraverse(request, 'thistle')
-    'A little thistle'
+    >>> print(navigation2.publishTraverse(request, 'thingview')())
+    a view on a thingset
+    >>> print(navigation2.publishTraverse(request, 'thistle'))
+    A little thistle
     >>> navigation2.publishTraverse(request, 'neverthere')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
@@ -379,8 +379,8 @@ Let's create another subclass and add a stepthrough.
 
     >>> request.traversal_stack = ['prince', 'charming']
     >>> navigation3 = ThingSetNavigation3(thingset, request)
-    >>> navigation3.publishTraverse(request, 'toad')
-    'the toad called charming'
+    >>> print(navigation3.publishTraverse(request, 'toad'))
+    the toad called charming
     >>> request.traversal_stack = ['prince', 'charming']
     >>> navigation3 = ThingSetNavigation3(thingset, request)
     >>> navigation3.publishTraverse(request, 'neverland')
@@ -399,7 +399,7 @@ Let's create another subclass and add a stepthrough.
 
 Check that the request's state is as it should be.
 
-    >>> request.traversal_stack
+    >>> print(pretty(request.traversal_stack))
     ['prince']
 
 
@@ -455,40 +455,40 @@ Let's make another navigation class to test redirection.
     >>> navigation4 = ThingSetNavigation4(thingset, request)
     >>> navigation4.publishTraverse(request, 'tree')
     <...RedirectionView...>
-    >>> navigation4.publishTraverse(request, 'tree')()
-    u''
-    >>> request.response.redirected_to
-    'trees'
-    >>> print request.response.status
+    >>> print(navigation4.publishTraverse(request, 'tree')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    trees
+    >>> print(request.response.status)
     301
 
-    >>> navigation4.publishTraverse(request, 'toad')()
-    u''
-    >>> request.response.redirected_to
-    'toads'
-    >>> print request.response.status
+    >>> print(navigation4.publishTraverse(request, 'toad')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    toads
+    >>> print(request.response.status)
     None
 
-    >>> navigation4.publishTraverse(request, 'something')()
-    u''
-    >>> request.response.redirected_to
-    '/another/place'
-    >>> print request.response.status
+    >>> print(navigation4.publishTraverse(request, 'something')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    /another/place
+    >>> print(request.response.status)
     301
 
     >>> request.traversal_stack = ['tundra']
-    >>> navigation4.publishTraverse(request, 'outerspace')()
-    u''
-    >>> request.response.redirected_to
-    '/siberia/tundra'
-    >>> print request.response.status
+    >>> print(navigation4.publishTraverse(request, 'outerspace')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    /siberia/tundra
+    >>> print(request.response.status)
     None
 
-    >>> navigation4.publishTraverse(request, 'here')()
-    u''
-    >>> request.response.redirected_to
-    '/there'
-    >>> print request.response.status
+    >>> print(navigation4.publishTraverse(request, 'here')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    /there
+    >>> print(request.response.status)
     301
 
 
@@ -509,20 +509,20 @@ with the remainder of the URL and or query string.
     >>> navigation5 = ThingSetNavigation5(thingset, request)
     >>> navigation5.publishTraverse(request, 'jobs')
     <...RedirectionView...>
-    >>> navigation5.publishTraverse(request, 'jobs')()
-    u''
-    >>> request.response.redirected_to
-    'http://ubuntu.com/jobs'
-    >>> print request.response.status
+    >>> print(navigation5.publishTraverse(request, 'jobs')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    http://ubuntu.com/jobs
+    >>> print(request.response.status)
     301
 
     >>> request.traversal_stack = ['LaunchpadMeeting']
     >>> request.query_string = 'hilight=Time'
-    >>> navigation5.publishTraverse(request, '+foo')()
-    u''
-    >>> request.response.redirected_to
-    'http://wiki.canonical.com/LaunchpadMeeting?hilight=Time'
-    >>> print request.response.status
+    >>> print(navigation5.publishTraverse(request, '+foo')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    http://wiki.canonical.com/LaunchpadMeeting?hilight=Time
+    >>> print(request.response.status)
     303
 
 
@@ -565,55 +565,55 @@ so far, and also defining some more stepthroughs and steptos and redirections.
 
 Check out the traversals defined directly.
 
-    >>> ubernav.publishTraverse(request, 'teeth')
-    'some teeth'
+    >>> print(ubernav.publishTraverse(request, 'teeth'))
+    some teeth
 
     >>> ubernav.publishTraverse(request, 'diplodocus')
     <...RedirectionView...>
 
     >>> request.traversal_stack = ['frank']
-    >>> ubernav.publishTraverse(request, 'diplodocus')
-    'diplodocus called frank'
+    >>> print(ubernav.publishTraverse(request, 'diplodocus'))
+    diplodocus called frank
 
-    >>> ubernav.publishTraverse(request, 'topology')()
-    u''
-    >>> request.response.redirected_to
-    'topologies'
+    >>> print(ubernav.publishTraverse(request, 'topology')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    topologies
 
 Check those from ThingSetNavigation, implicitly:
 
-    >>> ubernav.publishTraverse(request, 'thingview')()
-    'a view on a thingset'
+    >>> print(ubernav.publishTraverse(request, 'thingview')())
+    a view on a thingset
 
 Check those from ThingSetNavigation2:
 
-    >>> ubernav.publishTraverse(request, 'thistle')
-    'A little thistle'
+    >>> print(ubernav.publishTraverse(request, 'thistle'))
+    A little thistle
 
 Check those from ThingSetNavigation3:
 
     >>> request.traversal_stack = ['prince', 'charming']
-    >>> ubernav.publishTraverse(request, 'toad')
-    'the toad called charming'
+    >>> print(ubernav.publishTraverse(request, 'toad'))
+    the toad called charming
 
     >>> request.traversal_stack = []
 
 Check those from ThingSetNavigation4:
 
-    >>> ubernav.publishTraverse(request, 'tree')()
-    u''
-    >>> request.response.redirected_to
-    'trees'
+    >>> print(ubernav.publishTraverse(request, 'tree')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    trees
 
-    >>> ubernav.publishTraverse(request, 'toad')()
-    u''
-    >>> request.response.redirected_to
-    'toads'
+    >>> print(ubernav.publishTraverse(request, 'toad')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    toads
 
-    >>> ubernav.publishTraverse(request, 'ttt')()
-    u''
-    >>> request.response.redirected_to
-    '/another/place'
+    >>> print(ubernav.publishTraverse(request, 'ttt')())
+    <BLANKLINE>
+    >>> print(request.response.redirected_to)
+    /another/place
 
 
 == Testing that multiple inheritance involving decorators works ==
@@ -645,14 +645,14 @@ Check those from ThingSetNavigation4:
     ...         return 'foo2 from C'
 
     >>> instance_of_c = C(thingset, request)
-    >>> instance_of_c.publishTraverse(request, 'foo')
-    'foo'
-    >>> instance_of_c.publishTraverse(request, 'bar')
-    'bar'
-    >>> instance_of_c.publishTraverse(request, 'baz')
-    'baz'
-    >>> instance_of_c.publishTraverse(request, 'foo2')
-    'foo2 from C'
+    >>> print(instance_of_c.publishTraverse(request, 'foo'))
+    foo
+    >>> print(instance_of_c.publishTraverse(request, 'bar'))
+    bar
+    >>> print(instance_of_c.publishTraverse(request, 'baz'))
+    baz
+    >>> print(instance_of_c.publishTraverse(request, 'foo2'))
+    foo2 from C
 
 
 == Showing that the name of the function really doesn't matter ==
@@ -668,12 +668,12 @@ Check those from ThingSetNavigation4:
     ...         return 'bar'
 
     >>> instance_of_dupenames = DupeNames(thingset, request)
-    >>> instance_of_dupenames.publishTraverse(request, 'foo')
-    'foo'
-    >>> instance_of_dupenames.publishTraverse(request, 'bar')
-    'bar'
+    >>> print(instance_of_dupenames.publishTraverse(request, 'foo'))
+    foo
+    >>> print(instance_of_dupenames.publishTraverse(request, 'bar'))
+    bar
 
 The doit_*() methods still work though.
 
-    >>> instance_of_dupenames.doit_bar()
-    'bar'
+    >>> print(instance_of_dupenames.doit_bar())
+    bar

@@ -71,6 +71,7 @@ from lp.services.database.interfaces import (
     IStoreSelector,
     MAIN_STORE,
     )
+from lp.services.helpers import backslashreplace
 from lp.services.propertycache import clear_property_cache
 
 # Default we want for scripts, and the PostgreSQL default. Note psycopg1 will
@@ -320,8 +321,11 @@ def quote(x):
     query will be a Unicode string (the entire query will be encoded
     before sending across the wire to the database).
 
-    >>> quote(u"\N{TRADE MARK SIGN}")
-    u"E'\u2122'"
+    >>> quoted = quote(u"\N{TRADE MARK SIGN}")
+    >>> isinstance(quoted, six.text_type)
+    True
+    >>> print(backslashreplace(quoted))
+    E'\u2122'
 
     Timezone handling is not implemented, since all timestamps should
     be UTC anyway.
@@ -393,7 +397,7 @@ def quote_like(x):
     >>> quote_like(1)
     Traceback (most recent call last):
         [...]
-    TypeError: Not a string (<type 'int'>)
+    TypeError: Not a string (<... 'int'>)
 
     """
     if not isinstance(x, six.string_types):

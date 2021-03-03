@@ -91,8 +91,8 @@ Now we can build the source package using the generated tarball.
     /tmp/fakepackager-.../biscuit_1.0-1_source.changes
 
     >>> changesfile_path = packager.listAvailableUploads()[0]
-    >>> changesfile = open(changesfile_path)
-    >>> print(changesfile.read())
+    >>> with open(changesfile_path) as changesfile:
+    ...     print(changesfile.read())
     Format: ...
     Date: ...
     Source: biscuit
@@ -167,7 +167,8 @@ basically checking we pass the right arguments to it.
     >>> print(os.path.basename(changesfile_path))
     biscuit_1.0-3_source.changes
 
-    >>> content = open(changesfile_path).read()
+    >>> with open(changesfile_path, 'rb') as changesfile:
+    ...     content = changesfile.read()
 
     >>> from zope.component import getUtility
     >>> from lp.services.gpg.interfaces import IGPGHandler

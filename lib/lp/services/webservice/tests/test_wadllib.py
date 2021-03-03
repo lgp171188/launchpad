@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function
 __metaclass__ = type
 __all__ = ['test_suite']
 
-
+import __future__
 import os
 import unittest
 
@@ -23,7 +23,7 @@ topdir = os.path.dirname(wadllib.__file__)
 
 def setUp(test):
     for future_item in 'absolute_import', 'print_function':
-        test.globs[future_item] = getattr(globals(), future_item)
+        test.globs[future_item] = getattr(__future__, future_item)
 
 
 def test_suite():

@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from testtools.matchers import MatchesRegex
 from zope.component import getUtility
 
 from lp.registry.interfaces.codeofconduct import (
@@ -169,4 +170,6 @@ class TestCodeOfConductBrowser(BrowserTestCase):
         self.assertEqual(str(len(content)), browser.headers['Content-length'])
         disposition = 'attachment; filename="UbuntuCodeofConduct-2.0.txt"'
         self.assertEqual(disposition, browser.headers['Content-disposition'])
-        self.assertEqual('text/plain', browser.headers['Content-type'])
+        self.assertThat(
+            browser.headers['Content-type'],
+            MatchesRegex(r'^text/plain;charset="?utf-8"?$'))

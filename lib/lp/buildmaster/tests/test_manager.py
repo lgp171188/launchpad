@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the renovated slave scanner aka BuilddManager."""
@@ -680,12 +680,17 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
     @defer.inlineCallbacks
     def test_end_to_end(self):
         # Test that SlaveScanner.scan() successfully finds, dispatches,
-        # collects and cleans a build.
+        # collects and cleans a build, and then makes a reasonable start on
+        # a second build.
         build = self.factory.makeBinaryPackageBuild()
         build.distro_arch_series.addOrUpdateChroot(
             self.factory.makeLibraryFileAlias(db_only=True))
         bq = build.queueBuild()
         bq.manualScore(9000)
+        build2 = self.factory.makeBinaryPackageBuild(
+            distroarchseries=build.distro_arch_series)
+        bq2 = build2.queueBuild()
+        bq2.manualScore(8900)
 
         builder = self.factory.makeBuilder(
             processors=[bq.processor], manual=False, vm_host='VMHOST')
@@ -764,6 +769,24 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
         self.assertEqual(['resume', 'echo'], get_slave.result.method_log)
         self.assertIs(None, builder.currentjob)
         self.assertEqual(BuilderCleanStatus.CLEAN, builder.clean_status)
+
+        # Now we can go round the loop again with a second build.  (We only
+        # go far enough to ensure that the lost-job check works on the
+        # second iteration.)
+        get_slave.result = OkSlave()
+        yield scanner.scan()
+        self.assertEqual(
+            ['status', 'ensurepresent', 'build'],
+            get_slave.result.method_log)
+        self.assertEqual(bq2, builder.currentjob)
+        self.assertEqual(BuildQueueStatus.RUNNING, bq2.status)
+        self.assertEqual(BuildStatus.BUILDING, build2.status)
+        self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
+
+        get_slave.result = BuildingSlave(build2.build_cookie)
+        yield scanner.scan()
+        yield scanner.manager.flushLogTails()
+        self.assertEqual("This is a build log: 0", bq2.logtail)
 
 
 class TestPrefetchedBuilderFactory(TestCaseWithFactory):
@@ -1008,8 +1031,8 @@ class TestSlaveScannerWithoutDB(TestCase):
 
         with ExpectedException(
                 BuildDaemonIsolationError,
-                r"Allegedly clean slave not idle "
-                r"\(u'BuilderStatus.BUILDING' instead\)"):
+                r"Allegedly clean slave not idle \(%r instead\)" %
+                'BuilderStatus.BUILDING'):
             yield scanner.scan()
         self.assertEqual(['status'], slave.call_log)
 
@@ -1170,7 +1193,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         slave = LostBuildingBrokenSlave()
         self.builder.current_build.cancel()
         with ExpectedException(
-                xmlrpc_client.Fault, "<Fault 8002: u'Could not abort'>"):
+                xmlrpc_client.Fault, "<Fault 8002: %r>" % 'Could not abort'):
             yield self._getScanner().checkCancellation(self.vitals, slave)
 
 
@@ -1407,7 +1430,7 @@ class TestNewBuilders(TestCase):
         factory = LaunchpadObjectFactory()
         for builder_name in new_builders:
             factory.makeBuilder(name=builder_name)
-        self.assertEqual(new_builders, manager.checkForNewBuilders())
+        self.assertContentEqual(new_builders, manager.checkForNewBuilders())
 
     def test_checkForNewBuilders_detects_builder_only_once(self):
         # checkForNewBuilders() only detects a new builder once.

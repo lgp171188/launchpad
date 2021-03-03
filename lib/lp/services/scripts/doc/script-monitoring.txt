@@ -110,7 +110,7 @@ result of successful runs.  This is intended for use by cron scripts
 and others where it is useful to monitor the result.
 
     >>> script_file = tempfile.NamedTemporaryFile()
-    >>> script_file.write("""
+    >>> _ = script_file.write(b"""
     ... from lp.services.scripts.base import LaunchpadCronScript
     ...
     ... class TestScript(LaunchpadCronScript):

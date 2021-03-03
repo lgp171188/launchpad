@@ -34,16 +34,16 @@ The default username and password for RT instances are 'guest' and
 specific credentials for will return the default credentials.
 
     >>> rt_one = RequestTracker('http://foobar.com')
-    >>> rt_one.credentials
-    {'user': 'guest', 'pass': 'guest'}
+    >>> print(pretty(rt_one.credentials))
+    {'pass': 'guest', 'user': 'guest'}
 
 However, if the RT instance is one for which we have a username and
 password, those credentials will be retrieved from the Launchpad
 configuration files. rt.example.com is known to Launchpad.
 
     >>> rt_two = RequestTracker('http://rt.example.com')
-    >>> rt_two.credentials
-    {'user': 'zaphod', 'pass': 'pangalacticgargleblaster'}
+    >>> print(pretty(rt_two.credentials))
+    {'pass': 'pangalacticgargleblaster', 'user': 'zaphod'}
 
 == Status Conversion ==
 

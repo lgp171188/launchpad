@@ -351,7 +351,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
             person.preferredemail.email, person).makeMessage()
         attachment = message.get_payload()[1]
         self.assertEqual(
-            'This is a diff.', attachment.get_payload(decode=True))
+            b'This is a diff.', attachment.get_payload(decode=True))
 
     def makeCommentAndParticipants(self):
         """Create a merge proposal and comment.

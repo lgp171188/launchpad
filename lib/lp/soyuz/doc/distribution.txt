@@ -35,11 +35,14 @@ Iteration over all PPAs
 getAllPPAs method provides all returns, as the suggests, all PPAs for
 the distribution in question:
 
-    >>> [archive.owner.name for archive in ubuntu.getAllPPAs()]
-    [u'cprov', u'mark', u'no-priv']
+    >>> for archive in ubuntu.getAllPPAs():
+    ...     print(archive.owner.name)
+    cprov
+    mark
+    no-priv
 
-    >>> [archive.owner.name for archive in debian.getAllPPAs()]
-    []
+    >>> for archive in debian.getAllPPAs():
+    ...     print(archive.owner.name)
 
 
 Searching PPAs
@@ -65,8 +68,10 @@ There is only one 'active' PPA:
     0
 
     >>> result = ubuntu.searchPPAs()
-    >>> [archive.owner.name for archive in result]
-    [u'cprov', u'mark']
+    >>> for archive in result:
+    ...     print(archive.owner.name)
+    cprov
+    mark
 
 PPAs can be reached passing a filter matching (via fti) its description
 and its  'contents description' (see package-cache.txt).
@@ -78,34 +83,44 @@ and its  'contents description' (see package-cache.txt).
     no-priv: I am not allowed to say, I have no privs.
 
     >>> result = ubuntu.searchPPAs(text=u'friend')
-    >>> [archive.owner.name for archive in result]
-    [u'cprov']
+    >>> for archive in result:
+    ...     print(archive.owner.name)
+    cprov
 
     >>> result = ubuntu.searchPPAs(text=u'oink')
-    >>> [archive.owner.name for archive in result]
-    []
+    >>> for archive in result:
+    ...     print(archive.owner.name)
 
     >>> result = ubuntu.searchPPAs(text=u'packages')
-    >>> [archive.owner.name for archive in result]
-    [u'cprov', u'mark']
+    >>> for archive in result:
+    ...     print(archive.owner.name)
+    cprov
+    mark
 
     >>> result = ubuntu.searchPPAs(text=u'help')
-    >>> [archive.owner.name for archive in result]
-    [u'cprov', u'mark']
+    >>> for archive in result:
+    ...     print(archive.owner.name)
+    cprov
+    mark
 
 Including 'inactive' PPAs:
 
     >>> result = ubuntu.searchPPAs(show_inactive=True)
-    >>> [archive.owner.name for archive in result]
-    [u'cprov', u'mark', u'no-priv']
+    >>> for archive in result:
+    ...     print(archive.owner.name)
+    cprov
+    mark
+    no-priv
 
     >>> result = ubuntu.searchPPAs(text=u'priv', show_inactive=True)
-    >>> [archive.owner.name for archive in result]
-    [u'no-priv']
+    >>> for archive in result:
+    ...     print(archive.owner.name)
+    no-priv
 
     >>> result = ubuntu.searchPPAs(text=u'ubuntu', show_inactive=True)
-    >>> [archive.owner.name for archive in result]
-    [u'mark']
+    >>> for archive in result:
+    ...     print(archive.owner.name)
+    mark
 
 The searchPPAs() method only returns the PPAs of active users.
 
@@ -114,8 +129,8 @@ The searchPPAs() method only returns the PPAs of active users.
     >>> no_priv.setAccountStatus(AccountStatus.SUSPENDED, None, 'spammer!')
 
     >>> result = ubuntu.searchPPAs(text=u'priv', show_inactive=True)
-    >>> [archive for archive in result]
-    []
+    >>> for archive in result:
+    ...     print(archive.owner.name)
 
     >>> no_priv.setAccountStatus(AccountStatus.DEACTIVATED, None, 'oops')
     >>> no_priv.setAccountStatus(AccountStatus.ACTIVE, None, 'login')

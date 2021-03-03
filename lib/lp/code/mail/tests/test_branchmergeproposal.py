@@ -5,10 +5,12 @@
 
 from difflib import unified_diff
 import operator
+import re
 from textwrap import dedent
 
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
+import six
 import transaction
 from zope.interface import providedBy
 
@@ -375,7 +377,8 @@ class TestMergeProposalMailing(TestCaseWithFactory):
             'text/x-diff; charset="utf-8"', attachment['Content-Type'])
         self.assertEqual('inline; filename="review-diff.txt"',
                          attachment['Content-Disposition'])
-        self.assertEqual(diff_text, attachment.get_payload(decode=True))
+        self.assertEqual(
+            diff_text.encode('UTF-8'), attachment.get_payload(decode=True))
 
     def test_generateEmail_no_diff_for_status_only(self):
         """If the subscription is for status only, don't attach diffs."""
@@ -404,7 +407,9 @@ class TestMergeProposalMailing(TestCaseWithFactory):
             'text/x-diff; charset="utf-8"', attachment['Content-Type'])
         self.assertEqual('inline; filename="review-diff.txt"',
                          attachment['Content-Disposition'])
-        self.assertEqual(diff_text[:25], attachment.get_payload(decode=True))
+        self.assertEqual(
+            diff_text.encode('UTF-8')[:25],
+            attachment.get_payload(decode=True))
         warning_text = (
             "The attached diff has been truncated due to its size.\n")
         self.assertTrue(warning_text in ctrl.body)
@@ -521,9 +526,9 @@ class TestMergeProposalMailing(TestCaseWithFactory):
                          'who were implicitly subscribed to their branches.')
         email = emails[0]
         self.assertEqual('[Merge] '
-            'lp://dev/~bob/super-product/fix-foo-for-bar into\n'
+            'lp://dev/~bob/super-product/fix-foo-for-bar into'
             ' lp://dev/~mary/super-product/bar',
-            email['subject'].replace('\n\t', '\n '))
+            re.sub(r'\n[\t ]', ' ', email['subject']))
         bmp = job.branch_merge_proposal
         expected = dedent("""\
             The proposal to merge %(source)s into %(target)s has been updated.
@@ -544,7 +549,8 @@ class TestMergeProposalMailing(TestCaseWithFactory):
                 'source': bmp.source_branch.bzr_identity,
                 'target': bmp.target_branch.bzr_identity,
                 'bmp': canonical_url(bmp)}
-        self.assertEqual(expected, email.get_payload(decode=True))
+        self.assertEqual(
+            expected, six.ensure_text(email.get_payload(decode=True)))
 
     def assertRecipientsMatches(self, recipients, mailer):
         """Assert that `mailer` will send to the people in `recipients`."""
@@ -676,7 +682,8 @@ class TestBranchMergeProposalRequestReview(TestCaseWithFactory):
                 'source': bmp.source_branch.bzr_identity,
                 'target': bmp.target_branch.bzr_identity,
                 'bmp': canonical_url(bmp)})
-        self.assertEqual(expected, sent_mail.get_payload(decode=True))
+        self.assertEqual(
+            expected, six.ensure_text(sent_mail.get_payload(decode=True)))
 
     def test_nominateReview_emails_team_address(self):
         # If a review request is made for a team, the members of the team are

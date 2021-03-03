@@ -155,6 +155,9 @@ class BaseRunnableJob(BaseRunnableJobSource):
     def __ne__(self, job):
         return not (self == job)
 
+    def __hash__(self):
+        return hash(tuple([self.__class__] + sorted(self.__dict__.items())))
+
     def __lt__(self, job):
         naked_job = removeSecurityProxy(job)
         if self.__class__ is naked_job.__class__:
@@ -448,7 +451,7 @@ class JobRunner(BaseJobRunner):
 class RunJobCommand(amp.Command):
 
     arguments = [(b'job_id', amp.Integer())]
-    response = [(b'success', amp.Integer()), (b'oops_id', amp.String())]
+    response = [(b'success', amp.Integer()), (b'oops_id', amp.Unicode())]
 
 
 def import_source(job_source_name):

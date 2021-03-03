@@ -5,10 +5,10 @@
   >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 
   >>> pmount_bin = BinaryPackageRelease.get(15)
-  >>> pmount_bin.name
-  u'pmount'
-  >>> pmount_bin.version
-  u'0.1-1'
+  >>> print(pmount_bin.name)
+  pmount
+  >>> print(pmount_bin.version)
+  0.1-1
 
 Get a "mock" request:
   >>> mock_form = {}
@@ -46,9 +46,9 @@ question. In this case 'url' will be None, which indicates no link
 should be rendered for this dependency.
 
   >>> for dep in pmount_deps:
-  ...    dep.name, dep.operator, dep.version, dep.url
-  (u'at', u'>=', u'3.14156', u'http://launchpad.test/ubuntu/hoary/i386/at')
-  (u'linux-2.6.12', None, u'', u'http://launchpad.test/ubuntu/hoary/i386/linux-2.6.12')
-  (u'tramp-package', None, u'', None)
+  ...    print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+  ('at', '>=', '3.14156', 'http://launchpad.test/ubuntu/hoary/i386/at')
+  ('linux-2.6.12', None, '', 'http://launchpad.test/ubuntu/hoary/i386/linux-2.6.12')
+  ('tramp-package', None, '', None)
 
 Other relationship groups use the same mechanism.

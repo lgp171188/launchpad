@@ -143,10 +143,12 @@ get_comments_for_bugtask:
 
     >>> [bug_comment.index for bug_comment in all_comments]
     [0, 1]
-    >>> all_comments[0].text_for_display
-    u'test bug'
-    >>> all_comments[1].text_for_display
-    u'Welcome to Canada!\n\nUnicode\u2122 text'
+    >>> print(all_comments[0].text_for_display)
+    test bug
+    >>> print(all_comments[1].text_for_display)
+    Welcome to Canada!
+    <BLANKLINE>
+    Unicode™ text
 
 Note that multi-chunk comments are only created by the email interface
 itself; adding comments through the web UI always places them in the
@@ -227,13 +229,13 @@ hidden.
     >>> bug_view = getMultiAdapter(
     ...     (bug_three_bugtask, LaunchpadTestRequest()), name='+index')
     >>> bug_view.initialize()
-    >>> [(c.index, c.title, c.text_for_display)
-    ...  for c in bug_comments(bug_view)]
-    [(1, u'Hi', u'Hello there'),
-     (3, u'Ho', u'Hello there'),
-     (5, u'Ho', u'Hello there'),
-     (6, u'Ho', u'Hello there'),
-     (7, u'Ho', u'Hello there')]
+    >>> for c in bug_comments(bug_view):
+    ...     print("%d: '%s', '%s'" % (c.index, c.title, c.text_for_display))
+    1: 'Hi', 'Hello there'
+    3: 'Ho', 'Hello there'
+    5: 'Ho', 'Hello there'
+    6: 'Ho', 'Hello there'
+    7: 'Ho', 'Hello there'
 
 
 Bugs with lots of comments

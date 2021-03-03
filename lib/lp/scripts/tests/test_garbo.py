@@ -1173,9 +1173,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(0, len(list(store.find(TimeLimitedToken,
             path="sample path"))))
         # One to clean and one to keep
-        store.add(TimeLimitedToken(path="sample path", token="foo",
+        store.add(TimeLimitedToken(path="sample path", token=b"foo",
             created=datetime(2008, 1, 1, tzinfo=UTC)))
-        store.add(TimeLimitedToken(path="sample path", token="bar")),
+        store.add(TimeLimitedToken(path="sample path", token=b"bar")),
         store.commit()
         self.assertEqual(2, len(list(store.find(TimeLimitedToken,
             path="sample path"))))
@@ -1308,7 +1308,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         naked_bug.heat_last_updated = old_update
         IMasterStore(FeatureFlag).add(FeatureFlag(
             'default', 0, 'bugs.heat_updates.cutoff',
-            cutoff.isoformat().decode('ascii')))
+            six.ensure_text(cutoff.isoformat())))
         transaction.commit()
         self.assertEqual(old_update, naked_bug.heat_last_updated)
         self.runHourly()

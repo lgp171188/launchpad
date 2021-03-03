@@ -350,6 +350,25 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
             "Scheduling upload of %r to registries." % self.build,
             logger.output.splitlines())
 
+    def test_updateStatus_fullybuilt_distro_triggers_registry_uploads(self):
+        # A completed OCIRecipeBuild with distribution credentials triggers
+        # registry uploads.
+        self.setConfig()
+        logger = self.useFixture(FakeLogger())
+        distribution = self.factory.makeDistribution()
+        distribution.oci_registry_credentials = (
+            self.factory.makeOCIRegistryCredentials())
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        build = self.factory.makeOCIRecipeBuild(recipe=recipe)
+        oci_project.setOfficialRecipeStatus(recipe, True)
+        with dbuser(config.builddmaster.dbuser):
+            build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertEqual(1, len(list(build.registry_upload_jobs)))
+        self.assertIn(
+            "Scheduling upload of %r to registries." % build,
+            logger.output.splitlines())
+
     def test_eta(self):
         # OCIRecipeBuild.eta returns a non-None value when it should, or
         # None when there's no start time.

@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd. This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd. This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test views that manage sharing."""
@@ -23,6 +23,7 @@ from lp.app.interfaces.services import IService
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
+    PersonVisibility,
     )
 from lp.registry.interfaces.accesspolicy import IAccessPolicyGrantFlatSource
 from lp.registry.model.pillar import PillarPerson
@@ -31,6 +32,7 @@ from lp.services.config import config
 from lp.services.webapp.interfaces import StormRangeFactoryError
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
+    admin_logged_in,
     login_person,
     logout,
     normalize_whitespace,
@@ -360,6 +362,22 @@ class PillarSharingViewTestMixin:
         # information".
         self.run_sharing_message_test(
             self.pillar, self.pillar.owner, public=True)
+
+    def test_shared_with_normally_invisible_private_team(self):
+        # If a pillar is shared with a private team, then we disclose
+        # information about the share to users who can see +sharing even if
+        # they can't normally see that private team.
+        self.pushConfig('launchpad', default_batch_size=75)
+        with admin_logged_in():
+            team = self.factory.makeTeam(visibility=PersonVisibility.PRIVATE)
+            team_name = team.name
+            self.factory.makeAccessPolicyGrant(self.access_policy, team)
+        with person_logged_in(self.pillar.owner):
+            view = create_initialized_view(self.pillar, name='+sharing')
+            cache = IJSONRequestCache(view.request)
+            self.assertIn(
+                team_name,
+                [grantee['name'] for grantee in cache.objects['grantee_data']])
 
 
 class TestProductSharingView(PillarSharingViewTestMixin,

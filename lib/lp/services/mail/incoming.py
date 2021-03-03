@@ -268,7 +268,7 @@ def authenticateEmail(mail, signature_timestamp_checker=None):
         from_addr = parseaddr(mail['From'])[1]
         try:
             principal = authutil.getPrincipalByLogin(from_addr)
-        except TypeError:
+        except (TypeError, UnicodeDecodeError):
             # The email isn't valid, so don't authenticate
             principal = None
 

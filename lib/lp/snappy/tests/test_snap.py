@@ -1945,6 +1945,15 @@ class TestSnapSet(TestCaseWithFactory):
                     store_names[0], owner=owners[1],
                     visible_by_user=owners[0]))
 
+    def test_getSnapcraftYaml_snap_no_source(self):
+        [git_ref] = self.factory.makeGitRefs()
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with admin_logged_in():
+            git_ref.repository.destroySelf(break_references=True)
+        self.assertRaisesWithContent(
+            CannotFetchSnapcraftYaml, "Snap source is not defined",
+            getUtility(ISnapSet).getSnapcraftYaml, snap)
+
     def test_getSnapcraftYaml_bzr_snap_snapcraft_yaml(self):
         def getInventory(unique_name, dirname, *args, **kwargs):
             if dirname == "snap":
@@ -3678,7 +3687,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertThat(snap.store_secrets, MatchesDict({
                 "root": Equals(root_macaroon.serialize()),
                 "discharge_encrypted": AfterPreprocessing(
-                    container.decrypt, Equals(discharge_macaroon.serialize())),
+                    lambda data: container.decrypt(data).decode("UTF-8"),
+                    Equals(discharge_macaroon.serialize())),
                 }))
 
     def makeBuildableDistroArchSeries(self, **kwargs):

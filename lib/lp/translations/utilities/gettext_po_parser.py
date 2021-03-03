@@ -691,7 +691,12 @@ class POParser(object):
         # We found some text escaped that should be recoded to Unicode.
         # First, we unescape it.
         escaped_string, string = string[:position], string[position:]
-        unescaped_string = escaped_string.decode('string-escape')
+        # Effectively a bytes-to-bytes string-escape decoding, but
+        # compatible with Python 3.  This works because we've already
+        # ensured above that escaped_string only includes hexadecimal or
+        # octal escapes (not \uXXXX etc.).
+        unescaped_string = escaped_string.encode('ascii').decode(
+            'unicode-escape').encode('iso-8859-1')
 
         if (self._translation_file is not None and
             self._translation_file.header is not None):
@@ -725,15 +730,18 @@ class POParser(object):
     def _parseQuotedString(self, string):
         r"""Parse a quoted string, interpreting escape sequences.
 
+          >>> from lp.services.helpers import backslashreplace
+
           >>> parser = POParser()
-          >>> parser._parseQuotedString(u'\"abc\"')
-          u'abc'
-          >>> parser._parseQuotedString(u'\"abc\\ndef\"')
-          u'abc\ndef'
-          >>> parser._parseQuotedString(u'\"ab\x63\"')
-          u'abc'
-          >>> parser._parseQuotedString(u'\"ab\143\"')
-          u'abc'
+          >>> print(parser._parseQuotedString(u'\"abc\"'))
+          abc
+          >>> print(parser._parseQuotedString(u'\"abc\\ndef\"'))
+          abc
+          def
+          >>> print(parser._parseQuotedString(u'\"ab\x63\"'))
+          abc
+          >>> print(parser._parseQuotedString(u'\"ab\143\"'))
+          abc
 
           After the string has been converted to unicode, the backslash
           escaped sequences are still in the encoding that the charset header
@@ -757,8 +765,8 @@ class POParser(object):
           ...     charset = 'UTF-8'
           >>> parser._translation_file = TranslationFileData()
           >>> parser._translation_file.header = FakeHeader()
-          >>> parser._parseQuotedString(utf8_string)
-          u'view \xab${version_title}\xbb'
+          >>> print(backslashreplace(parser._parseQuotedString(utf8_string)))
+          view \xab${version_title}\xbb
 
           Let's see that we raise a TranslationFormatInvalidInputError
           exception when we have an escaped char that is not valid in the

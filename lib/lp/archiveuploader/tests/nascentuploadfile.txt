@@ -90,18 +90,18 @@ file name.
 
 At this point the changesfile content is already parsed:
 
-    >>> ed_binary_changes.source
-    'ed'
+    >>> print(ed_binary_changes.source)
+    ed
 
-    >>> ed_binary_changes.version
-    '0.2-20'
+    >>> print(ed_binary_changes.version)
+    0.2-20
 
     >>> for item in ed_binary_changes.architectures:
     ...     print(item)
     i386
 
-    >>> ed_binary_changes.suite_name
-    'unstable'
+    >>> print(ed_binary_changes.suite_name)
+    unstable
 
 Push upload targeted suite into policy before the checks, nomally done
 by NascentUpload object:
@@ -126,18 +126,22 @@ we can deal with the errors later:
 At this point we can inspect the list of files contained in the upload.
 
     >>> for uploaded_file in ed_binary_changes.files:
-    ...     print uploaded_file.filename
+    ...     print(uploaded_file.filename)
     ed_0.2-20_i386.deb
 
-    >>> [f.filename for f in ed_binary_changes.binary_package_files]
-    ['ed_0.2-20_i386.deb']
-    >>> [f.filename for f in ed_binary_changes.source_package_files]
-    []
+    >>> for f in ed_binary_changes.binary_package_files:
+    ...     print(f.filename)
+    ed_0.2-20_i386.deb
+    >>> for f in ed_binary_changes.source_package_files:
+    ...     print(f.filename)
 
-    >>> [f.filename for f in ed_source_changes.binary_package_files]
-    []
-    >>> [f.filename for f in ed_source_changes.source_package_files]
-    ['ed_0.2-20.dsc', 'ed_0.2-20.diff.gz', 'ed_0.2.orig.tar.gz']
+    >>> for f in ed_source_changes.binary_package_files:
+    ...     print(f.filename)
+    >>> for f in ed_source_changes.source_package_files:
+    ...     print(f.filename)
+    ed_0.2-20.dsc
+    ed_0.2-20.diff.gz
+    ed_0.2.orig.tar.gz
 
 Similar to what we have in 'processFiles' ChangesFile.verify is also
 a error generator
@@ -177,14 +181,14 @@ regexp, even though it isn't actually a source file:
 
     >>> from lp.archiveuploader.utils import re_issource
     >>> src_match = re_issource.match('dist-upgrader_1.0.tar.gz')
-    >>> src_match.group(0)
-    'dist-upgrader_1.0.tar.gz'
-    >>> src_match.group(1)
-    'dist-upgrader'
-    >>> src_match.group(2)
-    '1.0'
-    >>> src_match.group(3)
-    'tar.gz'
+    >>> print(src_match.group(0))
+    dist-upgrader_1.0.tar.gz
+    >>> print(src_match.group(1))
+    dist-upgrader
+    >>> print(src_match.group(2))
+    1.0
+    >>> print(src_match.group(3))
+    tar.gz
 
 That's why we recognize them by identifying a set of custom sections:
 
@@ -364,14 +368,14 @@ in the ChangesFile instance.
 The DSCFile also presents a similar behaviour to access its parsed
 contents:
 
-    >>> ed_source_dsc.source
-    'ed'
-    >>> ed_source_dsc.version
-    '0.2-20'
-    >>> ed_source_dsc.architecture
-    'any'
-    >>> ed_source_dsc.binary
-    'ed'
+    >>> print(ed_source_dsc.source)
+    ed
+    >>> print(ed_source_dsc.version)
+    0.2-20
+    >>> print(ed_source_dsc.architecture)
+    any
+    >>> print(ed_source_dsc.binary)
+    ed
 
 The DSC is GPG-signed most of the time, so we can guarantee who was
 the author. The DSCFile class implements the same address parsing
@@ -440,7 +444,7 @@ Sub-DSCFiles are DSCUploadedFile objects.
 We can also inspect the list of files declared in this DSC:
 
     >>> for dsc_file in ed_source_dsc.files:
-    ...     print dsc_file.filename
+    ...     print(dsc_file.filename)
     ed_0.2.orig.tar.gz
     ed_0.2-20.diff.gz
 
@@ -482,7 +486,7 @@ changes file:
     ...     'main/net', 'important', 'foo', '1.2', ed_binary_changes,
     ...     modified_insecure_policy, DevNullLogger())
     >>> list(ed_binary_deb.verify())
-    [UploadError('ed_0.2-20_i386.deb
+    [UploadError(...'ed_0.2-20_i386.deb
     control file lists section as main/editors but changes file has
     main/net.',)]
 
@@ -493,7 +497,7 @@ It also checks the priority against the changes file:
     ...     'main/editors', 'extra', 'foo', '1.2', ed_binary_changes,
     ...     modified_insecure_policy, DevNullLogger())
     >>> list(ed_binary_deb.verify())
-    [UploadError('ed_0.2-20_i386.deb
+    [UploadError(...'ed_0.2-20_i386.deb
     control file lists priority as important but changes file has extra.',)]
 
 The timestamp of the files in the .deb are tested against the policy for
@@ -510,9 +514,9 @@ being too new:
     ...     'main/editors', 'important', 'foo', '1.2', ed_binary_changes,
     ...     old_only_policy, DevNullLogger())
     >>> list(ed_binary_deb.verifyDebTimestamp())
-    [UploadError('ed_0.2-20_i386.deb:
+    [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far into the future
-    (e.g. control [Thu Jan  3 19:29:01 2008]).',)]
+    (e.g. ./ [Thu Jan  3 19:29:00 2008]).',)]
 
 ... as well as for being too old:
 
@@ -525,6 +529,6 @@ being too new:
     ...     'main/editors', 'important', 'foo', '1.2', ed_binary_changes,
     ...     new_only_policy, DevNullLogger())
     >>> list(ed_binary_deb.verify())
-    [UploadError('ed_0.2-20_i386.deb:
+    [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far in the past
-    (e.g. control [Thu Jan  3 19:29:01 2008]).',)]
+    (e.g. ./ [Thu Jan  3 19:29:00 2008]).',)]

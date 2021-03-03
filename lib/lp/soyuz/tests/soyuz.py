@@ -29,7 +29,7 @@ class Base64KeyMatches(Matcher):
         self.fingerprint = fingerprint
 
     def match(self, encoded_key):
-        key = base64.b64decode(encoded_key)
+        key = base64.b64decode(encoded_key.encode("ASCII"))
         return Equals(self.fingerprint).match(
             getUtility(IGPGHandler).importPublicKey(key).fingerprint)
 

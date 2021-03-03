@@ -19,8 +19,8 @@ It also knows how to set these values as the aliases of the pillar it is bound
 to.
 
     >>> bound_field.set(firefox, aliases)
-    >>> bound_field.get(firefox)
-    u'iceweasel snowchicken'
+    >>> print(bound_field.get(firefox))
+    iceweasel snowchicken
 
 An alias which is already in use by a given pillar is considered by the field
 to be a valid alias for that pillar, but only for that pillar.
@@ -37,8 +37,8 @@ If existing aliases are not passed to the field's set() method, they will be
 removed.
 
     >>> bound_field.set(firefox, u'iceweasel')
-    >>> bound_field.get(firefox)
-    u'iceweasel'
+    >>> print(bound_field.get(firefox))
+    iceweasel
 
 If an empty string (or None) is given, all aliases will be removed.
 

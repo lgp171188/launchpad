@@ -64,10 +64,9 @@ class TestPersonEmailSecurity(TestCaseWithFactory):
         accessor = self.factory.makePerson()
         lp = launchpadlib_for("test", accessor.name)
         person = lp.people['target']
-        emails = sorted(list(person.confirmed_email_addresses))
-        self.assertNotEqual(
-                sorted([self.email_one, self.email_two]),
-                len(emails))
+        emails = [entry.email for entry in person.confirmed_email_addresses]
+        self.assertContentEqual(
+            ['test1@example.com', 'test2@example.com'], emails)
 
     def test_anonymous_cannot_access(self):
         # An anonymous launchpadlib connection cannot see email addresses.
@@ -336,7 +335,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
                 '/people?ws.op=getByEmail&email=foo@').jsonBody)
         # XXX wgrant bug=1088358: This escaping shouldn't be here; it's
         # not HTML.
-        self.assertEqual("email: Invalid email &#x27;foo@&#x27;.", e[0])
+        self.assertEqual("email: Invalid email &#x27;foo@&#x27;.", e.args[0])
 
     def test_getByOpenIDIdentifier(self):
         # You can get a person by their OpenID identifier URL.

@@ -395,11 +395,24 @@ class TestBasicLaunchpadRequest(TestCase):
     def test_baserequest_recovers_from_bad_path_info_encoding(self):
         # The request object recodes PATH_INFO to ensure sane_environment
         # does not raise a UnicodeDecodeError when LaunchpadBrowserRequest
-        # is instantiated.
-        bad_path = 'fnord/trunk\xE4'
+        # is instantiated.  This is only relevant on Python 2: PATH_INFO is
+        # required to be a native string, which on Python 3 is already
+        # Unicode, so the recoding issue doesn't arise.
+        bad_path = b'fnord/trunk\xE4'
         env = {'PATH_INFO': bad_path}
         request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
         self.assertEqual(u'fnord/trunk\ufffd', request.getHeader('PATH_INFO'))
+
+    def test_baserequest_preserves_path_info_unicode(self):
+        # If the request object receives PATH_INFO as Unicode, it is passed
+        # through unchanged.  This is only relevant on Python 3: PATH_INFO
+        # is required to be a native string, which on Python 2 is bytes.
+        # (As explained in BasicLaunchpadRequest.__init__, non-ASCII
+        # characters will be rejected later during traversal.)
+        bad_path = u'fnord/trunk\xE4'
+        env = {'PATH_INFO': bad_path}
+        request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
+        self.assertEqual(u'fnord/trunk\xE4', request.getHeader('PATH_INFO'))
 
     def test_request_with_invalid_query_string_recovers(self):
         # When the query string has invalid utf-8, it is decoded with

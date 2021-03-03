@@ -32,17 +32,17 @@ the sampledata.
     None
 
     >>> pofile = potemplate.newPOFile('sr')
-    >>> pofile_content = br'''
+    >>> pofile_content = six.ensure_binary('''
     ... msgid ""
     ... msgstr ""
-    ... "PO-Revision-Date: 2005-06-04 20:41+0100\n"
-    ... "Last-Translator: Danilo Šegan <danilo@canonical.com>\n"
-    ... "Content-Type: text/plain; charset=UTF-8\n"
-    ... "X-Rosetta-Export-Date: %s\n"
+    ... "PO-Revision-Date: 2005-06-04 20:41+0100\\n"
+    ... "Last-Translator: Danilo \u0160egan <danilo@canonical.com>\\n"
+    ... "Content-Type: text/plain; charset=UTF-8\\n"
+    ... "X-Rosetta-Export-Date: %s\\n"
     ...
     ... msgid "Foo %%s"
     ... msgstr "Bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
 
 We clean the import queue.
 
@@ -84,7 +84,8 @@ has enough privileges for the script to run to completion.
     ...                       "rosetta-poimport.py")
     >>> process = subprocess.Popen([sys.executable, script],
     ...                            stdout=subprocess.PIPE,
-    ...                            stderr=subprocess.PIPE,)
+    ...                            stderr=subprocess.PIPE,
+    ...                            universal_newlines=True)
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -99,5 +100,5 @@ A new Account for 'danilo@canonical.com' is created.
 
     >>> danilo = getUtility(IPersonSet).getByEmail('danilo@canonical.com',
     ...     filter_status=False)
-    >>> danilo.displayname
-    u'Danilo \u0160egan'
+    >>> print(danilo.displayname)
+    Danilo Šegan

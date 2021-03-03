@@ -59,7 +59,7 @@ a 404 error:
   ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  zope.publisher.interfaces.NotFound: ... u'.bzr'
+  zope.publisher.interfaces.NotFound: ... '.bzr'
 
 
 Product Branch
@@ -83,4 +83,4 @@ associated with it, we get a 404 error:
   ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  zope.publisher.interfaces.NotFound: ... u'.bzr'
+  zope.publisher.interfaces.NotFound: ... '.bzr'

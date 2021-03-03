@@ -1419,7 +1419,7 @@ class TestProductFiles(TestCase):
     def test_adddownloadfile_nonascii_filename(self):
         """Test uploading a file with a non-ascii char in the filename."""
         firefox_owner = setupBrowser(auth='Basic mark@example.com:test')
-        filename = u'foo\xa5.txt'.encode('utf-8')
+        filename = u'foo\xa5.txt'
         firefox_owner.open(
             'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
         foo_file = BytesIO(b'Foo installer package...')

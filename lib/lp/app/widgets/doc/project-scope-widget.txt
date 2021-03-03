@@ -120,7 +120,7 @@ raised:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.WidgetInputError: ('field.scope', u'', LaunchpadValidationError(u'There is no project named &#x27;invalid&#x27; registered in Launchpad'))
+    zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'There is no project named &#x27;invalid&#x27; registered in Launchpad'))
 
 The same error text is returned by error():
 
@@ -139,7 +139,7 @@ If no project name is given at all, a widget error is also raised:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.WidgetInputError: ('field.scope', u'', LaunchpadValidationError(u'Please enter a project name'))
+    zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'Please enter a project name'))
 
     >>> print(widget.error())
     Please enter a project name
@@ -154,7 +154,7 @@ If no project name is given at all, a widget error is also raised:
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.WidgetInputError: ('field.scope', u'', LaunchpadValidationError(u'Please enter a project name'))
+    zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'Please enter a project name'))
 
     >>> print(widget.error())
     Please enter a project name

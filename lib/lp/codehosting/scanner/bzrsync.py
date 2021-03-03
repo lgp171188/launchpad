@@ -94,7 +94,9 @@ class BzrSync:
         # Get the history and ancestry from the branch first, to fail early
         # if something is wrong with the branch.
         self.logger.info("Retrieving history from breezy.")
-        bzr_history = branch_revision_history(bzr_branch)
+        bzr_history = [
+            six.ensure_text(revid)
+            for revid in branch_revision_history(bzr_branch)]
         # The BranchRevision, Revision and RevisionParent tables are only
         # written to by the branch-scanner, so they are not subject to
         # write-lock contention. Update them all in a single transaction to
@@ -152,7 +154,9 @@ class BzrSync:
                 BranchRevision.branch_id == self.db_branch.id,
                 Revision.id == BranchRevision.revision_id)
         parent_map = dict(
-            (r.revision_id, r.parent_ids) for r in revisions)
+            (six.ensure_binary(r.revision_id),
+             [six.ensure_binary(revid) for revid in r.parent_ids])
+            for r in revisions)
         parents_provider = DictParentsProvider(parent_map)
 
         class PPSource:
@@ -171,10 +175,14 @@ class BzrSync:
             added_ancestry = get_ancestry(bzr_branch.repository, bzr_last)
             removed_ancestry = set()
         else:
+            db_last = six.ensure_binary(db_last)
             graph = self._getRevisionGraph(bzr_branch, db_last)
             added_ancestry, removed_ancestry = (
                 graph.find_difference(bzr_last, db_last))
             added_ancestry.discard(NULL_REVISION)
+        added_ancestry = {six.ensure_text(revid) for revid in added_ancestry}
+        removed_ancestry = {
+            six.ensure_text(revid) for revid in removed_ancestry}
         return added_ancestry, removed_ancestry
 
     def getHistoryDelta(self, bzr_history, db_history):
@@ -245,7 +253,8 @@ class BzrSync:
         :param revisions: the set of Breezy revision IDs to return breezy
             Revision objects for.
         """
-        revisions = bzr_branch.repository.get_parent_map(revisions)
+        revisions = bzr_branch.repository.get_parent_map(
+            [six.ensure_binary(revid) for revid in revisions])
         return bzr_branch.repository.get_revisions(revisions.keys())
 
     def syncRevisions(self, bzr_branch, bzr_revisions, revids_to_insert):
@@ -260,7 +269,8 @@ class BzrSync:
         self.revision_set.newFromBazaarRevisions(bzr_revisions)
         mainline_revisions = []
         for bzr_revision in bzr_revisions:
-            if revids_to_insert[bzr_revision.revision_id] is None:
+            revision_id = six.ensure_text(bzr_revision.revision_id)
+            if revids_to_insert[revision_id] is None:
                 continue
             mainline_revisions.append(bzr_revision)
         notify(events.NewMainlineRevisions(

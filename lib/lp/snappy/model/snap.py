@@ -44,7 +44,6 @@ from storm.locals import (
     Storm,
     Unicode,
     )
-from twisted.application.service import IService
 import yaml
 from zope.component import (
     getAdapter,
@@ -1400,6 +1399,8 @@ class SnapSet:
         if owner is not None and owner.private:
             return InformationType.PROPRIETARY
 
+        # XXX pappacena 2021-03-02: We need to consider the pillar's branch
+        # sharing policy here instead of suggesting PUBLIC.
         return InformationType.PUBLIC
 
     def isValidInformationType(self, information_type, owner, branch=None,
@@ -1607,6 +1608,8 @@ class SnapSet:
         """See `ISnapSet`."""
         if ISnap.providedBy(context):
             context = context.source
+        if context is None:
+            raise CannotFetchSnapcraftYaml("Snap source is not defined")
         try:
             paths = (
                 "snap/snapcraft.yaml",
