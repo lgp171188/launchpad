@@ -33,6 +33,9 @@
         <tal:widget define="widget nocall:view/widgets/project">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
         </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/information_type">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
         <tal:widget define="widget nocall:view/widgets/store_distro_series">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
         </tal:widget>

@@ -46,7 +46,10 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
-from lp.app.enums import PRIVATE_INFORMATION_TYPES
+from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
+    PRIVATE_INFORMATION_TYPES,
+    )
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.vocabularies import InformationTypeVocabulary
@@ -136,6 +139,49 @@ class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
         person = getUtility(IPersonSet).getByName(name)
         if person is not None:
             return self.context.getSubscription(person)
+
+
+class SnapInformationTypeMixin:
+    def getPossibleInformationTypes(self, snap, user):
+        """Get the information types to display on the edit form.
+
+        We display a customised set of information types: anything allowed
+        by the repository's model, plus the current type.
+        """
+        allowed_types = set(snap.getAllowedInformationTypes(user))
+        allowed_types.add(snap.information_type)
+        return allowed_types
+
+    def validateInformationType(self, data, snap=None):
+        """Validates the information_type and project on data dictionary.
+
+        The possible information types are defined by snap. When creating a
+        new snap, snap should be None and the possible information types
+        will be calculated based on the project.
+        """
+        info_type = data.get('information_type')
+        project = data.get('project')
+        if info_type is None and project is None:
+            # Nothing to validate here. Move on.
+            return
+        if project is None and info_type not in FREE_INFORMATION_TYPES:
+            self.setFieldError(
+                'information_type',
+                'Snap can only be non-public if a project is selected.')
+        elif project is not None:
+            if snap is None:
+                snap_set = getUtility(ISnapSet)
+                possible_types = snap_set.getPossibleSnapInformationTypes(
+                    project)
+            else:
+                possible_types = self.getPossibleInformationTypes(
+                    snap, self.user)
+            if info_type not in possible_types:
+                msg = ('Project %s only accepts the following information '
+                       'types: %s.')
+                msg %= (project.name,
+                        ", ".join(i.title for i in possible_types))
+                self.setFieldError('information_type', msg)
 
 
 class SnapBreadcrumb(NameBreadcrumb):
@@ -430,8 +476,8 @@ class SnapAuthorizeMixin:
             log_oops(e, self.request)
 
 
-class SnapAddView(
-        LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin):
+class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
+                  SnapInformationTypeMixin):
     """View for creating snap packages."""
 
     page_title = label = 'Create a new snap package'
@@ -561,8 +607,6 @@ class SnapAddView(
             kwargs = {'git_ref': self.context}
         else:
             kwargs = {'branch': self.context}
-        information_type = getUtility(ISnapSet).getSnapSuggestedPrivacy(
-            data['owner'], **kwargs)
         if not data.get('auto_build', False):
             data['auto_build_archive'] = None
             data['auto_build_pocket'] = None
@@ -573,7 +617,8 @@ class SnapAddView(
             auto_build_archive=data['auto_build_archive'],
             auto_build_pocket=data['auto_build_pocket'],
             auto_build_channels=data['auto_build_channels'],
-            information_type=information_type,
+            information_type=data['information_type'],
+            project=data['project'],
             processors=data['processors'],
             build_source_tarball=data['build_source_tarball'],
             store_upload=data['store_upload'],
@@ -595,9 +640,11 @@ class SnapAddView(
                     'name',
                     'There is already a snap package owned by %s with this '
                     'name.' % owner.displayname)
+        self.validateInformationType(data)
 
 
-class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
+class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
+                       SnapInformationTypeMixin):
 
     schema = ISnapEditSchema
 
@@ -618,16 +665,6 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
     @property
     def has_snappy_distro_series(self):
         return not getUtility(ISnappyDistroSeriesSet).getAll().is_empty()
-
-    def getInformationTypesToShow(self):
-        """Get the information types to display on the edit form.
-
-        We display a customised set of information types: anything allowed
-        by the repository's model, plus the current type.
-        """
-        allowed_types = set(self.context.getAllowedInformationTypes(self.user))
-        allowed_types.add(self.context.information_type)
-        return allowed_types
 
     def validate_widgets(self, data, names=None):
         """See `LaunchpadFormView`."""
@@ -694,13 +731,7 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
                 msg = ('Private Snap recipes must be associated '
                        'with a project.')
                 self.setFieldError('project', msg)
-
-    def updateContextFromData(self, data, context=None, notify_modified=True):
-        if 'project' in data:
-            project = data.pop('project')
-            self.context.setProject(project)
-        super(BaseSnapEditView, self).updateContextFromData(
-            data, context, notify_modified)
+        self.validateInformationType(data, snap=self.context)
 
     def _needStoreReauth(self, data):
         """Does this change require reauthorizing to the store?"""
@@ -781,6 +812,13 @@ class SnapAdminView(BaseSnapEditView):
         # be removed once we back fill snap.information_type.
         return {'information_type': self.context.information_type}
 
+    def updateContextFromData(self, data, context=None, notify_modified=True):
+        if 'project' in data:
+            project = data.pop('project')
+            self.context.setProject(project)
+        super(BaseSnapEditView, self).updateContextFromData(
+            data, context, notify_modified)
+
 
 class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
     """View for editing snap packages."""
@@ -839,7 +877,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         super(SnapEditView, self).setUpWidgets(context)
         info_type_widget = self.widgets['information_type']
         info_type_widget.vocabulary = InformationTypeVocabulary(
-            types=self.getInformationTypesToShow())
+            types=self.getPossibleInformationTypes(self.context, self.user))
 
     @property
     def initial_values(self):
@@ -885,6 +923,13 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
                         # This processor is restricted and currently
                         # enabled. Leave it untouched.
                         data['processors'].append(processor)
+
+    def updateContextFromData(self, data, context=None, notify_modified=True):
+        if 'project' in data:
+            project = data.pop('project')
+            self.context.setProject(project)
+        super(BaseSnapEditView, self).updateContextFromData(
+            data, context, notify_modified)
 
 
 class SnapAuthorizeView(LaunchpadEditFormView):

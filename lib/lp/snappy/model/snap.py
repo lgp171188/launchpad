@@ -44,7 +44,6 @@ from storm.locals import (
     Storm,
     Unicode,
     )
-from twisted.application.service import IService
 import yaml
 from zope.component import (
     getAdapter,
@@ -1389,18 +1388,9 @@ class SnapSet:
 
         return snap
 
-    def getSnapSuggestedPrivacy(self, owner, branch=None, git_ref=None):
+    def getPossibleSnapInformationTypes(self, project):
         """See `ISnapSet`."""
-        # Public snaps with private sources are not allowed.
-        source = branch or git_ref
-        if source is not None and source.private:
-            return source.information_type
-
-        # Public snaps owned by private teams are not allowed.
-        if owner is not None and owner.private:
-            return InformationType.PROPRIETARY
-
-        return InformationType.PUBLIC
+        return BRANCH_POLICY_ALLOWED_TYPES[project.branch_sharing_policy]
 
     def isValidInformationType(self, information_type, owner, branch=None,
                                git_ref=None):

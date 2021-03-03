@@ -65,6 +65,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
@@ -85,6 +86,7 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.snappy.model.snap import Snap
 from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
@@ -384,87 +386,92 @@ class TestSnapAddView(BaseTestSnapView):
             browser.getLink("Create snap package")
 
     def test_create_new_snap_private(self):
-        # Private teams will automatically create private snaps.
-        self.useFixture(BranchHostingFixture(blob=b""))
+        # Creates a private snap for a private project.
         login_person(self.person)
-        self.factory.makeTeam(
-            name='super-private', owner=self.person,
-            membership_policy=TeamMembershipPolicy.MODERATED,
-            visibility=PersonVisibility.PRIVATE)
-        branch = self.factory.makeAnyBranch()
-
-        browser = self.getViewBrowser(
-            branch, view_name="+new-snap", user=self.person)
-        browser.getControl(name="field.name").value = "private-snap"
-        browser.getControl("Owner").value = ['super-private']
-        browser.getControl("Create snap package").click()
-
-        content = find_main_content(browser.contents)
-        self.assertEqual("private-snap", extract_text(content.h1))
-        self.assertEqual(
-            'This snap contains Private information',
-            extract_text(find_tag_by_id(browser.contents, "privacy"))
-        )
-
-    def test_create_new_snap_private_team_with_private_branch(self):
-        # Creating snaps from private branch should make the snap follow its
-        # privacy setting.
-        self.useFixture(BranchHostingFixture(blob=b""))
-        login_person(self.person)
-        private_team = self.factory.makeTeam(
-            name='super-private', owner=self.person,
-            membership_policy=TeamMembershipPolicy.MODERATED,
-            visibility=PersonVisibility.PRIVATE)
-        branch = self.factory.makeAnyBranch(
+        self.factory.makeProduct(
+            name='private-project',
             owner=self.person, registrant=self.person,
-            information_type=InformationType.PRIVATESECURITY)
-
-        browser = self.getViewBrowser(
-            branch, view_name="+new-snap", user=self.person)
-        browser.getControl(name="field.name").value = "private-snap"
-        browser.getControl("Owner").value = ['super-private']
-        browser.getControl("Create snap package").click()
-
-        content = find_main_content(browser.contents)
-        self.assertEqual("private-snap", extract_text(content.h1))
-        self.assertEqual(
-            'This snap contains Private information',
-            extract_text(find_tag_by_id(browser.contents, "privacy"))
-        )
-        login_admin()
-        snap = getUtility(ISnapSet).getByName(private_team, 'private-snap')
-        self.assertEqual(
-            InformationType.PRIVATESECURITY, snap.information_type)
-
-    def test_create_new_snap_private_team_with_private_git_repo(self):
-        # Creating snaps from private repos should make the snap follow its
-        # privacy setting.
-        self.useFixture(BranchHostingFixture(blob=b""))
-        login_person(self.person)
-        private_team = self.factory.makeTeam(
-            name='super-private', owner=self.person,
-            membership_policy=TeamMembershipPolicy.MODERATED,
-            visibility=PersonVisibility.PRIVATE)
-        [git_ref] = self.factory.makeGitRefs(
-            owner=self.person, registrant=self.person,
-            information_type=InformationType.PRIVATESECURITY)
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        [git_ref] = self.factory.makeGitRefs()
 
         browser = self.getViewBrowser(
             git_ref, view_name="+new-snap", user=self.person)
         browser.getControl(name="field.name").value = "private-snap"
-        browser.getControl("Owner").value = ['super-private']
+        browser.getControl(name="field.information_type").value = "PROPRIETARY"
+        browser.getControl(name="field.project").value = "private-project"
         browser.getControl("Create snap package").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual("private-snap", extract_text(content.h1))
         self.assertEqual(
             'This snap contains Private information',
-            extract_text(find_tag_by_id(browser.contents, "privacy"))
-        )
+            extract_text(find_tag_by_id(browser.contents, "privacy")))
         login_admin()
-        snap = getUtility(ISnapSet).getByName(private_team, 'private-snap')
+        snap = getUtility(ISnapSet).getByName(self.person, 'private-snap')
         self.assertEqual(
-            InformationType.PRIVATESECURITY, snap.information_type)
+            InformationType.PROPRIETARY, snap.information_type)
+
+    def test_create_new_snap_private_without_project_fails(self):
+        # It should not not be possible to create a private snap with
+        # information_type not matching project's branch_sharing_policy.
+        login_person(self.person)
+        [git_ref] = self.factory.makeGitRefs()
+
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "private-snap"
+        browser.getControl(name="field.information_type").value = "PROPRIETARY"
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("Create a new snap package", extract_text(content.h1))
+        messages = find_tags_by_class(browser.contents, "message")
+        self.assertEqual(2, len(messages))
+        top_msg, field_msg = messages
+        self.assertEqual(
+            'There is 1 error.', extract_text(top_msg))
+        self.assertEqual(
+            'Snap can only be non-public if a project is selected.',
+            extract_text(field_msg))
+        login_admin()
+        snap = IStore(Snap).find(Snap, Snap.name == 'private-snap').one()
+        self.assertIsNone(snap)
+
+    def test_create_new_snap_private_with_invalid_information_type_fails(self):
+        # It should not not be possible to create a private snap without
+        # setting a project.
+        login_person(self.person)
+        # The project is proprietary, with branch policy beign proprietary
+        # too. We can only create proprietary snaps.
+        self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        [git_ref] = self.factory.makeGitRefs()
+
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "private-snap"
+        browser.getControl(name="field.information_type").value = "PUBLIC"
+        browser.getControl(name="field.project").value = "private-project"
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("Create a new snap package", extract_text(content.h1))
+        messages = find_tags_by_class(browser.contents, "message")
+        self.assertEqual(2, len(messages))
+        top_msg, field_msg = messages
+        self.assertEqual(
+            'There is 1 error.', extract_text(top_msg))
+        expected_msg = (
+            'Project private-project only accepts the following information '
+            'types: Proprietary.')
+        self.assertEqual(expected_msg, extract_text(field_msg))
+        login_admin()
+        snap = IStore(Snap).find(Snap, Snap.name == 'private-snap').one()
+        self.assertIsNone(snap)
 
     def test_create_new_snap_build_source_tarball(self):
         # We can create a new snap and ask for it to build a source tarball.

@@ -947,8 +947,10 @@ class ISnapSet(Interface):
     def exists(owner, name):
         """Check to see if a matching snap exists."""
 
-    def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
-        """Which privacy a Snap should have based on its creation params."""
+    def getPossibleSnapInformationTypes(project):
+        """Returns the list of possible InformationTypes for snaps based on
+        the given project.
+        """
 
     def findByIds(snap_ids):
         """Return all snap packages with the given ids."""
