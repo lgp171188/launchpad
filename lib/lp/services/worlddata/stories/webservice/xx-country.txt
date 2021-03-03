@@ -31,7 +31,7 @@ Make sure that invalid countries return 404s and not OOPSes.
     >>> print(webservice.get(bogus_country))
     HTTP/1.1 404 Not Found
     ...
-    Object: ..., name: u'bogus'
+    Object: ..., name: 'bogus'
 
 == Country Custom Operations ==
 

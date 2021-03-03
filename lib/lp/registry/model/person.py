@@ -1,11 +1,10 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for a Person."""
 
 __metaclass__ = type
 __all__ = [
-    'AlreadyConvertedException',
     'get_person_visibility_terms',
     'get_recipients',
     'generate_nick',
@@ -187,6 +186,7 @@ from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
 from lp.registry.interfaces.person import (
+    AlreadyConvertedException,
     ImmutableVisibilityError,
     IPerson,
     IPersonSet,
@@ -262,7 +262,6 @@ from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import (
     backslashreplace,
-    ensure_unicode,
     shortlist,
     )
 from lp.services.identity.interfaces.account import (
@@ -328,10 +327,6 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
     )
-
-
-class AlreadyConvertedException(Exception):
-    """Raised when an attempt to claim a team that has been claimed."""
 
 
 @implementer(IJoinTeamEvent)
@@ -2353,6 +2348,7 @@ class Person(
             ('productseries', 'owner'),
             ('sharingjob', 'grantee'),
             ('signedcodeofconduct', 'owner'),
+            ('snapbuild', 'requester'),
             ('specificationsubscription', 'person'),
             ('sshkey', 'person'),
             ('structuralsubscription', 'subscriber'),
@@ -3656,7 +3652,7 @@ class PersonSet:
             Person.teamowner != None,
             Person.merged == None,
             EmailAddress.person == Person.id,
-            EmailAddress.email.lower().startswith(ensure_unicode(text)))
+            EmailAddress.email.lower().startswith(text))
         return team_email_query
 
     def _teamNameQuery(self, text):
@@ -3667,14 +3663,13 @@ class PersonSet:
             fti_search(Person, text))
         return team_name_query
 
-    def find(self, text=""):
+    def find(self, text=u""):
         """See `IPersonSet`."""
         if not text:
             # Return an empty result set.
             return EmptyResultSet()
 
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         lower_case_text = text.lower()
         # Teams may not have email addresses, so we need to either use a LEFT
         # OUTER JOIN or do a UNION between four queries. Using a UNION makes
@@ -3716,11 +3711,10 @@ class PersonSet:
         return results.order_by(orderBy)
 
     def findPerson(
-            self, text="", exclude_inactive_accounts=True,
+            self, text=u"", exclude_inactive_accounts=True,
             must_have_email=False, created_after=None, created_before=None):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         store = IStore(Person)
         base_query = And(
             Person.teamowner == None,
@@ -3768,10 +3762,9 @@ class PersonSet:
         combined_results = email_results.union(name_results)
         return combined_results.order_by(orderBy)
 
-    def findTeam(self, text="", preload_for_api=False):
+    def findTeam(self, text=u"", preload_for_api=False):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         # Teams may not have email addresses, so we need to either use a LEFT
         # OUTER JOIN or do a UNION between two queries. Using a UNION makes
         # it a lot faster than with a LEFT OUTER JOIN.
@@ -3806,8 +3799,7 @@ class PersonSet:
         if not emails:
             return EmptyResultSet()
         addresses = [
-            ensure_unicode(address.lower().strip())
-            for address in emails]
+            six.ensure_text(address).lower().strip() for address in emails]
         hidden_query = True
         filter_query = True
         if not include_hidden:
@@ -4104,8 +4096,8 @@ class SSHKey(SQLBase):
 
     def getFullKeyText(self):
         try:
-            ssh_keytype = getNS(base64.b64decode(self.keytext))[0].decode(
-                'ascii')
+            key_blob = base64.b64decode(self.keytext.encode('UTF-8'))
+            ssh_keytype = getNS(key_blob)[0].decode('ascii')
         except Exception:
             # We didn't always validate keys, so there might be some that
             # can't be loaded this way.

@@ -382,7 +382,7 @@ Now, Sample Person should be listed as an attendee.
     ...     """Print the attendees listed in the attendees portlet."""
     ...     attendees_portlet = find_portlet(sprint_page, 'Attendees')
     ...     for li in attendees_portlet.findAll('ul')[0].findAll('li'):
-    ...         print(li.a.string.encode('ascii', 'xmlcharrefreplace'))
+    ...         print(li.a.string)
 
     >>> print_attendees(browser.contents)
     Sample Person
@@ -441,7 +441,7 @@ Sample Person registers Salgado as well.
 And verifies that Carlos and Salgado are now listed:
 
     >>> print_attendees(browser.contents)
-    Carlos Perell&#243; Mar&#237;n
+    Carlos Perelló Marín
     Guilherme Salgado
     Sample Person
 
@@ -473,24 +473,23 @@ First, we add a couple of IRC nicknames for Carlos.
 
     >>> browser.getLink('Export attendees to CSV').click()
     >>> print(browser.headers['content-type'])
-    text/csv
+    text/csv;charset=...utf-8...
 
     >>> carlos_browser = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> carlos_browser.open('http://launchpad.test/sprints/ubz')
     >>> carlos_browser.getLink('Export attendees to CSV').click()
     >>> print(carlos_browser.headers['content-type'])
-    text/csv
+    text/csv;charset=...utf-8...
 
     >>> admin_browser.open('http://launchpad.test/sprints/ubz')
     >>> admin_browser.getLink('Export attendees to CSV').click()
     >>> print(admin_browser.headers['content-type'])
-    text/csv
+    text/csv;charset=...utf-8...
 
 The resulting CSV file lists physical attendance correctly.
 
     >>> import csv
-    >>> from StringIO import StringIO
-    >>> ubz_csv = list(csv.DictReader(StringIO(browser.contents)))
+    >>> ubz_csv = list(csv.DictReader(six.StringIO(browser.contents)))
     >>> [(row["Launchpad username"], row["Physically present"])
     ...     for row in ubz_csv]
     [('carlos', 'True'), ('salgado', 'False'), ('name12', 'True')]
@@ -523,7 +522,7 @@ as attending remotely.
     >>> browser.getControl('Register').click()
 
     >>> browser.getLink('Export attendees to CSV').click()
-    >>> ltsp_csv = list(csv.DictReader(StringIO(browser.contents)))
+    >>> ltsp_csv = list(csv.DictReader(six.StringIO(browser.contents)))
     >>> [(row["Launchpad username"], row["Physically present"])
     ...     for row in ltsp_csv]
     [('name12', 'False')]

@@ -23,8 +23,6 @@ from zope.session.interfaces import (
     ISessionPkgData,
     )
 
-from lp.services.helpers import ensure_unicode
-
 
 SECONDS = 1
 MINUTES = 60 * SECONDS
@@ -93,7 +91,7 @@ class PGSessionData(PGSessionBase):
 
     def __init__(self, session_data_container, client_id):
         self.session_data_container = session_data_container
-        self.client_id = ensure_unicode(client_id)
+        self.client_id = six.ensure_text(client_id, 'ascii')
         self.hashed_client_id = six.ensure_text(
             hashlib.sha256(self.client_id.encode('utf-8')).hexdigest(),
             'ascii')
@@ -172,7 +170,7 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
 
     def __init__(self, session_data, product_id):
         self.session_data = session_data
-        self.product_id = ensure_unicode(product_id)
+        self.product_id = six.ensure_text(product_id, 'ascii')
         self.table_name = (
             session_data.session_data_container.session_pkg_data_table_name)
         self._populate()
@@ -195,8 +193,9 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
         return self._data_cache[key]
 
     def __setitem__(self, key, value):
-        key = ensure_unicode(key)
-        pickled_value = pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
+        key = six.ensure_text(key, 'ascii')
+        # Use protocol 2 for Python 2 compatibility.
+        pickled_value = pickle.dumps(value, protocol=2)
 
         self.session_data._ensureClientId()
         self.store.execute(
@@ -228,7 +227,7 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
         self.store.execute(
             query,
             (self.session_data.hashed_client_id, self.product_id,
-             ensure_unicode(key)),
+             six.ensure_text(key, 'ascii')),
             noresult=True)
 
     def __iter__(self):

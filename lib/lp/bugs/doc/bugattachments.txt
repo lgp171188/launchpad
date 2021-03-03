@@ -31,7 +31,7 @@ ObjectCreatedEvent in order to trigger email notifications:
     >>> from lazr.lifecycle.event import IObjectCreatedEvent
     >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> def attachment_added(attachment, event):
-    ...     print("Attachment added: %r" % attachment.libraryfile.filename)
+    ...     print("Attachment added: '%s'" % attachment.libraryfile.filename)
     >>> event_listener = ZopeEventHandlerFixture(
     ...     attachment_added, (IBugAttachment, IObjectCreatedEvent))
     >>> event_listener.setUp()
@@ -53,7 +53,7 @@ ObjectCreatedEvent in order to trigger email notifications:
     ...     description="this fixes the bug",
     ...     comment=message,
     ...     is_patch=False)
-    Attachment added: u'foo.bar'
+    Attachment added: 'foo.bar'
     <BugAttachment ...>
 
     >>> import transaction
@@ -76,10 +76,10 @@ passed in is often a file-like object, but can be bytes too.
     ...     description="this fixes the bug",
     ...     comment="a string comment",
     ...     is_patch=False)
-    Attachment added: u'foo.baz'
+    Attachment added: 'foo.baz'
 
-    >>> attachment_from_strings.message.text_contents
-    u'a string comment'
+    >>> print(attachment_from_strings.message.text_contents)
+    a string comment
 
 If no description is given, the title is set to the filename.
 
@@ -90,14 +90,14 @@ If no description is given, the title is set to the filename.
     ...     filename="screenshot.jpg",
     ...     comment="a string comment",
     ...     is_patch=False)
-    Attachment added: u'screenshot.jpg'
-    >>> screenshot.title
-    u'screenshot.jpg'
+    Attachment added: 'screenshot.jpg'
+    >>> print(screenshot.title)
+    screenshot.jpg
 
 The content type is guessed based on the information provided.
 
-    >>> screenshot.libraryfile.mimetype
-    u'image/jpeg'
+    >>> print(screenshot.libraryfile.mimetype)
+    image/jpeg
 
     >>> data = BytesIO(b'</something-htmlish>')
     >>> debdiff = bug_four.addAttachment(
@@ -106,13 +106,13 @@ The content type is guessed based on the information provided.
     ...     filename="something.debdiff",
     ...     comment="something debdiffish",
     ...     is_patch=False)
-    Attachment added: u'something.debdiff'
-    >>> debdiff.title
-    u'something.debdiff'
-    >>> debdiff.libraryfile.filename
-    u'something.debdiff'
-    >>> debdiff.libraryfile.mimetype
-    u'text/plain'
+    Attachment added: 'something.debdiff'
+    >>> print(debdiff.title)
+    something.debdiff
+    >>> print(debdiff.libraryfile.filename)
+    something.debdiff
+    >>> print(debdiff.libraryfile.mimetype)
+    text/plain
 
 The librarian won't allow empty files, so the view that creates the
 attachment needs to handle that:
@@ -144,8 +144,8 @@ and work with that:
     1
     >>> add_comment_view.error_count
     'There is 1 error.'
-    >>> add_comment_view.getFieldError('filecontent')
-    u'Cannot upload empty file.'
+    >>> print(add_comment_view.getFieldError('filecontent'))
+    Cannot upload empty file.
 
 It's possible to limit the maximum size of the attachments by setting
 max_attachment_size in launchpad.conf. The default value for the
@@ -168,8 +168,9 @@ upload it:
     >>> add_comment_view.initialize()
     >>> len(add_comment_view.errors)
     1
-    >>> [error.doc() for error in add_comment_view.errors]
-    [u'Cannot upload files larger than 1024 bytes']
+    >>> for error in add_comment_view.errors:
+    ...     print(error.doc())
+    Cannot upload files larger than 1024 bytes
 
 If we set the limit to 0 we can upload it, though, since a value of 0
 means no limit:
@@ -192,7 +193,7 @@ means no limit:
     >>> add_comment_view = getMultiAdapter(
     ...     (bugtask, add_request), name='+addcomment-form')
     >>> add_comment_view.initialize()
-    Attachment added: u'foo.txt'
+    Attachment added: 'foo.txt'
     >>> len(add_comment_view.errors)
     0
 
@@ -209,8 +210,9 @@ must have at least one.
     >>> add_comment_view.initialize()
     >>> len(add_comment_view.errors)
     1
-    >>> [error for error in add_comment_view.errors]
-    [u'Either a comment or attachment must be provided.']
+    >>> for error in add_comment_view.errors:
+    ...     print(error)
+    Either a comment or attachment must be provided.
 
 If the request contains no attachment description the filename should be used.
 
@@ -227,11 +229,11 @@ If the request contains no attachment description the filename should be used.
     >>> add_comment_view = getMultiAdapter(
     ...     (bugtask, add_request), name='+addcomment-form')
     >>> add_comment_view.initialize()
-    Attachment added: u'RA.txt'
+    Attachment added: 'RA.txt'
     >>> len(add_comment_view.errors)
     0
-    >>> bug_four.attachments[bug_four.attachments.count()-1].title
-    u'RA.txt'
+    >>> print(bug_four.attachments[bug_four.attachments.count()-1].title)
+    RA.txt
 
 Since the ObjectCreatedEvent was generated, a notification about the
 attachment was added.
@@ -261,12 +263,12 @@ Let's try uploading a file with some weird characters in them:
     >>> len(add_comment_view.errors)
     0
     >>> add_comment_view.initialize()
-    Attachment added: u'fo\xf6 bar'
+    Attachment added: 'foö bar'
     >>> len(add_comment_view.errors)
     0
     >>> attachments = bug_four.attachments
-    >>> attachments[bug_four.attachments.count()-1].libraryfile.filename
-    u'fo\xf6 bar'
+    >>> print(attachments[bug_four.attachments.count()-1].libraryfile.filename)
+    foö bar
     >>> attachments[bug_four.attachments.count()-1].libraryfile.http_url
     'http://.../fo%C3%B6%20bar'
 
@@ -287,11 +289,12 @@ from the librarian.
     >>> add_comment_view = getMultiAdapter(
     ...     (bugtask, add_request), name='+addcomment-form')
     >>> add_comment_view.initialize()
-    Attachment added: u'foo-bar-baz'
+    Attachment added: 'foo-bar-baz'
     >>> len(add_comment_view.errors)
     0
-    >>> attachments[bug_four.attachments.count()-1].libraryfile.filename
-    u'foo-bar-baz'
+    >>> print(
+    ...     attachments[bug_four.attachments.count()-1].libraryfile.filename)
+    foo-bar-baz
     >>> attachments[bug_four.attachments.count()-1].libraryfile.http_url
     'http://.../foo-bar-baz'
 
@@ -307,8 +310,8 @@ also view/edit the attachment. At the moment the bug_four is public, so
 anonymous can read the attachment's attributes, but they can't set them:
 
     >>> login(ANONYMOUS)
-    >>> attachment.title
-    u'this fixes the bug'
+    >>> print(attachment.title)
+    this fixes the bug
     >>> attachment.title = 'Better Title'
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
@@ -321,8 +324,8 @@ anonymous can read the attachment's attributes, but they can't set them:
 Attachment owner can access and set the attributes, though:
 
     >>> login('foo.bar@canonical.com')
-    >>> attachment.title
-    u'this fixes the bug'
+    >>> print(attachment.title)
+    this fixes the bug
     >>> attachment.title = 'Even Better Title'
 
 Now let's make the bug private instead:
@@ -335,8 +338,8 @@ Foo Bar isn't explicitly subscribed to the bug, BUT they are an admin, so
 they can access the attachment's attributes:
 
     >>> login('test@canonical.com')
-    >>> attachment.title
-    u'Even Better Title'
+    >>> print(attachment.title)
+    Even Better Title
 
 Mr. No Privs, who is not subscribed to bug_four, cannot access or set the
 attachments attributes:
@@ -370,8 +373,8 @@ Of course, anonymous is also not allowed to access or set them:
 Sample Person is explicitly subscribed, so they can access the attributes:
 
     >>> login('test@canonical.com')
-    >>> attachment.title
-    u'Even Better Title'
+    >>> print(attachment.title)
+    Even Better Title
 
 
 Let's make the bug public again:
@@ -595,16 +598,19 @@ deleted, for example. because an admin deleted a privacy sensitive file.
 These attachments are not included in Bug.attachments. Our test bug has
 at present two attachments.
 
-    >>> [attachment.title for attachment in bug.attachments]
-    [u'foobar', u'An attachment of some sort']
+    >>> for attachment in bug.attachments:
+    ...     print(attachment.title)
+    foobar
+    An attachment of some sort
 
 If we remove the content record from one attachment, it is no longer
 returned by Bug.attachments.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(attachment.libraryfile).content = None
-    >>> [attachment.title for attachment in bug.attachments]
-    [u'foobar']
+    >>> for attachment in bug.attachments:
+    ...     print(attachment.title)
+    foobar
 
 
 Adding bug attachments to private bugs
@@ -651,8 +657,8 @@ Miscellaneous
 
 The method IBugAttachment.getFileByName() returns the Librarian file.
 
-    >>> attachment.libraryfile.filename
-    u'foobar'
+    >>> print(attachment.libraryfile.filename)
+    foobar
     >>> attachment.getFileByName('foobar')
     <LibraryFileAlias at...
 
@@ -663,4 +669,4 @@ does not match the file name of the Librarian file.
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.errors.NotFoundError: u'nonsense'
+    lp.app.errors.NotFoundError: ...'nonsense'

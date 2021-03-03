@@ -154,10 +154,10 @@ remote_product fields.
     >>> process = subprocess.Popen(
     ...     ['cronscripts/update-sourceforge-remote-products.py', '-v'],
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> (out, err) = process.communicate()
-    >>> out
-    ''
+    >>> print(out)
+    <BLANKLINE>
     >>> process.returncode
     0
 

@@ -290,9 +290,10 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
             'Launchpad encountered an internal error during the following'
             ' operation: appending a string to a list.  It was logged with id'
             ' %s.  Sorry for the inconvenience.' % oops['id'],
-            notification.get_payload(decode=True))
-        self.assertNotIn('Fake exception.  Foobar, I say!',
-                         notification.get_payload(decode=True))
+            notification.get_payload(decode=True).decode('UTF-8'))
+        self.assertNotIn(
+            'Fake exception.  Foobar, I say!',
+            notification.get_payload(decode=True).decode('UTF-8'))
         self.assertEqual('Launchpad internal error', notification['subject'])
 
     def test_runAll_mails_user_errors(self):
@@ -317,7 +318,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual([], self.oopses)
         notifications = pop_notifications()
         self.assertEqual(1, len(notifications))
-        body = notifications[0].get_payload(decode=True)
+        body = notifications[0].get_payload(decode=True).decode('UTF-8')
         self.assertEqual(
             'Launchpad encountered an error during the following operation:'
             ' appending a string to a list.  Fake exception.  Foobar, I say!',

@@ -39,6 +39,7 @@ from paste.request import (
     parse_querystring,
     path_info_pop,
     )
+import six
 from six.moves import xmlrpc_client
 from six.moves.urllib.parse import (
     urlencode,
@@ -248,7 +249,7 @@ class RootApp:
                     raise
             if transport_type != BRANCH_TRANSPORT:
                 raise HTTPNotFound()
-            trail = urlutils.unescape(trail).encode('utf-8')
+            trail = urlutils.unescape(trail)
             trail += trailingSlashCount * '/'
             amount_consumed = len(path) - len(trail)
             consumed = path[:amount_consumed]
@@ -256,7 +257,7 @@ class RootApp:
             self.log.info('Using branch: %s', branch_name)
             if trail and not trail.startswith('/'):
                 trail = '/' + trail
-            environ['PATH_INFO'] = trail
+            environ['PATH_INFO'] = six.ensure_str(trail)
             environ['SCRIPT_NAME'] += consumed.rstrip('/')
             branch_url = lp_server.get_url() + branch_name
             branch_link = urljoin(

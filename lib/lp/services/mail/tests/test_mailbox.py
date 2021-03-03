@@ -50,7 +50,7 @@ class TestDirectoryMailBox(TestCase):
         box = DirectoryMailBox(self.email_dir)
         [mail] = list(box.items())
         self.assertEqual('foo', os.path.basename(mail[0]))
-        self.assertEqual('This is the content', mail[1])
+        self.assertEqual(b'This is the content', mail[1])
 
     def test_delete(self):
         # Deleting the item removes the file from the mail dir.

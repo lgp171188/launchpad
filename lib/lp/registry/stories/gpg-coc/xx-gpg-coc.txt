@@ -3,11 +3,11 @@
 
 == Setup ==
 
-    >>> import email
-    >>> from lp.testing.keyserver import KeyServerTac
-    >>> from lp.services.mail import stub
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.services.compat import message_from_bytes
+    >>> from lp.services.mail import stub
+    >>> from lp.testing.keyserver import KeyServerTac
     >>> from lp.testing.pages import setupBrowserFreshLogin
 
 Set up the stub KeyServer:
@@ -53,7 +53,7 @@ text part that provides useful information to users who -- for whatever reason
 -- cannot decrypt the token url.  Start by grabbing the confirmation message.
 
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = email.message_from_string(raw_msg)
+    >>> msg = message_from_bytes(raw_msg)
     >>> msg.get_content_type()
     'text/plain'
 
@@ -62,7 +62,7 @@ followed by ASCII armored encrypted confirmation instructions.  Ensure that
 the clear text instructions contain the expected URLs pointing to more help.
 
     >>> cipher_body = msg.get_payload(decode=True)
-    >>> print(cipher_body)
+    >>> print(six.ensure_text(cipher_body))
     Hello,
     <BLANKLINE>
     This message contains the instructions for confirming registration of an
@@ -113,8 +113,8 @@ message.
 Extract the token URL from the email:
 
     >>> from lp.services.verification.tests.logintoken import (
-    ...     get_token_url_from_string)
-    >>> token_url = get_token_url_from_string(body)
+    ...     get_token_url_from_bytes)
+    >>> token_url = get_token_url_from_bytes(body)
 
 Go to the link sent by email, to validate the email address.
 
@@ -174,7 +174,7 @@ their Launchpad account.
 Sample Person checks their email.
 
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = email.message_from_string(raw_msg)
+    >>> msg = message_from_bytes(raw_msg)
     >>> msg.get_content_type()
     'text/plain'
     >>> body = msg.get_payload(decode=True)
@@ -182,13 +182,13 @@ Sample Person checks their email.
 The email is not encrypted, since Sample Person didn't claim the
 ability to decrypt text with this key.
 
-    >>> '-----BEGIN PGP MESSAGE-----' in body
+    >>> b'-----BEGIN PGP MESSAGE-----' in body
     False
 
 The email does contain some information about the key, and a token URL
 Sample Person should visit to verify their ownership of the key.
 
-    >>> print(body)
+    >>> print(six.ensure_text(body))
     <BLANKLINE>
     Hello,
     ...
@@ -203,14 +203,15 @@ Sample Person should visit to verify their ownership of the key.
     ...
         http://launchpad.test/token/...
 
-    >>> token_url = get_token_url_from_string(body)
+    >>> token_url = get_token_url_from_bytes(body)
 
 Side note: in a little while, Sample User will be asked to sign some
 text which includes the date the token was generated (to avoid replay
 attacks). To make this testable, we set the creation date of this
 token to a fixed value:
 
-    >>> nothing, token_value = token_url.split('http://launchpad.test/token/')
+    >>> token_value = token_url.split(
+    ...     'http://launchpad.test/token/')[1].encode('ASCII')
 
     >>> import datetime, hashlib, pytz
     >>> from lp.services.verification.model.logintoken import LoginToken
@@ -286,7 +287,8 @@ A419AE861E88BC9E04B9C26FBA2B9389DFD20543:
 If they sign the text correctly, they are redirected to their home page.
 
     >>> login(ANONYMOUS)
-    >>> good = gpghandler.signContent(bytes(verification_content), key, 'test')
+    >>> good = gpghandler.signContent(
+    ...     six.ensure_binary(verification_content), key, 'test')
     >>> logout()
 
     >>> browser.getControl('Signed text').value = good
@@ -503,12 +505,12 @@ Get the token from the body of the email sent.
     >>> import email, re
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = email.message_from_string(raw_msg)
+    >>> msg = message_from_bytes(raw_msg)
     >>> cipher_body = msg.get_payload(decode=1)
     >>> body = decrypt_content(cipher_body, six.ensure_str('test'))
-    >>> link = re.findall(r'http.*/token/.*', body)[0]
+    >>> link = get_token_url_from_bytes(body)
     >>> token = re.sub(r'.*token/', '', link)
-    >>> token_url = 'http://launchpad.test/token/%s' % token.encode('ascii')
+    >>> token_url = 'http://launchpad.test/token/%s' % token
 
 
 Going to the token page will get us redirected to the page of that specific
@@ -621,8 +623,8 @@ Test if the advertisement email was sent:
     >>> import email
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = email.message_from_string(raw_msg)
-    >>> print(msg.get_payload(decode=True))
+    >>> msg = message_from_bytes(raw_msg)
+    >>> print(six.ensure_text(msg.get_payload(decode=True)))
     <BLANKLINE>
     ...
     User: 'Mark Shuttleworth'

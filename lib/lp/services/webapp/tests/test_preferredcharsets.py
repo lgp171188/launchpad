@@ -5,9 +5,13 @@
 
 __metaclass__ = type
 
-from lp.testing.systemdocs import LayeredDocFileSuite
+from lp.testing.systemdocs import (
+    LayeredDocFileSuite,
+    setGlobs,
+    )
 
 
 def test_suite():
     return LayeredDocFileSuite(
-        'test_preferredcharsets.txt')
+        'test_preferredcharsets.txt',
+        setUp=lambda test: setGlobs(test, future=True))

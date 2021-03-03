@@ -48,7 +48,7 @@ from lp.services.gpg.interfaces import (
     )
 
 
-GREETING = 'Copyright 2004-2009 Canonical Ltd.\n'
+GREETING = b'Copyright 2004-2009 Canonical Ltd.\n'
 
 
 def locate_key(root, suffix):
@@ -107,13 +107,13 @@ class PksResource(_BaseResource):
         self.putChild(b'add', SubmitKey(root))
 
     def render_GET(self, request):
-        return 'Welcome To Fake SKS service.\n'
+        return b'Welcome To Fake SKS service.\n'
 
 
 KEY_NOT_FOUND_BODY = (
-    "<html><head><title>Error handling request</title></head>\n"
-    "<body><h1>Error handling request</h1>No results found: "
-    "No keys found</body></html>")
+    b"<html><head><title>Error handling request</title></head>\n"
+    b"<body><h1>Error handling request</h1>No results found: "
+    b"No keys found</body></html>")
 
 
 class LookUp(Resource):
@@ -127,10 +127,10 @@ class LookUp(Resource):
 
     def render_GET(self, request):
         try:
-            action = request.args['op'][0]
-            keyid = request.args['search'][0]
+            action = request.args[b'op'][0].decode('ISO-8859-1')
+            keyid = request.args[b'search'][0].decode('ISO-8859-1')
         except KeyError:
-            return 'Invalid Arguments %s' % request.args
+            return ('Invalid Arguments %s' % request.args).encode('UTF-8')
 
         return self.processRequest(action, keyid, request)
 
@@ -139,7 +139,8 @@ class LookUp(Resource):
         # are properly handled by setting an even shorter timeout.
         sleep(0.02)
         if (action not in self.permitted_actions) or not keyid:
-            return 'Forbidden: "%s" on ID "%s"' % (action, keyid)
+            message = 'Forbidden: "%s" on ID "%s"' % (action, keyid)
+            return message.encode('UTF-8')
 
         filename = '%s.%s' % (keyid, action)
 
@@ -152,7 +153,7 @@ class LookUp(Resource):
                     '</head>\n<body>'
                     '<h1>Results for Key %s</h1>\n'
                     '<pre>\n%s\n</pre>\n</html>') % (keyid, keyid, content)
-            return page
+            return page.encode('UTF-8')
         else:
             request.setResponseCode(404)
             return KEY_NOT_FOUND_BODY
@@ -183,13 +184,13 @@ class SubmitKey(Resource):
         self.root = root
 
     def render_GET(self, request):
-        return SUBMIT_KEY_PAGE % {'banner': ''}
+        return (SUBMIT_KEY_PAGE % {'banner': ''}).encode('UTF-8')
 
     def render_POST(self, request):
         try:
-            keytext = request.args['keytext'][0]
+            keytext = request.args[b'keytext'][0]
         except KeyError:
-            return 'Invalid Arguments %s' % request.args
+            return ('Invalid Arguments %s' % request.args).encode('UTF-8')
         return self.storeKey(keytext)
 
     def storeKey(self, keytext):
@@ -198,13 +199,12 @@ class SubmitKey(Resource):
             key = gpghandler.importPublicKey(keytext)
         except (GPGKeyNotFoundError, SecretGPGKeyImportDetected,
                 MoreThanOneGPGKeyFound) as err:
-            return SUBMIT_KEY_PAGE % {'banner': str(err)}
+            return (SUBMIT_KEY_PAGE % {'banner': str(err)}).encode('UTF-8')
 
         filename = '0x%s.get' % key.fingerprint
         path = os.path.join(self.root, filename)
 
-        fp = open(path, 'w')
-        fp.write(keytext)
-        fp.close()
+        with open(path, 'wb') as fp:
+            fp.write(keytext)
 
-        return SUBMIT_KEY_PAGE % {'banner': 'Key added'}
+        return (SUBMIT_KEY_PAGE % {'banner': 'Key added'}).encode('UTF-8')

@@ -17,7 +17,7 @@ PillarNameSet.
 We can get a list of featured projects from the pillar name set:
 
     >>> for project in pillar_set.featured_projects:
-    ...     print project.name
+    ...     print(project.name)
     applets
     bazaar
     firefox

@@ -10,7 +10,6 @@ __all__ = [
     ]
 
 from datetime import datetime
-import email
 from email.utils import (
     mktime_tz,
     parseaddr,
@@ -42,6 +41,7 @@ from lp.bugs.interfaces.externalbugtracker import (
     UNKNOWN_REMOTE_IMPORTANCE,
     )
 from lp.bugs.scripts import debbugs
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.database.isolation import ensure_no_transaction
 from lp.services.mail.sendmail import simple_sendmail
@@ -242,7 +242,7 @@ class DebBugs(ExternalBugTracker):
 
         comment_ids = []
         for comment in debian_bug.comments:
-            parsed_comment = email.message_from_string(comment)
+            parsed_comment = message_from_bytes(comment)
 
             # It's possible for the same message to appear several times
             # in a DebBugs comment log, since each control command in a
@@ -271,7 +271,7 @@ class DebBugs(ExternalBugTracker):
         self._loadLog(debian_bug)
 
         for comment in debian_bug.comments:
-            parsed_comment = email.message_from_string(comment)
+            parsed_comment = message_from_bytes(comment)
             if parsed_comment['message-id'] == comment_id:
                 return parseaddr(parsed_comment['from'])
 
@@ -324,7 +324,7 @@ class DebBugs(ExternalBugTracker):
         self._loadLog(debian_bug)
 
         for comment in debian_bug.comments:
-            parsed_comment = email.message_from_string(comment)
+            parsed_comment = message_from_bytes(comment)
             if parsed_comment['message-id'] == comment_id:
                 msg_date = self._getDateForComment(parsed_comment)
                 message = getUtility(IMessageSet).fromEmail(comment, poster,

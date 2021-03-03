@@ -218,7 +218,7 @@ class DistroArchSeries(SQLBase):
         # match.
         content_sha1sum = hashlib.sha1(filecontent).hexdigest()
         if content_sha1sum != sha1sum:
-            filecontent += '\r'
+            filecontent += b'\r'
             content_sha1sum = hashlib.sha1(filecontent).hexdigest()
         if content_sha1sum != sha1sum:
             raise InvalidChrootUploaded("Chroot upload checksums do not match")

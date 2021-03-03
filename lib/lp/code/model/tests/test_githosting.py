@@ -290,8 +290,11 @@ class TestGitHostingClient(TestCase):
         # pygit2 tries to decode the diff as UTF-8 with errors="replace".
         # In some cases this can result in unpaired surrogates, which older
         # versions of json/simplejson don't like.
-        body = json.dumps(
-            {"patch": "卷。".encode("GBK").decode("UTF-8", errors="replace")})
+        # This is u"卷。".encode("GBK").decode("UTF-8", errors="replace") on
+        # Python 2.  Python 3 decodes this differently, but we don't mind
+        # how we get there as long as the input contains an unpaired
+        # surrogate.
+        body = json.dumps({"patch": "\uFFFD\uD863"})
         with self.mockRequests("GET", body=body):
             diff = self.client.getMergeDiff("123", "a", "b")
         self.assertEqual({"patch": "\uFFFD\uD863"}, diff)

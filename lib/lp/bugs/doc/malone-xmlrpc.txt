@@ -140,8 +140,10 @@ Reporting a package bug.
     True
     >>> bug.private
     True
-    >>> sorted(p.name for p in bug.getDirectSubscribers())
-    [u'name12', u'no-priv']
+    >>> for name in sorted(p.name for p in bug.getDirectSubscribers()):
+    ...     print(name)
+    name12
+    no-priv
     >>> bug.getIndirectSubscribers()
     []
 

@@ -236,7 +236,7 @@ class TestSpecificationWorkItemsNotifications(TestCaseWithFactory):
             new_work_item['status'].name)
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2]
+        msg = email[2].decode('UTF-8')
         self.assertIn(rationale, msg)
 
     def test_workitems_deleted_notification_message(self):
@@ -255,7 +255,7 @@ class TestSpecificationWorkItemsNotifications(TestCaseWithFactory):
         rationale = '- %s: %s' % (wi.title, wi.status.name)
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2]
+        msg = email[2].decode('UTF-8')
         self.assertIn(rationale, msg)
 
     def test_workitems_changed_notification_message(self):
@@ -294,7 +294,7 @@ class TestSpecificationWorkItemsNotifications(TestCaseWithFactory):
             new_work_item['title'], new_work_item['status'].name)
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2]
+        msg = email[2].decode('UTF-8')
         self.assertIn(rationale_removed, msg)
         self.assertIn(rationale_added, msg)
 

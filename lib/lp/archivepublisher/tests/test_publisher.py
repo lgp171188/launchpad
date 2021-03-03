@@ -120,6 +120,7 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
     )
+from lp.testing.matchers import FileContainsBytes
 
 
 RELEASE = PackagePublishingPocket.RELEASE
@@ -295,9 +296,11 @@ class TestPublisherSeries(TestNativePublishingBase):
 
         # source and binary PUBLISHED on disk.
         foo_dsc = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
-        self.assertEqual(open(foo_dsc).read().strip(), 'Hello')
+        with open(foo_dsc) as foo_dsc_file:
+            self.assertEqual(foo_dsc_file.read().strip(), 'Hello')
         foo_deb = "%s/main/f/foo/foo-bin_666_all.deb" % self.pool_dir
-        self.assertEqual(open(foo_deb).read().strip(), 'World')
+        with open(foo_deb) as foo_deb_file:
+            self.assertEqual(foo_deb_file.read().strip(), 'World')
 
     def checkPublicationsAreIgnored(self, pocket):
         """Check if publications are ignored for a given pocket.
@@ -482,7 +485,7 @@ class ByHashHasContents(Matcher):
         mismatch = DirContains(self.expected_hashes.keys()).match(by_hash_path)
         if mismatch is not None:
             return mismatch
-        best_hashname, best_hashattr = self.expected_hashes.items()[-1]
+        best_hashname, best_hashattr = list(self.expected_hashes.items())[-1]
         for hashname, hashattr in self.expected_hashes.items():
             digests = {
                 getattr(hashlib, hashattr)(content).hexdigest(): content
@@ -494,7 +497,7 @@ class ByHashHasContents(Matcher):
             for digest, content in digests.items():
                 full_path = os.path.join(path, digest)
                 if hashname == best_hashname:
-                    mismatch = FileContains(content).match(full_path)
+                    mismatch = FileContainsBytes(content).match(full_path)
                     if mismatch is not None:
                         return mismatch
                 else:
@@ -535,7 +538,7 @@ class TestByHash(TestCaseWithFactory):
 
     def test_add(self):
         root = self.makeTemporaryDirectory()
-        contents = ["abc\n", "def\n"]
+        contents = [b"abc\n", b"def\n"]
         lfas = [
             self.factory.makeLibraryFileAlias(content=content)
             for content in contents]
@@ -548,10 +551,10 @@ class TestByHash(TestCaseWithFactory):
 
     def test_add_copy_from_path(self):
         root = self.makeTemporaryDirectory()
-        content = "abc\n"
+        content = b"abc\n"
         sources_path = "dists/foo/main/source/Sources"
         with open_for_writing(
-                os.path.join(root, sources_path), "w") as sources:
+                os.path.join(root, sources_path), "wb") as sources:
             sources.write(content)
         lfa = self.factory.makeLibraryFileAlias(content=content, db_only=True)
         by_hash = ByHash(root, "dists/foo/main/source", DevNullLogger())
@@ -561,12 +564,13 @@ class TestByHash(TestCaseWithFactory):
 
     def test_add_existing(self):
         root = self.makeTemporaryDirectory()
-        content = "abc\n"
+        content = b"abc\n"
         lfa = self.factory.makeLibraryFileAlias(content=content)
         by_hash_path = os.path.join(root, "dists/foo/main/source/by-hash")
         sha256_digest = hashlib.sha256(content).hexdigest()
         with open_for_writing(
-                os.path.join(by_hash_path, "SHA256", sha256_digest), "w") as f:
+                os.path.join(by_hash_path, "SHA256", sha256_digest),
+                "wb") as f:
             f.write(content)
         by_hash = ByHash(root, "dists/foo/main/source", DevNullLogger())
         self.assertThat(by_hash_path, ByHashHasContents([content]))
@@ -575,8 +579,8 @@ class TestByHash(TestCaseWithFactory):
 
     def test_known(self):
         root = self.makeTemporaryDirectory()
-        content = "abc\n"
-        with open_for_writing(os.path.join(root, "abc"), "w") as f:
+        content = b"abc\n"
+        with open_for_writing(os.path.join(root, "abc"), "wb") as f:
             f.write(content)
         lfa = self.factory.makeLibraryFileAlias(content=content, db_only=True)
         by_hash = ByHash(root, "", DevNullLogger())
@@ -596,9 +600,9 @@ class TestByHash(TestCaseWithFactory):
 
     def test_prune(self):
         root = self.makeTemporaryDirectory()
-        content = "abc\n"
+        content = b"abc\n"
         sources_path = "dists/foo/main/source/Sources"
-        with open_for_writing(os.path.join(root, sources_path), "w") as f:
+        with open_for_writing(os.path.join(root, sources_path), "wb") as f:
             f.write(content)
         lfa = self.factory.makeLibraryFileAlias(content=content, db_only=True)
         by_hash = ByHash(root, "dists/foo/main/source", DevNullLogger())
@@ -625,12 +629,13 @@ class TestByHash(TestCaseWithFactory):
         # but we since decided that this was unnecessary cruft.  If they
         # exist on disk, they are pruned in their entirety.
         root = self.makeTemporaryDirectory()
-        content = "abc\n"
+        content = b"abc\n"
         lfa = self.factory.makeLibraryFileAlias(content=content)
         by_hash_path = os.path.join(root, "dists/foo/main/source/by-hash")
         sha256_digest = hashlib.sha256(content).hexdigest()
         with open_for_writing(
-                os.path.join(by_hash_path, "SHA256", sha256_digest), "w") as f:
+                os.path.join(by_hash_path, "SHA256", sha256_digest),
+                "wb") as f:
             f.write(content)
         for hashname, hashattr in (("MD5Sum", "md5"), ("SHA1", "sha1")):
             digest = getattr(hashlib, hashattr)(content).hexdigest()
@@ -653,15 +658,15 @@ class TestByHashes(TestCaseWithFactory):
         root = self.makeTemporaryDirectory()
         self.assertThat(root, ByHashesHaveContents({}))
         path_contents = {
-            "dists/foo/main/source": {"Sources": "abc\n"},
+            "dists/foo/main/source": {"Sources": b"abc\n"},
             "dists/foo/main/binary-amd64": {
-                "Packages.gz": "def\n", "Packages.xz": "ghi\n"},
+                "Packages.gz": b"def\n", "Packages.xz": b"ghi\n"},
             }
         by_hashes = ByHashes(root, DevNullLogger())
         for dirpath, contents in path_contents.items():
             for name, content in contents.items():
                 path = os.path.join(dirpath, name)
-                with open_for_writing(os.path.join(root, path), "w") as f:
+                with open_for_writing(os.path.join(root, path), "wb") as f:
                     f.write(content)
                 lfa = self.factory.makeLibraryFileAlias(
                     content=content, db_only=True)
@@ -672,9 +677,9 @@ class TestByHashes(TestCaseWithFactory):
 
     def test_known(self):
         root = self.makeTemporaryDirectory()
-        content = "abc\n"
+        content = b"abc\n"
         sources_path = "dists/foo/main/source/Sources"
-        with open_for_writing(os.path.join(root, sources_path), "w") as f:
+        with open_for_writing(os.path.join(root, sources_path), "wb") as f:
             f.write(content)
         lfa = self.factory.makeLibraryFileAlias(content=content, db_only=True)
         by_hashes = ByHashes(root, DevNullLogger())
@@ -692,15 +697,15 @@ class TestByHashes(TestCaseWithFactory):
     def test_prune(self):
         root = self.makeTemporaryDirectory()
         path_contents = {
-            "dists/foo/main/source": {"Sources": "abc\n"},
+            "dists/foo/main/source": {"Sources": b"abc\n"},
             "dists/foo/main/binary-amd64": {
-                "Packages.gz": "def\n", "Packages.xz": "ghi\n"},
+                "Packages.gz": b"def\n", "Packages.xz": b"ghi\n"},
             }
         by_hashes = ByHashes(root, DevNullLogger())
         for dirpath, contents in path_contents.items():
             for name, content in contents.items():
                 path = os.path.join(dirpath, name)
-                with open_for_writing(os.path.join(root, path), "w") as f:
+                with open_for_writing(os.path.join(root, path), "wb") as f:
                     f.write(content)
                 lfa = self.factory.makeLibraryFileAlias(
                     content=content, db_only=True)
@@ -1368,7 +1373,7 @@ class TestPublisher(TestPublisherBase):
             elif suffix == '.xz':
                 open_func = lzma.LZMAFile
             else:
-                open_func = open
+                open_func = lambda path: open(path, 'rb')
             with open_func(index_base_path + suffix) as index_file:
                 all_contents.append(index_file.read().splitlines())
 
@@ -1439,24 +1444,23 @@ class TestPublisher(TestPublisherBase):
             archive_publisher, os.path.join('source', 'Sources'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: foo',
-             'Binary: foo-bin',
-             'Version: 666',
-             'Section: base',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Standards-Version: 3.6.2',
-             'Format: 1.0',
-             'Directory: pool/main/f/foo',
-             'Files:',
-             ' 3e25960a79dbc69b674cd4ec67a72c62 11 foo_1.dsc',
-             'Checksums-Sha1:',
-             ' 7b502c3a1f48c8609ae212cdfb639dee39673f5e 11 foo_1.dsc',
-             'Checksums-Sha256:',
-             ' 64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f'
-             '3c 11 foo_1.dsc',
-
-             ''],
+            [b'Package: foo',
+             b'Binary: foo-bin',
+             b'Version: 666',
+             b'Section: base',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Standards-Version: 3.6.2',
+             b'Format: 1.0',
+             b'Directory: pool/main/f/foo',
+             b'Files:',
+             b' 3e25960a79dbc69b674cd4ec67a72c62 11 foo_1.dsc',
+             b'Checksums-Sha1:',
+             b' 7b502c3a1f48c8609ae212cdfb639dee39673f5e 11 foo_1.dsc',
+             b'Checksums-Sha256:',
+             b' 64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f'
+             b'3c 11 foo_1.dsc',
+             b''],
             index_contents)
 
         # Various compressed Packages files are written; ensure that they
@@ -1465,25 +1469,25 @@ class TestPublisher(TestPublisherBase):
             archive_publisher, os.path.join('binary-i386', 'Packages'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: foo-bin',
-             'Source: foo',
-             'Priority: standard',
-             'Section: base',
-             'Installed-Size: 100',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Version: 666',
-             'Filename: pool/main/f/foo/foo-bin_666_all.deb',
-             'Size: 18',
-             'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
-             'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
-             'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
-             '00bb3e945',
-             'Description: Foo app is great',
-             ' My leading spaces are normalised to a single space but not '
-             'trailing.  ',
-             ' It does nothing, though',
-             ''],
+            [b'Package: foo-bin',
+             b'Source: foo',
+             b'Priority: standard',
+             b'Section: base',
+             b'Installed-Size: 100',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Version: 666',
+             b'Filename: pool/main/f/foo/foo-bin_666_all.deb',
+             b'Size: 18',
+             b'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
+             b'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
+             b'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
+             b'00bb3e945',
+             b'Description: Foo app is great',
+             b' My leading spaces are normalised to a single space but not '
+             b'trailing.  ',
+             b' It does nothing, though',
+             b''],
             index_contents)
 
         # Various compressed Packages files are written for the
@@ -1494,23 +1498,23 @@ class TestPublisher(TestPublisherBase):
             os.path.join('debian-installer', 'binary-i386', 'Packages'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: bingo',
-             'Source: foo',
-             'Priority: standard',
-             'Section: base',
-             'Installed-Size: 100',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Version: 666',
-             'Filename: pool/main/f/foo/bingo_666_all.udeb',
-             'Size: 18',
-             'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
-             'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
-             'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
-             '00bb3e945',
-             'Description: Foo app is great',
-             ' nice udeb',
-             ''],
+            [b'Package: bingo',
+             b'Source: foo',
+             b'Priority: standard',
+             b'Section: base',
+             b'Installed-Size: 100',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Version: 666',
+             b'Filename: pool/main/f/foo/bingo_666_all.udeb',
+             b'Size: 18',
+             b'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
+             b'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
+             b'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
+             b'00bb3e945',
+             b'Description: Foo app is great',
+             b' nice udeb',
+             b''],
             index_contents)
 
         # 'debug' too, when publish_debug_symbols is enabled.
@@ -1519,25 +1523,25 @@ class TestPublisher(TestPublisherBase):
             os.path.join('debug', 'binary-i386', 'Packages'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: foo-bin-dbgsym',
-             'Source: foo',
-             'Priority: standard',
-             'Section: base',
-             'Installed-Size: 100',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Version: 666',
-             'Filename: pool/main/f/foo/foo-bin-dbgsym_666_all.ddeb',
-             'Size: 18',
-             'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
-             'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
-             'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
-             '00bb3e945',
-             'Description: Foo app is great',
-             ' My leading spaces are normalised to a single space but not '
-             'trailing.  ',
-             ' It does nothing, though',
-             ''],
+            [b'Package: foo-bin-dbgsym',
+             b'Source: foo',
+             b'Priority: standard',
+             b'Section: base',
+             b'Installed-Size: 100',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Version: 666',
+             b'Filename: pool/main/f/foo/foo-bin-dbgsym_666_all.ddeb',
+             b'Size: 18',
+             b'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
+             b'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
+             b'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
+             b'00bb3e945',
+             b'Description: Foo app is great',
+             b' My leading spaces are normalised to a single space but not '
+             b'trailing.  ',
+             b' It does nothing, though',
+             b''],
             index_contents)
 
         # We always regenerate all Releases file for a given suite.
@@ -1593,24 +1597,23 @@ class TestPublisher(TestPublisherBase):
             archive_publisher, os.path.join('source', 'Sources'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: foo',
-             'Binary: foo-bin',
-             'Version: 666',
-             'Section: base',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Standards-Version: 3.6.2',
-             'Format: 1.0',
-             'Directory: pool/main/f/foo',
-             'Files:',
-             ' 3e25960a79dbc69b674cd4ec67a72c62 11 foo_1.dsc',
-             'Checksums-Sha1:',
-             ' 7b502c3a1f48c8609ae212cdfb639dee39673f5e 11 foo_1.dsc',
-             'Checksums-Sha256:',
-             ' 64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f'
-             '3c 11 foo_1.dsc',
-
-             ''],
+            [b'Package: foo',
+             b'Binary: foo-bin',
+             b'Version: 666',
+             b'Section: base',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Standards-Version: 3.6.2',
+             b'Format: 1.0',
+             b'Directory: pool/main/f/foo',
+             b'Files:',
+             b' 3e25960a79dbc69b674cd4ec67a72c62 11 foo_1.dsc',
+             b'Checksums-Sha1:',
+             b' 7b502c3a1f48c8609ae212cdfb639dee39673f5e 11 foo_1.dsc',
+             b'Checksums-Sha256:',
+             b' 64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f'
+             b'3c 11 foo_1.dsc',
+             b''],
             index_contents)
 
         # Various compressed Packages files are written; ensure that they
@@ -1619,23 +1622,23 @@ class TestPublisher(TestPublisherBase):
             archive_publisher, os.path.join('binary-i386', 'Packages'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: foo-bin',
-             'Source: foo',
-             'Priority: standard',
-             'Section: base',
-             'Installed-Size: 100',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Version: 666',
-             'Filename: pool/main/f/foo/foo-bin_666_all.deb',
-             'Size: 18',
-             'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
-             'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
-             'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
-             '00bb3e945',
-             'Description: Foo app is great',
-             'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
-             ''],
+            [b'Package: foo-bin',
+             b'Source: foo',
+             b'Priority: standard',
+             b'Section: base',
+             b'Installed-Size: 100',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Version: 666',
+             b'Filename: pool/main/f/foo/foo-bin_666_all.deb',
+             b'Size: 18',
+             b'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
+             b'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
+             b'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
+             b'00bb3e945',
+             b'Description: Foo app is great',
+             b'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
+             b''],
             index_contents)
 
         # Various compressed Packages files are written for the
@@ -1646,23 +1649,23 @@ class TestPublisher(TestPublisherBase):
             os.path.join('debian-installer', 'binary-i386', 'Packages'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: bingo',
-             'Source: foo',
-             'Priority: standard',
-             'Section: base',
-             'Installed-Size: 100',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Version: 666',
-             'Filename: pool/main/f/foo/bingo_666_all.udeb',
-             'Size: 18',
-             'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
-             'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
-             'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
-             '00bb3e945',
-             'Description: Foo app is great',
-             'Description-md5: 6fecedf187298acb6bc5f15cc5807fb7',
-             ''],
+            [b'Package: bingo',
+             b'Source: foo',
+             b'Priority: standard',
+             b'Section: base',
+             b'Installed-Size: 100',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Version: 666',
+             b'Filename: pool/main/f/foo/bingo_666_all.udeb',
+             b'Size: 18',
+             b'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
+             b'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
+             b'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
+             b'00bb3e945',
+             b'Description: Foo app is great',
+             b'Description-md5: 6fecedf187298acb6bc5f15cc5807fb7',
+             b''],
             index_contents)
 
         # 'debug' too, when publish_debug_symbols is enabled.
@@ -1671,23 +1674,23 @@ class TestPublisher(TestPublisherBase):
             os.path.join('debug', 'binary-i386', 'Packages'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: foo-bin-dbgsym',
-             'Source: foo',
-             'Priority: standard',
-             'Section: base',
-             'Installed-Size: 100',
-             'Maintainer: Foo Bar <foo@bar.com>',
-             'Architecture: all',
-             'Version: 666',
-             'Filename: pool/main/f/foo/foo-bin-dbgsym_666_all.ddeb',
-             'Size: 18',
-             'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
-             'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
-             'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
-             '00bb3e945',
-             'Description: Foo app is great',
-             'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
-             ''],
+            [b'Package: foo-bin-dbgsym',
+             b'Source: foo',
+             b'Priority: standard',
+             b'Section: base',
+             b'Installed-Size: 100',
+             b'Maintainer: Foo Bar <foo@bar.com>',
+             b'Architecture: all',
+             b'Version: 666',
+             b'Filename: pool/main/f/foo/foo-bin-dbgsym_666_all.ddeb',
+             b'Size: 18',
+             b'MD5sum: 008409e7feb1c24a6ccab9f6a62d24c5',
+             b'SHA1: 30b7b4e583fa380772c5a40e428434628faef8cf',
+             b'SHA256: 006ca0f356f54b1916c24c282e6fd19961f4356441401f4b0966f2a'
+             b'00bb3e945',
+             b'Description: Foo app is great',
+             b'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
+             b''],
             index_contents)
 
         # We always regenerate all Releases file for a given suite.
@@ -1701,25 +1704,25 @@ class TestPublisher(TestPublisherBase):
             archive_publisher, os.path.join('i18n', 'Translation-en'),
             ['.gz', '.bz2'])
         self.assertEqual(
-            ['Package: bingo',
-             'Description-md5: 6fecedf187298acb6bc5f15cc5807fb7',
-             'Description-en: Foo app is great',
-             ' nice udeb',
-             '',
-             'Package: foo-bin',
-             'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
-             'Description-en: Foo app is great',
-             ' My leading spaces are normalised to a single space but not '
-             'trailing.  ',
-             ' It does nothing, though',
-             '',
-             'Package: foo-bin-dbgsym',
-             'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
-             'Description-en: Foo app is great',
-             ' My leading spaces are normalised to a single space but not '
-             'trailing.  ',
-             ' It does nothing, though',
-             '',
+            [b'Package: bingo',
+             b'Description-md5: 6fecedf187298acb6bc5f15cc5807fb7',
+             b'Description-en: Foo app is great',
+             b' nice udeb',
+             b'',
+             b'Package: foo-bin',
+             b'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
+             b'Description-en: Foo app is great',
+             b' My leading spaces are normalised to a single space but not '
+             b'trailing.  ',
+             b' It does nothing, though',
+             b'',
+             b'Package: foo-bin-dbgsym',
+             b'Description-md5: 42d89d502e81dad6d3d4a2f85fdc6c6e',
+             b'Description-en: Foo app is great',
+             b' My leading spaces are normalised to a single space but not '
+             b'trailing.  ',
+             b' It does nothing, though',
+             b'',
              ],
             index_contents)
 
@@ -1733,7 +1736,7 @@ class TestPublisher(TestPublisherBase):
         # It is listed correctly in Release.
         release_path = os.path.join(series, 'Release')
         release = self.parseRelease(release_path)
-        with open(i18n_index) as i18n_index_file:
+        with open(i18n_index, 'rb') as i18n_index_file:
             self.assertReleaseContentsMatch(
                 release, 'main/i18n/Index', i18n_index_file.read())
 
@@ -1916,7 +1919,7 @@ class TestPublisher(TestPublisherBase):
         arch_release_path = os.path.join(
             self.config.distsroot, 'breezy-autotest',
             'main', 'source', 'Release')
-        with open(arch_release_path) as arch_release_file:
+        with open(arch_release_path, 'rb') as arch_release_file:
             self.assertReleaseContentsMatch(
                 release, 'main/source/Release', arch_release_file.read())
 
@@ -1967,14 +1970,14 @@ class TestPublisher(TestPublisherBase):
         arch_sources_path = os.path.join(
             archive_publisher._config.distsroot, 'breezy-autotest',
             'main', 'source', 'Sources.gz')
-        with gzip.open(arch_sources_path) as arch_sources_file:
+        with gzip.open(arch_sources_path, 'rb') as arch_sources_file:
             self.assertReleaseContentsMatch(
                 release, 'main/source/Sources', arch_sources_file.read())
 
         arch_release_path = os.path.join(
             archive_publisher._config.distsroot, 'breezy-autotest',
             'main', 'source', 'Release')
-        with open(arch_release_path) as arch_release_file:
+        with open(arch_release_path, 'rb') as arch_release_file:
             self.assertReleaseContentsMatch(
                 release, 'main/source/Release', arch_release_file.read())
 
@@ -2120,7 +2123,7 @@ class TestPublisher(TestPublisherBase):
 
         # It is listed correctly in Release.
         release = self.parseRelease(os.path.join(series, 'Release'))
-        with open(i18n_index) as i18n_index_file:
+        with open(i18n_index, 'rb') as i18n_index_file:
             self.assertReleaseContentsMatch(
                 release, 'main/i18n/Index', i18n_index_file.read())
 
@@ -2174,7 +2177,7 @@ class TestPublisher(TestPublisherBase):
         os.makedirs(dep11_path)
         for name in dep11_names:
             with gzip.GzipFile(os.path.join(dep11_path, name), 'wb') as f:
-                f.write(name)
+                f.write(six.ensure_binary(name))
         publisher.markPocketDirty(
             self.ubuntutest.getSeries('breezy-autotest'),
             PackagePublishingPocket.RELEASE)
@@ -2204,7 +2207,7 @@ class TestPublisher(TestPublisherBase):
         os.makedirs(cnf_path)
         for name in cnf_names:
             with lzma.LZMAFile(os.path.join(cnf_path, name), 'wb') as f:
-                f.write(name)
+                f.write(six.ensure_binary(name))
         publisher.markPocketDirty(
             self.ubuntutest.getSeries('breezy-autotest'),
             PackagePublishingPocket.RELEASE)
@@ -2243,7 +2246,7 @@ class TestPublisher(TestPublisherBase):
         now = time.time()
         for name in dep11_names:
             with gzip.GzipFile(os.path.join(dep11_path, name), 'wb') as f:
-                f.write(name)
+                f.write(six.ensure_binary(name))
             os.utime(os.path.join(dep11_path, name), (now - 60, now - 60))
 
         publisher.D_writeReleaseFiles(False)
@@ -2384,7 +2387,7 @@ class TestPublisher(TestPublisherBase):
 
         # i18n/Index has the correct contents.
         translation_en = os.path.join(i18n_root, 'Translation-en.bz2')
-        with open(translation_en) as translation_en_file:
+        with open(translation_en, 'rb') as translation_en_file:
             translation_en_contents = translation_en_file.read()
         i18n_index = self.parseI18nIndex(os.path.join(i18n_root, 'Index'))
         self.assertTrue('sha1' in i18n_index)
@@ -2811,7 +2814,7 @@ class TestUpdateByHash(TestPublisherBase):
         self.setUpMockTime()
 
         def get_release_contents():
-            with open(suite_path('Release')) as f:
+            with open(suite_path('Release'), 'rb') as f:
                 return f.read()
 
         # Create the first file.
@@ -2827,7 +2830,7 @@ class TestUpdateByHash(TestPublisherBase):
         releases = [get_release_contents()]
         self.assertThat(
             suite_path('by-hash'),
-            ByHashHasContents(['A Contents file\n'] + releases))
+            ByHashHasContents([b'A Contents file\n'] + releases))
 
         # Add a second identical file.
         with open_for_writing(suite_path('Contents-hppa'), 'w') as f:
@@ -2842,7 +2845,7 @@ class TestUpdateByHash(TestPublisherBase):
         releases.append(get_release_contents())
         self.assertThat(
             suite_path('by-hash'),
-            ByHashHasContents(['A Contents file\n'] + releases))
+            ByHashHasContents([b'A Contents file\n'] + releases))
 
         # Delete the first file, but allow it its stay of execution.
         os.unlink(suite_path('Contents-i386'))
@@ -2857,7 +2860,7 @@ class TestUpdateByHash(TestPublisherBase):
         releases.append(get_release_contents())
         self.assertThat(
             suite_path('by-hash'),
-            ByHashHasContents(['A Contents file\n'] + releases))
+            ByHashHasContents([b'A Contents file\n'] + releases))
 
         # A no-op run leaves the scheduled deletion date intact.
         self.advanceTime(delta=timedelta(hours=1))
@@ -2871,7 +2874,7 @@ class TestUpdateByHash(TestPublisherBase):
         releases.append(get_release_contents())
         self.assertThat(
             suite_path('by-hash'),
-            ByHashHasContents(['A Contents file\n'] + releases))
+            ByHashHasContents([b'A Contents file\n'] + releases))
 
         # Arrange for the first file to be pruned, and delete the second
         # file.  This also puts us past the stay of execution of the first
@@ -2892,7 +2895,7 @@ class TestUpdateByHash(TestPublisherBase):
         releases.append(get_release_contents())
         self.assertThat(
             suite_path('by-hash'),
-            ByHashHasContents(['A Contents file\n'] + releases[2:]))
+            ByHashHasContents([b'A Contents file\n'] + releases[2:]))
 
         # Arrange for the second file to be pruned.  This also puts us past
         # the stay of execution of the first two remaining Release files.
@@ -3228,9 +3231,10 @@ class TestPublisherRepositorySignatures(
 
         # Release file signature is correct and was done by Celso's PPA
         # signing_key.
-        with open(self.release_file_path) as release_file:
+        with open(self.release_file_path, 'rb') as release_file:
             release_content = release_file.read()
-            with open(self.release_file_signature_path) as release_file_sig:
+            with open(self.release_file_signature_path,
+                      'rb') as release_file_sig:
                 signature = getUtility(IGPGHandler).getVerifiedSignature(
                     release_content, release_file_sig.read())
         self.assertEqual(
@@ -3238,7 +3242,7 @@ class TestPublisherRepositorySignatures(
 
         # InRelease file signature and content are correct, and the
         # signature was done by Celso's PPA signing_key.
-        with open(self.inline_release_file_path) as inline_release_file:
+        with open(self.inline_release_file_path, 'rb') as inline_release_file:
             inline_signature = getUtility(IGPGHandler).getVerifiedSignature(
                 inline_release_file.read())
         self.assertEqual(
@@ -3419,7 +3423,7 @@ class TestPublisherLite(TestCaseWithFactory):
 
         self.assertTrue(file_exists(release_path))
         with open(release_path) as release_file:
-            self.assertEqual(release_data.encode('utf-8'), release_file.read())
+            self.assertEqual(release_data, release_file.read())
 
     def test_writeReleaseFile_creates_directory_if_necessary(self):
         # If the suite is new and its release directory does not exist
@@ -3475,7 +3479,7 @@ class TestDirectoryHashHelpers(TestCaseWithFactory):
     """Helper functions for DirectoryHash testing."""
 
     def createTestFile(self, path, content):
-        with open(path, "w") as tfd:
+        with open(path, "wb") as tfd:
             tfd.write(content)
         return hashlib.sha256(content).hexdigest()
 
@@ -3525,15 +3529,15 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
         tmpdir = six.ensure_text(self.makeTemporaryDirectory())
         rootdir = six.ensure_text(self.makeTemporaryDirectory())
         test1_file = os.path.join(rootdir, "test1")
-        test1_hash = self.createTestFile(test1_file, "test1")
+        test1_hash = self.createTestFile(test1_file, b"test1")
 
         test2_file = os.path.join(rootdir, "test2")
-        test2_hash = self.createTestFile(test2_file, "test2")
+        test2_hash = self.createTestFile(test2_file, b"test2")
 
         os.mkdir(os.path.join(rootdir, "subdir1"))
 
         test3_file = os.path.join(rootdir, "subdir1", "test3")
-        test3_hash = self.createTestFile(test3_file, "test3")
+        test3_hash = self.createTestFile(test3_file, b"test3")
 
         with DirectoryHash(rootdir, tmpdir) as dh:
             dh.add(test1_file)
@@ -3553,15 +3557,15 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
         tmpdir = six.ensure_text(self.makeTemporaryDirectory())
         rootdir = six.ensure_text(self.makeTemporaryDirectory())
         test1_file = os.path.join(rootdir, "test1")
-        test1_hash = self.createTestFile(test1_file, "test1 dir")
+        test1_hash = self.createTestFile(test1_file, b"test1 dir")
 
         test2_file = os.path.join(rootdir, "test2")
-        test2_hash = self.createTestFile(test2_file, "test2 dir")
+        test2_hash = self.createTestFile(test2_file, b"test2 dir")
 
         os.mkdir(os.path.join(rootdir, "subdir1"))
 
         test3_file = os.path.join(rootdir, "subdir1", "test3")
-        test3_hash = self.createTestFile(test3_file, "test3 dir")
+        test3_hash = self.createTestFile(test3_file, b"test3 dir")
 
         with DirectoryHash(rootdir, tmpdir) as dh:
             dh.add_dir(rootdir)

@@ -227,5 +227,5 @@ class TestLaunchpadlibAPI(TestCaseWithFactory):
         self.assertEqual([], self.oopses)
         self.assertEqual(400, e.response.status)
         self.assertIn(
-            'This project cannot be deactivated since it is linked to source '
-            'packages.', e.content)
+            b'This project cannot be deactivated since it is linked to source '
+            b'packages.', e.content)

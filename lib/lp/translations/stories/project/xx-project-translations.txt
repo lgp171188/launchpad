@@ -32,8 +32,8 @@ It does show up among untranslated projects.
     >>> untranslated_projects = find_tag_by_id(
     ...     browser.contents, 'untranslatable-projects')
     >>> link = untranslated_projects.find(text='NetApplet').parent
-    >>> link['href']
-    u'http://launchpad.test/netapplet/+translations'
+    >>> print(link['href'])
+    http://launchpad.test/netapplet/+translations
 
 Let's confirm what we just stated.
 

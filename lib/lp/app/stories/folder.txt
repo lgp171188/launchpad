@@ -13,14 +13,14 @@ the directory to expose.
     >>> import tempfile
     >>> resource_dir = tempfile.mkdtemp(prefix='resources')
     >>> with open(os.path.join(resource_dir, 'test.txt'), 'w') as f:
-    ...     f.write('Text file')
+    ...     _ = f.write('Text file')
     >>> with open(os.path.join(resource_dir, 'image1.gif'), 'w') as f:
-    ...     f.write('GIF file')
+    ...     _ = f.write('GIF file')
     >>> with open(os.path.join(resource_dir, 'image2.png'), 'w') as f:
-    ...     f.write('PNG file')
+    ...     _ = f.write('PNG file')
     >>> os.mkdir(os.path.join(resource_dir, 'a_dir'))
     >>> with open(os.path.join(resource_dir, 'other.txt'), 'w') as f:
-    ...     f.write('Other file')
+    ...     _ = f.write('Other file')
 
     >>> from lp.app.browser.folder import ExportedFolder
     >>> class MyFolder(ExportedFolder):
@@ -40,7 +40,7 @@ all the traversal logic.
 The view will serve the file that it traverses to.
 
     >>> view = view.publishTraverse(view.request, 'test.txt')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Text file
 
 It also sets the appropriate headers for cache control on the response.
@@ -58,7 +58,7 @@ identifier.
     >>> view = MyFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'rev6510')
     >>> view = view.publishTraverse(view.request, 'image1.gif')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     GIF file
 
 Requesting a directory raises a NotFound.
@@ -117,7 +117,7 @@ image_extensions property.
     ('.png', '.gif')
 
     >>> view = view.publishTraverse(view.request, 'image2')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     PNG file
     >>> print(view.request.response.getHeader('Content-Type'))
     image/png
@@ -125,18 +125,18 @@ image_extensions property.
 If a file without extension exists, that one will be served.
 
     >>> with open(os.path.join(resource_dir, 'image3'), 'w') as f:
-    ...     f.write('Image without extension')
+    ...     _ = f.write('Image without extension')
     >>> with open(os.path.join(resource_dir, 'image3.gif'), 'w') as f:
-    ...     f.write('Image with extension')
+    ...     _ = f.write('Image with extension')
 
     >>> view = MyImageFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'image3')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Image without extension
 
     >>> view = MyImageFolder(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'image3.gif')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Image with extension
 
 
@@ -149,11 +149,11 @@ subdirectories.
     >>> os.mkdir(os.path.join(resource_dir, 'public'))
     >>> with open(os.path.join(
     ...         resource_dir, 'public', 'test1.txt'), 'w') as f:
-    ...     f.write('Public File')
+    ...     _ = f.write('Public File')
     >>> os.mkdir(os.path.join(resource_dir, 'public', 'subdir1'))
     >>> with open(os.path.join(
     ...         resource_dir, 'public', 'subdir1', 'test1.txt'), 'w') as f:
-    ...     f.write('Sub file 1')
+    ...     _ = f.write('Sub file 1')
 
     >>> class MyTree(ExportedFolder):
     ...     folder = resource_dir
@@ -165,14 +165,14 @@ Traversing to a file in a subdirectory will now work.
     >>> view = view.publishTraverse(view.request, 'public')
     >>> view = view.publishTraverse(view.request, 'subdir1')
     >>> view = view.publishTraverse(view.request, 'test1.txt')
-    >>> print(view())
+    >>> print(view().decode('UTF-8'))
     Sub file 1
 
 But traversing to the subdirectory itself will raise a NotFound.
 
     >>> view = MyTree(object(), FakeRequest(version="devel"))
     >>> view = view.publishTraverse(view.request, 'public')
-    >>> print(view())  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> view()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...

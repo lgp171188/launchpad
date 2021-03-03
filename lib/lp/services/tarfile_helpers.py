@@ -32,8 +32,8 @@ class LaunchpadWriteTarFile:
     This class makes it convenient to generate tar files in various ways.
     """
 
-    def __init__(self, stream):
-        self.tarfile = tarfile.open('', 'w:gz', stream)
+    def __init__(self, stream, encoding='UTF-8'):
+        self.tarfile = tarfile.open('', 'w:gz', stream, encoding=encoding)
         self.closed = False
 
     @classmethod
@@ -47,9 +47,10 @@ class LaunchpadWriteTarFile:
         return buffer
 
     @classmethod
-    def files_to_string(cls, files):
-        """Turn a dictionary of files into a data string."""
-        return cls.files_to_stream(files).read()
+    def files_to_bytes(cls, files):
+        """Turn a dictionary of files into a byte string."""
+        with cls.files_to_stream(files) as stream:
+            return stream.read()
 
     @classmethod
     def files_to_tarfile(cls, files):

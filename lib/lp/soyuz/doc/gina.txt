@@ -126,45 +126,46 @@ And give it a spin:
 
     >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q',
     ...              'hoary', 'breezy']
-    >>> proc = subprocess.Popen(gina_proc, stderr=subprocess.PIPE)
+    >>> proc = subprocess.Popen(
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
 
 Check STDERR for the errors we expected:
 
     >>> print(proc.stderr.read())
     ERROR   Error processing package files for clearlooks
     ...
-    ExecutionError: Error 2 unpacking source
+    ...ExecutionError: Error 2 unpacking source
     WARNING Invalid format in db1-compat, assumed '1.0'
     WARNING Source package ed lacks section, assumed 'misc'
     ERROR   Unable to create SourcePackageData for mkvmlinuz
     ...
-    InvalidVersionError: mkvmlinuz has an invalid version: None
+    ...InvalidVersionError: mkvmlinuz has an invalid version: None
     WARNING Invalid urgency in python-pam, None, assumed 'low'
     ERROR   Error processing package files for util-linux
     ...
-    PoolFileNotFound: File util-linux_2.12p-2ubuntu2.2.dsc not in archive
+    ...PoolFileNotFound: File util-linux_2.12p-2ubuntu2.2.dsc not in archive
     ERROR   Error processing package files for bsdutils
     ...
-    PoolFileNotFound: .../bsdutils_2.12p-2ubuntu2_i386.deb not found
+    ...PoolFileNotFound: .../bsdutils_2.12p-2ubuntu2_i386.deb not found
     WARNING Binary package ed lacks valid priority, assumed 'extra'
     ERROR   Unable to create BinaryPackageData for mount
     ...
-    InvalidVersionError: mount has an invalid version: -ewePP2.12p-2ubuntu2
+    ...InvalidVersionError: mount has an invalid version: -ewePP2.12p-2ubuntu2
     WARNING Binary package python-pam lacks a section, assumed 'misc'
     ERROR   Error processing package files for python2.4-pam
     ...
-    PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not found
+    ...PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not found
     ERROR   Error processing package files for python2.4-sqlite
     ...
-    PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not found
+    ...PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not found
     WARNING No source package rioutil (1.4.4-1.0.1) listed for rioutil (1.4.4-1.0.1), scrubbing archive...
     WARNING Nope, couldn't find it. Could it be a bin-only-NMU? Checking...
     ERROR   Error processing package files for util-linux
     ...
-    PoolFileNotFound: .../util-linux_2.12p-2ubuntu2_i386.deb not found
+    ...PoolFileNotFound: .../util-linux_2.12p-2ubuntu2_i386.deb not found
     ERROR   Unable to create BinaryPackageData for util-linux-locales
     ...
-    MissingRequiredArguments: ['installed_size']
+    ...MissingRequiredArguments: ['installed_size']
     ERROR   Invalid Sources stanza in /tmp/tmp...
     ...
     WARNING No changelog file found for mkvmlinuz in mkvmlinuz-14ubuntu1
@@ -172,13 +173,13 @@ Check STDERR for the errors we expected:
     WARNING Invalid urgency in mkvmlinuz, None, assumed 'low'
     ERROR   Error processing package files for python-sqlite
     ...
-    PoolFileNotFound: File python-sqlite_1.0.1-2ubuntu1.dsc not in archive
+    ...PoolFileNotFound: File python-sqlite_1.0.1-2ubuntu1.dsc not in archive
     ERROR   Error processing package files for util-linux
     ...
-    PoolFileNotFound: File util-linux_2.12p-6ubuntu5.dsc not in archive
+    ...PoolFileNotFound: File util-linux_2.12p-6ubuntu5.dsc not in archive
     ERROR   Error processing package files for python-sqlite
     ...
-    PoolFileNotFound: .../python-sqlite_1.0.1-2ubuntu1_all.deb not found
+    ...PoolFileNotFound: .../python-sqlite_1.0.1-2ubuntu1_all.deb not found
     WARNING No source package ubuntu-meta (0.80) listed for ubuntu-base (0.80), scrubbing archive...
     <BLANKLINE>
 
@@ -229,7 +230,7 @@ Check if the changelog message was stored correcly:
 
 Check that the changelog was uploaded to the librarian correctly:
 
-    >>> print(x11p.changelog.read())
+    >>> print(six.ensure_text(x11p.changelog.read()))
     x11proto-damage (6.8.99.7-2) breezy; urgency=low
     <BLANKLINE>
       * Add dependency on x11proto-fixes-dev.
@@ -515,49 +516,50 @@ run.
 
     >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q',
     ...              'hoary', 'breezy']
-    >>> proc = subprocess.Popen(gina_proc, stderr=subprocess.PIPE)
+    >>> proc = subprocess.Popen(
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> print(proc.stderr.read())
     ERROR   Error processing package files for clearlooks
     ...
-    ExecutionError: Error 2 unpacking source
+    ...ExecutionError: Error 2 unpacking source
     WARNING Source package ed lacks section, assumed 'misc'
     ERROR   Unable to create SourcePackageData for mkvmlinuz
     ...
-    InvalidVersionError: mkvmlinuz has an invalid version: None
+    ...InvalidVersionError: mkvmlinuz has an invalid version: None
     ERROR   Error processing package files for util-linux
     ...
-    PoolFileNotFound: File util-linux_2.12p-2ubuntu2.2.dsc not in archive
+    ...PoolFileNotFound: File util-linux_2.12p-2ubuntu2.2.dsc not in archive
     ERROR   Error processing package files for bsdutils
     ...
-    PoolFileNotFound: .../bsdutils_2.12p-2ubuntu2_i386.deb not found
+    ...PoolFileNotFound: .../bsdutils_2.12p-2ubuntu2_i386.deb not found
     WARNING Binary package ed lacks valid priority, assumed 'extra'
     ERROR   Unable to create BinaryPackageData for mount
     ...
-    InvalidVersionError: mount has an invalid version: -ewePP2.12p-2ubuntu2
+    ...InvalidVersionError: mount has an invalid version: -ewePP2.12p-2ubuntu2
     WARNING Binary package python-pam lacks a section, assumed 'misc'
     ERROR   Error processing package files for python2.4-pam
     ...
-    PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not found
+    ...PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not found
     ERROR   Error processing package files for python2.4-sqlite
     ...
-    PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not found
+    ...PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not found
     ERROR   Error processing package files for util-linux
     ...
-    PoolFileNotFound: .../util-linux_2.12p-2ubuntu2_i386.deb not found
+    ...PoolFileNotFound: .../util-linux_2.12p-2ubuntu2_i386.deb not found
     ERROR   Unable to create BinaryPackageData for util-linux-locales
     ...
-    MissingRequiredArguments: ['installed_size']
+    ...MissingRequiredArguments: ['installed_size']
     ERROR   Invalid Sources stanza in /tmp/tmp...
     ...
     ERROR   Error processing package files for python-sqlite
     ...
-    PoolFileNotFound: File python-sqlite_1.0.1-2ubuntu1.dsc not in archive
+    ...PoolFileNotFound: File python-sqlite_1.0.1-2ubuntu1.dsc not in archive
     ERROR   Error processing package files for util-linux
     ...
-    PoolFileNotFound: File util-linux_2.12p-6ubuntu5.dsc not in archive
+    ...PoolFileNotFound: File util-linux_2.12p-6ubuntu5.dsc not in archive
     ERROR   Error processing package files for python-sqlite
     ...
-    PoolFileNotFound: .../python-sqlite_1.0.1-2ubuntu1_all.deb not found
+    ...PoolFileNotFound: .../python-sqlite_1.0.1-2ubuntu1_all.deb not found
     <BLANKLINE>
     >>> proc.wait()
     0
@@ -644,7 +646,8 @@ First get a set of existing publishings for both source and binary:
 Now run gina to import packages and convert them to partner:
 
     >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q', 'partner']
-    >>> proc = subprocess.Popen(gina_proc, stderr=subprocess.PIPE)
+    >>> proc = subprocess.Popen(
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> proc.wait()
     0
     >>> transaction.commit()
@@ -747,7 +750,8 @@ Commit the changes and run the importer script.
 
     >>> gina_proc = [
     ...     sys.executable, 'scripts/gina.py', '-q', 'lenny']
-    >>> proc = subprocess.Popen(gina_proc, stderr=subprocess.PIPE)
+    >>> proc = subprocess.Popen(
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> proc.wait()
     0
 
@@ -785,7 +789,8 @@ batch.
 
     >>> gina_proc = [
     ...     sys.executable, 'scripts/gina.py', 'lenny', 'partner']
-    >>> proc = subprocess.Popen(gina_proc, stderr=subprocess.PIPE)
+    >>> proc = subprocess.Popen(
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
 
     >>> print(proc.stderr.read())
     INFO    Creating lockfile: /var/lock/launchpad-gina.lock
@@ -805,11 +810,12 @@ Other tests
 For kicks, finally, run gina on a configured but incomplete archive:
 
     >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q', 'bogus']
-    >>> proc = subprocess.Popen(gina_proc, stderr=subprocess.PIPE)
+    >>> proc = subprocess.Popen(
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> print(proc.stderr.read())
     ERROR   Failed to analyze archive for bogoland
     ...
-    MangledArchiveError: No archive directory for bogoland/main
+    ...MangledArchiveError: No archive directory for bogoland/main
     <BLANKLINE>
     >>> proc.wait()
     1

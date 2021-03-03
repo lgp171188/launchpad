@@ -450,4 +450,4 @@ class SourcePackageRelease(SQLBase):
             return None
 
         output = "\n\n".join(chunks)
-        return output.decode("utf-8", "replace")
+        return six.ensure_text(output, "utf-8", "replace")

@@ -41,10 +41,10 @@ User files a bug
     >>> latest_activity = bug.activity[-1]
     >>> latest_activity.person == user
     True
-    >>> latest_activity.whatchanged
-    u'bug'
-    >>> latest_activity.message
-    u'added bug'
+    >>> print(latest_activity.whatchanged)
+    bug
+    >>> print(latest_activity.message)
+    added bug
 
 
 Bug title edited
@@ -53,12 +53,12 @@ Bug title edited
     >>> with notify_modified(bug, ["title", "description"]):
     ...     bug.title = "new bug title"
     >>> latest_activity = bug.activity[-1]
-    >>> latest_activity.whatchanged
-    u'summary'
-    >>> latest_activity.oldvalue
-    u'a test bug'
-    >>> latest_activity.newvalue
-    u'new bug title'
+    >>> print(latest_activity.whatchanged)
+    summary
+    >>> print(latest_activity.oldvalue)
+    a test bug
+    >>> print(latest_activity.newvalue)
+    new bug title
 
 
 Source package assignment edited
@@ -79,8 +79,8 @@ Source package assignment edited
     ...     source_package_assignment.transitionToStatus(
     ...         BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
     >>> latest_activity = bug.activity[-1]
-    >>> latest_activity.whatchanged
-    u'mozilla-firefox (Ubuntu): status'
+    >>> print(latest_activity.whatchanged)
+    mozilla-firefox (Ubuntu): status
     >>> latest_activity.oldvalue == BugTaskStatus.NEW.title
     True
     >>> latest_activity.newvalue == BugTaskStatus.CONFIRMED.title
@@ -91,10 +91,10 @@ a project and an attribute.  This happens when the change is to a bugtask.
 The activity object object provides a couple of simple attributes to separate
 out these values: `target` and `attribute`.
 
-    >>> latest_activity.target
-    u'mozilla-firefox (Ubuntu)'
-    >>> latest_activity.attribute
-    u'status'
+    >>> print(latest_activity.target)
+    mozilla-firefox (Ubuntu)
+    >>> print(latest_activity.attribute)
+    status
 
 If the activity is not for a bug task, `target` is None, and `attribute` is
 typically the same as `whatchanged`.  However, in some cases (ideally,
@@ -103,8 +103,8 @@ For instance, look at the attributes on the previous activity.
 
     >>> print(bug.activity[-2].target)
     None
-    >>> bug.activity[-2].whatchanged
-    u'summary'
+    >>> print(bug.activity[-2].whatchanged)
+    summary
     >>> bug.activity[-2].attribute
     'title'
 
@@ -122,12 +122,12 @@ Upstream product assignment edited
     ...     product_assignment.transitionToStatus(
     ...         BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
     >>> latest_activity = bug.activity[-1]
-    >>> latest_activity.whatchanged
-    u'thunderbird: status'
-    >>> latest_activity.target
-    u'thunderbird'
-    >>> latest_activity.attribute
-    u'status'
+    >>> print(latest_activity.whatchanged)
+    thunderbird: status
+    >>> print(latest_activity.target)
+    thunderbird
+    >>> print(latest_activity.attribute)
+    status
     >>> latest_activity.oldvalue == BugTaskStatus.NEW.title
     True
     >>> latest_activity.newvalue == BugTaskStatus.INVALID.title
@@ -144,8 +144,8 @@ Bug report is marked as a duplicate of another bug report
     ...     latest_bug = factory.makeBug()
     ...     bug.markAsDuplicate(latest_bug)
     >>> latest_activity = bug.activity[-1]
-    >>> latest_activity.whatchanged
-    u'marked as duplicate'
+    >>> print(latest_activity.whatchanged)
+    marked as duplicate
     >>> latest_activity.oldvalue is None
     True
     >>> latest_activity.newvalue == six.text_type(latest_bug.id)
@@ -162,8 +162,8 @@ Bug report has its duplicate marker changed to another bug report
     ...     another_bug = factory.makeBug()
     ...     bug.markAsDuplicate(another_bug)
     >>> latest_activity = bug.activity[-1]
-    >>> latest_activity.whatchanged
-    u'changed duplicate marker'
+    >>> print(latest_activity.whatchanged)
+    changed duplicate marker
     >>> latest_activity.oldvalue == six.text_type(latest_bug.id)
     True
     >>> latest_activity.newvalue == six.text_type(another_bug.id)
@@ -179,8 +179,8 @@ The bug report is un-duplicated
     >>> with notify_modified(bug, edit_fields):
     ...     bug.markAsDuplicate(None)
     >>> latest_activity = bug.activity[-1]
-    >>> latest_activity.whatchanged
-    u'removed duplicate marker'
+    >>> print(latest_activity.whatchanged)
+    removed duplicate marker
     >>> latest_activity.oldvalue == six.text_type(another_bug.id)
     True
     >>> latest_activity.newvalue is None

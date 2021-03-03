@@ -941,7 +941,7 @@ class Publisher(object):
                 pocket, component, self.archive):
             stanza = build_source_stanza_fields(
                 spp.sourcepackagerelease, spp.component, spp.section)
-            source_index.write(stanza.makeOutput().encode('utf-8') + '\n\n')
+            source_index.write(stanza.makeOutput().encode('utf-8') + b'\n\n')
 
         source_index.close()
 
@@ -978,7 +978,7 @@ class Publisher(object):
                     bpp.priority, bpp.phased_update_percentage,
                     separate_long_descriptions)
                 indices[subcomp].write(
-                    stanza.makeOutput().encode('utf-8') + '\n\n')
+                    stanza.makeOutput().encode('utf-8') + b'\n\n')
                 if separate_long_descriptions:
                     # If the (Package, Description-md5) pair already exists
                     # in the set, build_translations_stanza_fields will
@@ -990,7 +990,7 @@ class Publisher(object):
                     if translation_stanza is not None:
                         translation_en.write(
                             translation_stanza.makeOutput().encode('utf-8')
-                            + '\n\n')
+                            + b'\n\n')
 
             for index in six.itervalues(indices):
                 index.close()
@@ -1168,7 +1168,7 @@ class Publisher(object):
         """
         release_path = os.path.join(
             self._config.distsroot, suite, "Release.new")
-        with open_for_writing(release_path, "w") as release_file:
+        with open_for_writing(release_path, "wb") as release_file:
             release_data.dump(release_file, "utf-8")
 
     def _syncTimestamps(self, suite, all_files):
@@ -1337,7 +1337,7 @@ class Publisher(object):
         release_file["Architecture"] = arch_name
 
         release_path = os.path.join(suite_dir, component, arch_path, "Release")
-        with open_for_writing(release_path, "w") as f:
+        with open_for_writing(release_path, "wb") as f:
             release_file.dump(f, "utf-8")
 
     def _writeSuiteSource(self, distroseries, pocket, component,
@@ -1402,7 +1402,7 @@ class Publisher(object):
             # Schedule i18n files for inclusion in the Release file.
             all_series_files.add(os.path.join(i18n_subpath, i18n_file))
 
-        with open(os.path.join(i18n_dir, "Index"), "w") as f:
+        with open(os.path.join(i18n_dir, "Index"), "wb") as f:
             i18n_index.dump(f, "utf-8")
 
         # Schedule this for inclusion in the Release file.

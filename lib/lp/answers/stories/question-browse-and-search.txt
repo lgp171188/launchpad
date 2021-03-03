@@ -541,7 +541,7 @@ questions to a particular status:
     >>> browser.open('http://launchpad.test/~name16/+questions')
     >>> browser.getControl(name='field.search_text').value = 'Firefox'
     >>> browser.getControl(name='field.status').displayValue = [
-    ...     b'Solved', b'Invalid']
+    ...     'Solved', 'Invalid']
     >>> browser.getControl('Search', index=0).click()
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
     >>> for question in questions.findAll('td', 'questionTITLE'):
@@ -732,7 +732,7 @@ Only the default set of statuses is searched:
 
 When no results are found, a message informs the user of this fact:
 
-    >>> browser.getControl(name='field.status').displayValue = [b'Expired']
+    >>> browser.getControl(name='field.status').displayValue = ['Expired']
     >>> browser.getControl('Search', index=0).click()
 
     >>> print(find_main_content(
@@ -742,7 +742,7 @@ When no results are found, a message informs the user of this fact:
 Clicking the 'Search' button without entering any search text will
 display all questions asked in Launchpad with the selected statuses.
 
-    >>> browser.getControl(name='field.status').displayValue = [b'Open']
+    >>> browser.getControl(name='field.status').displayValue = ['Open']
     >>> browser.getControl(name='field.search_text').value = ''
     >>> browser.getControl('Search', index=0).click()
 

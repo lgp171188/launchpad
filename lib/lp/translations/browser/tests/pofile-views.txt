@@ -124,8 +124,8 @@ a view for it, which will be the last in the pofile_view's list.
     11
     >>> translationmessage_view = pofile_view.translationmessage_views[-1]
     >>> translationmessage_view.initialize()
-    >>> translationmessage_view.singular_text
-    u'evolution addressbook'
+    >>> print(translationmessage_view.singular_text)
+    evolution addressbook
 
 It does not have a plural form.
 
@@ -139,8 +139,9 @@ And thus, it only has one translation.
 
 Which is the one we wanted.
 
-    >>> translationmessage_view.context.translations
-    [u'libreta de direcciones de Evolution']
+    >>> for translation in translationmessage_view.context.translations:
+    ...     print(translation)
+    libreta de direcciones de Evolution
 
 To help the JavaScript key navigation the view is exposing the autofocus
 field and a list of all translation fields ordered by the way they are
@@ -276,8 +277,9 @@ And we can see that we didn't get errors.
     >>> translationmessage = potmsgset.getCurrentTranslation(
     ...     pofile_es.potemplate, pofile_es.language,
     ...     pofile_es.potemplate.translation_side)
-    >>> translationmessage.translations
-    [u'Foo']
+    >>> for translation in translationmessage.translations:
+    ...     print(translation)
+    Foo
     >>> pofile_view.errors
     {}
 
@@ -412,8 +414,8 @@ given POFile instead of the one given with the submit.
 
     >>> entry.path == pofile_es.path
     True
-    >>> pofile_es.path
-    u'es.po'
+    >>> print(pofile_es.path)
+    es.po
 
     >>> transaction.commit()
 

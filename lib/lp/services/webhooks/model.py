@@ -608,8 +608,8 @@ class WebhookDeliveryJob(WebhookJobDerived):
         secret = self.webhook.secret
         result = getUtility(IWebhookClient).deliver(
             self.webhook.delivery_url, config.webhooks.http_proxy,
-            user_agent, 30, secret.encode('utf-8') if secret else None,
-            str(self.job_id), self.event_type, self.payload)
+            user_agent, 30, secret, str(self.job_id), self.event_type,
+            self.payload)
         # Request and response headers and body may be large, so don't
         # store them in the frequently-used JSON. We could store them in
         # the librarian if we wanted them in future.

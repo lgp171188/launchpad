@@ -299,7 +299,7 @@ class TestUnicodePath(TestCaseWithFactory):
         self.assertRaises(
             NotFound,
             browser.open,
-            'http://launchpad.test/%ED%B4%B5')
+            'http://launchpad.test/%EC%B4%B5')
         self.assertEqual(0, len(self.oopses))
 
 

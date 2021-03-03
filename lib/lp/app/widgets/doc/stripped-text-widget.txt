@@ -63,4 +63,4 @@ provided.
   >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  zope.formlib.interfaces.WidgetInputError: ('field', u'Title', RequiredMissing('field'))
+  zope.formlib.interfaces.WidgetInputError: ('field', ...'Title', RequiredMissing('field'))

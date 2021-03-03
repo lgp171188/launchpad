@@ -363,7 +363,7 @@ class OpenIDCallbackView(OpenIDLogin):
         the changes we just did.
         """
         identifier = self.openid_response.identity_url.split('/')[-1]
-        identifier = identifier.decode('ascii')
+        identifier = six.ensure_text(identifier, encoding='ascii')
         should_update_last_write = False
         # Force the use of the master database to make sure a lagged slave
         # doesn't fool us into creating a Person/Account when one already

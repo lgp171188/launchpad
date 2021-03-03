@@ -63,8 +63,8 @@ The product owner cannot see the Status or Importance widgets:
     >>> gnome_terminal = getUtility(IProductSet).getByName("gnome-terminal")
 
     >>> login(ANONYMOUS)
-    >>> gnome_terminal.owner.name
-    u'name12'
+    >>> print(gnome_terminal.owner.name)
+    name12
     >>> print_widget_visibility(
     ...     user=gnome_terminal.owner,
     ...     url=('http://bugs.launchpad.test/'
@@ -122,8 +122,8 @@ The owner can see the Status and Importance widgets.
     >>> alsa_utils = getUtility(IProductSet).getByName("alsa-utils")
 
     >>> login(ANONYMOUS)
-    >>> alsa_utils.owner.name
-    u'mark'
+    >>> print(alsa_utils.owner.name)
+    mark
 
     >>> print_widget_visibility(
     ...     user=alsa_utils.owner,

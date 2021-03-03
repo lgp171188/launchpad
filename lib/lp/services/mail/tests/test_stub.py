@@ -17,9 +17,9 @@ def test_simple_sendmail():
     r"""
     Send an email (faked by TestMailer - no actual email is sent)
 
-    >>> import email
     >>> from email.mime.text import MIMEText
     >>> import transaction
+    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> from lp.services.mail.sendmail import simple_sendmail
 
@@ -60,17 +60,19 @@ def test_simple_sendmail():
 
     We have two emails, but we have no idea what order they are in!
 
-    Let's sort them, and verify that the first one is the one we want
-    because only the first one contains the string 'nobody@example.com'
-    in its raw message.
+    Let's sort them by their From: fields, and verify that the second one is
+    the one we want because only the second one contains the string
+    'nobody@example.com' in its raw message.
 
-    >>> sorted_test_emails = sorted(list(stub.test_emails))
+    >>> sorted_test_emails = sorted(
+    ...     list(stub.test_emails),
+    ...     key=lambda email: message_from_bytes(email[2])['From'])
     >>> for from_addr, to_addrs, raw_message in sorted_test_emails:
-    ...     print(from_addr, to_addrs, 'nobody@example.com' in raw_message)
-    bounces@canonical.com ['nobody2@example.com'] True
+    ...     print(from_addr, to_addrs, b'nobody@example.com' in raw_message)
     bounces@canonical.com ['nobody2@example.com'] False
+    bounces@canonical.com ['nobody2@example.com'] True
 
-    >>> from_addr, to_addrs, raw_message = sorted_test_emails[0]
+    >>> from_addr, to_addrs, raw_message = sorted_test_emails[1]
     >>> from_addr
     'bounces@canonical.com'
     >>> to_addrs
@@ -78,7 +80,7 @@ def test_simple_sendmail():
 
     The message should be a sane RFC2822 document
 
-    >>> message = email.message_from_string(raw_message)
+    >>> message = message_from_bytes(raw_message)
     >>> message['From']
     'nobody@example.com'
     >>> message['To']

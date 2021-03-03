@@ -316,8 +316,8 @@ class DigestSearchResource(resource.Resource):
 
     def render_GET(self, request):
         try:
-            digest = request.args['digest'][0]
-        except LookupError:
+            digest = six.ensure_text(request.args[b'digest'][0])
+        except (LookupError, UnicodeDecodeError):
             return static.Data(
                 b'Bad search', six.ensure_str('text/plain')).render(request)
 

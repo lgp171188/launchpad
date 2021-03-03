@@ -10,6 +10,7 @@ __all__ = [
 import hashlib
 
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
@@ -169,8 +170,8 @@ class LoginToken(SQLBase):
         # Encrypt this part's content if requested.
         if key.can_encrypt:
             gpghandler = getUtility(IGPGHandler)
-            token_text = gpghandler.encryptContent(
-                token_text.encode('utf-8'), key)
+            token_text = six.ensure_text(gpghandler.encryptContent(
+                token_text.encode('utf-8'), key))
             # In this case, we need to include some clear text instructions
             # for people who do not have an MUA that can decrypt the ASCII
             # armored text.

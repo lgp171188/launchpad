@@ -71,7 +71,7 @@ read-only records of what happened.
 In order to read the actual log file, the transaction needs to be committed
 for the Librarian to save the file.
 
-    >>> print(new_result.log_file.read())
+    >>> print(new_result.log_file.read().decode('UTF-8'))
     several
     lines
     of

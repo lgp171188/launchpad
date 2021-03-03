@@ -22,7 +22,7 @@ from lp.testing.systemdocs import (
 
 
 def archivePublisherSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     switch_dbuser(config.archivepublisher.dbuser)
 
 

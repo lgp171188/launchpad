@@ -759,7 +759,7 @@ class TestSnapAdminView(BaseTestSnapView):
         browser.getControl(name="field.information_type").value = private
         browser.getControl("Update snap package").click()
         self.assertEqual(
-            'Private Snap recipes must be associated with a project.',
+            'Private snap recipes must be associated with a project.',
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
     def test_admin_snap_privacy_mismatch(self):

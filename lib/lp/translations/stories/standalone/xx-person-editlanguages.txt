@@ -117,8 +117,8 @@ equivalent information is known.
     ...     'http://translations.launchpad.test/~name12/+editlanguages')
     >>> country_portlet = find_tag_by_id(browser.contents,
     ...                                  'portlet-country-languages')
-    >>> print(find_spoken_languages(country_portlet))
-    [[u'Portuguese (Brazil)']]
+    >>> print(pretty(find_spoken_languages(country_portlet)))
+    [['Portuguese (Brazil)']]
 
 We also have a page under the launchpad root, called +editmylanguages,
 with launchpad.AnyPerson as permission. This is the page to which we

@@ -630,7 +630,7 @@ class AffectsEmailCommand(EmailCommand):
                         'cannot-add-task.txt',
                         error_templates=error_templates,
                         bug_id=bug.id,
-                        target_name=bug_target.name, reason=e[0]),
+                        target_name=bug_target.name, reason=e.args[0]),
                     stop_processing=True)
             event = ObjectCreatedEvent(bugtask)
 

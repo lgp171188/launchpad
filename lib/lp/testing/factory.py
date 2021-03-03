@@ -493,16 +493,11 @@ class ObjectFactory(
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
-    if sys.version_info[0] >= 3:
-        def getUniqueBytes(self, prefix=None):
-            return six.ensure_binary(self.getUniqueString(prefix=prefix))
+    def getUniqueBytes(self, prefix=None):
+        return six.ensure_binary(self.getUniqueString(prefix=prefix))
 
-        getUniqueUnicode = getUniqueString
-    else:
-        getUniqueBytes = getUniqueString
-
-        def getUniqueUnicode(self, prefix=None):
-            return six.ensure_text(self.getUniqueString(prefix=prefix))
+    def getUniqueUnicode(self, prefix=None):
+        return six.ensure_text(self.getUniqueString(prefix=prefix))
 
     def getUniqueURL(self, scheme=None, host=None):
         """Return a URL unique to this run of the test case."""
@@ -1685,7 +1680,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if parent_ids is None:
             parent_ids = []
         if rev_id is None:
-            rev_id = self.getUniqueString('revision-id')
+            rev_id = self.getUniqueUnicode('revision-id')
+        else:
+            rev_id = six.ensure_text(rev_id)
         if log_body is None:
             log_body = self.getUniqueString('log-body')
         return getUtility(IRevisionSet).new(
@@ -2531,13 +2528,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeCodeImportResult(self, code_import=None, result_status=None,
                              date_started=None, date_finished=None,
-                             log_excerpt=None, log_alias=None, machine=None):
+                             log_excerpt=None, log_alias=None, machine=None,
+                             requesting_user=None):
         """Create and return a new CodeImportResult."""
         if code_import is None:
             code_import = self.makeCodeImport()
         if machine is None:
             machine = self.makeCodeImportMachine()
-        requesting_user = None
         if log_excerpt is None:
             log_excerpt = self.getUniqueUnicode()
         if result_status is None:
@@ -3080,8 +3077,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if name is None:
             name = self.getUniqueUnicode('spr-name')
         if description is None:
-            description = self.getUniqueString(
-                'spr-description').decode('utf8')
+            description = self.getUniqueUnicode('spr-description')
         if daily_build_archive is None:
             daily_build_archive = self.makeArchive(
                 distribution=distroseries.distribution, owner=owner)
@@ -4396,7 +4392,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             raise AssertionError(
                 "key_type must be a member of SSH_TEXT_TO_KEY_TYPE, not %r" %
                 key_type)
-        key_text = base64.b64encode(NS(key_type) + b"".join(parameters))
+        key_text = base64.b64encode(
+            NS(key_type) + b"".join(parameters)).decode("ASCII")
         if comment is None:
             comment = self.getUniqueString()
         return "%s %s %s" % (key_type, key_text, comment)
@@ -5017,7 +5014,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipeBuild(self, requester=None, registrant=None, recipe=None,
                            distro_arch_series=None, date_created=DEFAULT,
                            status=BuildStatus.NEEDSBUILD, builder=None,
-                           duration=None, **kwargs):
+                           duration=None, build_request=None, **kwargs):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -5040,7 +5037,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             recipe = self.makeOCIRecipe(
                 registrant=registrant, oci_project=oci_project, **kwargs)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, distro_arch_series, date_created)
+            requester, recipe, distro_arch_series, date_created, build_request)
         if duration is not None:
             removeSecurityProxy(oci_build).updateStatus(
                 BuildStatus.BUILDING, builder=builder,

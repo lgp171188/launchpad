@@ -536,8 +536,8 @@ class ProjectGroupSet:
     def get(self, projectgroupid):
         """See `lp.registry.interfaces.projectgroup.IProjectGroupSet`.
 
-        >>> getUtility(IProjectGroupSet).get(1).name
-        u'apache'
+        >>> print(getUtility(IProjectGroupSet).get(1).name)
+        apache
         >>> getUtility(IProjectGroupSet).get(-1)
         ... # doctest: +NORMALIZE_WHITESPACE
         ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2

@@ -23,6 +23,7 @@ from lp.registry.interfaces.mailinglist import (
     PostedMessageStatus,
     )
 from lp.registry.interfaces.person import PersonalStanding
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.testing import (
     admin_logged_in,
@@ -180,7 +181,7 @@ class TestMailingListXMLRPCMessage(TestCaseWithFactory):
         # and notifies a team admins to moderate it.
         team, sender, message = self.makeMailingListAndHeldMessage()
         pop_notifications()
-        info = self.rpc_proxy.holdMessage('team', message.as_string())
+        info = self.rpc_proxy.holdMessage('team', message_as_bytes(message))
         notifications = pop_notifications()
         found = getUtility(IMessageApprovalSet).getMessageByMessageID(
             '<first-post>')
@@ -199,7 +200,7 @@ class TestMailingListXMLRPCMessage(TestCaseWithFactory):
         # List moderators can approve messages.
         team, sender, message = self.makeMailingListAndHeldMessage()
         pop_notifications()
-        self.rpc_proxy.holdMessage('team', message.as_string())
+        self.rpc_proxy.holdMessage('team', message_as_bytes(message))
         found = getUtility(IMessageApprovalSet).getMessageByMessageID(
             '<first-post>')
         found.approve(team.teamowner)

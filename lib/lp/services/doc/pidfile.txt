@@ -32,8 +32,8 @@ You can pass in your own config instance to use.
     ...     class canonical:
     ...         pid_dir = '/var/tmp'
     ...     instance_name = 'blah'
-    >>> pidfile_path('beans', MyConfig)
-    '/var/tmp/blah-beans.pid'
+    >>> print(pidfile_path('beans', MyConfig))
+    /var/tmp/blah-beans.pid
 
 This basic mechanism supports the other three functions.
 
@@ -93,24 +93,24 @@ we'll need them again later.
     ...                 return real_pid
     ...         time.sleep(0.1)
     ...     else:
-    ...         print 'Error: pid file was not created'
+    ...         print('Error: pid file was not created')
     ...
     >>> def stop(pid, sig):
     ...     os.kill(pid, sig)
     ...     os.waitpid(pid, 0)
     ...     if not os.path.exists(pidfile_path('nuts')):
-    ...         print 'Stopped successfully'
+    ...         print('Stopped successfully')
     ...     else:
     ...         try:
     ...             # Is it still here at all?
     ...             os.kill(pid, 0)
     ...         except OSError as e:
     ...             if e.errno == errno.ESRCH:
-    ...                 print 'Error: pid file was not removed'
+    ...                 print('Error: pid file was not removed')
     ...             else:
     ...                 raise
     ...         else:
-    ...             print 'Error: process did not exit'
+    ...             print('Error: process did not exit')
     ...
 
 Here's our example.  We start, and then stop with SIGINT.
@@ -165,7 +165,7 @@ continuing as normal.
     True
     >>> stop(new_pid, signal.SIGTERM)
     Stopped successfully
-    >>> print get_pid('nuts')
+    >>> print(get_pid('nuts'))
     None
 
 
@@ -197,11 +197,11 @@ You can also pass in your own config instance.
     ...         pid_dir = '/var/tmp'
     ...     instance_name = 'blah'
     >>> path = pidfile_path('beans', MyConfig)
-    >>> path
-    '/var/tmp/blah-beans.pid'
+    >>> print(path)
+    /var/tmp/blah-beans.pid
     >>> file = open(path, 'w')
     >>> try:
-    ...     print >> file, 72
+    ...     print(72, file=file)
     ... finally:
     ...     file.close()
     >>> get_pid('beans', MyConfig)
@@ -218,7 +218,7 @@ if you are overriding the default SIGTERM signal handler.
     >>> path = pidfile_path('legumes')
     >>> file = open(path, 'w')
     >>> try:
-    ...     print >> file, os.getpid()
+    ...     print(os.getpid(), file=file)
     ... finally:
     ...     file.close()
     >>> remove_pidfile('legumes')
@@ -240,7 +240,7 @@ need to match the current process's pid.
 
     >>> file = open(path, 'w')
     >>> try:
-    ...     print >> file, os.getpid() + 1
+    ...     print(os.getpid() + 1, file=file)
     ... finally:
     ...     file.close()
     >>> remove_pidfile('pits', MyConfig)

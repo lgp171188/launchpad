@@ -85,7 +85,7 @@ class UpdateStatsTest(unittest.TestCase):
         cmd = [sys.executable, get_script(), '--quiet']
         process = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.STDOUT, universal_newlines=True)
         (stdout, empty_stderr) = process.communicate()
 
         # Ensure it returned a success code

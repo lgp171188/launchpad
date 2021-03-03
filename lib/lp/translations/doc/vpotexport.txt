@@ -43,14 +43,14 @@ template.
 
 We are working with the evolution-2.2 template.
 
-    >>> first.potemplate.title
-    u'Template "evolution-2.2" in Evolution trunk'
+    >>> print(first.potemplate.title)
+    Template "evolution-2.2" in Evolution trunk
 
 And this first row has the information for the 'Found %i invalid file.'
 message.
 
-    >>> first.msgid_singular
-    u'Found %i invalid file.'
+    >>> print(first.msgid_singular)
+    Found %i invalid file.
 
     # We will need the potmsgset of this message to demonstrate the values
     # we get.
@@ -91,31 +91,31 @@ plural form (identified by the index 1). In this case, the message has both.
 
 Comment text is a comment added by a translator.
 
-    >>> first.comment
-    u''
-    >>> potmsgset.commenttext
-    u''
+    >>> print(first.comment)
+    <BLANKLINE>
+    >>> print(potmsgset.commenttext)
+    <BLANKLINE>
 
 Source comment is the comment added by a developer to help translators
 to understand the message they are translating.
 
-    >>> first.source_comment
-    u''
-    >>> potmsgset.sourcecomment
-    u''
+    >>> print(first.source_comment)
+    <BLANKLINE>
+    >>> print(potmsgset.sourcecomment)
+    <BLANKLINE>
 
 File references is a reference to the source code file and line number where
 this message was extracted from.
 
-    >>> first.file_references
-    u'encfs/encfsctl.cpp:346'
-    >>> potmsgset.filereferences
-    u'encfs/encfsctl.cpp:346'
+    >>> print(first.file_references)
+    encfs/encfsctl.cpp:346
+    >>> print(potmsgset.filereferences)
+    encfs/encfsctl.cpp:346
 
 flags comment represent a set of flags used to validate the message
 translation.
 
-    >>> first.flags_comment
-    u'c-format'
-    >>> potmsgset.flagscomment
-    u'c-format'
+    >>> print(first.flags_comment)
+    c-format
+    >>> print(potmsgset.flagscomment)
+    c-format

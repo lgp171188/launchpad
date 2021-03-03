@@ -410,8 +410,7 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
 
         out, err, exit_code = run_script(
             "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s" % (
-                IProcessAcceptedBugsJobSource.getName()),
-            universal_newlines=True)
+                IProcessAcceptedBugsJobSource.getName()))
 
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))

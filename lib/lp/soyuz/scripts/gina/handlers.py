@@ -20,7 +20,7 @@ __all__ = [
     'DistroHandler',
     ]
 
-from cStringIO import StringIO
+import io
 import os
 import re
 
@@ -513,21 +513,21 @@ class SourcePackageHandler:
         # Since the dsc doesn't know, we add in the directory, package
         # component and section
         dsc_contents['directory'] = os.path.join("pool",
-            poolify(sp_name, sp_component))
-        dsc_contents['package'] = sp_name
-        dsc_contents['component'] = sp_component
-        dsc_contents['section'] = sp_section
+            poolify(sp_name, sp_component)).encode("ASCII")
+        dsc_contents['package'] = sp_name.encode("ASCII")
+        dsc_contents['component'] = sp_component.encode("ASCII")
+        dsc_contents['section'] = sp_section.encode("ASCII")
 
         # the dsc doesn't list itself so add it ourselves
         if 'files' not in dsc_contents:
             log.error('DSC for %s didn\'t contain a files entry: %r' %
                       (dsc_name, dsc_contents))
             return None
-        if not dsc_contents['files'].endswith("\n"):
-            dsc_contents['files'] += "\n"
+        if not dsc_contents['files'].endswith(b"\n"):
+            dsc_contents['files'] += b"\n"
         # XXX kiko 2005-10-21: Why do we hack the md5sum and size of the DSC?
         # Should probably calculate it properly.
-        dsc_contents['files'] += "xxx 000 %s" % dsc_name
+        dsc_contents['files'] += ("xxx 000 %s" % dsc_name).encode("ASCII")
 
         # SourcePackageData requires capitals
         capitalized_dsc = {}
@@ -648,7 +648,7 @@ class SourcePackageHandler:
             changelog_lfa = getUtility(ILibraryFileAliasSet).create(
                 "changelog",
                 len(src.changelog),
-                StringIO(src.changelog),
+                io.BytesIO(src.changelog),
                 "text/x-debian-source-changelog")
             spr.changelog = changelog_lfa
 

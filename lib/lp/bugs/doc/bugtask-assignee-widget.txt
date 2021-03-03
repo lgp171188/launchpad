@@ -65,8 +65,8 @@ But it is assigned to another user:
     >>> widget.selectedRadioButton() == widget.assign_to_me
     True
 
-    >>> widget.getAssigneeDisplayValue()
-    u'Mark Shuttleworth (mark)'
+    >>> print(widget.getAssigneeDisplayValue())
+    Mark Shuttleworth (mark)
 
 The widget has input:
 
@@ -87,12 +87,12 @@ The input value is the current user:
 
 Let's apply the changes:
 
-    >>> bugtask.assignee.displayname
-    u'Mark Shuttleworth'
+    >>> print(bugtask.assignee.displayname)
+    Mark Shuttleworth
     >>> widget.applyChanges(bugtask)
     True
-    >>> bugtask.assignee.displayname
-    u'Foo Bar'
+    >>> print(bugtask.assignee.displayname)
+    Foo Bar
 
 Finally, let's rebind the widget's context to the updated context, as
 its current context will be out of sync with the new value:
@@ -164,8 +164,8 @@ Which means it's not assigned to another user:
     >>> widget.assignedToAnotherUser()
     False
 
-    >>> widget.getAssigneeDisplayValue()
-    u'Foo Bar (name16)'
+    >>> print(widget.getAssigneeDisplayValue())
+    Foo Bar (name16)
 
 The widget has input:
 

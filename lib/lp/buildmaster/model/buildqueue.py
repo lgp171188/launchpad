@@ -324,7 +324,7 @@ class BuildQueueSet(object):
                 try:
                     return int(value_str)
                 except ValueError:
-                    logger.error('invalid %s %r', flag, value_str)
+                    logger.error("invalid %s: %s", flag, value_str)
 
         score_conditions = []
         minimum_scores = set()
