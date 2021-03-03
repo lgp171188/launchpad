@@ -312,9 +312,11 @@ Bug tasks
 Each bug may be associated with one or more bug tasks. Much of the
 data in a bug task is derived from the bug.
 
+    >>> from operator import itemgetter
     >>> bug_one_bugtasks_url = bug_one['bug_tasks_collection_link']
     >>> bug_one_bugtasks = sorted(webservice.get(
-    ...     bug_one_bugtasks_url).jsonBody()['entries'])
+    ...     bug_one_bugtasks_url).jsonBody()['entries'],
+    ...     key=itemgetter('self_link'))
     >>> len(bug_one_bugtasks)
     3
 
@@ -825,7 +827,6 @@ Bug subscriptions
 
 We can get the collection of subscriptions to a bug.
 
-    >>> from operator import itemgetter
     >>> bug_one_subscriptions_url = bug_one['subscriptions_collection_link']
     >>> subscriptions = webservice.get(bug_one_subscriptions_url).jsonBody()
     >>> subscription_entries = sorted(
@@ -1056,7 +1057,8 @@ case aspects of the bugtask (like status) are slaved to the remote bug
 report described by the bugwatch.
 
     >>> bug_one_bug_watches = sorted(webservice.get(
-    ...     bug_one['bug_watches_collection_link']).jsonBody()['entries'])
+    ...     bug_one['bug_watches_collection_link']).jsonBody()['entries'],
+    ...     key=itemgetter('self_link'))
     >>> len(bug_one_bug_watches)
     4
 

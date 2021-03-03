@@ -292,7 +292,7 @@ binaries have been copied and published in the same context archive.
     >>> source_pub = pubs['entries'][0]
     >>> builds = webservice.named_get(
     ...     source_pub['self_link'], 'getBuilds').jsonBody()
-    >>> for entry in sorted(builds['entries']):
+    >>> for entry in builds['entries']:
     ...     print(entry['title'])
     i386 build of pmount 0.1-1 in ubuntu warty RELEASE
 
@@ -310,7 +310,7 @@ of that publication.
     >>> source_pub = pubs['entries'][0]
     >>> builds = webservice.named_get(
     ...     source_pub['self_link'], 'getPublishedBinaries').jsonBody()
-    >>> for entry in sorted(builds['entries']):
+    >>> for entry in builds['entries']:
     ...     print(entry['display_name'])
     pmount 0.1-1 in warty hppa
     pmount 0.1-1 in warty i386

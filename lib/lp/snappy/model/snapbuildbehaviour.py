@@ -94,7 +94,7 @@ class SnapProxyMixin:
             build_id=self.build.build_cookie,
             timestamp=timestamp)
         auth_string = '{}:{}'.format(admin_username, secret).strip()
-        auth_header = b'Basic ' + base64.b64encode(auth_string)
+        auth_header = b'Basic ' + base64.b64encode(auth_string.encode('ASCII'))
 
         token = yield self._slave.process_pool.doWork(
             RequestProxyTokenCommand,

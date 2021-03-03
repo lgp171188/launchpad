@@ -356,7 +356,7 @@ particular bug (see bug 1357):
 
     >>> commented_bugtasks_view = create_view(no_priv, '+commentedbugs')
     >>> commented_bugs = list(commented_bugtasks_view.search().batch)
-    >>> [bugtask.bug.id for bugtask in sorted(commented_bugs)]
+    >>> [bugtask.bug.id for bugtask in commented_bugs]
     [1, 1, 1]
 
 

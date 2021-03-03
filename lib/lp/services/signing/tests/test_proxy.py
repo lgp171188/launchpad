@@ -72,7 +72,6 @@ class SigningServiceResponseFactory:
             bytes(self.generated_public_key))
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
-        self.b64_signed_msg = base64.b64encode(b"the-signed-msg")
 
         self.signed_msg_template = "%s::signed!"
 
@@ -169,8 +168,8 @@ class SigningServiceResponseFactory:
 
         def sign_callback(request):
             call_counts['/sign'] += 1
-            signed = base64.b64encode(
-                self.signed_msg_template % call_counts['/sign'])
+            signed_msg = self.signed_msg_template % call_counts['/sign']
+            signed = base64.b64encode(signed_msg.encode('utf8'))
             data = {'signed-message': signed.decode('utf8'),
                     'public-key': self.b64_generated_public_key.decode('utf8')}
             return 201, {}, self._encryptPayload(data, self.response_nonce)

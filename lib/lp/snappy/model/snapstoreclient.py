@@ -98,8 +98,8 @@ class MacaroonAuth(requests.auth.AuthBase):
             try:
                 _, key, value = caveat.caveat_id.split("|")
                 if key == "account":
-                    account = json.loads(
-                        base64.b64decode(value).decode("UTF-8"))
+                    account = json.loads(base64.b64decode(
+                        value.encode("UTF-8")).decode("UTF-8"))
                     if "openid" in account:
                         self.logger.debug(
                             "%s macaroon: OpenID identifier: %s" %

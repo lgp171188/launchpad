@@ -2,7 +2,8 @@
   results of the director-2004 poll.
 
   >>> import base64
-  >>> jdub_auth = base64.b64encode('jeff.waugh@ubuntulinux.com:test')
+  >>> jdub_auth = base64.b64encode(
+  ...     b'jeff.waugh@ubuntulinux.com:test').decode('ASCII')
   >>> print(http(r"""
   ... GET /~ubuntu-team/+poll/director-2004 HTTP/1.1
   ... Authorization: Basic %s
