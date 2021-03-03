@@ -495,8 +495,9 @@ datecreated comes not from the Date header but from the Received header.
 
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     read_test_file)
-    >>> parsed_message = email.message_from_string(
-    ...     read_test_file('debbugs-comment-with-received-date.txt'))
+    >>> parsed_message = message_from_bytes(
+    ...     read_test_file('debbugs-comment-with-received-date.txt').encode(
+    ...         'UTF-8'))
 
     >>> print(parsed_message['date'])
     Fri, 14 Dec 2007 18:54:30 +0000
@@ -520,8 +521,9 @@ default to using the Date header again.
     >>> print(message.datecreated)
     2007-12-14 18:54:30+00:00
 
-    >>> parsed_message = email.message_from_string(
-    ...     read_test_file('debbugs-comment-with-received-date.txt'))
+    >>> parsed_message = message_from_bytes(
+    ...     read_test_file('debbugs-comment-with-received-date.txt').encode(
+    ...         'UTF-8'))
 
     >>> print(parsed_message['date'])
     Fri, 14 Dec 2007 18:54:30 +0000
