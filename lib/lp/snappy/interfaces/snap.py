@@ -708,6 +708,16 @@ class ISnapEditableAttributes(IHasOwner):
         schema=IProduct, vocabulary='Product',
         required=False, readonly=False)
 
+    private = exported(Bool(
+        title=_("Private"), required=False, readonly=False,
+        description=_("Whether or not this snap is private.")))
+
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this Snap recipe.")))
+
     distro_series = exported(Reference(
         IDistroSeries, title=_("Distro Series"),
         required=False, readonly=False,
@@ -873,16 +883,6 @@ class ISnapAdminAttributes(Interface):
 
     These attributes need launchpad.View to see, and launchpad.Admin to change.
     """
-
-    private = exported(Bool(
-        title=_("Private"), required=False, readonly=False,
-        description=_("Whether or not this snap is private.")))
-
-    information_type = exported(Choice(
-        title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=False, default=InformationType.PUBLIC,
-        description=_(
-            "The type of information contained in this Snap recipe.")))
 
     require_virtualized = exported(Bool(
         title=_("Require virtualized builders"), required=True, readonly=False,
