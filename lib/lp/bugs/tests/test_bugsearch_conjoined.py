@@ -237,7 +237,7 @@ class TestProjectGroupExcludeConjoinedMasterSearch(TestSearchBase):
         unexcluded_count = 0
         for bugtask in masters:
             unexcluded_count += 1
-            with person_logged_in(product.owner):
+            with person_logged_in(bugtask.target.owner):
                 bugtask.transitionToStatus(
                     BugTaskStatus.WONTFIX, bugtask.target.owner)
             self.assertEqual(

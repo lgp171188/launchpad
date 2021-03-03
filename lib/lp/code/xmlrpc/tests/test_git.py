@@ -7,11 +7,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import datetime
 import hashlib
 import uuid
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
+import pytz
 import six
 from six.moves import xmlrpc_client
 from six.moves.urllib.parse import quote
@@ -1356,13 +1358,13 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         team = self.factory.makeTeam(members=[requester])
         self.assertCreates(requester, u"/~%s/+git/random" % team.name)
 
-    def test_translatePath_create_bytestring(self):
-        # ASCII strings come in as bytestrings, not Unicode strings. They
-        # work fine too.
+    def test_translatePath_create_native_string(self):
+        # On Python 2, ASCII strings come in as native strings, not Unicode
+        # strings. They work fine too.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         path = u"/~%s/%s/+git/random" % (requester.name, project.name)
-        self.assertCreates(requester, path.encode('ascii'))
+        self.assertCreates(requester, six.ensure_str(path))
 
     def test_translatePath_anonymous_cannot_create(self):
         # Anonymous users cannot create repositories.
@@ -2091,6 +2093,151 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         job_source = getUtility(IGitRefScanJobSource)
         [job] = list(job_source.iterReady())
         self.assertEqual(repository, job.repository)
+
+    def assertSetsRepackData(self, repo, auth_params):
+        start_time = datetime.now(pytz.UTC)
+        self.assertIsNone(
+            self.assertDoesNotFault(
+                None, "notify", repo.getInternalPath(),
+                {'loose_object_count': 5, 'pack_count': 2},
+                auth_params))
+        end_time = datetime.now(pytz.UTC)
+        naked_repo = removeSecurityProxy(repo)
+        self.assertEqual(5, naked_repo.loose_object_count)
+        self.assertEqual(2, naked_repo.pack_count)
+        self.assertBetween(start_time, naked_repo.date_last_scanned, end_time)
+
+    def test_notify_set_repack_data(self):
+        # The notify call sets the repack
+        # indicators (loose_object_count, pack_count, date_last_scanned)
+        # when received from Turnip for a user
+        # that has their ordinary privileges on the corresponding repository
+        requester_owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester_owner)
+
+        self.assertSetsRepackData(repository, {'uid': requester_owner.id})
+
+    def test_notify_set_repack_data_user_macaroon(self):
+        self.pushConfig("codehosting", git_macaroon_secret_key="some-secret")
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        with person_logged_in(requester):
+            macaroon = removeSecurityProxy(issuer).issueMacaroon(
+                    repository, user=requester)
+        auth_params = _make_auth_params(requester,
+                                        macaroon_raw=macaroon.serialize())
+        self.assertSetsRepackData(repository, auth_params)
+
+    def test_notify_set_repack_data_user_mismatch(self):
+        # notify refuses macaroons in the case where the
+        # user doesn't match what the issuer claims was verified.  (We use a
+        # dummy issuer for this, since this is a stopgap check to defend
+        # against issuer bugs)
+
+        issuer = DummyMacaroonIssuer()
+        # Claim to be the code-import-job issuer.  This is a bit weird, but
+        # it gets us past the difficulty that only certain named issuers are
+        # allowed to confer write permissions.
+        issuer.identifier = "code-import-job"
+        self.useFixture(ZopeUtilityFixture(
+            issuer, IMacaroonIssuer, name="code-import-job"))
+        requesters = [self.factory.makePerson() for _ in range(2)]
+        owner = self.factory.makeTeam(members=requesters)
+        repository = self.factory.makeGitRepository(owner=owner)
+        macaroon = issuer.issueMacaroon(repository)
+
+        for verified_user, authorized, unauthorized in (
+                (requesters[0], [requesters[0]],
+                 [LAUNCHPAD_SERVICES, requesters[1], None]),
+                ([None, NO_USER], [],
+                 [LAUNCHPAD_SERVICES] + requesters + [None]),
+        ):
+            issuer._verified_user = verified_user
+            for requester in authorized:
+                login(ANONYMOUS)
+                auth_params = _make_auth_params(
+                     requester, macaroon_raw=macaroon.serialize())
+                self.assertSetsRepackData(repository, auth_params)
+
+            for requester in unauthorized:
+                login(ANONYMOUS)
+                auth_params = _make_auth_params(
+                    requester, macaroon_raw=macaroon.serialize())
+                self.assertFault(
+                    faults.Unauthorized, None, "notify",
+                    repository.getInternalPath(),
+                    {'loose_object_count': 5, 'pack_count': 2},
+                    auth_params)
+
+    def test_notify_set_repack_data_code_import(self):
+        # We set the repack data on a repository from a code import worker
+        # with a suitable macaroon.
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        code_imports = [
+            self.factory.makeCodeImport(
+                target_rcs_type=TargetRevisionControlSystems.GIT)
+            for _ in range(2)]
+        with celebrity_logged_in("vcs_imports"):
+            jobs = [
+                self.factory.makeCodeImportJob(code_import=code_import)
+                for code_import in code_imports]
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroons = [
+            removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
+
+        with celebrity_logged_in("vcs_imports"):
+            getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
+
+        auth_params = _make_auth_params(
+            LAUNCHPAD_SERVICES, macaroon_raw=macaroons[0].serialize())
+        self.assertSetsRepackData(
+            code_imports[0].git_repository,
+            auth_params)
+
+        auth_params = _make_auth_params(
+            LAUNCHPAD_SERVICES, macaroon_raw=macaroons[1].serialize())
+        self.assertFault(
+            faults.Unauthorized, None, "notify",
+            code_imports[0].git_repository.getInternalPath(),
+            {'loose_object_count': 5, 'pack_count': 2}, auth_params)
+
+    def test_notify_set_repack_data_private_code_import(self):
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        code_imports = [
+            self.factory.makeCodeImport(
+                target_rcs_type=TargetRevisionControlSystems.GIT)
+            for _ in range(2)]
+        private_repository = code_imports[0].git_repository
+        path = private_repository.getInternalPath()
+        removeSecurityProxy(private_repository).transitionToInformationType(
+            InformationType.PRIVATESECURITY, private_repository.owner)
+        with celebrity_logged_in("vcs_imports"):
+            jobs = [
+                self.factory.makeCodeImportJob(code_import=code_import)
+                for code_import in code_imports]
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroons = [
+            removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
+
+        with celebrity_logged_in("vcs_imports"):
+            getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
+
+        auth_params = _make_auth_params(
+            LAUNCHPAD_SERVICES, macaroon_raw=macaroons[0].serialize())
+        self.assertSetsRepackData(
+            code_imports[0].git_repository,
+            auth_params)
+
+        auth_params = _make_auth_params(
+            LAUNCHPAD_SERVICES, macaroon_raw=macaroons[1].serialize())
+        self.assertFault(
+            faults.Unauthorized, None, "notify", path,
+            {'loose_object_count': 5, 'pack_count': 2}, auth_params)
 
     def test_authenticateWithPassword(self):
         self.assertFault(

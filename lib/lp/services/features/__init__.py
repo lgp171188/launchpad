@@ -123,7 +123,7 @@ and if you want to use the value ::
 
      value = features.getFeatureFlag('example_flag.enabled')
      if value:
-        print value
+        print(value)
 
 Checking flags without access to the database
 =============================================

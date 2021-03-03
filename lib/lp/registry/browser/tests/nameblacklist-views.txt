@@ -46,7 +46,7 @@ An invalid regular expression cannot be added.
     >>> view = create_initialized_view(name_blacklist_set, '+add', form=form)
     >>> for error in view.errors:
     ...     print(error)
-    Invalid regular expression: unbalanced parenthesis
+    Invalid regular expression: ...
 
 A duplicate regular expression cannot be added.
 
@@ -86,7 +86,7 @@ When a regular expression is edited, it still must be valid.
     >>> view = create_initialized_view(foo_exp, '+edit', form=form)
     >>> for error in view.errors:
     ...     print(error)
-    Invalid regular expression: unbalanced parenthesis
+    Invalid regular expression: ...
 
 It cannot changed to conflict with another regular expression.
 

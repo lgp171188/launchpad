@@ -73,6 +73,7 @@ from lp.bugs.interfaces.bugtarget import (
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.enums import (
     DistributionDefaultTraversalPolicy,
     VCSType,
@@ -719,6 +720,13 @@ class IDistributionPublic(
     def newOCIProject(registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
 
+    oci_registry_credentials = Reference(
+        IOCIRegistryCredentials,
+        title=_("OCI registry credentials"),
+        description=_("Credentials and URL to use for uploading all OCI "
+                      "images in this distribution to a registry."),
+        required=False, readonly=False)
+
 
 @exported_as_webservice_entry(as_of="beta")
 class IDistribution(
@@ -734,9 +742,9 @@ class IDistribution(
         ubuntu = launchpad.distributions["ubuntu"]
         archive = ubuntu.main_archive
         series = ubuntu.current_series
-        print archive.getPublishedSources(exact_match=True,
+        print(archive.getPublishedSources(exact_match=True,
             source_name="apport",
-            distro_series=series)[0].source_package_version
+            distro_series=series)[0].source_package_version)
     """
 
 

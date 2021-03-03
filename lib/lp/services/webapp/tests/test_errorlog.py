@@ -236,7 +236,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         except ArbitraryException:
             report = utility.raising(sys.exc_info(), request)
         for key in report['req_vars'].keys():
-            if isinstance(key, str):
+            if isinstance(key, bytes):
                 key.decode('utf8')
             else:
                 self.assertIsInstance(key, six.text_type)
@@ -505,14 +505,15 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         """The error report should include the oops messages."""
         utility = ErrorReportingUtility()
         utility._oops_config.publisher = None
-        with utility.oopsMessage(dict(a='b', c='d')):
+        message = {'a': 'b', 'c': 'd'}
+        with utility.oopsMessage(message):
             try:
                 raise ArbitraryException('foo')
             except ArbitraryException:
                 info = sys.exc_info()
                 oops = utility._oops_config.create(dict(exc_info=info))
                 self.assertEqual(
-                    {'<oops-message-0>': "{'a': 'b', 'c': 'd'}"},
+                    {'<oops-message-0>': str(message)},
                     oops['req_vars'])
 
     def test__makeErrorReport_combines_request_and_error_vars(self):
@@ -520,7 +521,8 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         utility = ErrorReportingUtility()
         utility._oops_config.publisher = None
         request = ScriptRequest([('c', 'd')])
-        with utility.oopsMessage(dict(a='b')):
+        message = {'a': 'b'}
+        with utility.oopsMessage(message):
             try:
                 raise ArbitraryException('foo')
             except ArbitraryException:
@@ -528,7 +530,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
                 oops = utility._oops_config.create(
                         dict(exc_info=info, http_request=request))
                 self.assertEqual(
-                    {'<oops-message-0>': "{'a': 'b'}", 'c': 'd'},
+                    {'<oops-message-0>': str(message), 'c': 'd'},
                     oops['req_vars'])
 
     def test_filter_session_statement(self):

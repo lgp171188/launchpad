@@ -58,8 +58,9 @@ those in the original message.
     >>> potmsgset = factory.makePOTMsgSet(
     ...     potemplate=template, singular=u'%d n', sequence=1)
     >>> removeSecurityProxy(potmsgset).flagscomment = 'c-format'
-    >>> potmsgset.flags
-    [u'c-format']
+    >>> for flag in potmsgset.flags:
+    ...     print(flag)
+    c-format
 
 The sample message has an upstream translation, and an Ubuntu
 in Launchpad that differs from the upstream one.

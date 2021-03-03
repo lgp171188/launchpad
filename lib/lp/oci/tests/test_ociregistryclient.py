@@ -69,6 +69,7 @@ from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
 from lp.testing import (
     admin_logged_in,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.fixture import ZopeUtilityFixture
@@ -262,6 +263,55 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             OCIRecipeBuildRegistryUploadStatus.SUPERSEDED,
             self.build.registry_upload_status)
         self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_upload_with_distribution_credentials(self):
+        self._makeFiles()
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
+        credentials = self.factory.makeOCIRegistryCredentials()
+        image_name = self.factory.getUniqueUnicode()
+        self.build.recipe.image_name = image_name
+        distro = self.build.recipe.oci_project.distribution
+        with person_logged_in(distro.owner):
+            distro.oci_registry_credentials = credentials
+        # we have distribution credentials, we should have a 'push rule'
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+        self.addManifestResponses(push_rule)
+
+        self.client.upload(self.build)
+
+        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
+
+        self.assertThat(request, MatchesDict({
+            "layers": MatchesListwise([
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_1"),
+                    "size": Equals(999)}),
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_2"),
+                    "size": Equals(999)})
+            ]),
+            "schemaVersion": Equals(2),
+            "config": MatchesDict({
+                "mediaType": Equals(
+                    "application/vnd.docker.container.image.v1+json"),
+                "digest": Equals(
+                    "sha256:33b69b4b6e106f9fc7a8b93409"
+                    "36c85cf7f84b2d017e7b55bee6ab214761f6ab"),
+                "size": Equals(52)
+            }),
+            "mediaType": Equals(
+                "application/vnd.docker.distribution.manifest.v2+json")
+        }))
 
     @responses.activate
     def test_upload_formats_credentials(self):

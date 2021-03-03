@@ -209,20 +209,20 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         # Create fake UEFI keys for the root
         for filename in ("uefi.key", "uefi.crt"):
-            with open(os.path.join(archive_root, filename), 'wb') as fd:
-                fd.write(b"Root %s" % filename)
+            with open(os.path.join(archive_root, filename), 'w') as fd:
+                fd.write("Root %s" % filename)
 
         # Create fake OPAL and Kmod keys for series1
         for filename in ("opal.pem", "opal.x509", "kmod.pem", "kmod.x509"):
-            with open(os.path.join(key_dirs[series1], filename), 'wb') as fd:
-                fd.write(b"Series 1 %s" % filename)
+            with open(os.path.join(key_dirs[series1], filename), 'w') as fd:
+                fd.write("Series 1 %s" % filename)
 
         # Create fake FIT keys for series1
         os.makedirs(os.path.join(key_dirs[series1], "fit"))
         for filename in ("fit.key", "fit.crt"):
             with open(os.path.join(key_dirs[series1], "fit", filename),
-                      'wb') as fd:
-                fd.write(b"Series 1 %s" % filename)
+                      'w') as fd:
+                fd.write("Series 1 %s" % filename)
 
         script = self.makeScript(["--archive", archive.reference])
         script.inject = mock.Mock()
@@ -304,20 +304,20 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
         # Create fake UEFI keys for the root
         for filename in ("uefi.key", "uefi.crt"):
-            with open(os.path.join(archive_root, filename), 'wb') as fd:
-                fd.write(b"Root %s" % filename)
+            with open(os.path.join(archive_root, filename), 'w') as fd:
+                fd.write("Root %s" % filename)
 
         # Create fake OPAL and Kmod keys for series1
         for filename in ("opal.pem", "opal.x509", "kmod.pem", "kmod.x509"):
-            with open(os.path.join(key_dirs[series1], filename), 'wb') as fd:
-                fd.write(b"Series 1 %s" % filename)
+            with open(os.path.join(key_dirs[series1], filename), 'w') as fd:
+                fd.write("Series 1 %s" % filename)
 
         # Create fake FIT keys for series1
         os.makedirs(os.path.join(key_dirs[series1], "fit"))
         for filename in ("fit.key", "fit.crt"):
             with open(os.path.join(key_dirs[series1], "fit", filename),
-                      'wb') as fd:
-                fd.write(b"Series 1 %s" % filename)
+                      'w') as fd:
+                fd.write("Series 1 %s" % filename)
 
         script = self.makeScript(
             ["--archive", archive.reference, "--overwrite", "--dry-run"])
@@ -385,8 +385,8 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         gpgkey = self.factory.makeGPGKey(archive.owner)
         secret_key_path = os.path.join(
             self.signing_root_dir, "%s.gpg" % gpgkey.fingerprint)
-        with open(secret_key_path, "wb") as fd:
-            fd.write(b"Private key %s" % gpgkey.fingerprint)
+        with open(secret_key_path, "w") as fd:
+            fd.write("Private key %s" % gpgkey.fingerprint)
         archive.signing_key_owner = archive.owner
         archive.signing_key_fingerprint = gpgkey.fingerprint
 

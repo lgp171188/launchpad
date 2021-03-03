@@ -132,9 +132,10 @@ We can filter our search results by reporter
 
     >>> bugtasks_filtered_by_reporter = list(
     ...     distro_advanced_search_listingview.search().batch)
-    >>> [(bugtask.bug.id, bugtask.bug.owner.name)
-    ...     for bugtask in bugtasks_filtered_by_reporter]
-    [(1, u'name12'), (2, u'name12')]
+    >>> for bugtask in bugtasks_filtered_by_reporter:
+    ...     print('%d: %s' % (bugtask.bug.id, bugtask.bug.owner.name))
+    1: name12
+    2: name12
 
 But if we query for an invalid person, the view displays a nice error
 message.
@@ -148,8 +149,8 @@ message.
     >>> distro_advanced_search_listingview = create_view(
     ...     debian, '+bugs', form_values)
 
-    >>> distro_advanced_search_listingview.getFieldError('bug_reporter')
-    u'There&#x27;s no person with the name or email address &#x27;invalid-reporter&#x27;.'
+    >>> print(distro_advanced_search_listingview.getFieldError('bug_reporter'))
+    There&#x27;s no person with the name or email address &#x27;invalid-reporter&#x27;.
 
 The same if we try with an invalid assignee.
 
@@ -162,8 +163,8 @@ The same if we try with an invalid assignee.
     >>> distro_advanced_search_listingview = create_view(
     ...     debian, '+bugs', form_values)
 
-    >>> distro_advanced_search_listingview.getFieldError('assignee')
-    u'There&#x27;s no person with the name or email address &#x27;invalid-assignee&#x27;.'
+    >>> print(distro_advanced_search_listingview.getFieldError('assignee'))
+    There&#x27;s no person with the name or email address &#x27;invalid-assignee&#x27;.
 
 Searching by component is possible, as long as the context has defined a
 .currentseries.

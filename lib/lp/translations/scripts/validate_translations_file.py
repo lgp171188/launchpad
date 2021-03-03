@@ -104,6 +104,6 @@ class ValidateTranslationsFile:
         :param filename: Name of a file to read.
         :return: Whether the file was parsed successfully.
         """
-        with open(filename) as f:
+        with open(filename, "rb") as f:
             content = f.read()
         return self._validateContent(filename, content)

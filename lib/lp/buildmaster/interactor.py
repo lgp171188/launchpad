@@ -8,7 +8,10 @@ __all__ = [
     'extract_vitals_from_db',
     ]
 
-from collections import namedtuple
+from collections import (
+    namedtuple,
+    OrderedDict,
+    )
 import logging
 import os.path
 import sys
@@ -219,7 +222,7 @@ class BuilderSlave(object):
 
     def getURL(self, sha1):
         """Get the URL for a file on the builder with a given SHA-1."""
-        return urlappend(self._file_cache_url, sha1).encode('utf8')
+        return urlappend(self._file_cache_url, sha1)
 
     @defer.inlineCallbacks
     def getFile(self, sha_sum, path_to_write, logger=None):
@@ -315,6 +318,8 @@ class BuilderSlave(object):
         :param args: A dictionary of extra arguments. The contents depend on
             the build job type.
         """
+        if isinstance(filemap, OrderedDict):
+            filemap = dict(filemap)
         return self._with_timeout(self._server.callRemote(
             'build', buildid, builder_type, chroot_sha1, filemap, args))
 
@@ -548,12 +553,12 @@ class BuilderInteractor(object):
         if builder_status == "BuilderStatus.ABORTING":
             logtail = u"Waiting for slave process to be terminated"
         elif slave_status.get("logtail") is not None:
-            # slave_status["logtail"] is normally an xmlrpc_client.Binary
-            # instance, and the contents might include invalid UTF-8 due to
-            # being a fixed number of bytes from the tail of the log.  Turn
-            # it into Unicode as best we can.
-            logtail = bytes(
-                slave_status.get("logtail")).decode("UTF-8", errors="replace")
+            # slave_status["logtail"] is an xmlrpc_client.Binary instance,
+            # and the contents might include invalid UTF-8 due to being a
+            # fixed number of bytes from the tail of the log.  Turn it into
+            # Unicode as best we can.
+            logtail = slave_status.get("logtail").data.decode(
+                "UTF-8", errors="replace")
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
             # in going through contortions to store them.

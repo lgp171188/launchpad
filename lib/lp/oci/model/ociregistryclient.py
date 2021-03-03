@@ -80,7 +80,7 @@ class OCIRegistryClient:
         """Read JSON out of a `LibraryFileAlias`."""
         try:
             reference.open()
-            return json.loads(reference.read())
+            return json.loads(reference.read().decode("UTF-8"))
         finally:
             reference.close()
 
@@ -276,7 +276,7 @@ class OCIRegistryClient:
         # https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list
         # Specifically the Schema 2 manifest.
         digest = None
-        data = json.dumps(registry_manifest)
+        data = json.dumps(registry_manifest).encode("UTF-8")
         size = len(data)
         content_type = registry_manifest.get(
             "mediaType",

@@ -8,6 +8,7 @@ __all__ = []
 
 from textwrap import dedent
 
+import six
 from testtools.matchers import Equals
 import transaction
 from zope.component import getUtility
@@ -828,7 +829,7 @@ class MessageApprovalTestCase(MailingListMessageTestCase):
         finally:
             held_message.posted_message.close()
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            '.*Message-ID: <first-post>.*', text)
+            '.*Message-ID: <first-post>.*', six.ensure_text(text))
 
     def test_approve(self):
         test_objects = self.makeMailingListAndHeldMessage()

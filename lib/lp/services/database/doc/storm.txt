@@ -91,8 +91,8 @@ similarly wrapped.
     >>> person = getUtility(IPersonSet).getByEmail('no-priv@canonical.com')
     >>> removeSecurityProxy(person) is person
     False
-    >>> person.displayname
-    u'No Privileges Person'
+    >>> print(person.displayname)
+    No Privileges Person
     >>> person.name = 'foo'
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
@@ -102,8 +102,8 @@ similarly wrapped.
     >>> person = IMasterObject(person)
     >>> removeSecurityProxy(person) is person
     False
-    >>> person.displayname
-    u'No Privileges Person'
+    >>> print(person.displayname)
+    No Privileges Person
     >>> person.name = 'foo'
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
@@ -113,8 +113,8 @@ similarly wrapped.
     >>> person = IMasterObject(removeSecurityProxy(person))
     >>> removeSecurityProxy(person) is person
     True
-    >>> person.displayname
-    u'No Privileges Person'
+    >>> print(person.displayname)
+    No Privileges Person
     >>> person.name = 'foo'
 
 Our objects may compare equal even if they have come from different

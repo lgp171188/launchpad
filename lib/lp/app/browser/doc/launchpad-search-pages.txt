@@ -39,11 +39,10 @@ When text is not None, the title indicates what was searched.
     ...     search_param_list = []
     ...     for name in sorted(form):
     ...         value = form[name]
-    ...         if isinstance(value, six.text_type):
-    ...             value = wsgi_native_string(value)
-    ...         search_param_list.append(b'%s=%s' % (
-    ...             wsgi_native_string(name), value))
-    ...     query_string = b'&'.join(search_param_list)
+    ...         search_param_list.append(
+    ...             wsgi_native_string(name) + wsgi_native_string('=') +
+    ...             wsgi_native_string(value))
+    ...     query_string = wsgi_native_string('&').join(search_param_list)
     ...     request = LaunchpadTestRequest(
     ...         SERVER_URL='https://launchpad.test/+search',
     ...         QUERY_STRING=query_string, form=form, PATH_INFO='/+search')
@@ -129,7 +128,7 @@ created because they are the owner.
     ...     owner=sample_person, information_type=InformationType.USERDATA)
 
     >>> search_view = getSearchView(
-    ...     form={'field.text': private_bug.id})
+    ...     form={'field.text': str(private_bug.id)})
     >>> search_view.bug.private
     True
 
@@ -137,7 +136,7 @@ But anonymous and unprivileged users cannot see the private bug.
 
     >>> login(ANONYMOUS)
     >>> search_view = getSearchView(
-    ...     form={'field.text': private_bug.id})
+    ...     form={'field.text': str(private_bug.id)})
     >>> print(search_view.bug)
     None
 

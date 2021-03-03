@@ -18,6 +18,7 @@ from breezy.transform import (
     ROOT_PARENT,
     TransformPreview,
     )
+import six
 
 from lp.code.errors import StaleLastMirrored
 from lp.codehosting.bzrutils import (
@@ -88,6 +89,8 @@ class DirectBranchCommit:
         self.db_branch = db_branch
 
         self.last_scanned_id = self.db_branch.last_scanned_id
+        if self.last_scanned_id is not None:
+            self.last_scanned_id = six.ensure_binary(self.last_scanned_id)
 
         if committer is None:
             committer = db_branch.owner
@@ -126,7 +129,7 @@ class DirectBranchCommit:
         if (self.db_branch.last_mirrored_id is None
             and revision_id == NULL_REVISION):
             return True
-        return revision_id == self.db_branch.last_mirrored_id
+        return six.ensure_text(revision_id) == self.db_branch.last_mirrored_id
 
     def _getDir(self, path):
         """Get trans_id for directory "path."  Create if necessary."""
@@ -235,7 +238,8 @@ class DirectBranchCommit:
                     self.bzrbranch, commit_message, self.merge_parents,
                     committer=committer_id)
             IMasterObject(self.db_branch).branchChanged(
-                get_stacked_on_url(self.bzrbranch), new_rev_id,
+                get_stacked_on_url(self.bzrbranch),
+                None if new_rev_id is None else six.ensure_text(new_rev_id),
                 self.db_branch.control_format, self.db_branch.branch_format,
                 self.db_branch.repository_format)
 

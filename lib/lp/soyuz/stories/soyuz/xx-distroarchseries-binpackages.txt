@@ -45,7 +45,7 @@ As well as a link to the related distribution source package:
     >>> browser.open(
     ...     'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox')
     >>> browser.getLink(id="source_package").click()
-    >>> print(browser.title.decode('ascii', 'ignore'))
+    >>> print(browser.title)
     iceweasel package : Ubuntu
 
 If the binary distribution does not have a current release, then the

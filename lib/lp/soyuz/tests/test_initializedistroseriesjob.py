@@ -102,15 +102,15 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
             "parent[overlay?/pockets/components]: "
             "{parent1.name}[True/Updates/main],"
             "{parent2.name}[False/Release/universe], "
-            "architectures: (u'i386', u'amd64'), "
+            "architectures: {architectures}, "
             "archindep_archtag: amd64, "
-            "packagesets: [u'{packageset1.name}', u'{packageset2.name}'], "
+            "packagesets: {packagesets}, "
             "rebuild: False>".format(
                 distroseries=distroseries,
                 parent1=parent1,
                 parent2=parent2,
-                packageset1=packageset1,
-                packageset2=packageset2))
+                architectures=('i386', 'amd64'),
+                packagesets=[packageset1.name, packageset2.name]))
         self.assertEqual(
             expected,
             repr(job)

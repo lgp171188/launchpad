@@ -76,7 +76,7 @@ than the text of the revision author.
     ...     revisions = find_tags_by_class(
     ...         browser.contents, 'revision-details')
     ...     for revision in revisions:
-    ...         print(extract_text(revision).encode('ascii'))
+    ...         print(extract_text(revision))
 
     >>> print_revisions(user_browser)
     5. By Eric on 2007-01-05

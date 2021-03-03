@@ -66,7 +66,9 @@ class RoundupSniffer:
 
     def fetch(self, url):
         """Fetch the URL, consulting the cache first."""
-        filename = join(self.cache_dir, urlsafe_b64encode(url))
+        filename = join(
+            self.cache_dir,
+            urlsafe_b64encode(url.encode('UTF-8')).decode('ASCII'))
         if not exists(filename):
             open(filename, 'wb').write(urlopen(url).read())
         return open(filename, 'rb')

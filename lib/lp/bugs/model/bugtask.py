@@ -341,7 +341,7 @@ def validate_target(bug, target, retarget_existing=True,
                 target.distribution.guessPublishedSourcePackageName(
                     target.sourcepackagename.name)
             except NotFoundError as e:
-                raise IllegalTarget(e[0])
+                raise IllegalTarget(e.args[0])
 
     legal_types = target.pillar.getAllowedBugInformationTypes()
     new_pillar = target.pillar not in bug.affected_pillars

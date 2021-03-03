@@ -70,10 +70,7 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormbase import StormBase
-from lp.services.helpers import (
-    ensure_unicode,
-    shortlist,
-    )
+from lp.services.helpers import shortlist
 from lp.services.messages.model.message import Message
 from lp.services.webapp import (
     urlappend,
@@ -770,7 +767,8 @@ class BugWatchSet:
         bulk.create(
             (BugWatchActivity.bug_watch_id, BugWatchActivity.result,
              BugWatchActivity.oops_id),
-            [(bug_watch_id, result, ensure_unicode(oops_id))
+            [(bug_watch_id, result,
+              None if oops_id is None else six.ensure_text(oops_id))
              for bug_watch_id in set(get_bug_watch_ids(references))])
 
 

@@ -46,8 +46,8 @@ package for that release:
     >>> verifyObject(ILibraryFileAlias, srcfile.libraryfile)
     True
 
-    >>> srcfile.libraryfile.filename
-    u'firefox_0.9.2.orig.tar.gz'
+    >>> print(srcfile.libraryfile.filename)
+    firefox_0.9.2.orig.tar.gz
 
     >>> srcfile.libraryfile.http_url
     'http://.../3/firefox_0.9.2.orig.tar.gz'
@@ -64,8 +64,8 @@ instalable debian-format file:
     >>> warty_i386_pmount_binpkg = warty['i386'].getBinaryPackage(
     ...    'pmount')['2:1.9-1']
 
-    >>> warty_i386_pmount_binpkg.name
-    u'pmount'
+    >>> print(warty_i386_pmount_binpkg.name)
+    pmount
 
     >>> debfile = warty_i386_pmount_binpkg.files[0]
 
@@ -75,8 +75,8 @@ instalable debian-format file:
     >>> verifyObject(ILibraryFileAlias, debfile.libraryfile)
     True
 
-    >>> debfile.libraryfile.filename
-    u'pmount_1.9-1_all.deb'
+    >>> print(debfile.libraryfile.filename)
+    pmount_1.9-1_all.deb
 
     >>> debfile.libraryfile.http_url
     'http://.../37/pmount_1.9-1_all.deb'

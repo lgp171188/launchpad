@@ -33,8 +33,8 @@ creates the ExternalBugTracker for the given BugTracker.
     >>> rt_external = updater._getExternalBugTracker(rt)
     >>> rt_external.__class__.__name__
     'RequestTracker'
-    >>> rt_external.baseurl
-    u'http://rt.example.com'
+    >>> print(rt_external.baseurl)
+    http://rt.example.com
 
 For testing, _getExternalBugTracker() can be overridden to return an
 ExternalBugTracker that doesn't require network access.
@@ -42,7 +42,8 @@ ExternalBugTracker that doesn't require network access.
     >>> class FakeExternalBugTracker:
     ...
     ...     def initializeRemoteBugDB(self, bug_ids):
-    ...         print("Initializing DB for bugs: %s." % bug_ids)
+    ...         print("Initializing DB for bugs: [%s]." %
+    ...             ", ".join("'%s'" % bug_id for bug_id in bug_ids))
     ...
     ...     def getRemoteProduct(self, remote_bug):
     ...         return 'product-for-bug-%s' % remote_bug
@@ -145,7 +146,7 @@ given one are ignored.
     ...     rt_bugtask.bugwatch = rt_bugwatch
 
     >>> updater.updateByBugTrackerType(BugTrackerType.RT)
-    Initializing DB for bugs: [u'84'].
+    Initializing DB for bugs: ['84'].
 
     >>> print(rt_product.remote_product)
     product-for-bug-84
@@ -198,11 +199,11 @@ after each product's remote_product has been updated.
     ...     FakeTransaction(log_calls=True), BufferLogger())
     >>> updater.print_method_calls = False
     >>> updater.updateByBugTrackerType(BugTrackerType.RT)
-    Initializing DB for bugs: [u'84'].
+    Initializing DB for bugs: ['84'].
     COMMIT
-    Initializing DB for bugs: [u'84'].
+    Initializing DB for bugs: ['84'].
     COMMIT
-    Initializing DB for bugs: [u'84'].
+    Initializing DB for bugs: ['84'].
     COMMIT
 
 
@@ -248,7 +249,7 @@ tracker don't break the run for all bug trackers.
     >>> updater.updateByBugTrackerType(BugTrackerType.RT)
     INFO  1 projects using RT needing updating.
     DEBUG Trying to update fooix
-    Initializing DB for bugs: [u'42'].
+    Initializing DB for bugs: ['42'].
     ERROR Unable to set remote_product for 'fooix': Didn't find bug 42.
 
 AssertionErrors are also handled.

@@ -38,8 +38,8 @@ While some of them (homepageurl, icon, logo and mugshot) are optional, others
     ...     title='Just a test project', homepageurl=None,
     ...     summary='Mandatory summary', description='blah',
     ...     owner=no_priv)
-    >>> test_project.name
-    u'project-test'
+    >>> print(test_project.name)
+    project-test
 
 
 Looking up existing projects
@@ -51,21 +51,22 @@ inactive projects, while the latter returns only active ones. Both can be
 used to look up projects by their aliases, though.
 
     >>> gnome = projectset['gnome']
-    >>> gnome.name
-    u'gnome'
-    >>> projectset.getByName('gnome').name
-    u'gnome'
+    >>> print(gnome.name)
+    gnome
+    >>> print(projectset.getByName('gnome').name)
+    gnome
 
     # Need to login as an LP admin to set a project's aliases.
     >>> login('foo.bar@canonical.com')
     >>> gnome.setAliases(['dwarf'])
-    >>> gnome.aliases
-    [u'dwarf']
+    >>> for alias in gnome.aliases:
+    ...     print(alias)
+    dwarf
     >>> login(ANONYMOUS)
-    >>> projectset['dwarf'].name
-    u'gnome'
-    >>> projectset.getByName('dwarf').name
-    u'gnome'
+    >>> print(projectset['dwarf'].name)
+    gnome
+    >>> print(projectset.getByName('dwarf').name)
+    gnome
 
 Make sure that a project provides the IProjectGroup interface.
 
@@ -104,15 +105,15 @@ The inactive project will still be accessible using
 IProjectGroupSet.getByName(), though.
 
     >>> gnome = getUtility(IProjectGroupSet).getByName('gnome')
-    >>> gnome.name
-    u'gnome'
+    >>> print(gnome.name)
+    gnome
     >>> gnome.active
     False
 
 getByName() also accepts an argument to ignore inactive projects.
 
     >>> projectgroups = getUtility(IProjectGroupSet)
-    >>> print projectgroups.getByName('gnome', ignore_inactive=True)
+    >>> print(projectgroups.getByName('gnome', ignore_inactive=True))
     None
 
 Products which are part of a project
@@ -122,9 +123,13 @@ The products which are part of a given project are given by a project's
 .products property. Note that only active products are included and they're
 ordered by their names.
 
-    >>> [product.displayname for product in gnome.products]
-    [u'Evolution', u'GNOME Terminal', u'Gnome Applets', u'NetApplet',
-     u'gnomebaker']
+    >>> for product in gnome.products:
+    ...     print(product.displayname)
+    Evolution
+    GNOME Terminal
+    Gnome Applets
+    NetApplet
+    gnomebaker
 
     >>> netapplet = gnome.getProduct('netapplet')
 
@@ -135,8 +140,12 @@ ordered by their names.
     >>> flush_database_updates()
     >>> from lp.services.propertycache import clear_property_cache
     >>> clear_property_cache(gnome)
-    >>> [product.displayname for product in gnome.products]
-    [u'Evolution', u'GNOME Terminal', u'Gnome Applets', u'gnomebaker']
+    >>> for product in gnome.products:
+    ...     print(product.displayname)
+    Evolution
+    GNOME Terminal
+    Gnome Applets
+    gnomebaker
 
     # Re-activate netapplet so that we don't interfere in other tests below.
     >>> netapplet.active = True
@@ -155,7 +164,7 @@ First, there should be only one informational spec for mozilla:
 
     >>> filter = [SpecificationFilter.INFORMATIONAL]
     >>> for spec in mozilla.specifications(None, filter=filter):
-    ...    print spec.name
+    ...    print(spec.name)
     extension-manager-upgrades
 
 
@@ -163,7 +172,7 @@ There are no completed specs for mozilla:
 
     >>> filter = [SpecificationFilter.COMPLETE]
     >>> for spec in mozilla.specifications(None, filter=filter):
-    ...    print spec.name
+    ...    print(spec.name)
 
 
 And there are five incomplete specs:
@@ -175,7 +184,7 @@ And there are five incomplete specs:
 We can filter for specifications that contain specific text:
 
     >>> for spec in mozilla.specifications(None, filter=[u'install']):
-    ...     print spec.name
+    ...     print(spec.name)
     extension-manager-upgrades
 
 
@@ -206,7 +215,7 @@ We can get all the specifications via the visible_specifications property,
 and all valid specifications via the valid_specifications method:
 
     >>> for spec in mozilla.visible_specifications:
-    ...    print spec.name
+    ...    print(spec.name)
     svg-support
     canvas
     extension-manager-upgrades
@@ -214,7 +223,7 @@ and all valid specifications via the valid_specifications method:
     e4x
 
     >>> for spec in mozilla.valid_specifications():
-    ...    print spec.name
+    ...    print(spec.name)
     svg-support
     canvas
     extension-manager-upgrades
@@ -237,7 +246,7 @@ An IProjectGroupSeries object can be retrieved by IProjectGroup.getSeries.
 
 If no series with the given name exists, IProjectGroup.getSeries returns None.
 
-    >>> print mozilla.getSeries('nonsense')
+    >>> print(mozilla.getSeries('nonsense'))
     None
 
 IProjectGroupSeries.visible_specifications lists all specifications
@@ -257,20 +266,20 @@ mozilla_1_0_series.visible_specifications.
     >>> series_1_0 = firefox.getSeries('1.0')
     >>> extension_manager_upgrades.proposeGoal(series_1_0, no_priv)
     >>> for spec in mozilla_series_1_0.visible_specifications:
-    ...     print spec.name
+    ...     print(spec.name)
     extension-manager-upgrades
 
 This specification is not listed for other series.
 
     >>> mozilla_trunk = mozilla.getSeries('trunk')
-    >>> print mozilla_trunk.visible_specifications.count()
+    >>> print(mozilla_trunk.visible_specifications.count())
     0
 
 Filtered lists of project series related specifications are generated
 the same way as for project related specifications.
 
     >>> for spec in mozilla_series_1_0.specifications(None, filter=filter):
-    ...     print spec.name
+    ...     print(spec.name)
     extension-manager-upgrades
 
 If all existing specifications are assigned to the 1.0 series,...
@@ -283,7 +292,7 @@ project itself.
 
     >>> filter = [SpecificationFilter.INCOMPLETE]
     >>> for spec in mozilla_series_1_0.specifications(None, filter=filter):
-    ...     print spec.name
+    ...     print(spec.name)
     svg-support
     canvas
     extension-manager-upgrades
@@ -294,14 +303,14 @@ project itself.
 
     >>> for spec in mozilla_series_1_0.specifications(
     ...     None, filter=[u'install']):
-    ...     print spec.name
+    ...     print(spec.name)
     extension-manager-upgrades
 
 Inactive products are excluded from the series listings.
 
     >>> filter = [SpecificationFilter.INCOMPLETE]
     >>> specs = mozilla_series_1_0.specifications(None, filter=filter)
-    >>> print specs.count()
+    >>> print(specs.count())
     5
 
     >>> firefox = getUtility(IProductSet).getByName('firefox')
@@ -318,7 +327,7 @@ We can get all the specifications via the visible_specifications property,
 and all valid specifications via the valid_specifications method:
 
     >>> for spec in mozilla_series_1_0.visible_specifications:
-    ...    print spec.name
+    ...    print(spec.name)
     svg-support
     canvas
     extension-manager-upgrades
@@ -326,7 +335,7 @@ and all valid specifications via the valid_specifications method:
     e4x
 
     >>> for spec in mozilla_series_1_0.valid_specifications():
-    ...    print spec.name
+    ...    print(spec.name)
     svg-support
     canvas
     extension-manager-upgrades
@@ -367,7 +376,7 @@ It has one translatable product.
 And that translatable product is 'Evolution'.
 
     >>> evolution = translatables[0]
-    >>> print evolution.title
+    >>> print(evolution.title)
     Evolution
 
 With its 'trunk' series translatable.
@@ -376,24 +385,24 @@ With its 'trunk' series translatable.
     >>> len(evo_series)
     1
     >>> evo_trunk = evo_series[0]
-    >>> print evo_trunk.name
+    >>> print(evo_trunk.name)
     trunk
 
 That is using Rosetta officially.
 
-    >>> print evolution.translations_usage.name
+    >>> print(evolution.translations_usage.name)
     LAUNCHPAD
 
 GNOME project has also another product, netapplet.
 
     >>> netapplet = gnome.getProduct('netapplet')
-    >>> print netapplet.title
+    >>> print(netapplet.title)
     NetApplet
 
 But it was not returned from 'translatables' method because it's not using
 Rosetta officially.
 
-    >>> print netapplet.translations_usage.name
+    >>> print(netapplet.translations_usage.name)
     UNKNOWN
 
 And thus, it doesn't have any translatable series.
@@ -426,7 +435,7 @@ a project.
     >>> gnome = getUtility(IProjectGroupSet)['gnome']
     >>> milestones = gnome.milestones
     >>> for milestone in milestones:
-    ...     print milestone.name, 'active:', milestone.active
+    ...     print(milestone.name, 'active:', milestone.active)
     1.2 active: True
     1.1. active: True
     1.1 active: True
@@ -436,7 +445,7 @@ project.
 
     >>> milestones = gnome.all_milestones
     >>> for milestone in milestones:
-    ...     print milestone.name, 'active:', milestone.active
+    ...     print(milestone.name, 'active:', milestone.active)
     2.1.6 active: False
     1.0 active: False
     1.3 active: False
@@ -448,10 +457,10 @@ ProjectGroup.getMilestone(name) returns the project milestone with the name
 `name' or None, if no milestone with this name exists.
 
     >>> milestone = gnome.getMilestone('1.1')
-    >>> print milestone.name
+    >>> print(milestone.name)
     1.1
     >>> milestone = gnome.getMilestone('invalid')
-    >>> print milestone
+    >>> print(milestone)
     None
 
 For details see doc/milestone.txt and tests/test_project_milestone.py.

@@ -35,7 +35,7 @@ class ScriptsTestCase(WithScenarios, TestCase):
     def test_script(self):
         # Run self.script_path with '-h' to make sure it runs cleanly.
         cmd_line = self.script_path + " -h"
-        out, err, returncode = run_script(cmd_line, universal_newlines=True)
+        out, err, returncode = run_script(cmd_line)
         self.assertThat(err, DocTestMatches('', doctest.REPORT_NDIFF))
         self.assertEqual('', err)
         self.assertEqual(os.EX_OK, returncode)

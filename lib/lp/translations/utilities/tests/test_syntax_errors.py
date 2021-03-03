@@ -81,7 +81,7 @@ class TranslationFormatSyntaxErrorTest(TestCase):
         exception = TranslationFormatSyntaxError(filename=u"khor-khai-\u0e01",
             line_number=4, message=u"khor-khai-\u0e02")
         self.assertEqual(str(exception),
-            "khor-khai-\\u0e01, line 4: khor-khai-\u0e02")
+            "khor-khai-\\u0e01, line 4: khor-khai-\\u0e02")
 
 
 def test_suite():

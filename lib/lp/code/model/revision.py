@@ -355,7 +355,7 @@ class RevisionSet:
         # Collect all data for making Revision objects.
         data = []
         for bzr_revision, author_name in zip(revisions, author_names):
-            revision_id = bzr_revision.revision_id
+            revision_id = six.ensure_text(bzr_revision.revision_id)
             revision_date = self._timestampToDatetime(bzr_revision.timestamp)
             revision_author = revision_authors[author_name]
 
@@ -376,7 +376,7 @@ class RevisionSet:
         parent_data = []
         property_data = []
         for bzr_revision in revisions:
-            db_id = revision_db_id[bzr_revision.revision_id]
+            db_id = revision_db_id[six.ensure_text(bzr_revision.revision_id)]
             # Property data: revision DB id, name, value.
             for name, value in six.iteritems(bzr_revision.properties):
                 # pristine-tar properties can be huge, and storing them
@@ -384,7 +384,9 @@ class RevisionSet:
                 if name.startswith('deb-pristine-delta'):
                     continue
                 property_data.append((db_id, name, value))
-            parent_ids = bzr_revision.parent_ids
+            parent_ids = [
+                six.ensure_text(parent_id)
+                for parent_id in bzr_revision.parent_ids]
             # Parent data: revision DB id, sequence, revision_id
             seen_parents = set()
             for sequence, parent_id in enumerate(parent_ids):

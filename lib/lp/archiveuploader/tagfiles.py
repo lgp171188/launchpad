@@ -22,7 +22,7 @@ class TagFileParseError(Exception):
     pass
 
 
-def parse_tagfile_content(content, filename=None, as_bytes=False):
+def parse_tagfile_content(content, filename=None):
     """Parses a tag file and returns a dictionary where each field is a key.
 
     The mandatory first argument is the contents of the tag file as a
@@ -30,13 +30,15 @@ def parse_tagfile_content(content, filename=None, as_bytes=False):
 
     An OpenPGP cleartext signature will be stripped before parsing if
     one is present.
+
+    Header values are always returned as bytes.
     """
 
     with tempfile.TemporaryFile() as f:
         f.write(strip_pgp_signature(content))
         f.seek(0)
         try:
-            stanzas = list(apt_pkg.TagFile(f, bytes=as_bytes))
+            stanzas = list(apt_pkg.TagFile(f, bytes=True))
         except SystemError as e:
             raise TagFileParseError("%s: %s" % (filename, e))
     if len(stanzas) != 1:
@@ -61,8 +63,10 @@ def parse_tagfile(filename):
 
     The mandatory first argument is the filename of the tag file, and
     the contents of that file is passed on to parse_tagfile_content.
+
+    Header values are always returned as bytes.
     """
-    with open(filename, "r") as changes_in:
+    with open(filename, "rb") as changes_in:
         content = changes_in.read()
     if not content:
         raise TagFileParseError("%s: empty file" % filename)

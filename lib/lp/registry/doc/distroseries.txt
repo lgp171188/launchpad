@@ -33,9 +33,9 @@ The IDistroSeriesSet utility is accessed in the usual fashion:
 To retrieve a specific release of a distribution, use IDistroSeriesSet.get:
 
     >>> warty = distroseriesset.get(1)
-    >>> print warty.name
+    >>> print(warty.name)
     warty
-    >>> print warty.fullseriesname
+    >>> print(warty.fullseriesname)
     Ubuntu Warty
 
 To get one specific release by name, use queryByName:
@@ -43,16 +43,16 @@ To get one specific release by name, use queryByName:
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
     >>> warty = distroseriesset.queryByName(ubuntu, "warty")
-    >>> warty.name
-    u'warty'
-    >>> print distroseriesset.queryByName(ubuntu, "foobar")
+    >>> print(warty.name)
+    warty
+    >>> print(distroseriesset.queryByName(ubuntu, "foobar"))
     None
 
 Or IDistroSeriesSet.queryByVersion:
 
-    >>> print distroseriesset.queryByVersion(ubuntu, "5.04").name
+    >>> print(distroseriesset.queryByVersion(ubuntu, "5.04").name)
     hoary
-    >>> print distroseriesset.queryByVersion(ubuntu, "5.05")
+    >>> print(distroseriesset.queryByVersion(ubuntu, "5.05"))
     None
 
 queryByName works on series aliases too if follow_aliases is True.
@@ -60,10 +60,10 @@ queryByName works on series aliases too if follow_aliases is True.
     >>> ignored = login_person(ubuntu.owner.activemembers[0])
     >>> ubuntu.development_series_alias = "devel"
     >>> login(ANONYMOUS)
-    >>> print distroseriesset.queryByName(ubuntu, "devel")
+    >>> print(distroseriesset.queryByName(ubuntu, "devel"))
     None
-    >>> print distroseriesset.queryByName(
-    ...     ubuntu, "devel", follow_aliases=True).name
+    >>> print(distroseriesset.queryByName(
+    ...     ubuntu, "devel", follow_aliases=True).name)
     hoary
 
 We verify that a distroseries does in fact fully provide IDistroSeries:
@@ -84,8 +84,9 @@ To search the set of IDistroSeriess, use IDistroSeriesSet.search:
 
     >>> ubuntu_releases = distroseriesset.search(
     ...     distribution=ubuntu, isreleased=True, orderBy="-datereleased")
-    >>> [release.name for release in ubuntu_releases]
-    [u'warty']
+    >>> for release in ubuntu_releases:
+    ...     print(release.name)
+    warty
 
     >>> all_ubuntu_releases = distroseriesset.search(distribution=ubuntu)
     >>> all_ubuntu_releases.count()
@@ -98,17 +99,17 @@ Distroseries identifying attributes
 A distroseries has a set of attributes that identify it. The launchpad id is
 the name attribute.
 
-    >>> print warty.name
+    >>> print(warty.name)
     warty
 
 It has a title for heading and titles...
 
-    >>> print warty.title
+    >>> print(warty.title)
     The Warty Warthog Release
 
 And a display_name for referring to it in a sentence.
 
-    >>> print warty.display_name
+    >>> print(warty.display_name)
     Warty
 
 The fullseriesname attribute is used when the context of the series name
@@ -116,18 +117,18 @@ can be confused. Note that the value is created from the launchpad id names
 of the distribution and the series, though it may look like the display_name
 attributes were used.
 
-    >>> print warty.fullseriesname
+    >>> print(warty.fullseriesname)
     Ubuntu Warty
 
 The version attribute holds the debversion of the series.
 
-    >>> print warty.version
+    >>> print(warty.version)
     4.10
 
 The named_version attribute is used is used to present the series display_name
 and version values consistently.
 
-    >>> print warty.named_version
+    >>> print(warty.named_version)
     Warty (4.10)
 
 
@@ -204,7 +205,7 @@ through fti, and even for substrings:
     1
     >>> pkgs = warty.searchPackages(u'a')
     >>> for dsbp in pkgs:
-    ...     print "%s: %s" % (dsbp.__class__.__name__, dsbp.name)
+    ...     print("%s: %s" % (dsbp.__class__.__name__, dsbp.name))
     DistroSeriesBinaryPackage: foobar
     DistroSeriesBinaryPackage: mozilla-firefox
     DistroSeriesBinaryPackage: at
@@ -219,11 +220,11 @@ other things) the uploader for validating incoming uploads.
 
     >>> hoary = distroseriesset.get(3)
     >>> for c in hoary.components:
-    ...     print c.name
+    ...     print(c.name)
     main
     restricted
     >>> for s in hoary.sections:
-    ...     print s.name
+    ...     print(s.name)
     base
     web
     editors
@@ -238,12 +239,12 @@ other things) the uploader for validating incoming uploads.
     >>> hoary.addSection(python)
 
     >>> for c in hoary.components:
-    ...     print c.name
+    ...     print(c.name)
     main
     restricted
 
     >>> for s in hoary.sections:
-    ...     print s.name
+    ...     print(s.name)
     base
     web
     editors
@@ -257,7 +258,7 @@ Breezy-autotest has got a partner component, which is not reported:
     >>> breezyautotest = distroseriesset.queryByName(
     ...     ubuntu, "breezy-autotest")
     >>> for c in breezyautotest.components:
-    ...     print c.name
+    ...     print(c.name)
     main
     restricted
     universe
@@ -267,7 +268,7 @@ The upload_components property, however, reports all the available
 components since partner is allowed for upload:
 
     >>> for c in breezyautotest.upload_components:
-    ...     print c.name
+    ...     print(c.name)
     main
     restricted
     universe
@@ -358,7 +359,7 @@ getBinariesForSeries() should be inherited from parent release.
     3
 
     >>> for bin in bumpy_firefox_sp.currentrelease.getBinariesForSeries(bumpy):
-    ...     print bin.id, bin.title, bin.build.distro_arch_series.title
+    ...     print(bin.id, bin.title, bin.build.distro_arch_series.title)
     27 mozilla-firefox-data-0.9 The Warty Warthog Release for i386 (386)
     26 mozilla-firefox-0.9 The Warty Warthog Release for hppa (hppa)
     12 mozilla-firefox-0.9 The Warty Warthog Release for i386 (386)
@@ -366,7 +367,7 @@ getBinariesForSeries() should be inherited from parent release.
 The new series also has the same packaging links as its parent series.
 
     >>> for packaging in warty.packagings:
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.sourcepackagename.name)
     a52dec
     alsa-utils
     evolution
@@ -374,7 +375,7 @@ The new series also has the same packaging links as its parent series.
     netapplet
 
     >>> for packaging in bumpy.packagings:
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.sourcepackagename.name)
     a52dec
     alsa-utils
     evolution
@@ -390,7 +391,7 @@ distribution release:
 
     >>> translatables = hoary.getTranslatableSourcePackages()
     >>> for translatable in translatables:
-    ...    print translatable.name
+    ...    print(translatable.name)
     evolution
     mozilla
     pmount
@@ -399,17 +400,21 @@ Packages can be linked to upstream productseries in specific
 distribution releases. IDistroSeries offers a way to query translatable
 packages that are linked to upstream productseries.
 
+    >>> from operator import attrgetter
     >>> unlinked_translatables = hoary.getUnlinkedTranslatableSourcePackages()
-    >>> sorted(translatable.name for translatable in unlinked_translatables)
-    [u'mozilla', u'pmount']
+    >>> for translatable in sorted(
+    ...         unlinked_translatables, key=attrgetter('name')):
+    ...     print(translatable.name)
+    mozilla
+    pmount
 
 The links to upstream product series can be verified using the
 packagings property:
 
     >>> packagings = hoary.packagings
     >>> for packaging in packagings:
-    ...     print packaging.sourcepackagename.name, \
-    ...           packaging.productseries.product.displayname
+    ...     print(packaging.sourcepackagename.name,
+    ...           packaging.productseries.product.displayname)
     evolution Evolution
     mozilla-firefox Mozilla Firefox
     netapplet NetApplet
@@ -428,9 +433,9 @@ translations, and code. Each item in the list is a dict with the 'package',
 total_bugs, and total_messages (translatable messages).
 
     >>> for summary in hoary.getPrioritizedUnlinkedSourcePackages():
-    ...     print  summary['package'].name
+    ...     print(summary['package'].name)
     ...     naked_summary = removeSecurityProxy(summary)
-    ...     print '%(bug_count)s %(total_messages)s' % naked_summary
+    ...     print('%(bug_count)s %(total_messages)s' % naked_summary)
     pmount  0  64
     alsa-utils  0  0
     cnews  0  0
@@ -443,7 +448,7 @@ list of `IPackaging` that need more information about the upstream project to
 share bugs, translations, and code.
 
     >>> for packaging in hoary.getPrioritizedPackagings():
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.sourcepackagename.name)
     netapplet
     evolution
 
@@ -458,7 +463,7 @@ upstream.
     >>> distribution = factory.makeDistribution()
     >>> distroseries = factory.makeDistroSeries(distribution=distribution)
     >>> pkgs = distroseries.getMostRecentlyLinkedPackagings()
-    >>> print pkgs.count()
+    >>> print(pkgs.count())
     0
 
     >>> for name in ['aaron', 'bjorn', 'chex', 'deryck', 'edwin', 'francis']:
@@ -473,7 +478,7 @@ upstream.
 
     >>> pkgs = distroseries.getMostRecentlyLinkedPackagings()
     >>> for packaging in pkgs:
-    ...     print packaging.sourcepackagename.name
+    ...     print(packaging.sourcepackagename.name)
     francis
     edwin
     deryck
@@ -504,7 +509,7 @@ the future.
     >>> for name in sorted(set(
     ...         pkgpub.sourcepackagerelease.sourcepackagename.name
     ...         for pkgpub in spphs)):
-    ...     print name
+    ...     print(name)
     alsa-utils
     evolution
     libstdc++
@@ -531,14 +536,14 @@ publication in question:
     >>> warty_pub_source = warty.main_archive.getPublishedSources(
     ...     distroseries=warty, name=u'mozilla-firefox',
     ...     status=PackagePublishingStatus.PUBLISHED).one()
-    >>> warty_pub_source.sourcepackagerelease.name
-    u'mozilla-firefox'
-    >>> warty_pub_source.sourcepackagerelease.version
-    u'0.9'
-    >>> warty_pub_source.component.name
-    u'main'
-    >>> warty_pub_source.section.name
-    u'web'
+    >>> print(warty_pub_source.sourcepackagerelease.name)
+    mozilla-firefox
+    >>> print(warty_pub_source.sourcepackagerelease.version)
+    0.9
+    >>> print(warty_pub_source.component.name)
+    main
+    >>> print(warty_pub_source.section.name)
+    web
 
     >>> warty_mozilla_pub_binaries = warty_pub_source.getPublishedBinaries()
     >>> warty_mozilla_pub_binaries.count()
@@ -551,14 +556,14 @@ publication in question:
     >>> verifyObject(IBinaryPackagePublishingHistory, warty_mozilla_pub_bin)
     True
 
-    >>> warty_mozilla_pub_bin.binarypackagerelease.name
-    u'mozilla-firefox'
-    >>> warty_mozilla_pub_bin.binarypackagerelease.version
-    u'0.9'
-    >>> warty_mozilla_pub_bin.component.name
-    u'main'
-    >>> warty_mozilla_pub_bin.section.name
-    u'base'
+    >>> print(warty_mozilla_pub_bin.binarypackagerelease.name)
+    mozilla-firefox
+    >>> print(warty_mozilla_pub_bin.binarypackagerelease.version)
+    0.9
+    >>> print(warty_mozilla_pub_bin.component.name)
+    main
+    >>> print(warty_mozilla_pub_bin.section.name)
+    base
 
 DistroSeries.getBinaryPackagePublishing will return
 BinaryPackagePublishingHistory objects for the DistroSeries:
@@ -598,12 +603,12 @@ and in the main archives for this distroseries:
     ...     print(
     ...         source.sourcepackagerelease.sourcepackagename.name,
     ...         source.sourcepackagerelease.version)
-    (u'netapplet', u'0.99.6-1')
-    (u'alsa-utils', u'1.0.8-1ubuntu1')
-    (u'alsa-utils', u'1.0.9a-4')
-    (u'mozilla-firefox', u'0.9')
-    (u'cdrkit', u'1.0')
-    (u'iceweasel', u'1.0')
+    netapplet 0.99.6-1
+    alsa-utils 1.0.8-1ubuntu1
+    alsa-utils 1.0.9a-4
+    mozilla-firefox 0.9
+    cdrkit 1.0
+    iceweasel 1.0
 
 Similarly for binary publications:
 
@@ -612,16 +617,16 @@ Similarly for binary publications:
     ...     print(
     ...         binary.binarypackagerelease.binarypackagename.name,
     ...         binary.binarypackagerelease.version)
-    (u'mozilla-firefox', u'0.9')
-    (u'pmount', u'0.1-1')
-    (u'linux-2.6.12', u'2.6.12.20')
-    (u'pmount', u'2:1.9-1')
-    (u'at', u'3.14156')
-    (u'cdrkit', u'1.0')
-    (u'mozilla-firefox', u'1.0')
-    (u'mozilla-firefox', u'0.9')
-    (u'mozilla-firefox-data', u'0.9')
-    (u'mozilla-firefox-data', u'0.9')
+    mozilla-firefox 0.9
+    pmount 0.1-1
+    linux-2.6.12 2.6.12.20
+    pmount 2:1.9-1
+    at 3.14156
+    cdrkit 1.0
+    mozilla-firefox 1.0
+    mozilla-firefox 0.9
+    mozilla-firefox-data 0.9
+    mozilla-firefox-data 0.9
 
 
 Creating DistroSeries
@@ -643,11 +648,11 @@ series' driver role so that they can edit it.
     ...     name='island', display_name='Island', title='YouBuntu Island',
     ...     summary='summary', description='description', version='09.07',
     ...     previous_series=warty, registrant=yo_driver)
-    >>> print yo_series.name
+    >>> print(yo_series.name)
     island
-    >>> print yo_series.registrant.name
+    >>> print(yo_series.registrant.name)
     yo-driver
-    >>> print yo_series.driver.name
+    >>> print(yo_series.driver.name)
     yo-driver
 
 Owners of derivative distributions, and admins can create series too, but
@@ -659,9 +664,9 @@ have permission to edit the series.
     ...     name='forest', display_name='Forest', title='YouBuntu Forest',
     ...     summary='summary', description='description', version='09.07',
     ...     previous_series=warty, registrant=youbuntu.owner)
-    >>> print yo_series.name
+    >>> print(yo_series.name)
     forest
-    >>> print yo_series.driver
+    >>> print(yo_series.driver)
     None
 
 Ubuntu uses Launchpad for package managemtn, so it requires special
@@ -688,11 +693,11 @@ series.
     ...     name='finch', display_name='Finch', title='Ubuntu Finch',
     ...     summary='summary', description='description', version='9.06',
     ...     previous_series=warty, registrant=ubuntu.owner)
-    >>> print u_series.name
+    >>> print(u_series.name)
     finch
-    >>> print u_series.registrant.name
+    >>> print(u_series.registrant.name)
     ubuntu-team
-    >>> print u_series.driver
+    >>> print(u_series.driver)
     None
 
 
@@ -721,7 +726,7 @@ There are 2 completed specs for Krunch:
 
     >>> filter = [SpecificationFilter.COMPLETE]
     >>> for spec in kubuntu.specifications(None, filter=filter):
-    ...    print spec.name, spec.is_complete
+    ...     print(spec.name, spec.is_complete)
     thinclient-local-devices True
     usplash-on-hibernation True
 
@@ -730,7 +735,7 @@ And there are 2 incomplete specs:
 
     >>> filter = [SpecificationFilter.INCOMPLETE]
     >>> for spec in krunch.specifications(None, filter=filter):
-    ...     print spec.name, spec.is_complete
+    ...     print(spec.name, spec.is_complete)
     cluster-installation False
     revu False
 
@@ -739,7 +744,7 @@ If we ask for all specs, we get them in the order of priority.
 
     >>> filter = [SpecificationFilter.ALL]
     >>> for spec in krunch.specifications(None, filter=filter):
-    ...    print spec.priority.title, spec.name
+    ...     print(spec.priority.title, spec.name)
     Essential cluster-installation
     High revu
     Medium thinclient-local-devices
@@ -752,7 +757,7 @@ With a distroseries, we can ask for ACCEPTED, PROPOSED and DECLINED specs:
 
     >>> filter=[SpecificationFilter.ACCEPTED]
     >>> for spec in krunch.specifications(None, filter=filter):
-    ...     print spec.name, spec.goalstatus.title
+    ...     print(spec.name, spec.goalstatus.title)
     cluster-installation Accepted
     revu Accepted
     thinclient-local-devices Accepted
@@ -760,12 +765,12 @@ With a distroseries, we can ask for ACCEPTED, PROPOSED and DECLINED specs:
 
     >>> filter=[SpecificationFilter.PROPOSED]
     >>> for spec in krunch.specifications(None, filter=filter):
-    ...     print spec.name, spec.goalstatus.title
+    ...     print(spec.name, spec.goalstatus.title)
     kde-desktopfile-langpacks Proposed
 
     >>> filter=[SpecificationFilter.DECLINED]
     >>> for spec in krunch.specifications(None, filter=filter):
-    ...     print spec.name, spec.goalstatus.title
+    ...     print(spec.name, spec.goalstatus.title)
     krunch-desktop-plan Declined
 
 
@@ -773,7 +778,7 @@ And if we ask just for specs, we get BOTH the incomplete and the complete
 ones that have been accepted.
 
     >>> for spec in krunch.specifications(None):
-    ...     print spec.name, spec.is_complete, spec.goalstatus.title
+    ...     print(spec.name, spec.is_complete, spec.goalstatus.title)
     cluster-installation False Accepted
     revu False Accepted
     thinclient-local-devices True Accepted
@@ -782,7 +787,7 @@ ones that have been accepted.
 We can filter for specifications that contain specific text:
 
     >>> for spec in krunch.specifications(None, filter=[u'usb']):
-    ...     print spec.name
+    ...     print(spec.name)
     thinclient-local-devices
 
 
@@ -810,12 +815,12 @@ We test these rules below.
 First, we look at a release where both the distribution and release have
 drivers. Kubuntu should be a good example.
 
-    >>> kubuntu.driver.name
-    u'jblack'
-    >>> krunch.driver.name
-    u'edgar'
+    >>> print(kubuntu.driver.name)
+    jblack
+    >>> print(krunch.driver.name)
+    edgar
     >>> for d in krunch.drivers:
-    ...     print d.name
+    ...     print(d.name)
     edgar
     jblack
 
@@ -824,15 +829,15 @@ Now, we look at a release where there is a driver on the release but not on
 the distribution.
 
     >>> debian = distroset.getByName('debian')
-    >>> print debian.driver
+    >>> print(debian.driver)
     None
-    >>> print debian.owner.name
+    >>> print(debian.owner.name)
     mark
     >>> sarge = debian.getSeries('sarge')
-    >>> print sarge.driver.name
+    >>> print(sarge.driver.name)
     jdub
     >>> for d in sarge.drivers:
-    ...     print d.name
+    ...     print(d.name)
     jdub
     mark
 
@@ -841,13 +846,13 @@ Now, a release where there is no driver on the release but there is a driver
 on the distribution.
 
     >>> redhat = distroset.getByName('redhat')
-    >>> print redhat.driver.name
+    >>> print(redhat.driver.name)
     jblack
     >>> six = redhat.getSeries('six')
-    >>> print six.driver
+    >>> print(six.driver)
     None
     >>> for d in six.drivers:
-    ...     print d.name
+    ...     print(d.name)
     jblack
 
 Finally, on a release where neither the distribution nor the release have a
@@ -855,17 +860,17 @@ driver. Here, we expect the driver to be the owner of the distribution
 (because this is the "commonest fallback").
 
     >>> sid = debian.getSeries('sid')
-    >>> print debian.driver
+    >>> print(debian.driver)
     None
-    >>> print debian.owner.name
+    >>> print(debian.owner.name)
     mark
-    >>> print sid.driver
+    >>> print(sid.driver)
     None
-    >>> print sid.registrant.name
+    >>> print(sid.registrant.name)
     jdub
 
     >>> for d in sid.drivers:
-    ...     print d.name
+    ...     print(d.name)
     mark
 
 
@@ -882,7 +887,7 @@ uploaded and published in its context.
 Each element is an IDistributionSourcePackageRelease instance:
 
     >>> for upload in latest_uploads:
-    ...     print upload.title
+    ...     print(upload.title)
     mozilla-firefox 0.9 source package in Ubuntu
 
 Also, empty results (caused obviously by lack of sample data or very
@@ -904,7 +909,7 @@ a getBuildRecords() method.
 
     >>> builds = ubuntu['warty'].getBuildRecords(name=u'firefox')
     >>> for build in builds:
-    ...     print build.title
+    ...     print(build.title)
     hppa build of mozilla-firefox 0.9 in ubuntu warty RELEASE
     i386 build of mozilla-firefox 0.9 in ubuntu warty RELEASE
 

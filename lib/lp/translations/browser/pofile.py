@@ -19,6 +19,7 @@ import os.path
 import re
 
 from lazr.restful.utils import smartquote
+import six
 from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.publisher.browser import FileUpload
@@ -561,7 +562,7 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
         translations_person = ITranslationsPerson(self.user, None)
         if (self.user is not None and
             translations_person.translations_relicensing_agreement is None):
-            url = str(self.request.URL).decode('US-ASCII', 'replace')
+            url = six.ensure_text(str(self.request.URL), 'US-ASCII', 'replace')
             if self.request.get('QUERY_STRING', None):
                 url = url + '?' + self.request['QUERY_STRING']
 

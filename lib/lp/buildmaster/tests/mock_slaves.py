@@ -21,6 +21,7 @@ __all__ = [
     'WaitingSlave',
     ]
 
+from collections import OrderedDict
 import os
 import sys
 
@@ -163,7 +164,7 @@ class BuildingSlave(OkSlave):
     def status(self):
         self.call_log.append('status')
         buildlog = xmlrpc_client.Binary(
-            "This is a build log: %d" % self.status_count)
+            b"This is a build log: %d" % self.status_count)
         self.status_count += 1
         return defer.succeed({
             'builder_status': 'BuilderStatus.BUILDING',
@@ -216,7 +217,7 @@ class WaitingSlave(OkSlave):
             if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
             if not self.valid_files[hash]:
-                content = b"This is a %s" % hash
+                content = ("This is a %s" % hash).encode("ASCII")
             else:
                 with open(self.valid_files[hash], 'rb') as source:
                     content = source.read()
@@ -360,5 +361,8 @@ class SlaveTestHelpers(fixtures.Fixture):
             'ogrecomponent': 'main',
             }
         return slave.build(
-            build_id, 'binarypackage', chroot_file, {'.dsc': dsc_file},
-            extra_args)
+            build_id, 'binarypackage', chroot_file,
+            # Although a single-element dict obviously has stable ordering,
+            # we use an OrderedDict anyway to test that BuilderSlave
+            # serializes it correctly over XML-RPC.
+            OrderedDict([('.dsc', dsc_file)]), extra_args)

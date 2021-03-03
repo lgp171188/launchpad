@@ -39,8 +39,8 @@ Each pocket should only contain packages marked as PUBLISHED.
   >>> for pub in pmount_view.published_by_pocket():
   ...     pkg_versions = [
   ...         (p['spr'].version, p['component_name']) for p in pub['packages']]
-  ...     print(pub['pocketdetails'].title, sorted(pkg_versions))
-  Release [(u'0.1-2', u'main')]
+  ...     print(pub['pocketdetails'].title, pretty(sorted(pkg_versions)))
+  Release [('0.1-2', 'main')]
   Security []
   Updates []
   Proposed []
@@ -61,10 +61,10 @@ architecturespecific attribute is hidden, i.e, this binary is
 architecture independent and we don't know at this point, that's why we
 have only on binary.
 
-  >>> for bin_name, archs in firefox_view.binaries().items():
-  ...    print(bin_name, archs)
-  mozilla-firefox [u'hppa', u'i386']
-  mozilla-firefox-data [u'hppa', u'i386']
+  >>> for bin_name, archs in sorted(firefox_view.binaries().items()):
+  ...    print(bin_name, pretty(archs))
+  mozilla-firefox ['hppa', 'i386']
+  mozilla-firefox-data ['hppa', 'i386']
 
 Check the formatted dependency lines provided by the view class, they
 return a IPackageRelationshipSet object (see package-relationship.txt).
@@ -77,13 +77,13 @@ return a IPackageRelationshipSet object (see package-relationship.txt).
   True
 
   >>> for dep in firefox_parsed_depends:
-  ...    dep.name, dep.operator, dep.version, dep.url
-  (u'gcc-3.4', u'>=', u'3.4.1-4sarge1', None)
-  (u'gcc-3.4', u'<<', u'3.4.2', None)
-  (u'gcc-3.4-base', None, u'', None)
-  (u'libc6', u'>=', u'2.3.2.ds1-4', None)
-  (u'libstdc++6-dev', u'>=', u'3.4.1-4sarge1', None)
-  (u'pmount', None, u'', u'http://launchpad.test/ubuntu/warty/+package/pmount')
+  ...    print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+  ('gcc-3.4', '>=', '3.4.1-4sarge1', None)
+  ('gcc-3.4', '<<', '3.4.2', None)
+  ('gcc-3.4-base', None, '', None)
+  ('libc6', '>=', '2.3.2.ds1-4', None)
+  ('libstdc++6-dev', '>=', '3.4.1-4sarge1', None)
+  ('pmount', None, '', 'http://launchpad.test/ubuntu/warty/+package/pmount')
 
 
   >>> firefox_parsed_dependsindep = firefox_view.builddependsindep
@@ -92,11 +92,11 @@ return a IPackageRelationshipSet object (see package-relationship.txt).
   True
 
   >>> for dep in firefox_parsed_dependsindep:
-  ...    dep.name, dep.operator, dep.version, dep.url
-  (u'bacula-common', u'=', u'1.34.6-2', None)
-  (u'bacula-director-common', u'=', u'1.34.6-2', None)
-  (u'pmount', None, u'', u'http://launchpad.test/ubuntu/warty/+package/pmount')
-  (u'postgresql-client', u'>=', u'7.4', None)
+  ...    print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+  ('bacula-common', '=', '1.34.6-2', None)
+  ('bacula-director-common', '=', '1.34.6-2', None)
+  ('pmount', None, '', 'http://launchpad.test/ubuntu/warty/+package/pmount')
+  ('postgresql-client', '>=', '7.4', None)
 
 Ensure we have fixed bug 31039, by properly escape the
 sourcepackagename before passing to regexp.

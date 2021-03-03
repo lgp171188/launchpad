@@ -15,6 +15,7 @@ from datetime import (
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
+import six
 from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
@@ -465,7 +466,8 @@ class TestSnapBuild(TestCaseWithFactory):
             notification["X-Launchpad-Notification-Type"])
         self.assertEqual(
             "FAILEDTOBUILD", notification["X-Launchpad-Build-State"])
-        body, footer = notification.get_payload(decode=True).split("\n-- \n")
+        body, footer = six.ensure_text(
+            notification.get_payload(decode=True)).split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
             "http://launchpad.test/~person/+snap/snap-1/+build/%d\n"

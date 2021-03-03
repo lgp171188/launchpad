@@ -569,7 +569,9 @@ class TestLibrarianGarbageCollectionBase:
                 config.root, 'cronscripts', 'librarian-gc.py'
                 )
         cmd = [sys.executable, script_path, '-q']
-        process = Popen(cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE)
+        process = Popen(
+            cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE,
+            universal_newlines=True)
         (script_output, _empty) = process.communicate()
         self.assertEqual(
             process.returncode, 0, 'Error: %s' % script_output)
@@ -1143,7 +1145,9 @@ class TestBlobCollection(TestCase):
                 config.root, 'cronscripts', 'librarian-gc.py'
                 )
         cmd = [sys.executable, script_path, '-q']
-        process = Popen(cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE)
+        process = Popen(
+            cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE,
+            universal_newlines=True)
         (script_output, _empty) = process.communicate()
         self.assertEqual(
             process.returncode, 0, 'Error: %s' % script_output)

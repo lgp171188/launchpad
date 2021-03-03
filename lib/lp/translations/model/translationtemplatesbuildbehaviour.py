@@ -123,7 +123,7 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
         if filename is None:
             logger.error("Build produced no tarball.")
         else:
-            tarball_file = open(filename)
+            tarball_file = open(filename, "rb")
             try:
                 logger.debug("Uploading translation templates tarball.")
                 self._uploadTarball(

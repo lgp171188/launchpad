@@ -43,6 +43,6 @@ Store's replication set.
     >>> main_master.find(Person, name='janitor').one().display_name = 'BenD'
     >>> transaction.commit()
     >>> t = transaction.begin()
-    >>> main_master.find(Person, name='janitor').one().display_name
-    u'BenD'
+    >>> print(main_master.find(Person, name='janitor').one().display_name)
+    BenD
     >>> transaction.abort()

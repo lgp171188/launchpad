@@ -56,9 +56,9 @@ class TestDeathRow(TestCase):
     def getDiskPoolPath(self, pub, pub_file, diskpool):
         """Return the absolute path to a published file in the disk pool/."""
         return diskpool.pathFor(
-            pub.component.name.encode('utf-8'),
-            pub.source_package_name.encode('utf8'),
-            pub_file.libraryfile.filename.encode('utf-8'))
+            pub.component.name,
+            pub.source_package_name,
+            pub_file.libraryfile.filename)
 
     def assertIsFile(self, path):
         """Assert the path exists and is a regular file."""
