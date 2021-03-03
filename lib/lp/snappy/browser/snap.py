@@ -46,10 +46,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
-from lp.app.enums import (
-    FREE_INFORMATION_TYPES,
-    PRIVATE_INFORMATION_TYPES,
-    )
+from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.vocabularies import InformationTypeVocabulary
@@ -155,19 +152,19 @@ class SnapInformationTypeMixin:
     def validateInformationType(self, data, snap=None):
         """Validates the information_type and project on data dictionary.
 
-        The possible information types are defined by snap. When creating a
-        new snap, snap should be None and the possible information types
-        will be calculated based on the project.
+        The possible information types are defined by the given `snap`.
+        When creating a new snap, `snap` should be None and the possible
+        information types will be calculated based on the project.
         """
         info_type = data.get('information_type')
         project = data.get('project')
         if info_type is None and project is None:
             # Nothing to validate here. Move on.
             return
-        if project is None and info_type not in FREE_INFORMATION_TYPES:
+        if project is None and info_type in PRIVATE_INFORMATION_TYPES:
             self.setFieldError(
                 'information_type',
-                'Snap can only be non-public if a project is selected.')
+                'Private snap recipes must be associated with a project.')
         elif project is not None:
             if snap is None:
                 snap_set = getUtility(ISnapSet)
@@ -724,13 +721,6 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
                     self.setFieldError(
                         'information_type' if editing_info_type else 'git_ref',
                         'A public snap cannot have a private repository.')
-        else:
-            # Requirements for private snaps.
-            project = data.get('project', self.context.project)
-            if project is None:
-                msg = ('Private Snap recipes must be associated '
-                       'with a project.')
-                self.setFieldError('project', msg)
         self.validateInformationType(data, snap=self.context)
 
     def _needStoreReauth(self, data):

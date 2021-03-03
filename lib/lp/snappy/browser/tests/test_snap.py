@@ -432,7 +432,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertEqual(
             'There is 1 error.', extract_text(top_msg))
         self.assertEqual(
-            'Snap can only be non-public if a project is selected.',
+            'Private snap recipes must be associated with a project.',
             extract_text(field_msg))
         login_admin()
         snap = IStore(Snap).find(Snap, Snap.name == 'private-snap').one()
@@ -762,11 +762,11 @@ class TestSnapAdminView(BaseTestSnapView):
         private = InformationType.PRIVATESECURITY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
-        browser.getControl(name='field.project').value = ''
+        browser.getControl(name='field.project').value = None
         browser.getControl(name="field.information_type").value = private
         browser.getControl("Update snap package").click()
         self.assertEqual(
-            'Private Snap recipes must be associated with a project.',
+            'Private snap recipes must be associated with a project.',
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
     def test_admin_snap_privacy_mismatch(self):
@@ -1002,6 +1002,92 @@ class TestSnapEditView(BaseTestSnapView):
             "There is already a snap package owned by Test Person with this "
             "name.",
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
+
+    def test_edit_snap_project_and_info_type(self):
+        series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[series])
+        login_person(self.person)
+        initial_project = self.factory.makeProduct(
+            name='initial-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person, project=initial_project,
+            distroseries=series, store_series=snappy_series,
+            information_type=InformationType.PUBLIC)
+        final_project = self.factory.makeProduct(
+            name='final-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+        browser.getControl(name="field.project").value = "final-project"
+        browser.getControl(name="field.information_type").value = "PROPRIETARY"
+        browser.getControl("Update snap package").click()
+        login_admin()
+        self.assertEqual(canonical_url(snap), browser.url)
+        snap = IStore(Snap).find(Snap, Snap.name == snap.name).one()
+        self.assertEqual(final_project, snap.project)
+        self.assertEqual(InformationType.PROPRIETARY, snap.information_type)
+
+    def test_edit_snap_private_without_project(self):
+        series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[series])
+        login_person(self.person)
+        private_project = self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        snap = self.factory.makeSnap(
+            name='foo-snap', registrant=self.person, owner=self.person,
+            distroseries=series, store_series=snappy_series,
+            information_type=InformationType.PROPRIETARY,
+            project=private_project)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+        browser.getControl(name="field.project").value = ''
+        browser.getControl(name="field.information_type").value = (
+            "PROPRIETARY")
+        browser.getControl("Update snap package").click()
+
+        messages = find_tags_by_class(browser.contents, "message")
+        self.assertEqual(2, len(messages))
+        top_msg, field_msg = messages
+        self.assertEqual(
+            'There is 1 error.', extract_text(top_msg))
+        self.assertEqual(
+            'Private snap recipes must be associated with a project.',
+            extract_text(field_msg))
+
+    def test_edit_snap_private_information_type_matches_project(self):
+        series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[series])
+        login_person(self.person)
+        private_project = self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        snap = self.factory.makeSnap(
+            name='foo-snap', registrant=self.person, owner=self.person,
+            distroseries=series, store_series=snappy_series,
+            information_type=InformationType.PROPRIETARY,
+            project=private_project)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+
+        # Make sure we are only showing valid information type options:
+        info_type_selector = browser.getControl(name="field.information_type")
+        self.assertEqual(['PROPRIETARY'], info_type_selector.options)
 
     def test_edit_public_snap_private_owner(self):
         series = self.factory.makeUbuntuDistroSeries()
