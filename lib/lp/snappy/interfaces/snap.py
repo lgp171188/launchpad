@@ -571,6 +571,9 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    def visibleByUser(user):
+        """Can the specified user see this snap recipe?"""
+
     def getAllowedInformationTypes(user):
         """Get a list of acceptable `InformationType`s for this snap recipe.
 
@@ -838,6 +841,9 @@ class ISnapEditableAttributes(IHasOwner):
             " track, a risk, and an optional branch, e.g. "
             "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
             "'stable'.")))
+
+    def setProject(project):
+        """Set the pillar project of this snap recipe."""
 
 
 class ISnapAdminAttributes(Interface):

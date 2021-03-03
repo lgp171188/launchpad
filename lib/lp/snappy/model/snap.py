@@ -120,7 +120,10 @@ from lp.registry.interfaces.role import (
     IHasOwner,
     IPersonRoles,
     )
-from lp.registry.model.accesspolicy import AccessPolicyGrant
+from lp.registry.model.accesspolicy import (
+    AccessPolicyGrant,
+    reconcile_access_for_artifact,
+    )
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
@@ -419,8 +422,11 @@ class Snap(Storm, WebhookTargetMixin):
         # Set the information type first so that other validators can perform
         # suitable privacy checks, but pillar should also be set, since it's
         # mandatory for private snaps.
+        # Note that we set self._information_type (not self.information_type)
+        # to avoid the call to self._reconcileAccess() while building the
+        # Snap instance.
         self.project = project
-        self.information_type = information_type
+        self._information_type = information_type
 
         self.registrant = registrant
         self.owner = owner
@@ -457,6 +463,7 @@ class Snap(Storm, WebhookTargetMixin):
     @information_type.setter
     def information_type(self, information_type):
         self._information_type = information_type
+        self._reconcileAccess()
 
     @property
     def private(self):
@@ -1120,6 +1127,14 @@ class Snap(Storm, WebhookTargetMixin):
         order_by = Desc(SnapBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    def visibleByUser(self, user):
+        """See `ISnap`."""
+        store = IStore(self)
+        return not store.find(
+            Snap,
+            Snap.id == self.id,
+            get_snap_privacy_filter(user)).is_empty()
+
     def subscribe(self, person, subscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         # XXX pappacena 2021-02-05: We may need a "SnapSubscription" here.
@@ -1134,6 +1149,21 @@ class Snap(Storm, WebhookTargetMixin):
         service.revokeAccessGrants(
             self.pillar, person, unsubscribed_by, snaps=[self])
         IStore(self).flush()
+
+    def _reconcileAccess(self):
+        """Reconcile the snap's sharing information.
+
+        Takes the privacy and pillar and makes the related AccessArtifact
+        and AccessPolicyArtifacts match.
+        """
+        if self.project is None:
+            return
+        pillars = [self.project]
+        reconcile_access_for_artifact(self, self.information_type, pillars)
+
+    def setProject(self, project):
+        self.project = project
+        self._reconcileAccess()
 
     def _deleteAccessGrants(self):
         """Delete access grants for this snap recipe prior to deleting it."""
@@ -1262,6 +1292,7 @@ class SnapSet:
             store_name=store_name, store_secrets=store_secrets,
             store_channels=store_channels, project=project)
         store.add(snap)
+        snap._reconcileAccess()
 
         # Automatically subscribe the owner to the Snap.
         snap.subscribe(snap.owner, registrant, ignore_permissions=True)

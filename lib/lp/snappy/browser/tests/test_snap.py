@@ -56,7 +56,10 @@ from lp.code.tests.helpers import (
     BranchHostingFixture,
     GitHostingFixture,
     )
-from lp.registry.enums import PersonVisibility
+from lp.registry.enums import (
+    BranchSharingPolicy,
+    PersonVisibility,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
@@ -713,13 +716,17 @@ class TestSnapAdminView(BaseTestSnapView):
         commercial_admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
         login_person(self.person)
+        project = self.factory.makeProduct(name="my-project")
+        with person_logged_in(project.owner):
+            project.information_type = InformationType.PROPRIETARY
         snap = self.factory.makeSnap(registrant=self.person)
-        project = self.factory.makeProduct(name='my-project')
         self.assertTrue(snap.require_virtualized)
         self.assertIsNone(snap.project)
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
 
+        self.factory.makeAccessPolicy(
+            pillar=project, type=InformationType.PRIVATESECURITY)
         private = InformationType.PRIVATESECURITY.name
         browser = self.getViewBrowser(snap, user=commercial_admin)
         browser.getLink("Administer snap package").click()
@@ -756,8 +763,12 @@ class TestSnapAdminView(BaseTestSnapView):
         login_person(self.person)
         team = self.factory.makeTeam(
             owner=self.person, visibility=PersonVisibility.PRIVATE)
+        project = self.factory.makeProduct(
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
         snap = self.factory.makeSnap(
-            registrant=self.person, owner=team, private=True)
+            registrant=self.person, owner=team, project=project,
+            information_type=InformationType.PRIVATESECURITY)
         # Note that only LP admins or, in this case, commercial_admins
         # can reach this snap because it's owned by a private team.
         commercial_admin = self.factory.makePerson(
