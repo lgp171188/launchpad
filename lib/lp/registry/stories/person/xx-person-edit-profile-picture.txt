@@ -14,9 +14,9 @@ or logo.
     >>> browser.url
     'http://launchpad.test/~mark/+edit'
 
-    >>> find_tag_by_id(
-    ...     browser.contents, 'field.mugshot_current_img').get('src')
-    u'/@@/person-mugshot'
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'field.mugshot_current_img').get('src'))
+    /@@/person-mugshot
 
     >>> from lp.testing.branding import set_branding
     >>> set_branding(browser, icon=False, logo=False)
@@ -33,7 +33,7 @@ Here we see the updated values.
 
     >>> browser.getControl(name='field.mugshot.action').value
     ['keep']
-    >>> find_tag_by_id(
-    ...     browser.contents, 'field.mugshot_current_img').get('src')
-    u'.../mugshot.png'
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'field.mugshot_current_img').get('src'))
+    http://.../mugshot.png
 

@@ -187,10 +187,11 @@ class Bugzilla(ExternalBugTracker):
         # high bit set for non-ASCII characters, we can now strip out any
         # ASCII control characters without touching encoded Unicode
         # characters.
-        bad_chars = ''.join(chr(i) for i in range(0, 32))
-        for char in '\n\r\t':
-            bad_chars = bad_chars.replace(char, '')
-        trans_map = string.maketrans(bad_chars, ' ' * len(bad_chars))
+        bad_chars = b''.join(six.int2byte(i) for i in range(0, 32))
+        for char in b'\n', b'\r', b'\t':
+            bad_chars = bad_chars.replace(char, b'')
+        maketrans = bytes.maketrans if six.PY3 else string.maketrans
+        trans_map = maketrans(bad_chars, b' ' * len(bad_chars))
         contents = contents.translate(trans_map)
         # Don't use forbid_dtd=True here; Bugzilla XML responses seem to
         # include DOCTYPE declarations.
@@ -242,7 +243,7 @@ class Bugzilla(ExternalBugTracker):
         version_numbers = re.findall('[0-9]+', version)
         if len(version_numbers) == 0:
             raise UnparsableBugTrackerVersion(
-                'Failed to parse version %r for %s' %
+                "Failed to parse version '%s' for %s" %
                 (version, self.baseurl))
 
         return tuple(int(number) for number in version_numbers)
@@ -842,7 +843,7 @@ class BugzillaAPI(Bugzilla):
 
         # As a sanity check, drop any comments that don't belong to the
         # bug in remote_bug_id.
-        for comment_id, comment in comments.items():
+        for comment_id, comment in list(comments.items()):
             if int(comment['bug_id']) != actual_bug_id:
                 del comments[comment_id]
 

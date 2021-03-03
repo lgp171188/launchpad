@@ -6,6 +6,8 @@
 
 """Library to create sprites."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 __all__ = [
@@ -160,8 +162,10 @@ class SpriteUtil:
             try:
                 sprite_images[sprite['filename']] = Image.open(abs_filename)
             except IOError:
-                print >> sys.stderr, "Error opening '%s' for %s css rule" % (
-                    abs_filename, sprite['rule'].selectorText)
+                print(
+                    "Error opening '%s' for %s css rule" % (
+                        abs_filename, sprite['rule'].selectorText),
+                    file=sys.stderr)
                 raise
             width, height = sprite_images[sprite['filename']].size
             max_sprite_width = max(width, max_sprite_width)
@@ -194,8 +198,9 @@ class SpriteUtil:
                         position[0] = x_position
                         combined_image.paste(sprite_image, tuple(position))
             except:
-                print >> sys.stderr, (
-                    "Error with image file %s" % sprite['filename'])
+                print(
+                    "Error with image file %s" % sprite['filename'],
+                    file=sys.stderr)
                 raise
             # This is the position of the combined image on an HTML
             # element. Therefore, it subtracts the position of the

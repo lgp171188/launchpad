@@ -94,7 +94,7 @@ class LaunchpadLogFile(DailyLogFile):
         :return: the path to the compressed file.
         """
         bz2_path = '%s.bz2' % path
-        copy_and_close(open(path), bz2.BZ2File(bz2_path, mode='w'))
+        copy_and_close(open(path, 'rb'), bz2.BZ2File(bz2_path, mode='w'))
         os.remove(path)
         return bz2_path
 

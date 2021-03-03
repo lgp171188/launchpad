@@ -25,28 +25,28 @@ class BaseStormOpenIDStoreTestsMixin:
         self.assertIsInstance(self.store, BaseStormOpenIDStore)
 
     def test_storeAssociation(self):
-        self.store.storeAssociation('server-url\xC2\xA9', Association(
-                'handle', 'secret', 42, 600, 'HMAC-SHA1'))
+        self.store.storeAssociation(u'server-url\xA9', Association(
+            b'handle', b'secret', 42, 600, 'HMAC-SHA1'))
         db_assoc = IMasterStore(self.store.Association).get(
             self.store.Association, (u'server-url\xA9', u'handle'))
         self.assertEqual(db_assoc.server_url, u'server-url\xA9')
         self.assertEqual(db_assoc.handle, u'handle')
-        self.assertEqual(db_assoc.secret, 'secret')
+        self.assertEqual(db_assoc.secret, b'secret')
         self.assertEqual(db_assoc.issued, 42)
         self.assertEqual(db_assoc.lifetime, 600)
         self.assertEqual(db_assoc.assoc_type, u'HMAC-SHA1')
 
     def test_storeAssociation_update_existing(self):
         self.store.storeAssociation('server-url', Association(
-                'handle', 'secret', 42, 600, 'HMAC-SHA1'))
+            b'handle', b'secret', 42, 600, 'HMAC-SHA1'))
         db_assoc = IMasterStore(self.store.Association).get(
             self.store.Association, (u'server-url', u'handle'))
         self.assertNotEqual(db_assoc, None)
 
         # Now update the association with new information.
         self.store.storeAssociation('server-url', Association(
-                'handle', 'secret2', 420, 900, 'HMAC-SHA256'))
-        self.assertEqual(db_assoc.secret, 'secret2')
+            b'handle', b'secret2', 420, 900, 'HMAC-SHA256'))
+        self.assertEqual(db_assoc.secret, b'secret2')
         self.assertEqual(db_assoc.issued, 420)
         self.assertEqual(db_assoc.lifetime, 900)
         self.assertEqual(db_assoc.assoc_type, u'HMAC-SHA256')
@@ -54,12 +54,12 @@ class BaseStormOpenIDStoreTestsMixin:
     def test_getAssociation(self):
         timestamp = int(time.time())
         self.store.storeAssociation('server-url', Association(
-                'handle', 'secret', timestamp, 600, 'HMAC-SHA1'))
+            b'handle', b'secret', timestamp, 600, 'HMAC-SHA1'))
 
         assoc = self.store.getAssociation('server-url', 'handle')
         self.assertIsInstance(assoc, Association)
         self.assertEqual(assoc.handle, 'handle')
-        self.assertEqual(assoc.secret, 'secret')
+        self.assertEqual(assoc.secret, b'secret')
         self.assertEqual(assoc.issued, timestamp)
         self.assertEqual(assoc.lifetime, 600)
         self.assertEqual(assoc.assoc_type, 'HMAC-SHA1')
@@ -72,7 +72,7 @@ class BaseStormOpenIDStoreTestsMixin:
         lifetime = 600
         timestamp = int(time.time()) - 2 * lifetime
         self.store.storeAssociation('server-url', Association(
-                'handle', 'secret', timestamp, lifetime, 'HMAC-SHA1'))
+            b'handle', b'secret', timestamp, lifetime, 'HMAC-SHA1'))
         # The association is not returned because it is out of date.
         # Further more, it is removed from the database.
         assoc = self.store.getAssociation('server-url', 'handle')
@@ -86,9 +86,9 @@ class BaseStormOpenIDStoreTestsMixin:
     def test_getAssociation_no_handle(self):
         timestamp = int(time.time())
         self.store.storeAssociation('server-url', Association(
-                'handle1', 'secret', timestamp, 600, 'HMAC-SHA1'))
+            b'handle1', b'secret', timestamp, 600, 'HMAC-SHA1'))
         self.store.storeAssociation('server-url', Association(
-                'handle2', 'secret', timestamp + 1, 600, 'HMAC-SHA1'))
+            b'handle2', b'secret', timestamp + 1, 600, 'HMAC-SHA1'))
 
         # The most recent handle is returned.
         assoc = self.store.getAssociation('server-url', None)
@@ -98,7 +98,7 @@ class BaseStormOpenIDStoreTestsMixin:
     def test_removeAssociation(self):
         timestamp = int(time.time())
         self.store.storeAssociation('server-url', Association(
-                'handle', 'secret', timestamp, 600, 'HMAC-SHA1'))
+            b'handle', b'secret', timestamp, 600, 'HMAC-SHA1'))
         self.assertEqual(
             self.store.removeAssociation('server-url', 'handle'), True)
         self.assertEqual(
@@ -137,9 +137,9 @@ class BaseStormOpenIDStoreTestsMixin:
     def test_cleanupAssociations(self):
         timestamp = int(time.time()) - 100
         self.store.storeAssociation('server-url', Association(
-                'handle1', 'secret', timestamp, 50, 'HMAC-SHA1'))
+            b'handle1', b'secret', timestamp, 50, 'HMAC-SHA1'))
         self.store.storeAssociation('server-url', Association(
-                'handle2', 'secret', timestamp, 200, 'HMAC-SHA1'))
+            b'handle2', b'secret', timestamp, 200, 'HMAC-SHA1'))
 
         self.assertEqual(self.store.cleanupAssociations(), 1)
 

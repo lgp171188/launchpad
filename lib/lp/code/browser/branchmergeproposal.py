@@ -540,9 +540,7 @@ class DiffRenderingMixin:
         if preview_diff is None:
             return None
         try:
-            diff = preview_diff.text.decode('utf-8')
-        except UnicodeDecodeError:
-            diff = preview_diff.text.decode('windows-1252', 'replace')
+            diff = preview_diff.text
         except (LookupError, LibrarianServerError):
             self._diff_available = False
             diff = ''

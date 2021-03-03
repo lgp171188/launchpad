@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = ['urlappend', 'urlparse', 'urlsplit']
 
+import six
 from six.moves.urllib.parse import (
     urljoin,
     urlparse as original_urlparse,
@@ -78,17 +79,32 @@ def urlappend(baseurl, path):
     return urljoin(baseurl, path)
 
 
+def _ensure_ascii_str(url):
+    """Ensure that `url` only contains ASCII, and convert it to a `str`."""
+    if six.PY2:
+        url = url.encode('ascii')
+    elif isinstance(url, bytes):
+        url = url.decode('ascii')
+    else:
+        # Ignore the result; just check that `url` is pure ASCII.
+        url.encode('ascii')
+    return url
+
+
 def urlparse(url, scheme='', allow_fragments=True):
     """Convert url to a str object and call the original urlparse function.
 
     The url parameter should contain ASCII characters only. This
     function ensures that the original urlparse is called always with a
-    str object, and never unicode.
+    str object, and never unicode (Python 2) or bytes (Python 3).
 
         >>> tuple(urlparse(u'http://foo.com/bar'))
         ('http', 'foo.com', '/bar', '', '', '')
 
         >>> tuple(urlparse('http://foo.com/bar'))
+        ('http', 'foo.com', '/bar', '', '', '')
+
+        >>> tuple(urlparse(b'http://foo.com/bar'))
         ('http', 'foo.com', '/bar', '', '', '')
 
         >>> tuple(original_urlparse('http://foo.com/bar'))
@@ -101,7 +117,7 @@ def urlparse(url, scheme='', allow_fragments=True):
     func=detail&aid=1313119&group_id=5470&atid=105470)
     """
     return original_urlparse(
-        url.encode('ascii'), scheme=scheme, allow_fragments=allow_fragments)
+        _ensure_ascii_str(url), scheme=scheme, allow_fragments=allow_fragments)
 
 
 def urlsplit(url, scheme='', allow_fragments=True):
@@ -109,7 +125,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     The url parameter should contain ASCII characters only. This
     function ensures that the original urlsplit is called always with a
-    str object, and never unicode.
+    str object, and never unicode (Python 2) or bytes (Python 3).
 
         >>> tuple(urlsplit(u'http://foo.com/baz'))
         ('http', 'foo.com', '/baz', '', '')
@@ -117,9 +133,12 @@ def urlsplit(url, scheme='', allow_fragments=True):
         >>> tuple(urlsplit('http://foo.com/baz'))
         ('http', 'foo.com', '/baz', '', '')
 
+        >>> tuple(urlsplit(b'http://foo.com/baz'))
+        ('http', 'foo.com', '/baz', '', '')
+
         >>> tuple(original_urlsplit('http://foo.com/baz'))
         ('http', 'foo.com', '/baz', '', '')
 
     """
     return original_urlsplit(
-        url.encode('ascii'), scheme=scheme, allow_fragments=allow_fragments)
+        _ensure_ascii_str(url), scheme=scheme, allow_fragments=allow_fragments)

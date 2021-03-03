@@ -13,8 +13,8 @@ the Debian task in bug 1
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bugwatch_field = IBugTask['bugwatch']
     >>> debian_task = bug_one.bugtasks[2]
-    >>> debian_task.bugtargetname
-    u'mozilla-firefox (Debian)'
+    >>> print(debian_task.bugtargetname)
+    mozilla-firefox (Debian)
 
     >>> bugwatch_field = bugwatch_field.bind(debian_task)
 
@@ -60,8 +60,8 @@ If we pass a bug watch to renderItems(), the corresponding radio button
 will be selected.
 
     >>> mozilla_bugwatch = bug_one.watches[0]
-    >>> mozilla_bugwatch.title
-    u'The Mozilla.org Bug Tracker #123543'
+    >>> print(mozilla_bugwatch.title)
+    The Mozilla.org Bug Tracker #123543
 
     >>> for item in bugwatch_widget.renderItems(mozilla_bugwatch):
     ...     print_item(item)
@@ -110,11 +110,11 @@ Now let's create a new bug watch, pointing at bug #84 in the Gnome tracker.
     >>> bugwatch_widget = BugTaskBugWatchWidget(
     ...     bugwatch_field, bugwatch_field.vocabulary, request)
     >>> bugwatch = bugwatch_widget.getInputValue()
-    >>> bugwatch.bugtracker.title
-    u'GnomeGBug GTracker'
+    >>> print(bugwatch.bugtracker.title)
+    GnomeGBug GTracker
 
-    >>> bugwatch.remotebug
-    u'84'
+    >>> print(bugwatch.remotebug)
+    84
 
     >>> for bug_watch in bug_one.watches:
     ...     print("%s: #%s" % (
@@ -134,10 +134,10 @@ watch is being returned, and no new bug watch is created.
     >>> bugwatch_widget = BugTaskBugWatchWidget(
     ...     bugwatch_field, bugwatch_field.vocabulary, request)
     >>> bugwatch = bugwatch_widget.getInputValue()
-    >>> bugwatch.bugtracker.title
-    u'GnomeGBug GTracker'
-    >>> bugwatch.remotebug
-    u'84'
+    >>> print(bugwatch.bugtracker.title)
+    GnomeGBug GTracker
+    >>> print(bugwatch.remotebug)
+    84
 
     >>> for bug_watch in bug_one.watches:
     ...     print("%s: #%s" % (

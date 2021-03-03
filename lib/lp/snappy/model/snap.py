@@ -1392,6 +1392,7 @@ class SnapSet:
         """See `ISnapSet`."""
         return BRANCH_POLICY_ALLOWED_TYPES[project.branch_sharing_policy]
 
+
     def isValidInformationType(self, information_type, owner, branch=None,
                                git_ref=None):
         private = information_type not in PUBLIC_INFORMATION_TYPES
@@ -1589,6 +1590,8 @@ class SnapSet:
         """See `ISnapSet`."""
         if ISnap.providedBy(context):
             context = context.source
+        if context is None:
+            raise CannotFetchSnapcraftYaml("Snap source is not defined")
         try:
             paths = (
                 "snap/snapcraft.yaml",

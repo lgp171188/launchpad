@@ -321,7 +321,7 @@ class SignedCodeOfConductSet:
         current = coc.content
 
         # calculate text digest
-        if sig.plain_data.split() != current.split():
+        if sig.plain_data.split() != current.encode('UTF-8').split():
             return ('The signed text does not match the Code of Conduct. '
                     'Make sure that you signed the correct text (white '
                     'space differences are acceptable).')

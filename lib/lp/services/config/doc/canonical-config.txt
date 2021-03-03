@@ -58,8 +58,8 @@ using persistent helpers - see lp.testing.layers).
     >>> config.filename
     '.../launchpad-lazr.conf'
 
-    >>> config.extends.filename
-    u'.../launchpad-lazr.conf'
+    >>> print(config.extends.filename)
+    /.../launchpad-lazr.conf
 
 LaunchpadConfig provides __contains__ and __getitem__ to check and
 access lazr.config sections and keys.
@@ -161,8 +161,8 @@ conf file name that is loaded.
     >>> test_config.filename
     '.../configs/testrunner/test-process-lazr.conf'
 
-    >>> test_config.extends.filename
-    u'.../configs/testrunner/launchpad-lazr.conf'
+    >>> print(test_config.extends.filename)
+    /.../configs/testrunner/launchpad-lazr.conf
 
     >>> test_config.answertracker.days_before_expiration
     300
@@ -181,8 +181,8 @@ process's name.
     >>> test_config.filename
     '.../configs/testrunner/launchpad-lazr.conf'
 
-    >>> test_config.extends.filename
-    u'.../configs/development/launchpad-lazr.conf'
+    >>> print(test_config.extends.filename)
+    /.../configs/development/launchpad-lazr.conf
 
     >>> test_config.answertracker.days_before_expiration
     15
@@ -222,8 +222,8 @@ argument to the constructor.
 #    >>> from lp.services.config import config
 #    >>> config.filename
 #    '.../configs/mailman-itests/launchpad-lazr.conf'
-#    >>> config.extends.filename
-#    u'.../configs/development/launchpad-lazr.conf'
+#    >>> print(config.extends.filename)
+#    /.../configs/development/launchpad-lazr.conf
 #    >>> config.database.dbname
 #    'launchpad_dev'
 

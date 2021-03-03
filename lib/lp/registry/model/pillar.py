@@ -11,6 +11,7 @@ __metaclass__ = type
 from operator import attrgetter
 import warnings
 
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -54,7 +55,6 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
-from lp.services.helpers import ensure_unicode
 from lp.services.librarian.model import LibraryFileAlias
 
 
@@ -91,7 +91,7 @@ class PillarNameSet:
 
     def __contains__(self, name):
         """See `IPillarNameSet`."""
-        name = ensure_unicode(name)
+        name = six.ensure_text(name)
         result = IStore(PillarName).execute("""
             SELECT TRUE
             FROM PillarName
@@ -134,7 +134,7 @@ class PillarNameSet:
             query %= " AND active IS TRUE"
         else:
             query %= ""
-        name = ensure_unicode(name)
+        name = six.ensure_text(name)
         result = IStore(PillarName).execute(query, [name, name])
         row = result.get_one()
         if row is None:
@@ -185,7 +185,7 @@ class PillarNameSet:
                  Distribution.fti @@ ftq(%(text)s) OR
                  lower(Distribution.title) = lower(%(text)s)
                 )
-            ''' % sqlvalues(text=ensure_unicode(text)))
+            ''' % sqlvalues(text=text))
         columns = [
             PillarName, OtherPillarName, Product, ProjectGroup, Distribution]
         return IStore(PillarName).using(*origin).find(

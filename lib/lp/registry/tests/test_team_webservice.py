@@ -1,6 +1,8 @@
 # Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from lazr.restfulclient.errors import (
@@ -150,7 +152,7 @@ class TestTeamLimitedViewAccess(TestCaseWithFactory):
         team = launchpad.projects['some-product'].bug_supervisor
         failure_regex = '.*permission to see.*'
         with ExpectedException(ValueError, failure_regex):
-            print team.name
+            print(team.name)
 
     def test_authorised_user_can_see_team_limitedView_details(self):
         # Test that a user with limitedView permission can access the team and
@@ -170,4 +172,4 @@ class TestTeamLimitedViewAccess(TestCaseWithFactory):
         failure_regex = '(.|\n)*api_activemembers.*launchpad.View(.|\n)*'
         with ExpectedException(Unauthorized, failure_regex):
             members = team.members
-            print members.total_size
+            print(members.total_size)

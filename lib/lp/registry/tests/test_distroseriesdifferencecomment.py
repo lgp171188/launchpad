@@ -33,7 +33,7 @@ def get_comment_source():
 
 def randomize_list(original_list):
     """Sort a list (or other iterable) in random order.  Return list."""
-    return sorted(original_list, key=lambda _: random)
+    return sorted(original_list, key=lambda _: random())
 
 
 class DistroSeriesDifferenceCommentTestCase(TestCaseWithFactory):

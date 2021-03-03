@@ -61,7 +61,7 @@ class LoomTestMixin:
         loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
         loom_tree.branch.new_thread('bottom-thread')
-        loom_tree.commit('this is a commit', rev_id='commit-1')
+        loom_tree.commit('this is a commit', rev_id=b'commit-1')
         loom_tree.unlock()
         loom_tree.branch.record_loom('sample loom')
         self.get_transport().delete_tree('checkout')
@@ -79,7 +79,7 @@ class LoomTestMixin:
         loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
         loom_tree.branch.new_thread('bottom-thread')
-        loom_tree.commit('this is a commit', rev_id='commit-1')
+        loom_tree.commit('this is a commit', rev_id=b'commit-1')
         loom_tree.unlock()
         loom_tree.branch.record_loom('sample loom')
         return loom_tree

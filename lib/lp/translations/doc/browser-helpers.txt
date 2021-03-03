@@ -19,8 +19,8 @@ Normal strings get passed through unmodified.
 
 The string '[tab]' gets converted to a tab character.
 
-    >>> contract_rosetta_escapes('foo[tab]bar')
-    u'foo\tbar'
+    >>> print(pretty(contract_rosetta_escapes('foo[tab]bar')))
+    'foo\tbar'
 
 The string '\[tab]' gets converted to a literal '[tab]'.
 
@@ -39,8 +39,8 @@ And so on...
 
 Similarly, string '[nbsp]' gets converted to no-break space character.
 
-    >>> contract_rosetta_escapes('foo[nbsp]bar')
-    u'foo\xa0bar'
+    >>> print(pretty(contract_rosetta_escapes('foo[nbsp]bar')))
+    'foo\xa0bar'
 
 The string '\[nbsp]' gets converted to a literal '[nbsp]'.
 
@@ -50,8 +50,8 @@ The string '\[nbsp]' gets converted to a literal '[nbsp]'.
 Similarly, string '[nnbsp]' gets converted to narrow no-break space
 character.
 
-    >>> contract_rosetta_escapes('foo[nnbsp]bar')
-    u'foo\u202fbar'
+    >>> print(pretty(contract_rosetta_escapes('foo[nnbsp]bar')))
+    'foo\u202fbar'
 
 The string '\[nnbsp]' gets converted to a literal '[nnbsp]'.
 
@@ -67,58 +67,58 @@ expand_rosetta_escapes
 
 Normal strings get passed through unmodified.
 
-    >>> expand_rosetta_escapes(u'foo')
-    u'foo'
-    >>> expand_rosetta_escapes(u'foo\\nbar')
-    u'foo\\nbar'
+    >>> print(expand_rosetta_escapes(u'foo'))
+    foo
+    >>> print(expand_rosetta_escapes(u'foo\\nbar'))
+    foo\nbar
 
 Tabs get converted to a special constant TranslationConstants.TAB_CHAR
 which renders as below:
 
-    >>> expand_rosetta_escapes(u'foo\tbar')
-    u'foo<code>[tab]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo\tbar'))
+    foo<code>[tab]</code>bar
 
 Literal occurrences of u'[tab]' get escaped to a special constant
 TranslationConstants.TAB_CHAR_ESCAPED which renders them as below:
 
-    >>> expand_rosetta_escapes(u'foo[tab]bar')
-    u'foo<code>\\[tab]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo[tab]bar'))
+    foo<code>\[tab]</code>bar
 
 Escaped ocurrences themselves get escaped.
 
-    >>> expand_rosetta_escapes(u'foo\\[tab]bar')
-    u'foo\\<code>\\[tab]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo\\[tab]bar'))
+    foo\<code>\[tab]</code>bar
 
 And so on...
 
-    >>> expand_rosetta_escapes(u'foo\\\\[tab]bar')
-    u'foo\\\\<code>\\[tab]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo\\\\[tab]bar'))
+    foo\\<code>\[tab]</code>bar
 
 Similarly, no-break spaces get converted to a special constant
 TranslationConstants.NO_BREAK_SPACE_CHAR which renders as below:
 
-    >>> expand_rosetta_escapes(u'foo\u00a0bar')
-    u'foo<code>[nbsp]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo\u00a0bar'))
+    foo<code>[nbsp]</code>bar
 
 Literal occurrences of u'[nbsp]' get escaped to a special constant
 TranslationConstants.NO_BREAK_SPACE_CHAR_ESCAPED which renders them
 as below:
 
-    >>> expand_rosetta_escapes(u'foo[nbsp]bar')
-    u'foo<code>\\[nbsp]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo[nbsp]bar'))
+    foo<code>\[nbsp]</code>bar
 
 Similarly, narrow no-break spaces get converted to a special constant
 TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR which renders as below:
 
-    >>> expand_rosetta_escapes(u'foo\u202fbar')
-    u'foo<code>[nnbsp]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo\u202fbar'))
+    foo<code>[nnbsp]</code>bar
 
 Literal occurrences of u'[nnbsp]' get escaped to a special constant
 TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR_ESCAPED which renders them
 as below:
 
-    >>> expand_rosetta_escapes(u'foo[nnbsp]bar')
-    u'foo<code>\\[nnbsp]</code>bar'
+    >>> print(expand_rosetta_escapes(u'foo[nnbsp]bar'))
+    foo<code>\[nnbsp]</code>bar
 
 
 parse_cformat_string
@@ -128,13 +128,12 @@ parse_cformat_string
     ...     parse_cformat_string)
     >>> parse_cformat_string('')
     []
-    >>> parse_cformat_string('foo')
-    [('string', u'foo')]
-    >>> parse_cformat_string('blah %d blah')
-    [('string', u'blah '), ('interpolation', u'%d'), ('string', u' blah')]
-    >>> parse_cformat_string('%sfoo%%bar%s')
-    [('interpolation', u'%s'), ('string', u'foo%%bar'),
-     ('interpolation', u'%s')]
+    >>> print(pretty(parse_cformat_string('foo')))
+    [('string', 'foo')]
+    >>> print(pretty(parse_cformat_string('blah %d blah')))
+    [('string', 'blah '), ('interpolation', '%d'), ('string', ' blah')]
+    >>> print(pretty(parse_cformat_string('%sfoo%%bar%s')))
+    [('interpolation', '%s'), ('string', 'foo%%bar'), ('interpolation', '%s')]
     >>> parse_cformat_string('%')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
@@ -150,37 +149,37 @@ text_to_html
 
 First, do no harm.
 
-    >>> text_to_html(u'foo bar', [], '<sp>')
-    u'foo bar'
+    >>> print(text_to_html(u'foo bar', [], '<sp>'))
+    foo bar
 
 Test replacement of leading and trailing spaces.
 
-    >>> text_to_html(u' foo bar', [], '<sp>')
-    u'<sp>foo bar'
-    >>> text_to_html(u'foo bar ', [], '<sp>')
-    u'foo bar<sp>'
-    >>> text_to_html(u'  foo bar  ', [], '<sp>')
-    u'<sp><sp>foo bar<sp><sp>'
+    >>> print(text_to_html(u' foo bar', [], '<sp>'))
+    <sp>foo bar
+    >>> print(text_to_html(u'foo bar ', [], '<sp>'))
+    foo bar<sp>
+    >>> print(text_to_html(u'  foo bar  ', [], '<sp>'))
+    <sp><sp>foo bar<sp><sp>
 
 Test replacement of newlines.
 
-    >>> text_to_html(u'foo\nbar', [], newline='<cr>')
-    u'foo<cr>bar'
+    >>> print(text_to_html(u'foo\nbar', [], newline='<cr>'))
+    foo<cr>bar
 
 And both together.
 
-    >>> text_to_html(u'foo \nbar', [], '<sp>', '<cr>')
-    u'foo<sp><cr>bar'
+    >>> print(text_to_html(u'foo \nbar', [], '<sp>', '<cr>'))
+    foo<sp><cr>bar
 
 Test treatment of tabs.
 
-    >>> text_to_html(u'foo\tbar', [])
-    u'foo<code>[tab]</code>bar'
+    >>> print(text_to_html(u'foo\tbar', []))
+    foo<code>[tab]</code>bar
 
 Test valid C format strings are formatted.
 
-    >>> text_to_html(u'foo %d bar', ['c-format'])
-    u'foo <code>%d</code> bar'
+    >>> print(text_to_html(u'foo %d bar', ['c-format']))
+    foo <code>%d</code> bar
 
 If we get None, we return None.
 
@@ -201,26 +200,26 @@ Test bad format strings are caught and passed through.
 
 If we get '\r\n' as the new line mark, we should remove '\r':
 
-    >>> text_to_html(u'foo\r\nbar', [])
-    u'foo<img alt="" src="/@@/translation-newline" /><br/>\nbar'
+    >>> print(pretty(text_to_html(u'foo\r\nbar', [])))
+    'foo<img alt="" src="/@@/translation-newline" /><br/>\nbar'
 
 And '\r' should be also handled:
 
-    >>> text_to_html(u'foo\rbar', [])
-    u'foo<img alt="" src="/@@/translation-newline" /><br/>\nbar'
+    >>> print(pretty(text_to_html(u'foo\rbar', [])))
+    'foo<img alt="" src="/@@/translation-newline" /><br/>\nbar'
 
 HTML in the input string is escaped.
 
-    >>> text_to_html(u'<b>Test %d</b>', [])
-    u'&lt;b&gt;Test %d&lt;/b&gt;'
-    >>> text_to_html(u'<b>Test %d</b>', ['c-format'])
-    u'&lt;b&gt;Test <code>%d</code>&lt;/b&gt;'
+    >>> print(text_to_html(u'<b>Test %d</b>', []))
+    &lt;b&gt;Test %d&lt;/b&gt;
+    >>> print(text_to_html(u'<b>Test %d</b>', ['c-format']))
+    &lt;b&gt;Test <code>%d</code>&lt;/b&gt;
 
 Format strings are parsed before markup is generated (the %q is invalid
 as it has no conversion specifier until the <samp> is injected):
 
-    >>> text_to_html(u'Test %q: ', ['c-format'])
-    u'Test %q:<samp> </samp>'
+    >>> print(text_to_html(u'Test %q: ', ['c-format']))
+    Test %q:<samp> </samp>
 
 
 convert_newlines_to_web_form
@@ -228,16 +227,16 @@ convert_newlines_to_web_form
 
     >>> from lp.translations.browser.browser_helpers import (
     ...     convert_newlines_to_web_form)
-    >>> convert_newlines_to_web_form(u'foo')
-    u'foo'
-    >>> convert_newlines_to_web_form(u'foo\n')
-    u'foo\r\n'
-    >>> convert_newlines_to_web_form(u'foo\nbar\n\nbaz')
-    u'foo\r\nbar\r\n\r\nbaz'
-    >>> convert_newlines_to_web_form(u'foo\r\nbar')
-    u'foo\r\nbar'
-    >>> convert_newlines_to_web_form(u'foo\rbar')
-    u'foo\r\nbar'
+    >>> print(pretty(convert_newlines_to_web_form(u'foo')))
+    'foo'
+    >>> print(pretty(convert_newlines_to_web_form(u'foo\n')))
+    'foo\r\n'
+    >>> print(pretty(convert_newlines_to_web_form(u'foo\nbar\n\nbaz')))
+    'foo\r\nbar\r\n\r\nbaz'
+    >>> print(pretty(convert_newlines_to_web_form(u'foo\r\nbar')))
+    'foo\r\nbar'
+    >>> print(pretty(convert_newlines_to_web_form(u'foo\rbar')))
+    'foo\r\nbar'
 
 
 count_lines

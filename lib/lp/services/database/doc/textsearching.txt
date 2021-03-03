@@ -17,21 +17,22 @@ Querying
 The examples use the following helper function to execute SQL commands
 against the database and display the results:
 
-    >>> from lp.services.database.sqlbase import cursor
+    >>> from lp.services.database.interfaces import (
+    ...     DEFAULT_FLAVOR,
+    ...     IStoreSelector,
+    ...     MAIN_STORE,
+    ...     )
+
+    >>> store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+
     >>> def runsql(query, *args):
     ...     '''Run an SQL query and return the results as text'''
     ...     colsize = 25
-    ...     cur = cursor() # Get a cursor
-    ...     if args:
-    ...         cur.execute(query, args)
-    ...     else:
-    ...         cur.execute(query)
-    ...     for row in cur.fetchall():
+    ...     for row in store.execute(query, args):
     ...         line = ''
     ...         for col in row:
-    ...             if isinstance(col, (float,int,long)):
+    ...             if isinstance(col, (float, six.integer_types)):
     ...                 col = '%1.2f' % col
-    ...             col = col.encode('ascii', 'replace')
     ...             if len(col) > colsize:
     ...                 line += '%s... ' % col[:colsize-3]
     ...             else:
@@ -50,14 +51,14 @@ Queries are all case insensitive:
 
     >>> runsql("""SELECT displayname FROM Person WHERE fti @@ ftq('cArlos')
     ...               ORDER BY displayname""")
-    Carlos Perell? Mar?n
-    Carlos Valdivia Yag?e
+    Carlos Perelló Marín
+    Carlos Valdivia Yagüe
 
 If a query contains multiple words, an AND query is performed:
 
     >>> runsql("""SELECT displayname FROM Person
     ...               WHERE fti @@ ftq('Carlos Valdivia')""")
-    Carlos Valdivia Yag?e
+    Carlos Valdivia Yagüe
 
 This can also be explicity performed by joining the words with 'and':
 
@@ -65,7 +66,7 @@ This can also be explicity performed by joining the words with 'and':
     ...     SELECT displayname FROM Person
     ...         WHERE fti @@ ftq('carlos AND valdivia') ORDER BY displayname
     ...     """)
-    Carlos Valdivia Yag?e
+    Carlos Valdivia Yagüe
 
 We also support 'OR' as a boolean operation:
 
@@ -73,7 +74,7 @@ We also support 'OR' as a boolean operation:
     ...     SELECT displayname FROM Person
     ...         WHERE fti @@ ftq('valdivia OR mark') ORDER BY displayname
     ...     """)
-    Carlos Valdivia Yag?e
+    Carlos Valdivia Yagüe
     Mark Shuttleworth
 
 NULL searches will return nothing:
@@ -97,32 +98,30 @@ The following examples show the text version of the query using
 
     >>> from lp.services.database.sqlbase import SQLBase
     >>> def ftq(query):
-    ...     query = query.encode('UTF-8')
-    ...     cur = cursor()
     ...     try:
-    ...         cur.execute("SELECT _ftq(%s), ftq(%s)", (query, query))
-    ...         uncompiled, compiled = cur.fetchone()
+    ...         result = store.execute(
+    ...             "SELECT _ftq(%s), ftq(%s)", (query, query))
+    ...         uncompiled, compiled = result.get_one()
     ...     except Exception:
-    ...         SQLBase._connection._connection.rollback()
+    ...         store.rollback()
     ...         raise
     ...     if uncompiled is not None:
     ...         uncompiled = backslashreplace(uncompiled)
     ...         uncompiled = uncompiled.replace(' ','')
     ...     if compiled is not None:
-    ...         compiled = compiled.decode('UTF-8')
     ...         compiled = backslashreplace(compiled)
     ...     print('%s <=> %s' % (uncompiled, compiled))
     >>>
     >>> def search(text_to_search, search_phrase):
-    ...     cur = cursor()
-    ...     cur.execute("SELECT to_tsvector(%s)", (text_to_search, ))
-    ...     ts_vector = cur.fetchall()[0][0]
-    ...     cur.execute("SELECT ftq(%s)", (search_phrase, ))
-    ...     ts_query = cur.fetchall()[0][0]
-    ...     cur.execute(
+    ...     result = store.execute(
+    ...         "SELECT to_tsvector(%s)", (text_to_search, ))
+    ...     ts_vector = result.get_all()[0][0]
+    ...     result = store.execute("SELECT ftq(%s)", (search_phrase, ))
+    ...     ts_query = result.get_all()[0][0]
+    ...     result = store.execute(
     ...         "SELECT to_tsvector(%s) @@ ftq(%s)",
     ...         (text_to_search, search_phrase))
-    ...     match = cur.fetchall()[0][0]
+    ...     match = result.get_all()[0][0]
     ...     return six.ensure_str("FTI data: %s query: %s match: %s") % (
     ...         ts_vector, ts_query, str(match))
     >>>
@@ -375,10 +374,10 @@ NB. This gets stemmed, see below.
 
 Bug #44913 - Unicode characters in the wrong place.
 
-    >>> search_same(u'abc-a\N{LATIN SMALL LETTER C WITH CEDILLA}')
-    "FTI data: 'abc':2 'abc-a\xc3\xa7':1 'a\xc3\xa7':3
-    query: 'abc-a\xc3\xa7' & 'abc' & 'a\xc3\xa7'
-    match: True"
+    >>> print(search_same(u'abc-a\N{LATIN SMALL LETTER C WITH CEDILLA}'))
+    FTI data: 'abc':2 'abc-aç':1 'aç':3
+    query: 'abc-aç' & 'abc' & 'aç'
+    match: True
 
 Cut & Paste of 'Smart' quotes. Note that the quotation mark is retained
 in the FTI.
@@ -651,8 +650,11 @@ by tsearch2. All words are also stemmed.
 
     >>> from lp.services.database.nl_search import nl_term_candidates
 
-    >>> nl_term_candidates('When I start firefox, it crashes')
-    [u'start', u'firefox', u'crash']
+    >>> for term in nl_term_candidates('When I start firefox, it crashes'):
+    ...     print(term)
+    start
+    firefox
+    crash
 
 It returns an empty list when there is only stop-words in the query:
 
@@ -661,10 +663,15 @@ It returns an empty list when there is only stop-words in the query:
 
 Except for the hyphenation character, all non-word caracters are ignored:
 
-    >>> nl_term_candidates(
-    ...     "Will the \'\'|\'\' character (inside a ''quoted'' string) "
-    ...     "work???")
-    [u'charact', u'insid', u'quot', u'string', u'work']
+    >>> for term in nl_term_candidates(
+    ...         "Will the \'\'|\'\' character (inside a ''quoted'' string) "
+    ...         "work???"):
+    ...     print(term)
+    charact
+    insid
+    quot
+    string
+    work
 
 
 nl_phrase_search()
@@ -700,9 +707,9 @@ More than 50% of the questions matches firefox:
 
 So firefox will be removed from the final query:
 
-    >>> nl_phrase_search('system is slow when running firefox', Question,
-    ...     fast_enabled=False)
-    u'system|slow|run'
+    >>> print(nl_phrase_search('system is slow when running firefox', Question,
+    ...     fast_enabled=False))
+    system|slow|run
 
     >>> nl_term_candidates('how do I do this?')
     []
@@ -712,14 +719,14 @@ So firefox will be removed from the final query:
 The fast code path does not remove any terms. Rather it uses an & query over
 all the terms combined with an & query for each ordinal-1 subset of the terms:
 
-    >>> nl_phrase_search('system is slow when running firefox on ubuntu',
-    ...     Question)
-    u'(firefox&run&slow&system&ubuntu)|(run&slow&system&ubuntu)|(firefox&slow&system&ubuntu)|(firefox&run&system&ubuntu)|(firefox&run&slow&ubuntu)|(firefox&run&slow&system)'
+    >>> print(nl_phrase_search('system is slow when running firefox on ubuntu',
+    ...     Question))
+    (firefox&run&slow&system&ubuntu)|(run&slow&system&ubuntu)|(firefox&slow&system&ubuntu)|(firefox&run&system&ubuntu)|(firefox&run&slow&ubuntu)|(firefox&run&slow&system)
 
 Short queries are expanded more simply:
 
-    >>> nl_phrase_search('system is slow', Question)
-    u'slow|system'
+    >>> print(nl_phrase_search('system is slow', Question))
+    slow|system
 
 
 Using other constraints
@@ -743,11 +750,11 @@ considered a stop word by tsearch2).
     >>> float(get_questions) / firefox_count > 0.50
     True
 
-    >>> nl_phrase_search(
+    >>> print(nl_phrase_search(
     ...     'firefox gets very slow on flickr', Question,
     ...     [Question.product == firefox_product, Product.active],
-    ...     fast_enabled=False)
-    u'slow|flickr'
+    ...     fast_enabled=False))
+    slow|flickr
 
 When the query only has stop words in it, the returned query will be the empty
 string:
@@ -760,9 +767,9 @@ is done.
 
     >>> IStore(Question).find(Question, Question.product_id == -1).count()
     0
-    >>> nl_phrase_search('firefox is very slow on flickr', Question,
-    ...                  [Question.product == -1])
-    u'(firefox&flickr&slow)|(flickr&slow)|(firefox&slow)|(firefox&flickr)'
+    >>> print(nl_phrase_search('firefox is very slow on flickr', Question,
+    ...                  [Question.product == -1]))
+    (firefox&flickr&slow)|(flickr&slow)|(firefox&slow)|(firefox&flickr)
 
 
 No keywords filtering with few rows
@@ -799,8 +806,8 @@ And more than half of these contain the keyword "firefox" in them:
 But the keyword is still keep because there are only less than 5
 questions:
 
-    >>> nl_phrase_search(
+    >>> print(nl_phrase_search(
     ...     'firefox is slow', Question,
     ...     [Question.distribution == ubuntu,
-    ...      Question.sourcepackagename == firefox_package.sourcepackagename])
-    u'firefox|slow'
+    ...      Question.sourcepackagename == firefox_package.sourcepackagename]))
+    firefox|slow

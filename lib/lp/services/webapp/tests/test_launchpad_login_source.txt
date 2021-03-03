@@ -8,7 +8,7 @@ person is found with the given email address, None is returned
     >>> from lp.services.webapp.authentication import (
     ...     LaunchpadLoginSource)
     >>> login_source = LaunchpadLoginSource()
-    >>> print login_source.getPrincipalByLogin('no-such-email@example.com')
+    >>> print(login_source.getPrincipalByLogin('no-such-email@example.com'))
     None
 
 Giving getPrincipalByLogin() an existing email address, returns a

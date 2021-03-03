@@ -72,6 +72,5 @@ def guess_librarian_encoding(filename, mimetype):
         mimetype = 'text/plain'
     else:
         encoding = None
-        mimetype = mimetype.encode('ascii')
 
     return encoding, mimetype

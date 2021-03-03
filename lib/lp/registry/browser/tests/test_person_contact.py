@@ -140,7 +140,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
         for email, recipient in recipient_set.getRecipientPersons():
             reason, rationale = recipient_set.getReason(email)
         self.assertEqual(
-            'using the "Contact this user" link on your profile page\n'
+            'using the "Contact this user" link on your profile page '
             '(http://launchpad.test/~pting)',
             reason)
         self.assertEqual('ContactViaWeb user', rationale)
@@ -153,7 +153,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
             reason, rationale = recipient_set.getReason(email)
         self.assertEqual(
             'using the "Contact this team\'s admins" link '
-            'on the Pting team page\n'
+            'on the Pting team page '
             '(http://launchpad.test/~pting)',
             reason)
         self.assertEqual('ContactViaWeb owner (pting team)', rationale)
@@ -166,7 +166,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
             reason, rationale = recipient_set.getReason(email)
         self.assertEqual(
             'to each member of the Pting team using the '
-            '"Contact this team" link on the Pting team page\n'
+            '"Contact this team" link on the Pting team page '
             '(http://launchpad.test/~pting)',
             reason)
         self.assertEqual('ContactViaWeb member (pting team)', rationale)

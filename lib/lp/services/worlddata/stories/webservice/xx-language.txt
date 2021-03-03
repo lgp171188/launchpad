@@ -8,8 +8,8 @@ The language information from Launchpad can be queried using
 '/+languages/CC', where CC is the language code.
 
     >>> es = anon_webservice.get('/+languages/es').jsonBody()
-    >>> es['resource_type_link']
-    u'http.../#language'
+    >>> print(es['resource_type_link'])
+    http.../#language
     >>> print(es['text_direction'])
     Left to Right
     >>> print(es['code'])
@@ -42,8 +42,8 @@ at '/+languages'.
     ...             list += language['english_name'] + '(hidden)' + "\n"
     ...     return list
     >>> default_languages = anon_webservice.get('/+languages').jsonBody()
-    >>> default_languages['resource_type_link']
-        u'http.../#languages'
+    >>> print(default_languages['resource_type_link'])
+    http.../#languages
     >>> languages = get_languages_entries(default_languages)
     >>> print(languages)
     Abkhazian

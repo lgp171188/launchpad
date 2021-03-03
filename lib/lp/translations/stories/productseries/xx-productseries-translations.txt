@@ -99,8 +99,8 @@ pages.
 
     >>> serbian_row = find_tags_by_class(browser.contents, "language-sr")[0]
     >>> serbian_link = serbian_row.find('a')
-    >>> serbian_link['href']
-    u'/frobnicator/trunk/+pots/template1/sr/+translate'
+    >>> print(serbian_link['href'])
+    /frobnicator/trunk/+pots/template1/sr/+translate
 
 A product series can have more than one translatable template.
 
@@ -126,8 +126,8 @@ translations page.
 
     >>> serbian_row = find_tags_by_class(browser.contents, "language-sr")[0]
     >>> serbian_link = serbian_row.find('a')
-    >>> serbian_link['href']
-    u'/frobnicator/trunk/+lang/sr'
+    >>> print(serbian_link['href'])
+    /frobnicator/trunk/+lang/sr
 
 Upload page and translations use
 --------------------------------

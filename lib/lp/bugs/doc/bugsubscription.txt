@@ -589,9 +589,9 @@ Let's have a look at an example for a distribution bug:
 
 Only the bug reporter, Foo Bar, has an explicit subscription.
 
-    >>> [subscription.person.displayname
-    ...  for subscription in new_bug.subscriptions]
-    [u'Foo Bar']
+    >>> for subscription in new_bug.subscriptions:
+    ...     print(subscription.person.displayname)
+    Foo Bar
 
 But because Sample Person is the distribution contact for Ubuntu, they
 will be implicitly added to the notification recipients.
@@ -629,9 +629,9 @@ Another example, this time for an upstream:
 
 Again, only Foo Bar is explicitly subscribed:
 
-    >>> [subscription.person.displayname
-    ...  for subscription in new_bug.subscriptions]
-    [u'Foo Bar']
+    >>> for subscription in new_bug.subscriptions:
+    ...     print(subscription.person.displayname)
+    Foo Bar
 
 But the upstream Firefox bug supervisor, mark, is implicitly added to the
 recipients list.
@@ -650,9 +650,9 @@ supervisor will be subscribed:
 
 But still, only Foo Bar is explicitly subscribed.
 
-    >>> [subscription.person.displayname
-    ...  for subscription in new_bug.subscriptions]
-    [u'Foo Bar']
+    >>> for subscription in new_bug.subscriptions:
+    ...     print(subscription.person.displayname)
+    Foo Bar
 
 When an upstream does *not* have a specific bug supervisor set, the
 product.owner is used instead. So, if Firefox's bug supervisor is unset,
@@ -667,9 +667,9 @@ Sample Person, the Firefox "owner" will get subscribed instead:
 
 Foo Bar is the only explicit subscriber:
 
-    >>> [subscription.person.displayname
-    ...  for subscription in new_bug.subscriptions]
-    [u'Foo Bar']
+    >>> for subscription in new_bug.subscriptions:
+    ...     print(subscription.person.displayname)
+    Foo Bar
 
 But the product owner, Sample Person, is implicitly added to the
 recipient list:
@@ -712,9 +712,9 @@ So, if the Ubuntu team is added as a bug supervisor to evolution:
 The team will be implicitly subscribed to the previous bug we
 created:
 
-    >>> [subscription.person.displayname
-    ...  for subscription in new_bug.subscriptions]
-    [u'Foo Bar']
+    >>> for subscription in new_bug.subscriptions:
+    ...     print(subscription.person.displayname)
+    Foo Bar
 
     >>> new_bug.clearBugNotificationRecipientsCache()
     >>> getSubscribers(new_bug)
@@ -728,9 +728,9 @@ And the Ubuntu team will be implicitly subscribed to future bugs:
     ...     owner=foobar)
     >>> new_bug = evolution.createBug(params)
 
-    >>> [subscription.person.displayname
-    ...  for subscription in new_bug.subscriptions]
-    [u'Foo Bar']
+    >>> for subscription in new_bug.subscriptions:
+    ...     print(subscription.person.displayname)
+    Foo Bar
 
     >>> getSubscribers(new_bug)
     ['foo.bar@canonical.com', 'support@ubuntu.com']

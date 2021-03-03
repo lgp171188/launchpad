@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import six
 from testtools.testcase import ExpectedException
 from zope.security.proxy import removeSecurityProxy
 
@@ -217,7 +218,8 @@ class TestDirectBranchCommit(DirectBranchCommitTestCase, TestCaseWithFactory):
         # the branch.
         self.committer.writeFile('hi.c', b'main(){puts("hi world");}')
         revid = self.committer.commit('')
-        self.assertEqual(revid, self.db_branch.last_mirrored_id)
+        self.assertEqual(
+            six.ensure_text(revid), self.db_branch.last_mirrored_id)
 
     def test_commit_uses_getBzrCommitterID(self):
         # commit() passes self.getBzrCommitterID() to bzr as the

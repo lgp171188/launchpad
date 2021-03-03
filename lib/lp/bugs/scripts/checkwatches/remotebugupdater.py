@@ -56,17 +56,17 @@ class RemoteBugUpdater(WorkingBase):
 
         self.error_type_messages = {
             BugWatchActivityStatus.INVALID_BUG_ID:
-                ("Invalid bug %(bug_id)r on %(base_url)s "
+                ("Invalid bug '%(bug_id)s' on %(base_url)s "
                  "(local bugs: %(local_ids)s)."),
             BugWatchActivityStatus.BUG_NOT_FOUND:
-                ("Didn't find bug %(bug_id)r on %(base_url)s "
+                ("Didn't find bug '%(bug_id)s' on %(base_url)s "
                  "(local bugs: %(local_ids)s)."),
             BugWatchActivityStatus.PRIVATE_REMOTE_BUG:
-                ("Remote bug %(bug_id)r on %(base_url)s is private "
+                ("Remote bug '%(bug_id)s' on %(base_url)s is private "
                  "(local bugs: %(local_ids)s)."),
             }
         self.error_type_message_default = (
-            "remote bug: %(bug_id)r; "
+            "remote bug: '%(bug_id)s'; "
             "base url: %(base_url)s; "
             "local bugs: %(local_ids)s"
             )

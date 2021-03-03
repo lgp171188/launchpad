@@ -25,8 +25,8 @@ need a distribution, so we give the widget a distribution task to work with.
     >>> from lp.bugs.interfaces.bugtask import IBugTask
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> ubuntu_task = bug_one.bugtasks[-2]
-    >>> ubuntu_task.distribution.name
-    u'ubuntu'
+    >>> print(ubuntu_task.distribution.name)
+    ubuntu
 
     >>> unbound_package_field = IBugTask['sourcepackagename']
     >>> if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
@@ -44,8 +44,8 @@ need a distribution, so we give the widget a distribution task to work with.
     ...     package_field, package_field.vocabulary, request)
     >>> widget.getInputValue().__class__.__name__ == expected_input_class
     True
-    >>> widget.getInputValue().name
-    u'evolution'
+    >>> print(widget.getInputValue().name)
+    evolution
 
 If we pass in a binary package name, which can be mapped to a source package
 name, the corresponding SourcePackageName is returned.  (In the case of the
@@ -62,8 +62,8 @@ new picker, this instead requires searching first.)
     ...     package_field, package_field.vocabulary, request)
     >>> widget.getInputValue().__class__.__name__ == expected_input_class
     True
-    >>> widget.getInputValue().name
-    u'linux-source-2.6.15'
+    >>> print(widget.getInputValue().name)
+    linux-source-2.6.15
 
 For some distributions we don't know exactly which source packages they
 contain, so IDistribution.guessPublishedSourcePackageName will raise a
@@ -90,8 +90,8 @@ will still be returned.
     ...     package_field, package_field.vocabulary, request)
     >>> widget.getInputValue().__class__.__name__ == expected_input_class
     True
-    >>> widget.getInputValue().name
-    u'evolution'
+    >>> print(widget.getInputValue().name)
+    evolution
 
 If we pass in a package name that doesn't exist in Launchpad, we get a
 ConversionError saying that the package name doesn't exist.
@@ -119,10 +119,10 @@ distribution from the request.
     >>> request = LaunchpadTestRequest(
     ...     form={'field.distribution': 'debian',
     ...           'field.sourcepackagename': 'linux-2.6.12'})
-    >>> BugTaskAlsoAffectsSourcePackageNameWidget(
+    >>> print(BugTaskAlsoAffectsSourcePackageNameWidget(
     ...     package_field, package_field.vocabulary,
-    ...     request).getDistribution().name
-    u'debian'
+    ...     request).getDistribution().name)
+    debian
 
 +distrotask always supplies a valid distribution name or none at all. If the
 name isn't the name of a distro, UnexpectedFormData is raised.
@@ -173,8 +173,8 @@ bug target rather than a bug task.
     ...     package_field, package_field.vocabulary, request)
     >>> widget.getInputValue().__class__.__name__ == expected_input_class
     True
-    >>> widget.getInputValue().name
-    u'evolution'
+    >>> print(widget.getInputValue().name)
+    evolution
 
 If we pass in a binary package name, which can be mapped to a source
 package name, the corresponding source package name (albeit as a
@@ -192,8 +192,8 @@ this instead requires searching first.)
     ...     package_field, package_field.vocabulary, request)
     >>> widget.getInputValue().__class__.__name__ == expected_input_class
     True
-    >>> widget.getInputValue().name
-    u'linux-source-2.6.15'
+    >>> print(widget.getInputValue().name)
+    linux-source-2.6.15
 
 For some distributions we don't know exactly which source packages they
 contain, so IDistribution.guessPublishedSourcePackageName will raise a
@@ -217,8 +217,8 @@ will still be returned.
     ...     package_field, package_field.vocabulary, request)
     >>> widget.getInputValue().__class__.__name__ == expected_input_class
     True
-    >>> widget.getInputValue().name
-    u'evolution'
+    >>> print(widget.getInputValue().name)
+    evolution
 
 If we pass in a package name that doesn't exist in Launchpad, we get a
 ConversionError saying that the package name doesn't exist.

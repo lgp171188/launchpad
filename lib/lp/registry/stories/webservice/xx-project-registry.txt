@@ -9,8 +9,8 @@ Project group collection
 It is possible to get a batched list of all the project groups.
 
     >>> group_collection = webservice.get("/projectgroups").jsonBody()
-    >>> group_collection['resource_type_link']
-    u'http://.../#project_groups'
+    >>> print(group_collection['resource_type_link'])
+    http://.../#project_groups
 
     >>> group_collection['total_size']
     7
@@ -18,8 +18,8 @@ It is possible to get a batched list of all the project groups.
     >>> from operator import itemgetter
     >>> project_group_entries = sorted(
     ...     group_collection['entries'], key=itemgetter('name'))
-    >>> project_group_entries[0]['self_link']
-    u'http://.../apache'
+    >>> print(project_group_entries[0]['self_link'])
+    http://.../apache
 
     >>> for project_group in project_group_entries:
     ...   print(project_group['display_name'])
@@ -265,8 +265,9 @@ is no milestone for the given name.
 
 The project group can be accessed through the project_group_link.
 
-    >>> webservice.get(firefox['project_group_link']).jsonBody()['self_link']
-    u'http://.../mozilla'
+    >>> print(webservice.get(
+    ...     firefox['project_group_link']).jsonBody()['self_link'])
+    http://.../mozilla
 
 A list of series can be accessed through the series_collection_link.
 
@@ -335,8 +336,8 @@ The development focus series can be accessed through the
 development_focus_link.
 
     >>> response = webservice.get(firefox['development_focus_link'])
-    >>> response.jsonBody()['self_link']
-    u'http://.../firefox/trunk'
+    >>> print(response.jsonBody()['self_link'])
+    http://.../firefox/trunk
 
 Attributes can be edited via the webservice.patch() method.
 
@@ -354,20 +355,21 @@ Attributes can be edited via the webservice.patch() method.
     ...
 
     >>> firefox = webservice.get('/firefox').jsonBody()
-    >>> firefox['driver_link']
-    u'http://.../~mark'
+    >>> print(firefox['driver_link'])
+    http://.../~mark
 
-    >>> firefox['homepage_url']
-    u'http://sf.net/firefox'
+    >>> print(firefox['homepage_url'])
+    http://sf.net/firefox
 
-    >>> webservice.get(firefox['driver_link']).jsonBody()['self_link']
-    u'http://.../~mark'
+    >>> print(webservice.get(firefox['driver_link']).jsonBody()['self_link'])
+    http://.../~mark
 
-    >>> webservice.get(firefox['owner_link']).jsonBody()['self_link']
-    u'http://.../~name12'
+    >>> print(webservice.get(firefox['owner_link']).jsonBody()['self_link'])
+    http://.../~name12
 
-    >>> webservice.get(firefox['bug_tracker_link']).jsonBody()['self_link']
-    u'http://.../bugs/bugtrackers/mozilla.org'
+    >>> print(webservice.get(
+    ...     firefox['bug_tracker_link']).jsonBody()['self_link'])
+    http://.../bugs/bugtrackers/mozilla.org
 
 When the owner_link is changed the ownership of some attributes is
 changed as well.
@@ -387,8 +389,8 @@ changed as well.
     >>> logout()
 
     >>> test_project = webservice.get('/test-project').jsonBody()
-    >>> test_project['owner_link']
-    u'http://.../~test-project-owner'
+    >>> print(test_project['owner_link'])
+    http://.../~test-project-owner
 
     >>> patch = {
     ...     u'owner_link': webservice.getAbsoluteUrl('/~mark'),
@@ -399,8 +401,8 @@ changed as well.
     ...
 
     >>> test_project = webservice.get('/test-project').jsonBody()
-    >>> test_project['owner_link']
-    u'http://.../~mark'
+    >>> print(test_project['owner_link'])
+    http://.../~mark
 
 Read-only attributes, like registrant, cannot be modified via the
 webservice.patch() method.
@@ -415,8 +417,8 @@ webservice.patch() method.
     registrant_link: You tried to modify a read-only attribute.
 
     >>> firefox = webservice.get('/firefox').jsonBody()
-    >>> firefox['registrant_link']
-    u'http://.../~name12'
+    >>> print(firefox['registrant_link'])
+    http://.../~name12
 
 Similarly the date_created attribute cannot be modified.
 
@@ -509,8 +511,8 @@ Project collection
 It is possible to get a batched list of all the projects.
 
     >>> project_collection = webservice.get("/projects").jsonBody()
-    >>> project_collection['resource_type_link']
-    u'http://.../#projects'
+    >>> print(project_collection['resource_type_link'])
+    http://.../#projects
 
 The entire collection has 24 entries.
 
@@ -624,8 +626,10 @@ Verify a project does not exist and then create it.
     >>> print(new_project['summary'])
     My Shiny New Project
 
-    >>> print(sorted(new_project['licenses']))
-    [u'GNU GPL v2', u'Zope Public Licence']
+    >>> for license in sorted(new_project['licenses']):
+    ...     print(license)
+    GNU GPL v2
+    Zope Public Licence
 
     >>> print(new_project['project_reviewed'])
     False
@@ -653,7 +657,6 @@ if it was HTML.
     ...
     wiki_url: The URI scheme &quot;htp&quot; is not allowed.  Only URIs
     with the following schemes may be used: ftp, http, https
-    ...
 
 
 The pillar set

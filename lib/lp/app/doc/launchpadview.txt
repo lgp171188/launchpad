@@ -65,7 +65,7 @@ an IStructuredString implementation.
     >>> view.error_message = six.ensure_str('A simple string.')
     Traceback (most recent call last):
     ...
-    ValueError: <type 'str'> is not a valid value for error_message,
+    ValueError: <... 'str'> is not a valid value for error_message,
     only None and IStructuredString are allowed.
     >>> print(view.error_message)
     None
@@ -73,7 +73,7 @@ an IStructuredString implementation.
     >>> view.info_message = six.ensure_str('A simple string.')
     Traceback (most recent call last):
     ...
-    ValueError: <type 'str'> is not a valid value for info_message,
+    ValueError: <... 'str'> is not a valid value for info_message,
     only None and IStructuredString are allowed.
     >>> print(view.info_message)
     None

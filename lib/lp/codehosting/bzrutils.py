@@ -324,7 +324,7 @@ def get_branch_info(branch):
     """
     info = {}
     info['stacked_on_url'] = get_stacked_on_url(branch)
-    info['last_revision_id'] = branch.last_revision()
+    info['last_revision_id'] = six.ensure_str(branch.last_revision())
     # XXX: Aaron Bentley 2008-06-13
     # Bazaar does not provide a public API for learning about
     # format markers.  Fix this in Bazaar, then here.

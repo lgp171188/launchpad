@@ -93,7 +93,7 @@ page, and that it has all the data we are expecting, in terms of languages.
   >>> from lp.testing.pages import extract_url_parameter
   >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
   ...     '+translations')
-  >>> b'Translation status by language' in browser.contents
+  >>> six.ensure_str('Translation status by language') in browser.contents
   True
   >>> print(browser.getLink('Catalan').url)
   http://translations.launchpad.test/ubuntu/hoary/+lang/ca
@@ -113,7 +113,7 @@ put Afrihili into the list of "preferred languages".
   >>> browser.addHeader('Accept-Language', 'en-us,en;q=0.7,afh;q=0.3')
   >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
   ...     '+translations')
-  >>> b'Translation status by language' in browser.contents
+  >>> six.ensure_str('Translation status by language') in browser.contents
   True
   >>> print(browser.getLink('Catalan').url)
   http://translations.launchpad.test/ubuntu/hoary/+lang/ca
@@ -129,9 +129,9 @@ pofile) for evolution-2.2
 
   >>> browser.open(
   ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/hr?batch=2')
-  >>> b'Croatian' in browser.contents
+  >>> six.ensure_str('Croatian') in browser.contents
   True
-  >>> b'Translatable templates' in browser.contents
+  >>> six.ensure_str('Translatable templates') in browser.contents
   True
   >>> print(browser.getLink('evolution-2.2').url)
   http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/hr/+translate
@@ -173,7 +173,7 @@ And finally, we will get pmount.
 
 With its latest translator.
 
-  >>> b'Edgar Bursic' in browser.contents
+  >>> six.ensure_str('Edgar Bursic') in browser.contents
   True
 
 == Last translator ==
@@ -210,7 +210,7 @@ file):
   batch=10
   >>> print(extract_url_parameter(browser.url, 'show'))
   show=untranslated
-  >>> b'10.' in browser.contents
+  >>> six.ensure_str('10.') in browser.contents
   True
 
 If everything works out ok, that means that DummyPOFile has actually
@@ -222,7 +222,8 @@ Finally, lets also check that translated entries show up as well.
   >>> browser.getControl('Change').click()
   >>> print(extract_url_parameter(browser.url, 'show'))
   show=translated
-  >>> b"There are no messages that match this filtering." in browser.contents
+  >>> six.ensure_str("There are no messages that match this filtering.") in (
+  ...     browser.contents)
   True
 
 == Links to filtered pages ==
@@ -264,7 +265,7 @@ has the right filter preselected.
     >>> print(extract_text(untranslated))
     15
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
-    >>> browser.open(untranslated_link.encode('UTF-8'))
+    >>> browser.open(untranslated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=1).value)
@@ -277,7 +278,7 @@ with the 'with new suggestions' filter selected.
     >>> print(extract_text(unreviewed))
     1
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
-    >>> browser.open(unreviewed_link.encode('UTF-8'))
+    >>> browser.open(unreviewed_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=1).value)
@@ -290,7 +291,7 @@ The number of updated entries points to the translation page with the
     >>> print(extract_text(updated))
     1
     >>> updated_link = extract_link_from_tag(updated, base_href)
-    >>> browser.open(updated_link.encode('UTF-8'))
+    >>> browser.open(updated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=1).value)
@@ -378,20 +379,20 @@ should see Catalan in the list.
     >>> browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+translations')
-    >>> b'Catalan' in browser.contents
+    >>> six.ensure_str('Catalan') in browser.contents
     True
 
 But also, he doesn't want to see other languages in the list.  So, he
 shouldn't see eg. Japanese.
 
-    >>> b'Japanese' in browser.contents
+    >>> six.ensure_str('Japanese') in browser.contents
     False
 
 Next, if he chooses to view all the languages, he should see Japanese
 among the languages on the page.
 
     >>> browser.getLink('View template & all languages...').click()
-    >>> b'Japanese' in browser.contents
+    >>> six.ensure_str('Japanese') in browser.contents
     True
 
 So, everything is fine, and Carlos can sleep calmly.
@@ -437,7 +438,7 @@ the right filter preselected.
     >>> print(extract_text(untranslated))
     15
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
-    >>> browser.open(untranslated_link.encode('UTF-8'))
+    >>> browser.open(untranslated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=2).value)
@@ -450,7 +451,7 @@ with the 'with new suggestions' filter selected.
     >>> print(extract_text(unreviewed))
     1
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
-    >>> browser.open(unreviewed_link.encode('UTF-8'))
+    >>> browser.open(unreviewed_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=2).value)
@@ -463,7 +464,7 @@ The number of updated entries points to the translation page with the
     >>> print(extract_text(updated))
     1
     >>> updated_link = extract_link_from_tag(updated, base_href)
-    >>> browser.open(updated_link.encode('UTF-8'))
+    >>> browser.open(updated_link)
     >>> browser.url
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=2).value)

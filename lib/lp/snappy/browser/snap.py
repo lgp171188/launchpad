@@ -723,6 +723,7 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
                         'A public snap cannot have a private repository.')
         self.validateInformationType(data, snap=self.context)
 
+
     def _needStoreReauth(self, data):
         """Does this change require reauthorizing to the store?"""
         store_upload = data.get('store_upload', False)

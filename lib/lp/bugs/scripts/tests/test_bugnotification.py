@@ -690,7 +690,7 @@ class EmailNotificationTestBase(TestCaseWithFactory):
 
 class EmailNotificationsBugMixin:
 
-    change_class = change_name = old = new = alt = unexpected_text = None
+    change_class = change_name = old = new = alt = unexpected_bytes = None
 
     def change(self, old, new):
         self.bug.addChange(
@@ -708,7 +708,7 @@ class EmailNotificationsBugMixin:
         # A smoketest.
         self.change(self.old, self.new)
         message, body = next(self.get_messages())
-        self.assertThat(body, Contains(self.unexpected_text))
+        self.assertThat(body, Contains(self.unexpected_bytes))
 
     def test_undone_change_sends_no_emails(self):
         self.change(self.old, self.new)
@@ -720,7 +720,7 @@ class EmailNotificationsBugMixin:
         self.change(self.new, self.old)
         self.change_other()
         message, body = next(self.get_messages())
-        self.assertThat(body, Not(Contains(self.unexpected_text)))
+        self.assertThat(body, Not(Contains(self.unexpected_bytes)))
 
     def test_multiple_undone_changes_sends_no_emails(self):
         self.change(self.old, self.new)
@@ -763,7 +763,7 @@ class EmailNotificationsBugTaskMixin(EmailNotificationsBugMixin):
         self.change(self.old, self.new, index=0)
         self.change(self.new, self.old, index=1)
         message, body = next(self.get_messages())
-        self.assertThat(body, Contains(self.unexpected_text))
+        self.assertThat(body, Contains(self.unexpected_bytes))
 
 
 class EmailNotificationsAddedRemovedMixin:
@@ -805,7 +805,7 @@ class TestEmailNotificationsBugTitle(
     old = "Old summary"
     new = "New summary"
     alt = "Another summary"
-    unexpected_text = '** Summary changed:'
+    unexpected_bytes = b'** Summary changed:'
 
 
 class TestEmailNotificationsBugTags(
@@ -816,7 +816,7 @@ class TestEmailNotificationsBugTags(
     old = ['foo', 'bar', 'baz']
     new = ['foo', 'bar']
     alt = ['bing', 'shazam']
-    unexpected_text = '** Tags'
+    unexpected_bytes = b'** Tags'
 
     def test_undone_ordered_set_sends_no_email(self):
         # Tags use ordered sets to generate change descriptions, which we
@@ -831,7 +831,7 @@ class TestEmailNotificationsBugDuplicate(
 
     change_class = BugDuplicateChange
     change_name = "duplicateof"
-    unexpected_text = 'duplicate'
+    unexpected_bytes = b'duplicate'
 
     def _bug(self):
         with lp_dbuser():
@@ -850,7 +850,7 @@ class TestEmailNotificationsBugTaskStatus(
     old = BugTaskStatus.TRIAGED
     new = BugTaskStatus.INPROGRESS
     alt = BugTaskStatus.INVALID
-    unexpected_text = 'Status: '
+    unexpected_bytes = b'Status: '
 
 
 class TestEmailNotificationsBugWatch(
@@ -862,8 +862,8 @@ class TestEmailNotificationsBugWatch(
     # bugwatch, so they can be handled just as a simple bugtask attribute
     # change, like status.
 
-    added_message = '** Bug watch added:'
-    removed_message = '** Bug watch removed:'
+    added_message = b'** Bug watch added:'
+    removed_message = b'** Bug watch removed:'
 
     @cachedproperty
     def tracker(self):
@@ -897,8 +897,8 @@ class TestEmailNotificationsBugWatch(
 class TestEmailNotificationsBranch(
     EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase):
 
-    added_message = '** Branch linked:'
-    removed_message = '** Branch unlinked:'
+    added_message = b'** Branch linked:'
+    removed_message = b'** Branch unlinked:'
 
     def _branch(self):
         with lp_dbuser():
@@ -923,8 +923,8 @@ class TestEmailNotificationsBranch(
 class TestEmailNotificationsCVE(
     EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase):
 
-    added_message = '** CVE added:'
-    removed_message = '** CVE removed:'
+    added_message = b'** CVE added:'
+    removed_message = b'** CVE removed:'
 
     def _cve(self, sequence):
         with lp_dbuser():
@@ -949,8 +949,8 @@ class TestEmailNotificationsCVE(
 class TestEmailNotificationsAttachments(
     EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase):
 
-    added_message = '** Attachment added:'
-    removed_message = '** Attachment removed:'
+    added_message = b'** Attachment added:'
+    removed_message = b'** Attachment removed:'
 
     def _attachment(self):
         with lp_dbuser():
@@ -1270,10 +1270,10 @@ class TestExpandedNotificationFooters(EmailNotificationTestBase):
             payload for message, payload in self.get_messages()
             if message["to"] == expected_to]
         self.assertThat(payload, MatchesRegex(
-            r'.*To manage notifications about this bug go to:\n'
-            r'http://.*\+subscriptions\n'
-            r'\n'
-            r'Launchpad-Notification-Type: bug\n', re.S))
+            br'.*To manage notifications about this bug go to:\n'
+            br'http://.*\+subscriptions\n'
+            br'\n'
+            br'Launchpad-Notification-Type: bug\n', re.S))
 
 
 class TestDeferredNotifications(TestCaseWithFactory):

@@ -11,6 +11,7 @@ __all__ = [
 
 import csv
 import logging
+import re
 
 from bs4.element import Comment
 from requests.cookies import RequestsCookieJar
@@ -249,7 +250,7 @@ class Mantis(ExternalBugTracker):
         # MANTIS_VIEW_ALL_COOKIE set in the previous step to specify
         # what's being viewed.
         try:
-            csv_data = self._getPage("csv_export.php").content
+            csv_data = self._getPage("csv_export.php").text
         except BugTrackerConnectError as value:
             # Some Mantis installations simply return a 500 error
             # when the csv_export.php page is accessed. Since the
@@ -304,7 +305,7 @@ class Mantis(ExternalBugTracker):
         # _checkForApplicationError) then we could be much more
         # specific than this.
         bug_page = BeautifulSoup(
-            self._getPage('view.php?id=%s' % bug_id).content,
+            self._getPage('view.php?id=%s' % bug_id).text,
             parse_only=SoupStrainer('table'))
 
         app_error = self._checkForApplicationError(bug_page)
@@ -329,13 +330,13 @@ class Mantis(ExternalBugTracker):
     def getRemoteBugBatch(self, bug_ids):
         """See `ExternalBugTracker`."""
         # XXX: Gavin Panella 2007-09-06 bug=137780:
-        # You may find this zero in "\r\n0" funny. Well I don't. This is
+        # You may find this zero in "\r?\n0" funny. Well I don't. This is
         # to work around the fact that Mantis' CSV export doesn't cope
         # with the fact that the bug summary can contain embedded "\r\n"
         # characters! I don't see a better way to handle this short of
         # not using the CSV module and forcing all lines to have the
         # same number as fields as the header.
-        csv_data = self.csv_data.strip().split("\r\n0")
+        csv_data = re.split(r"\r?\n0", self.csv_data.strip())
 
         if not csv_data:
             raise UnparsableBugData("Empty CSV for %s" % self.baseurl)
