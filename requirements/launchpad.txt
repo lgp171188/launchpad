@@ -187,5 +187,5 @@ zope.server==4.0.2
 zope.session==4.3.0+lp1
 zope.testbrowser==5.5.1
 # lp:~launchpad-committers/zope.testrunner:launchpad
-zope.testrunner==5.2+lp1
+zope.testrunner==5.2+lp2
 zope.vocabularyregistry==1.1.1
