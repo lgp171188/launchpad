@@ -874,6 +874,12 @@ class ISnapAdminAttributes(Interface):
             "Allow access to external network resources via a proxy.  "
             "Resources hosted on Launchpad itself are always allowed.")))
 
+    def subscribe(person, subscribed_by):
+        """Subscribe a person to this snap recipe."""
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person to this snap recipe."""
+
 
 # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
@@ -918,6 +924,9 @@ class ISnapSet(Interface):
 
     def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
         """Which privacy a Snap should have based on its creation params."""
+
+    def findByIds(snap_ids):
+        """Return all snap packages with the given ids."""
 
     def isValidInformationType(
             information_type, owner, branch=None, git_ref=None):

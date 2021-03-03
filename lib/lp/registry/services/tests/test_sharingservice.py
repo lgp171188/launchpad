@@ -1459,7 +1459,7 @@ class TestSharingService(TestCaseWithFactory):
 
         # Check the results.
         (shared_bugtasks, shared_branches, shared_gitrepositories,
-         shared_specs) = (
+         shared_snaps, shared_specs) = (
             self.service.getSharedArtifacts(product, grantee, user))
         self.assertContentEqual(bug_tasks[:9], shared_bugtasks)
         self.assertContentEqual(branches[:9], shared_branches)
