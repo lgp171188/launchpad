@@ -5,10 +5,10 @@
 
 import _pythonpath
 
-from lp.code.scripts.requestgitrepack import RequestGitRepack
+from lp.code.scripts.repackgitrepository import RepackGitRepository
 
 
 if __name__ == '__main__':
-    script = RequestGitRepack(
+    script = RepackGitRepository(
         'repack_git_repositories',  dbuser='branchscanner')
     script.lock_and_run()
