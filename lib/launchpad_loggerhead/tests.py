@@ -206,3 +206,24 @@ class TestWSGI(TestCaseWithFactory):
         self.assertEqual(
             versioninfo.revision,
             response.headers['X-Launchpad-Revision'])
+
+    def test_vary_header_present(self):
+        db_branch, _ = self.create_branch_and_tree()
+        branch_url = "http://127.0.0.1:%d/%s" % (
+            config.codebrowse.port, db_branch.unique_name)
+        response = requests.get(branch_url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual('Cookie, Authorization', response.headers['Vary'])
+
+    def test_security_headers_present(self):
+        db_branch, _ = self.create_branch_and_tree()
+        branch_url = "http://127.0.0.1:%d/%s" % (
+            config.codebrowse.port, db_branch.unique_name)
+        response = requests.get(branch_url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            "frame-ancestors 'self';",
+            response.headers['Content-Security-Policy'])
+        self.assertEqual('SAMEORIGIN', response.headers['X-Frame-Options'])
+        self.assertEqual('nosniff', response.headers['X-Content-Type-Options'])
+        self.assertEqual('1; mode=block', response.headers['X-XSS-Protection'])
