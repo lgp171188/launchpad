@@ -73,7 +73,7 @@ class TestLogout(TestCase):
         app = session_scribbler(app, self)
         app = HTTPExceptionHandler(app)
         app = SessionHandler(app, SESSION_VAR, SECRET)
-        self.cookie_name = app.cookie_handler.cookie_name
+        self.cookie_name = app.cookie_name
         self.browser = Browser(wsgi_app=app)
         self.browser.open(
             config.codehosting.secure_codebrowse_root + '+login')
@@ -95,10 +95,7 @@ class TestLogout(TestCase):
         self.assertEqual(
             self.browser.url, allvhosts.configs['mainsite'].rooturl)
 
-        # The session cookie still exists, because of how
-        # paste.auth.cookie works (see
-        # http://trac.pythonpaste.org/pythonpaste/ticket/139 ) but the user
-        # does in fact have an empty session now.
+        # The user has an empty session now.
         self.browser.open(
             config.codehosting.secure_codebrowse_root + 'favicon.ico')
         self.assertEqual(self.session, {})
