@@ -50,7 +50,6 @@ from zope.security.proxy import isinstance as zisinstance
 
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.services.helpers import ensure_unicode
 
 
 class ForgivingSimpleVocabulary(SimpleVocabulary):
@@ -428,7 +427,7 @@ class NamedSQLObjectVocabulary(SQLObjectVocabularyBase):
     def search(self, query, vocab_filter=None):
         """Return terms where query is a subtring of the name."""
         if query:
-            clause = CONTAINSSTRING(self._table.q.name, ensure_unicode(query))
+            clause = CONTAINSSTRING(self._table.q.name, six.ensure_text(query))
             if self._filter:
                 clause = AND(clause, self._filter)
             return self._table.select(clause, orderBy=self._orderBy)
@@ -569,7 +568,7 @@ class NamedStormVocabulary(StormVocabularyBase):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         results = IStore(self._table).find(
             self._table,
             self._table.name.contains_string(query),
