@@ -574,6 +574,9 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
         super(SnapAddView, self).setUpWidgets()
         self.widgets['processors'].widget_class = 'processors'
         if self.is_project_context:
+            # If we are on Project:+new-snap page, we know which information
+            # types the project supports. Let's filter our the ones that are
+            # not supported.
             types = getUtility(ISnapSet).getPossibleSnapInformationTypes(
                     self.context)
             info_type_widget = self.widgets['information_type']

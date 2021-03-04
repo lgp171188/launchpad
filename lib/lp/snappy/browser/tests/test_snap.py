@@ -339,6 +339,49 @@ class TestSnapAddView(BaseTestSnapView):
             "the store.\nEdit snap package",
             MatchesTagText(content, "store_upload"))
 
+    def test_create_new_snap_project(self):
+        self.useFixture(GitHostingFixture(blob=b""))
+        project = self.factory.makeProduct()
+        [git_ref] = self.factory.makeGitRefs()
+        source_display = git_ref.display_name
+        browser = self.getViewBrowser(
+            project, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "snap-name"
+        browser.getControl(name="field.vcs").value = "GIT"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.shortened_path)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("snap-name", extract_text(content.h1))
+        self.assertThat(
+            "Test Person", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Distribution series:\n%s\nEdit snap package" %
+            self.distroseries.fullseriesname,
+            MatchesTagText(content, "distro_series"))
+        self.assertThat(
+            "Source:\n%s\nEdit snap package" % source_display,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build source tarball:\nNo\nEdit snap package",
+            MatchesTagText(content, "build_source_tarball"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt on request\nEdit snap package\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertThat(
+            "Source archive for automatic builds:\n\nEdit snap package\n",
+            MatchesTagText(content, "auto_build_archive"))
+        self.assertThat(
+            "Pocket for automatic builds:\n\nEdit snap package",
+            MatchesTagText(content, "auto_build_pocket"))
+        self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
+        self.assertThat(
+            "Builds of this snap package are not automatically uploaded to "
+            "the store.\nEdit snap package",
+            MatchesTagText(content, "store_upload"))
+
     def test_create_new_snap_users_teams_as_owner_options(self):
         # Teams that the user is in are options for the snap package owner.
         self.useFixture(BranchHostingFixture(blob=b""))
