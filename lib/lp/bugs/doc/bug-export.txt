@@ -19,13 +19,13 @@ Exporting one bug
 We will export bug #1 in the context of Firefox.  First some initial
 setup:
 
+    >>> import io
     >>> import sys
     >>> try:
     ...     import xml.etree.cElementTree as ET
     ... except ImportError:
     ...     import cElementTree as ET
     >>> from zope.component import getUtility
-    >>> from cStringIO import StringIO
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
@@ -44,7 +44,9 @@ Now we serialise it as XML, and print it:
 
     >>> node = serialise_bugtask(bugtask)
     >>> tree = ET.ElementTree(node)
-    >>> tree.write(sys.stdout)
+    >>> output = io.BytesIO()
+    >>> tree.write(output)
+    >>> print(output.getvalue().decode('UTF-8'))
     <bug id="1">
     <private>False</private>
     <security_related>False</security_related>
@@ -93,7 +95,8 @@ bugs for a product.  The export_bugtasks() function does this by
 successively serialising each of the tasks for that product.
 
     >>> import transaction
-    >>> export_bugtasks(transaction, firefox, sys.stdout)
+    >>> export_bugtasks(
+    ...     transaction, firefox, getattr(sys.stdout, 'buffer', sys.stdout))
     <launchpad-bugs xmlns="https://launchpad.net/xmlns/2006/bugs">
     <bug id="1">
     ...
@@ -131,13 +134,11 @@ Attachments are included in the XML dump.  First add an attachment to
 bug #1.  We need to commit here so that the librarian can later serve
 the file when we later serialise the bug:
 
-    >>> from io import BytesIO
-
     >>> login('test@canonical.com')
     >>> bug4 = getUtility(IBugSet).get(4)
     >>> sampleperson = getUtility(IPersonSet).getByEmail('test@canonical.com')
     >>> bug4.addAttachment(
-    ...     sampleperson, BytesIO(b'Hello World'), 'Added attachment',
+    ...     sampleperson, io.BytesIO(b'Hello World'), 'Added attachment',
     ...     'hello.txt', description='"Hello World" attachment')
     <BugAttachment ...>
 
@@ -181,14 +182,14 @@ script.  To test this, we'll make a bug private:
 
 Now we'll do a dump not including private bugs:
 
-    >>> output = StringIO()
+    >>> output = io.BytesIO()
     >>> export_bugtasks(transaction, firefox, output)
-    >>> '<bug id="4">' in output.getvalue()
+    >>> b'<bug id="4">' in output.getvalue()
     False
 
 However, bug #4 will appear in the export if we include private bugs:
 
-    >>> output = StringIO()
+    >>> output = io.BytesIO()
     >>> export_bugtasks(transaction, firefox, output, include_private=True)
-    >>> '<bug id="4">' in output.getvalue()
+    >>> b'<bug id="4">' in output.getvalue()
     True

@@ -5,6 +5,7 @@
 
 __metaclass__ = type
 
+from datetime import datetime
 import hashlib
 
 from zope.publisher.browser import TestRequest
@@ -167,3 +168,43 @@ class TestPgSession(TestCase):
 
         # also see the page test xx-no-anonymous-session-cookies for tests of
         # the cookie behaviour.
+
+    def test_datetime_compatibility(self):
+        # datetime objects serialized by either Python 2 or 3 can be
+        # unserialized as part of the session.
+        client_id = u'Client Id #1'
+        product_id = u'Product Id'
+        expected_datetime = datetime(2021, 3, 4, 0, 50, 1, 300000)
+
+        session = self.sdc[client_id]
+        session._ensureClientId()
+
+        # These are returned by the following code in Python 2.7 and 3.5
+        # respectively:
+        #
+        #     pickle.dumps(expected_datetime, protocol=2)
+        python_2_pickle = (
+            b'\x80\x02cdatetime\ndatetime\nq\x00'
+            b'U\n\x07\xe5\x03\x04\x002\x01\x04\x93\xe0q\x01\x85q\x02Rq\x03.')
+        python_3_pickle = (
+            b'\x80\x02cdatetime\ndatetime\nq\x00'
+            b'c_codecs\nencode\nq\x01'
+            b'X\r\x00\x00\x00\x07\xc3\xa5\x03\x04\x002\x01\x04\xc2\x93\xc3\xa0'
+            b'q\x02X\x06\x00\x00\x00latin1q\x03\x86q\x04Rq\x05\x85q\x06R'
+            b'q\x07.')
+
+        store = self.sdc.store
+        store.execute(
+            "SELECT set_session_pkg_data(?, ?, ?, ?)",
+            (session.hashed_client_id, product_id, u'logintime',
+             python_2_pickle),
+            noresult=True)
+        store.execute(
+            "SELECT set_session_pkg_data(?, ?, ?, ?)",
+            (session.hashed_client_id, product_id, u'last_write',
+             python_3_pickle),
+            noresult=True)
+
+        pkgdata = session[product_id]
+        self.assertEqual(expected_datetime, pkgdata['logintime'])
+        self.assertEqual(expected_datetime, pkgdata['last_write'])

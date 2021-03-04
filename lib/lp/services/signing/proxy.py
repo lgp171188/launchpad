@@ -64,7 +64,8 @@ class SigningServiceClient:
     def _decryptResponseJson(self, response, response_nonce):
         box = Box(self.private_key, self.service_public_key)
         return json.loads(box.decrypt(
-            response.content, response_nonce, encoder=Base64Encoder))
+            response.content, response_nonce,
+            encoder=Base64Encoder).decode("UTF-8"))
 
     def _requestJson(self, path, method="GET", encrypt=False, **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
@@ -138,8 +139,9 @@ class SigningServiceClient:
         return {
             "Content-Type": "application/x-boxed-json",
             "X-Client-Public-Key": config.signing.client_public_key,
-            "X-Nonce": base64.b64encode(nonce),
-            "X-Response-Nonce": base64.b64encode(response_nonce),
+            "X-Nonce": base64.b64encode(nonce).decode("UTF-8"),
+            "X-Response-Nonce": (
+                base64.b64encode(response_nonce).decode("UTF-8")),
             }
 
     def _encryptPayload(self, nonce, message):
@@ -178,7 +180,8 @@ class SigningServiceClient:
             "/generate", "POST", encrypt=True, json=payload)
         return {
             "fingerprint": ret["fingerprint"],
-            "public-key": base64.b64decode(ret["public-key"])}
+            "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
+            }
 
     def sign(self, key_type, fingerprint, message_name, message, mode):
         valid_modes = {SigningMode.ATTACHED, SigningMode.DETACHED}
@@ -199,8 +202,10 @@ class SigningServiceClient:
 
         ret = self._requestJson("/sign", "POST", encrypt=True, json=payload)
         return {
-            "public-key": base64.b64decode(ret["public-key"]),
-            "signed-message": base64.b64decode(ret["signed-message"])}
+            "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
+            "signed-message": base64.b64decode(
+                ret["signed-message"].encode("UTF-8")),
+            }
 
     def inject(self, key_type, private_key, public_key, description,
                created_at):
