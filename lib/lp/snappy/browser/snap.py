@@ -762,6 +762,13 @@ class SnapAdminView(BaseSnapEditView):
                     'information_type',
                     'You do not have permission to create private snaps.')
 
+    def updateContextFromData(self, data, context=None, notify_modified=True):
+        if 'project' in data:
+            project = data.pop('project')
+            self.context.setProject(project)
+        super(SnapAdminView, self).updateContextFromData(
+            data, context, notify_modified)
+
 
 class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
     """View for editing snap packages."""
