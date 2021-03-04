@@ -900,10 +900,13 @@ class IGitRepositoryEdit(IWebhookTarget):
             effective permissions on each of the requested references.
         """
 
-    def getRepositoriesForRepack():
-        """Get all repositories that need a repack.
+    def setRepackData(loose_object_count, pack_count):
+        """Sets the repack parameters received from Turnip.
 
-        :return: A collection of `IGitRepository` objects.
+        :param loose_object_count: The number of loose objects that
+            this repository currently has.
+        :param pack_count: The number of packs that
+            this repository currently has.
         """
 
     @operation_parameters(
@@ -1068,14 +1071,14 @@ class IGitRepositorySet(Interface):
         :return: A collection of `IGitRepository` objects.
         """
 
-    # @operation_returns_collection_of(IGitRepository)
-    # @export_read_operation()
-    # @operation_for_version("devel")
-    # def getRepositoriesForRepack():
-    #     """Get all repositories that need a repack.
-    #
-    #     :return: A collection of `IGitRepository` objects.
-    #     """
+    @operation_returns_collection_of(IGitRepository)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getRepositoriesForRepack():
+        """Get all repositories that need a repack.
+
+        :return: A collection of `IGitRepository` objects.
+        """
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
