@@ -181,10 +181,10 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual([job_1], runner.completed_jobs)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('job.start_count,type=NullJob,env=test',))
+            ('job.start_count,env=test,type=NullJob',))
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ('job.complete_count,type=NullJob,env=test',))
+            ('job.complete_count,env=test,type=NullJob',))
 
     def test_runAll(self):
         """Ensure runAll works in the normal case."""
@@ -232,10 +232,10 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual(["{'foo': 'bar'}"], list(oops['req_vars'].values()))
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('job.start_count,type=NullJob,env=test',))
+            ('job.start_count,env=test,type=NullJob',))
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ('job.fail_count,type=NullJob,env=test',))
+            ('job.fail_count,env=test,type=NullJob',))
 
     def test_oops_messages_used_when_handling(self):
         """Oops messages should appear even when exceptions are handled."""

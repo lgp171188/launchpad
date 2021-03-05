@@ -80,9 +80,10 @@ class NumberCruncher(service.Service):
         stopping_deferred = loop.start(interval)
         return loop, stopping_deferred
 
-    def _sendGauge(self, gauge_name, value):
-        self.logger.debug("{}: {}".format(gauge_name, value))
-        self.statsd_client.gauge(gauge_name, value)
+    def _sendGauge(self, gauge_name, value, labels=None):
+        self.logger.debug("{}: {}".format(
+            self.statsd_client.composeMetric(gauge_name, labels), value))
+        self.statsd_client.gauge(gauge_name, value, labels=labels)
 
     def updateBuilderQueues(self):
         """Update statsd with the build queue lengths.
@@ -95,9 +96,9 @@ class NumberCruncher(service.Service):
             for queue_type, contents in queue_details.items():
                 virt = queue_type == 'virt'
                 for arch, value in contents.items():
-                    gauge_name = (
-                        "buildqueue,virtualized={},arch={}".format(virt, arch))
-                    self._sendGauge(gauge_name, value[0])
+                    self._sendGauge(
+                        "buildqueue", value[0],
+                        labels={"virtualized": virt, "arch": arch})
             self.logger.debug("Build queue stats update complete.")
         except Exception:
             self.logger.exception("Failure while updating build queue stats:")
@@ -115,9 +116,7 @@ class NumberCruncher(service.Service):
                 continue
             for processor_name in builder.processor_names:
                 counts = counts_by_processor.setdefault(
-                    "{},virtualized={}".format(
-                        processor_name,
-                        builder.virtualized),
+                    (processor_name, builder.virtualized),
                     {'cleaning': 0, 'idle': 0, 'disabled': 0, 'building': 0})
                 if not builder.builderok:
                     counts['disabled'] += 1
@@ -127,11 +126,15 @@ class NumberCruncher(service.Service):
                     counts['building'] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEAN:
                     counts['idle'] += 1
-        for processor, counts in counts_by_processor.items():
+        for (processor, virtualized), counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
-                gauge_name = "builders,status={},arch={}".format(
-                    count_name, processor)
-                self._sendGauge(gauge_name, count_value)
+                self._sendGauge(
+                    "builders", count_value,
+                    labels={
+                        "status": count_name,
+                        "arch": processor,
+                        "virtualized": virtualized,
+                        })
         self.logger.debug("Builder stats update complete.")
 
     def updateBuilderStats(self):

@@ -784,7 +784,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,job_type=SNAPBUILD,builder_name={},env=test'.format(
+            ('build.count,builder_name={},env=test,job_type=SNAPBUILD'.format(
                 builder.name),))
 
     @defer.inlineCallbacks

@@ -297,11 +297,11 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertEqual(4, self.stats_client.incr.call_count)
         calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
         self.assertThat(calls, MatchesListwise([
-            Equals('job.start_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals('job.start_count,env=test,type=OCIRecipeRequestBuildsJob'),
             Equals(
-                'job.complete_count,type=OCIRecipeRequestBuildsJob,env=test'),
-            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test')]))
+                'job.complete_count,env=test,type=OCIRecipeRequestBuildsJob'),
+            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob')]))
 
     def test_run_multiple_architectures(self):
         build_request = self.makeBuildRequest()
@@ -336,13 +336,13 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
             client.uploadManifestList.calls)
         calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
         self.assertThat(calls, MatchesListwise([
-            Equals('job.start_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals('job.start_count,env=test,type=OCIRecipeRequestBuildsJob'),
             Equals(
-                'job.complete_count,type=OCIRecipeRequestBuildsJob,env=test'),
-            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test')]))
+                'job.complete_count,env=test,type=OCIRecipeRequestBuildsJob'),
+            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob')]))
 
     def test_failing_upload_does_not_retries_automatically(self):
         build_request = self.makeBuildRequest(include_i386=False)
