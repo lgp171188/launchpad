@@ -924,6 +924,10 @@ def merge_people(from_person, to_person, reviewer, delete=False):
     _mergeOCIRecipe(cur, from_person, to_person)
     skip.append(('ocirecipe', 'owner'))
 
+    # XXX pappacena 2021-03-05: We need to implement the proper handling for
+    # this once we have OCIRecipeSubscription implemented.
+    skip.append(('ocirecipesubscription', 'person'))
+
     # Sanity check. If we have a reference that participates in a
     # UNIQUE index, it must have already been handled by this point.
     # We can tell this by looking at the skip list.
