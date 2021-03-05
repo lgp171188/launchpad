@@ -1392,7 +1392,6 @@ class SnapSet:
         """See `ISnapSet`."""
         return BRANCH_POLICY_ALLOWED_TYPES[project.branch_sharing_policy]
 
-
     def isValidInformationType(self, information_type, owner, branch=None,
                                git_ref=None):
         private = information_type not in PUBLIC_INFORMATION_TYPES
@@ -1478,9 +1477,14 @@ class SnapSet:
                 collection.visibleByUser(visible_by_user),
                 visible_by_user=visible_by_user)
 
+        snaps_for_project = IStore(Snap).find(
+            Snap,
+            Snap.project == project,
+            get_snap_privacy_filter(visible_by_user))
         bzr_collection = removeSecurityProxy(IBranchCollection(project))
         git_collection = removeSecurityProxy(IGitCollection(project))
-        return _getSnaps(bzr_collection).union(_getSnaps(git_collection))
+        return snaps_for_project.union(
+            _getSnaps(bzr_collection)).union(_getSnaps(git_collection))
 
     def findByBranch(self, branch, visible_by_user=None):
         """See `ISnapSet`."""
