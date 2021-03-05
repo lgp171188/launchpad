@@ -122,11 +122,17 @@ wasn't a handler registered for that domain, an OOPS was recorded with
 a link to the original message.
 
     >>> from lp.testing.mail_helpers import pop_notifications
-    >>> print(str(pop_notifications()[-1]))
-    From ...
-    Content-Type: multipart/mixed...
-    ...
-    To: Sample Person <test@canonical.com>
+    >>> notification = pop_notifications()[-1]
+    >>> print(notification.get_content_type())
+    multipart/mixed
+    >>> print(notification['To'])
+    Sample Person <test@canonical.com>
+    >>> error_message, original_message = notification.get_payload()
+    >>> print(error_message.get_content_type())
+    text/plain
+    >>> print(error_message.get_payload(decode=True).decode())
+    An error occurred while processing a mail you sent to Launchpad's email
+    interface.
     ...
     Sorry, something went wrong when Launchpad tried processing your mail.
     We've recorded what happened, and we'll fix it as soon as possible.
@@ -135,11 +141,14 @@ a link to the original message.
     If this is blocking your work, please file a question at
     https://answers.launchpad.net/launchpad/+addquestion
     and include the error ID OOPS-... in the descr...
-    ...
-    From: Sample Person <test@canonical.com>
-    To: 123@baz.com
-    Subject: Signed Email
-    ...
+    >>> print(original_message.get_content_type())
+    message/rfc822
+    >>> print(original_message.get_payload(0)['From'])
+    Sample Person <test@canonical.com>
+    >>> print(original_message.get_payload(0)['To'])
+    123@baz.com
+    >>> print(original_message.get_payload(0)['Subject'])
+    Signed Email
 
 ---------------------------------------------
 Mail from Persons not registered in Launchpad
@@ -259,11 +268,17 @@ And submit an email to the handler.
 An exception is raised, an OOPS is recorded, and an email is sent back
 to the user, citing the OOPS ID, with the original message attached.
 
-    >>> print(str(pop_notifications()[-1]))
-    From ...
-    Content-Type: multipart/mixed...
-    ...
-    To: Foo Bar <foo.bar@canonical.com>
+    >>> notification = pop_notifications()[-1]
+    >>> print(notification.get_content_type())
+    multipart/mixed
+    >>> print(notification['To'])
+    Foo Bar <foo.bar@canonical.com>
+    >>> error_message, original_message = notification.get_payload()
+    >>> print(error_message.get_content_type())
+    text/plain
+    >>> print(error_message.get_payload(decode=True).decode())
+    An error occurred while processing a mail you sent to Launchpad's email
+    interface.
     ...
     Sorry, something went wrong when Launchpad tried processing your mail.
     We've recorded what happened, and we'll fix it as soon as possible.
@@ -271,13 +286,17 @@ to the user, citing the OOPS ID, with the original message attached.
     <BLANKLINE>
     If this is blocking your work, please file a question at
     https://answers.launchpad.net/launchpad/+addquestion
-    and include the error ID OOPS-...... in the descr...
-    ...
-    From: Foo Bar <foo.bar@canonical.com>
-    To: launchpad@oops.com
-    X-Launchpad-Original-To: launchpad@oops.com
-    Subject: doesn't matter
-    ...
+    and include the error ID OOPS-... in the descr...
+    >>> print(original_message.get_content_type())
+    message/rfc822
+    >>> print(original_message.get_payload(0)['From'])
+    Foo Bar <foo.bar@canonical.com>
+    >>> print(original_message.get_payload(0)['To'])
+    launchpad@oops.com
+    >>> print(original_message.get_payload(0)['X-Launchpad-Original-To'])
+    launchpad@oops.com
+    >>> print(original_message.get_payload(0)['Subject'])
+    doesn't matter
 
 Unauthorized exceptions, which are ignored for the purpose of OOPS
 reporting in the web interface, are not ignored in the email interface.
@@ -298,16 +317,22 @@ reporting in the web interface, are not ignored in the email interface.
     ... doesn't matter
     ... """)
     >>> msgid = sendmail(msg, ['edit@malone-domain'])
-    >>> handleMailForTest()
+    >>> handleMailForTest()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     ERROR:process-mail:An exception was raised inside the handler:
     ...
-    Unauthorized
+    twisted.cred.error.Unauthorized
 
-    >>> print(str(pop_notifications()[-1]))
-    From ...
-    Content-Type: multipart/mixed...
-    ...
-    To: Foo Bar <foo.bar@canonical.com>
+    >>> notification = pop_notifications()[-1]
+    >>> print(notification.get_content_type())
+    multipart/mixed
+    >>> print(notification['To'])
+    Foo Bar <foo.bar@canonical.com>
+    >>> error_message, original_message = notification.get_payload()
+    >>> print(error_message.get_content_type())
+    text/plain
+    >>> print(error_message.get_payload(decode=True).decode())
+    An error occurred while processing a mail you sent to Launchpad's email
+    interface.
     ...
     Sorry, something went wrong when Launchpad tried processing your mail.
     We've recorded what happened, and we'll fix it as soon as possible.
@@ -315,13 +340,17 @@ reporting in the web interface, are not ignored in the email interface.
     <BLANKLINE>
     If this is blocking your work, please file a question at
     https://answers.launchpad.net/launchpad/+addquestion
-    and include the error ID OOPS-...... in the descr...
-    ...
-    From: Foo Bar <foo.bar@canonical.com>
-    To: launchpad@unauthorized.com
-    X-Launchpad-Original-To: launchpad@unauthorized.com
-    Subject: doesn't matter
-    ...
+    and include the error ID OOPS-... in the descr...
+    >>> print(original_message.get_content_type())
+    message/rfc822
+    >>> print(original_message.get_payload(0)['From'])
+    Foo Bar <foo.bar@canonical.com>
+    >>> print(original_message.get_payload(0)['To'])
+    launchpad@unauthorized.com
+    >>> print(original_message.get_payload(0)['X-Launchpad-Original-To'])
+    launchpad@unauthorized.com
+    >>> print(original_message.get_payload(0)['Subject'])
+    doesn't matter
 
 -------------
 DB exceptions
@@ -367,7 +396,7 @@ out:
     ERROR:...:An exception was raised inside the handler: http://...
     Traceback (most recent call last):
     ...
-    DataError: division by zero
+    ...DataError: division by zero
     <BLANKLINE>
     WARNING...
 
@@ -401,10 +430,10 @@ logged.
     >>> len(stub.test_emails)
     2
 
-    >>> handleMailForTest()
+    >>> handleMailForTest()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     ERROR:...:Upload to Librarian failed...
     ...
-    UploadFailed: ...Connection refused...
+    lp.services.librarian.interfaces.client.UploadFailed: ...Connection refused...
 
     >>> len(stub.test_emails)
     2

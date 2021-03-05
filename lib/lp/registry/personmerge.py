@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person/team merger implementation."""
@@ -916,6 +916,10 @@ def merge_people(from_person, to_person, reviewer, delete=False):
 
     _mergeSnap(cur, from_person, to_person)
     skip.append(('snap', 'owner'))
+
+    # XXX pappacena 2021-02-18: add tests for this once we have
+    # SnapSubscription model in place.
+    skip.append(('snapsubscription', 'person'))
 
     _mergeOCIRecipe(cur, from_person, to_person)
     skip.append(('ocirecipe', 'owner'))

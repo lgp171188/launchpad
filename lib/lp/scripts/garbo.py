@@ -505,7 +505,7 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
                     DistributionSourcePackageCache.archiveID,
                     DistributionSourcePackageCache.distributionID,
                     DistributionSourcePackageCache.sourcepackagenameID),
-                map(Row, cache_filter_data)))
+                [Row(cache_key) for cache_key in cache_filter_data]))
         for dspc in rows:
             existing_records.add(
                 (dspc.archiveID, dspc.distributionID,
@@ -626,7 +626,7 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
                     lpsprc.upload_archive_id,
                     lpsprc.upload_distroseries_id,
                     lpsprc.sourcepackagename_id),
-                map(Row, cache_filter_data)))
+                [Row(cache_key) for cache_key in cache_filter_data]))
         for lpsprc_record in rs:
             key = (
                 lpsprc_record.maintainer_id,

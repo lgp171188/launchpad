@@ -31,10 +31,10 @@ These are parsed into webapp.vhost.allvhosts.
     >>> allvhosts.use_https
     False
     >>> for confname, vhost in sorted(allvhosts.configs.items()):
-    ...     print confname, '@', vhost.hostname
-    ...     print 'rooturl:', vhost.rooturl
-    ...     print 'althosts:', (', '.join(vhost.althostnames))
-    ...     print '----'
+    ...     print(confname, '@', vhost.hostname)
+    ...     print('rooturl:', vhost.rooturl)
+    ...     print('althosts:', (', '.join(vhost.althostnames)))
+    ...     print('----')
     answers @ answers.launchpad.test
     rooturl: http://answers.launchpad.test/
     althosts:
@@ -85,7 +85,7 @@ collected into a set.  This provides a quick way to determine if a
 request is headed to one of the officialy-used Launchpad host names:
 
     >>> for hostname in sorted(allvhosts.hostnames):
-    ...     print hostname
+    ...     print(hostname)
     answers.launchpad.test
     api.launchpad.test
     blueprints.launchpad.test
@@ -162,7 +162,7 @@ canHandle() by saving the environment to a thread-local variable. This
 information is retrieved later on, in __call__().
 
     >>> for key, value in sorted(factory._thread_local.environment.items()):
-    ...     print '%s: %s' % (key, value)
+    ...     print('%s: %s' % (key, value))
     HTTP_HOST: launchpad.test
     REQUEST_METHOD: GET
     SERVER_PORT: 1234
@@ -417,10 +417,10 @@ listens on a particular port.
 
 Find the port the Private XMLRPC service is listening on.
 
-    >>> for server in config.servers:
-    ...     if server.type == 'PrivateXMLRPC':
-    ...         private_port = server.address[1]
+    >>> config.use_gunicorn
+    True
 
+    >>> private_port = config.vhost.xmlrpc_private.private_port
     >>> print_request_and_publication(
     ...     'xmlrpc-private.launchpad.test', method='POST',
     ...     mime_type='application/xml')
@@ -459,13 +459,13 @@ less nice.
 
     >>> logout()
     >>> from lp.testing.pages import http
-    >>> print http("GET / HTTP/1.1\n"
-    ...            "Host: nosuchhost.launchpad.test")
+    >>> print(http("GET / HTTP/1.1\n"
+    ...            "Host: nosuchhost.launchpad.test"))
     HTTP/1.1 404 Not Found
     ...
 
-    >>> print http("GET /foo/bar HTTP/1.1\n"
-    ...            "Host: xmlrpc.launchpad.test")
+    >>> print(http("GET /foo/bar HTTP/1.1\n"
+    ...            "Host: xmlrpc.launchpad.test"))
     HTTP/1.1 405 Method Not Allowed
     Allow: POST
     ...
@@ -526,16 +526,17 @@ The advantage of the IBrowserFormNG API is that it offers methods that
 checks the number of values you are expecting. The getOne() method
 should be used when you expect only one value for the field.
 
-    >>> request.form_ng.getOne('a_field')
-    u'a_value'
+    >>> print(request.form_ng.getOne('a_field'))
+    a_value
 
 UnexpectedFormData is raised if more than one value was submitted for
 the field:
 
     >>> request.form_ng.getOne('items_field')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData:...
+    lp.app.errors.UnexpectedFormData: ...
 
 None is returned if the field wasn't submitted:
 
@@ -545,20 +546,24 @@ None is returned if the field wasn't submitted:
 You can provide a default value that is returned if the field wasn't
 submitted:
 
-    >>> request.form_ng.getOne('another_field', u'default')
-    u'default'
+    >>> print(request.form_ng.getOne('another_field', u'default'))
+    default
 
 The getAll() method should be used when you are expecting a list of
 values.
 
-    >>> request.form_ng.getAll('items_field')
-    [u'1', u'2', u'3']
+    >>> for item in request.form_ng.getAll('items_field'):
+    ...     print(item)
+    1
+    2
+    3
 
 If only one value was submitted, it will still be returned as part of
 a list:
 
-    >>> request.form_ng.getAll('a_field')
-    [u'a_value']
+    >>> for item in request.form_ng.getAll('a_field'):
+    ...     print(item)
+    a_value
 
 An empty list is returned when no value was submitted for the field:
 
@@ -568,13 +573,14 @@ An empty list is returned when no value was submitted for the field:
 That method also accepts a default value that is to be returned when
 no value was submitted with the field.
 
-    >>> request.form_ng.getAll('another_field', [u'default'])
-    [u'default']
+    >>> for item in request.form_ng.getAll('another_field', [u'default']):
+    ...     print(item)
+    default
 
 All the submitted field names can be iterated over:
 
     >>> for name in sorted(request.form_ng):
-    ...     print name
+    ...     print(name)
     a_field
     items_field
 
@@ -616,7 +622,7 @@ name of the context class and the view class name.
     >>> view = TestView(TestContext(), request)
     >>> publication.beforeTraversal(request)
     >>> publication.afterTraversal(request, view)
-    >>> print request._orig_env['launchpad.pageid']
+    >>> print(request._orig_env['launchpad.pageid'])
     TestContext:TestView
     >>> from lp.services.webapp.adapter import (
     ...     clear_request_started, set_request_started)
@@ -665,8 +671,9 @@ current thread.
     False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
-    >>> publication.callObject(request, TestView(TestContext(), request))
-    u'Result'
+    >>> print(publication.callObject(
+    ...     request, TestView(TestContext(), request)))
+    Result
     >>> publication.afterCall(request, None)
     >>> 'launchpad.publicationduration' in request._orig_env
     True
@@ -731,8 +738,9 @@ completed), we'll have the duration for the traversal and the duration for
 the publication, up to the point where it was forcefully stopped.
 
     >>> publication.afterTraversal(request, None)
-    >>> publication.callObject(request, TestView(TestContext(), request))
-    u'Result'
+    >>> print(publication.callObject(
+    ...     request, TestView(TestContext(), request)))
+    Result
     >>> set_request_started()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
@@ -773,9 +781,10 @@ If that happens, though, we'll remove the
     ... except:
     ...     publication.handleException(
     ...         None, request, sys.exc_info(), retry_allowed=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Retry: foo
+    zope.publisher.interfaces.Retry: foo
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
@@ -801,9 +810,10 @@ If that happens, though, we'll remove the
     ...     exc_info = sys.exc_info()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Retry: foo DisconnectionError
+    zope.publisher.interfaces.Retry: foo DisconnectionError
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
@@ -833,9 +843,10 @@ WSGI env.
     ... except:
     ...     publication.handleException(
     ...         None, request, sys.exc_info(), retry_allowed=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Retry: foo
+    zope.publisher.interfaces.Retry: foo
 
     >>> request._orig_env['launchpad.publicationduration']
     0.5
@@ -864,7 +875,7 @@ The user attribute is an empty string, when no user is logged in.
     >>> import transaction
     >>> txn = transaction.begin()
     >>> request, publication = get_request_and_publication()
-    >>> print request.principal
+    >>> print(request.principal)
     None
 
     # Our afterCall() implementation expects to find _publication_start and
@@ -874,7 +885,7 @@ The user attribute is an empty string, when no user is logged in.
     >>> request._publication_start = 1.345
     >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
-    >>> print txn.user
+    >>> print(txn.user)
     <BLANKLINE>
 
 But if there is a logged in user, the transaction user attribute will
@@ -889,7 +900,7 @@ allowing different authentication based on the traversed objects):
     16
     >>> request.setPrincipal(foo_bar)
     >>> publication.afterCall(request, None)
-    >>> print txn.user
+    >>> print(txn.user)
      / 16
 
 
@@ -907,7 +918,7 @@ some string in its finishReadOnlyRequest().
 
     >>> class MyPublication(LaunchpadBrowserPublication):
     ...     def finishReadOnlyRequest(self, request, ob, txn):
-    ...         print "booo!"
+    ...         print("booo!")
 
     >>> publication = MyPublication(None)
     >>> publication.afterCall(request, None)
@@ -927,7 +938,7 @@ be automatically reverted in a GET request.
     ...         Person.id == EmailAddress.personID,
     ...         EmailAddress.email == 'foo.bar@canonical.com').one()
     >>> foo_bar = get_foo_bar_person()
-    >>> print foo_bar.description
+    >>> print(foo_bar.description)
     None
     >>> foo_bar.description = 'Montreal'
 
@@ -942,7 +953,7 @@ be automatically reverted in a GET request.
     >>> publication.afterCall(request, None)
     >>> txn = transaction.begin()
     >>> foo_bar = get_foo_bar_person()
-    >>> print foo_bar.description
+    >>> print(foo_bar.description)
     None
 
 But not if the request uses POST, the changes will be preserved.
@@ -960,7 +971,7 @@ But not if the request uses POST, the changes will be preserved.
     >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
     >>> txn = transaction.begin()
-    >>> print get_foo_bar_person().description
+    >>> print(get_foo_bar_person().description)
     Darwin
 
 
@@ -977,7 +988,7 @@ Doomed transactions are aborted.
     >>> bound_abort = txn.abort
     >>> def faux_abort():
     ...     bound_abort()
-    ...     print 'Aborted'
+    ...     print('Aborted')
     ...
     >>> txn.abort = faux_abort
 
@@ -1036,8 +1047,8 @@ afterCall() publication hook.)
     >>> request._publication_start = 1.345
     >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
-    >>> request.response.consumeBody()
-    ''
+    >>> print(six.ensure_text(request.response.consumeBody()))
+    <BLANKLINE>
 
 In other cases, like a GET, the body would be unchanged.
 
@@ -1053,7 +1064,7 @@ In other cases, like a GET, the body would be unchanged.
     >>> request._publication_start = 1.345
     >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
-    >>> print request.response.consumeBody()
+    >>> print(six.ensure_text(request.response.consumeBody()))
     Some boring content.
 
 
@@ -1092,11 +1103,11 @@ utility to setup the request.
     >>> import base64
     >>> login(ANONYMOUS) # Get rid of the marker object in the interaction.
     >>> foo_bar_auth = 'Basic %s' % (
-    ...     base64.b64encode('foo.bar@canonical.com:test'))
+    ...     base64.b64encode(b'foo.bar@canonical.com:test').decode('ASCII'))
     >>> request, publication = get_request_and_publication(
     ...     extra_environment=dict(HTTP_AUTHORIZATION=foo_bar_auth))
     >>> principal = publication.getPrincipal(request)
-    >>> print principal.title
+    >>> print(principal.title)
     Foo Bar
 
 The feeds implementation always returns the anonymous user.
@@ -1141,12 +1152,12 @@ token.
     ...     extra_environment=dict(QUERY_STRING=urlencode(form)))
     >>> test_request.processInputs()
     >>> principal = publication.getPrincipal(test_request)
-    >>> print principal.title
+    >>> print(principal.title)
     Guilherme Salgado
     >>> principal.access_level
     <DBItem AccessLevel.WRITE_PUBLIC...
-    >>> principal.scope_url
-    u'/firefox'
+    >>> print(principal.scope_url)
+    /firefox
 
 If the token is expired or doesn't exist, an Unauthorized exception is
 raised, though.
@@ -1161,9 +1172,10 @@ raised, though.
     >>> form2['oauth_nonce'] = '1764572616e48616d6d65724c61686'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TokenException: Expired token...
+    lp.services.oauth.interfaces.TokenException: Expired token...
 
     >>> access_token.date_expires = now + timedelta(days=1)
 
@@ -1172,9 +1184,10 @@ raised, though.
     >>> form2['oauth_nonce'] = '4572616e48616d6d65724c61686176'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TokenException: Unknown access token...
+    lp.services.oauth.interfaces.TokenException: Unknown access token...
 
 The consumer must be registered as well, and the signature must be
 correct.
@@ -1183,18 +1196,20 @@ correct.
     >>> form2['oauth_consumer_key'] += 'z'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: Unknown consumer (foobar123451432z).
+    zope.security.interfaces.Unauthorized: Unknown consumer (foobar123451432z).
 
     >>> form2 = form.copy()
     >>> form2['oauth_signature'] += 'z'
     >>> form2['oauth_nonce'] = '2616e48616d6d65724c61686176457'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    TokenException: Invalid signature.
+    lp.services.oauth.interfaces.TokenException: Invalid signature.
 
 Close the bogus request that was started by the call to
 beforeTraversal, in order to ensure we leave our state sane.

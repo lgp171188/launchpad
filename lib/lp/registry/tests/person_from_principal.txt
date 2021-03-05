@@ -9,9 +9,10 @@ raised.
     ...     id = 42
     ...     person = None
     >>> person_from_principal(NoLaunchpadPrincipal())
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ComponentLookupError
+    zope.interface.interfaces.ComponentLookupError
 
 If an ILaunchpadPrincipal is passed in, the principal's .person
 attribute is returned. The .person attribute was set when the principal

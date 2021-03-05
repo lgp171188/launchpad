@@ -1176,32 +1176,6 @@ class RedirectToEditLanguagesView(LaunchpadView):
             '%s/+editlanguages' % canonical_url(self.user))
 
 
-@delegate_to(IPerson, context='person')
-class PersonWithKeysAndPreferredEmail:
-    """A decorated person that includes GPG keys and preferred emails."""
-
-    # These need to be predeclared to avoid delegates taking them over.
-    # Would be nice if there was a way of allowing writes to just work
-    # (i.e. no proxying of __set__).
-    gpgkeys = None
-    sshkeys = None
-    preferredemail = None
-
-    def __init__(self, person):
-        self.person = person
-        self.gpgkeys = []
-        self.sshkeys = []
-
-    def addGPGKey(self, key):
-        self.gpgkeys.append(key)
-
-    def addSSHKey(self, key):
-        self.sshkeys.append(key)
-
-    def setPreferredEmail(self, email):
-        self.preferredemail = email
-
-
 class PersonRdfView(BaseRdfView):
     """A view that embeds PersonRdfContentsView in a standalone page."""
 
@@ -4160,13 +4134,13 @@ class ContactViaWebNotificationRecipientSet:
         """
         if self.primary_reason is self.TO_USER:
             reason = (
-                'using the "Contact this user" link on your profile page\n'
+                'using the "Contact this user" link on your profile page '
                 '(%s)' % canonical_url(person_or_team))
             header = 'ContactViaWeb user'
         elif self.primary_reason is self.TO_ADMINS:
             reason = (
                 'using the "Contact this team\'s admins" link on the '
-                '%s team page\n(%s)' % (
+                '%s team page (%s)' % (
                     person_or_team.displayname,
                     canonical_url(person_or_team)))
             header = 'ContactViaWeb owner (%s team)' % person_or_team.name
@@ -4174,7 +4148,7 @@ class ContactViaWebNotificationRecipientSet:
             # self.primary_reason is self.TO_MEMBERS.
             reason = (
                 'to each member of the %s team using the '
-                '"Contact this team" link on the %s team page\n(%s)' % (
+                '"Contact this team" link on the %s team page (%s)' % (
                     person_or_team.displayname,
                     person_or_team.displayname,
                     canonical_url(person_or_team)))

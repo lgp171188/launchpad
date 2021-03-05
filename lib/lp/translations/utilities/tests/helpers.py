@@ -25,8 +25,8 @@ def import_pofile_or_potemplate(file_contents, person,
     pofile=None, potemplate=None, by_maintainer=True):
     """Import a `POFile` or `POTemplate` from the given string.
 
-    :param file_contents: text of "file" to import, or a seekable file
-        object containing the text.
+    :param file_contents: contents of "file" to import as a byte string, or
+        a seekable file object open in binary mode.
     :param person: party requesting the import.
     :param pofile: if uploading a `POFile`, file to import to; None otherwise.
     :param potemplate: if uploading a `POTemplate`, file to import to; None

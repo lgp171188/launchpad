@@ -94,18 +94,19 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
         other compressed.
         """
         repo_file = self.getRepoFile('boing')
-        repo_file.write('hello')
+        repo_file.write(b'hello')
         repo_file.close()
 
-        gzip_file = gzip.open(os.path.join(self.root, 'boing.gz'))
-        gzip_content = gzip_file.read()
-        bz2_content = bz2.decompress(
-            open(os.path.join(self.root, 'boing.bz2')).read())
-        xz_content = lzma.open(os.path.join(self.root, 'boing.xz')).read()
+        with gzip.open(os.path.join(self.root, 'boing.gz')) as gzip_file:
+            gzip_content = gzip_file.read()
+        with bz2.BZ2File(os.path.join(self.root, 'boing.bz2')) as bz2_file:
+            bz2_content = bz2_file.read()
+        with lzma.open(os.path.join(self.root, 'boing.xz')) as xz_file:
+            xz_content = xz_file.read()
 
         self.assertEqual(gzip_content, bz2_content)
         self.assertEqual(gzip_content, xz_content)
-        self.assertEqual('hello', gzip_content)
+        self.assertEqual(b'hello', gzip_content)
 
         # gzip is compressed as if with "-n", ensuring that the hash
         # doesn't change just because we're compressing at a different

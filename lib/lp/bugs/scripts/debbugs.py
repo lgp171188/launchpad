@@ -231,10 +231,10 @@ class Database:
             logreader = process.stdout
             comment = io.BytesIO()
             for line in logreader:
-                if line == '.\n':
+                if line == b'.\n':
                     comments.append(comment.getvalue())
                     comment = io.BytesIO()
-                elif line.startswith('.'):
+                elif line.startswith(b'.'):
                     comment.write(line[1:])
                 else:
                     comment.write(line)

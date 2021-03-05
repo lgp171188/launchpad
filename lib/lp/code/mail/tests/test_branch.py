@@ -309,7 +309,7 @@ class TestBranchMailerDiffMixin:
         ctrl = self.makeBobMailController(diff=u'hello \u03A3')
         self.assertEqual(1, len(ctrl.attachments))
         diff = ctrl.attachments[0]
-        self.assertEqual('hello \xce\xa3', diff.get_payload(decode=True))
+        self.assertEqual(b'hello \xce\xa3', diff.get_payload(decode=True))
         self.assertEqual('text/x-diff; charset="utf-8"', diff['Content-type'])
         self.assertEqual('inline; filename="revision-diff.txt"',
                          diff['Content-disposition'])

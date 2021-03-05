@@ -178,7 +178,8 @@ def massage(root, project_name, fix_nickname, tag_nickname):
                     u"text/plain")
                 etree.SubElement(attachment, '{%s}contents' % NS).text = (
                     standard_b64encode(
-                        first_comment_text.text.encode('utf-8')))
+                        first_comment_text.text.encode('utf-8')
+                        ).decode('ascii'))
                 # Trim the comment text.
                 problem_resolution('Trimming comment text.')
                 first_comment_text.text = truncate(

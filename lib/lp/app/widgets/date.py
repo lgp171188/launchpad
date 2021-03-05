@@ -84,10 +84,12 @@ class DateTimeWidget(TextWidget):
       >>> widget.request.form[widget.name] = '2005-07-03'
       >>> widget.from_date = datetime(2006, 5, 23,
       ...                             tzinfo=pytz.timezone('UTC'))
-      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
+      >>> print(widget.getInputValue())
+      ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+      ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
       Traceback (most recent call last):
       ...
-      WidgetInputError: (...Please pick a date after 2006-05-22 17:00:00...)
+      zope.formlib.interfaces.WidgetInputError: (...Please pick a date after 2006-05-22 17:00:00...)
 
     If the date provided is greater than from_date then the widget works as
     expected.
@@ -100,10 +102,12 @@ class DateTimeWidget(TextWidget):
 
       >>> widget.to_date = datetime(2008, 1, 26,
       ...                           tzinfo=pytz.timezone('UTC'))
-      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
+      >>> print(widget.getInputValue())
+      ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+      ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
       Traceback (most recent call last):
       ...
-      WidgetInputError: (...Please pick a date before 2008-01-25 16:00:00...)
+      zope.formlib.interfaces.WidgetInputError: (...Please pick a date before 2008-01-25 16:00:00...)
 
     A datetime picker can be disabled initially:
 
@@ -380,10 +384,12 @@ class DateTimeWidget(TextWidget):
 
         Invalid dates result in a ConversionError:
 
-          >>> print(widget._parseInput('not a date'))  #doctest: +ELLIPSIS
+          >>> print(widget._parseInput('not a date'))
+          ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
-          ConversionError: ('Invalid date value', ...)
+          zope.formlib.interfaces.ConversionError: ('Invalid date value', ...)
         """
         if input == self._missing:
             return self.context.missing_value
@@ -541,10 +547,12 @@ class DateWidget(DateTimeWidget):
 
         Invalid dates result in a ConversionError:
 
-          >>> print(widget._toFieldValue('not a date'))  #doctest: +ELLIPSIS
+          >>> print(widget._toFieldValue('not a date'))
+          ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
-          ConversionError: ('Invalid date value', ...)
+          zope.formlib.interfaces.ConversionError: ('Invalid date value', ...)
 
         """
         parsed = self._parseInput(input)

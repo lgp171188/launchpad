@@ -351,7 +351,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
             except Exception as e:
                 if (isinstance(e, SnapStoreError) and e.can_retry and
                         self.attempt_count <= self.max_retries):
-                    raise RetryableSnapStoreError(e.message, detail=e.detail)
+                    raise RetryableSnapStoreError(e.args[0], detail=e.detail)
                 self.error_message = str(e)
                 self.error_messages = getattr(e, "messages", None)
                 self.error_detail = getattr(e, "detail", None)

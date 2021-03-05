@@ -1,7 +1,9 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Definition of the internet servers that Launchpad uses."""
+
+from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
@@ -137,19 +139,19 @@ class StepsToGo(six.Iterator):
     False
     >>> len(stepstogo)
     3
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     foo
     >>> request._traversed_names
     ['foo']
     >>> request.stack
     ['baz', 'bar']
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     bar
     >>> bool(stepstogo)
     True
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     baz
-    >>> print stepstogo.consume()
+    >>> print(stepstogo.consume())
     None
     >>> bool(stepstogo)
     False
@@ -529,7 +531,13 @@ def get_query_string_params(request):
     if query_string is None:
         query_string = ''
 
-    parsed_qs = parse_qs(query_string, keep_blank_values=True)
+    # PEP-3333 specifies that strings must only contain codepoints
+    # representable in ISO-8859-1.
+    kwargs = {}
+    if not six.PY2:
+        kwargs['encoding'] = 'ISO-8859-1'
+        kwargs['errors'] = 'replace'
+    parsed_qs = parse_qs(query_string, keep_blank_values=True, **kwargs)
     # Use BrowserRequest._decode() for decoding the received parameters.
     decoded_qs = {}
     for key, values in six.iteritems(parsed_qs):
@@ -593,6 +601,9 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
             environ['PATH_INFO'] = pi.encode('utf-8')
         super(BasicLaunchpadRequest, self).__init__(
             body_instream, environ, response)
+        # Now replace PATH_INFO with the version decoded by sane_environment.
+        if 'PATH_INFO' in self._environ:
+            environ['PATH_INFO'] = self._environ['PATH_INFO']
 
         # Our response always vary based on authentication.
         self.response.setHeader('Vary', 'Cookie, Authorization')
@@ -1018,8 +1029,8 @@ class LaunchpadTestResponse(LaunchpadBrowserResponse):
     True
 
     >>> response.addWarningNotification('Warning Notification')
-    >>> request.notifications[0].message
-    u'Warning Notification'
+    >>> print(request.notifications[0].message)
+    Warning Notification
     """
 
     uuid = 'LaunchpadTestResponse'
@@ -1110,7 +1121,8 @@ class LaunchpadAccessLogger(CommonAccessLogger):
                 )
            )
 
-
+# XXX pappacena 2021-01-21: These 4 server definitions can be removed once
+# we are using only gunicorn (and not Zope Server).
 http = wsgi.ServerType(
     ZServerTracelogServer,  # subclass of WSGIHTTPServer
     WSGIPublisherApplication,
@@ -1577,10 +1589,13 @@ def register_launchpad_request_publication_factories():
 
     # We may also have a private XML-RPC server.
     private_port = None
-    for server in config.servers:
-        if server.type == 'PrivateXMLRPC':
-            ip, private_port = server.address
-            break
+    if config.use_gunicorn:
+        private_port = config.vhost.xmlrpc_private.private_port
+    else:
+        for server in config.servers:
+            if server.type == 'PrivateXMLRPC':
+                ip, private_port = server.address
+                break
 
     if private_port is not None:
         factories.append(XMLRPCRequestPublicationFactory(

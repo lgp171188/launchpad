@@ -48,8 +48,8 @@ Now, is time to create the new potemplate
 
     >>> from lp.registry.model.productrelease import ProductRelease
     >>> release = ProductRelease.get(3)
-    >>> release.milestone.productseries.product.name
-    u'firefox'
+    >>> print(release.milestone.productseries.product.name)
+    firefox
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
     >>> potemplate = subset.new(
@@ -97,8 +97,8 @@ The status is now FAILED:
 
 And the method returned an email with a notification of the error.
 
-    >>> subject
-    u'Import problem - Welsh (cy) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Welsh (cy) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,

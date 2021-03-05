@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Layers used by Launchpad tests.
@@ -55,6 +55,7 @@ from functools import partial
 import gc
 import logging
 import os
+import select
 import signal
 import socket
 import subprocess
@@ -74,7 +75,11 @@ from fixtures import (
     MonkeyPatch,
     )
 import psycopg2
-from six.moves.urllib.error import URLError
+import six
+from six.moves.urllib.error import (
+    HTTPError,
+    URLError,
+    )
 from six.moves.urllib.parse import (
     quote,
     urlparse,
@@ -1625,7 +1630,8 @@ class AccessLoggingMiddleware:
         # here is gratuitously annoying.  This is similar to parts of
         # wsgiref.util.request_uri, but with slightly more lenient quoting.
         url = quote(
-            environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO', ''),
+            six.ensure_str(
+                environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO', '')),
             safe='/+')
         if environ.get('QUERY_STRING'):
             url += '?' + environ['QUERY_STRING']
@@ -1794,6 +1800,14 @@ class LayerProcessController:
             raise LayerIsolationError(
                 "App server died in this test (status=%s):\n%s" % (
                     cls.appserver.returncode, cls.appserver.stdout.read()))
+        # Cleanup the app server's output buffer between tests.
+        while True:
+            # Read while we have something available at the stdout.
+            r, w, e = select.select([cls.appserver.stdout], [], [], 0)
+            if cls.appserver.stdout in r:
+                cls.appserver.stdout.readline()
+            else:
+                break
         DatabaseLayer.force_dirty_database()
 
     @classmethod
@@ -1836,6 +1850,12 @@ class LayerProcessController:
             try:
                 connection = urlopen(root_url)
                 connection.read()
+            except HTTPError as error:
+                if error.code == 503:
+                    raise RuntimeError(
+                        "App server is returning unknown error code %s. Is "
+                        "there another instance running in the same port?" %
+                        error.code)
             except URLError as error:
                 # We are interested in a wrapped socket.error.
                 if not isinstance(error.reason, socket.error):

@@ -17,6 +17,7 @@ from datetime import (
     )
 from difflib import unified_diff
 import doctest
+from functools import partial
 import hashlib
 import re
 
@@ -99,6 +100,7 @@ from lp.registry.enums import (
     PersonVisibility,
     TeamMembershipPolicy,
     )
+from lp.services.compat import message_as_bytes
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
@@ -138,6 +140,14 @@ from lp.testing.views import (
     create_initialized_view,
     create_view,
     )
+
+
+if six.PY3:
+    from difflib import diff_bytes
+
+    unified_diff_bytes = partial(diff_bytes, unified_diff)
+else:
+    unified_diff_bytes = unified_diff
 
 
 class GitHostingClientMixin:
@@ -1401,7 +1411,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
     def test_preview_diff_utf8(self):
         """A preview_diff in utf-8 should be decoded as utf-8."""
         text = ''.join(six.unichr(x) for x in range(255))
-        diff_bytes = ''.join(unified_diff('', text)).encode('utf-8')
+        diff_bytes = ''.join(unified_diff([''], [text])).encode('utf-8')
         self.setPreviewDiff(diff_bytes)
         transaction.commit()
         view = create_initialized_view(self.bmp, '+index')
@@ -1412,7 +1422,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
     def test_preview_diff_all_chars(self):
         """preview_diff should work on diffs containing all possible bytes."""
         text = b''.join(six.int2byte(x) for x in range(255))
-        diff_bytes = b''.join(unified_diff(b'', text))
+        diff_bytes = b''.join(unified_diff_bytes([b''], [text]))
         self.setPreviewDiff(diff_bytes)
         transaction.commit()
         view = create_initialized_view(self.bmp, '+index')
@@ -1424,7 +1434,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # The preview_diff will recover from a timeout set to get the
         # librarian content.
         text = b''.join(six.int2byte(x) for x in range(255))
-        diff_bytes = b''.join(unified_diff(b'', text))
+        diff_bytes = b''.join(unified_diff_bytes([b''], [text]))
         preview_diff = self.setPreviewDiff(diff_bytes)
         transaction.commit()
 
@@ -1444,7 +1454,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # librarian content.  (This can happen e.g. on staging replicas of
         # the production database.)
         text = b''.join(six.int2byte(x) for x in range(255))
-        diff_bytes = b''.join(unified_diff(b'', text))
+        diff_bytes = b''.join(unified_diff_bytes([b''], [text]))
         preview_diff = self.setPreviewDiff(diff_bytes)
         transaction.commit()
 
@@ -2189,7 +2199,7 @@ class TestCommentAttachmentRendering(TestCaseWithFactory):
         msg = self.factory.makeEmailMessage(
             body='testing',
             attachments=[('test.diff', 'text/plain', attachment_body)])
-        message = MessageSet().fromEmail(msg.as_string())
+        message = MessageSet().fromEmail(message_as_bytes(msg))
         return CodeReviewDisplayComment(
             bmp.createCommentFromMessage(message, None, None, msg))
 

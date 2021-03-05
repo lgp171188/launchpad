@@ -13,7 +13,7 @@ on their status and content.
     ...     mirrors = []
     ...     for tr in header.findNextSiblings('tr'):
     ...         if 'head' in str(tr.attrs):
-    ...             print("%s: %s" % (country, mirrors))
+    ...             print("%s: %s" % (country, pretty(mirrors)))
     ...             country = extract_text(tr.find('th'))
     ...             if country == 'Total':
     ...                 break
@@ -43,14 +43,14 @@ The archive mirrors display the "freshness", how far behind they are.
     Mirrors :...
     >>> print_mirrors_by_countries(browser.contents)
     Antarctica:
-      [(u'Archive-mirror2', u'http', u'128 Kbps', u'Six hours behind'),
-       (u'Archive-redirect-mirror', u'http', u'128 Kbps',
-        u'Last update unknown')]
+      [('Archive-mirror2', 'http', '128 Kbps', 'Six hours behind'),
+       ('Archive-redirect-mirror', 'http', '128 Kbps',
+        'Last update unknown')]
     France:
-      [(u'Archive-404-mirror', u'http', u'512 Kbps', u'Last update unknown'),
-       (u'Archive-mirror', u'http', u'128 Kbps', u'Last update unknown')]
-    United Kingdom: [(u'Canonical-archive', u'http', u'100 Mbps',
-      u'Last update unknown')]
+      [('Archive-404-mirror', 'http', '512 Kbps', 'Last update unknown'),
+       ('Archive-mirror', 'http', '128 Kbps', 'Last update unknown')]
+    United Kingdom: [('Canonical-archive', 'http', '100 Mbps',
+      'Last update unknown')]
 
     >>> find_tags_by_class(
     ...     browser.contents, 'distromirrorstatusSIXHOURSBEHIND')
@@ -66,10 +66,10 @@ Freshness doesn't make sense for CD mirrors so it is not shown for them.
     'http://launchpad.test/ubuntu/+cdmirrors'
     >>> print_mirrors_by_countries(browser.contents)
     France:
-      [(u'Releases-mirror', u'http', u'2 Mbps'),
-       (u'Unreachable-mirror', u'http', u'512 Kbps')]
-    Germany: [(u'Releases-mirror2', u'http', u'2 Mbps')]
-    United Kingdom: [(u'Canonical-releases', u'http', u'100 Mbps')]
+      [('Releases-mirror', 'http', '2 Mbps'),
+       ('Unreachable-mirror', 'http', '512 Kbps')]
+    Germany: [('Releases-mirror2', 'http', '2 Mbps')]
+    United Kingdom: [('Canonical-releases', 'http', '100 Mbps')]
 
 
 Disabled mirrors
@@ -80,9 +80,10 @@ they were out of date, missing some content, etc). This list can only be
 seen by distro owners, mirror admins of the distro or launchpad admins.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/+disabledmirrors')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
     >>> browser.open('http://launchpad.test/ubuntu/+disabledmirrors')
@@ -102,9 +103,10 @@ It's only visible to distro owners, mirror admins of the distro or
 launchpad admins.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/+unofficialmirrors')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
     >>> browser.open('http://launchpad.test/ubuntu/+unofficialmirrors')
@@ -112,7 +114,7 @@ launchpad admins.
     'http://launchpad.test/ubuntu/+unofficialmirrors'
 
     >>> print_mirrors_by_countries(browser.contents)
-    France: [(u'Invalid-mirror', u'http', u'2 Mbps', u'Last update unknown')]
+    France: [('Invalid-mirror', 'http', '2 Mbps', 'Last update unknown')]
 
 
 Pending-review mirrors
@@ -124,9 +126,10 @@ type of mirror is shown.  Also the freshness is not visible since
 pending mirrors have never been probed.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/+pendingreviewmirrors')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
     >>> # Register an unreviewed archive mirror.
@@ -143,8 +146,8 @@ pending mirrors have never been probed.
     >>> browser.open('http://launchpad.test/ubuntu/+pendingreviewmirrors')
     >>> print_mirrors_by_countries(browser.contents)
     Afghanistan:
-     [(u'Kabul LUG mirror', u'ftp', u'10 Gbps',
-       u'Archive')]
+     [('Kabul LUG mirror', 'ftp', '10 Gbps',
+       'Archive')]
     United Kingdom:
-      [(u'Random-releases-mirror', u'http', u'100 Mbps',
-        u'CD Image')]
+      [('Random-releases-mirror', 'http', '100 Mbps',
+        'CD Image')]

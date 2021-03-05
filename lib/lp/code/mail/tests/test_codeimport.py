@@ -5,9 +5,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from email import message_from_string
 import textwrap
 
+import six
 import transaction
 
 from lp.code.enums import (
@@ -16,6 +16,7 @@ from lp.code.enums import (
     TargetRevisionControlSystems,
     )
 from lp.code.tests.helpers import GitHostingFixture
+from lp.services.compat import message_from_bytes
 from lp.services.mail import stub
 from lp.testing import (
     login_celebrity,
@@ -41,7 +42,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             cvs_module='a_module', branch_name='import',
             product=fooix, registrant=eric)
         transaction.commit()
-        msg = message_from_string(stub.test_emails[0][2])
+        msg = message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/import', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -51,7 +52,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    :pserver:anonymouse@cvs.example.com:/cvsroot, a_module\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_svn_to_bzr_import(self):
         # Test the email for a new Subversion-to-Bazaar import.
@@ -64,7 +66,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             branch_name='trunk', product=fooix, registrant=eric,
             rcs_type=RevisionControlSystems.BZR_SVN)
         transaction.commit()
-        msg = message_from_string(stub.test_emails[0][2])
+        msg = message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/trunk', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -74,7 +76,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    svn://svn.example.com/fooix/trunk\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_git_to_bzr_import(self):
         # Test the email for a new git-to-Bazaar import.
@@ -86,7 +89,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             git_repo_url='git://git.example.com/fooix.git',
             branch_name='master', product=fooix, registrant=eric)
         transaction.commit()
-        msg = message_from_string(stub.test_emails[0][2])
+        msg = message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/master', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -97,7 +100,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    git://git.example.com/fooix.git\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_git_to_git_import(self):
         # Test the email for a new git-to-git import.
@@ -111,7 +115,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             branch_name=u'master', product=fooix, registrant=eric,
             target_rcs_type=TargetRevisionControlSystems.GIT)
         transaction.commit()
-        msg = message_from_string(stub.test_emails[0][2])
+        msg = message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/+git/master', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -122,7 +126,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    git://git.example.com/fooix.git\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_new_source_package_import(self):
         # Test the email for a new sourcepackage import.
@@ -138,7 +143,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             git_repo_url='git://git.example.com/fooix.git',
             branch_name='master', sourcepackage=fooix, registrant=eric)
         transaction.commit()
-        msg = message_from_string(stub.test_emails[0][2])
+        msg = message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual(
             '~eric/foobuntu/manic/fooix/master', msg['X-Launchpad-Branch'])
@@ -150,7 +155,8 @@ class TestNewCodeImports(TestCaseWithFactory):
             '    git://git.example.com/fooix.git\n'
             '\n'
             '-- \nYou are getting this email because you are a member of the '
-            'vcs-imports team.\n', msg.get_payload(decode=True))
+            'vcs-imports team.\n',
+            six.ensure_text(msg.get_payload(decode=True)))
 
 
 class TestUpdatedCodeImports(TestCaseWithFactory):
@@ -159,7 +165,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def assertSameDetailsEmail(self, details, unique_name):
-        msg = message_from_string(stub.test_emails[0][2])
+        msg = message_from_bytes(stub.test_emails[0][2])
         self.assertEqual(
             'code-import-updated', msg['X-Launchpad-Notification-Type'])
         self.assertEqual(unique_name, msg['X-Launchpad-Branch'])
@@ -174,11 +180,11 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
                 'details': details,
                 'unique_name': unique_name,
                 },
-            msg.get_payload(decode=True))
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def assertDifferentDetailsEmail(self, old_details, new_details,
                                     unique_name):
-        msg = message_from_string(stub.test_emails[0][2])
+        msg = message_from_bytes(stub.test_emails[0][2])
         self.assertEqual(
             'code-import-updated', msg['X-Launchpad-Notification-Type'])
         self.assertEqual(unique_name, msg['X-Launchpad-Branch'])
@@ -198,7 +204,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
                 'new_details': new_details,
                 'unique_name': unique_name,
                 },
-            msg.get_payload(decode=True))
+            six.ensure_text(msg.get_payload(decode=True)))
 
     def test_cvs_to_bzr_import_same_details(self):
         code_import = self.factory.makeProductCodeImport(

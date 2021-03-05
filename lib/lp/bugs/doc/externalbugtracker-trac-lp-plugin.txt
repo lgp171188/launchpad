@@ -94,7 +94,7 @@ After it has been called, the XML-RPC transport will have its
 auth_cookie attribute set.
 
     >>> test_transport.cookie_jar
-    <RequestsCookieJar[Cookie(version=0, name=u'trac_auth'...
+    <RequestsCookieJar[Cookie(version=0, name=...'trac_auth'...
 
 The XML-RPC transport shares its cookiejar with the TracLPPlugin instance.
 This is so that the TracLPPlugin can use the cookiejar when authenticating
@@ -107,7 +107,7 @@ use, meaning that there's no need to manually manipulate cookies.
 So if we look in the TracLPPlugin's CookieJar we'll see the same cookie:
 
     >>> trac._cookie_jar
-    <RequestsCookieJar[Cookie(version=0, name=u'trac_auth'...
+    <RequestsCookieJar[Cookie(version=0, name=...'trac_auth'...
 
 And altering the cookie in the TracLPPlugin's CookieJar will mean, of
 course, that it's altered in the XML-RPC transport's CookieJar, too.
@@ -118,12 +118,12 @@ course, that it's altered in the XML-RPC transport's CookieJar, too.
     ...     domain='http://example.com', path='')
 
     >>> trac._cookie_jar
-    <...CookieJar[Cookie(version=0, name=u'trac_auth',
-    value=u'Look ma, a new cookie!'...>
+    <...CookieJar[Cookie(version=0, name=...'trac_auth',
+    value=...'Look ma, a new cookie!'...>
 
     >>> test_transport.cookie_jar
-    <...CookieJar[Cookie(version=0, name=u'trac_auth',
-    value=u'Look ma, a new cookie!'...>
+    <...CookieJar[Cookie(version=0, name=...'trac_auth',
+    value=...'Look ma, a new cookie!'...>
 
 If authentication fails, a BugTrackerAuthenticationError will be raised.
 
@@ -132,10 +132,10 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
     ...     requests_mock.add(
     ...         'GET', re.compile(r'.*/launchpad-auth/.*'), status=401)
     ...     trac._authenticate()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugTrackerAuthenticationError: http://example.com:
-    401 Client Error: Unauthorized
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://example.com: 401 Client Error: Unauthorized
 
 
 Current time
@@ -170,7 +170,7 @@ authentication. Because the cookie is now set, other calls won't cause
 an authorization request.
 
     >>> test_transport.auth_cookie
-    Cookie(version=0, name=u'trac_auth'...)
+    Cookie(version=0, name=...'trac_auth'...)
     >>> trac.getCurrentDBTime()
     datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=<UTC>)
 
@@ -302,9 +302,10 @@ since that bug wasn't in the list of bugs that were modified since our
 last_checked time.
 
     >>> trac.getRemoteStatus('2')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: 2
+    lp.bugs.externalbugtracker.base.BugNotFound: 2
 
 
 Importing Comments
@@ -396,9 +397,10 @@ Trying to call getCommentIds() on a bug that doesn't exist will raise a
 BugNotFound error.
 
     >>> trac.getCommentIds(bug_watch_broken.remotebug)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: 123
+    lp.bugs.externalbugtracker.base.BugNotFound: 123
 
 The fetchComments() method is used to pre-load a given set of comments
 for a given bug before they are parsed.
@@ -603,12 +605,14 @@ If we try to call getLaunchpadBugId() or setLaunchpadBugId() for a
 remote bug that doesn't exist, a BugNotFound error will be raised.
 
     >>> trac.getLaunchpadBugId('12345')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: 12345
+    lp.bugs.externalbugtracker.base.BugNotFound: 12345
 
     >>> trac.setLaunchpadBugId(
     ...     '12345', 1, 'http://bugs.launchpad.test/bugs/xxx')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: 12345
+    lp.bugs.externalbugtracker.base.BugNotFound: 12345

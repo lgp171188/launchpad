@@ -25,8 +25,8 @@ latitude/longitude read via the Web API will still be None.
     ...     time_zone=u'Australia/Sydney'))
     HTTP/1.1 200 Ok
     ...
-    >>> webservice.get("/~jdub").jsonBody()['time_zone']
-    u'Australia/Sydney'
+    >>> print(webservice.get("/~jdub").jsonBody()['time_zone'])
+    Australia/Sydney
     >>> print(jdub['latitude'])
     None
     >>> print(jdub['longitude'])

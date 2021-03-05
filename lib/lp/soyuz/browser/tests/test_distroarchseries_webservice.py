@@ -103,7 +103,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         ws_das = ws_object(webservice, das)
         e = self.assertRaises(
             BadRequest, ws_das.setChroot, data=b'zyx', sha1sum='x')
-        self.assertEqual("Chroot upload checksums do not match", e.content)
+        self.assertEqual(b"Chroot upload checksums do not match", e.content)
 
     def test_setChroot_missing_trailing_cr(self):
         # Due to http://bugs.python.org/issue1349106 launchpadlib sends
@@ -272,7 +272,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         e = self.assertRaises(
             BadRequest, ws_das.setChrootFromBuild,
             livefsbuild=build_url, filename="livecd.ubuntu-base.rootfs.tar.gz")
-        self.assertEqual("Cannot set chroot from a private build.", e.content)
+        self.assertEqual(b"Cannot set chroot from a private build.", e.content)
 
     def test_setChrootFromBuild_pocket(self):
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
@@ -337,12 +337,13 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         e = self.assertRaises(
             BadRequest, ws_das.setSourceFilter,
             packageset=packageset_url, sense="Include")
-        self.assertEqual(
+        expected_error = (
             "The requested package set is for %s and cannot be set as a "
             "filter for %s %s." % (
                 packageset.distroseries.fullseriesname,
-                das.distroseries.fullseriesname, das.architecturetag),
-            e.content)
+                das.distroseries.fullseriesname,
+                das.architecturetag))
+        self.assertEqual(expected_error.encode("UTF-8"), e.content)
 
     def test_setSourceFilter_removeSourceFilter(self):
         das = self.factory.makeDistroArchSeries()

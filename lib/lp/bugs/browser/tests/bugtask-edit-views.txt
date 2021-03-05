@@ -52,8 +52,8 @@ assigned to linux-source-2.6.15 instead.
     >>> edit_view = getMultiAdapter(
     ...     (ubuntu_thunderbird_task, request), name='+editstatus')
     >>> edit_view.initialize()
-    >>> ubuntu_thunderbird_task.sourcepackagename.name
-    u'linux-source-2.6.15'
+    >>> print(ubuntu_thunderbird_task.sourcepackagename.name)
+    linux-source-2.6.15
 
 A notification was added informing the user that the binary package was
 changed to the corresponding source package.
@@ -83,9 +83,9 @@ exist in Launchpad. we'll get an error message.
     ...     (ubuntu_thunderbird_task, request), name='+editstatus')
     >>> edit_view.initialize()
     >>> for error in edit_view.errors:
-    ...     print(error)
-    (u'ubuntu_thunderbird.target', u'Target',
-     LaunchpadValidationError(u'There is no package named
+    ...     print(pretty(error.args))
+    ('ubuntu_thunderbird.target', 'Target',
+     LaunchpadValidationError(...'There is no package named
      &#x27;no-such-package&#x27; published in Ubuntu.'))
 
 An error is reported to the user when a bug is retargeted and there is
@@ -98,8 +98,8 @@ an existing task for the same target.
     >>> login('test@canonical.com')
     >>> bug_seven = getUtility(IBugSet).get(7)
     >>> product_task = bug_seven.bugtasks[0]
-    >>> product_task.bugtargetname
-    u'evolution'
+    >>> print(product_task.bugtargetname)
+    evolution
 
     >>> edit_form = {
     ...    'evolution.actions.save': 'Save Changes',
@@ -117,8 +117,8 @@ an existing task for the same target.
     >>> edit_view.initialize()
     >>> [str(error) for error in edit_view.errors]
     []
-    >>> product_task.bugtargetname
-    u'firefox'
+    >>> print(product_task.bugtargetname)
+    firefox
 
 If no product name is given, an error message is displayed.
 
@@ -137,8 +137,8 @@ If no product name is given, an error message is displayed.
     ...     (product_task, request), name='+editstatus')
     >>> edit_view.initialize()
     >>> for error in edit_view.errors:
-    ...     print(error)
-    ('product', u'Project', RequiredMissing('product'))
+    ...     print(pretty(error.args))
+    ('product', 'Project', RequiredMissing('product'))
 
 
 == Bug Watch Linkage ==

@@ -10,8 +10,8 @@ to that branch.
     ...     'cronscripts/translations-export-to-branch.py', [])
     >>> ret_code
     0
-    >>> stdout
-    ''
+    >>> print(stdout)
+    <BLANKLINE>
     >>> print(stderr)
     INFO Creating lockfile:
     /var/lock/launchpad-translations-export-to-branch.lock
@@ -37,7 +37,7 @@ files into the branches.  We mock it up here.
     ...
     ...     def writeFile(self, path, contents):
     ...         self.logger.info("Writing file '%s':" % path)
-    ...         self.logger.info(contents)
+    ...         self.logger.info(six.ensure_text(contents))
     ...         self.written_files += 1
     ...
     ...     def lockForCommit(self):
@@ -223,8 +223,8 @@ The Launchpad UI allows users to register branches in the Launchpad
 database without populating them in bzr.  Exporting to such a branch
 won't work, so we email a notification to the branch owner.
 
-    >>> from email import message_from_string
     >>> from lp.codehosting.vfs import get_rw_server
+    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> from lp.testing.factory import (
     ...     remove_security_proxy_and_shout_at_engineer)
@@ -255,7 +255,7 @@ won't work, so we email a notification to the branch owner.
     >>> transaction.commit()
 
     >>> sender, recipients, body = stub.test_emails.pop()
-    >>> message = message_from_string(body)
+    >>> message = message_from_bytes(body)
     >>> print(message['Subject'])
     Launchpad: translations branch has not been set up.
 

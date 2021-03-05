@@ -79,7 +79,8 @@ class BrowserTestCase(TestCase):
 
     def setUp(self):
         super(BrowserTestCase, self).setUp()
-        self.file = NamedTemporaryFile(prefix='html5browser_', suffix='.html')
+        self.file = NamedTemporaryFile(
+            mode='w+', prefix='html5browser_', suffix='.html')
         self.addCleanup(self.file.close)
 
     def test_init_default(self):

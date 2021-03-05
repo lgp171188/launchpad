@@ -6,7 +6,6 @@
 import email.message
 import errno
 import os
-import sys
 
 from testtools.matchers import (
     Equals,
@@ -26,6 +25,7 @@ from lp.bugs.scripts.debbugs import (
     SummaryParseError,
     SummaryVersionError,
     )
+from lp.services.compat import message_as_bytes
 from lp.testing import TestCase
 
 
@@ -57,10 +57,7 @@ class TestDebBugs(TestCase):
             for h in headers:
                 m[h] = headers[h]
         with open(os.path.join(bucket, "%s.summary" % (bug_id,)), "wb") as f:
-            if sys.version_info[:2] >= (3, 5):
-                f.write(m.as_bytes())
-            else:
-                f.write(m.as_string())
+            f.write(message_as_bytes(m))
 
     def test_no_db_dir(self):
         err = self.assertRaises(DebBugsDatabaseNotFound, self.get_tracker)

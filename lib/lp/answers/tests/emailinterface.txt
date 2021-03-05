@@ -31,7 +31,7 @@ AnswerTrackerHandler.
     # Define a helper function to send email to the Answer Tracker handler.
     >>> from lp.answers.mail.handler import AnswerTrackerHandler
     >>> from email.utils import formatdate, make_msgid, mktime_tz
-    >>> from lp.services.mail.signedmessage import signed_message_from_string
+    >>> from lp.services.mail.signedmessage import signed_message_from_bytes
     >>> handler = AnswerTrackerHandler()
     >>> def send_question_email(question_id, from_addr, subject, body):
     ...     login(from_addr)
@@ -46,7 +46,7 @@ AnswerTrackerHandler.
     ...     lines.append('')
     ...     lines.append(body)
     ...     raw_msg = '\n'.join(lines)
-    ...     msg = signed_message_from_string(raw_msg.encode('UTF-8'))
+    ...     msg = signed_message_from_bytes(raw_msg.encode('UTF-8'))
     ...     if handler.process(msg, msg['To']):
     ...         # Ensures that the DB user has the correct permission to \
     ...         # saves the changes.
@@ -62,12 +62,12 @@ configuration variable.)
 
 All other email addresses are ignored:
 
-    >>> raw_msg = """From: test@canonical.com
+    >>> raw_msg = b"""From: test@canonical.com
     ... To: foo@support.launchpad.net
     ... Subject: Hello
     ...
     ... Hello there."""
-    >>> msg = signed_message_from_string(raw_msg)
+    >>> msg = signed_message_from_bytes(raw_msg)
     >>> handler.process(msg, msg['To'])
     False
 

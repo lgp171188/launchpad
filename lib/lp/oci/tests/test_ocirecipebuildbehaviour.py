@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `OCIRecipeBuildBehaviour`."""
@@ -18,10 +18,13 @@ import uuid
 
 import fixtures
 from fixtures import MockPatch
+from pymacaroons import Macaroon
 import pytz
+import six
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
+    AfterPreprocessing,
     ContainsDict,
     Equals,
     Is,
@@ -29,6 +32,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesListwise,
     MatchesSetwise,
+    MatchesStructure,
     StartsWith,
     )
 from testtools.twistedsupport import (
@@ -39,6 +43,7 @@ from zope.component import getUtility
 from zope.proxy import isProxy
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
@@ -78,6 +83,7 @@ from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
+from lp.snappy.tests.test_snapbuildbehaviour import InProcessAuthServerFixture
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -396,7 +402,67 @@ class TestAsyncOCIRecipeBuildBehaviour(
             "git_path": Equals(ref.name),
             "name": Equals(job.build.recipe.name),
             "proxy_url": ProxyURLMatcher(job, self.now),
-            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
+            "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
+            "series": Equals(job.build.distro_arch_series.distroseries.name),
+            "trusted_keys": Equals(expected_trusted_keys),
+            # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
+            "metadata": ContainsDict({
+                "architectures": Equals(["i386"]),
+                "build_request_id": Equals(None),
+                "build_request_timestamp": Equals(None),
+                "build_urls": Equals({"i386": canonical_url(job.build)})
+            })
+        }))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_private_repo(self):
+        # extraBuildArgs returns appropriate arguments if asked to build a
+        # job for a Git branch.
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        [ref] = self.factory.makeGitRefs()
+        ref.repository.transitionToInformationType(
+            InformationType.PRIVATESECURITY, ref.repository.owner)
+        job = self.makeJob(git_ref=ref)
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        # Asserts that nothing here is a zope proxy, to avoid errors when
+        # serializing it for XML-RPC call.
+        self.assertHasNoZopeSecurityProxy(args)
+        split_browse_root = urlsplit(config.codehosting.git_browse_root)
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_file": Equals(job.build.recipe.build_file),
+            "build_args": Equals({"BUILD_VAR": "123"}),
+            "build_path": Equals(job.build.recipe.build_path),
+            "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_repository": AfterPreprocessing(urlsplit, MatchesStructure(
+                scheme=Equals(split_browse_root.scheme),
+                username=Equals(""),
+                password=AfterPreprocessing(
+                    Macaroon.deserialize, MatchesStructure(
+                        location=Equals(config.vhost.mainsite.hostname),
+                        identifier=Equals("oci-recipe-build"),
+                        caveats=MatchesListwise([
+                            MatchesStructure.byEquality(
+                                caveat_id="lp.oci-recipe-build %s"
+                                          % job.build.id),
+                            ]))),
+                hostname=Equals(split_browse_root.hostname),
+                port=Equals(split_browse_root.port))),
+            "git_path": Equals(ref.name),
+            "name": Equals(job.build.recipe.name),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
             # 'metadata' has detailed tests at TestOCIBuildBehaviour class.
@@ -597,7 +663,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def _createTestFile(self, name, content, hash):
         path = os.path.join(self.test_files_dir, name)
         with open(path, 'wb') as fp:
-            fp.write(content)
+            fp.write(six.ensure_binary(content))
         self.slave.valid_files[hash] = path
 
     def setUp(self):
@@ -819,7 +885,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
             self.build.updateStatus(BuildStatus.BUILDING)
             with ExpectedException(
                     BuildDaemonError,
-                    "Build returned unexpected status: u'ABORTED'"):
+                    "Build returned unexpected status: %r" % 'ABORTED'):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "ABORTED", {})
 
@@ -847,7 +913,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def test_givenback_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'GIVENBACK'"):
+                "Build returned unexpected status: %r" % 'GIVENBACK'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "GIVENBACK", {})
@@ -856,7 +922,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def test_builderfail_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'BUILDERFAIL'"):
+                "Build returned unexpected status: %r" % 'BUILDERFAIL'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "BUILDERFAIL", {})
@@ -865,7 +931,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def test_invalid_status_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'BORKED'"):
+                "Build returned unexpected status: %r" % 'BORKED'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "BORKED", {})

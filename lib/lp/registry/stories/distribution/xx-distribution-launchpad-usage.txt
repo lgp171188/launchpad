@@ -9,17 +9,20 @@ details.
 
     >>> user_browser.open('http://launchpad.test/ubuntu')
     >>> user_browser.getLink('Change details')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFound...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.getLink('Configure publisher')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFound...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open('http://launchpad.test/ubuntu/+edit')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Create a restricted processor.
 

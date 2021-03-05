@@ -2,9 +2,10 @@ An anonymous user who tries to access the bugtask edit page will be
 redirected to the login page.
 
     >>> browser.open("http://launchpad.test/thunderbird/+bug/9/+editstatus")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Even when the product has a bug supervisor, see bug #49891.
 
@@ -23,9 +24,10 @@ Even when the product has a bug supervisor, see bug #49891.
     >>> logout()
 
     >>> browser.open("http://launchpad.test/firefox/+bug/1/+editstatus")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Any logged-in user can edit a bugtask.
 

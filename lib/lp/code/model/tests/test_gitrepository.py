@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
@@ -15,7 +15,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-import email
 from functools import partial
 import hashlib
 import json
@@ -147,6 +146,7 @@ from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.authserver.xmlrpc import AuthServerAPIView
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
@@ -209,7 +209,13 @@ class TestGitRepository(TestCaseWithFactory):
         verifyObject(IGitRepository, repository)
 
     def test_avoids_large_snapshots(self):
-        large_properties = ['refs', 'branches']
+        large_properties = [
+            'refs',
+            'branches',
+            '_api_landing_targets',
+            '_api_landing_candidates',
+            'dependent_landings',
+            ]
         self.assertThat(
             self.factory.makeGitRepository(),
             DoesNotSnapshot(large_properties, IGitRepositoryView))
@@ -1295,9 +1301,9 @@ class TestGitRepositoryModificationNotifications(TestCaseWithFactory):
                 getUtility(IGitRepositoryModifiedMailJobSource)).runAll()
         bodies_by_recipient = {}
         for from_addr, to_addrs, message in stub.test_emails:
-            body = email.message_from_string(message).get_payload(decode=True)
+            body = message_from_bytes(message).get_payload(decode=True)
             for to_addr in to_addrs:
-                bodies_by_recipient[to_addr] = body
+                bodies_by_recipient[to_addr] = six.ensure_text(body)
         # Both the owner and the unprivileged subscriber receive email.
         self.assertContentEqual(
             [owner_address, subscriber_address], bodies_by_recipient.keys())
@@ -1334,6 +1340,23 @@ class TestGitRepositoryURLs(TestCaseWithFactory):
         expected_url = urlutils.join(
             config.codehosting.git_browse_root, repository.shortened_path)
         self.assertEqual(expected_url, repository.getCodebrowseUrl())
+
+    def test_codebrowser_url_with_username_and_password(self):
+        self.pushConfig(
+            "codehosting", git_browse_root="http://git.launchpad.test:99")
+        repository = self.factory.makeGitRepository()
+        expected_url = lambda usr, passw: urlutils.join(
+            "http://%s:%s@git.launchpad.test:99" % (usr, passw),
+            repository.shortened_path)
+        self.assertEqual(
+            expected_url("foo", "bar"),
+            repository.getCodebrowseUrl("foo", "bar"))
+        self.assertEqual(
+            expected_url("", "bar"),
+            repository.getCodebrowseUrl(None, "bar"))
+        self.assertEqual(
+            expected_url("foo", ""),
+            repository.getCodebrowseUrl("foo", ""))
 
     def test_codebrowse_url_for_default(self):
         # The codebrowse URL for the default repository for a target is an
@@ -2859,7 +2882,7 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         notifications = pop_notifications()
         self.assertIn(
             "Work in progress => Merged",
-            notifications[0].get_payload(decode=True))
+            notifications[0].get_payload(decode=True).decode("UTF-8"))
         self.assertEqual(
             config.canonical.noreply_from_address, notifications[0]["From"])
         recipients = set(msg["x-envelope-to"] for msg in notifications)

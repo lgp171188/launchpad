@@ -1133,7 +1133,7 @@ class TestCheckTeamParticipationScript(TestCase):
         cmd.extend(args)
         process = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE, universal_newlines=True)
         out, err = process.communicate()
         if out != "":
             self.addDetail("stdout", text_content(out))
@@ -1292,7 +1292,8 @@ class TestCheckTeamParticipationScript(TestCase):
         filename_out = tempdir.join("info.out")
         fout = bz2.BZ2File(filename_in, "w")
         try:
-            pickle.dump(info, fout, pickle.HIGHEST_PROTOCOL)
+            # Use protocol 2 for Python 2 compatibility.
+            pickle.dump(info, fout, protocol=2)
         finally:
             fout.close()
         code, out, err = self._runScript(
@@ -1340,6 +1341,7 @@ def test_suite():
     suite = TestLoader().loadTestsFromName(__name__)
     bug_249185 = LayeredDocFileSuite(
         'bug-249185.txt', optionflags=default_optionflags,
-        layer=DatabaseFunctionalLayer, setUp=setUp, tearDown=tearDown)
+        layer=DatabaseFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown)
     suite.addTest(bug_249185)
     return suite

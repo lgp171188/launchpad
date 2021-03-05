@@ -397,8 +397,7 @@ class CodehostingTest(WithScenarios, TestCaseWithFactory):
         # always HTML, so it ends up double-escaped in XML-RPC faults.
         message = html_escape(
             "Invalid branch name '%s'. %s"
-            % (invalid_name, BRANCH_NAME_VALIDATION_ERROR_MESSAGE)
-            ).encode('utf-8')
+            % (invalid_name, BRANCH_NAME_VALIDATION_ERROR_MESSAGE))
         fault = self.codehosting_api.createBranch(
             owner.id, escape(
                 '/~%s/%s/%s' % (owner.name, product.name, invalid_name)))

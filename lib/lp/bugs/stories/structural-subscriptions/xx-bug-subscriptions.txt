@@ -42,9 +42,8 @@ Sample Person and the Landscape team are now subscribed.
 
     >>> browser.open(
     ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
-    >>> print(extract_text(find_portlet(
-    ...     browser.contents, 'Subscribers')).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_portlet(
+    ...     browser.contents, 'Subscribers'))))
     Subscribers
       To all bugs in mozilla-firefox in Ubuntu:
         Foo Bar

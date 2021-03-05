@@ -116,7 +116,7 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
-from lp.services.mail.signedmessage import signed_message_from_string
+from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -1316,7 +1316,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
             # The PGP signature is stripped from all changesfiles
             # to avoid replay attacks (see bugs 159304 and 451396).
-            signed_message = signed_message_from_string(changesfilecontent)
+            signed_message = signed_message_from_bytes(changesfilecontent)
             if signed_message is not None:
                 # Overwrite `changesfilecontent` with the text stripped
                 # of the PGP signature.

@@ -1,20 +1,20 @@
 SignedMessage extends email.message.Message in order to provide easy
 access to signed content and the signature of messages.
 
-You can create it from a string using signed_message_from_string. It
-basically the same as using email.message_from_string and passing
+You can create it from a byte string using signed_message_from_bytes. It
+basically the same as using email.message_from_bytes and passing
 SignedMessage as the _class parameter, but it also ensures that all
 the attributes are correctly set.
 
     >>> from lp.services.mail.interfaces import ISignedMessage
-    >>> from lp.services.mail.signedmessage import signed_message_from_string
+    >>> from lp.services.mail.signedmessage import signed_message_from_bytes
     >>> from lp.testing import verifyObject
-    >>> msg = signed_message_from_string('To: someone\n\nHello.')
+    >>> msg = signed_message_from_bytes(b'To: someone\n\nHello.')
     >>> verifyObject(ISignedMessage, msg)
     True
     >>> msg['To']
     'someone'
-    >>> print(msg.parsed_string)
+    >>> print(six.ensure_text(msg.parsed_bytes))
     To: someone
     <BLANKLINE>
     Hello.
@@ -32,9 +32,11 @@ You can access the headers of the message:
     >>> print(msg['From'])
     Sample Person <test@canonical.com>
 
-The raw text that was signed is available as msg.signedContent:
+The raw byte string that was signed is available as msg.signedContent:
 
-    >>> print(msg.signedContent)
+    >>> isinstance(msg.signedContent, bytes)
+    True
+    >>> print(six.ensure_text(msg.signedContent))
     Some signed content.
     <BLANKLINE>
     With multiple paragraphs.
@@ -50,7 +52,9 @@ object as well:
 
 Finally the signature can be accessed via msg.signature:
 
-    >>> print(msg.signature)
+    >>> isinstance(msg.signature, bytes)
+    True
+    >>> print(six.ensure_text(msg.signature))
     -----BEGIN PGP SIGNATURE-----
     Version: GnuPG v1.2.5 (GNU/Linux)
     <BLANKLINE>
@@ -72,7 +76,7 @@ unescaped.
     Sample Person
     ...
 
-    >>> print(msg.signedContent)
+    >>> print(six.ensure_text(msg.signedContent))
     Some signed content.
     <BLANKLINE>
     --
@@ -86,7 +90,7 @@ contains of two MIME parts, the signed text, and the signature:
 
 The signed content includes the MIME headers as well:
 
-    >>> print(msg.signedContent)
+    >>> print(six.ensure_text(msg.signedContent))
     Content-Type: text/plain; charset=us-ascii
     Content-Disposition: inline
     <BLANKLINE>
@@ -103,7 +107,7 @@ separately:
 
 And of course the signature is accessible as well:
 
-    >>> print(msg.signature)
+    >>> print(six.ensure_text(msg.signature))
     -----BEGIN PGP SIGNATURE-----
     Version: GnuPG v1.2.5 (GNU/Linux)
     <BLANKLINE>
@@ -133,7 +137,7 @@ It handles signed multipart messages as well:
     A signed attachment.
     <BLANKLINE>
 
-    >>> print(msg.signature)
+    >>> print(six.ensure_text(msg.signature))
     -----BEGIN PGP SIGNATURE-----
     Version: GnuPG v1.2.5 (GNU/Linux)
     <BLANKLINE>
@@ -143,7 +147,8 @@ It handles signed multipart messages as well:
     -----END PGP SIGNATURE-----
 
     >>> msg = read_test_message('signed_folded_header.txt')
-    >>> print(msg.signedContent) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(six.ensure_text(msg.signedContent))
+    ... #doctest: -NORMALIZE_WHITESPACE
     Content-Type: multipart/mixed;
      boundary="--------------------EuxKj2iCbKjpUGkD"
     ...

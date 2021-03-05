@@ -126,9 +126,10 @@ cannot access the page.
     >>> view = create_initialized_view(firefox, name='+index')
 
     >>> view = create_initialized_view(firefox, name='+review-license')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Product..., 'project_reviewed', 'launchpad.Moderate')
+    zope.security.interfaces.Unauthorized: (<Product..., 'project_reviewed', 'launchpad.Moderate')
 
 Mark is in the registry admins team and is allowed to access the page.
 
@@ -230,10 +231,11 @@ purchase a commercial subscription.
     ...     }
     >>> view = create_initialized_view(
     ...     firefox, name='+review-license', form=form)
-    >>> view.errors
-    [u'Proprietary projects may not be manually approved to use Launchpad.
-       Proprietary projects must be granted a commercial subscription
-       to be allowed to use Launchpad.']
+    >>> for error in view.errors:
+    ...     print(error)
+    Proprietary projects may not be manually approved to use Launchpad.
+    Proprietary projects must be granted a commercial subscription
+    to be allowed to use Launchpad.
     >>> firefox.license_approved
     False
     >>> print(firefox.reviewer_whiteboard)

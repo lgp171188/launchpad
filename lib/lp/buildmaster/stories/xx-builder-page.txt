@@ -266,9 +266,10 @@ Farm list. Celso cannot see the link to it.
     386          1        empty
 
     >>> cprov_browser.getLink('bob').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 But Celso can access the deactivated builder via its URL.
 
@@ -285,29 +286,31 @@ Change details link.
 
     >>> user_browser.open("http://localhost/+builds/bob")
     >>> user_browser.getLink('Change details')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Nor is the toggle mode control included on the index page.
 
     >>> user_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
-    LookupError: name ...'field.actions.update'
-    ...
+    LookupError: name ...'field.actions.update' ...
 
 Nor can they access the edit page directly via URL.
 
     >>> user_browser.open("http://localhost/+builds/bob/+edit")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 The same is true for the anonymous user:
 
     >>> anon_browser.open("http://localhost/+builds/bob")
     >>> anon_browser.getLink('Change details')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
@@ -315,8 +318,9 @@ The same is true for the anonymous user:
     ...
 
     >>> anon_browser.open("http://localhost/+builds/bob/+edit")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 

@@ -95,8 +95,8 @@ And one of the included .po files look like what we expected.
 
     >>> fh = tarfile.extractfile(
     ...     'rosetta-hoary/es/LC_MESSAGES/evolution-2.2.po')
-    >>> fh.readline()
-    '# traducci\xc3\xb3n de es.po al Spanish\n'
+    >>> print(six.ensure_text(fh.readline()))
+    # traducción de es.po al Spanish
 
 
 Base language pack export using Librarian with date limits
@@ -373,7 +373,7 @@ number of command-line arguments is wrong.
     ...     return subprocess.Popen(
     ...         command, shell=True,
     ...         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...         stderr=subprocess.PIPE)
+    ...         stderr=subprocess.PIPE, universal_newlines=True)
 
     >>> proc = get_subprocess('cronscripts/language-pack-exporter.py')
     >>> (out, err) = proc.communicate()

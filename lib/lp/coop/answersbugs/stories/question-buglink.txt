@@ -15,9 +15,10 @@ This link is only available to registered user:
     >>> anon_browser.open(
     ...     'http://launchpad.test/firefox/+question/2')
     >>> anon_browser.getLink(url='+linkbug').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> user_browser.open(
     ...     'http://launchpad.test/firefox/+question/2')
@@ -51,8 +52,8 @@ portlet:
 
     >>> user_browser.getControl('Bug ID').value = '1'
     >>> user_browser.getControl('Link').click()
-    >>> print extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'related-bugs'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(user_browser.contents, 'related-bugs')))
     Related bugs
     Bug #1: Firefox does not support SVG
 
@@ -67,7 +68,7 @@ A notification is also displayed.
 To remove bug links, the user uses the 'Remove Bug Link' action.
 
     >>> user_browser.getLink('Remove bug link').click()
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Remove links to bug reports : Question #...
 
 The list of linked bugs is displayed. The user selects the link to
@@ -84,8 +85,8 @@ message is displayed:
     >>> soup = find_main_content(user_browser.contents)
     >>> soup.find('div', 'informational message')
     <div class="informational message">Removed link to bug #...</div>
-    >>> print extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'related-bugs'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(user_browser.contents, 'related-bugs')))
     Related bugs
 
 
@@ -118,7 +119,7 @@ have access to:
     >>> browser.getControl('Bug ID').value = '6'
     >>> browser.getControl('Link').click()
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.decode_contents()
+    ...     print(tag.decode_contents())
     There is 1 error.
     You are not allowed to link to private bug #6.
 
@@ -130,8 +131,8 @@ able to link to that bug.
     >>> admin_browser.getLink('Link existing bug').click()
     >>> admin_browser.getControl('Bug ID').value = '6'
     >>> admin_browser.getControl('Link').click()
-    >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'related-bugs'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(admin_browser.contents, 'related-bugs')))
     Related bugs
     Bug #6: Firefox crashes when Save As dialog for a nonexistent window
     is closed
@@ -141,8 +142,8 @@ nothing.
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/firefox/+question/2')
-    >>> print extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'related-bugs'))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'related-bugs')))
     Related bugs
 
 Only the administrator will be able to unlink the bug.

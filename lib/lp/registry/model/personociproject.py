@@ -39,8 +39,11 @@ class PersonOCIProject:
     def __eq__(self, other):
         return (
             IPersonOCIProject.providedBy(other) and
-            self.person.id == other.person.id and
+            self.person == other.person and
             self.oci_project == other.oci_project)
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        return hash((self.person, self.oci_project))

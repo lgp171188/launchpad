@@ -159,9 +159,10 @@ As teams do not have OpenID Logins, there is no link in the Contact
 details section for help.
 
     >>> sample_browser.getLink('OpenID help')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 If the logged in user is an indirect member of the team, we'll say that and
 will even show the path from the user to the team.

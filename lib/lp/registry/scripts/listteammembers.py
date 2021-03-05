@@ -72,7 +72,7 @@ def process_team(teamname, display_option='simple'):
             name=member.name,
             teamname=teamname,
             id=member.id,
-            displayname=member.displayname.encode("ascii", "replace"),
+            displayname=member.displayname,
             ubuntite=ubuntite,
             sshkey=sshkey,
             )

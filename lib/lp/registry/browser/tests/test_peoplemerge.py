@@ -4,6 +4,7 @@
 
 __metaclass__ = type
 
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -105,8 +106,10 @@ class TestRequestPeopleMergeMultipleEmails(RequestPeopleMergeMixin):
         self.assertEqual('bounces@canonical.com', from_addr2)
         self.assertEqual(['foo@baz.com'], to_addrs1)
         self.assertEqual(['bar.foo@canonical.com'], to_addrs2)
-        self.assertIn('Launchpad: request to merge accounts', raw_msg1)
-        self.assertIn('Launchpad: request to merge accounts', raw_msg2)
+        self.assertIn(
+            'Launchpad: request to merge accounts', six.ensure_text(raw_msg1))
+        self.assertIn(
+            'Launchpad: request to merge accounts', six.ensure_text(raw_msg2))
 
     def _assert_validation_email_confirm(self):
         # Test that the user can go to the page we sent a link via email to

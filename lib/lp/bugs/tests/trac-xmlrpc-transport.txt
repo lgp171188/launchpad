@@ -15,9 +15,10 @@ installed implement.
 All the methods need an authentication cookie to be sent.
 
     >>> server.launchpad.bugtracker_version()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ProtocolError: <... 403 Forbidden>
+    xmlrpc.client.ProtocolError: <... 403 Forbidden>
 
 This test transport doesn't validate the cookie, it just ensures that
 some cookie is set.
@@ -87,8 +88,8 @@ Specifying a level of 0 and no criteria will return the IDs of all the
 bugs, along with a time snapshot as returned by time_snapshot().
 
     >>> time_snapshot, bugs = trac_transport.bug_info(level=0)
-    >>> print(bugs)
-    [{'id': u'1'}, {'id': u'2'}, {'id': u'3'}]
+    >>> print(pretty(bugs))
+    [{'id': '1'}, {'id': '2'}, {'id': '3'}]
 
 Specifying a level of 1 will return each bug's metadata, not including
 its last modified time.
@@ -124,9 +125,9 @@ We'll add some sample comments to demonstrate this.
 
     >>> time_snapshot, bugs = trac_transport.bug_info(level=2)
     >>> for bug in bugs:
-    ...     print("%s: %s" % (bug['id'], bug['comments']))
-    1: [u'1-1']
-    2: [u'2-1', u'2-2']
+    ...     print("%s: %s" % (bug['id'], pretty(bug['comments'])))
+    1: ['1-1']
+    2: ['2-1', '2-2']
     3: []
 
 We'll also define a helper function to print comments out.
@@ -177,8 +178,8 @@ so we'll convert a datetime into one for the purposes of this test.
     >>> time_snapshot, bugs = trac_transport.bug_info(
     ...     level=0, criteria=criteria)
 
-    >>> print(bugs)
-    [{'id': u'1'}, {'id': u'3'}]
+    >>> print(pretty(bugs))
+    [{'id': '1'}, {'id': '3'}]
 
 The bugs key in the criteria dict allows us to specify a list of bug IDs
 to return.
@@ -187,8 +188,8 @@ to return.
     >>> time_snapshot, bugs = trac_transport.bug_info(
     ...     level=0, criteria=criteria)
 
-    >>> print(bugs)
-    [{'id': u'1'}, {'id': u'2'}]
+    >>> print(pretty(bugs))
+    [{'id': '1'}, {'id': '2'}]
 
 If a bug doesn't exist, it will be returned with a status of
 'missing'.
@@ -197,8 +198,8 @@ If a bug doesn't exist, it will be returned with a status of
     >>> time_snapshot, bugs = trac_transport.bug_info(
     ...     level=0, criteria=criteria)
 
-    >>> print(bugs)
-    [{'status': 'missing', 'id': u'11'}, {'status': 'missing', 'id': u'12'}]
+    >>> print(pretty(bugs))
+    [{'id': '11', 'status': 'missing'}, {'id': '12', 'status': 'missing'}]
 
 Combining the bugs and modified_since fields in the criteria dict will
 result in only the bugs modified since the modified_since time whose IDs
@@ -210,8 +211,8 @@ are in the bugs list being returned.
     >>> time_snapshot, bugs = trac_transport.bug_info(
     ...     level=0, criteria=criteria)
 
-    >>> print(bugs)
-    [{'id': u'1'}]
+    >>> print(pretty(bugs))
+    [{'id': '1'}]
 
 
 == launchpad.get_comments() ==
@@ -307,9 +308,10 @@ Calling `launchpad.get_launchpad_bug()` on a remote bug that doesn't
 exist will result in a Fault being raised.
 
     >>> trac_transport.get_launchpad_bug('12345')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 1001: 'Ticket does not exist'>
+    xmlrpc.client.Fault: <Fault 1001: 'Ticket does not exist'>
 
 Setting the Launchpad bug for a remote bug is done by calling
 `launchpad.set_launchpad_bug()`. This takes two parameters: the remote
@@ -332,7 +334,8 @@ Trying to call `launchpad.set_launchpad_bug()` on a remote bug that
 doesn't exist will result in a Fault.
 
     >>> trac_transport.set_launchpad_bug('12345', 1)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Fault: <Fault 1001: 'Ticket does not exist'>
+    xmlrpc.client.Fault: <Fault 1001: 'Ticket does not exist'>
 

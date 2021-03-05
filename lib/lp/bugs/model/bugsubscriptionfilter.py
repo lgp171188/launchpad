@@ -81,6 +81,20 @@ class BugSubscriptionFilter(StormBase):
 
     description = Unicode('description')
 
+    def __init__(self, structural_subscription,
+                 bug_notification_level=BugNotificationLevel.COMMENTS,
+                 find_all_tags=False,
+                 include_any_tags=False, exclude_any_tags=False,
+                 other_parameters=None, description=None):
+        super(BugSubscriptionFilter, self).__init__()
+        self.structural_subscription = structural_subscription
+        self.bug_notification_level = bug_notification_level
+        self.find_all_tags = find_all_tags
+        self.include_any_tags = include_any_tags
+        self.exclude_any_tags = exclude_any_tags
+        self.other_parameters = other_parameters
+        self.description = description
+
     def _get_collection(self, cls, attribute):
         kind = getattr(cls, attribute)
         return frozenset(

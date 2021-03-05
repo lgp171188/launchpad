@@ -386,7 +386,7 @@ class TestProductAddView(TestCaseWithFactory):
         del form['field.disclaim_maintainer']
         view = create_initialized_view(self.product_set, '+new', form=form)
         self.assertEqual(1, len(view.view.errors))
-        self.assertEqual('owner', view.view.errors[0][0])
+        self.assertEqual('owner', view.view.errors[0].args[0])
 
     def test_disclaim_maitainer_empty_supersedes_owner(self):
         # Errors for the owner field are ignored when disclaim_maintainer is

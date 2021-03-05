@@ -29,8 +29,8 @@ class TestRootRDF(TestCaseWithFactory):
         app = getUtility(ILaunchpadApplication)
         view = create_view(app, name='rdf-spec')
         owl = view.publishTraverse(view.request, 'launchpad.owl')
-        entity = 'ENTITY launchpad "https://launchpad.net/rdf-spec/launchpad#'
-        self.assertTrue(entity in owl())
+        entity = b'ENTITY launchpad "https://launchpad.net/rdf-spec/launchpad#'
+        self.assertIn(entity, owl())
         self.assertEqual(
             'application/rdf+xml',
             owl.request.response.getHeader('content-type'))

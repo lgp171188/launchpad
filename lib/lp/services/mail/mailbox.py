@@ -142,7 +142,7 @@ class POP3MailBox:
 
         for msg_id in range(1, count + 1):
             response, msg_lines, size = popbox.retr(msg_id)
-            yield (msg_id, '\n'.join(msg_lines))
+            yield (msg_id, b'\n'.join(msg_lines))
 
     def delete(self, id):
         """See IMailBox."""
@@ -171,7 +171,7 @@ class DirectoryMailBox:
         """See IMailBox."""
         for entry in scandir.scandir(self.mail_dir):
             if entry.is_file():
-                with open(entry.path) as mail_file:
+                with open(entry.path, "rb") as mail_file:
                     yield (entry.path, mail_file.read())
 
     def delete(self, id):

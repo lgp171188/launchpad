@@ -185,10 +185,7 @@ from lp.services.database.stormexpr import (
     fti_search,
     RegexpMatch,
     )
-from lp.services.helpers import (
-    ensure_unicode,
-    shortlist,
-    )
+from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
@@ -242,7 +239,7 @@ class BasePersonVocabulary:
         If the token contains an '@', treat it like an email. Otherwise,
         treat it like a name.
         """
-        token = ensure_unicode(token)
+        token = six.ensure_text(token)
         if "@" in token:
             # This looks like an email token, so let's do an object
             # lookup based on that.
@@ -313,7 +310,6 @@ class ProductVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            query = ensure_unicode(query)
             like_query = query.lower()
             like_query = "'%%%%' || %s || '%%%%'" % quote_like(like_query)
             fti_query = quote(query)
@@ -372,7 +368,6 @@ class ProjectGroupVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            query = ensure_unicode(query)
             like_query = query.lower()
             like_query = "'%%' || %s || '%%'" % quote_like(like_query)
             fti_query = quote(query)
@@ -471,7 +466,7 @@ class NonMergedPeopleAndTeamsVocabulary(
         if not text:
             return self.emptySelectResults()
 
-        return self._select(ensure_unicode(text))
+        return self._select(text)
 
 
 @implementer(IHugeVocabulary)
@@ -491,7 +486,7 @@ class PersonAccountToMergeVocabulary(
     def __contains__(self, obj):
         return obj in self._select()
 
-    def _select(self, text=""):
+    def _select(self, text=u""):
         """Return `IPerson` objects that match the text."""
         return getUtility(IPersonSet).findPerson(
             text, exclude_inactive_accounts=False,
@@ -505,7 +500,6 @@ class PersonAccountToMergeVocabulary(
         if not text:
             return self.emptySelectResults()
 
-        text = ensure_unicode(text)
         return self._select(text)
 
 
@@ -739,7 +733,7 @@ class ValidPersonOrTeamVocabulary(
             else:
                 return self.emptySelectResults()
 
-        text = ensure_unicode(text)
+        text = six.ensure_text(text)
         return self._doSearch(text=text, vocab_filter=vocab_filter)
 
     def searchForTerms(self, query=None, vocab_filter=None):
@@ -1194,7 +1188,7 @@ class ProductReleaseVocabulary(SQLObjectVocabularyBase):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         objs = self._table.select(
             AND(
                 Milestone.q.id == ProductRelease.q.milestoneID,
@@ -1251,7 +1245,7 @@ class ProductSeriesVocabulary(SQLObjectVocabularyBase):
             return self.emptySelectResults()
         user = getUtility(ILaunchBag).user
         privacy_filter = ProductSet.getProductPrivacyFilter(user)
-        query = ensure_unicode(query).lower().strip('/')
+        query = six.ensure_text(query).lower().strip('/')
         # If there is a slash splitting the product and productseries
         # names, they must both match. If there is no slash, we don't
         # know whether it is matching the product or the productseries
@@ -1585,7 +1579,7 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         objs = self._table.select(
                 AND(
                     Distribution.q.id == DistroSeries.q.distributionID,
@@ -1863,7 +1857,7 @@ class PillarVocabularyBase(NamedStormHugeVocabulary):
     def searchForTerms(self, query=None, vocab_filter=None):
         if not query:
             return self.emptySelectResults()
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         store = IStore(PillarName)
         origin = [
             PillarName,
@@ -1994,7 +1988,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         results = IStore(self._table).find(
             self._table,
             Or(

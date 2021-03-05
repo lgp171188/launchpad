@@ -111,10 +111,10 @@ class IOCIRegistryCredentials(IOCIRegistryCredentialsEdit,
 class IOCIRegistryCredentialsSet(Interface):
     """A utility to create and access OCI Registry Credentials."""
 
-    def new(registrant, owner, url, credentials):
+    def new(registrant, owner, url, credentials, override_owner=False):
         """Create an `IOCIRegistryCredentials`."""
 
-    def getOrCreate(registrant, owner, url, credentials):
+    def getOrCreate(registrant, owner, url, credentials, override_owner=False):
         """Get an `IOCIRegistryCredentials` that match the url and username
         or create a new object."""
 

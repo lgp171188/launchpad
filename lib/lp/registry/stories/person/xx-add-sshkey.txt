@@ -133,9 +133,10 @@ Launchpad administrators are not allowed to poke at other user's ssh keys.
     >>> logout()
     >>> admin_browser = setupBrowserFreshLogin(foo_bar)
     >>> admin_browser.open('http://launchpad.test/~salgado/+editsshkeys')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Salgado chooses to remove one of his ssh keys from Launchpad. The link
 to edit his keys is on the page.
@@ -172,8 +173,9 @@ belong to him, it will fail with an error message.
 
     >>> browser.getControl(name='key', index=0).value = '1'
     >>> browser.getControl('Remove', index=0).click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
 Similarly, it's not possible to remove an unspecified ssh key, although in
 this case we'll raise an UnexpectedFormData.
@@ -181,14 +183,15 @@ this case we'll raise an UnexpectedFormData.
     >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
     >>> browser.getControl(name='key', index=0).value = ''
     >>> browser.getControl('Remove', index=0).click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
 If he removes a key then he will get a security warning email notification
 that the key has been removed.
 
-    >>> import email
+    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> stub.test_emails = []
     >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
@@ -196,7 +199,7 @@ that the key has been removed.
     >>> from_addr, to_addr, msg = stub.test_emails.pop()
     >>> to_addr
     ['guilherme.salgado@canonical.com']
-    >>> payload = email.message_from_string(msg).get_payload()
+    >>> payload = message_from_bytes(msg).get_payload()
     >>> assert payload.startswith('The SSH Key')
 
 

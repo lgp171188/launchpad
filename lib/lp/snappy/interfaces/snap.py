@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package interfaces."""
@@ -36,6 +36,7 @@ __all__ = [
     'SnapBuildRequestStatus',
     'SnapNotOwner',
     'SnapPrivacyMismatch',
+    'SnapPrivacyPillarError',
     'SnapPrivateFeatureDisabled',
     ]
 
@@ -66,6 +67,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from lazr.restful.interface import copy_field
 from six.moves import http_client
 from zope.interface import (
     Attribute,
@@ -88,7 +90,9 @@ from zope.security.interfaces import (
     )
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
 from lp.buildmaster.interfaces.processor import IProcessor
@@ -98,6 +102,7 @@ from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import (
     PersonChoice,
@@ -212,7 +217,16 @@ class SnapPrivacyMismatch(Exception):
     def __init__(self, message=None):
         super(SnapPrivacyMismatch, self).__init__(
             message or
-            "Snap contains private information and cannot be public.")
+            "Snap recipe contains private information and cannot be public.")
+
+
+@error_status(http_client.BAD_REQUEST)
+class SnapPrivacyPillarError(Exception):
+    """Private Snaps should be based in a pillar."""
+
+    def __init__(self, message=None):
+        super(SnapPrivacyPillarError, self).__init__(
+            message or "Private Snap recipes should have a pillar.")
 
 
 class BadSnapSearchContext(Exception):
@@ -557,6 +571,15 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    def visibleByUser(user):
+        """Can the specified user see this snap recipe?"""
+
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for this snap recipe.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
 
 class ISnapEdit(IWebhookTarget):
     """`ISnap` methods that require launchpad.Edit permission."""
@@ -658,6 +681,11 @@ class ISnapEditableAttributes(IHasOwner):
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this snap package.")))
 
+    project = ReferenceChoice(
+        title=_('The project that this Snap is associated with'),
+        schema=IProduct, vocabulary='Product',
+        required=False, readonly=False)
+
     distro_series = exported(Reference(
         IDistroSeries, title=_("Distro Series"),
         required=False, readonly=False,
@@ -667,9 +695,9 @@ class ISnapEditableAttributes(IHasOwner):
             "snapcraft.yaml.")))
 
     name = exported(TextLine(
-        title=_("Name"), required=True, readonly=False,
+        title=_("Snap recipe name"), required=True, readonly=False,
         constraint=name_validator,
-        description=_("The name of the snap package.")))
+        description=_("The name of the snap build recipe.")))
 
     description = exported(Text(
         title=_("Description"), required=False, readonly=False,
@@ -814,6 +842,9 @@ class ISnapEditableAttributes(IHasOwner):
             "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
             "'stable'.")))
 
+    def setProject(project):
+        """Set the pillar project of this snap recipe."""
+
 
 class ISnapAdminAttributes(Interface):
     """`ISnap` attributes that can be edited by admins.
@@ -824,6 +855,12 @@ class ISnapAdminAttributes(Interface):
     private = exported(Bool(
         title=_("Private"), required=False, readonly=False,
         description=_("Whether or not this snap is private.")))
+
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this Snap recipe.")))
 
     require_virtualized = exported(Bool(
         title=_("Require virtualized builders"), required=True, readonly=False,
@@ -843,6 +880,12 @@ class ISnapAdminAttributes(Interface):
             "Allow access to external network resources via a proxy.  "
             "Resources hosted on Launchpad itself are always allowed.")))
 
+    def subscribe(person, subscribed_by):
+        """Subscribe a person to this snap recipe."""
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person to this snap recipe."""
+
 
 # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
@@ -850,7 +893,7 @@ class ISnapAdminAttributes(Interface):
 @exported_as_webservice_entry(as_of="beta")
 class ISnap(
     ISnapView, ISnapEdit, ISnapEditableAttributes, ISnapAdminAttributes,
-    IPrivacy):
+    IPrivacy, IInformationType):
     """A buildable snap package."""
 
 
@@ -860,6 +903,7 @@ class ISnapSet(Interface):
 
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
+        information_type=copy_field(ISnap["information_type"], required=False),
         processors=List(
             value_type=Reference(schema=IProcessor), required=False))
     @export_factory_operation(
@@ -867,23 +911,32 @@ class ISnapSet(Interface):
             "owner", "distro_series", "name", "description", "branch",
             "git_repository", "git_repository_url", "git_path", "git_ref",
             "auto_build", "auto_build_archive", "auto_build_pocket",
-            "private", "store_upload", "store_series", "store_name",
-            "store_channels"])
+            "store_upload", "store_series", "store_name", "store_channels",
+            "project"])
     @operation_for_version("devel")
     def new(registrant, owner, distro_series, name, description=None,
             branch=None, git_repository=None, git_repository_url=None,
             git_path=None, git_ref=None, auto_build=False,
             auto_build_archive=None, auto_build_pocket=None,
             require_virtualized=True, processors=None, date_created=None,
-            private=False, store_upload=False, store_series=None,
-            store_name=None, store_secrets=None, store_channels=None):
+            information_type=InformationType.PUBLIC, store_upload=False,
+            store_series=None,
+            store_name=None, store_secrets=None, store_channels=None,
+            project=None):
         """Create an `ISnap`."""
 
     def exists(owner, name):
         """Check to see if a matching snap exists."""
 
-    def isValidPrivacy(private, owner, branch=None, git_ref=None):
-        """Whether or not the privacy context is valid."""
+    def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
+        """Which privacy a Snap should have based on its creation params."""
+
+    def findByIds(snap_ids):
+        """Return all snap packages with the given ids."""
+
+    def isValidInformationType(
+            information_type, owner, branch=None, git_ref=None):
+        """Whether or not the information type context is valid."""
 
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True),

@@ -16,6 +16,7 @@ import sys
 
 import dkim
 import dns.exception
+import six
 import transaction
 from zope.component import getUtility
 from zope.interface import (
@@ -49,7 +50,7 @@ from lp.services.mail.interfaces import IWeaklyAuthenticatedPrincipal
 from lp.services.mail.mailbox import IMailBox
 from lp.services.mail.notification import send_process_error_notification
 from lp.services.mail.sendmail import do_paranoid_envelope_to_validation
-from lp.services.mail.signedmessage import signed_message_from_string
+from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.services.webapp import canonical_url
 from lp.services.webapp.errorlog import (
     ErrorReportingUtility,
@@ -66,33 +67,42 @@ from lp.services.webapp.interfaces import (
 
 # Match '\n' and '\r' line endings. That is, all '\r' that are not
 # followed by a '\n', and all '\n' that are not preceded by a '\r'.
-non_canonicalised_line_endings = re.compile('((?<!\r)\n)|(\r(?!\n))')
+non_canonicalised_line_endings = re.compile(br'((?<!\r)\n)|(\r(?!\n))')
 
 # Match trailing whitespace.
-trailing_whitespace = re.compile(r'[ \t]*((?=\r\n)|$)')
+trailing_whitespace = re.compile(br'[ \t]*((?=\r\n)|$)')
 
 # this is a hard limit on the size of email we will be willing to store in
 # the database.
 MAX_EMAIL_SIZE = 10 * 1024 * 1024
 
 
-def canonicalise_line_endings(text):
+def canonicalise_line_endings(buf):
     r"""Canonicalise the line endings to '\r\n'.
 
-        >>> canonicalise_line_endings('\n\nfoo\nbar\rbaz\r\n')
+        >>> b = canonicalise_line_endings(b'\n\nfoo\nbar\rbaz\r\n')
+        >>> isinstance(b, bytes)
+        True
+        >>> six.ensure_str(b)
         '\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
 
-        >>> canonicalise_line_endings('\r\rfoo\r\nbar\rbaz\n')
+        >>> b = canonicalise_line_endings(b'\r\rfoo\r\nbar\rbaz\n')
+        >>> isinstance(b, bytes)
+        True
+        >>> six.ensure_str(b)
         '\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
 
-        >>> canonicalise_line_endings('\r\nfoo\r\nbar\nbaz\r')
+        >>> b = canonicalise_line_endings(b'\r\nfoo\r\nbar\nbaz\r')
+        >>> isinstance(b, bytes)
+        True
+        >>> six.ensure_str(b)
         '\r\nfoo\r\nbar\r\nbaz\r\n'
     """
-    if non_canonicalised_line_endings.search(text):
-        text = non_canonicalised_line_endings.sub('\r\n', text)
-    if trailing_whitespace.search(text):
-        text = trailing_whitespace.sub('', text)
-    return text
+    if non_canonicalised_line_endings.search(buf):
+        buf = non_canonicalised_line_endings.sub(b'\r\n', buf)
+    if trailing_whitespace.search(buf):
+        buf = trailing_whitespace.sub(b'', buf)
+    return buf
 
 
 class InvalidSignature(Exception):
@@ -144,7 +154,7 @@ def _verifyDkimOrigin(signed_message):
     dkim_checker = None
     dkim_result = False
     try:
-        dkim_checker = dkim.DKIM(signed_message.parsed_string, logger=dkim_log)
+        dkim_checker = dkim.DKIM(signed_message.parsed_bytes, logger=dkim_log)
         dkim_result = dkim_checker.verify()
     except dkim.DKIMException as e:
         log.info('DKIM error: %r' % (e,))
@@ -168,7 +178,7 @@ def _verifyDkimOrigin(signed_message):
         return None
     # in addition to the dkim signature being valid, we have to check that it
     # was actually signed by the user's domain.
-    signing_domain = dkim_checker.domain
+    signing_domain = six.ensure_str(dkim_checker.domain)
     if not _isDkimDomainTrusted(signing_domain):
         log.info("valid DKIM signature from untrusted domain %s"
             % (signing_domain,))
@@ -258,7 +268,7 @@ def authenticateEmail(mail, signature_timestamp_checker=None):
         from_addr = parseaddr(mail['From'])[1]
         try:
             principal = authutil.getPrincipalByLogin(from_addr)
-        except TypeError:
+        except (TypeError, UnicodeDecodeError):
             # The email isn't valid, so don't authenticate
             principal = None
 
@@ -426,7 +436,7 @@ def handleMail(trans=transaction, signature_timestamp_checker=None):
                 log.exception('Upload to Librarian failed')
                 continue
             try:
-                mail = signed_message_from_string(raw_mail)
+                mail = signed_message_from_bytes(raw_mail)
             except email.errors.MessageError:
                 # If we can't parse the message, we can't send a reply back to
                 # the user, but logging an exception will let us investigate.

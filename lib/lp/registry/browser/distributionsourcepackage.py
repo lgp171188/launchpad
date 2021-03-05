@@ -18,9 +18,11 @@ __all__ = [
     'PublishingHistoryViewMixin',
     ]
 
+from functools import cmp_to_key
 import itertools
 import operator
 
+import apt_pkg
 from lazr.delegates import delegate_to
 import six
 from zope.component import getUtility
@@ -513,7 +515,9 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
             # After the title row, we list each package version that's
             # currently published, and which pockets it's published in.
             pocket_dict = self.published_by_version(package)
-            for version in pocket_dict:
+            for version in sorted(
+                    pocket_dict,
+                    key=cmp_to_key(apt_pkg.version_compare), reverse=True):
                 most_recent_publication = pocket_dict[version][0]
                 date_published = most_recent_publication.datepublished
                 pockets = ", ".join(

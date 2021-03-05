@@ -1,18 +1,16 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `Collection`."""
 
 __metaclass__ = type
 
-from storm.locals import (
-    Int,
-    Storm,
-    )
+from storm.locals import Int
 
 from lp.registry.model.person import Person
 from lp.services.database.collection import Collection
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.testing import TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -36,16 +34,14 @@ def make_table(range_start, range_end, table_name=None):
        FROM generate_series(%d, %d)
        """ % (table_name, range_start, range_end - 1))
 
-    class TestTable(Storm):
+    class TestTable(StormBase):
         """A test class/table generated on the fly for testing purposes."""
         __storm_table__ = table_name
         id = Int(primary=True)
 
         def __init__(self, id):
             self.id = id
-
-        def __eq__(self, other):
-            return self.id == other.id
+            IStore(self.__class__).add(self)
 
     return TestTable
 
@@ -62,7 +58,7 @@ class CollectionTest(TestCaseWithFactory):
     def test_make_table(self):
         TestTable = make_table(1, 5)
         result = IStore(Person).find(TestTable).order_by(TestTable.id)
-        self.assertEqual(range(1, 5), get_ids(result))
+        self.assertEqual(list(range(1, 5)), get_ids(result))
 
     def test_select_one(self):
         TestTable = make_table(1, 5)

@@ -306,7 +306,7 @@ class CodeHandler:
                 ensure_not_weakly_authenticated(mail, 'code review')
 
             message = getUtility(IMessageSet).fromEmail(
-                mail.parsed_string,
+                mail.parsed_bytes,
                 owner=getUtility(ILaunchBag).user,
                 filealias=file_alias,
                 parsed_message=mail)

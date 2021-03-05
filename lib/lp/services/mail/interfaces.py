@@ -25,8 +25,8 @@ from zope.interface import (
     Interface,
     )
 from zope.schema import (
-    ASCII,
     Bool,
+    Bytes,
     )
 
 from lp import _
@@ -52,15 +52,15 @@ class ISignedMessage(Interface):
     signedMessage = Attribute("The part that was signed, represented "
                               "as an email.message.Message.")
 
-    signedContent = ASCII(title=_("Signed Content"),
-                          description=_("The text that was signed."))
+    signedContent = Bytes(title=_("Signed Content"),
+                          description=_("The byte string that was signed."))
 
-    signature = ASCII(title=_("Signature"),
+    signature = Bytes(title=_("Signature"),
                       description=_("The OpenPGP signature used to sign "
                                     "the message."))
 
-    parsed_string = Attribute(
-        "The string that was parsed to create the SignedMessage.")
+    parsed_bytes = Attribute(
+        "The byte string that was parsed to create the SignedMessage.")
 
 
 class IMailHandler(Interface):

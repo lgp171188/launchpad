@@ -449,7 +449,7 @@ class TestPullerMaster(TestCase):
         self.assertEqual('error message', oops['value'])
         self.assertEqual('RuntimeError', oops['type'])
         self.assertEqual(
-            six.ensure_binary(get_canonical_url_for_branch_name(
+            six.ensure_text(get_canonical_url_for_branch_name(
                 self.eventHandler.unique_name)), oops['url'])
 
     def test_startMirroring(self):

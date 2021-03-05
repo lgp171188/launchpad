@@ -51,8 +51,8 @@ distro series (ordered by architecture then datecreated):
 The last published binary can also be accessed directly:
 
     >>> last_published = firefox_dsbp.last_published
-    >>> "%s %s" % (last_published.name, last_published.version)
-    u'mozilla-firefox 1.0'
+    >>> print("%s %s" % (last_published.name, last_published.version))
+    mozilla-firefox 1.0
 
 It also provides access to the last DistributionSourcePackageRelease:
 
@@ -64,10 +64,10 @@ then the summary and description fields reflect the situation:
 
     >>> firefox_hoary_dsbp = ubuntu['hoary'].getBinaryPackage(
     ...     firefox_bin_name)
-    >>> firefox_hoary_dsbp.summary
-    u'No summary available for mozilla-firefox in ubuntu hoary.'
-    >>> firefox_hoary_dsbp.description
-    u'No description available for mozilla-firefox in ubuntu hoary.'
+    >>> print(firefox_hoary_dsbp.summary)
+    No summary available for mozilla-firefox in ubuntu hoary.
+    >>> print(firefox_hoary_dsbp.description)
+    No description available for mozilla-firefox in ubuntu hoary.
 
 If a DistroSeriesBinaryPackage doesn't have a publishing history (for
 whatever reason), then last_published returns None.

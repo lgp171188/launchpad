@@ -11,7 +11,6 @@ __all__ = [
     ]
 
 from datetime import datetime
-import email
 from email.header import (
     decode_header,
     make_header,
@@ -57,11 +56,11 @@ from lp.registry.interfaces.person import (
     PersonCreationRationale,
     validate_public_person,
     )
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
-from lp.services.encoding import guess as ensure_unicode
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.messages.interfaces.message import (
     IDirectEmailAuthorization,
@@ -250,7 +249,7 @@ class MessageSet:
         # Unfold the header before decoding it.
         header = ''.join(header.splitlines())
 
-        bits = email.header.decode_header(header)
+        bits = decode_header(header)
         # Re-encode the header parts using utf-8, replacing undecodable
         # characters with question marks.
         re_encoded_bits = []
@@ -268,7 +267,7 @@ class MessageSet:
             decoded = word if charset is None else self.decode(word, charset)
             re_encoded_bits.append((decoded.encode('utf-8'), 'utf-8'))
 
-        return six.text_type(email.header.make_header(re_encoded_bits))
+        return six.text_type(make_header(re_encoded_bits))
 
     def fromEmail(self, email_message, owner=None, filealias=None,
                   parsed_message=None, create_missing_persons=False,
@@ -277,15 +276,15 @@ class MessageSet:
         # It does not make sense to handle Unicode strings, as email
         # messages may contain chunks encoded in differing character sets.
         # Passing Unicode in here indicates a bug.
-        if not zisinstance(email_message, str):
+        if not zisinstance(email_message, bytes):
             raise TypeError(
-                'email_message must be a normal string.  Got: %r'
+                'email_message must be a byte string.  Got: %r'
                 % email_message)
 
         # Parse the raw message into an email.message.Message instance,
         # if we haven't been given one already.
         if parsed_message is None:
-            parsed_message = email.message_from_string(email_message)
+            parsed_message = message_from_bytes(email_message)
 
         # We could easily generate a default, but a missing message-id
         # almost certainly means a developer is using this method when
@@ -332,7 +331,7 @@ class MessageSet:
                 if not create_missing_persons:
                     raise UnknownSender(from_addrs[0][1])
                 # autocreate a person
-                sendername = ensure_unicode(from_addrs[0][0].strip())
+                sendername = six.ensure_text(from_addrs[0][0].strip())
                 senderemail = from_addrs[0][1].lower().strip()
                 # XXX: Guilherme Salgado 2006-08-31 bug=62344:
                 # It's hard to define what rationale to use here, and to
