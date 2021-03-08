@@ -740,7 +740,7 @@ class TestSnapAdminView(BaseTestSnapView):
         browser.getControl("Allow external network access").selected = False
         browser.getControl("Update snap package").click()
 
-        login_person(self.person)
+        login_admin()
         self.assertEqual(project, snap.project)
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
@@ -1596,7 +1596,7 @@ class TestSnapView(BaseTestSnapView):
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: &lt;Redacted&gt;
+            Source: &lt;redacted&gt;
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1631,7 +1631,7 @@ class TestSnapView(BaseTestSnapView):
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: &lt;Redacted&gt;
+            Source: &lt;redacted&gt;
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request

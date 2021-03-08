@@ -71,6 +71,7 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         browser = self.getViewBrowser(snap, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Subscribe yourself
+            Subscribe someone else
             Subscribers
             Snap-owner
             """, self.getSubscriptionPortletText(browser))
@@ -79,10 +80,10 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         browser = self.getViewBrowser(
             snap, view_name="+subscribe", user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Subscribe to Snap recipe
+            Subscribe to snap recipe
             Snap packages
             snap-name
-            Subscribe to Snap recipe or Cancel
+            Subscribe to snap recipe or Cancel
             """, self.extractMainText(browser))
         browser.getControl("Subscribe").click()
 
@@ -93,6 +94,7 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         # And the new user should be listed in the subscribers list.
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit your subscription
+            Subscribe someone else
             Subscribers
             Another-user
             Snap-owner
@@ -106,7 +108,7 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         subscription = snap.getSubscription(another_user)
         browser = self.getViewBrowser(subscription, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Edit subscription to Snap recipe for Another-user
+            Edit subscription to snap recipe for Another-user
             Snap packages
             snap-name
             If you unsubscribe from a snap recipe it will no longer show up on
@@ -114,7 +116,7 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
             """, self.extractMainText(browser))
         browser.getControl("Unsubscribe").click()
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Another-user has been unsubscribed from this Snap recipe.
+            Another-user has been unsubscribed from this snap recipe.
             """, self.extractInfoMessageContent(browser))
         with person_logged_in(self.person):
             self.assertIsNone(snap.getSubscription(another_user))
@@ -134,10 +136,10 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         browser = self.getViewBrowser(
             snap, view_name="+addsubscriber", user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Subscribe to Snap recipe
+            Subscribe to snap recipe
             Snap packages
             snap-name
-            Subscribe to Snap recipe
+            Subscribe to snap recipe
             Person:
             .*
             The person subscribed to the related snap recipe.
@@ -154,6 +156,7 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         # And the new user should be listed in the subscribers list.
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit your subscription
+            Subscribe someone else
             Subscribers
             Another-user
             Snap-owner
@@ -168,7 +171,7 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         subscription = snap.getSubscription(another_user)
         browser = self.getViewBrowser(subscription, user=snap.owner)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Edit subscription to Snap recipe for Another-user
+            Edit subscription to snap recipe for Another-user
             Snap packages
             snap-name
             If you unsubscribe from a snap recipe it will no longer show up on
@@ -176,7 +179,7 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
             """, self.extractMainText(browser))
         browser.getControl("Unsubscribe").click()
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Another-user has been unsubscribed from this Snap recipe.
+            Another-user has been unsubscribed from this snap recipe.
             """, self.extractInfoMessageContent(browser))
         with person_logged_in(self.person):
             self.assertIsNone(snap.getSubscription(another_user))
@@ -215,10 +218,10 @@ class TestPrivateSnapSubscriptionViews(BaseTestSnapView):
         browser = self.getViewBrowser(
             snap, view_name="+addsubscriber", user=self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Subscribe to Snap recipe
+            Subscribe to snap recipe
             Snap packages
             snap-name
-            Subscribe to Snap recipe
+            Subscribe to snap recipe
             Person:
             .*
             The person subscribed to the related snap recipe.
@@ -233,6 +236,7 @@ class TestPrivateSnapSubscriptionViews(BaseTestSnapView):
         browser = self.getViewBrowser(snap, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit your subscription
+            Subscribe someone else
             Subscribers
             Another-user
             Snap-owner
@@ -246,7 +250,7 @@ class TestPrivateSnapSubscriptionViews(BaseTestSnapView):
             subscription = snap.getSubscription(another_user)
         browser = self.getViewBrowser(subscription, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Edit subscription to Snap recipe for Another-user
+            Edit subscription to snap recipe for Another-user
             Snap packages
             snap-name
             If you unsubscribe from a snap recipe it will no longer show up on
@@ -254,7 +258,7 @@ class TestPrivateSnapSubscriptionViews(BaseTestSnapView):
             """, self.extractMainText(browser))
         browser.getControl("Unsubscribe").click()
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Another-user has been unsubscribed from this Snap recipe.
+            Another-user has been unsubscribed from this snap recipe.
             """, self.extractInfoMessageContent(browser))
         with person_logged_in(self.person):
             self.assertIsNone(snap.getSubscription(another_user))

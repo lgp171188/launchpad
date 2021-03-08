@@ -203,15 +203,13 @@ class SnapContextMenu(ContextMenu):
             url = "+subscription/%s" % self.user.name
             text = "Edit your subscription"
             icon = "edit"
-        elif self.context.userCanBeSubscribed(self.user):
+        else:
             url = "+subscribe"
             text = "Subscribe yourself"
             icon = "add"
-        else:
-            return None
         return Link(url, text, icon=icon)
 
-    @enabled_with_permission("launchpad.Edit")
+    @enabled_with_permission("launchpad.AnyPerson")
     def add_subscriber(self):
         text = "Subscribe someone else"
         return Link("+addsubscriber", text, icon="add")
