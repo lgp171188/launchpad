@@ -1410,6 +1410,19 @@ class TestSnapVisibility(TestCaseWithFactory):
             self.assertFalse(snap.visibleByUser(person))
             self.assertIsNone(self.getSnapSubscription(snap, person))
 
+    def test_snap_owner_can_unsubscribe_anyone(self):
+        person = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        admin = self.factory.makeAdministrator()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        with person_logged_in(admin):
+            snap.subscribe(person, admin)
+            self.assertTrue(snap.visibleByUser(person))
+        with person_logged_in(owner):
+            snap.unsubscribe(person, owner)
+            self.assertFalse(snap.visibleByUser(person))
+
     def test_reconcile_set_public(self):
         owner = self.factory.makePerson()
         snap = self.factory.makeSnap(
