@@ -1196,6 +1196,8 @@ class Snap(Storm, WebhookTargetMixin):
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         subscription = self._getSubscription(person)
+        if subscription is None:
+            return
         if (not ignore_permissions
                 and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
             raise UserCannotUnsubscribePerson(
@@ -1205,11 +1207,8 @@ class Snap(Storm, WebhookTargetMixin):
         artifact = getUtility(IAccessArtifactSource).find([self])
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(
             artifact, [person])
-        # It should never be None, since we always create a SnapSubscription
-        # on Snap.subscribe. But just in case...
-        if subscription is not None:
-            store = Store.of(subscription)
-            store.remove(subscription)
+        store = Store.of(subscription)
+        store.remove(subscription)
         IStore(self).flush()
 
     def _reconcileAccess(self):
