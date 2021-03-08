@@ -566,6 +566,26 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertWebhookDeliveries(
             ocibuild, ["Pending", "Failed to upload"], logger)
 
+    def test_run_does_not_oops(self):
+        # The job can OOPS, but it is hidden by our exception handling
+        # Check that it's actually empty
+        build_request = self.makeBuildRequest(include_i386=False)
+        recipe = build_request.recipe
+
+        self.assertEqual(1, build_request.builds.count())
+        ocibuild = build_request.builds[0]
+        ocibuild.updateStatus(BuildStatus.FULLYBUILT)
+        self.makeWebhook(recipe)
+
+        self.assertContentEqual([], ocibuild.registry_upload_jobs)
+        job = OCIRegistryUploadJob.create(ocibuild)
+        client = FakeRegistryClient()
+        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        self.assertEqual(0, len(self.oopses))
+
 
 class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
                                         MultiArchRecipeMixin):
