@@ -46,7 +46,7 @@ class SnapSubscription(StormBase):
         "subscribed_by", allow_none=False, validator=validate_person)
     subscribed_by = Reference(subscribed_by_id, "Person.id")
 
-    def __init__(self, snap=None, person=None, subscribed_by=None):
+    def __init__(self, snap, person, subscribed_by):
         super(SnapSubscription, self).__init__()
         self.snap = snap
         self.person = person
@@ -56,6 +56,7 @@ class SnapSubscription(StormBase):
         """See `ISnapSubscription`."""
         if user is None:
             return False
-        return (user.inTeam(self.person) or
+        return (user.inTeam(self.snap.owner) or
+                user.inTeam(self.person) or
                 user.inTeam(self.subscribed_by) or
                 IPersonRoles(user).in_admin)

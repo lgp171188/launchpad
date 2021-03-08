@@ -660,12 +660,12 @@ def _mergeSnap(cur, from_person, to_person):
     existing_names = [
         s.name for s in getUtility(ISnapSet).findByOwner(to_person)]
     for snap in snaps:
-        new_name = snap.name
+        naked_snap = removeSecurityProxy(snap)
+        new_name = naked_snap.name
         count = 1
         while new_name in existing_names:
             new_name = '%s-%s' % (snap.name, count)
             count += 1
-        naked_snap = removeSecurityProxy(snap)
         naked_snap.owner = to_person
         naked_snap.name = new_name
     if not snaps.is_empty():
