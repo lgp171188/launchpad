@@ -572,7 +572,7 @@ class ISnapView(Interface):
         value_type=Reference(schema=Interface), readonly=True)))
 
     subscribers = CollectionField(
-        title=_("Persons subscribed to this repository."),
+        title=_("Persons subscribed to this snap recipe."),
         readonly=True, value_type=Reference(IPerson))
 
     def visibleByUser(user):

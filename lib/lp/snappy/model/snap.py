@@ -1709,25 +1709,19 @@ class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
 
 
 def get_snap_privacy_filter(user):
-    """Returns the filter for all private Snaps that the given user is
-    subscribed to (that is, has access without being directly an owner).
+    """Returns the filter for all Snaps that the given user has access to,
+    including private snaps where the user has proper permission.
 
     :param user: An IPerson, or a class attribute that references an IPerson
                  in the database.
     :return: A storm condition.
     """
-    try:
+    # If `user` is an IPerson (and not a class property, like in
+    # get_snap_privacy_filter(SnapSubscription.person_id)), we should check
+    # if it's an admin. If so, we just skip the more specific permission
+    # clauses, since (commercial) admins are supposed to see all Snap objects.
+    if IPerson.providedBy(user):
         roles = IPersonRoles(user)
-    except TypeError:
-        # If we cannot adapt `user` to IPersonRoles, continue with creating
-        # the clause and skip the check for commercial admins.
-        # By doing this, we keep this function compatible with
-        # `user` as a class property. For example we can use it like
-        # get_snap_privacy_filter(SnapSubscription.person_id) and use the
-        # resulting clause to filter SnapSubscription objects based on its
-        # snap user's grants.
-        pass
-    else:
         if roles.in_admin or roles.in_commercial_admin:
             return True
 
