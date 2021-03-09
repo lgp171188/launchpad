@@ -27,6 +27,7 @@ from storm.expr import (
     And,
     Coalesce,
     Desc,
+    Exists,
     Join,
     LeftJoin,
     Not,
@@ -72,6 +73,7 @@ from lp.app.errors import (
     SubscriptionPrivacyViolation,
     UserCannotUnsubscribePerson,
     )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
@@ -1143,6 +1145,9 @@ class Snap(Storm, WebhookTargetMixin):
             return True
         if user is None:
             return False
+        roles = IPersonRoles(user)
+        if roles.in_admin:
+            return True
         store = IStore(self)
         return not store.find(
             Snap,
@@ -1716,15 +1721,6 @@ def get_snap_privacy_filter(user):
                  in the database.
     :return: A storm condition.
     """
-    # If `user` is an IPerson (and not a class property, like in
-    # get_snap_privacy_filter(SnapSubscription.person_id)), we should check
-    # if it's an admin. If so, we just skip the more specific permission
-    # clauses, since (commercial) admins are supposed to see all Snap objects.
-    if IPerson.providedBy(user):
-        roles = IPersonRoles(user)
-        if roles.in_admin or roles.in_commercial_admin:
-            return True
-
     # XXX pappacena 2021-02-12: Once we do the migration to back fill
     # information_type, we should be able to change this.
     private_snap = SQL(
@@ -1756,4 +1752,13 @@ def get_snap_privacy_filter(user):
                 where=(TeamParticipation.person == user)
             )), False)
 
-    return Or(private_snap == False, artifact_grant_query, policy_grant_query)
+    admin_team_id = getUtility(ILaunchpadCelebrities).admin.id
+    user_is_admin = Exists(Select(
+        TeamParticipation.personID,
+        tables=[TeamParticipation],
+        where=And(
+            TeamParticipation.teamID == admin_team_id,
+            TeamParticipation.person == user)))
+    return Or(
+        private_snap == False, artifact_grant_query, policy_grant_query,
+        user_is_admin)

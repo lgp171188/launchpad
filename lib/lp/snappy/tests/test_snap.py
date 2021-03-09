@@ -3096,8 +3096,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
 
         # Anonymous requests can only see public snaps.
@@ -3135,15 +3134,15 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with this URL.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByURL", url=urls[0], api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:4],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByURL", url=urls[0], owner=person_urls[0],
             api_version="devel")
         self.assertEqual(200, response.status)
@@ -3174,8 +3173,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
         prefix = "https://git.example.org/foo/"
 
@@ -3216,16 +3214,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with this URL prefix.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefix", url_prefix=prefix,
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:8],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefix", url_prefix=prefix,
             owner=person_urls[0], api_version="devel")
         self.assertEqual(200, response.status)
@@ -3258,8 +3256,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
         prefixes = [
             "https://git.example.org/foo/", "https://git.example.org/bar/"]
@@ -3301,16 +3298,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with any of these URL prefixes.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefixes", url_prefixes=prefixes,
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:16],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefixes", url_prefixes=prefixes,
             owner=person_urls[0], api_version="devel")
         self.assertEqual(200, response.status)
@@ -3335,8 +3332,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
 
         # Anonymous requests can only see public snaps.
@@ -3376,16 +3372,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with this store name.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByStoreName", store_name=store_names[0],
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:4],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByStoreName", store_name=store_names[0],
             owner=person_urls[0], api_version="devel")
         self.assertEqual(200, response.status)
