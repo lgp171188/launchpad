@@ -1647,10 +1647,8 @@ def get_snap_privacy_filter(user):
     # XXX pappacena 2021-02-12: Once we do the migration to back fill
     # information_type, we should be able to change this.
     private_snap = SQL(
-        "CASE information_type"
-        "    WHEN NULL THEN private"
-        "    ELSE information_type NOT IN ?"
-        "END", params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
+        "COALESCE(information_type NOT IN ?, private)",
+        params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
     if user is None:
         return private_snap == False
 
