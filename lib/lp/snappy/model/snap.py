@@ -1368,7 +1368,7 @@ class SnapSet:
 
     def findByIds(self, snap_ids):
         """See `ISnapSet`."""
-        return IStore(ISnap).find(Snap, Snap.id.is_in(snap_ids))
+        return IStore(Snap).find(Snap, Snap.id.is_in(snap_ids))
 
     def findByOwner(self, owner):
         """See `ISnapSet`."""

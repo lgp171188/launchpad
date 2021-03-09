@@ -44,6 +44,7 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.app.validators.validation import validate_oci_branch_name
@@ -85,6 +86,7 @@ from lp.oci.model.ocirecipejob import OCIRecipeJob
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
+from lp.registry.model.accesspolicy import reconcile_access_for_artifact
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
@@ -95,6 +97,7 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -141,6 +144,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     owner_id = Int(name='owner', allow_none=False)
     owner = Reference(owner_id, 'Person.id')
 
+    _information_type = DBEnum(
+        enum=InformationType, default=InformationType.PUBLIC,
+        name="information_type")
+
     oci_project_id = Int(name='oci_project', allow_none=False)
     oci_project = Reference(oci_project_id, "OCIProject.id")
 
@@ -171,13 +178,14 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
                  allow_internet=True, build_args=None, build_path=None,
-                 image_name=None):
+                 image_name=None, information_type=InformationType.PUBLIC):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
         self.name = name
         self.registrant = registrant
         self.owner = owner
+        self.information_type = information_type
         self.oci_project = oci_project
         self.description = description
         self.build_file = build_file
@@ -196,6 +204,20 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
             self.owner.name, self.oci_project.pillar.name,
             self.oci_project.name, self.name)
+
+    @property
+    def information_type(self):
+        if self._information_type is None:
+            return InformationType.PUBLIC
+        return self._information_type
+
+    @information_type.setter
+    def information_type(self, information_type):
+        self._information_type = information_type
+
+    @property
+    def pillar(self):
+        return self.oci_project.pillar
 
     @property
     def valid_webhook_event_types(self):
@@ -219,6 +241,15 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         assert value is None or isinstance(value, dict)
         self._build_args = {k: six.text_type(v)
                             for k, v in (value or {}).items()}
+
+    def _reconcileAccess(self):
+        """Reconcile the snap's sharing information.
+
+        Takes the privacy and pillar and makes the related AccessArtifact
+        and AccessPolicyArtifacts match.
+        """
+        reconcile_access_for_artifact(self, self.information_type,
+                                      [self.pillar])
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -609,7 +640,7 @@ class OCIRecipeSet:
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
             allow_internet=True, build_args=None, build_path=None,
-            image_name=None):
+            image_name=None, information_type=InformationType.PUBLIC):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -634,8 +665,10 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created, allow_internet, build_args, build_path, image_name)
+            date_created, allow_internet, build_args, build_path, image_name,
+            information_type)
         store.add(oci_recipe)
+        oci_recipe._reconcileAccess()
 
         if processors is None:
             processors = [

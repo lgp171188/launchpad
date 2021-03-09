@@ -102,6 +102,8 @@ class AccessArtifact(StormBase):
     snap = Reference(snap_id, 'Snap.id')
     specification_id = Int(name='specification')
     specification = Reference(specification_id, 'Specification.id')
+    ocirecipe_id = Int(name="ocirecipe")
+    ocirecipe = Reference(ocirecipe_id, 'OCIRecipe.id')
 
     @property
     def concrete_artifact(self):
@@ -117,6 +119,7 @@ class AccessArtifact(StormBase):
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.snappy.interfaces.snap import ISnap
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
         if IBug.providedBy(concrete_artifact):
             col = cls.bug
         elif IBranch.providedBy(concrete_artifact):
@@ -127,6 +130,8 @@ class AccessArtifact(StormBase):
             col = cls.snap
         elif ISpecification.providedBy(concrete_artifact):
             col = cls.specification
+        elif IOCIRecipe.providedBy(concrete_artifact):
+            col = cls.ocirecipe
         else:
             raise ValueError(
                 "%r is not a valid artifact" % concrete_artifact)
@@ -149,6 +154,7 @@ class AccessArtifact(StormBase):
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.snappy.interfaces.snap import ISnap
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
 
         existing = list(cls.find(concrete_artifacts))
         if len(existing) == len(concrete_artifacts):
@@ -162,19 +168,21 @@ class AccessArtifact(StormBase):
         insert_values = []
         for concrete in needed:
             if IBug.providedBy(concrete):
-                insert_values.append((concrete, None, None, None, None))
+                insert_values.append((concrete, None, None, None, None, None))
             elif IBranch.providedBy(concrete):
-                insert_values.append((None, concrete, None, None, None))
+                insert_values.append((None, concrete, None, None, None, None))
             elif IGitRepository.providedBy(concrete):
-                insert_values.append((None, None, concrete, None, None))
+                insert_values.append((None, None, concrete, None, None, None))
             elif ISnap.providedBy(concrete):
-                insert_values.append((None, None, None, concrete, None))
+                insert_values.append((None, None, None, concrete, None, None))
             elif ISpecification.providedBy(concrete):
-                insert_values.append((None, None, None, None, concrete))
+                insert_values.append((None, None, None, None, concrete, None))
+            elif IOCIRecipe.providedBy(concrete):
+                insert_values.append((None, None, None, None, None, concrete))
             else:
                 raise ValueError("%r is not a supported artifact" % concrete)
         columns = (cls.bug, cls.branch, cls.gitrepository, cls.snap,
-                   cls.specification)
+                   cls.specification, cls.ocirecipe)
         new = create(columns, insert_values, get_objects=True)
         return list(existing) + new
 
