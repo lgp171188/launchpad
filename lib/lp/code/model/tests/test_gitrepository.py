@@ -874,7 +874,10 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
 
     def test_related_GitJobs_deleted(self):
         # A repository with an associated job will delete those jobs.
-        GitAPI(None, None).notify(self.repository.getInternalPath())
+        with person_logged_in(self.repository.owner):
+            GitAPI(None, None).notify(self.repository.getInternalPath(),
+                                  {'loose_object_count': 5, 'pack_count': 2},
+                                  {'uid': self.repository.owner.id})
         store = Store.of(self.repository)
         self.repository.destroySelf()
         # Need to commit the transaction to fire off the constraint checks.
@@ -1471,7 +1474,11 @@ class TestGitRepositoryPendingUpdates(TestCaseWithFactory):
         # clears that flag.
         git_api = GitAPI(None, None)
         repository = self.factory.makeGitRepository()
-        self.assertIsNone(git_api.notify(repository.getInternalPath()))
+        with person_logged_in(repository.owner):
+            self.assertIsNone(git_api.notify(
+                repository.getInternalPath(),
+                {'loose_object_count': 5, 'pack_count': 2},
+                {'uid': repository.owner.id}))
         self.assertTrue(repository.pending_updates)
         [job] = list(getUtility(IGitRefScanJobSource).iterReady())
         with dbuser("branchscanner"):
