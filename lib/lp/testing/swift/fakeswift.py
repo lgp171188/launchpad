@@ -18,7 +18,6 @@ import io
 import json
 import logging
 import os.path
-import sys
 import time
 import uuid
 
