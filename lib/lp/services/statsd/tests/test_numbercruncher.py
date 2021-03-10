@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the stats number cruncher daemon."""
@@ -28,6 +28,7 @@ from lp.buildmaster.enums import (
     BuildStatus,
     )
 from lp.buildmaster.interactor import BuilderSlave
+from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.tests.mock_slaves import OkSlave
@@ -51,6 +52,10 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
     def setUp(self):
         super(TestNumberCruncher, self).setUp()
         self.setUpStats()
+        # Deactivate sampledata builders; we only want statistics for the
+        # builders explicitly created in these tests.
+        for builder in getUtility(IBuilderSet):
+            builder.active = False
 
     def test_single_processor_counts(self):
         builder = self.factory.makeBuilder()
@@ -62,14 +67,32 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         manager.updateBuilderStats()
 
         self.assertFalse(is_transaction_in_progress())
-        self.assertEqual(8, self.stats_client.gauge.call_count)
-        for call in self.stats_client.mock.gauge.call_args_list:
-            self.assertIn('386', call[0][0])
+        expected_gauges = [
+            'builders.failure_count,builder_name=%s,env=test' % builder.name,
+            ]
+        expected_gauges.extend([
+            'builders,arch=386,env=test,status=%s,virtualized=True' % status
+            for status in ('building', 'cleaning', 'disabled', 'idle')
+            ])
+        self.assertThat(
+            [call[0][0] for call in self.stats_client.gauge.call_args_list],
+            MatchesSetwise(*(
+                Equals(gauge_name) for gauge_name in expected_gauges)))
 
     def test_multiple_processor_counts(self):
-        builder = self.factory.makeBuilder(
-            processors=[getUtility(IProcessorSet).getByName('amd64')])
-        builder.setCleanStatus(BuilderCleanStatus.CLEAN)
+        builders = [
+            self.factory.makeBuilder(
+                processors=[
+                    getUtility(IProcessorSet).getByName(processor_name)],
+                virtualized=virtualized)
+            for processor_name, virtualized in (
+                ('386', True),
+                ('386', False),
+                ('amd64', True),
+                ('amd64', False),
+                )]
+        for builder in builders:
+            builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
         transaction.commit()
         clock = task.Clock()
@@ -77,31 +100,46 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         manager.updateBuilderStats()
 
         self.assertFalse(is_transaction_in_progress())
-        self.assertEqual(12, self.stats_client.gauge.call_count)
-        i386_calls = [c for c in self.stats_client.gauge.call_args_list
-                      if '386' in c[0][0]]
-        amd64_calls = [c for c in self.stats_client.gauge.call_args_list
-                       if 'amd64' in c[0][0]]
-        self.assertEqual(8, len(i386_calls))
-        self.assertEqual(4, len(amd64_calls))
+        expected_gauges = [
+            'builders.failure_count,builder_name=%s,env=test' % builder.name
+            for builder in builders
+            ]
+        expected_gauges.extend([
+            'builders,arch=%s,env=test,status=%s,virtualized=%s' % (
+                arch, status, virtualized)
+            for arch in ('386', 'amd64')
+            for virtualized in (True, False)
+            for status in ('building', 'cleaning', 'disabled', 'idle')
+            ])
+        self.assertThat(
+            [call[0][0] for call in self.stats_client.gauge.call_args_list],
+            MatchesSetwise(*(
+                Equals(gauge_name) for gauge_name in expected_gauges)))
 
     def test_correct_values_counts(self):
-        for _ in range(3):
-            cleaning_builder = self.factory.makeBuilder(
+        cleaning_builders = [
+            self.factory.makeBuilder(
                 processors=[getUtility(IProcessorSet).getByName('amd64')])
+            for _ in range(3)]
+        for cleaning_builder in cleaning_builders:
+            cleaning_builder.gotFailure()
             cleaning_builder.setCleanStatus(BuilderCleanStatus.CLEANING)
-        for _ in range(4):
-            idle_builder = self.factory.makeBuilder(
+        idle_builders = [
+            self.factory.makeBuilder(
                 processors=[getUtility(IProcessorSet).getByName('amd64')])
+            for _ in range(4)]
+        for idle_builder in idle_builders:
             idle_builder.setCleanStatus(BuilderCleanStatus.CLEAN)
             old_build = self.factory.makeSnapBuild()
             old_build.queueBuild()
             old_build.buildqueue_record.markAsBuilding(builder=idle_builder)
             old_build.buildqueue_record.destroySelf()
-        builds = []
-        for _ in range(2):
-            building_builder = self.factory.makeBuilder(
+        building_builders = [
+            self.factory.makeBuilder(
                 processors=[getUtility(IProcessorSet).getByName('amd64')])
+            for _ in range(2)]
+        builds = []
+        for building_builder in building_builders:
             building_builder.setCleanStatus(BuilderCleanStatus.CLEAN)
             build = self.factory.makeSnapBuild()
             build.queueBuild()
@@ -125,24 +163,29 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         manager.updateBuilderStats()
 
         self.assertFalse(is_transaction_in_progress())
-        self.assertEqual(12, self.stats_client.gauge.call_count)
-        calls = [c[0] for c in self.stats_client.gauge.call_args_list
-                 if 'amd64' in c[0][0]]
+        expected_gauges = {
+            'builders.failure_count,builder_name=%s,env=test' % builder.name: 1
+            for builder in cleaning_builders
+            }
+        expected_gauges.update({
+            'builders.failure_count,builder_name=%s,env=test' % builder.name: 0
+            for builder in idle_builders + building_builders
+            })
+        expected_gauges.update({
+            'builders,arch=amd64,env=test,status=%s,'
+            'virtualized=True' % status: count
+            for status, count in (
+                ('building', 2),
+                ('cleaning', 3),
+                ('disabled', 0),
+                ('idle', 4),
+                )
+            })
         self.assertThat(
-            calls, MatchesSetwise(
-                Equals((
-                    'builders,arch=amd64,env=test,status=disabled,'
-                    'virtualized=True', 0)),
-                Equals((
-                    'builders,arch=amd64,env=test,status=building,'
-                    'virtualized=True', 2)),
-                Equals((
-                    'builders,arch=amd64,env=test,status=idle,'
-                    'virtualized=True', 4)),
-                Equals((
-                    'builders,arch=amd64,env=test,status=cleaning,'
-                    'virtualized=True', 3))
-                ))
+            [call[0] for call in self.stats_client.gauge.call_args_list],
+            MatchesSetwise(*(
+                Equals((gauge_name, count))
+                for gauge_name, count in expected_gauges.items())))
 
     def test_updateBuilderStats_error(self):
         clock = task.Clock()

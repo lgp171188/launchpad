@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mock Build objects for tests soyuz buildd-system."""
@@ -74,6 +74,7 @@ class MockBuilder:
         self.version = version
         self.clean_status = clean_status
         self.active = active
+        self.failure_count = 0
 
     def setCleanStatus(self, clean_status):
         self.clean_status = clean_status

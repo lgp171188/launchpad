@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for Soyuz build farm jobs."""
@@ -177,6 +177,14 @@ class IBuildFarmJob(Interface):
 
     def setLog(log):
         """Set the `LibraryFileAlias` that contains the job log."""
+
+    def emitMetric(metric_name, **extra):
+        """Emit a metric for this build.
+
+        :param metric_name: The name of the metric (which will be prefixed
+            with "build.".
+        :param extra: Extra labels to attach to the metric.
+        """
 
     def updateStatus(status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,
