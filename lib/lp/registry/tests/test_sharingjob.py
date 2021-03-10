@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for SharingJobs."""
@@ -27,7 +27,7 @@ from lp.registry.interfaces.sharingjob import (
     ISharingJob,
     ISharingJobSource,
     )
-from lp.registry.model.accesspolicy import reconcile_access_for_artifact
+from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.sharingjob import (
     RemoveArtifactSubscriptionsJob,
     SharingJob,
@@ -360,8 +360,8 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         # Change artifact attributes so that it can become inaccessible for
         # some users.
         change_callback(concrete_artifact)
-        reconcile_access_for_artifact(
-            concrete_artifact, concrete_artifact.information_type,
+        reconcile_access_for_artifacts(
+            [concrete_artifact], concrete_artifact.information_type,
             get_pillars(concrete_artifact))
 
         getUtility(IRemoveArtifactSubscriptionsJobSource).create(

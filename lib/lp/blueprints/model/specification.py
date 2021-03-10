@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -922,14 +922,14 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         """See ISpecification."""
         # avoid circular imports.
         from lp.registry.model.accesspolicy import (
-            reconcile_access_for_artifact,
+            reconcile_access_for_artifacts,
             )
         if self.information_type == information_type:
             return False
         if information_type not in self.getAllowedInformationTypes(who):
             raise CannotChangeInformationType("Forbidden by project policy.")
         self.information_type = information_type
-        reconcile_access_for_artifact(self, information_type, [self.target])
+        reconcile_access_for_artifacts([self], information_type, [self.target])
         if (information_type in PRIVATE_INFORMATION_TYPES and
                 not self.subscribers.is_empty()):
             # Grant the subscribers access if they do not have a

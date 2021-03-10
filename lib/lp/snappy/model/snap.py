@@ -122,7 +122,7 @@ from lp.registry.interfaces.role import (
     )
 from lp.registry.model.accesspolicy import (
     AccessPolicyGrant,
-    reconcile_access_for_artifact,
+    reconcile_access_for_artifacts,
     )
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
@@ -1159,7 +1159,7 @@ class Snap(Storm, WebhookTargetMixin):
         if self.project is None:
             return
         pillars = [self.project]
-        reconcile_access_for_artifact(self, self.information_type, pillars)
+        reconcile_access_for_artifacts([self], self.information_type, pillars)
 
     def setProject(self, project):
         self.project = project

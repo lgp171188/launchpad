@@ -86,7 +86,7 @@ from lp.oci.model.ocirecipejob import OCIRecipeJob
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
-from lp.registry.model.accesspolicy import reconcile_access_for_artifact
+from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
@@ -251,8 +251,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         Takes the privacy and pillar and makes the related AccessArtifact
         and AccessPolicyArtifacts match.
         """
-        reconcile_access_for_artifact(self, self.information_type,
-                                      [self.pillar])
+        reconcile_access_for_artifacts([self], self.information_type,
+                                       [self.pillar])
 
     def destroySelf(self):
         """See `IOCIRecipe`."""

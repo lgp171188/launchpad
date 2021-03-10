@@ -173,7 +173,7 @@ from lp.registry.interfaces.sharingjob import (
     )
 from lp.registry.model.accesspolicy import (
     AccessPolicyGrant,
-    reconcile_access_for_artifact,
+    reconcile_access_for_artifacts,
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
@@ -615,8 +615,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             # works, so only work for projects for now.
             if self.project is not None:
                 pillars = [self.project]
-        reconcile_access_for_artifact(
-            self, self.information_type, pillars, wanted_links)
+        reconcile_access_for_artifacts(
+            [self], self.information_type, pillars, wanted_links)
 
     @property
     def refs(self):

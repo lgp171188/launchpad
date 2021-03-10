@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -160,7 +160,7 @@ from lp.registry.interfaces.sharingjob import (
     )
 from lp.registry.model.accesspolicy import (
     AccessPolicyGrant,
-    reconcile_access_for_artifact,
+    reconcile_access_for_artifacts,
     )
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
@@ -259,8 +259,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             # works, so only work for products for now.
             if self.product is not None:
                 pillars = [self.product]
-        reconcile_access_for_artifact(
-            self, self.information_type, pillars, wanted_links)
+        reconcile_access_for_artifacts(
+            [self], self.information_type, pillars, wanted_links)
 
     def setPrivate(self, private, user):
         """See `IBranch`."""
