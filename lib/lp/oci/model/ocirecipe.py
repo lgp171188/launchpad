@@ -185,7 +185,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.name = name
         self.registrant = registrant
         self.owner = owner
-        self.information_type = information_type
+        self._information_type = information_type
         self.oci_project = oci_project
         self.description = description
         self.build_file = build_file
@@ -213,7 +213,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @information_type.setter
     def information_type(self, information_type):
+        if information_type == self._information_type:
+            return
         self._information_type = information_type
+        self._reconcileAccess()
 
     @property
     def pillar(self):
