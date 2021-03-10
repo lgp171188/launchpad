@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functions used with the repack Git repositories script."""
@@ -11,46 +11,53 @@ from zope.component import getUtility
 from lp.code.errors import CannotRepackRepository
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.services.config import config
-from lp.services.scripts.base import LaunchpadCronScript
+from lp.services.looptuner import TunableLoop, LoopTuner
 from lp.services.timeout import set_default_timeout_function
 from lp.services.webapp.errorlog import globalErrorUtility
 
 
-class RepackGitRepository(LaunchpadCronScript):
-    """Run git repository repack job."""
+class RepackTunableLoop(TunableLoop):
+    tuner_class = LoopTuner
 
-    def __init__(self, *args, **kwargs):
-        super(RepackGitRepository, self).__init__(*args, **kwargs)
-        self.failures = {}
+    maximum_chunk_size = 5
 
-    def get_repositories(self):
+    def __init__(self, log, dry_run, abort_time=None):
+        super(RepackTunableLoop, self).__init__(log, abort_time)
+        self.dry_run = dry_run
+        self.start_at = 1
+
+    def findRepackCandidates(self):
         return getUtility(
             IGitRepositorySet).getRepositoriesForRepack()
 
-    def repack(self, repo):
-        return repo.repackRepository(self.logger)
+    def isDone(self):
+        return self.findRepackCandidates().is_empty()
 
-    def main(self):
+    def __call__(self, chunk_size):
         globalErrorUtility.configure(self.name)
         self.logger.info(
             'Requesting automatic git repository repack.')
         set_default_timeout_function(
             lambda: config.request_git_repack.timeout)
 
-        repackable_repos = self.get_repositories()
+        repackable_repos = list(self.findRepackCandidates()[:chunk_size])
         counter = 0
-        repos_to_repack = len(list(repackable_repos))
         for repo in repackable_repos:
             try:
-                self.repack(repo)
+                repo.repackRepository()
                 counter += 1
             except CannotRepackRepository as e:
                 self.logger.error(
                     'An error occurred while requesting repository repack %s'
                     % e.message)
-
+                continue
         self.logger.info(
-            'Requested %d automatic git repository repack out of the %d qualifying for repack.'
-            % (counter, repos_to_repack))
+            'Requested %d automatic git repository repacks out of the %d qualifying for repack.'
+            % (counter, repackable_repos))
 
-        transaction.commit()
+        self.start_at = repackable_repos[-1].id + 1
+
+        if not self.dry_run:
+            transaction.commit()
+        else:
+            transaction.abort()

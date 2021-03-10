@@ -749,7 +749,7 @@ class IGitRepositoryExpensiveRequest(Interface):
 
     @export_write_operation()
     @operation_for_version("devel")
-    def repackRepository(logger=None):
+    def repackRepository():
         """Trigger a repack repository operation.
 
         Raises Unauthorized if the repack was attempted by a person
@@ -1071,9 +1071,6 @@ class IGitRepositorySet(Interface):
         :return: A collection of `IGitRepository` objects.
         """
 
-    @operation_returns_collection_of(IGitRepository)
-    @export_read_operation()
-    @operation_for_version("devel")
     def getRepositoriesForRepack():
         """Get all repositories that need a repack.
 

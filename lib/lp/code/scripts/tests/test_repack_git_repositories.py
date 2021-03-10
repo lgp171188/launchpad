@@ -1,7 +1,7 @@
-# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test the request_git_repack script."""
+"""Test the repack_git_repositories script."""
 from collections import defaultdict
 import threading
 from wsgiref.simple_server import (
@@ -17,9 +17,9 @@ from lp.services.config.fixture import (
     ConfigFixture,
     ConfigUseFixture,
     )
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 
 
 class SilentWSGIRequestHandler(WSGIRequestHandler):
@@ -45,6 +45,7 @@ class FakeTurnipServer(threading.Thread):
 
     def __init__(self):
         super(FakeTurnipServer, self).__init__()
+        self.name = 'FakeTurnipServer'
         self.app = FakeTurnipApplication()
         self.server = make_server(
             'localhost', 0, self.app, handler_class=SilentWSGIRequestHandler)
@@ -67,6 +68,28 @@ class TestRequestGitRepack(TestCaseWithFactory):
     def setUp(self):
         super(TestRequestGitRepack, self).setUp()
 
+    def runScript_no_Turnip(self):
+        transaction.commit()
+
+        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        self.assertIn(
+            'An error occurred while requesting repository repack',
+            err)
+        self.assertIn(
+            'Failed to repack Git repository 1', err)
+        self.assertIn(
+            'Requested 0 automatic git repository '
+            'repack out of the 1 qualifying for repack.', err)
+        transaction.commit()
+
+    def runScript_with_Turnip(self):
+        transaction.commit()
+        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        self.assertIn(
+            'Requested 1 automatic git repository repacks '
+            'out of the 1 qualifying for repack.', err)
+        transaction.commit()
+
     def makeTurnipServer(self):
         turnip_server = FakeTurnipServer()
         config_name = self.factory.getUniqueString()
@@ -82,33 +105,19 @@ class TestRequestGitRepack(TestCaseWithFactory):
         self.addCleanup(turnip_server.stop)
         return turnip_server
 
-    def test_request_git_repack_fails(self):
-        """Ensure the request_git_repack script requests the repacks."""
-
+    def test_repack_git_repositories_no_Turnip(self):
         repo = self.factory.makeGitRepository()
         repo = removeSecurityProxy(repo)
         repo.loose_object_count = 7000
         repo.pack_count = 43
-        transaction.commit()
-
-        retcode, stdout, stderr = run_script(
-            'cronscripts/repack_git_repositories.py', [])
 
         # Do not start the fake turnip server here
         # to test if the RequestGitRepack will catch and
         # log correctly the expected CannotRepackRepository
+        self.runScript_no_Turnip()
         self.assertIsNone(repo.date_last_repacked)
-        self.assertIn(
-            'An error occurred while requesting repository repack',
-            stderr)
-        self.assertIn(
-            'Failed to repack Git repository 1', stderr)
-        self.assertIn(
-            'Requested 0 automatic git repository '
-            'repack out of the 1 qualifying for repack.', stderr)
 
-    def test_request_git_repack(self):
-        """Ensure the request_git_repack script requests the repacks."""
+    def test_repack_git_repositories_with_Turnip(self):
 
         repo = self.factory.makeGitRepository()
         repo = removeSecurityProxy(repo)
@@ -118,10 +127,6 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         self.makeTurnipServer()
 
-        retcode, stdout, stderr = run_script(
-            'cronscripts/repack_git_repositories.py', [])
+        self.runScript_with_Turnip()
 
         self.assertIsNotNone(repo.date_last_repacked)
-        self.assertIn(
-            'Requested 1 automatic git repository repack '
-            'out of the 1 qualifying for repack.', stderr)
