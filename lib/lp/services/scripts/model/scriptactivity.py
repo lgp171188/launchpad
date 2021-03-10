@@ -63,8 +63,9 @@ class ScriptActivitySet:
         # Pass equivalent information through to statsd as well.  (Don't
         # bother with the hostname, since telegraf adds that.)
         getUtility(IStatsdClient).timing(
-            'script_activity,name={}'.format(name),
-            (date_completed - date_started).total_seconds() * 1000)
+            'script_activity',
+            (date_completed - date_started).total_seconds() * 1000,
+            labels={'name': name})
         return activity
 
     def getLastActivity(self, name):

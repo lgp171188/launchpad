@@ -278,8 +278,8 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,job_type=UNKNOWN,'
-             'builder_name=mock-builder,env=test',))
+            ('build.count,builder_name=mock-builder,env=test,'
+             'job_type=UNKNOWN',))
 
 
 class TestGetUploadMethodsMixin:

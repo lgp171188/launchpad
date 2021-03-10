@@ -351,15 +351,6 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
                     self.build_uploaded = True
 
                 self.uploadManifestList(client)
-                # Force this job status to COMPLETED in the same transaction we
-                # called `getUploadedBuilds` (in the uploadManifestList call
-                # above) to release the lock already including our new status.
-                # This way, any other transaction that was blocked waiting to
-                # get the info about the upload jobs will immediately have the
-                # new status of this job, avoiding race conditions. Keep the
-                # `manage_transaction=False` to prevent the method from
-                # commiting at the wrong moment.
-                self.complete(manage_transaction=False)
 
             except OCIRegistryError as e:
                 self.error_summary = str(e)

@@ -297,11 +297,11 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertEqual(4, self.stats_client.incr.call_count)
         calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
         self.assertThat(calls, MatchesListwise([
-            Equals('job.start_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals('job.start_count,env=test,type=OCIRecipeRequestBuildsJob'),
             Equals(
-                'job.complete_count,type=OCIRecipeRequestBuildsJob,env=test'),
-            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test')]))
+                'job.complete_count,env=test,type=OCIRecipeRequestBuildsJob'),
+            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob')]))
 
     def test_run_multiple_architectures(self):
         build_request = self.makeBuildRequest()
@@ -336,13 +336,13 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
             client.uploadManifestList.calls)
         calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
         self.assertThat(calls, MatchesListwise([
-            Equals('job.start_count,type=OCIRecipeRequestBuildsJob,env=test'),
+            Equals('job.start_count,env=test,type=OCIRecipeRequestBuildsJob'),
             Equals(
-                'job.complete_count,type=OCIRecipeRequestBuildsJob,env=test'),
-            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.start_count,type=OCIRegistryUploadJob,env=test'),
-            Equals('job.complete_count,type=OCIRegistryUploadJob,env=test')]))
+                'job.complete_count,env=test,type=OCIRecipeRequestBuildsJob'),
+            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
+            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob')]))
 
     def test_failing_upload_does_not_retries_automatically(self):
         build_request = self.makeBuildRequest(include_i386=False)
@@ -565,6 +565,26 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
             ocibuild, ["Pending", "Failed to upload"], logger)
+
+    def test_run_does_not_oops(self):
+        # The job can OOPS, but it is hidden by our exception handling
+        # Check that it's actually empty
+        build_request = self.makeBuildRequest(include_i386=False)
+        recipe = build_request.recipe
+
+        self.assertEqual(1, build_request.builds.count())
+        ocibuild = build_request.builds[0]
+        ocibuild.updateStatus(BuildStatus.FULLYBUILT)
+        self.makeWebhook(recipe)
+
+        self.assertContentEqual([], ocibuild.registry_upload_jobs)
+        job = OCIRegistryUploadJob.create(ocibuild)
+        client = FakeRegistryClient()
+        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        self.assertEqual(0, len(self.oopses))
 
 
 class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,

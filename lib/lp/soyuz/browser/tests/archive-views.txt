@@ -336,8 +336,8 @@ they were published. We include any relevant builds for failures.
     ...             ))
     >>> print_latest_updates(view.latest_updates)
     cdrkit - Failed to build: i386
-    iceweasel - Successfully built
     pmount - Successfully built
+    iceweasel - Successfully built
 
 Let's now update the datepublished for iceweasel to show that the ordering
 is from most recent.  The view's latest_updates property is cached so we need
@@ -349,8 +349,8 @@ to reload the view.
     >>> login(ANONYMOUS)
     >>> print_latest_updates(view.latest_updates)
     cdrkit - Failed to build: i386
-    iceweasel - Successfully built
     pmount - Successfully built
+    iceweasel - Successfully built
 
 The ArchiveView also includes a helper method to return the number of
 updates over the past month (by default).
