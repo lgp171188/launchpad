@@ -221,28 +221,6 @@ def reconnect_stores(reset=False):
     assert session_store() is not None, 'Failed to reconnect'
 
 
-def wait_children(seconds=120):
-    """Wait for all children to exit.
-
-    :param seconds: Maximum number of seconds to wait.  If None, wait
-        forever.
-    """
-    now = datetime.datetime.now
-    if seconds is None:
-        until = None
-    else:
-        until = now() + datetime.timedelta(seconds=seconds)
-    while True:
-        try:
-            os.waitpid(-1, os.WNOHANG)
-        except OSError as error:
-            if error.errno != errno.ECHILD:
-                raise
-            break
-        if until is not None and now() > until:
-            break
-
-
 class BaseLayer:
     """Base layer.
 
