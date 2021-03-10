@@ -18,13 +18,13 @@ from lp.services.webapp.errorlog import globalErrorUtility
 
 class RepackTunableLoop(TunableLoop):
     tuner_class = LoopTuner
-
     maximum_chunk_size = 5
 
     def __init__(self, log, dry_run, abort_time=None):
         super(RepackTunableLoop, self).__init__(log, abort_time)
         self.dry_run = dry_run
         self.start_at = 1
+        self.logger = log
 
     def findRepackCandidates(self):
         return getUtility(
@@ -34,11 +34,11 @@ class RepackTunableLoop(TunableLoop):
         return self.findRepackCandidates().is_empty()
 
     def __call__(self, chunk_size):
-        globalErrorUtility.configure(self.name)
+        globalErrorUtility.configure('repack_git_repositories')
         self.logger.info(
             'Requesting automatic git repository repack.')
         set_default_timeout_function(
-            lambda: config.request_git_repack.timeout)
+            lambda: config.repack_git_repositories.timeout)
 
         repackable_repos = list(self.findRepackCandidates()[:chunk_size])
         counter = 0
@@ -53,7 +53,7 @@ class RepackTunableLoop(TunableLoop):
                 continue
         self.logger.info(
             'Requested %d automatic git repository repacks out of the %d qualifying for repack.'
-            % (counter, repackable_repos))
+            % (counter, len(repackable_repos)))
 
         self.start_at = repackable_repos[-1].id + 1
 
