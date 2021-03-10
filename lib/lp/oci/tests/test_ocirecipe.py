@@ -31,6 +31,7 @@ from zope.security.interfaces import (
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocipushrule import (
@@ -59,6 +60,11 @@ from lp.oci.interfaces.ociregistrycredentials import (
 from lp.oci.tests.helpers import (
     MatchesOCIRegistryCredentials,
     OCIConfigHelperMixin,
+    )
+from lp.registry.interfaces.accesspolicy import (
+    IAccessArtifactSource,
+    IAccessPolicyArtifactSource,
+    IAccessPolicySource,
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
@@ -785,6 +791,56 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=project)
         self.assertEqual(recipe.name, recipe.image_name)
+
+
+class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeAccessControl, self).setUp()
+        self.setConfig()
+
+    def test_change_oci_project_pillar_reconciles_access(self):
+        person = self.factory.makePerson()
+        initial_project = self.factory.makeProduct(
+            name='initial-project',
+            owner=person, registrant=person)
+        final_project = self.factory.makeProduct(
+            name='final-project',
+            owner=person, registrant=person)
+        oci_project = self.factory.makeOCIProject(
+            ociprojectname='the-oci-project', pillar=initial_project,
+            registrant=person)
+        recipes = []
+        for i in range(10):
+            recipes.append(self.factory.makeOCIRecipe(
+                registrant=person,
+                oci_project=oci_project,
+                information_type=InformationType.USERDATA))
+
+        access_artifacts = getUtility(IAccessArtifactSource).find(recipes)
+        initial_access_policy = getUtility(IAccessPolicySource).find(
+            [(initial_project, InformationType.USERDATA)]).one()
+        apasource = getUtility(IAccessPolicyArtifactSource)
+        policy_artifacts = apasource.find(
+            [(recipe_artifact, initial_access_policy)
+             for recipe_artifact in access_artifacts])
+        self.assertEqual(
+            {i.policy.pillar for i in policy_artifacts}, {initial_project})
+
+        # Changing OCI project's pillar should move the policy artifacts of
+        # all OCI recipes associated to the new pillar.
+        flush_database_caches()
+        with admin_logged_in():
+            oci_project.pillar = final_project
+
+        final_access_policy = getUtility(IAccessPolicySource).find(
+            [(final_project, InformationType.USERDATA)]).one()
+        policy_artifacts = apasource.find(
+            [(recipe_artifact, final_access_policy)
+             for recipe_artifact in access_artifacts])
+        self.assertEqual(
+            {i.policy.pillar for i in policy_artifacts}, {final_project})
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
