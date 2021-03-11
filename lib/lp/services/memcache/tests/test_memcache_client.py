@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the IMemcacheClient utility."""
@@ -8,6 +8,7 @@ __metaclass__ = type
 from lazr.restful.utils import get_current_browser_request
 from zope.component import getUtility
 
+from lp.services.memcache.client import memcache_client_factory
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.testing import TestCase
@@ -53,3 +54,30 @@ class MemcacheClientTestCase(TestCase):
         action = timeline.actions[-1]
         self.assertEqual('memcache-get', action.category)
         self.assertEqual('foo', action.detail)
+
+
+class MemcacheClientFactoryTestCase(TestCase):
+
+    layer = LaunchpadZopelessLayer
+
+    def test_with_timeline(self):
+        # memcache_client_factory defaults to returning a client that
+        # records events to a timeline.
+        client = memcache_client_factory()
+        request = get_current_browser_request()
+        timeline = get_request_timeline(request)
+        base_action_count = len(timeline.actions)
+        client.set('foo', 'bar')
+        self.assertEqual('bar', client.get('foo'))
+        self.assertEqual(base_action_count + 2, len(timeline.actions))
+
+    def test_without_timeline(self):
+        # We can explicitly request a client that does not record events to
+        # a timeline.
+        client = memcache_client_factory(timeline=False)
+        request = get_current_browser_request()
+        timeline = get_request_timeline(request)
+        base_action_count = len(timeline.actions)
+        client.set('foo', 'bar')
+        self.assertEqual('bar', client.get('foo'))
+        self.assertEqual(base_action_count, len(timeline.actions))

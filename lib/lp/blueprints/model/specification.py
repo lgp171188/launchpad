@@ -755,7 +755,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             # Grant the subscriber access if they can't see the
             # specification.
             service = getUtility(IService, 'sharing')
-            _, _, _, shared_specs = service.getVisibleArtifacts(
+            _, _, _, _, shared_specs = service.getVisibleArtifacts(
                 person, specifications=[self], ignore_permissions=True)
             if not shared_specs:
                 service.ensureAccessGrants(

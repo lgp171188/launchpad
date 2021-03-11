@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Out of process statsd reporting."""
@@ -31,10 +31,10 @@ from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.manager import PrefetchedBuilderFactory
 from lp.code.enums import CodeImportJobState
 from lp.code.model.codeimportjob import CodeImportJob
-from lp.soyuz.model.archive import Archive
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
+from lp.soyuz.model.archive import Archive
 
 
 NUMBER_CRUNCHER_LOG_NAME = "number-cruncher"
@@ -126,6 +126,9 @@ class NumberCruncher(service.Service):
                     counts['building'] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEAN:
                     counts['idle'] += 1
+            self._sendGauge(
+                "builders.failure_count", builder.failure_count,
+                labels={"builder_name": builder.name})
         for (processor, virtualized), counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
                 self._sendGauge(

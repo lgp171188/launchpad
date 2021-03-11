@@ -447,18 +447,25 @@ class TestCloseAccount(TestCaseWithFactory):
                  date_created, keys[1], self.factory.makePerson().id,
                  raw_submissions[1].id, system_fingerprint_ids[1]))]
         with dbuser('hwdb-submission-processor'):
+            vendor_name_id = store.execute("""
+                INSERT INTO HWVendorName (name) VALUES (?) RETURNING id
+                """, (self.factory.getUniqueUnicode(),)).get_one()[0]
+            vendor_id = store.execute("""
+                INSERT INTO HWVendorID (bus, vendor_id_for_bus, vendor_name)
+                VALUES (1, '0x0001', ?)
+                RETURNING id
+                """, (vendor_name_id,)).get_one()[0]
+            device_id = store.execute("""
+                INSERT INTO HWDevice
+                    (bus_vendor_id, bus_product_id, variant, name, submissions)
+                VALUES (?, '0x0002', NULL, ?, 1)
+                RETURNING id
+                """, (vendor_id, self.factory.getUniqueUnicode())).get_one()[0]
             device_driver_link_id = store.execute("""
-                SELECT HWDeviceDriverLink.id
-                FROM HWDeviceDriverLink, HWDevice, HWVendorID
-                WHERE
-                    HWVendorID.bus = 1
-                    AND HWVendorID.vendor_id_for_bus = '0x10de'
-                    AND HWDevice.bus_vendor_id = HWVendorID.id
-                    AND HWDevice.bus_product_id = '0x0455'
-                    AND HWDevice.variant IS NULL
-                    AND HWDeviceDriverLink.device = HWDevice.id
-                    AND HWDeviceDriverLink.driver IS NULL
-                """).get_one()[0]
+                INSERT INTO HWDeviceDriverLink (device, driver)
+                VALUES (?, NULL)
+                RETURNING id
+                """, (device_id,)).get_one()[0]
             parent_submission_device_id = store.execute("""
                 INSERT INTO HWSubmissionDevice
                     (device_driver_link, submission, parent, hal_device_id)

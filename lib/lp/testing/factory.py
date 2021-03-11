@@ -4764,7 +4764,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if registrant is None:
             registrant = self.makePerson()
         if owner is None:
-            owner = self.makeTeam(registrant)
+            is_private_snap = (
+                private or information_type not in PUBLIC_INFORMATION_TYPES)
+            # Private snaps cannot be owned by non-moderated teams.
+            membership_policy = (
+                TeamMembershipPolicy.OPEN if not is_private_snap
+                else TeamMembershipPolicy.MODERATED)
+            owner = self.makeTeam(
+                registrant, membership_policy=membership_policy)
         if distroseries is _DEFAULT:
             distroseries = self.makeDistroSeries()
         if name is None:
@@ -4778,7 +4785,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             if auto_build_pocket is None:
                 auto_build_pocket = PackagePublishingPocket.UPDATES
         if private and project is _DEFAULT:
-            # If we are creating a private snap and didn't explictly set a
+            # If we are creating a private snap and didn't explicitly set a
             # pillar for it, we must create a pillar.
             branch_sharing = (
                 BranchSharingPolicy.PUBLIC_OR_PROPRIETARY if not private

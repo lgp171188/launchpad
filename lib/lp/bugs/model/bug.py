@@ -875,7 +875,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # there is at least one bugtask for which access can be checked.
         if self.default_bugtask:
             service = getUtility(IService, 'sharing')
-            bugs, _, _, _ = service.getVisibleArtifacts(
+            bugs, _, _, _, _ = service.getVisibleArtifacts(
                 person, bugs=[self], ignore_permissions=True)
             if not bugs:
                 service.ensureAccessGrants(
@@ -1819,7 +1819,7 @@ class Bug(SQLBase, InformationTypeMixin):
         if information_type in PRIVATE_INFORMATION_TYPES:
             service = getUtility(IService, 'sharing')
             for person in (who, self.owner):
-                bugs, _, _, _ = service.getVisibleArtifacts(
+                bugs, _, _, _, _ = service.getVisibleArtifacts(
                     person, bugs=[self], ignore_permissions=True)
                 if not bugs:
                     # subscribe() isn't sufficient if a subscription

@@ -1,4 +1,4 @@
-# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Job classes related to the sharing feature are in here."""
@@ -91,6 +91,12 @@ from lp.services.job.model.job import (
     )
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
+from lp.snappy.interfaces.snap import ISnap
+from lp.snappy.model.snap import (
+    get_snap_privacy_filter,
+    Snap,
+    )
+from lp.snappy.model.snapsubscription import SnapSubscription
 
 
 class SharingJobType(DBEnumeratedType):
@@ -263,6 +269,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
         bug_ids = []
         branch_ids = []
         gitrepository_ids = []
+        snap_ids = []
         specification_ids = []
         if artifacts:
             for artifact in artifacts:
@@ -272,6 +279,8 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     branch_ids.append(artifact.id)
                 elif IGitRepository.providedBy(artifact):
                     gitrepository_ids.append(artifact.id)
+                elif ISnap.providedBy(artifact):
+                    snap_ids.append(artifact.id)
                 elif ISpecification.providedBy(artifact):
                     specification_ids.append(artifact.id)
                 else:
@@ -284,6 +293,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
             'bug_ids': bug_ids,
             'branch_ids': branch_ids,
             'gitrepository_ids': gitrepository_ids,
+            'snap_ids': snap_ids,
             'specification_ids': specification_ids,
             'information_types': information_types,
             'requestor.id': requestor.id
@@ -320,6 +330,10 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
         return self.metadata.get('gitrepository_ids', [])
 
     @property
+    def snap_ids(self):
+        return self.metadata.get('snap_ids', [])
+
+    @property
     def specification_ids(self):
         return self.metadata.get('specification_ids', [])
 
@@ -349,6 +363,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
             'bug_ids': self.bug_ids,
             'branch_ids': self.branch_ids,
             'gitrepository_ids': self.gitrepository_ids,
+            'snap_ids': self.snap_ids,
             'specification_ids': self.specification_ids,
             'pillar': getattr(self.pillar, 'name', None),
             'grantee': getattr(self.grantee, 'name', None)
@@ -365,6 +380,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
         bug_filters = []
         branch_filters = []
         gitrepository_filters = []
+        snap_filters = []
         specification_filters = []
 
         if self.branch_ids:
@@ -372,6 +388,8 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
         if self.gitrepository_ids:
             gitrepository_filters.append(GitRepository.id.is_in(
                 self.gitrepository_ids))
+        if self.snap_ids:
+            snap_filters.append(Snap.id.is_in(self.snap_ids))
         if self.specification_ids:
             specification_filters.append(Specification.id.is_in(
                 self.specification_ids))
@@ -387,6 +405,8 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 gitrepository_filters.append(
                     GitRepository.information_type.is_in(
                         self.information_types))
+                snap_filters.append(Snap._information_type.is_in(
+                    self.information_types))
                 specification_filters.append(
                     Specification.information_type.is_in(
                         self.information_types))
@@ -423,6 +443,11 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     Select(
                         TeamParticipation.personID,
                         where=TeamParticipation.team == self.grantee)))
+            snap_filters.append(
+                In(SnapSubscription.person_id,
+                   Select(
+                       TeamParticipation.personID,
+                       where=TeamParticipation.team == self.grantee)))
             specification_filters.append(
                 In(SpecificationSubscription.person_id,
                     Select(
@@ -465,6 +490,16 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     distinct=True)
             for sub in gitrepository_subscriptions:
                 sub.repository.unsubscribe(
+                    sub.person, self.requestor, ignore_permissions=True)
+        if snap_filters:
+            snap_filters.append(
+                Not(get_snap_privacy_filter(SnapSubscription.person_id)))
+            snap_subscriptions = IStore(SnapSubscription).using(
+                SnapSubscription,
+                Join(Snap, Snap.id == SnapSubscription.snap_id)
+            ).find(SnapSubscription, *snap_filters).config(distinct=True)
+            for sub in snap_subscriptions:
+                sub.snap.unsubscribe(
                     sub.person, self.requestor, ignore_permissions=True)
         if specification_filters:
             specification_filters.append(Not(*get_specification_privacy_filter(

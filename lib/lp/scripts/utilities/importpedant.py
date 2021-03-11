@@ -21,10 +21,6 @@ warnings.filterwarnings('ignore', category=UserWarning, append=True,
                         message=r'Module .*? is being added to sys.path')
 
 
-def text_lines_to_set(text):
-    return set(line.strip() for line in text.splitlines() if line.strip())
-
-
 # Sometimes, third-party modules don't export all of their public APIs through
 # __all__. The following dict maps from such modules to a list of attributes
 # that are allowed to be imported, whether or not they are in __all__.
