@@ -5,6 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'get_snap_privacy_filter',
     'Snap',
     ]
 
@@ -26,6 +27,7 @@ from storm.expr import (
     And,
     Coalesce,
     Desc,
+    Exists,
     Join,
     LeftJoin,
     Not,
@@ -71,6 +73,7 @@ from lp.app.errors import (
     SubscriptionPrivacyViolation,
     UserCannotUnsubscribePerson,
     )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
@@ -132,6 +135,7 @@ from lp.registry.model.accesspolicy import (
     reconcile_access_for_artifact,
     )
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import Person
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
@@ -1165,6 +1169,13 @@ class Snap(Storm, WebhookTargetMixin):
             person.is_team and
             person.anyone_can_join())
 
+    @property
+    def subscribers(self):
+        return Store.of(self).find(
+            Person,
+            SnapSubscription.person_id == Person.id,
+            SnapSubscription.snap == self)
+
     def subscribe(self, person, subscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         if not self._userCanBeSubscribed(person):
@@ -1177,9 +1188,12 @@ class Snap(Storm, WebhookTargetMixin):
                 person=person, snap=self, subscribed_by=subscribed_by)
             Store.of(subscription).flush()
         service = getUtility(IService, "sharing")
-        service.ensureAccessGrants(
-            [person], subscribed_by, snaps=[self],
-            ignore_permissions=ignore_permissions)
+        _, _, _, snaps, _ = service.getVisibleArtifacts(
+            person, snaps=[self], ignore_permissions=True)
+        if not snaps:
+            service.ensureAccessGrants(
+                [person], subscribed_by, snaps=[self],
+                ignore_permissions=ignore_permissions)
 
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""
@@ -1421,9 +1435,12 @@ class SnapSet:
             expressions.append(Snap.owner == owner)
         return IStore(Snap).find(Snap, *expressions)
 
-    def findByIds(self, snap_ids):
+    def findByIds(self, snap_ids, visible_by_user=None):
         """See `ISnapSet`."""
-        return IStore(ISnap).find(Snap, Snap.id.is_in(snap_ids))
+        clauses = [Snap.id.is_in(snap_ids)]
+        if visible_by_user is not None:
+            clauses.append(get_snap_privacy_filter(visible_by_user))
+        return IStore(Snap).find(Snap, *clauses)
 
     def findByOwner(self, owner):
         """See `ISnapSet`."""
@@ -1694,9 +1711,11 @@ class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
 
 
 def get_snap_privacy_filter(user):
-    """Returns the filter for all private Snaps that the given user is
-    subscribed to (that is, has access without being directly an owner).
+    """Returns the filter for all Snaps that the given user has access to,
+    including private snaps where the user has proper permission.
 
+    :param user: An IPerson, or a class attribute that references an IPerson
+                 in the database.
     :return: A storm condition.
     """
     # XXX pappacena 2021-02-12: Once we do the migration to back fill
@@ -1706,10 +1725,6 @@ def get_snap_privacy_filter(user):
         params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
     if user is None:
         return private_snap == False
-
-    roles = IPersonRoles(user)
-    if roles.in_admin or roles.in_commercial_admin:
-        return True
 
     artifact_grant_query = Coalesce(
         ArrayIntersects(
@@ -1732,4 +1747,13 @@ def get_snap_privacy_filter(user):
                 where=(TeamParticipation.person == user)
             )), False)
 
-    return Or(private_snap == False, artifact_grant_query, policy_grant_query)
+    admin_team_id = getUtility(ILaunchpadCelebrities).admin.id
+    user_is_admin = Exists(Select(
+        TeamParticipation.personID,
+        tables=[TeamParticipation],
+        where=And(
+            TeamParticipation.teamID == admin_team_id,
+            TeamParticipation.person == user)))
+    return Or(
+        private_snap == False, artifact_grant_query, policy_grant_query,
+        user_is_admin)
