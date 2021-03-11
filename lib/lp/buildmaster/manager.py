@@ -77,12 +77,6 @@ JOB_RESET_THRESHOLD = 3
 BUILDER_FAILURE_THRESHOLD = 5
 
 
-def build_candidate_sort_key(candidate):
-    # Sort key for build candidates.  This must match the ordering used in
-    # BuildQueueSet.findBuildCandidates.
-    return -candidate.lastscore, candidate.id
-
-
 class PrefetchedBuildCandidates:
     """A set of build candidates updated using efficient bulk queries.
 

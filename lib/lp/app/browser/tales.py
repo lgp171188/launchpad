@@ -2580,15 +2580,6 @@ class RevisionAuthorFormatterAPI(ObjectFormatterAPI):
             return ''
 
 
-def clean_path_segments(request):
-    """Returns list of path segments, excluding system-related segments."""
-    proto_host_port = request.getApplicationURL()
-    clean_url = request.getURL()
-    clean_path = clean_url[len(proto_host_port):]
-    clean_path_split = clean_path.split('/')
-    return clean_path_split
-
-
 @implementer(ITraversable)
 class PermissionRequiredQuery:
     """Check if the logged in user has a given permission on a given object.

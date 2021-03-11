@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -276,7 +276,7 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
         url = canonical_url(self.branch)
         # If the subscriber can no longer see the branch, redirect them away.
         service = getUtility(IService, 'sharing')
-        _, branches, _, _ = service.getVisibleArtifacts(
+        _, branches, _, _, _ = service.getVisibleArtifacts(
             self.person, branches=[self.branch], ignore_permissions=True)
         if not branches:
             url = canonical_url(self.branch.target)

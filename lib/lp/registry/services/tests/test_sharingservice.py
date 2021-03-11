@@ -1105,7 +1105,7 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
         # Check that grantees have expected access grants and subscriptions.
         for person in [team_grantee, person_grantee]:
             (visible_bugs, visible_branches, visible_gitrepositories,
-             visible_specs) = (
+             visible_snaps, visible_specs) = (
                 self.service.getVisibleArtifacts(
                     person, bugs=bugs, branches=branches,
                     gitrepositories=gitrepositories,
@@ -1137,7 +1137,7 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
             for bug in bugs or []:
                 self.assertNotIn(person, bug.getDirectSubscribers())
             (visible_bugs, visible_branches, visible_gitrepositories,
-             visible_specs) = (
+             visible_snaps, visible_specs) = (
                 self.service.getVisibleArtifacts(
                     person, bugs=bugs, branches=branches,
                     gitrepositories=gitrepositories))
@@ -1847,7 +1847,8 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
         grantee, ignore, bugs, branches, gitrepositories, specs = (
             self._make_Artifacts())
         # Check the results.
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         shared_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(
                 grantee, bugs=bugs, branches=branches,
                 gitrepositories=gitrepositories, specifications=specs))
@@ -1861,7 +1862,8 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
         # user has a policy grant for the pillar of the specification.
         _, owner, bugs, branches, gitrepositories, specs = (
             self._make_Artifacts())
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         shared_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(
                 owner, bugs=bugs, branches=branches,
                 gitrepositories=gitrepositories, specifications=specs))
@@ -1904,7 +1906,8 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
                 information_type=InformationType.USERDATA)
             bugs.append(bug)
 
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         visible_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(grantee, bugs=bugs))
         self.assertContentEqual(bugs, shared_bugs)
 
@@ -1912,7 +1915,8 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
         for x in range(0, 5):
             change_callback(bugs[x], owner)
         # Check the results.
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         visible_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(grantee, bugs=bugs))
         self.assertContentEqual(bugs[5:], shared_bugs)
 
