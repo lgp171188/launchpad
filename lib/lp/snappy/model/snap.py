@@ -1145,9 +1145,6 @@ class Snap(Storm, WebhookTargetMixin):
             return True
         if user is None:
             return False
-        roles = IPersonRoles(user)
-        if roles.in_admin:
-            return True
         store = IStore(self)
         return not store.find(
             Snap,
