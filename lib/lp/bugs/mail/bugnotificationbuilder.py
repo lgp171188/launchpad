@@ -27,8 +27,6 @@ from lp.app.enums import (
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.config import config
-from lp.services.helpers import shortlist
-from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.mail.sendmail import (
     append_footer,
     format_address,

@@ -23,7 +23,6 @@ from lp.buildmaster.enums import BuildBaseImageType
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features.testing import FeatureFixture
-from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     api_url,

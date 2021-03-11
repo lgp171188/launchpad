@@ -12,7 +12,6 @@ from textwrap import dedent
 
 from fixtures import FakeLogger
 import pytz
-from six.moves.urllib_error import HTTPError
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import getUtility

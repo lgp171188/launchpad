@@ -485,30 +485,17 @@ class GitAPI(LaunchpadXMLRPCView):
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
 
-    def notify(self, translated_path, statistics=None, auth_params=None):
+    def notify(self, translated_path, statistics, auth_params):
         """See `IGitAPI`."""
         logger = self._getLogger()
-        if statistics is None:
-            logger.info("Request received: notify('%s')", translated_path)
-        else:
-            logger.info("Request received: notify('%s', '%d', '%d')",
+        logger.info("Request received: notify('%s', '%d', '%d')",
                     translated_path, statistics.get('loose_object_count'),
                     statistics.get('pack_count'))
-        if auth_params is not None:
-            requester_id = _get_requester_id(auth_params)
-            result = run_with_login(
-                requester_id, self._notify,
-                translated_path, statistics, auth_params)
-            if isinstance(result, xmlrpc_client.Fault):
-                logger.error("notify failed: %r", result)
-            else:
-                logger.info("notify succeeded: %s" % result)
-            return result
-        else:
-            # XXX ilasc 2021-02-12: This else block will be removed
-            # once turnip always passes statistics and auth_params
-            result = self._notify(
-                None, translated_path, statistics, auth_params)
+
+        requester_id = _get_requester_id(auth_params)
+        result = run_with_login(
+            requester_id, self._notify,
+            translated_path, statistics, auth_params)
         if isinstance(result, xmlrpc_client.Fault):
             logger.error("notify failed: %r", result)
         else:

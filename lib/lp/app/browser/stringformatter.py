@@ -25,6 +25,7 @@ import sys
 from breezy.patches import hunk_from_header
 from lxml import html
 import markdown
+import six
 from six.moves import zip_longest as izip_longest
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -490,7 +491,11 @@ class FormattersAPI:
         element_tree = html.fromstring(linkified_text)
         for link in element_tree.xpath('//a'):
             link.set('target', '_new')
-        return html.tostring(element_tree)
+        # html.tostring returns bytes; we want text.  (Passing
+        # encoding='unicode' would cause it to return text, but that would
+        # also disable "&#...;" character encoding of non-ASCII characters,
+        # which we probably want to keep.)
+        return six.ensure_text(html.tostring(element_tree))
 
     # match whitespace at the beginning of a line
     _re_leadingspace = re.compile(r'^(\s+)')

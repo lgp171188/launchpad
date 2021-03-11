@@ -192,7 +192,6 @@ from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     )
-from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,

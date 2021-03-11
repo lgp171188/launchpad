@@ -177,7 +177,7 @@ class BuildingSlave(OkSlave):
         if sum == "buildlog":
             if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
-            file_to_write.write("This is a build log")
+            file_to_write.write(b"This is a build log")
             file_to_write.close()
         return defer.succeed(None)
 

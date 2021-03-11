@@ -1725,6 +1725,12 @@ class TestSnapSet(TestCaseWithFactory):
         shared_snaps = [self.factory.makeSnap(**snap_data) for _ in range(2)]
         snap_data["private"] = False
         public_snaps = [self.factory.makeSnap(**snap_data) for _ in range(3)]
+        # Backwards compatibility check: NULL on information_type db column
+        # should make us consider the "private" db column.
+        snap = removeSecurityProxy(public_snaps[-1])
+        snap._private = False
+        snap.information_type = None
+        Store.of(snap).flush()
 
         with admin_logged_in():
             for snap in shared_snaps:

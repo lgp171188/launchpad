@@ -15,7 +15,6 @@ __all__ = [
 import binascii
 
 from oauthlib import oauth1
-from oauthlib.oauth1.rfc5849.utils import parse_authorization_header
 import six
 from zope.authentication.interfaces import ILoginPassword
 from zope.component import getUtility

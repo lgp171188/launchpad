@@ -131,17 +131,17 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         self.assertThat(
             calls, MatchesSetwise(
                 Equals((
-                    'builders,status=disabled,arch=amd64,'
-                    'virtualized=True,env=test', 0)),
+                    'builders,arch=amd64,env=test,status=disabled,'
+                    'virtualized=True', 0)),
                 Equals((
-                    'builders,status=building,arch=amd64,'
-                    'virtualized=True,env=test', 2)),
+                    'builders,arch=amd64,env=test,status=building,'
+                    'virtualized=True', 2)),
                 Equals((
-                    'builders,status=idle,arch=amd64,'
-                    'virtualized=True,env=test', 4)),
+                    'builders,arch=amd64,env=test,status=idle,'
+                    'virtualized=True', 4)),
                 Equals((
-                    'builders,status=cleaning,arch=amd64,'
-                    'virtualized=True,env=test', 3))
+                    'builders,arch=amd64,env=test,status=cleaning,'
+                    'virtualized=True', 3))
                 ))
 
     def test_updateBuilderStats_error(self):
@@ -174,9 +174,9 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         self.assertThat(
             [x[0] for x in self.stats_client.gauge.call_args_list],
             MatchesSetwise(
-                Equals(('buildqueue,virtualized=True,arch={},env=test'.format(
+                Equals(('buildqueue,arch={},env=test,virtualized=True'.format(
                     build.processor.name), 1)),
-                Equals(('buildqueue,virtualized=False,arch=386,env=test', 1))
+                Equals(('buildqueue,arch=386,env=test,virtualized=False', 1))
                 ))
 
     def test_updateBuilderQueues_error(self):

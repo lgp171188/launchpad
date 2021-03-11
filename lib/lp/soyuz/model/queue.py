@@ -76,7 +76,6 @@ from lp.services.database.stormexpr import (
     Array,
     ArrayContains,
     )
-from lp.services.features import getFeatureFlag
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
     LibraryFileAlias,

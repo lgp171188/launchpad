@@ -586,11 +586,11 @@ makes it write out the emails it sends.
     another comment.
     <BLANKLINE>
     ** Summary changed:
+    <BLANKLINE>
     - Summary #431
     + Summary bleugh I'm going mad
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    --...
     You received this bug notification because...
     INFO    Notifying mark@example.com about bug 1.
     ...

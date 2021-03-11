@@ -22,3 +22,9 @@ class IStatsdClient(Interface):
 
     def reload():
         """Reload the statsd client configuration."""
+
+    def composeMetric(name, labels):
+        """Compose a full metric name from a measurement name and labels.
+
+        The inputs are composed according to the InfluxDB line protocol.
+        """
