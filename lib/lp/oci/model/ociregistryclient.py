@@ -104,12 +104,13 @@ class OCIRegistryClient:
         before=before_log(log, logging.INFO),
         retry=retry_if_exception_type(ConnectionError),
         stop=stop_after_attempt(5))
-    def _upload(cls, digest, push_rule, fileobj, http_client):
+    def _upload(cls, digest, push_rule, fileobj, length, http_client):
         """Upload a blob to the registry, using a given digest.
 
         :param digest: The digest to store the file under.
         :param push_rule: `OCIPushRule` to use for the URL and credentials.
         :param fileobj: An object that looks like a buffer.
+        :param length: The length of the blob in bytes.
 
         :raises BlobUploadFailed: if the registry does not accept the blob.
         """
@@ -137,6 +138,7 @@ class OCIRegistryClient:
                 post_location,
                 params=query_parsed,
                 data=fileobj,
+                headers={"Content-Length": str(length)},
                 method="PUT")
         except HTTPError as http_error:
             put_response = http_error.response
@@ -160,13 +162,18 @@ class OCIRegistryClient:
         """
         lfa.open()
         try:
-            un_zipped = tarfile.open(fileobj=lfa, mode='r|gz')
-            for tarinfo in un_zipped:
-                if tarinfo.name != 'layer.tar':
-                    continue
-                fileobj = un_zipped.extractfile(tarinfo)
-                cls._upload(digest, push_rule, fileobj, http_client)
-                return tarinfo.size
+            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                for tarinfo in un_zipped:
+                    if tarinfo.name != 'layer.tar':
+                        continue
+                    fileobj = un_zipped.extractfile(tarinfo)
+                    try:
+                        cls._upload(
+                            digest, push_rule, fileobj, tarinfo.size,
+                            http_client)
+                    finally:
+                        fileobj.close()
+                    return tarinfo.size
         finally:
             lfa.close()
 
@@ -328,6 +335,7 @@ class OCIRegistryClient:
                 "sha256:{}".format(config_sha),
                 push_rule,
                 BytesIO(config_json),
+                len(config_json),
                 http_client)
 
             # Build the registry manifest from the image manifest
