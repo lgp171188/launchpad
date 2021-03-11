@@ -26,6 +26,7 @@ import responses
 from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
+    ContainsDict,
     Equals,
     Is,
     MatchesAll,
@@ -67,6 +68,7 @@ from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
+from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.testing import (
     admin_logged_in,
     person_logged_in,
@@ -87,9 +89,11 @@ class SpyProxyCallsMixin:
             self.proxy_call_count += 1
             return proxy_urlfetch(*args, **kwargs)
 
-        self.useFixture(MockPatch(
+        proxy_mock = self.useFixture(MockPatch(
             'lp.oci.model.ociregistryclient.proxy_urlfetch',
-            side_effect=count_proxy_call_count))
+            side_effect=count_proxy_call_count)).mock
+        # Avoid reference cycles with file objects passed to urlfetch.
+        self.addCleanup(proxy_mock.reset_mock)
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
@@ -459,7 +463,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule = self.build.recipe.push_rules[0]
         push_rule.registry_credentials.setCredentials({})
         self.client._upload(
-            "test-digest", push_rule, None, http_client)
+            "test-digest", push_rule, None, 0, http_client)
 
         self.assertEqual(len(responses.calls), self.proxy_call_count)
         # There should be no auth headers for these calls
@@ -481,6 +485,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             "test-digest",
             push_rule,
             None,
+            0,
             http_client)
 
     @responses.activate
@@ -493,7 +498,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule.registry_credentials.setCredentials({
             "username": "user", "password": "password"})
         self.client._upload(
-            "test-digest", push_rule, None,
+            "test-digest", push_rule, None, 0,
             http_client)
 
         self.assertEqual(len(responses.calls), self.proxy_call_count)
@@ -521,7 +526,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             push_rule = self.build.recipe.push_rules[0]
             self.client._upload(
                 "test-digest", push_rule,
-                None, RegistryHTTPClient(push_rule))
+                None, 0, RegistryHTTPClient(push_rule))
         except RetryError:
             pass
         # Check that tenacity and our counting agree
@@ -552,7 +557,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertThat(
             partial(
                 self.client._upload,
-                "test-digest", push_rule, None, http_client),
+                "test-digest", push_rule, None, 0, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
                 MatchesAll(
@@ -578,7 +583,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertThat(
             partial(
                 self.client._upload,
-                "test-digest", push_rule, None, http_client),
+                "test-digest", push_rule, None, 0, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
                 MatchesAll(
@@ -650,6 +655,30 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                         str,
                         Equals(expected_msg)),
                     MatchesStructure(errors=Is(None))))))
+
+    @responses.activate
+    def test_upload_layer_put_blob_sends_content_length(self):
+        lfa = self.factory.makeLibraryFileAlias(
+            content=LaunchpadWriteTarFile.files_to_bytes(
+                {"layer.tar": b"test layer"}))
+        transaction.commit()
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add("PUT", upload_url, status=201)
+        self.client._upload_layer("test-digest", push_rule, lfa, http_client)
+        self.assertThat(responses.calls[2].request, MatchesStructure(
+            method=Equals("PUT"),
+            headers=ContainsDict({
+                "Content-Length": Equals(str(len(b"test layer"))),
+                }),
+            ))
 
     @responses.activate
     def test_multi_arch_manifest_upload_skips_superseded_builds(self):
