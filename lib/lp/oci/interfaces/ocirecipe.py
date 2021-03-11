@@ -506,6 +506,9 @@ class IOCIRecipeSet(Interface):
     def exists(owner, oci_project, name):
         """Check to see if an existing OCI Recipe exists."""
 
+    def findByIds(ocirecipe_ids, visible_by_user=None):
+        """Returns the OCI recipes with the given IDs."""
+
     def getByName(owner, oci_project, name):
         """Return the appropriate `OCIRecipe` for the given objects."""
 
