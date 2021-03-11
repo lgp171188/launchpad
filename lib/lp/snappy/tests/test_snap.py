@@ -34,6 +34,7 @@ from testtools.matchers import (
     Equals,
     GreaterThan,
     Is,
+    IsInstance,
     LessThan,
     MatchesAll,
     MatchesDict,
@@ -46,6 +47,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.app.errors import SubscriptionPrivacyViolation
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import (
     BuildQueueStatus,
@@ -68,6 +70,7 @@ from lp.code.tests.helpers import (
 from lp.registry.enums import (
     BranchSharingPolicy,
     PersonVisibility,
+    TeamMembershipPolicy,
     )
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -1353,6 +1356,9 @@ class TestSnapVisibility(TestCaseWithFactory):
             AccessArtifactGrant.abstract_artifact_id == AccessArtifact.id,
             *conditions)
 
+    def getSnapSubscription(self, snap, person):
+        return removeSecurityProxy(snap)._getSubscription(person)
+
     def test_only_owner_can_grant_access(self):
         owner = self.factory.makePerson()
         snap = self.factory.makeSnap(
@@ -1373,7 +1379,8 @@ class TestSnapVisibility(TestCaseWithFactory):
 
     def test_private_is_visible_by_team_member(self):
         person = self.factory.makePerson()
-        team = self.factory.makeTeam(members=[person])
+        team = self.factory.makeTeam(
+            members=[person], membership_policy=TeamMembershipPolicy.MODERATED)
         snap = self.factory.makeSnap(private=True, owner=team,
                                      registrant=person)
         with person_logged_in(team):
@@ -1388,10 +1395,32 @@ class TestSnapVisibility(TestCaseWithFactory):
         with person_logged_in(owner):
             self.assertFalse(snap.visibleByUser(person))
             snap.subscribe(person, snap.owner)
+            self.assertThat(
+                self.getSnapSubscription(snap, person),
+                MatchesStructure(
+                    person=Equals(person),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
             # Calling again should be a no-op.
             snap.subscribe(person, snap.owner)
             self.assertTrue(snap.visibleByUser(person))
+
             snap.unsubscribe(person, snap.owner)
+            self.assertFalse(snap.visibleByUser(person))
+            self.assertIsNone(self.getSnapSubscription(snap, person))
+
+    def test_snap_owner_can_unsubscribe_anyone(self):
+        person = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        admin = self.factory.makeAdministrator()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        with person_logged_in(admin):
+            snap.subscribe(person, admin)
+            self.assertTrue(snap.visibleByUser(person))
+        with person_logged_in(owner):
+            snap.unsubscribe(person, owner)
             self.assertFalse(snap.visibleByUser(person))
 
     def test_reconcile_set_public(self):
@@ -1401,11 +1430,24 @@ class TestSnapVisibility(TestCaseWithFactory):
         another_user = self.factory.makePerson()
         with admin_logged_in():
             snap.subscribe(another_user, snap.owner)
+            self.assertEqual(1, self.getSnapGrants(snap, another_user).count())
+            self.assertThat(
+                self.getSnapSubscription(snap, another_user),
+                MatchesStructure(
+                    person=Equals(another_user),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
 
-        self.assertEqual(1, self.getSnapGrants(snap, another_user).count())
-        with admin_logged_in():
             snap.information_type = InformationType.PUBLIC
-        self.assertEqual(0, self.getSnapGrants(snap, another_user).count())
+            self.assertEqual(0, self.getSnapGrants(snap, another_user).count())
+            self.assertThat(
+                self.getSnapSubscription(snap, another_user),
+                MatchesStructure(
+                    person=Equals(another_user),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
 
     def test_reconcile_permissions_setting_project(self):
         owner = self.factory.makePerson()
@@ -1429,10 +1471,24 @@ class TestSnapVisibility(TestCaseWithFactory):
             snap.subscribe(another_person, owner)
             self.assertTrue(snap.visibleByUser(another_person))
             self.assertEqual(2, self.getSnapGrants(snap).count())
+            self.assertThat(
+                self.getSnapSubscription(snap, another_person),
+                MatchesStructure(
+                    person=Equals(another_person),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
 
             snap.setProject(new_project)
             self.assertTrue(snap.visibleByUser(another_person))
             self.assertEqual(2, self.getSnapGrants(snap).count())
+            self.assertThat(
+                self.getSnapSubscription(snap, another_person),
+                MatchesStructure(
+                    person=Equals(another_person),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
 
 
 class TestSnapSet(TestCaseWithFactory):
@@ -1527,12 +1583,23 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
 
+    def test_create_private_snap_with_open_team_as_owner_fails(self):
+        components = self.makeSnapComponents()
+        with admin_logged_in():
+            components['owner'].membership_policy = TeamMembershipPolicy.OPEN
+            components['information_type'] = InformationType.PROPRIETARY
+        self.assertRaises(
+            SubscriptionPrivacyViolation,
+            getUtility(ISnapSet).new, **components)
+
     def test_private_snap_information_type_compatibility(self):
         login_admin()
         private = InformationType.PROPRIETARY
         public = InformationType.PUBLIC
+        components = self.makeSnapComponents()
+        components['owner'].membership_policy = TeamMembershipPolicy.MODERATED
         private_snap = getUtility(ISnapSet).new(
-            information_type=private, **self.makeSnapComponents())
+            information_type=private, **components)
         self.assertEqual(
             InformationType.PROPRIETARY, private_snap.information_type)
 
@@ -1545,7 +1612,10 @@ class TestSnapSet(TestCaseWithFactory):
         # Creating private snaps for public sources is allowed.
         [ref] = self.factory.makeGitRefs()
         components = self.makeSnapComponents(git_ref=ref)
-        components['information_type'] = InformationType.PROPRIETARY
+        with admin_logged_in():
+            components['information_type'] = InformationType.PROPRIETARY
+            components['owner'].membership_policy = (
+                TeamMembershipPolicy.MODERATED)
         components['project'] = self.factory.makeProduct(
             information_type=InformationType.PROPRIETARY,
             branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
@@ -2731,7 +2801,9 @@ class TestSnapWebservice(TestCaseWithFactory):
 
     def test_new_private(self):
         # Ensure private Snap creation works.
-        team = self.factory.makeTeam(owner=self.person)
+        team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
+            owner=self.person)
         distroseries = self.factory.makeDistroSeries(registrant=team)
         [ref] = self.factory.makeGitRefs()
         private_webservice = webservice_for_person(

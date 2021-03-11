@@ -59,6 +59,7 @@ from lp.code.tests.helpers import (
 from lp.registry.enums import (
     BranchSharingPolicy,
     PersonVisibility,
+    TeamMembershipPolicy,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -388,6 +389,7 @@ class TestSnapAddView(BaseTestSnapView):
         login_person(self.person)
         self.factory.makeTeam(
             name='super-private', owner=self.person,
+            membership_policy=TeamMembershipPolicy.MODERATED,
             visibility=PersonVisibility.PRIVATE)
         branch = self.factory.makeAnyBranch()
 
@@ -411,6 +413,7 @@ class TestSnapAddView(BaseTestSnapView):
         login_person(self.person)
         private_team = self.factory.makeTeam(
             name='super-private', owner=self.person,
+            membership_policy=TeamMembershipPolicy.MODERATED,
             visibility=PersonVisibility.PRIVATE)
         branch = self.factory.makeAnyBranch(
             owner=self.person, registrant=self.person,
@@ -440,6 +443,7 @@ class TestSnapAddView(BaseTestSnapView):
         login_person(self.person)
         private_team = self.factory.makeTeam(
             name='super-private', owner=self.person,
+            membership_policy=TeamMembershipPolicy.MODERATED,
             visibility=PersonVisibility.PRIVATE)
         [git_ref] = self.factory.makeGitRefs(
             owner=self.person, registrant=self.person,
@@ -762,6 +766,7 @@ class TestSnapAdminView(BaseTestSnapView):
         # Cannot make snap public if it still contains private information.
         login_person(self.person)
         team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
             owner=self.person, visibility=PersonVisibility.PRIVATE)
         project = self.factory.makeProduct(
             information_type=InformationType.PUBLIC,
