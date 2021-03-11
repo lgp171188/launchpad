@@ -72,6 +72,7 @@ from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
@@ -292,6 +293,10 @@ class IOCIRecipeView(Interface):
         description=_("Use the credentials on a Distribution for "
                       "registry upload"))
 
+    subscribers = CollectionField(
+        title=_("Persons subscribed to this snap recipe."),
+        readonly=True, value_type=Reference(IPerson))
+
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
 
@@ -326,6 +331,18 @@ class IOCIRecipeView(Interface):
     def getBuildRequest(job_id):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
+
+    def visibleByUser(user):
+        """Can the specified user see this snap recipe?"""
+
+    def getSubscription(person):
+        """Returns the OCIRecipeSubscription for the given user."""
+
+    def subscribe(person, subscribed_by):
+        """Subscribe a person to this snap recipe."""
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person to this snap recipe."""
 
 
 class IOCIRecipeEdit(IWebhookTarget):

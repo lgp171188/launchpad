@@ -1925,10 +1925,8 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
         for x in range(0, 5):
             change_callback(bugs[x], owner)
         # Check the results.
-        (shared_bugs, shared_branches, shared_gitrepositories,
-         visible_snaps, shared_specs) = (
-            self.service.getVisibleArtifacts(grantee, bugs=bugs))
-        self.assertContentEqual(bugs[5:], shared_bugs)
+        artifacts = self.service.getVisibleArtifacts(grantee, bugs=bugs)
+        self.assertContentEqual(bugs[5:], artifacts["bugs"])
 
     def test_getVisibleArtifacts_bug_policy_change(self):
         # getVisibleArtifacts excludes bugs after change of information type.

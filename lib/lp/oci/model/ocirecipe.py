@@ -37,7 +37,6 @@ from storm.locals import (
     Storm,
     Unicode,
     )
-from twisted.application.service import IService
 from zope.component import (
     getAdapter,
     getUtility,
@@ -60,6 +59,7 @@ from lp.app.errors import (
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
+from lp.app.interfaces.services import IService
 from lp.app.validators.validation import validate_oci_branch_name
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
@@ -245,7 +245,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def private(self):
-        return self.information_type not in PUBLIC_INFORMATION_TYPES
+        return (self.information_type is None
+                and self.information_type not in PUBLIC_INFORMATION_TYPES)
 
     @property
     def pillar(self):
@@ -275,7 +276,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                             for k, v in (value or {}).items()}
 
     def _reconcileAccess(self):
-        """Reconcile the snap's sharing information.
+        """Reconcile the OCI recipe's sharing information.
 
         Takes the privacy and pillar and makes the related AccessArtifact
         and AccessPolicyArtifacts match.
@@ -338,7 +339,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                 ignore_permissions=ignore_permissions)
 
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
-        """See `ISnap`."""
+        """See `IOCIRecipe`."""
         subscription = self.getSubscription(person)
         if subscription is None:
             return
@@ -355,11 +356,22 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         store.remove(subscription)
         IStore(self).flush()
 
+    def _deleteAccessGrants(self):
+        """Delete access grants for this snap recipe prior to deleting it."""
+        getUtility(IAccessArtifactSource).delete([self])
+
+    def _deleteOCIRecipeSubscriptions(self):
+        subscriptions = Store.of(self).find(
+            OCIRecipeSubscription, OCIRecipeSubscription.ocirecipe == self)
+        subscriptions.remove()
+
     def destroySelf(self):
         """See `IOCIRecipe`."""
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
         # are added
         store = IStore(OCIRecipe)
+        self._deleteOCIRecipeSubscriptions()
+        self._deleteAccessGrants()
         store.find(OCIRecipeArch, OCIRecipeArch.recipe == self).remove()
         buildqueue_records = store.find(
             BuildQueue,
@@ -774,6 +786,10 @@ class OCIRecipeSet:
         store.add(oci_recipe)
         oci_recipe._reconcileAccess()
 
+        # Automatically subscribe the owner to the OCI recipe.
+        oci_recipe.subscribe(oci_recipe.owner, registrant,
+                             ignore_permissions=True)
+
         if processors is None:
             processors = [
                 p for p in oci_recipe.available_processors
@@ -794,7 +810,7 @@ class OCIRecipeSet:
         return self._getByName(owner, oci_project, name) is not None
 
     def findByIds(self, ocirecipe_ids, visible_by_user=None):
-        """See `ISnapSet`."""
+        """See `IOCIRecipeSet`."""
         clauses = [OCIRecipe.id.is_in(ocirecipe_ids)]
         if visible_by_user is not None:
             clauses.append(get_ocirecipe_privacy_filter(visible_by_user))
@@ -929,7 +945,7 @@ def get_ocirecipe_privacy_filter(user):
     # XXX pappacena 2021-03-11: Once we do the migration to back fill
     # information_type, we should be able to change this.
     private_recipe = SQL(
-        "COALESCE(information_type NOT IN ?, private)",
+        "COALESCE(information_type NOT IN ?, false)",
         params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
     if user is None:
         return private_recipe == False

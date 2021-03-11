@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security policies for using content objects."""
@@ -107,6 +107,7 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipeBuildRequest,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
+from lp.oci.interfaces.ocirecipesubscription import IOCIRecipeSubscription
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.announcement import IAnnouncement
@@ -3441,6 +3442,12 @@ class ViewOCIRecipe(AnonymousAuthorization):
     """Anyone can view an `IOCIRecipe`."""
     usedfor = IOCIRecipe
 
+    def checkUnauthenticated(self):
+        return self.obj.visibleByUser(None)
+
+    def checkAuthenticated(self, user):
+        return self.obj.visibleByUser(user.person)
+
 
 class EditOCIRecipe(AuthorizationBase):
     permission = 'launchpad.Edit'
@@ -3468,6 +3475,37 @@ class AdminOCIRecipe(AuthorizationBase):
         return (
             user.in_ppa_self_admins
             and EditSnap(self.obj).checkAuthenticated(user))
+
+
+class OCIRecipeSubscriptionEdit(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIRecipeSubscription
+
+    def checkAuthenticated(self, user):
+        """Is the user able to edit an OCI recipe subscription?
+
+        Any team member can edit a OCI recipe subscription for their
+        team.
+        Launchpad Admins can also edit any OCI recipe subscription.
+        The owner of the subscribed OCI recipe can edit the subscription. If
+        the OCI recipe owner is a team, then members of the team can edit
+        the subscription.
+        """
+        return (user.inTeam(self.obj.ocirecipe.owner) or
+                user.inTeam(self.obj.person) or
+                user.inTeam(self.obj.subscribed_by) or
+                user.in_admin)
+
+
+class SnapSubscriptionView(AuthorizationBase):
+    permission = 'launchpad.View'
+    usedfor = IOCIRecipeSubscription
+
+    def checkUnauthenticated(self):
+        return self.obj.ocirecipe.visibleByUser(None)
+
+    def checkAuthenticated(self, user):
+        return self.obj.ocirecipe.visibleByUser(user.person)
 
 
 class ViewOCIRecipeBuild(AnonymousAuthorization):
