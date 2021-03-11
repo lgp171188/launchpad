@@ -160,13 +160,16 @@ class OCIRegistryClient:
         """
         lfa.open()
         try:
-            un_zipped = tarfile.open(fileobj=lfa, mode='r|gz')
-            for tarinfo in un_zipped:
-                if tarinfo.name != 'layer.tar':
-                    continue
-                fileobj = un_zipped.extractfile(tarinfo)
-                cls._upload(digest, push_rule, fileobj, http_client)
-                return tarinfo.size
+            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                for tarinfo in un_zipped:
+                    if tarinfo.name != 'layer.tar':
+                        continue
+                    fileobj = un_zipped.extractfile(tarinfo)
+                    try:
+                        cls._upload(digest, push_rule, fileobj, http_client)
+                    finally:
+                        fileobj.close()
+                    return tarinfo.size
         finally:
             lfa.close()
 
