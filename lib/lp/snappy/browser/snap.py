@@ -651,7 +651,7 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
 
     def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
-        super(BaseSnapEditView, self).setUpWidgets()
+        super(BaseSnapEditView, self).setUpWidgets(context=None)
         widget = self.widgets.get('vcs')
         if widget is not None:
             current_value = widget._getFormValue()
@@ -807,7 +807,7 @@ class SnapAdminView(BaseSnapEditView):
         if 'project' in data:
             project = data.pop('project')
             self.context.setProject(project)
-        super(BaseSnapEditView, self).updateContextFromData(
+        super(SnapAdminView, self).updateContextFromData(
             data, context, notify_modified)
 
 
@@ -919,7 +919,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         if 'project' in data:
             project = data.pop('project')
             self.context.setProject(project)
-        super(BaseSnapEditView, self).updateContextFromData(
+        super(SnapEditView, self).updateContextFromData(
             data, context, notify_modified)
 
 
