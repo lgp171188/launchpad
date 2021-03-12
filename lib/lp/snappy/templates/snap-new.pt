@@ -40,41 +40,38 @@
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
         </tal:widget>
 
-        <tal:guard condition="view/is_project_context">
-          <tr>
-            <td>
-              <div>
-                <label for="field.vcs">Source:</label>
-                <table>
-                  <tr>
-                    <td>
-                      <label tal:replace="structure view/vcs_bzr_radio" />
-                      <table class="subordinate">
-                        <tal:widget define="widget nocall:view/widgets/branch">
-                          <metal:block
-                         use-macro="context/@@launchpad_form/widget_row" />
-                        </tal:widget>
-                      </table>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td>
-                      <label tal:replace="structure view/vcs_git_radio" />
-                      <table class="subordinate">
-                        <tal:widget define="widget
-                        nocall:view/widgets/git_ref">
-                          <metal:block
-                         use-macro="context/@@launchpad_form/widget_row" />
-                        </tal:widget>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-            </td>
-          </tr>
-        </tal:guard>
+        <tr tal:condition="view/is_project_context">
+          <td>
+            <div>
+              <label for="field.vcs">Source:</label>
+              <table>
+                <tr>
+                  <td>
+                    <label tal:replace="structure view/vcs_bzr_radio" />
+                    <table class="subordinate">
+                      <tal:widget define="widget nocall:view/widgets/branch">
+                        <metal:block
+                       use-macro="context/@@launchpad_form/widget_row" />
+                      </tal:widget>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <label tal:replace="structure view/vcs_git_radio" />
+                    <table class="subordinate">
+                      <tal:widget define="widget
+                      nocall:view/widgets/git_ref">
+                        <metal:block
+                       use-macro="context/@@launchpad_form/widget_row" />
+                      </tal:widget>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </td>
+        </tr>
 
         <tal:widget define="widget nocall:view/widgets/store_distro_series">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />

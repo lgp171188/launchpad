@@ -143,19 +143,16 @@ class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
 class SnapFormMixin:
     def validateVCSWidgets(self, cls, data):
         """Validates if VCS sub-widgets."""
-        if self.widgets.get('vcs') is not None:
-            # Set widgets as required or optional depending on the vcs
-            # field.
-            super(cls, self).validate_widgets(data, ['vcs'])
-            vcs = data.get('vcs')
-            if vcs == VCSType.BZR:
-                self.widgets['branch'].context.required = True
-                self.widgets['git_ref'].context.required = False
-            elif vcs == VCSType.GIT:
-                self.widgets['branch'].context.required = False
-                self.widgets['git_ref'].context.required = True
-            else:
-                raise AssertionError("Unknown branch type %s" % vcs)
+        # Set widgets as required or optional depending on the vcs field.
+        vcs = data.get('vcs')
+        if vcs == VCSType.BZR:
+            self.widgets['branch'].context.required = True
+            self.widgets['git_ref'].context.required = False
+        elif vcs == VCSType.GIT:
+            self.widgets['branch'].context.required = False
+            self.widgets['git_ref'].context.required = True
+        else:
+            raise AssertionError("Unknown branch type %s" % vcs)
 
     def setUpVCSWidgets(self):
         widget = self.widgets.get('vcs')
@@ -575,7 +572,7 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
         self.widgets['processors'].widget_class = 'processors'
         if self.is_project_context:
             # If we are on Project:+new-snap page, we know which information
-            # types the project supports. Let's filter our the ones that are
+            # types the project supports. Let's filter out the ones that are
             # not supported.
             types = getUtility(ISnapSet).getPossibleSnapInformationTypes(
                     self.context)
@@ -635,7 +632,9 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
 
     def validate_widgets(self, data, names=None):
         """See `LaunchpadFormView`."""
-        self.validateVCSWidgets(SnapAddView, data)
+        if self.widgets.get('vcs') is not None:
+            super(SnapAddView, self).validate_widgets(data, ['vcs'])
+            self.validateVCSWidgets(SnapAddView, data)
         if self.widgets.get('auto_build') is not None:
             # Set widgets as required or optional depending on the
             # auto_build field.
@@ -721,7 +720,9 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
 
     def validate_widgets(self, data, names=None):
         """See `LaunchpadFormView`."""
-        self.validateVCSWidgets(BaseSnapEditView, data)
+        if self.widgets.get('vcs') is not None:
+            super(BaseSnapEditView, self).validate_widgets(data, ['vcs'])
+            self.validateVCSWidgets(BaseSnapEditView, data)
         if self.widgets.get('auto_build') is not None:
             # Set widgets as required or optional depending on the
             # auto_build field.
