@@ -1071,12 +1071,6 @@ class IGitRepositorySet(Interface):
         :return: A collection of `IGitRepository` objects.
         """
 
-    def getRepositoriesForRepack():
-        """Get all repositories that need a repack.
-
-        :return: A collection of `IGitRepository` objects.
-        """
-
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         person=Reference(

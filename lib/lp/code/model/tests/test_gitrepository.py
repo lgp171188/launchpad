@@ -569,48 +569,6 @@ class TestGitRepository(TestCaseWithFactory):
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
         self.assertEqual(7, recorder1.count)
 
-    def test_getRepositoriesForRepack(self):
-        # The values for the 2 thresholds are defined
-        # under config.codehosting.loose_objects_threshold = 4350
-        # and config.codehosting.packs_threshold = 30
-        self.pushConfig("codehosting", loose_objects_threshold=4350)
-        self.pushConfig("codehosting", packs_threshold=30)
-        repository = self.factory.makeGitRepository()
-        repository = removeSecurityProxy(repository)
-        repository.loose_object_count = 3
-        repository.pack_count = 4
-        self.assertEqual(0, len(list(getUtility(
-            IGitRepositorySet).getRepositoriesForRepack())))
-
-        # If either one of the 2 repack indicators are above
-        # allowed thresholds the repository becomes
-        # a candidate for an auto repack
-        repository.loose_object_count = 4350
-        repository.pack_count = 4
-        self.assertEqual(1, len(list(getUtility(
-            IGitRepositorySet).getRepositoriesForRepack())))
-
-        repository.loose_object_count = 3
-        repository.pack_count = 31
-        self.assertEqual(1, len(list(getUtility(
-            IGitRepositorySet).getRepositoriesForRepack())))
-
-        # adding a second repo with values under admissible thresholds
-        # does not modify the number of candidate repos
-        repository2 = self.factory.makeGitRepository()
-        repository2 = removeSecurityProxy(repository2)
-        repository2.loose_object_count = 3
-        repository2.pack_count = 4
-        self.assertEqual(1, len(list(getUtility(
-            IGitRepositorySet).getRepositoriesForRepack())))
-
-        # second repo has one metric above threshold
-        # number of candidates increases by 1
-        repository2.loose_object_count = 3
-        repository2.pack_count = 99
-        self.assertEqual(2, len(list(getUtility(
-            IGitRepositorySet).getRepositoriesForRepack())))
-
 
 class TestGitIdentityMixin(TestCaseWithFactory):
     """Test the defaults and identities provided by GitIdentityMixin."""

@@ -79,7 +79,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
             'Failed to repack Git repository 1', err)
         self.assertIn(
             'Requested 0 automatic git repository '
-            'repack out of the 1 qualifying for repack.', err)
+            'repacks out of the 1 qualifying for repack.', err)
         transaction.commit()
 
     def runScript_with_Turnip(self):
@@ -105,7 +105,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
         self.addCleanup(turnip_server.stop)
         return turnip_server
 
-    def test_repack_git_repositories_no_Turnip(self):
+    def test_auto_repack_without_Turnip(self):
         repo = self.factory.makeGitRepository()
         repo = removeSecurityProxy(repo)
         repo.loose_object_count = 7000
@@ -113,12 +113,14 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         # Do not start the fake turnip server here
         # to test if the RequestGitRepack will catch and
-        # log correctly the expected CannotRepackRepository
+        # log correctly the failure to establish
+        # a connection to Turnip
         self.runScript_no_Turnip()
         self.assertIsNone(repo.date_last_repacked)
 
-    def test_repack_git_repositories_with_Turnip(self):
-
+    def test_auto_repack_with_Turnip_one_repo(self):
+        # Test repack works when only one repository
+        # qualifies for a repack
         repo = self.factory.makeGitRepository()
         repo = removeSecurityProxy(repo)
         repo.loose_object_count = 7000
@@ -130,3 +132,22 @@ class TestRequestGitRepack(TestCaseWithFactory):
         self.runScript_with_Turnip()
 
         self.assertIsNotNone(repo.date_last_repacked)
+
+    def test_auto_repack_with_Turnip_multiple_repos(self):
+        # Test repack works when 10 repositories
+        # qualifies for a repack
+        repo = []
+        for i in range(10):
+            repo.append(self.factory.makeGitRepository())
+            repo[i] = removeSecurityProxy(repo[i])
+            repo[i].loose_object_count = 7000
+            repo[i].pack_count = 43
+        transaction.commit()
+
+        self.makeTurnipServer()
+
+        self.runScript_with_Turnip()
+
+        for i in range(10):
+            self.assertIsNotNone(repo[i].date_last_repacked)
+

@@ -5,13 +5,22 @@
 
 __metaclass__ = type
 
+from psycopg2.extensions import TransactionRollbackError
+import six
+from storm.expr import (
+    And,
+    Or,
+    )
 import transaction
-from zope.component import getUtility
 
 from lp.code.errors import CannotRepackRepository
-from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.code.model.gitrepository import GitRepository
 from lp.services.config import config
-from lp.services.looptuner import TunableLoop, LoopTuner
+from lp.services.database.interfaces import IStore
+from lp.services.looptuner import (
+    LoopTuner,
+    TunableLoop,
+    )
 from lp.services.timeout import set_default_timeout_function
 from lp.services.webapp.errorlog import globalErrorUtility
 
@@ -23,12 +32,21 @@ class RepackTunableLoop(TunableLoop):
     def __init__(self, log, dry_run, abort_time=None):
         super(RepackTunableLoop, self).__init__(log, abort_time)
         self.dry_run = dry_run
-        self.start_at = 1
+        self.start_at = 0
         self.logger = log
+        self.store = IStore(GitRepository)
 
     def findRepackCandidates(self):
-        return getUtility(
-            IGitRepositorySet).getRepositoriesForRepack()
+        repos = self.store.find(
+            GitRepository,
+            (Or(
+                GitRepository.loose_object_count >=
+                config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                config.codehosting.packs_threshold
+                ),
+             And(GitRepository.id > self.start_at))).order_by(GitRepository.id)
+        return repos
 
     def isDone(self):
         return self.findRepackCandidates().is_empty()
@@ -51,11 +69,20 @@ class RepackTunableLoop(TunableLoop):
                     'An error occurred while requesting repository repack %s'
                     % e.message)
                 continue
+            except TransactionRollbackError as error:
+                self.logger.error(
+                    'An error occurred while requesting repository repack %s'
+                    % six.text_type(error))
+                if transaction is not None:
+                    transaction.abort()
+                continue
+
         self.logger.info(
-            'Requested %d automatic git repository repacks out of the %d qualifying for repack.'
+            'Requested %d automatic git repository repacks '
+            'out of the %d qualifying for repack.'
             % (counter, len(repackable_repos)))
 
-        self.start_at = repackable_repos[-1].id + 1
+        self.start_at = repackable_repos[-1].id
 
         if not self.dry_run:
             transaction.commit()

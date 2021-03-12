@@ -1848,12 +1848,6 @@ class GitRepositorySet:
             collection = collection.modifiedSince(modified_since_date)
         return collection.getRepositories(eager_load=True, sort_by=order_by)
 
-    def getRepositoriesForRepack(self):
-        """See `IGitRepositorySet`."""
-        collection = getUtility(IAllGitRepositories)
-        collection = collection.qualifiesForRepack()
-        return collection.getRepositories(eager_load=True)
-
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""
         if user is None:
