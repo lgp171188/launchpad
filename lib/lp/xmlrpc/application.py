@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """XML-RPC API to the application roots."""
@@ -30,11 +30,12 @@ from lp.services.authserver.interfaces import IAuthServerApplication
 from lp.services.features.xmlrpc import IFeatureFlagApplication
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.soyuz.interfaces.archiveapi import IArchiveApplication
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 # NOTE: If you add a traversal here, you should update
-# the regular expression in utilities/page-performance-report.ini
+# the regular expression in lp:lp-dev-utils page-performance-report.ini.
 @implementer(IPrivateApplication)
 class PrivateApplication:
 
@@ -42,6 +43,11 @@ class PrivateApplication:
     def mailinglists(self):
         """See `IPrivateApplication`."""
         return getUtility(IMailingListApplication)
+
+    @property
+    def archive(self):
+        """See `IPrivateApplication`."""
+        return getUtility(IArchiveApplication)
 
     @property
     def authserver(self):

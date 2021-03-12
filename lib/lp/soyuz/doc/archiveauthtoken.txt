@@ -140,11 +140,34 @@ It's also possible to retrieve a set of all the tokens for an archive.
     ...     print(token.person.name)
     bradsmith
 
-Tokens can also be retreived by archive and person:
+Tokens can also be retrieved by archive and person:
 
     >>> print(token_set.getActiveTokenForArchiveAndPerson(
     ...     new_token.archive, new_token.person).token)
     testtoken
+
+Or by archive and person name:
+
+    >>> print(token_set.getActiveTokenForArchiveAndPersonName(
+    ...     new_token.archive, "bradsmith").token)
+    testtoken
+
+Tokens are only returned if they match a current subscription:
+
+    >>> from zope.security.proxy import removeSecurityProxy
+    >>> from lp.soyuz.enums import ArchiveSubscriberStatus
+    >>> removeSecurityProxy(subscription_to_joe_private_ppa).status = (
+    ...     ArchiveSubscriberStatus.EXPIRED)
+
+    >>> print(token_set.getActiveTokenForArchiveAndPerson(
+    ...     new_token.archive, new_token.person))
+    None
+    >>> print(token_set.getActiveTokenForArchiveAndPersonName(
+    ...     new_token.archive, "bradsmith"))
+    None
+
+    >>> removeSecurityProxy(subscription_to_joe_private_ppa).status = (
+    ...     ArchiveSubscriberStatus.CURRENT)
 
 
 == Amending Tokens ==
