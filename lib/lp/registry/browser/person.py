@@ -69,7 +69,6 @@ import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
-    urljoin,
     )
 from storm.zope.interfaces import IResultSet
 from zope.browserpage import ViewPageTemplateFile
@@ -193,7 +192,6 @@ from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     )
-from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,
@@ -649,15 +647,10 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     def traverse_snap(self, name):
         """Traverse to this person's snap packages."""
         snap = getUtility(ISnapSet).getByName(self.context, name)
-        # If it's a snap attached to a pillar, redirect to the Snap
-        # URL under pillar's URL.
+        # If it's a snap attached to a pillar, this is not the right place
+        # to traverse. The correct URL should be under IPersonProduct.
         if snap.project:
-            person_product = getUtility(IPersonProductFactory).create(
-                self.context, snap.project)
-            project_url = canonical_url(person_product)
-            snap_url = urljoin(project_url + '/', '+snap/')
-            snap_url = urljoin(snap_url, snap.name)
-            return self.redirectSubTree(snap_url)
+            raise NotFoundError(name)
         return snap
 
 

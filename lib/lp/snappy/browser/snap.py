@@ -28,7 +28,10 @@ from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.formlib.widget import CustomWidgetFactory
-from zope.interface import Interface
+from zope.interface import (
+    implementer,
+    Interface,
+    )
 from zope.schema import (
     Choice,
     Dict,
@@ -61,6 +64,7 @@ from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.interfaces.gitref import IGitRef
 from lp.registry.enums import VCSType
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
@@ -81,6 +85,7 @@ from lp.services.webapp.breadcrumb import (
     Breadcrumb,
     NameBreadcrumb,
     )
+from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webapp.url import urlappend
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.widgets.snaparchive import SnapArchiveWidget
@@ -110,6 +115,27 @@ from lp.snappy.interfaces.snapstoreclient import (
 from lp.soyuz.browser.archive import EnableProcessorsMixin
 from lp.soyuz.browser.build import get_build_by_id_str
 from lp.soyuz.interfaces.archive import IArchive
+
+
+@implementer(ICanonicalUrlData)
+class SnapURL:
+    """Snap URL creation rules."""
+    rootsite = 'mainsite'
+
+    def __init__(self, snap):
+        self.snap = snap
+
+    @property
+    def inside(self):
+        owner = self.snap.owner
+        project = self.snap.project
+        if project is None:
+            return owner
+        return getUtility(IPersonProductFactory).create(owner, project)
+
+    @property
+    def path(self):
+        return "+snap/%s" % self.snap.name
 
 
 class SnapNavigation(WebhookTargetNavigationMixin, Navigation):

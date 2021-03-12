@@ -9,9 +9,6 @@ __metaclass__ = type
 
 
 from fixtures import FakeLogger
-from lp.registry.interfaces.personproduct import IPersonProductFactory
-from six.moves.urllib.parse import urljoin
-from zope.component._api import getUtility
 from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
@@ -68,17 +65,6 @@ class BaseTestSnapView(BrowserTestCase):
 
 class TestPublicSnapSubscriptionViews(BaseTestSnapView):
 
-    def getSnapURL(self, snap):
-        with admin_logged_in():
-            if snap.project:
-                person_product = getUtility(IPersonProductFactory).create(
-                    snap.owner, snap.project)
-                project_url = canonical_url(person_product)
-                snap_url = urljoin(project_url + '/', '+snap/')
-                return urljoin(snap_url, snap.name)
-            else:
-                return canonical_url(snap)
-
     def test_subscribe_self(self):
         snap = self.makeSnap()
         another_user = self.factory.makePerson(name="another-user")
@@ -101,7 +87,8 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         browser.getControl("Subscribe").click()
 
         # We should be redirected back to snap page.
-        self.assertEqual(self.getSnapURL(snap), browser.url)
+        with admin_logged_in():
+            self.assertEqual(canonical_url(snap), browser.url)
 
         # And the new user should be listed in the subscribers list.
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
@@ -161,7 +148,8 @@ class TestPublicSnapSubscriptionViews(BaseTestSnapView):
         browser.getControl("Subscribe").click()
 
         # We should be redirected back to snap page.
-        self.assertEqual(self.getSnapURL(snap), browser.url)
+        with admin_logged_in():
+            self.assertEqual(canonical_url(snap), browser.url)
 
         # And the new user should be listed in the subscribers list.
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""

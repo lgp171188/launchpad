@@ -58,7 +58,6 @@ from lp.code.tests.helpers import (
     )
 from lp.registry.enums import (
     BranchSharingPolicy,
-    BranchSharingPolicy,
     PersonVisibility,
     TeamMembershipPolicy,
     )
@@ -573,9 +572,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
-            urlsplit(
-                canonical_url(snap, rootsite="code") +
-                "/+authorize/+login")[:3],
+            urlsplit(canonical_url(snap) + "/+authorize/+login")[:3],
             parsed_location[:3])
         expected_args = {
             "discharge_macaroon_action": ["field.actions.complete"],

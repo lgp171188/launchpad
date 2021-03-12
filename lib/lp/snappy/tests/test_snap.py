@@ -69,7 +69,6 @@ from lp.code.tests.helpers import (
     )
 from lp.registry.enums import (
     BranchSharingPolicy,
-    BranchSharingPolicy,
     PersonVisibility,
     TeamMembershipPolicy,
     )
