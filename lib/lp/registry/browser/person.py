@@ -1349,6 +1349,12 @@ class PersonAccountAdministerView(LaunchpadFormView):
             self.request.response.addInfoNotification(
                 u'The account "%s" is now deactivated. The user can log in '
                 u'to reactivate it.' % self.context.displayname)
+        elif data['status'] == AccountStatus.DECEASED:
+            # Deliberately leave the email address in place so that it can't
+            # easily be claimed by somebody else.
+            self.request.response.addInfoNotification(
+                u'The account "%s" has been marked as having belonged to a '
+                u'deceased user.' % self.context.displayname)
         self.context.setStatus(data['status'], self.user, data['comment'])
 
 
