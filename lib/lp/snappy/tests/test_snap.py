@@ -3029,8 +3029,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
 
         # Anonymous requests can only see public snaps.
@@ -3063,16 +3062,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = webservice.named_get(
             "/+snaps", "findByOwner", owner=person_urls[0],
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:2],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByOwner", owner=person_urls[1],
             api_version="devel")
         self.assertEqual(200, response.status)

@@ -717,8 +717,8 @@ class TestSnapAdminView(BaseTestSnapView):
     def test_admin_snap(self):
         # Admins can change require_virtualized, privacy, and allow_internet.
         login("admin@canonical.com")
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         login_person(self.person)
         project = self.factory.makeProduct(name="my-project")
         with person_logged_in(project.owner):
@@ -732,7 +732,7 @@ class TestSnapAdminView(BaseTestSnapView):
         self.factory.makeAccessPolicy(
             pillar=project, type=InformationType.PRIVATESECURITY)
         private = InformationType.PRIVATESECURITY.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = "my-project"
         browser.getControl("Require virtualized builders").selected = False
@@ -750,10 +750,10 @@ class TestSnapAdminView(BaseTestSnapView):
         # Cannot make snap private if it doesn't have a project associated.
         login_person(self.person)
         snap = self.factory.makeSnap(registrant=self.person)
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         private = InformationType.PRIVATESECURITY.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = ''
         browser.getControl(name="field.information_type").value = private
@@ -776,10 +776,10 @@ class TestSnapAdminView(BaseTestSnapView):
             information_type=InformationType.PRIVATESECURITY)
         # Note that only LP admins or, in this case, commercial_admins
         # can reach this snap because it's owned by a private team.
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         public = InformationType.PUBLIC.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name="field.information_type").value = public
         browser.getControl("Update snap package").click()
