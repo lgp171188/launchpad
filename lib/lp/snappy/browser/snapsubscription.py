@@ -10,7 +10,7 @@ __all__ = [
     'SnapPortletSubscribersContent'
 ]
 
-from zope.component._api import getUtility
+from zope.component import getUtility
 from zope.formlib.form import action
 from zope.security.interfaces import ForbiddenAttribute
 
