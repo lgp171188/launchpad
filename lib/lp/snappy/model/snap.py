@@ -1139,6 +1139,18 @@ class Snap(Storm, WebhookTargetMixin):
         order_by = Desc(SnapBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def subscriptions(self):
+        return Store.of(self).find(
+            SnapSubscription, SnapSubscription.snap == self)
+
+    @property
+    def subscribers(self):
+        return Store.of(self).find(
+            Person,
+            SnapSubscription.person_id == Person.id,
+            SnapSubscription.snap == self)
+
     def visibleByUser(self, user):
         """See `ISnap`."""
         if self.information_type in PUBLIC_INFORMATION_TYPES:
@@ -1151,7 +1163,11 @@ class Snap(Storm, WebhookTargetMixin):
             Snap.id == self.id,
             get_snap_privacy_filter(user)).is_empty()
 
-    def _getSubscription(self, person):
+    def hasSubscription(self, person):
+        """See `ISnap`."""
+        return self.getSubscription(person) is not None
+
+    def getSubscription(self, person):
         """Returns person's subscription to this snap recipe, or None if no
         subscription is available.
         """
@@ -1162,7 +1178,7 @@ class Snap(Storm, WebhookTargetMixin):
             SnapSubscription.person == person,
             SnapSubscription.snap == self).one()
 
-    def _userCanBeSubscribed(self, person):
+    def userCanBeSubscribed(self, person):
         """Checks if the given person can subscribe to this snap recipe."""
         return not (
             self.private and
@@ -1178,11 +1194,11 @@ class Snap(Storm, WebhookTargetMixin):
 
     def subscribe(self, person, subscribed_by, ignore_permissions=False):
         """See `ISnap`."""
-        if not self._userCanBeSubscribed(person):
+        if not self.userCanBeSubscribed(person):
             raise SubscriptionPrivacyViolation(
                 "Open and delegated teams cannot be subscribed to private "
                 "snap recipes.")
-        subscription = self._getSubscription(person)
+        subscription = self.getSubscription(person)
         if subscription is None:
             subscription = SnapSubscription(
                 person=person, snap=self, subscribed_by=subscribed_by)
@@ -1197,7 +1213,7 @@ class Snap(Storm, WebhookTargetMixin):
 
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""
-        subscription = self._getSubscription(person)
+        subscription = self.getSubscription(person)
         if subscription is None:
             return
         if (not ignore_permissions

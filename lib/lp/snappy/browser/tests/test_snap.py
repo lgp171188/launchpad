@@ -717,8 +717,8 @@ class TestSnapAdminView(BaseTestSnapView):
     def test_admin_snap(self):
         # Admins can change require_virtualized, privacy, and allow_internet.
         login("admin@canonical.com")
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         login_person(self.person)
         project = self.factory.makeProduct(name="my-project")
         with person_logged_in(project.owner):
@@ -732,7 +732,7 @@ class TestSnapAdminView(BaseTestSnapView):
         self.factory.makeAccessPolicy(
             pillar=project, type=InformationType.PRIVATESECURITY)
         private = InformationType.PRIVATESECURITY.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = "my-project"
         browser.getControl("Require virtualized builders").selected = False
@@ -740,7 +740,7 @@ class TestSnapAdminView(BaseTestSnapView):
         browser.getControl("Allow external network access").selected = False
         browser.getControl("Update snap package").click()
 
-        login_person(self.person)
+        login_admin()
         self.assertEqual(project, snap.project)
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
@@ -750,10 +750,10 @@ class TestSnapAdminView(BaseTestSnapView):
         # Cannot make snap private if it doesn't have a project associated.
         login_person(self.person)
         snap = self.factory.makeSnap(registrant=self.person)
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         private = InformationType.PRIVATESECURITY.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = ''
         browser.getControl(name="field.information_type").value = private
@@ -776,10 +776,10 @@ class TestSnapAdminView(BaseTestSnapView):
             information_type=InformationType.PRIVATESECURITY)
         # Note that only LP admins or, in this case, commercial_admins
         # can reach this snap because it's owned by a private team.
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         public = InformationType.PUBLIC.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name="field.information_type").value = public
         browser.getControl("Update snap package").click()
@@ -1575,6 +1575,74 @@ class TestSnapView(BaseTestSnapView):
             Successfully built 30 minutes ago i386
             Primary Archive for Ubuntu Linux
             """, self.getMainText(build.snap))
+
+    def test_index_for_subscriber_without_git_repo_access(self):
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="snap-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        snap = self.makeSnap(git_ref=ref, private=True)
+        with admin_logged_in():
+            self.makeBuild(
+                snap=snap, status=BuildStatus.FULLYBUILT,
+                duration=timedelta(minutes=30))
+
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            snap.subscribe(subscriber, self.person)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+            Snap packages snap-name
+            .*
+            Snap package information
+            Owner: Test Person
+            Distribution series: Ubuntu Shiny
+            Source: &lt;redacted&gt;
+            Build source tarball: No
+            Build schedule: \(\?\)
+            Built on request
+            Source archive for automatic builds:
+            Pocket for automatic builds:
+            Builds of this snap package are not automatically uploaded to
+            the store.
+            Latest builds
+            Status When complete Architecture Archive
+            Successfully built 30 minutes ago i386
+            Primary Archive for Ubuntu Linux
+            """, self.getMainText(snap, user=subscriber))
+
+    def test_index_for_subscriber_without_archive_access(self):
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="snap-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        snap = self.makeSnap(git_ref=ref, private=True)
+        with admin_logged_in():
+            archive = self.factory.makeArchive(private=True)
+            self.makeBuild(
+                snap=snap, status=BuildStatus.FULLYBUILT, archive=archive,
+                duration=timedelta(minutes=30))
+
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            snap.subscribe(subscriber, self.person)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+            Snap packages snap-name
+            .*
+            Snap package information
+            Owner: Test Person
+            Distribution series: Ubuntu Shiny
+            Source: &lt;redacted&gt;
+            Build source tarball: No
+            Build schedule: \(\?\)
+            Built on request
+            Source archive for automatic builds:
+            Pocket for automatic builds:
+            Builds of this snap package are not automatically uploaded to
+            the store.
+            Latest builds
+            Status When complete Architecture Archive
+            This snap package has not been built yet.
+            """, self.getMainText(snap, user=subscriber))
 
     def test_index_git_url(self):
         ref = self.factory.makeGitRefRemote(

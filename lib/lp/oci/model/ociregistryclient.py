@@ -433,13 +433,19 @@ class OCIRegistryClient:
         for build in uploaded_builds:
             build_manifest = build_request.uploaded_manifests.get(build.id)
             if not build_manifest:
+                log.info(
+                    "No build manifest found for build {}".format(build.id))
                 continue
+            log.info("Build manifest found for build {}".format(build.id))
             digest = build_manifest["digest"]
             size = build_manifest["size"]
             arch = build.processor.name
 
             manifest = get_manifest_for_architecture(manifests, arch)
             if manifest is None:
+                log.info(
+                    "Appending multi-arch manifest for build {} "
+                    "with arch {}".format(build.id, arch))
                 manifest = {
                     "mediaType": ("application/"
                                   "vnd.docker.distribution.manifest.v2+json"),
@@ -449,6 +455,9 @@ class OCIRegistryClient:
                 }
                 manifests.append(manifest)
             else:
+                log.info(
+                    "Updating multi-arch manifest for build {} "
+                    "with arch {}".format(build.id, arch))
                 manifest["digest"] = digest
                 manifest["size"] = size
                 manifest["platform"]["architecture"] = arch
@@ -485,13 +494,19 @@ class OCIRegistryClient:
             return
         for push_rule in build_request.recipe.push_rules:
             for tag in cls._calculateTags(build_request.recipe):
-                http_client = RegistryHTTPClient.getInstance(push_rule)
-                multi_manifest_content = cls.makeMultiArchManifest(
-                    http_client, push_rule, build_request, uploaded_builds,
-                    tag)
-                cls._uploadRegistryManifest(
-                    http_client, multi_manifest_content, push_rule, tag,
-                    build=None)
+                try:
+                    http_client = RegistryHTTPClient.getInstance(push_rule)
+                    multi_manifest_content = cls.makeMultiArchManifest(
+                        http_client, push_rule, build_request, uploaded_builds,
+                        tag)
+                    cls._uploadRegistryManifest(
+                        http_client, multi_manifest_content, push_rule, tag,
+                        build=None)
+                except Exception:
+                    log.exception(
+                        "Exception in uploading manifest for OCI build "
+                        "request {} with tag {}".format(build_request.id, tag))
+                    raise
 
 
 class OCIRegistryAuthenticationError(Exception):
