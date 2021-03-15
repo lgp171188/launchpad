@@ -409,6 +409,20 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         response = self.getOrCreateSoftwareCenterCustomer(sca)
         self.assertEqual(400, response.status)
 
+    def test_getOrCreateSoftwareCenterCustomer_rejects_deceased(self):
+        # Deceased accounts are not returned.
+        with admin_logged_in():
+            existing = self.factory.makePerson(
+                email='somebody@example.com',
+                account_status=AccountStatus.DECEASED)
+            oid = OpenIdIdentifier()
+            oid.account = existing.account
+            oid.identifier = u'somebody'
+            Store.of(existing).add(oid)
+            sca = getUtility(IPersonSet).getByName('software-center-agent')
+        response = self.getOrCreateSoftwareCenterCustomer(sca)
+        self.assertEqual(400, response.status)
+
     def test_getUsernameForSSO(self):
         # canonical-identity-provider (SSO) can get the username for an
         # OpenID identifier suffix.
