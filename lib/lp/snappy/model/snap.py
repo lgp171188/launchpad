@@ -1440,7 +1440,11 @@ class SnapSet:
 
     def getByPillarAndName(self, owner, pillar, name):
         conditions = [Snap.owner == owner, Snap.name == name]
-        if IProduct.providedBy(pillar):
+        if pillar is None:
+            # If we start supporting more pillars, remember to add the
+            # conditions here.
+            conditions.append(Snap.project == None)
+        elif IProduct.providedBy(pillar):
             conditions.append(Snap.project == pillar)
         else:
             raise NotImplementedError("Unknown pillar for snap: %s" % pillar)

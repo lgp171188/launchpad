@@ -1519,7 +1519,7 @@ class TestSnapView(BaseTestSnapView):
                         "snap breadcrumb", "li",
                         text=re.compile(r"\ssnap-name\s")))))
 
-    def test_snap_with_project_pillar_redirects(self):
+    def test_snap_with_project_pillar_url(self):
         project = self.factory.makeProduct()
         snap = self.factory.makeSnap(project=project)
         browser = self.getViewBrowser(snap)

@@ -16,7 +16,6 @@ from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
 import six
-from six.moves.urllib.parse import urlsplit
 from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
@@ -791,9 +790,6 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
         unpriv_webservice.default_api_version = "devel"
         logout()
         response = self.webservice.get(build_url)
-        if response.status == 301:
-            location = urlsplit(response.getheader('location')).path
-            response = self.webservice.get(location)
         self.assertEqual(200, response.status)
         # 404 since we aren't allowed to know that the private team exists.
         self.assertEqual(404, unpriv_webservice.get(build_url).status)

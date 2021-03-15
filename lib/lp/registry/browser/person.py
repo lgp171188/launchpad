@@ -646,10 +646,9 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     @stepthrough('+snap')
     def traverse_snap(self, name):
         """Traverse to this person's snap packages."""
-        snap = getUtility(ISnapSet).getByName(self.context, name)
-        # If it's a snap attached to a pillar, this is not the right place
-        # to traverse. The correct URL should be under IPersonProduct.
-        if snap.project:
+        snap = getUtility(ISnapSet).getByPillarAndName(
+            self.context, None, name)
+        if snap is None:
             raise NotFoundError(name)
         return snap
 
