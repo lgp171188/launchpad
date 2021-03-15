@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the repack_git_repositories script."""
-from collections import defaultdict
 import threading
 from wsgiref.simple_server import (
     make_server,
@@ -33,9 +32,10 @@ class FakeTurnipApplication:
     """A WSGI application that provides a fake turnip endpoint."""
 
     def __init__(self):
-        self.contents = defaultdict(dict)
+        self.contents = []
 
     def __call__(self, environ, start_response):
+        self.contents.append(environ['PATH_INFO'])
         start_response('200 OK', [('Content-Type', 'text/plain')])
         return [b'']
 
@@ -91,19 +91,19 @@ class TestRequestGitRepack(TestCaseWithFactory):
         transaction.commit()
 
     def makeTurnipServer(self):
-        turnip_server = FakeTurnipServer()
+        self.turnip_server = FakeTurnipServer()
         config_name = self.factory.getUniqueString()
         config_fixture = self.useFixture(ConfigFixture(
             config_name, config.instance_name))
         setting_lines = [
             '[codehosting]',
-            'internal_git_api_endpoint: %s' % turnip_server.getURL(),
+            'internal_git_api_endpoint: %s' % self.turnip_server.getURL(),
             ]
         config_fixture.add_section('\n' + '\n'.join(setting_lines))
         self.useFixture(ConfigUseFixture(config_name))
-        turnip_server.start()
-        self.addCleanup(turnip_server.stop)
-        return turnip_server
+        self.turnip_server.start()
+        self.addCleanup(self.turnip_server.stop)
+        return self.turnip_server
 
     def test_auto_repack_without_Turnip(self):
         repo = self.factory.makeGitRepository()
@@ -150,4 +150,5 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         for i in range(10):
             self.assertIsNotNone(repo[i].date_last_repacked)
-
+            self.assertEqual("/repo/%s/repack" % repo[i].getInternalPath(),
+                             self.turnip_server.app.contents[i])

@@ -13,6 +13,7 @@ from storm.expr import (
     )
 import transaction
 
+from lp.code.enums import GitRepositoryStatus
 from lp.code.errors import CannotRepackRepository
 from lp.code.model.gitrepository import GitRepository
 from lp.services.config import config
@@ -21,8 +22,6 @@ from lp.services.looptuner import (
     LoopTuner,
     TunableLoop,
     )
-from lp.services.timeout import set_default_timeout_function
-from lp.services.webapp.errorlog import globalErrorUtility
 
 
 class RepackTunableLoop(TunableLoop):
@@ -42,6 +41,7 @@ class RepackTunableLoop(TunableLoop):
             (Or(
                 GitRepository.loose_object_count >=
                 config.codehosting.loose_objects_threshold,
+                GitRepository.status == GitRepositoryStatus.AVAILABLE,
                 GitRepository.pack_count >=
                 config.codehosting.packs_threshold
                 ),
@@ -52,18 +52,18 @@ class RepackTunableLoop(TunableLoop):
         return self.findRepackCandidates().is_empty()
 
     def __call__(self, chunk_size):
-        globalErrorUtility.configure('repack_git_repositories')
-        self.logger.info(
-            'Requesting automatic git repository repack.')
-        set_default_timeout_function(
-            lambda: config.repack_git_repositories.timeout)
-
         repackable_repos = list(self.findRepackCandidates()[:chunk_size])
         counter = 0
         for repo in repackable_repos:
             try:
-                repo.repackRepository()
-                counter += 1
+                if self.dry_run:
+                    print ('Would repack %s' % repo.identity)
+                else:
+                    self.logger.info(
+                        'Requesting automatic git repository repack for %s.'
+                        % repo.identity)
+                    repo.repackRepository()
+                    counter += 1
             except CannotRepackRepository as e:
                 self.logger.error(
                     'An error occurred while requesting repository repack %s'
@@ -77,10 +77,17 @@ class RepackTunableLoop(TunableLoop):
                     transaction.abort()
                 continue
 
-        self.logger.info(
-            'Requested %d automatic git repository repacks '
-            'out of the %d qualifying for repack.'
-            % (counter, len(repackable_repos)))
+        if self.dry_run:
+            print(
+                'Reporting %d automatic git repository repacks '
+                'would have been requested as part of this run '
+                'out of the %d qualifying for repack.'
+                % (counter, len(repackable_repos)))
+        else:
+            self.logger.info(
+                'Requested %d automatic git repository repacks '
+                'out of the %d qualifying for repack.'
+                % (counter, len(repackable_repos)))
 
         self.start_at = repackable_repos[-1].id
 
