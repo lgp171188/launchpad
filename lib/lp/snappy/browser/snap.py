@@ -501,8 +501,8 @@ class SnapAuthorizeMixin:
             log_oops(e, self.request)
 
 
-class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
-                  SnapInformationTypeMixin, SnapFormMixin):
+class SnapAddView(SnapAuthorizeMixin, EnableProcessorsMixin,
+                  SnapInformationTypeMixin, SnapFormMixin, LaunchpadFormView):
     """View for creating snap packages."""
 
     page_title = label = 'Create a new snap package'
@@ -700,8 +700,8 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
         self.validateInformationType(data)
 
 
-class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
-                       SnapInformationTypeMixin, SnapFormMixin):
+class BaseSnapEditView(SnapAuthorizeMixin, SnapInformationTypeMixin,
+                       SnapFormMixin, LaunchpadEditFormView):
 
     schema = ISnapEditSchema
 
