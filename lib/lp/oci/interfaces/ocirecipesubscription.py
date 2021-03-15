@@ -18,8 +18,8 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.services.fields import PersonChoice
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.services.fields import PersonChoice
 
 
 class IOCIRecipeSubscription(Interface):
@@ -30,7 +30,7 @@ class IOCIRecipeSubscription(Interface):
         title=_('Person'), required=True, vocabulary='ValidPersonOrTeam',
         readonly=True,
         description=_("The person subscribed to the related OCI recipe."))
-    ocirecipe = Reference(
+    recipe = Reference(
         IOCIRecipe, title=_("OCI recipe"), required=True, readonly=True)
     subscribed_by = PersonChoice(
         title=_('Subscribed by'), required=True,

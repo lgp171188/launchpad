@@ -3491,7 +3491,7 @@ class OCIRecipeSubscriptionEdit(AuthorizationBase):
         the OCI recipe owner is a team, then members of the team can edit
         the subscription.
         """
-        return (user.inTeam(self.obj.ocirecipe.owner) or
+        return (user.inTeam(self.obj.recipe.owner) or
                 user.inTeam(self.obj.person) or
                 user.inTeam(self.obj.subscribed_by) or
                 user.in_admin)
@@ -3502,10 +3502,10 @@ class SnapSubscriptionView(AuthorizationBase):
     usedfor = IOCIRecipeSubscription
 
     def checkUnauthenticated(self):
-        return self.obj.ocirecipe.visibleByUser(None)
+        return self.obj.recipe.visibleByUser(None)
 
     def checkAuthenticated(self, user):
-        return self.obj.ocirecipe.visibleByUser(user.person)
+        return self.obj.recipe.visibleByUser(user.person)
 
 
 class ViewOCIRecipeBuild(AnonymousAuthorization):

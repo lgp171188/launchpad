@@ -303,7 +303,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         return Store.of(self).find(
             OCIRecipeSubscription,
             OCIRecipeSubscription.person == person,
-            OCIRecipeSubscription.ocirecipe == self).one()
+            OCIRecipeSubscription.recipe == self).one()
 
     def userCanBeSubscribed(self, person):
         """Checks if the given person can subscribe to this OCI recipe."""
@@ -317,7 +317,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         return Store.of(self).find(
             Person,
             OCIRecipeSubscription.person_id == Person.id,
-            OCIRecipeSubscription.ocirecipe == self)
+            OCIRecipeSubscription.recipe == self)
 
     def subscribe(self, person, subscribed_by, ignore_permissions=False):
         """See `IOCIRecipe`."""
@@ -328,7 +328,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         subscription = self.getSubscription(person)
         if subscription is None:
             subscription = OCIRecipeSubscription(
-                person=person, ocirecipe=self, subscribed_by=subscribed_by)
+                person=person, recipe=self, subscribed_by=subscribed_by)
             Store.of(subscription).flush()
         service = getUtility(IService, "sharing")
         ocirecipes = service.getVisibleArtifacts(
@@ -362,7 +362,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     def _deleteOCIRecipeSubscriptions(self):
         subscriptions = Store.of(self).find(
-            OCIRecipeSubscription, OCIRecipeSubscription.ocirecipe == self)
+            OCIRecipeSubscription, OCIRecipeSubscription.recipe == self)
         subscriptions.remove()
 
     def destroySelf(self):

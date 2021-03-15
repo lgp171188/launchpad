@@ -870,7 +870,7 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
                 recipe.getSubscription(another_user),
                 MatchesStructure(
                     person=Equals(another_user),
-                    ocirecipe=Equals(recipe),
+                    recipe=Equals(recipe),
                     subscribed_by=Equals(recipe.owner),
                     date_created=IsInstance(datetime)))
 
@@ -880,7 +880,7 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
                 recipe.getSubscription(another_user),
                 MatchesStructure(
                     person=Equals(another_user),
-                    ocirecipe=Equals(recipe),
+                    recipe=Equals(recipe),
                     subscribed_by=Equals(recipe.owner),
                     date_created=IsInstance(datetime)))
 
@@ -941,7 +941,7 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
                 recipe.getSubscription(person),
                 MatchesStructure(
                     person=Equals(person),
-                    ocirecipe=Equals(recipe),
+                    recipe=Equals(recipe),
                     subscribed_by=Equals(recipe.owner),
                     date_created=IsInstance(datetime)))
             # Calling again should be a no-op.

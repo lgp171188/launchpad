@@ -713,9 +713,9 @@ def _mergeOCIRecipeSubscription(cur, from_id, to_id):
     cur.execute('''
         UPDATE OCIRecipeSubscription
         SET person=%(to_id)d
-        WHERE person=%(from_id)d AND ocirecipe NOT IN
+        WHERE person=%(from_id)d AND recipe NOT IN
             (
-            SELECT ocirecipe
+            SELECT recipe
             FROM OCIRecipeSubscription
             WHERE person = %(to_id)d
             )
