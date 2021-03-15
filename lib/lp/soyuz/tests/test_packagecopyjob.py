@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for sync package jobs."""
@@ -6,8 +6,11 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import operator
+import os
+import signal
 from textwrap import dedent
 
+from fixtures import FakeLogger
 from storm.store import Store
 from testtools.content import text_content
 from testtools.matchers import (
@@ -28,6 +31,10 @@ from lp.registry.model.distroseriesdifferencecomment import (
     )
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
+from lp.services.database.locking import (
+    LockType,
+    try_advisory_lock,
+    )
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
@@ -58,6 +65,7 @@ from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
     )
+from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.packagecopyjob import PackageCopyJob
 from lp.soyuz.model.queue import PackageUpload
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
@@ -328,6 +336,45 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
         removeSecurityProxy(job).attemptCopy = FakeMethod(failure=Boom())
 
         self.assertRaises(Boom, job.run)
+
+    def test_run_tries_advisory_lock(self):
+        # A job is retried if an advisory lock for the same archive, package
+        # name, and version is held.
+        logger = self.useFixture(FakeLogger())
+        job = create_proper_job(self.factory)
+        advisory_lock_id = hash((
+            job.target_archive_id,
+            job.package_name,
+            job.package_version)) & 0x7FFFFFFF
+        self.assertEqual(
+            advisory_lock_id, removeSecurityProxy(job)._advisory_lock_id)
+        switch_dbuser(self.dbuser)
+        # Fork so that we can take an advisory lock from a different
+        # PostgreSQL session.
+        read, write = os.pipe()
+        pid = os.fork()
+        if pid == 0:  # child
+            os.close(read)
+            with try_advisory_lock(
+                    LockType.PACKAGE_COPY, advisory_lock_id, IStore(Archive)):
+                os.write(write, b"1")
+                try:
+                    signal.pause()
+                except KeyboardInterrupt:
+                    pass
+            os._exit(0)
+        else:  # parent
+            try:
+                os.close(write)
+                os.read(read, 1)
+                runner = JobRunner([job])
+                runner.runAll()
+                self.assertEqual(JobStatus.WAITING, job.status)
+                self.assertEqual([], runner.oops_ids)
+                self.assertIn(
+                    "Scheduling retry due to AdvisoryLockHeld", logger.output)
+            finally:
+                os.kill(pid, signal.SIGINT)
 
     def test_run_posts_copy_failure_as_comment(self):
         # If the job fails with a CannotCopy exception, it swallows the
