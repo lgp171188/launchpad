@@ -71,6 +71,7 @@ from lp.services.features import get_relevant_feature_controller
 from lp.services.features.flags import NullFeatureController
 from lp.services.feeds.interfaces.application import IFeedsApplication
 from lp.services.feeds.interfaces.feed import IFeed
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
     IOAuthSignedRequest,
@@ -1349,6 +1350,8 @@ class WebServicePublication(WebServicePublicationMixin,
             raise TokenException('Expired token (%s).' % token.key)
         elif not check_oauth_signature(request, consumer, token):
             raise TokenException('Invalid signature.')
+        elif token.person.account_status != AccountStatus.ACTIVE:
+            raise TokenException('Inactive account.')
         else:
             # Everything is fine, let's return the principal.
             pass
