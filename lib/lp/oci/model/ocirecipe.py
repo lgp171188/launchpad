@@ -313,6 +313,12 @@ class OCIRecipe(Storm, WebhookTargetMixin):
             person.anyone_can_join())
 
     @property
+    def subscriptions(self):
+        return Store.of(self).find(
+            OCIRecipeSubscription,
+            OCIRecipeSubscription.recipe == self)
+
+    @property
     def subscribers(self):
         return Store.of(self).find(
             Person,
