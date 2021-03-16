@@ -1869,11 +1869,10 @@ class TestArchiveDependencies(TestCaseWithFactory):
     def test_private_sources_list(self):
         """Entries for private dependencies include credentials."""
         p3a = self.factory.makeArchive(name='p3a', private=True)
-        with InProcessKeyServerFixture() as keyserver:
-            yield keyserver.start()
-            key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveGPGSigningKey(p3a).setSigningKey(
-                key_path, async_keyserver=True)
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        yield IArchiveGPGSigningKey(p3a).setSigningKey(
+            key_path, async_keyserver=True)
         dependency = self.factory.makeArchive(
             name='dependency', private=True, owner=p3a.owner)
         with person_logged_in(p3a.owner):
