@@ -9,12 +9,11 @@ __metaclass__ = type
 
 
 from fixtures import FakeLogger
-from lp.oci.tests.helpers import OCIConfigHelperMixin
 from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import BranchSharingPolicy
-from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.testing import (
     admin_logged_in,
@@ -104,57 +103,57 @@ class TestPublicOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
             """, self.getSubscriptionPortletText(browser))
 
     def test_unsubscribe_self(self):
-        snap = self.makeOCIRecipe()
+        recipe = self.makeOCIRecipe()
         another_user = self.factory.makePerson(name="another-user")
-        with person_logged_in(snap.owner):
-            snap.subscribe(another_user, snap.owner)
-        subscription = snap.getSubscription(another_user)
+        with person_logged_in(recipe.owner):
+            recipe.subscribe(another_user, recipe.owner)
+        subscription = recipe.getSubscription(another_user)
         browser = self.getViewBrowser(subscription, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Edit subscription to snap recipe for Another-user
-            Snap packages
-            snap-name
-            If you unsubscribe from a snap recipe it will no longer show up on
+            Edit subscription to OCI recipe for Another-user
+            my-oci-project OCI project
+            recipe-name
+            If you unsubscribe from an OCI recipe it will no longer show up on
             your personal pages. or Cancel
             """, self.extractMainText(browser))
         browser.getControl("Unsubscribe").click()
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Another-user has been unsubscribed from this snap recipe.
+            Another-user has been unsubscribed from this OCI recipe.
             """, self.extractInfoMessageContent(browser))
         with person_logged_in(self.person):
-            self.assertIsNone(snap.getSubscription(another_user))
+            self.assertIsNone(recipe.getSubscription(another_user))
 
     def test_subscribe_someone_else(self):
-        snap = self.makeOCIRecipe()
+        recipe = self.makeOCIRecipe()
         another_user = self.factory.makePerson(name="another-user")
-        browser = self.getViewBrowser(snap, user=snap.owner)
+        browser = self.getViewBrowser(recipe, user=recipe.owner)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit your subscription
             Subscribe someone else
             Subscribers
-            Snap-owner
+            Recipe-owner
             """, self.getSubscriptionPortletText(browser))
 
         # Go to "subscribe" page, and click the button.
         browser = self.getViewBrowser(
-            snap, view_name="+addsubscriber", user=another_user)
+            recipe, view_name="+addsubscriber", user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Subscribe to snap recipe
-            Snap packages
-            snap-name
-            Subscribe to snap recipe
+            Subscribe to OCI recipe
+            my-oci-project OCI project
+            recipe-name
+            Subscribe to OCI recipe
             Person:
             .*
-            The person subscribed to the related snap recipe.
+            The person subscribed to the related OCI recipe.
             or
             Cancel
             """, self.extractMainText(browser))
         browser.getControl(name="field.person").value = 'another-user'
         browser.getControl("Subscribe").click()
 
-        # We should be redirected back to snap page.
+        # We should be redirected back to OCI recipe page.
         with admin_logged_in():
-            self.assertEqual(canonical_url(snap), browser.url)
+            self.assertEqual(canonical_url(recipe), browser.url)
 
         # And the new user should be listed in the subscribers list.
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
@@ -162,72 +161,74 @@ class TestPublicOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
             Subscribe someone else
             Subscribers
             Another-user
-            Snap-owner
+            Recipe-owner
             """, self.getSubscriptionPortletText(browser))
 
     def test_unsubscribe_someone_else(self):
-        snap = self.makeOCIRecipe()
+        recipe = self.makeOCIRecipe()
         another_user = self.factory.makePerson(name="another-user")
-        with person_logged_in(snap.owner):
-            snap.subscribe(another_user, snap.owner)
+        with person_logged_in(recipe.owner):
+            recipe.subscribe(another_user, recipe.owner)
 
-        subscription = snap.getSubscription(another_user)
-        browser = self.getViewBrowser(subscription, user=snap.owner)
+        subscription = recipe.getSubscription(another_user)
+        browser = self.getViewBrowser(subscription, user=recipe.owner)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Edit subscription to snap recipe for Another-user
-            Snap packages
-            snap-name
-            If you unsubscribe from a snap recipe it will no longer show up on
+            Edit subscription to OCI recipe for Another-user
+            my-oci-project OCI project
+            recipe-name
+            If you unsubscribe from an OCI recipe it will no longer show up on
             your personal pages. or Cancel
             """, self.extractMainText(browser))
         browser.getControl("Unsubscribe").click()
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Another-user has been unsubscribed from this snap recipe.
+            Another-user has been unsubscribed from this OCI recipe.
             """, self.extractInfoMessageContent(browser))
         with person_logged_in(self.person):
-            self.assertIsNone(snap.getSubscription(another_user))
+            self.assertIsNone(recipe.getSubscription(another_user))
 
 
-class TestPrivateSnapSubscriptionViews(BaseTestOCIRecipeView):
+class TestPrivateOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
 
-    def makePrivateSnap(self, **kwargs):
+    def makePrivateOCIRecipe(self, **kwargs):
         project = self.factory.makeProduct(
             owner=self.person, registrant=self.person,
             information_type=InformationType.PROPRIETARY,
             branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        oci_project = self.factory.makeOCIProject(
+            ociprojectname='my-oci-project', pillar=project)
         return self.makeOCIRecipe(
             information_type=InformationType.PROPRIETARY,
-            oci_project=project)
+            oci_project=oci_project)
 
     def test_cannot_subscribe_to_private_snap(self):
-        snap = self.makePrivateSnap()
+        recipe = self.makePrivateOCIRecipe()
         another_user = self.factory.makePerson(name="another-user")
-        # Unsubscribed user should not see the snap page.
+        # Unsubscribed user should not see the OCI recipe page.
         self.assertRaises(
-            Unauthorized, self.getViewBrowser, snap, user=another_user)
+            Unauthorized, self.getViewBrowser, recipe, user=another_user)
         # Nor the subscribe pages.
         self.assertRaises(
             Unauthorized, self.getViewBrowser,
-            snap, view_name="+subscribe", user=another_user)
+            recipe, view_name="+subscribe", user=another_user)
         self.assertRaises(
             Unauthorized, self.getViewBrowser,
-            snap, view_name="+addsubscriber", user=another_user)
+            recipe, view_name="+addsubscriber", user=another_user)
 
-    def test_snap_owner_can_subscribe_someone_to_private_snap(self):
-        snap = self.makePrivateSnap()
+    def test_recipe_owner_can_subscribe_someone_to_private_recipe(self):
+        recipe = self.makePrivateOCIRecipe()
         another_user = self.factory.makePerson(name="another-user")
 
         # Go to "subscribe" page, and click the button.
         browser = self.getViewBrowser(
-            snap, view_name="+addsubscriber", user=self.person)
+            recipe, view_name="+addsubscriber", user=self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Subscribe to snap recipe
-            Snap packages
-            snap-name
-            Subscribe to snap recipe
+            Subscribe to OCI recipe
+            my-oci-project OCI project
+            recipe-name
+            Subscribe to OCI recipe
             Person:
             .*
-            The person subscribed to the related snap recipe.
+            The person subscribed to the related OCI recipe.
             or
             Cancel
             """, self.extractMainText(browser))
@@ -235,33 +236,33 @@ class TestPrivateSnapSubscriptionViews(BaseTestOCIRecipeView):
         browser.getControl("Subscribe").click()
 
         # Now the new user should be listed in the subscribers list,
-        # and have access to the snap page.
-        browser = self.getViewBrowser(snap, user=another_user)
+        # and have access to the recipe page.
+        browser = self.getViewBrowser(recipe, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit your subscription
             Subscribe someone else
             Subscribers
             Another-user
-            Snap-owner
+            Recipe-owner
             """, self.getSubscriptionPortletText(browser))
 
     def test_unsubscribe_self(self):
-        snap = self.makePrivateSnap()
+        recipe = self.makePrivateOCIRecipe()
         another_user = self.factory.makePerson(name="another-user")
         with person_logged_in(self.person):
-            snap.subscribe(another_user, self.person)
-            subscription = snap.getSubscription(another_user)
+            recipe.subscribe(another_user, self.person)
+            subscription = recipe.getSubscription(another_user)
         browser = self.getViewBrowser(subscription, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Edit subscription to snap recipe for Another-user
-            Snap packages
-            snap-name
-            If you unsubscribe from a snap recipe it will no longer show up on
+            Edit subscription to OCI recipe for Another-user
+            my-oci-project OCI project
+            recipe-name
+            If you unsubscribe from an OCI  recipe it will no longer show up on
             your personal pages. or Cancel
             """, self.extractMainText(browser))
         browser.getControl("Unsubscribe").click()
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Another-user has been unsubscribed from this snap recipe.
+            Another-user has been unsubscribed from this OCI recipe.
             """, self.extractInfoMessageContent(browser))
         with person_logged_in(self.person):
-            self.assertIsNone(snap.getSubscription(another_user))
+            self.assertIsNone(recipe.getSubscription(another_user))

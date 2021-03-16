@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IProduct."""
@@ -476,6 +476,10 @@ class IProductLimitedView(IHasIcon, IHasLogo, IHasOwner, ILaunchpadUsage):
             description=_("The project title. Should be just a few words."),
             readonly=True))
 
+    def getOCIProject(name):
+        """Return a `OCIProject` with the given name for this product, or None.
+        """
+
 
 class IProductView(
     ICanGetMilestonesDirectly, IHasAppointedDriver, IHasBranches,
@@ -801,10 +805,6 @@ class IProductView(
     def canAdministerOCIProjects(person):
         """Checks if the given person can manage OCI projects for this
         Product."""
-
-    def getOCIProject(name):
-        """Return a `OCIProject` with the given name for this product, or None.
-        """
 
     def getPackage(distroseries):
         """Return a package in that distroseries for this product."""
