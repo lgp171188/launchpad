@@ -68,7 +68,7 @@ from lp.testing.script import run_script
 class TestSyncSigningKeysScript(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSyncSigningKeysScript, self).setUp()
