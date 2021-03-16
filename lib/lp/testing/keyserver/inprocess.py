@@ -48,19 +48,30 @@ class InProcessKeyServerFixture(Fixture):
             def setUp(self):
                 super(TestSomething, self).setUp()
                 yield self.useFixture(InProcessKeyServerFixture()).start()
+
+    Unlike other fixtures, `InProcessKeyServerFixture` should not be used as
+    a context manager, because the context manager API does not offer a way
+    to do asynchronous cleanup.
     """
 
     @defer.inlineCallbacks
     def start(self):
         resource = KeyServerResource(self.useFixture(TempDir()).path)
         endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
-        port = yield endpoint.listen(server.Site(resource))
-        self.addCleanup(port.stopListening)
+        self._port = yield endpoint.listen(server.Site(resource))
         config.push("in-process-key-server-fixture", dedent("""
             [gpghandler]
             port: %s
-            """) % port.getHost().port)
+            """) % self._port.getHost().port)
         self.addCleanup(config.pop, "in-process-key-server-fixture")
+
+    @defer.inlineCallbacks
+    def cleanUp(self, *args, **kwargs):
+        # fixtures.callmany.CallMany doesn't support cleanup functions that
+        # return Deferred, so we have to do this manually.
+        yield self._port.stopListening()
+        defer.returnValue(
+            super(InProcessKeyServerFixture, self).cleanUp(*args, **kwargs))
 
     @property
     def url(self):

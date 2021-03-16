@@ -81,11 +81,10 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         self.archive_root = getPubConfig(self.archive).archiveroot
         self.suite = "distroseries"
 
-        with InProcessKeyServerFixture() as keyserver:
-            yield keyserver.start()
-            key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveGPGSigningKey(self.archive).setSigningKey(
-                key_path, async_keyserver=True)
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        yield IArchiveGPGSigningKey(self.archive).setSigningKey(
+            key_path, async_keyserver=True)
 
     def test_signFile_absolute_within_archive(self):
         filename = os.path.join(self.archive_root, "signme")

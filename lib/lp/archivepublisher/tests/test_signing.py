@@ -231,11 +231,10 @@ class TestSigningHelpers(TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def setUpArchiveKey(self):
-        with InProcessKeyServerFixture() as keyserver:
-            yield keyserver.start()
-            key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveGPGSigningKey(self.archive).setSigningKey(
-                key_path, async_keyserver=True)
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        yield IArchiveGPGSigningKey(self.archive).setSigningKey(
+            key_path, async_keyserver=True)
 
     def setUpUefiKeys(self, create=True, series=None):
         if not series:
