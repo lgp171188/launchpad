@@ -133,7 +133,6 @@ class OCIRecipeSubscriptionAddView(_OCIRecipeSubscriptionCreationView):
                 "You are already subscribed to this OCI recipe.")
         else:
             self.context.subscribe(self.user, self.user)
-
             self.request.response.addNotification(
                 "You have subscribed to this OCI recipe.")
 
