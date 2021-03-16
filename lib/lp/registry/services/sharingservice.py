@@ -437,7 +437,7 @@ class SharingService:
         visible_ocirecipes = []
         if ocirecipes:
             visible_ocirecipes = list(getUtility(IOCIRecipeSet).findByIds(
-                snap_ids, visible_by_user=person))
+                ocirecipes_ids, visible_by_user=person))
 
         return {
             "bugs": visible_bugs,
