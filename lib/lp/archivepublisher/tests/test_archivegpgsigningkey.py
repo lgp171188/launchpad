@@ -66,7 +66,7 @@ from lp.testing.layers import ZopelessDatabaseLayer
 class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     @defer.inlineCallbacks
     def setUp(self):
