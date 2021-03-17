@@ -1863,7 +1863,7 @@ class TestAddArchiveDependencies(TestCaseWithFactory):
 class TestArchiveDependencies(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     @defer.inlineCallbacks
     def test_private_sources_list(self):
@@ -4073,7 +4073,7 @@ class TestGetSigningKeyData(TestCaseWithFactory):
     """
 
     layer = DatabaseFunctionalLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def test_getSigningKeyData_no_fingerprint(self):
         ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
