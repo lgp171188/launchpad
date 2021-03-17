@@ -167,6 +167,10 @@ class OCIRegistryClient:
                     if tarinfo.name != 'layer.tar':
                         continue
                     fileobj = un_zipped.extractfile(tarinfo)
+                    # XXX Work around requests handling of objects that have
+                    # fileno, but error on access in python3:
+                    # https://github.com/psf/requests/pull/5239
+                    fileobj.len = tarinfo.size
                     try:
                         cls._upload(
                             digest, push_rule, fileobj, tarinfo.size,

@@ -1211,6 +1211,21 @@ correct.
     ...
     lp.services.oauth.interfaces.TokenException: Invalid signature.
 
+The user's account must be active.
+
+    >>> from lp.services.identity.interfaces.account import AccountStatus
+
+    >>> login('foo.bar@canonical.com')
+    >>> salgado.setAccountStatus(AccountStatus.SUSPENDED, None, 'Bye')
+
+    >>> login('salgado@ubuntu.com')
+    >>> test_request = LaunchpadTestRequest(form=form)
+    >>> publication.getPrincipal(test_request)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    Traceback (most recent call last):
+    ...
+    lp.services.oauth.interfaces.TokenException: Inactive account.
+
 Close the bogus request that was started by the call to
 beforeTraversal, in order to ensure we leave our state sane.
 Also, pop all the database policies we have been accumulating.

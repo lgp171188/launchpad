@@ -52,7 +52,10 @@ from lp.registry.interfaces.person import (
     )
 from lp.services.config import config
 from lp.services.database.policy import MasterDatabasePolicy
-from lp.services.identity.interfaces.account import AccountSuspendedError
+from lp.services.identity.interfaces.account import (
+    AccountDeceasedError,
+    AccountSuspendedError,
+    )
 from lp.services.openid.extensions import macaroon
 from lp.services.openid.interfaces.openidconsumer import IOpenIDConsumerStore
 from lp.services.propertycache import cachedproperty
@@ -278,6 +281,9 @@ class OpenIDCallbackView(OpenIDLogin):
     suspended_account_template = ViewPageTemplateFile(
         'templates/login-suspended-account.pt')
 
+    deceased_account_template = ViewPageTemplateFile(
+        'templates/login-deceased-account.pt')
+
     team_email_address_template = ViewPageTemplateFile(
         'templates/login-team-email-address.pt')
 
@@ -379,6 +385,8 @@ class OpenIDCallbackView(OpenIDLogin):
             should_update_last_write = db_updated
         except AccountSuspendedError:
             return self.suspended_account_template()
+        except AccountDeceasedError:
+            return self.deceased_account_template()
         except TeamEmailAddressError:
             return self.team_email_address_template()
 

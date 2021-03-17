@@ -152,6 +152,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import JobRunner
@@ -4711,6 +4712,21 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
             ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
              identifier],
             issuer, macaroon, repository, user=self.factory.makePerson())
+
+    def test_verifyMacaroon_inactive_account(self):
+        repository = self.factory.makeGitRepository()
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
+        naked_account = removeSecurityProxy(repository.owner).account
+        identifier = naked_account.openid_identifiers.any().identifier
+        with admin_logged_in():
+            repository.owner.setAccountStatus(
+                AccountStatus.SUSPENDED, None, "Bye")
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
+             identifier],
+            issuer, macaroon, repository, user=repository.owner)
 
     def test_verifyMacaroon_closed_account(self):
         # A closed account no longer has an OpenID identifier, so the

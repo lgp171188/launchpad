@@ -50,41 +50,66 @@ class TestAccount(TestCaseWithFactory):
         self.assertEqual(status, account.status)
 
     def test_status_from_noaccount(self):
-        # The status may change from NOACCOUNT to ACTIVE or CLOSED.
+        # The status may change from NOACCOUNT to ACTIVE, CLOSED, or
+        # DECEASED.
         account = self.factory.makeAccount(status=AccountStatus.NOACCOUNT)
         login_celebrity('admin')
         self.assertCannotTransition(
             account, [AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED])
         self.assertCanTransition(
-            account, [AccountStatus.ACTIVE, AccountStatus.CLOSED])
+            account,
+            [AccountStatus.ACTIVE, AccountStatus.CLOSED,
+             AccountStatus.DECEASED])
 
     def test_status_from_active(self):
-        # The status may change from ACTIVE to DEACTIVATED, SUSPENDED, or
-        # CLOSED.
+        # The status may change from ACTIVE to DEACTIVATED, SUSPENDED,
+        # CLOSED, or DECEASED.
         account = self.factory.makeAccount(status=AccountStatus.ACTIVE)
         login_celebrity('admin')
         self.assertCannotTransition(account, [AccountStatus.NOACCOUNT])
         self.assertCanTransition(
             account,
             [AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED,
-             AccountStatus.CLOSED])
+             AccountStatus.CLOSED, AccountStatus.DECEASED])
 
     def test_status_from_deactivated(self):
-        # The status may change from DEACTIVATED to ACTIVATED or CLOSED.
+        # The status may change from DEACTIVATED to ACTIVATED, CLOSED, or
+        # DECEASED.
         account = self.factory.makeAccount()
         login_celebrity('admin')
         account.setStatus(AccountStatus.DEACTIVATED, None, 'gbcw')
         self.assertCannotTransition(
             account, [AccountStatus.NOACCOUNT, AccountStatus.SUSPENDED])
         self.assertCanTransition(
-            account, [AccountStatus.ACTIVE, AccountStatus.CLOSED])
+            account,
+            [AccountStatus.ACTIVE, AccountStatus.CLOSED,
+             AccountStatus.DECEASED])
 
     def test_status_from_suspended(self):
-        # The status may change from SUSPENDED to DEACTIVATED or CLOSED.
+        # The status may change from SUSPENDED to DEACTIVATED, CLOSED, or
+        # DECEASED.
         account = self.factory.makeAccount()
         login_celebrity('admin')
         account.setStatus(AccountStatus.SUSPENDED, None, 'spammer!')
         self.assertCannotTransition(
             account, [AccountStatus.NOACCOUNT, AccountStatus.ACTIVE])
         self.assertCanTransition(
-            account, [AccountStatus.DEACTIVATED, AccountStatus.CLOSED])
+            account,
+            [AccountStatus.DEACTIVATED, AccountStatus.CLOSED,
+             AccountStatus.DECEASED])
+
+    def test_status_from_deceased(self):
+        # The status may change from DECEASED to DEACTIVATED (perhaps we
+        # were misinformed) or CLOSED (perhaps family members don't want the
+        # account to be visible).
+        account = self.factory.makeAccount()
+        login_celebrity('admin')
+        account.setStatus(AccountStatus.DECEASED, None, 'RIP')
+        self.assertCannotTransition(
+            account,
+            [AccountStatus.NOACCOUNT, AccountStatus.ACTIVE,
+             AccountStatus.SUSPENDED])
+        self.assertCanTransition(
+            account,
+            [AccountStatus.DEACTIVATED, AccountStatus.CLOSED,
+             AccountStatus.DECEASED])
