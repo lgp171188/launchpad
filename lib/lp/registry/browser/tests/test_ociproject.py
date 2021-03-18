@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OCI project views."""
@@ -14,6 +14,7 @@ from datetime import datetime
 import pytz
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.ociproject import (
     OCI_PROJECT_ALLOW_CREATE,
@@ -110,6 +111,49 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             Project: My Project
             Name: oci-name
             """, self.getMainText(oci_project))
+
+    def test_hides_recipes_link_if_no_recipe_is_present(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        browser = self.getViewBrowser(oci_project)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe"]
+        self.assertEqual("\n".join(expected_links), actions)
+
+    def test_shows_recipes_link_if_public_recipe_is_present(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        self.factory.makeOCIRecipe(oci_project=oci_project)
+        browser = self.getViewBrowser(oci_project)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe", "View all recipes"]
+        self.assertEqual("\n".join(expected_links), actions)
+
+    def test_hides_recipes_link_if_only_non_visible_recipe_exists(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        self.factory.makeOCIRecipe(
+            oci_project=oci_project,
+            information_type=InformationType.PRIVATESECURITY)
+        another_user = self.factory.makePerson()
+        browser = self.getViewBrowser(oci_project, user=another_user)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe"]
+        self.assertEqual("\n".join(expected_links), actions)
+
+    def test_shows_recipes_link_if_user_has_access_to_private_recipe(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        recipe = self.factory.makeOCIRecipe(
+            oci_project=oci_project,
+            information_type=InformationType.PRIVATESECURITY)
+        another_user = self.factory.makePerson()
+        with admin_logged_in():
+            recipe.subscribe(another_user, recipe.owner)
+        browser = self.getViewBrowser(oci_project, user=another_user)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe", "View all recipes"]
+        self.assertEqual("\n".join(expected_links), actions)
 
     def test_git_repo_hint(self):
         owner = self.factory.makePerson(name="a-usr")

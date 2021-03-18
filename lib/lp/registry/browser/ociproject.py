@@ -17,9 +17,7 @@ __all__ = [
 
 from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
-from zope.formlib import form
 from zope.interface import implementer
-from zope.schema import Choice
 
 from lp.app.browser.launchpadform import (
     action,
@@ -199,7 +197,7 @@ class OCIProjectNavigationMenu(NavigationMenu):
 
     def view_recipes(self):
         enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
-            self.context).is_empty()
+            self.context, visible_by_user=self.user).is_empty()
         return Link(
             '+recipes', 'View all recipes', icon='info', enabled=enabled)
 
@@ -219,7 +217,7 @@ class OCIProjectContextMenu(ContextMenu):
 
     def view_recipes(self):
         enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
-            self.context).is_empty()
+            self.context, visible_by_user=self.user).is_empty()
         return Link(
             '+recipes', 'View all recipes', icon='info', enabled=enabled)
 
