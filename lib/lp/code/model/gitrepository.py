@@ -682,6 +682,14 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
                 return ref
         return None
 
+    def getRepackData(self):
+        result = dict()
+        result['loose_object_count'] = self.loose_object_count
+        result['pack_count'] = self.pack_count
+        result['date_last_repacked'] = self.date_last_repacked
+        result['date_last_scanned'] = self.date_last_scanned
+        return result
+
     @staticmethod
     def _convertRefInfo(info):
         """Validate and canonicalise ref info from the hosting service.

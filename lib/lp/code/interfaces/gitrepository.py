@@ -843,6 +843,15 @@ class IGitRepositoryEdit(IWebhookTarget):
 
     @export_read_operation()
     @operation_for_version("devel")
+    def getRepackData():
+        """Return repack data for this repository.
+
+        :return: The number of loose objects and packs for this repository
+            and the dates it was last scanned and repacked.
+        """
+
+    @export_read_operation()
+    @operation_for_version("devel")
     def getRules():
         """Get the access rules for this repository."""
 
