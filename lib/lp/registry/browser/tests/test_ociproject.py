@@ -232,6 +232,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             pillar=distribution, ociprojectname="oci-name")
         self.factory.makeOCIRecipe(oci_project=oci_project, official=False)
         self.factory.makeOCIRecipe(oci_project=oci_project, official=False)
+
         browser = self.getViewBrowser(
             oci_project, view_name="+index", user=distribution.owner)
         self.assertNotIn("Official recipes", browser.contents)
@@ -242,10 +243,48 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             "There are no recipes registered for this OCI project.",
             browser.contents)
 
+    def test_shows_private_recipes_with_proper_grants(self):
+        distribution = self.factory.makeDistribution(displayname="My Distro")
+        oci_project = self.factory.makeOCIProject(
+            pillar=distribution, ociprojectname="oci-name")
+        official_recipe = self.factory.makeOCIRecipe(
+            oci_project=oci_project, official=True,
+            information_type=InformationType.PRIVATESECURITY)
+        unofficial_recipe = self.factory.makeOCIRecipe(
+            oci_project=oci_project, official=False,
+            information_type=InformationType.PRIVATESECURITY)
+
+        granted_user = self.factory.makePerson()
+        with admin_logged_in():
+            unofficial_recipe.subscribe(granted_user, official_recipe.owner)
+            official_recipe.subscribe(granted_user, official_recipe.owner)
+            official_recipe_url = canonical_url(
+                official_recipe, force_local_path=True)
+        browser = self.getViewBrowser(oci_project, user=granted_user)
+
+        self.assertIn(
+            "There is <strong>1</strong> unofficial recipe.", browser.contents)
+        self.assertIn("<h3>Official recipes</h3>", browser.contents)
+
+        recipes_tag = find_tag_by_id(browser.contents, 'mirrors_list')
+        rows = recipes_tag.find_all('tr')
+        self.assertEqual(2, len(rows), 'We should have a header and 1 row')
+        self.assertIn(official_recipe_url, str(rows[1]))
+
     def test_shows_no_recipes(self):
         distribution = self.factory.makeDistribution(displayname="My Distro")
         oci_project = self.factory.makeOCIProject(
             pillar=distribution, ociprojectname="oci-name")
+
+        # Make sure we don't include private recipes that the visitor
+        # doesn't have access to.
+        self.factory.makeOCIRecipe(
+            oci_project=oci_project,
+            information_type=InformationType.PRIVATESECURITY)
+        self.factory.makeOCIRecipe(
+            oci_project=oci_project, official=True,
+            information_type=InformationType.PRIVATESECURITY)
+
         browser = self.getViewBrowser(
             oci_project, view_name="+index", user=distribution.owner)
         self.assertNotIn("Official recipes", browser.contents)

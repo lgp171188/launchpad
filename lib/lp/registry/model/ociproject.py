@@ -198,40 +198,47 @@ class OCIProject(BugTargetBase, StormBase):
     def getSeriesByName(self, name):
         return self.series.find(OCIProjectSeries.name == name).one()
 
-    def getRecipes(self):
+    def getRecipes(self, visible_by_user=None):
         """See `IOCIProject`."""
-        from lp.oci.model.ocirecipe import OCIRecipe
+        from lp.oci.model.ocirecipe import (
+            OCIRecipe,
+            get_ocirecipe_privacy_filter,
+        )
         rs = IStore(OCIRecipe).find(
             OCIRecipe,
             OCIRecipe.owner_id == Person.id,
-            OCIRecipe.oci_project == self)
+            OCIRecipe.oci_project == self,
+            get_ocirecipe_privacy_filter(visible_by_user))
         return rs.order_by(Person.name, OCIRecipe.name)
 
-    def getRecipeByNameAndOwner(self, recipe_name, owner_name):
+    def getRecipeByNameAndOwner(self, recipe_name, owner_name,
+                                visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        q = self.getRecipes().find(
+        q = self.getRecipes(visible_by_user=visible_by_user).find(
             OCIRecipe.name == recipe_name,
             Person.name == owner_name)
         return q.one()
 
-    def searchRecipes(self, query):
+    def searchRecipes(self, query, visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        q = self.getRecipes().find(
+        q = self.getRecipes(visible_by_user=visible_by_user).find(
             OCIRecipe.name.contains_string(query) |
             Person.name.contains_string(query))
         return q.order_by(Person.name, OCIRecipe.name)
 
-    def getOfficialRecipes(self):
+    def getOfficialRecipes(self, visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        return self.getRecipes().find(OCIRecipe._official == True)
+        return self.getRecipes(
+            visible_by_user=visible_by_user).find(OCIRecipe._official == True)
 
-    def getUnofficialRecipes(self):
+    def getUnofficialRecipes(self, visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        return self.getRecipes().find(OCIRecipe._official == False)
+        return self.getRecipes(
+            visible_by_user=visible_by_user).find(OCIRecipe._official == False)
 
     def setOfficialRecipeStatus(self, recipe, status):
         """See `IOCIProject`."""
