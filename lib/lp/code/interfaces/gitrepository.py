@@ -216,6 +216,24 @@ class IGitRepositoryView(IHasRecipes):
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
 
+    pack_count = exported(Int(
+        title=_("Pack count"), readonly=True,
+        description=_("The number of packs for this repository.")))
+
+    loose_object_count = exported(Int(
+        title=_("Loose object count"), readonly=True,
+        description=_("The number of loose objects for this repository.")))
+
+    date_last_repacked = exported(Datetime(
+        title=_("Date last repacked"), readonly=True,
+        description=_("The date that this repository was last repacked "
+                      "by the automated repack cron job.")))
+
+    date_last_scanned = exported(Datetime(
+        title=_("Date last scanned"), readonly=True,
+        description=_("The date that this repository was last pushed to "
+                      "and updated the repack stats via the notify call.")))
+
     def getClonedFrom():
         """Returns from which repository the given repo is a clone from."""
 
@@ -839,15 +857,6 @@ class IGitRepositoryEdit(IWebhookTarget):
             member.
         :param ref_pattern: If not None, only return grants for rules with
             this ref_pattern.
-        """
-
-    @export_read_operation()
-    @operation_for_version("devel")
-    def getRepackData():
-        """Return repack data for this repository.
-
-        :return: The number of loose objects and packs for this repository
-            and the dates it was last scanned and repacked.
         """
 
     @export_read_operation()
