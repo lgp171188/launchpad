@@ -3,8 +3,8 @@
 
 SET client_min_messages=ERROR;
 
-CREATE INDEX gitrepository__loose_object_count__pack_count__idx
-ON GitRepository(loose_object_count, pack_count)
-WHERE status = 2;
+CREATE INDEX gitrepository__loose_object_count__pack_count__status__idx
+    ON GitRepository(loose_object_count, pack_count)
+    WHERE status = 2;
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 28, 0);
