@@ -101,6 +101,13 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getUnofficialRecipes(visible_by_user=None):
         """Gets the unofficial recipes for this OCI project."""
 
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for for OCI recipes
+        of this OCI project.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
     def getDefaultGitRepository(person):
         """Returns the default git repository for the given user under the
         namespace of this OCI project"""

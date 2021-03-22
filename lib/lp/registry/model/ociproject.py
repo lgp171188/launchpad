@@ -28,12 +28,21 @@ from storm.locals import (
     Reference,
     Unicode,
     )
+from twisted.application.service import IService
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import (
+    PRIVATE_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
+    )
 from lp.bugs.model.bugtarget import BugTargetBase
 from lp.code.interfaces.gitnamespace import IGitNamespaceSet
+from lp.code.model.branchnamespace import (
+    BRANCH_POLICY_ALLOWED_TYPES,
+    BRANCH_POLICY_REQUIRED_GRANTS,
+    )
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
@@ -43,6 +52,7 @@ from lp.registry.interfaces.ociproject import (
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.ociprojectname import OCIProjectName
@@ -69,6 +79,17 @@ def oci_project_modified(oci_project, event):
     # This attribute is normally read-only; bypass the security proxy to
     # avoid that.
     removeSecurityProxy(oci_project).date_last_modified = UTC_NOW
+
+
+def user_has_special_oci_access(user):
+    """Admins have special access.
+
+    :param user: An `IPerson` or None.
+    """
+    if user is None:
+        return False
+    roles = IPersonRoles(user)
+    return roles.in_admin
 
 
 @implementer(IOCIProject)
@@ -251,6 +272,22 @@ class OCIProject(BugTargetBase, StormBase):
         # regardless of security checks on OCIRecipe objects.
         recipe = removeSecurityProxy(recipe)
         recipe._official = status
+
+    def getAllowedInformationTypes(self, user):
+        """See `IOCIRecipe`."""
+        if user_has_special_oci_access(user):
+            # Admins can set any type.
+            return set(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES)
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            self.pillar.branch_sharing_policy]
+        if (required_grant is not None
+                and not getUtility(IService, 'sharing').checkPillarAccess(
+                    [self.pillar], required_grant, self.owner)
+                and (user is None
+                     or not getUtility(IService, 'sharing').checkPillarAccess(
+                            [self.pillar], required_grant, user))):
+            return []
+        return BRANCH_POLICY_ALLOWED_TYPES[self.pillar.branch_sharing_policy]
 
     def getDefaultGitRepository(self, person):
         namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
