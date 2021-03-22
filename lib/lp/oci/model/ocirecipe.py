@@ -245,7 +245,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def private(self):
-        return (self.information_type is None
+        return (self.information_type is not None
                 and self.information_type not in PUBLIC_INFORMATION_TYPES)
 
     @property

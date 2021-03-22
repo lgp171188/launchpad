@@ -820,7 +820,7 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
         recipes = []
         for i in range(10):
             recipes.append(self.factory.makeOCIRecipe(
-                registrant=person,
+                registrant=person, owner=person,
                 oci_project=oci_project,
                 information_type=InformationType.USERDATA))
 
