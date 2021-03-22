@@ -896,17 +896,17 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
                 subscribed_by=Equals(registrant),
                 date_created=IsInstance(datetime)))
 
-    def test_only_owner_can_grant_access(self):
+    def test_owner_can_grant_access(self):
         owner = self.factory.makePerson()
         recipe = self.factory.makeOCIRecipe(
             registrant=owner, owner=owner,
             information_type=InformationType.USERDATA)
         other_person = self.factory.makePerson()
+        with person_logged_in(other_person):
+            self.assertRaises(Unauthorized, getattr, recipe, 'subscribe')
         with person_logged_in(owner):
             recipe.subscribe(other_person, owner)
-        with person_logged_in(other_person):
-            self.assertRaises(
-                Unauthorized, recipe.subscribe, other_person, other_person)
+            self.assertIn(other_person, recipe.subscribers)
 
     def test_private_is_invisible_by_default(self):
         owner = self.factory.makePerson()
