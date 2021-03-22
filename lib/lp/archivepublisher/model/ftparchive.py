@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from collections import defaultdict
@@ -242,7 +242,7 @@ class FTPArchiveHandler:
         """Creates empty files for a release pocket and distroseries"""
         suite = distroseries.getSuite(pocket)
 
-        # Create empty override lists.
+        # Create empty override lists if they don't already exist.
         needed_paths = [
             (comp,),
             ("extra", comp),
@@ -252,15 +252,19 @@ class FTPArchiveHandler:
             needed_paths.append((comp, sub_comp))
 
         for path in needed_paths:
-            write_file(os.path.join(
+            full_path = os.path.join(
                 self._config.overrideroot,
-                ".".join(("override", suite) + path)), b"")
+                ".".join(("override", suite) + path))
+            if not os.path.exists(full_path):
+                write_file(full_path, b"")
 
-        # Create empty file lists.
+        # Create empty file lists if they don't already exist.
         def touch_list(*parts):
-            write_file(os.path.join(
+            full_path = os.path.join(
                 self._config.overrideroot,
-                "_".join((suite, ) + parts)), b"")
+                "_".join((suite, ) + parts))
+            if not os.path.exists(full_path):
+                write_file(full_path, b"")
         touch_list(comp, "source")
 
         arch_tags = [

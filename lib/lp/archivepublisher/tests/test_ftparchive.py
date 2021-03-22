@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for ftparchive.py"""
@@ -22,6 +22,7 @@ from debian.deb822 import (
     )
 from testtools.matchers import (
     Equals,
+    FileContains,
     LessThan,
     MatchesListwise,
     )
@@ -42,6 +43,7 @@ from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
     )
+from lp.services.osutils import write_file
 from lp.soyuz.enums import (
     BinaryPackageFormat,
     IndexCompressionType,
@@ -191,6 +193,36 @@ class TestFTPArchive(TestCaseWithFactory):
         binary_files = FakeSelectResult(
             [('tiny', 'tiny_0.1_i386.deb', component, 'binary-i386')])
         fa.publishFileLists('hoary-test', source_files, binary_files)
+
+    def test_createEmptyPocketRequests_preserves_existing(self):
+        # createEmptyPocketRequests leaves existing override and file list
+        # files alone, in order to avoid race conditions with other
+        # processes (e.g. generate-contents-files) reading those files in
+        # parallel.
+        publisher = Publisher(
+            self._logger, self._config, self._dp, self._archive)
+        fa = FTPArchiveHandler(
+            self._logger, self._config, self._dp, self._distribution,
+            publisher)
+        lists = (
+            'hoary-test-updates_main_source',
+            'hoary-test-updates_main_binary-i386',
+            'hoary-test-updates_main_debian-installer_binary-i386',
+            'override.hoary-test-updates.main',
+            'override.hoary-test-updates.extra.main',
+            'override.hoary-test-updates.main.src',
+            )
+        for listname in lists:
+            write_file(
+                os.path.join(self._config.overrideroot, listname),
+                b'previous contents\n')
+
+        fa.createEmptyPocketRequests(fullpublish=True)
+
+        for listname in lists:
+            self.assertThat(
+                os.path.join(self._config.overrideroot, listname),
+                FileContains('previous contents\n'))
 
     def test_getSourcesForOverrides(self):
         # getSourcesForOverrides returns a list of tuples containing:
