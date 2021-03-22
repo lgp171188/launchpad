@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -646,7 +646,11 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     @stepthrough('+snap')
     def traverse_snap(self, name):
         """Traverse to this person's snap packages."""
-        return getUtility(ISnapSet).getByName(self.context, name)
+        snap = getUtility(ISnapSet).getByPillarAndName(
+            self.context, None, name)
+        if snap is None:
+            raise NotFoundError(name)
+        return snap
 
 
 class PersonSetNavigation(Navigation):

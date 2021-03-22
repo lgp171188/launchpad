@@ -11,8 +11,7 @@
     <facet facet="overview">
         <browser:url
             for="lp.snappy.interfaces.snap.ISnap"
-            path_expression="string:+snap/${name}"
-            attribute_to_parent="owner" />
+            urldata="lp.snappy.browser.snap.SnapURL" />
         <browser:defaultView
             for="lp.snappy.interfaces.snap.ISnap"
             name="+index" />

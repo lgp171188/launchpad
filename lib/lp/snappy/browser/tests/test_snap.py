@@ -572,9 +572,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
-            urlsplit(
-                canonical_url(snap, rootsite="code") +
-                "/+authorize/+login")[:3],
+            urlsplit(canonical_url(snap) + "/+authorize/+login")[:3],
             parsed_location[:3])
         expected_args = {
             "discharge_macaroon_action": ["field.actions.complete"],
@@ -1520,6 +1518,15 @@ class TestSnapView(BaseTestSnapView):
                     soupmatchers.Tag(
                         "snap breadcrumb", "li",
                         text=re.compile(r"\ssnap-name\s")))))
+
+    def test_snap_with_project_pillar_url(self):
+        project = self.factory.makeProduct()
+        snap = self.factory.makeSnap(project=project)
+        browser = self.getViewBrowser(snap)
+        with admin_logged_in():
+            expected_url = 'http://launchpad.test/~{}/{}/+snap/{}'.format(
+                snap.owner.name, project.name, snap.name)
+        self.assertEqual(expected_url, browser.url)
 
     def test_index_bzr(self):
         branch = self.factory.makePersonalBranch(

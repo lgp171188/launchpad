@@ -1439,7 +1439,20 @@ class SnapSet:
             raise NoSuchSnap(name)
         return snap
 
-    def _getSnapsFromCollection(self, collection, owner=None):
+    def getByPillarAndName(self, owner, pillar, name):
+        conditions = [Snap.owner == owner, Snap.name == name]
+        if pillar is None:
+            # If we start supporting more pillars, remember to add the
+            # conditions here.
+            conditions.append(Snap.project == None)
+        elif IProduct.providedBy(pillar):
+            conditions.append(Snap.project == pillar)
+        else:
+            raise NotImplementedError("Unknown pillar for snap: %s" % pillar)
+        return IStore(Snap).find(Snap, *conditions).one()
+
+    def _getSnapsFromCollection(self, collection, owner=None,
+                                visible_by_user=None):
         if IBranchCollection.providedBy(collection):
             id_column = Snap.branch_id
             ids = collection.getBranchIds()
@@ -1449,6 +1462,7 @@ class SnapSet:
         expressions = [id_column.is_in(ids._get_select())]
         if owner is not None:
             expressions.append(Snap.owner == owner)
+        expressions.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *expressions)
 
     def findByIds(self, snap_ids, visible_by_user=None):
@@ -1466,8 +1480,10 @@ class SnapSet:
         """See `ISnapSet`."""
         def _getSnaps(collection):
             collection = collection.visibleByUser(visible_by_user)
-            owned = self._getSnapsFromCollection(collection.ownedBy(person))
-            packaged = self._getSnapsFromCollection(collection, owner=person)
+            owned = self._getSnapsFromCollection(
+                collection.ownedBy(person), visible_by_user=visible_by_user)
+            packaged = self._getSnapsFromCollection(
+                collection, owner=person, visible_by_user=visible_by_user)
             return owned.union(packaged)
 
         bzr_collection = removeSecurityProxy(getUtility(IAllBranches))
@@ -1482,28 +1498,35 @@ class SnapSet:
         """See `ISnapSet`."""
         def _getSnaps(collection):
             return self._getSnapsFromCollection(
-                collection.visibleByUser(visible_by_user))
+                collection.visibleByUser(visible_by_user),
+                visible_by_user=visible_by_user)
 
         bzr_collection = removeSecurityProxy(IBranchCollection(project))
         git_collection = removeSecurityProxy(IGitCollection(project))
         return _getSnaps(bzr_collection).union(_getSnaps(git_collection))
 
-    def findByBranch(self, branch):
+    def findByBranch(self, branch, visible_by_user=None):
         """See `ISnapSet`."""
-        return IStore(Snap).find(Snap, Snap.branch == branch)
+        return IStore(Snap).find(
+            Snap,
+            Snap.branch == branch,
+            get_snap_privacy_filter(visible_by_user))
 
-    def findByGitRepository(self, repository, paths=None):
+    def findByGitRepository(self, repository, paths=None,
+                            visible_by_user=None):
         """See `ISnapSet`."""
         clauses = [Snap.git_repository == repository]
         if paths is not None:
             clauses.append(Snap.git_path.is_in(paths))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
-    def findByGitRef(self, ref):
+    def findByGitRef(self, ref, visible_by_user=None):
         """See `ISnapSet`."""
         return IStore(Snap).find(
             Snap,
-            Snap.git_repository == ref.repository, Snap.git_path == ref.path)
+            Snap.git_repository == ref.repository, Snap.git_path == ref.path,
+            get_snap_privacy_filter(visible_by_user))
 
     def findByContext(self, context, visible_by_user=None, order_by_date=True):
         if IPerson.providedBy(context):
@@ -1511,16 +1534,13 @@ class SnapSet:
         elif IProduct.providedBy(context):
             snaps = self.findByProject(
                 context, visible_by_user=visible_by_user)
-        # XXX cjwatson 2015-09-15: At the moment we can assume that if you
-        # can see the source context then you can see the snap packages
-        # based on it.  This will cease to be true if snap packages gain
-        # privacy of their own.
         elif IBranch.providedBy(context):
-            snaps = self.findByBranch(context)
+            snaps = self.findByBranch(context, visible_by_user=visible_by_user)
         elif IGitRepository.providedBy(context):
-            snaps = self.findByGitRepository(context)
+            snaps = self.findByGitRepository(
+                context, visible_by_user=visible_by_user)
         elif IGitRef.providedBy(context):
-            snaps = self.findByGitRef(context)
+            snaps = self.findByGitRef(context, visible_by_user=visible_by_user)
         else:
             raise BadSnapSearchContext(context)
         if order_by_date:
