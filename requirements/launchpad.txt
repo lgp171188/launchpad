@@ -129,7 +129,7 @@ python-memcached==1.58
 # lp1 Fix normalization of non-ASCII query strings on Python 2.
 python-openid2==3.2+lp1
 python-swiftclient==3.8.1
-PyYAML==5.4.1
+PyYAML==5.3.1
 rabbitfixture==0.5.0
 requests-file==1.4.3
 requests-toolbelt==0.9.1
