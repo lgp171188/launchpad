@@ -382,10 +382,9 @@ class FTPArchiveHandler:
 
                 spphs = self.getSourcesForOverrides(distroseries, pocket)
                 bpphs = self.getBinariesForOverrides(distroseries, pocket)
-                self.publishOverrides(
-                    distroseries.getSuite(pocket), spphs, bpphs)
+                self.publishOverrides(distroseries, pocket, spphs, bpphs)
 
-    def publishOverrides(self, suite,
+    def publishOverrides(self, distroseries, pocket,
                          source_publications, binary_publications):
         """Output a set of override files for use in apt-ftparchive.
 
@@ -408,8 +407,15 @@ class FTPArchiveHandler:
         # test_ftparchive.
         from lp.archivepublisher.publishing import FORMAT_TO_SUBCOMPONENT
 
+        suite = distroseries.getSuite(pocket)
+
         # overrides[component][src/bin] = sets of tuples
         overrides = defaultdict(lambda: defaultdict(set))
+        # Ensure that we generate overrides for all the expected components,
+        # even if they're currently empty.
+        for component in self.publisher.archive.getComponentsForSeries(
+                distroseries):
+            overrides[component.name]
 
         def updateOverride(packagename, component, section, archtag=None,
                            priority=None, binpackageformat=None,
@@ -666,16 +672,25 @@ class FTPArchiveHandler:
                         continue
                 spps = self.getSourceFiles(distroseries, pocket)
                 pps = self.getBinaryFiles(distroseries, pocket)
-                self.publishFileLists(distroseries.getSuite(pocket), spps, pps)
+                self.publishFileLists(distroseries, pocket, spps, pps)
 
-    def publishFileLists(self, suite, sourcefiles, binaryfiles):
+    def publishFileLists(self, distroseries, pocket, sourcefiles, binaryfiles):
         """Collate the set of source files and binary files provided and
         write out all the file list files for them.
 
         listroot/distroseries_component_source
         listroot/distroseries_component_binary-archname
         """
+        suite = distroseries.getSuite(pocket)
+
         filelist = defaultdict(lambda: defaultdict(list))
+        # Ensure that we generate file lists for all the expected components
+        # and architectures, even if they're currently empty.
+        for component in self.publisher.archive.getComponentsForSeries(
+                distroseries):
+            filelist[component.name]["source"]
+            for das in distroseries.enabled_architectures:
+                filelist[component.name]["binary-%s" % das.architecturetag]
 
         def updateFileList(sourcepackagename, filename, component,
                            architecturetag=None):
@@ -698,7 +713,6 @@ class FTPArchiveHandler:
             updateFileList(*file_details)
 
         self.log.debug("Writing file lists for %s" % suite)
-        series, pocket = self.distro.getDistroSeriesAndPocket(suite)
         for component, architectures in six.iteritems(filelist):
             for architecture, file_names in six.iteritems(architectures):
                 # XXX wgrant 2010-10-06: There must be a better place to do
@@ -708,7 +722,7 @@ class FTPArchiveHandler:
                 else:
                     # The "[7:]" strips the "binary-" prefix off the
                     # architecture names we get here.
-                    das = series.getDistroArchSeries(architecture[7:])
+                    das = distroseries.getDistroArchSeries(architecture[7:])
                     enabled = das.enabled
                 if enabled:
                     self.writeFileList(
@@ -740,7 +754,8 @@ class FTPArchiveHandler:
             with open(new_path, 'w') as f:
                 files[subcomp].sort(key=package_name)
                 f.write("\n".join(files[subcomp]))
-                f.write("\n")
+                if files[subcomp]:
+                    f.write("\n")
             os.rename(new_path, final_path)
 
     #
