@@ -230,6 +230,11 @@ class IOCIRecipeView(Interface):
         description=_("True if this recipe is official for its OCI project."),
         readonly=True)
 
+    private = Bool(
+        title=_("Is this OCI recipe private?"),
+        required=False, readonly=True,
+        description=_("True if this recipe is private. False otherwise."))
+
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
         processors=List(

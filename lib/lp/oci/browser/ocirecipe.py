@@ -239,6 +239,10 @@ class OCIProjectRecipesView(LaunchpadView):
 class OCIRecipeView(LaunchpadView):
     """Default view of an OCI recipe."""
 
+    @property
+    def private(self):
+        return self.context.private
+
     @cachedproperty
     def builds(self):
         return builds_for_recipe(self.context)
@@ -956,6 +960,10 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
 class BaseOCIRecipeEditView(LaunchpadEditFormView):
 
     schema = IOCIRecipeEditSchema
+
+    @property
+    def private(self):
+        return self.context.private
 
     @property
     def cancel_url(self):
