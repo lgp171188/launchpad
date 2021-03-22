@@ -186,13 +186,17 @@ class TestFTPArchive(TestCaseWithFactory):
             'tiny', component, section, 'i386',
             PackagePublishingPriority.EXTRA, binpackageformat,
             phased_update_percentage)])
-        fa.publishOverrides('hoary-test', source_overrides, binary_overrides)
+        fa.publishOverrides(
+            self._distribution['hoary-test'], PackagePublishingPocket.RELEASE,
+            source_overrides, binary_overrides)
 
     def _publishDefaultFileLists(self, fa, component):
         source_files = FakeSelectResult([('tiny', 'tiny_0.1.dsc', component)])
         binary_files = FakeSelectResult(
             [('tiny', 'tiny_0.1_i386.deb', component, 'binary-i386')])
-        fa.publishFileLists('hoary-test', source_files, binary_files)
+        fa.publishFileLists(
+            self._distribution['hoary-test'], PackagePublishingPocket.RELEASE,
+            source_files, binary_files)
 
     def test_createEmptyPocketRequests_preserves_existing(self):
         # createEmptyPocketRequests leaves existing override and file list
@@ -362,6 +366,29 @@ class TestFTPArchive(TestCaseWithFactory):
             self.assertEqual(
                 ["tiny\textra\tdevel"], result_file.read().splitlines())
 
+    def test_publishOverrides_empties_missing_components(self):
+        # publishOverrides writes empty overrides files for components that
+        # have no publications.
+        fa = self._setUpFTPArchiveHandler()
+        empty_overrides = []
+        for component in ("restricted", "universe", "multiverse"):
+            empty_overrides.extend([
+                "override.hoary-test.%s" % component,
+                "override.hoary-test.%s.src" % component,
+                "override.hoary-test.extra.%s" % component,
+                ])
+        for override in empty_overrides:
+            write_file(
+                os.path.join(self._overdir, override), b"previous contents\n")
+
+        self._publishDefaultOverrides(fa, "main")
+
+        self._verifyFile("override.hoary-test.main", self._overdir)
+        self._verifyFile("override.hoary-test.main.src", self._overdir)
+        self._verifyFile("override.hoary-test.extra.main", self._overdir)
+        for override in empty_overrides:
+            self._verifyEmpty(os.path.join(self._overdir, override))
+
     def test_generateOverrides(self):
         # generateOverrides generates all the overrides from start to finish.
         self._distribution = getUtility(IDistributionSet).getByName('ubuntu')
@@ -458,6 +485,27 @@ class TestFTPArchive(TestCaseWithFactory):
         # expected contents.
         self._verifyFile("hoary-test_main_source", self._listdir)
         self._verifyFile("hoary-test_main_binary-i386", self._listdir)
+
+    def test_publishFileLists_empties_missing_components(self):
+        # publishFileLists writes empty file list files for components that
+        # have no publications.
+        fa = self._setUpFTPArchiveHandler()
+        empty_filelists = []
+        for component in ("restricted", "universe", "multiverse"):
+            empty_filelists.extend([
+                "hoary-test_%s_source" % component,
+                "hoary-test_%s_binary-i386" % component,
+                ])
+        for filelist in empty_filelists:
+            write_file(
+                os.path.join(self._listdir, filelist), b"previous contents\n")
+
+        self._publishDefaultFileLists(fa, "main")
+
+        self._verifyFile("hoary-test_main_source", self._listdir)
+        self._verifyFile("hoary-test_main_binary-i386", self._listdir)
+        for filelist in empty_filelists:
+            self._verifyEmpty(os.path.join(self._listdir, filelist))
 
     def test_generateConfig(self):
         # Generate apt-ftparchive configuration file and run it.
@@ -727,12 +775,16 @@ class TestFTPArchive(TestCaseWithFactory):
             "bin%d" % i, "main", "misc", "i386",
             PackagePublishingPriority.EXTRA, BinaryPackageFormat.DEB, None)
             for i in range(50)])
-        fa.publishOverrides("hoary-test", source_overrides, binary_overrides)
+        fa.publishOverrides(
+            self._distribution["hoary-test"], PackagePublishingPocket.RELEASE,
+            source_overrides, binary_overrides)
         source_files = FakeSelectResult([("tiny", "tiny_0.1.dsc", "main")])
         binary_files = FakeSelectResult([(
             "bin%d" % i, "bin%d_1_i386.deb" % i, "main", "binary-i386")
             for i in range(50)])
-        fa.publishFileLists("hoary-test", source_files, binary_files)
+        fa.publishFileLists(
+            self._distribution["hoary-test"], PackagePublishingPocket.RELEASE,
+            source_files, binary_files)
         self._addRepositoryFile("main", "tiny", "tiny_0.1.dsc")
         for i in range(50):
             self._addRepositoryFile(
