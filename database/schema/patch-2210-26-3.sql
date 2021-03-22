@@ -31,7 +31,7 @@ COMMENT ON COLUMN OCIRecipeSubscription.date_created IS
 COMMENT ON COLUMN OCIRecipeSubscription.subscribed_by IS
     'The person performing the action of subscribing someone to the OCI recipe.';
 
-CREATE UNIQUE INDEX ocirecipesubscription__person_recipe__key
+CREATE UNIQUE INDEX ocirecipesubscription__recipe__person__key
     ON OCIRecipeSubscription(recipe, person);
 
 CREATE INDEX ocirecipesubscription__person__idx
