@@ -2213,6 +2213,13 @@ class TestSnapSet(TestCaseWithFactory):
                 CannotFetchSnapcraftYaml,
                 getUtility(ISnapSet).getSnapcraftYaml, snap)
 
+    def test_getSnapcraftYaml_emoji(self):
+        self.useFixture(GitHostingFixture(blob="summary: \U0001f680\n"))
+        [git_ref] = self.factory.makeGitRefs()
+        self.assertEqual(
+            {"summary": "\U0001f680"},
+            getUtility(ISnapSet).getSnapcraftYaml(git_ref))
+
     def test__findStaleSnaps(self):
         # Stale; not built automatically.
         self.factory.makeSnap(is_stale=True)
