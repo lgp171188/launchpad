@@ -240,6 +240,8 @@ class IOCIRecipeView(Interface):
         description=_("True if this recipe is official for its OCI project."),
         readonly=True)
 
+    pillar = Attribute('The pillar of this OCI recipe.')
+
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
         processors=List(
