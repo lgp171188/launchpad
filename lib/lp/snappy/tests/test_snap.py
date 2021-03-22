@@ -1684,6 +1684,22 @@ class TestSnapSet(TestCaseWithFactory):
             getUtility(ISnapSet).exists(self.factory.makePerson(), snap.name))
         self.assertFalse(getUtility(ISnapSet).exists(snap.owner, "different"))
 
+    def test_getByPillarAndName(self):
+        owner = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        project_snap = self.factory.makeSnap(
+            name='proj-snap', owner=owner, registrant=owner, project=project)
+        no_project_snap = self.factory.makeSnap(
+            name='no-proj-snap', owner=owner, registrant=owner)
+
+        snap_set = getUtility(ISnapSet)
+        self.assertEqual(
+            project_snap,
+            snap_set.getByPillarAndName(owner, project, 'proj-snap'))
+        self.assertEqual(
+            no_project_snap,
+            snap_set.getByPillarAndName(owner, None, 'no-proj-snap'))
+
     def test_findByOwner(self):
         # ISnapSet.findByOwner returns all Snaps with the given owner.
         owners = [self.factory.makePerson() for i in range(2)]
@@ -2884,9 +2900,13 @@ class TestSnapWebservice(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch(
             owner=self.person,
             information_type=InformationType.PRIVATESECURITY)
+        project = self.factory.makeProduct(
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, branch=branch,
-            private=True)
+            project=project, information_type=InformationType.PROPRIETARY)
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         with person_logged_in(self.person):
             snap_url = api_url(snap)
@@ -2894,9 +2914,9 @@ class TestSnapWebservice(TestCaseWithFactory):
         admin_webservice = webservice_for_person(
             admin, permission=OAuthPermission.WRITE_PRIVATE)
         admin_webservice.default_api_version = "devel"
-        response = admin_webservice.patch(
-            snap_url, "application/json",
-            json.dumps({"information_type": 'Public'}))
+        data = json.dumps({"information_type": 'Public'})
+        content_type = "application/json"
+        response = admin_webservice.patch(snap_url, content_type, data)
         self.assertEqual(400, response.status)
         self.assertEqual(
             b"Snap recipe contains private information and cannot be public.",
