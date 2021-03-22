@@ -28,7 +28,6 @@ from storm.locals import (
     Reference,
     Unicode,
     )
-from twisted.application.service import IService
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -37,6 +36,7 @@ from lp.app.enums import (
     PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
     )
+from lp.app.interfaces.services import IService
 from lp.bugs.model.bugtarget import BugTargetBase
 from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.code.model.branchnamespace import (
@@ -282,7 +282,7 @@ class OCIProject(BugTargetBase, StormBase):
             self.pillar.branch_sharing_policy]
         if (required_grant is not None
                 and not getUtility(IService, 'sharing').checkPillarAccess(
-                    [self.pillar], required_grant, self.owner)
+                    [self.pillar], required_grant, self.registrant)
                 and (user is None
                      or not getUtility(IService, 'sharing').checkPillarAccess(
                             [self.pillar], required_grant, user))):
