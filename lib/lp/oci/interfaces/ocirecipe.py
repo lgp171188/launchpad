@@ -20,6 +20,7 @@ __all__ = [
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
+    'OCIRecipePrivacyMismatch',
     'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_BUILD_DISTRIBUTION',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
@@ -140,6 +141,16 @@ class CannotModifyOCIRecipeProcessor(Exception):
     def __init__(self, processor):
         super(CannotModifyOCIRecipeProcessor, self).__init__(
             self._fmt % {'processor': processor.name})
+
+
+@error_status(http_client.BAD_REQUEST)
+class OCIRecipePrivacyMismatch(Exception):
+    """OCI recipe privacy does not match its content."""
+
+    def __init__(self, message=None):
+        super(OCIRecipePrivacyMismatch, self).__init__(
+            message or
+            "OCI recipe contains private information and cannot be public.")
 
 
 @exported_as_webservice_entry(
