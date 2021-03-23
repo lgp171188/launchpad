@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Views, menus and traversal related to PersonProducts."""
@@ -30,6 +30,7 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+from lp.snappy.interfaces.snap import ISnapSet
 
 
 class PersonProductNavigation(PersonTargetDefaultVCSNavigationMixin,
@@ -52,6 +53,13 @@ class PersonProductNavigation(PersonTargetDefaultVCSNavigationMixin,
             raise NotFoundError
         else:
             return branch
+
+    @stepthrough('+snap')
+    def traverse_snap(self, name):
+        return getUtility(ISnapSet).getByPillarAndName(
+            owner=self.context.person,
+            pillar=self.context.product,
+            name=name)
 
 
 @implementer(IMultiFacetedBreadcrumb)

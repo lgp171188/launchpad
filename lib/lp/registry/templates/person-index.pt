@@ -54,8 +54,14 @@
 
 <div metal:fill-slot="main"
   tal:define="overview_menu context/menu:overview">
-  <tal:is-valid-person tal:condition="context/is_valid_person">
-
+  <tal:show-main-content
+      condition="python: context.is_valid_person or
+                         context.account_status.name == 'DECEASED'">
+    <div id="deceased-note"
+         tal:condition="context/account_status/enumvalue:DECEASED">
+      This account belonged to a deceased user and has been
+      <strong>archived</strong>.
+    </div>
     <div class="description">
       <tal:widget replace="structure view/description_widget" />
    </div>
@@ -105,7 +111,7 @@
 
       </div>
     </div>
-  </tal:is-valid-person>
+  </tal:show-main-content>
 
   <div id="not-lp-user-or-team"
        tal:condition="not: context/is_valid_person_or_team">

@@ -208,12 +208,7 @@ class GitSubscriptionAddOtherView(_GitSubscriptionView):
 
     @action("Subscribe", name="subscribe_action")
     def subscribe_action(self, action, data):
-        """Subscribe the specified user to the repository.
-
-        The user must be a member of a team in order to subscribe that team
-        to the repository.  Launchpad Admins are special and they can
-        subscribe any team.
-        """
+        """Subscribe the specified user to the repository."""
         notification_level = data["notification_level"]
         max_diff_lines = self.optional_max_diff_lines(
             notification_level, data["max_diff_lines"])

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the internal codehosting API."""
@@ -24,6 +24,7 @@ from lp.services.authserver.interfaces import (
     )
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.librarian.interfaces import (
     ILibraryFileAlias,
     ILibraryFileAliasSet,
@@ -106,6 +107,17 @@ class GetUserAndSSHKeysTests(TestCaseWithFactory):
             self.assertEqual(
                 dict(id=new_person.id, name=new_person.name,
                      keys=[(key.keytype.title, key.keytext)]),
+                self.authserver.getUserAndSSHKeys(new_person.name))
+
+    def test_inactive_user_with_keys(self):
+        # getUserAndSSHKeys returns the InactiveAccount fault if the given
+        # name refers to an inactive account.
+        new_person = self.factory.makePerson(
+            account_status=AccountStatus.SUSPENDED)
+        with person_logged_in(new_person):
+            self.factory.makeSSHKey(person=new_person)
+            self.assertEqual(
+                faults.InactiveAccount(new_person.name),
                 self.authserver.getUserAndSSHKeys(new_person.name))
 
     def test_via_xmlrpc(self):

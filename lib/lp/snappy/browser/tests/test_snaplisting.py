@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package listings."""
@@ -27,7 +27,9 @@ from lp.services.database.constants import (
     SEVEN_DAYS_AGO,
     UTC_NOW,
     )
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
+from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     ANONYMOUS,
     BrowserTestCase,
@@ -153,6 +155,204 @@ class TestSnapListing(BrowserTestCase):
             Name            Owner           Source          Registered
             snap-name.*     Team Name.*     ~.*:.*          .*
             snap-name.*     Team Name.*     lp:.*           .*""", text)
+
+    def test_project_private_snap_listing(self):
+        # Only users with permission can see private snap packages in the list
+        # for a project.
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        project = self.factory.makeProduct(displayname="Snappable")
+        private_owner = self.factory.makePerson()
+        user_with_permission = self.factory.makePerson()
+        someone_else = self.factory.makePerson()
+        private_snap = self.factory.makeSnap(
+            name="private-snap",
+            private=True, registrant=private_owner, owner=private_owner,
+            branch=self.factory.makeProductBranch(product=project),
+            date_created=ONE_DAY_AGO)
+        with person_logged_in(private_owner):
+            private_snap.subscribe(user_with_permission, private_owner)
+        [ref] = self.factory.makeGitRefs(target=project)
+        self.factory.makeSnap(git_ref=ref, date_created=UTC_NOW)
+
+        full_list = """
+            Snap packages for Snappable
+            Name            Owner           Source          Registered
+            snap-name.*     Team Name.*     ~.*:.*           .*
+            private-snap.*  Person-name.*   lp:.*            .*"""
+
+        public_list = """
+            Snap packages for Snappable
+            Name            Owner           Source          Registered
+            snap-name.*     Team Name.*     ~.*:.*          .*"""
+
+        # private_owner: full_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list, self.getMainText(project, "+snaps", user=private_owner))
+        # user_with_permission: full_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list,
+            self.getMainText(project, "+snaps", user=user_with_permission))
+        # someone_else: public_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list,
+            self.getMainText(project, "+snaps", user=someone_else))
+        # Not logged in: public_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(project, "+snaps", user=None))
+
+    def test_person_private_snap_listing(self):
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        private_owner = self.factory.makePerson(name="random-user")
+        user_with_permission = self.factory.makePerson()
+        someone_else = self.factory.makePerson()
+        private_snap = self.factory.makeSnap(
+            name="private-snap",
+            private=True, registrant=private_owner, owner=private_owner,
+            date_created=ONE_DAY_AGO)
+        with person_logged_in(private_owner):
+            private_snap.subscribe(user_with_permission, private_owner)
+        [ref] = self.factory.makeGitRefs()
+        self.factory.makeSnap(
+            private=False, registrant=private_owner, owner=private_owner,
+            git_ref=ref, date_created=UTC_NOW)
+
+        full_list = """
+            Snap packages for Random-user
+            Name               Source          Registered
+            snap-name.*        ~.*:.*          .*
+            private-snap.*     lp:.*           .*"""
+
+        public_list = """
+            Snap packages for Random-user
+            Name               Source          Registered
+            snap-name.*        ~.*:.*          .*"""
+
+        # private_owner: full_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list, self.getMainText(private_owner, "+snaps",
+                                        user=private_owner))
+        # user_with_permission: full_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list, self.getMainText(private_owner, "+snaps",
+                                        user=user_with_permission))
+        # someone_else: public_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(private_owner, "+snaps",
+                                          user=someone_else))
+        # Not logged in: public_list.
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(private_owner, "+snaps", user=None))
+
+    def test_branch_private_snap_listing(self):
+        # Only certain users can see private snaps on branch listing.
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        private_owner = self.factory.makePerson(name="random-user")
+        user_with_permission = self.factory.makePerson()
+        someone_else = self.factory.makePerson()
+        branch = self.factory.makeAnyBranch()
+        private_snap = self.factory.makeSnap(
+            private=True, name="private-snap",
+            owner=private_owner, registrant=private_owner, branch=branch)
+        with person_logged_in(private_owner):
+            private_snap.subscribe(user_with_permission, private_owner)
+        self.factory.makeSnap(
+            private=False, owner=private_owner, registrant=private_owner,
+            branch=branch)
+        full_list = """
+            Snap packages for lp:.*
+            Name            Owner           Registered
+            snap-name.*     Random-user.*   .*
+            private-snap.*  Random-user.*   .*"""
+        public_list = """
+            Snap packages for lp:.*
+            Name            Owner           Registered
+            snap-name.*     Random-user.*     .*"""
+
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list, self.getMainText(branch, "+snaps", user=private_owner))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list, self.getMainText(branch, "+snaps",
+                                        user=user_with_permission))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(branch, "+snaps", user=someone_else))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(branch, "+snaps", user=None))
+
+    def test_git_repository_private_snap_listing(self):
+        # Only certain users can see private snaps on git repo listing.
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        private_owner = self.factory.makePerson(name="random-user")
+        user_with_permission = self.factory.makePerson()
+        someone_else = self.factory.makePerson()
+        repository = self.factory.makeGitRepository()
+        [ref] = self.factory.makeGitRefs(repository=repository)
+        private_snap = self.factory.makeSnap(
+            private=True, name="private-snap",
+            owner=private_owner, registrant=private_owner, git_ref=ref)
+        with person_logged_in(private_owner):
+            private_snap.subscribe(user_with_permission, private_owner)
+        self.factory.makeSnap(
+            private=False, owner=private_owner, registrant=private_owner,
+            git_ref=ref)
+
+        full_list = """
+            Snap packages for lp:~.*
+            Name            Owner           Registered
+            snap-name.*     Random-user.*   .*
+            private-snap.*  Random-user.*   .*"""
+        public_list = """
+            Snap packages for lp:.*
+            Name            Owner           Registered
+            snap-name.*     Random-user.*     .*"""
+
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list,
+            self.getMainText(repository, "+snaps", user=private_owner))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list,
+            self.getMainText(repository, "+snaps", user=user_with_permission))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list,
+            self.getMainText(repository, "+snaps", user=someone_else))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(repository, "+snaps", user=None))
+
+    def test_git_ref_private_snap_listing(self):
+        # Only certain users can see private snaps on git ref listing.
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        private_owner = self.factory.makePerson(name="random-user")
+        user_with_permission = self.factory.makePerson()
+        someone_else = self.factory.makePerson()
+        repository = self.factory.makeGitRepository()
+        [ref] = self.factory.makeGitRefs(repository=repository)
+        private_snap = self.factory.makeSnap(
+            private=True, name="private-snap",
+            owner=private_owner, registrant=private_owner, git_ref=ref)
+        with person_logged_in(private_owner):
+            private_snap.subscribe(user_with_permission, private_owner)
+        self.factory.makeSnap(
+            private=False, owner=private_owner, registrant=private_owner,
+            git_ref=ref)
+
+        full_list = """
+                    Snap packages for ~.*:.*
+                    Name            Owner           Registered
+                    snap-name.*     Random-user.*   .*
+                    private-snap.*  Random-user.*   .*"""
+        public_list = """
+                    Snap packages for ~.*:.*
+                    Name            Owner           Registered
+                    snap-name.*     Random-user.*     .*"""
+
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list, self.getMainText(ref, "+snaps", user=private_owner))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            full_list,
+            self.getMainText(ref, "+snaps", user=user_with_permission))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(ref, "+snaps", user=someone_else))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            public_list, self.getMainText(ref, "+snaps", user=None))
 
     def assertSnapsQueryCount(self, context, item_creator):
         self.pushConfig("launchpad", default_batch_size=10)
