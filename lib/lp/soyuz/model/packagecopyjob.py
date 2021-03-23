@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -8,7 +8,9 @@ __all__ = [
     "PlainPackageCopyJob",
     ]
 
+from datetime import timedelta
 import logging
+import random
 
 from lazr.delegates import delegate_to
 from lazr.jobrunner.jobrunner import SuspendJobException
@@ -49,6 +51,11 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
+    )
+from lp.services.database.locking import (
+    AdvisoryLockHeld,
+    LockType,
+    try_advisory_lock,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
@@ -267,7 +274,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
     user_error_types = (CannotCopy,)
     # Raised when closing bugs ends up hitting another process and
     # deadlocking.
-    retry_error_types = (TransactionRollbackError,)
+    retry_error_types = (TransactionRollbackError, AdvisoryLockHeld)
     max_retries = 5
 
     @classmethod
@@ -579,10 +586,41 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             transaction.commit()
         super(PlainPackageCopyJob, self).notifyOops(oops)
 
+    @property
+    def _advisory_lock_id(self):
+        """An ID for use in advisory locks for this job."""
+        # Mask off the bottom 31 bits so that this fits in PostgreSQL's
+        # integer type, allowing it to be used as the second argument to a
+        # two-argument pg_try_advisory_lock function.
+        return hash((
+            self.target_archive_id,
+            self.package_name,
+            self.package_version)) & 0x7FFFFFFF
+
+    @property
+    def retry_delay(self):
+        """See `BaseRunnableJob`."""
+        # Retry in somewhere between 6 and 8 minutes.  This is longer than
+        # the lease duration and the soft time limit, and the randomness
+        # makes it less likely that N-1 of a set of jobs that are all
+        # competing for the same advisory lock will collide the next time
+        # round.  There's already no particular ordering guarantee among
+        # jobs with the same copy policy (see
+        # `PackageCopyJobDerived.iterReady`).
+        return timedelta(minutes=random.uniform(6, 8))
+
     def run(self):
         """See `IRunnableJob`."""
         try:
-            self.attemptCopy()
+            # Take an advisory lock to fend off by far the most common case
+            # of races between multiple instances of the copier's conflict
+            # checker, namely copies of the same source name and version
+            # from the same archive into multiple destination series.  Other
+            # races are still possible, but much rarer.
+            with try_advisory_lock(
+                    LockType.PACKAGE_COPY, self._advisory_lock_id,
+                    IStore(Archive)):
+                self.attemptCopy()
         except CannotCopy as e:
             # Remember the target archive purpose, as otherwise aborting the
             # transaction will forget it.
@@ -607,7 +645,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
                 # the job.  We will normally have a DistroSeriesDifference
                 # in this case.
                 pass
-        except SuspendJobException:
+        except (SuspendJobException, AdvisoryLockHeld):
             raise
         except:
             # Abort work done so far, but make sure that we commit the

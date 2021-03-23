@@ -229,7 +229,7 @@ class TestCodeHandler(TestCaseWithFactory):
         Error message:
 
         The 'review' command expects any of the following arguments:
-        abstain, approve, disapprove, needs-fixing, needs-info, resubmit
+        abstain, approve, disapprove, needs-fixing, needs-info, needs-resubmitting
 
         For example:
 
@@ -539,6 +539,17 @@ class TestVoteEmailCommand(TestCase):
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
         command = VoteEmailCommand('vote', ['needs-information'])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
+
+    def test_getVoteNeedsResubmittingAlias(self):
+        """Test the needs_resubmitting review type and its aliases."""
+        command = VoteEmailCommand('vote', ['needs_resubmitting'])
+        self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
+        command = VoteEmailCommand('vote', ['needsresubmitting'])
+        self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
+        command = VoteEmailCommand('vote', ['needs-resubmitting'])
+        self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
+        command = VoteEmailCommand('vote', ['resubmit'])
+        self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
 
 
 class TestUpdateStatusEmailCommand(TestCaseWithFactory):

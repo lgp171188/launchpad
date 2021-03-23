@@ -28,13 +28,17 @@ from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.formlib.widget import CustomWidgetFactory
-from zope.interface import Interface
+from zope.interface import (
+    implementer,
+    Interface,
+    )
 from zope.schema import (
     Choice,
     Dict,
     List,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -59,6 +63,8 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.interfaces.gitref import IGitRef
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
@@ -79,6 +85,7 @@ from lp.services.webapp.breadcrumb import (
     Breadcrumb,
     NameBreadcrumb,
     )
+from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webapp.url import urlappend
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.widgets.snaparchive import SnapArchiveWidget
@@ -110,6 +117,27 @@ from lp.soyuz.browser.build import get_build_by_id_str
 from lp.soyuz.interfaces.archive import IArchive
 
 
+@implementer(ICanonicalUrlData)
+class SnapURL:
+    """Snap URL creation rules."""
+    rootsite = 'mainsite'
+
+    def __init__(self, snap):
+        self.snap = snap
+
+    @property
+    def inside(self):
+        owner = self.snap.owner
+        project = self.snap.project
+        if project is None:
+            return owner
+        return getUtility(IPersonProductFactory).create(owner, project)
+
+    @property
+    def path(self):
+        return "+snap/%s" % self.snap.name
+
+
 class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
     usedfor = ISnap
 
@@ -127,6 +155,13 @@ class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
         if build is None or build.snap != self.context:
             return None
         return build
+
+    @stepthrough("+subscription")
+    def traverse_subscription(self, name):
+        """Traverses to an `ISnapSubscription`."""
+        person = getUtility(IPersonSet).getByName(name)
+        if person is not None:
+            return self.context.getSubscription(person)
 
 
 class SnapBreadcrumb(NameBreadcrumb):
@@ -182,11 +217,28 @@ class SnapContextMenu(ContextMenu):
 
     facet = 'overview'
 
-    links = ('request_builds',)
+    links = ('request_builds', 'add_subscriber', 'subscription')
 
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
         return Link('+request-builds', 'Request builds', icon='add')
+
+    @enabled_with_permission("launchpad.AnyPerson")
+    def subscription(self):
+        if self.context.hasSubscription(self.user):
+            url = "+subscription/%s" % self.user.name
+            text = "Edit your subscription"
+            icon = "edit"
+        else:
+            url = "+subscribe"
+            text = "Subscribe yourself"
+            icon = "add"
+        return Link(url, text, icon=icon)
+
+    @enabled_with_permission("launchpad.AnyPerson")
+    def add_subscriber(self):
+        text = "Subscribe someone else"
+        return Link("+addsubscriber", text, icon="add")
 
 
 class SnapView(LaunchpadView):
@@ -221,6 +273,13 @@ class SnapView(LaunchpadView):
     @property
     def store_channels(self):
         return ', '.join(self.context.store_channels)
+
+    @property
+    def user_can_see_source(self):
+        try:
+            return self.context.source.visibleByUser(self.user)
+        except Unauthorized:
+            return False
 
 
 def builds_and_requests_for_snap(snap):

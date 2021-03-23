@@ -131,8 +131,9 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
 
     def test_hides_recipes_link_if_only_non_visible_recipe_exists(self):
         oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        owner = self.factory.makePerson()
         self.factory.makeOCIRecipe(
-            oci_project=oci_project,
+            owner=owner, registrant=owner, oci_project=oci_project,
             information_type=InformationType.PRIVATESECURITY)
         another_user = self.factory.makePerson()
         browser = self.getViewBrowser(oci_project, user=another_user)
@@ -143,8 +144,9 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
 
     def test_shows_recipes_link_if_user_has_access_to_private_recipe(self):
         oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        owner = self.factory.makePerson()
         recipe = self.factory.makeOCIRecipe(
-            oci_project=oci_project,
+            owner=owner, registrant=owner, oci_project=oci_project,
             information_type=InformationType.PRIVATESECURITY)
         another_user = self.factory.makePerson()
         with admin_logged_in():
@@ -247,10 +249,13 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
         distribution = self.factory.makeDistribution(displayname="My Distro")
         oci_project = self.factory.makeOCIProject(
             pillar=distribution, ociprojectname="oci-name")
+        owner = self.factory.makePerson()
         official_recipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner,
             oci_project=oci_project, official=True,
             information_type=InformationType.PRIVATESECURITY)
         unofficial_recipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner,
             oci_project=oci_project, official=False,
             information_type=InformationType.PRIVATESECURITY)
 
@@ -278,12 +283,13 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
 
         # Make sure we don't include private recipes that the visitor
         # doesn't have access to.
+        owner = self.factory.makePerson()
         self.factory.makeOCIRecipe(
-            oci_project=oci_project,
+            owner=owner, registrant=owner, oci_project=oci_project,
             information_type=InformationType.PRIVATESECURITY)
         self.factory.makeOCIRecipe(
-            oci_project=oci_project, official=True,
-            information_type=InformationType.PRIVATESECURITY)
+            owner=owner, registrant=owner, oci_project=oci_project,
+            official=True, information_type=InformationType.PRIVATESECURITY)
 
         browser = self.getViewBrowser(
             oci_project, view_name="+index", user=distribution.owner)
