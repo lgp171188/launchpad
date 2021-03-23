@@ -266,6 +266,7 @@ from lp.services.helpers import (
     )
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
+    AccountDeceasedError,
     AccountStatus,
     AccountSuspendedError,
     IAccount,
@@ -3375,6 +3376,10 @@ class PersonSet:
             elif status == AccountStatus.SUSPENDED:
                 raise AccountSuspendedError(
                     "The account matching the identifier is suspended.")
+            elif status == AccountStatus.DECEASED:
+                raise AccountDeceasedError(
+                    "The account matching the identifier belongs to a "
+                    "deceased user.")
             elif not trust_email and status != AccountStatus.NOACCOUNT:
                 # If the email address is not completely trustworthy
                 # (ie. it comes from SCA) and the account has already

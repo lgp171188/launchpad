@@ -789,7 +789,8 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
             self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
         unpriv_webservice.default_api_version = "devel"
         logout()
-        self.assertEqual(200, self.webservice.get(build_url).status)
+        response = self.webservice.get(build_url)
+        self.assertEqual(200, response.status)
         # 404 since we aren't allowed to know that the private team exists.
         self.assertEqual(404, unpriv_webservice.get(build_url).status)
 

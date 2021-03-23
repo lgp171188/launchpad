@@ -233,7 +233,7 @@ class TestTarfileVerification(TestCase):
 class TestSigning(TestCaseWithFactory, RunPartsMixin):
 
     layer = LaunchpadZopelessLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSigning, self).setUp()

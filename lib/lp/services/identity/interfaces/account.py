@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
+    'AccountDeceasedError',
     'AccountStatus',
     'AccountStatusError',
     'AccountSuspendedError',
@@ -44,6 +45,11 @@ from lp.services.fields import StrippedTextLine
 @error_status(http_client.BAD_REQUEST)
 class AccountSuspendedError(Exception):
     """The account being accessed has been suspended."""
+
+
+@error_status(http_client.BAD_REQUEST)
+class AccountDeceasedError(Exception):
+    """The account being accessed belongs to a deceased user."""
 
 
 class AccountStatus(DBEnumeratedType):
@@ -90,10 +96,17 @@ class AccountStatus(DBEnumeratedType):
         information as possible.
         """)
 
+    DECEASED = DBItem(60, """
+        Deceased
+
+        The account belonged to somebody who is now deceased, and has been
+        permanently archived.
+        """)
+
 
 INACTIVE_ACCOUNT_STATUSES = [
     AccountStatus.PLACEHOLDER, AccountStatus.DEACTIVATED,
-    AccountStatus.SUSPENDED, AccountStatus.CLOSED]
+    AccountStatus.SUSPENDED, AccountStatus.CLOSED, AccountStatus.DECEASED]
 
 
 class AccountCreationRationale(DBEnumeratedType):
@@ -241,16 +254,23 @@ class AccountStatusChoice(Choice):
 
     transitions = {
         AccountStatus.PLACEHOLDER: [
-            AccountStatus.NOACCOUNT, AccountStatus.ACTIVE],
-        AccountStatus.NOACCOUNT: [AccountStatus.ACTIVE, AccountStatus.CLOSED],
+            AccountStatus.NOACCOUNT, AccountStatus.ACTIVE,
+            AccountStatus.DECEASED],
+        AccountStatus.NOACCOUNT: [
+            AccountStatus.ACTIVE, AccountStatus.CLOSED,
+            AccountStatus.DECEASED],
         AccountStatus.ACTIVE: [
             AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED,
-            AccountStatus.CLOSED],
+            AccountStatus.CLOSED, AccountStatus.DECEASED],
         AccountStatus.DEACTIVATED: [
-            AccountStatus.ACTIVE, AccountStatus.CLOSED],
+            AccountStatus.ACTIVE, AccountStatus.CLOSED,
+            AccountStatus.DECEASED],
         AccountStatus.SUSPENDED: [
-            AccountStatus.DEACTIVATED, AccountStatus.CLOSED],
+            AccountStatus.DEACTIVATED, AccountStatus.CLOSED,
+            AccountStatus.DECEASED],
         AccountStatus.CLOSED: [],
+        AccountStatus.DECEASED: [
+            AccountStatus.DEACTIVATED, AccountStatus.CLOSED],
         }
 
     def constraint(self, value):
